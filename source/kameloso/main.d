@@ -3218,8 +3218,8 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             interruptibleSleep(gracePeriodBeforeReconnect, *instance.abort);
             if (*instance.abort) break outerloop;
 
-            // Re-init plugins here so it isn't done on the first connect attempt
-            instance.initPlugins();
+            // Re-instantiate plugins here so it isn't done on the first connect attempt
+            instance.instantiatePlugins();
 
             // Reset throttling, in case there were queued messages.
             instance.throttle.reset();
@@ -3244,7 +3244,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             instance.teardownPlugins();
         }
 
-        // May as well check once here, in case something in initPlugins aborted or so.
+        // May as well check once here, in case something in instantiatePlugins aborted or so.
         if (*instance.abort) break outerloop;
 
         instance.conn.reset();
@@ -3970,7 +3970,7 @@ auto run(string[] args)
     {
         import std.file : exists;
 
-        instance.initPlugins();
+        instance.instantiatePlugins();
 
         if (!instance.settings.headless &&
             instance.missingConfigurationEntries.length &&

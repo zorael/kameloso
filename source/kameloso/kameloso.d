@@ -450,9 +450,9 @@ public:
         return 0.0;
     }
 
-    // initPlugins
+    // instantiatePlugins
     /++
-        Resets and *minimally* initialises all plugins.
+        Instantiates and *minimally* initialises all plugins.
 
         It only initialises them to the point where they're aware of their
         settings, and not far enough to have loaded any resources.
@@ -461,7 +461,7 @@ public:
             [kameloso.plugins.common.misc.IRCPluginSettingsException|IRCPluginSettingsException]
             on failure to apply custom settings.
      +/
-    void initPlugins() @system
+    void instantiatePlugins() @system
     {
         import kameloso.plugins.common.core : IRCPluginState;
         import kameloso.plugins.common.misc : applyCustomSettings;

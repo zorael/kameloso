@@ -130,8 +130,8 @@ void verboselyWriteConfig(
         if (instance.settings.flush) stdout.flush();
     }
 
-    // If we don't initialise the plugins there'll be no plugins array
-    instance.initPlugins();
+    // If we don't instantiate the plugins there'll be no plugins array
+    instance.instantiatePlugins();
 
     immutable shouldGiveBrightTerminalHint =
         !instance.settings.monochrome &&
@@ -187,7 +187,7 @@ void printSettings(ref Kameloso instance) @system
         instance.connSettings,
         instance.settings);
 
-    instance.initPlugins();
+    instance.instantiatePlugins();
 
     foreach (plugin; instance.plugins) plugin.printSettings();
 
