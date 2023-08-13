@@ -2974,7 +2974,7 @@ void resolvePaths(ref Kameloso instance) @safe
     import std.path : absolutePath, buildNormalizedPath, dirName, expandTilde, isAbsolute;
     import std.range : only;
 
-    immutable defaultResourceDir = buildNormalizedPath(rbd, "kameloso");
+    immutable defaultResourceHomeDir = buildNormalizedPath(rbd, "kameloso");
 
     version(Posix)
     {
@@ -2983,20 +2983,20 @@ void resolvePaths(ref Kameloso instance) @safe
 
     // Resolve and create the resource directory
     // Assume nothing has been entered if it is the default resource dir sans server etc
-    if (instance.settings.resourceDirectory == defaultResourceDir)
+    if (instance.settings.resourceDirectory == defaultResourceHomeDir)
     {
         version(Windows)
         {
             import std.string : replace;
             instance.settings.resourceDirectory = buildNormalizedPath(
-                defaultResourceDir,
+                defaultResourceHomeDir,
                 "server",
                 instance.parser.server.address.replace(':', '_'));
         }
         else version(Posix)
         {
             instance.settings.resourceDirectory = buildNormalizedPath(
-                defaultResourceDir,
+                defaultResourceHomeDir,
                 "server",
                 instance.parser.server.address);
         }
