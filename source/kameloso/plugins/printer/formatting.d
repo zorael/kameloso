@@ -439,11 +439,11 @@ void formatMessageMonochrome(Sink)
     {
         enum pattern = " (%-(%s%|) (%))";
 
-        static if ((__VERSION__ == 2101L) || (__VERSION__ == 2102L))
+        static if ((__VERSION__ >= 2099L) && (__VERSION__ <= 2102L))
         {
             import std.array : array;
             // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
-            // Seemingly only on 2.101 and 2.102
+            // Seemingly only between 2.099 and 2.102
             sink.formattedWrite(pattern, auxRange.array.dup);
         }
         else
