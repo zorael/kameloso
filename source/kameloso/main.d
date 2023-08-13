@@ -4024,6 +4024,19 @@ auto run(string[] args)
             if (!instance.settings.force) return ShellReturnValue.pluginInitialisationFailure;
             failedPlugins ~= plugin.name;
         }
+        catch (Exception e)
+        {
+            if (instance.settings.force)
+            {
+                // Ignore the error and continue
+                logger.error(e.msg);
+                version(PrintStacktraces) logger.trace(e.info);
+            }
+            else
+            {
+                throw e;
+            }
+        }
     }
 
     if (failedPlugins.length)
