@@ -1069,64 +1069,25 @@ void writeConfigurationFile(
     ref Kameloso instance,
     const string filename) @system
 {
+    import kameloso.platform : rbd = resourceBaseDirectory;
     import lu.serialisation : justifiedEntryValueText, serialise;
     import lu.string : beginsWith, encode64;
     import std.array : Appender;
     import std.file : exists;
-    import std.path : expandTilde;
+    import std.path : buildNormalizedPath, expandTilde;
 
     Appender!(char[]) sink;
     sink.reserve(4096);  // ~2234
 
-    immutable settingsResourceDir = instance.settings.resourceDirectory.expandTilde();
-
-    // Snapshot resource dir in case we change it
-    immutable resourceDirSnapshot = settingsResourceDir;
-
     // Only make some changes if we're creating a new file
-    immutable newFile = !filename.exists;
-
-    if (newFile)
+    if (!filename.exists)
     {
         import kameloso.constants : KamelosoDefaults;
-        import kameloso.platform : rbd = resourceBaseDirectory;
-        import std.path : buildNormalizedPath;
 
         if (!instance.bot.quitReason.length)
         {
             // Set a the quit reason here and nowhere else.
             instance.bot.quitReason = KamelosoDefaults.quitReason;
-        }
-
-        // Copied from kameloso.main.resolvePaths
-        version(Windows)
-        {
-            import std.string : replace;
-            immutable escapedServerDirName = instance.parser.server.address.replace(':', '_');
-        }
-        else version(Posix)
-        {
-            immutable escapedServerDirName = instance.parser.server.address;
-        }
-        else
-        {
-            static assert(0, "Unsupported platform, please file a bug.");
-        }
-
-        immutable defaultResourceHomeDir = buildNormalizedPath(rbd, "kameloso");
-        immutable defaultFullServerResourceDir = escapedServerDirName.length ?
-            buildNormalizedPath(
-                defaultResourceHomeDir,
-                "server",
-                escapedServerDirName) :
-            string.init;
-
-        if ((settingsResourceDir == defaultResourceHomeDir) ||
-            (settingsResourceDir == defaultFullServerResourceDir))
-        {
-            // If the resource directory is the default (unset),
-            // or if it is what would be automatically inferred, write it out as empty
-            instance.settings.resourceDirectory = string.init;
         }
 
         if (!instance.settings.prefix.length)
@@ -1136,18 +1097,57 @@ void writeConfigurationFile(
         }
     }
 
-    if (!instance.settings.force &&
-        instance.bot.password.length &&
-        !instance.bot.password.beginsWith("base64:"))
+    // Base64-encode passwords if they're not already encoded
+    // --force opts out
+    if (!instance.settings.force)
     {
-        instance.bot.password = "base64:" ~ encode64(instance.bot.password);
+        if (!instance.bot.password.beginsWith("base64:"))
+        {
+            instance.bot.password = "base64:" ~ encode64(instance.bot.password);
+        }
+
+        if (!instance.bot.pass.beginsWith("base64:"))
+        {
+            instance.bot.pass = "base64:" ~ encode64(instance.bot.pass);
+        }
+    }
+
+    // Copied from kameloso.main.resolvePaths
+    version(Windows)
+    {
+        import std.string : replace;
+        immutable escapedServerDirName = instance.parser.server.address.replace(':', '_');
+    }
+    else version(Posix)
+    {
+        immutable escapedServerDirName = instance.parser.server.address;
+    }
+    else
+    {
+        static assert(0, "Unsupported platform, please file a bug.");
+    }
+
+    immutable defaultResourceHomeDir = buildNormalizedPath(rbd, "kameloso");
+    immutable defaultFullServerResourceDir = escapedServerDirName.length ?
+        buildNormalizedPath(
+            defaultResourceHomeDir,
+            "server",
+            escapedServerDirName) :
+        string.init;
+
+    string settingsResourceDirSnapshot = instance.settings.resourceDirectory.expandTilde();  // mutable
+
+    if (settingsResourceDirSnapshot == defaultResourceHomeDir)
+    {
+        settingsResourceDirSnapshot = defaultFullServerResourceDir;
     }
 
     if (!instance.settings.force &&
-        instance.bot.pass.length &&
-        !instance.bot.pass.beginsWith("base64:"))
+        (settingsResourceDirSnapshot == defaultFullServerResourceDir))
     {
-        instance.bot.pass = "base64:" ~ encode64(instance.bot.pass);
+        // If the resource directory is the default (unset),
+        // or if it is what would be automatically inferred, write it out as empty
+        instance.settings.resourceDirectory = string.init;
     }
 
     sink.serialise(
@@ -1172,7 +1172,7 @@ void writeConfigurationFile(
     writeToDisk(filename, justified, Yes.addBanner);
 
     // Restore resource dir in case we aren't exiting
-    instance.settings.resourceDirectory = resourceDirSnapshot;
+    instance.settings.resourceDirectory = settingsResourceDirSnapshot;
 }
 
 
