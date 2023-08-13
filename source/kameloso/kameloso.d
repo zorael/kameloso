@@ -480,7 +480,7 @@ public:
         state.abort = abort;
 
         // Leverage kameloso.plugins.instantiatePlugins to construct all plugins.
-        plugins = kameloso.plugins.instantiatePlugins(state);
+        this.plugins = kameloso.plugins.instantiatePlugins(state);
 
         foreach (plugin; plugins)
         {
@@ -505,7 +505,7 @@ public:
             }
         }
 
-        immutable allCustomSuccess = plugins.applyCustomSettings(this.customSettings, settings);
+        immutable allCustomSuccess = plugins.applyCustomSettings(this.customSettings, this.settings);
 
         if (!allCustomSuccess)
         {
