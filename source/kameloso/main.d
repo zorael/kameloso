@@ -4003,6 +4003,101 @@ auto run(string[] args)
     // It will change later and knowing this is useful when authenticating
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
+    // Initialise plugins and read concurrency messages sent by them
+    string[] failedPlugins;
+
+    foreach (plugin; instance.plugins)
+    {
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+
+        try
+        {
+            // Call .initialise here instead of in the constructors
+            immutable success = plugin.initialise();
+            if (*instance.abort) return ShellReturnValue.failure;
+            if (!success) failedPlugins ~= plugin.name;
+        }
+        catch (IRCPluginInitialisationException e)
+        {
+            logger.error(e.msg);
+            version(PrintStacktraces) logger.trace(e.info);
+            if (!instance.settings.force) return ShellReturnValue.pluginInitialisationFailure;
+            failedPlugins ~= plugin.name;
+        }
+    }
+
+    if (failedPlugins.length)
+    {
+        enum pattern = "Failed to run plugin initialisation routine: <l>%-(%s, %)";
+        logger.errorf(pattern, failedPlugins);
+        return ShellReturnValue.pluginInitialisationFailure;
+    }
+
+    while (true)
+    {
+        import kameloso.thread : ThreadMessage;
+        import std.concurrency : receiveTimeout;
+        import std.variant : Variant;
+        import core.time : Duration;
+
+        bool halt;
+
+        void onThreadMessage(ThreadMessage message) scope
+        {
+            with (ThreadMessage.Type)
+            switch (message.type)
+            {
+            case popCustomSetting:
+                size_t[] toRemove;
+
+                foreach (immutable i, immutable line; instance.customSettings)
+                {
+                    import lu.string : nom;
+
+                    string slice = line;  // mutable
+                    immutable setting = slice.nom!(Yes.inherit)('=');
+                    if (setting == message.content) toRemove ~= i;
+                }
+
+                foreach_reverse (immutable i; toRemove)
+                {
+                    import std.algorithm.mutation : SwapStrategy, remove;
+                    instance.customSettings = instance.customSettings
+                        .remove!(SwapStrategy.unstable)(i);
+                }
+
+                toRemove = null;
+                break;
+
+            case save:
+                import kameloso.config : writeConfigurationFile;
+                writeConfigurationFile(instance, instance.settings.configFile);
+                break;
+
+            default:
+                enum pattern = "onThreadMessage received unexpected message type: <t>%s";
+                logger.errorf(pattern, message.type);
+                if (instance.settings.flush) stdout.flush();
+                halt = true;
+                break;
+            }
+        }
+
+        if (halt) return ShellReturnValue.pluginInitialisationFailure;
+
+        immutable receivedSomething = receiveTimeout(Duration.zero,
+            &onThreadMessage,
+            (Variant v) scope
+            {
+                // Caught an unhandled message
+                enum pattern = "run received unknown Variant: <l>%s";
+                logger.warningf(pattern, v.type);
+            }
+        );
+
+        if (!receivedSomething) break;
+    }
+
     // Go!
     startBot(instance, attempt);
 
