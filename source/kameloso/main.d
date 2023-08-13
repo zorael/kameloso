@@ -273,7 +273,7 @@ void messageFiber(ref Kameloso instance)
             case sendline:
                 instance.outbuffer.put(OutgoingLine(
                     message.content,
-                    cast(Flag!"quiet")instance.settings.hideOutgoing));
+                    cast(Flag!"quiet")(message.quiet || instance.settings.hideOutgoing)));
                 break;
 
             case quietline:
@@ -285,7 +285,7 @@ void messageFiber(ref Kameloso instance)
             case immediateline:
                 instance.immediateBuffer.put(OutgoingLine(
                     message.content,
-                    cast(Flag!"quiet")instance.settings.hideOutgoing));
+                    cast(Flag!"quiet")(message.quiet || instance.settings.hideOutgoing)));
                 break;
 
             case shortenReceiveTimeout:
