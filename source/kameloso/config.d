@@ -677,6 +677,17 @@ auto handleGetopt(ref Kameloso instance) @system
             enum setupTwitchString = "(Requires Twitch support)";
         }
 
+        version(Windows)
+        {
+            enum editorMessage = "Open the configuration file in a *terminal* text editor " ~
+                "(or the application defined in the <i>%EDITOR%</> environment variable)";
+        }
+        else
+        {
+            enum editorMessage = "Open the configuration file in a *terminal* text editor " ~
+                "(or the application defined in the <i>$EDITOR</> environment variable)";
+        }
+
         return getopt(theseArgs,
             config.caseSensitive,
             config.bundling,
@@ -773,7 +784,7 @@ auto handleGetopt(ref Kameloso instance) @system
                     "Use monochrome output [<i>%s</>]"
                         .expandTags(LogLevel.trace)
                         .format(instance.settings.monochrome),
-                //&settings.monochrome,
+                //&settings.monochrome,  // already handled
                 &noop,
             "set",
                 quiet ? string.init :
@@ -784,7 +795,7 @@ auto handleGetopt(ref Kameloso instance) @system
                     "Specify a different configuration file [<i>%s</>]"
                         .expandTags(LogLevel.trace)
                         .format(instance.settings.configFile),
-                //&settings.configFile,
+                //&settings.configFile,  // already handled
                 &noop,
             "r|resourceDir",
                 quiet ? string.init :
@@ -851,9 +862,7 @@ auto handleGetopt(ref Kameloso instance) @system
                 &shouldWriteConfig,
             "edit",
                 quiet ? string.init :
-                    ("Open the configuration file in a *terminal* text editor " ~
-                        "(or the application defined in the <i>$EDITOR</> " ~
-                        "environment variable)").expandTags(LogLevel.trace) ~ editorVariableValue,
+                    editorMessage.expandTags(LogLevel.trace) ~ editorVariableValue,
                 &shouldOpenTerminalEditor,
             "gedit",
                 quiet ? string.init :
