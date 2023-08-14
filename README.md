@@ -81,7 +81,7 @@ If there's anyone chatting it should show up on your screen.
   * [Further help](#further-help)
 * [Known issues](#known-issues)
   * [Windows](#windows)
-  * [Google/YouTube song request playlist integration](#googleyoutube-song-request-playlist-integration)
+  * [Google/YouTube song request playlist integration errors](#googleyoutube-song-request-playlist-integration-errors)
 * [Roadmap](#roadmap)
 * [Built with](#built-with)
 * [License](#license)
@@ -97,7 +97,7 @@ Grab a prebuilt binary from under [**Releases**](https://github.com/zorael/kamel
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html), with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases) and with the GCC-based [**gdc**](https://gdcproject.org/downloads). **dmd** compiles very fast, while **ldc** and **gdc** are slower at compiling but produce faster code. Additionally, the latter two support more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
-You need a compiler based on D version **2.087** or later (July 2019). For **ldc** this is version **1.16**, while for **gdc** you broadly need release series **12**.
+You need a compiler based on D version **2.086** or later (May 2019). For **ldc** this is version **1.16**, while for **gdc** you broadly need release series **12**.
 
 If your repositories (or other software sources) don't have compilers recent enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice. (**gdc** is not available via this script.)
 
@@ -110,7 +110,7 @@ See the [known issues](#known-issues) section on Windows for information on libr
 ### Downloading source
 
 ```shell
-$ git clone https://github.com/zorael/kameloso.git
+git clone https://github.com/zorael/kameloso.git
 ```
 
 It can also be downloaded as a [`.zip` archive](https://github.com/zorael/kameloso/archive/master.zip).
@@ -118,10 +118,10 @@ It can also be downloaded as a [`.zip` archive](https://github.com/zorael/kamelo
 ### Compiling
 
 ```shell
-$ dub build
+dub build
 ```
 
-This will compile the bot in the default **debug** build type, which adds some extra code and debugging symbols. You can omit these and perform some optimisations by building it in **release** mode with `dub build -b release`. Mind that build times will increase accordingly. Refer to the output of `dub --annotate --print-builds` for more build types.
+This will compile the bot in the default **debug** build type, which adds some extra code and debugging symbols. You can omit these and have the copmiler perform some optimisations by building it in **release** mode with `dub build -b release`. Mind that build times will increase accordingly. Refer to the output of `dub --annotate --print-builds` for more build types.
 
 #### Build configurations
 
@@ -135,7 +135,7 @@ Both configurations come in `-lowmem` variants (e.g. `application-lowmem` and `t
 List configurations with `dub --annotate --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
 ```shell
-$ dub build -c twitch
+dub build -c twitch
 ```
 
 > If you want to slim down the program and customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add a character to the lines corresponding to the plugins you want to omit, thus invalidating the version identifiers and effectively disabling the code they relate to. Mind that disabling any of the "**service**" plugins may/will break the bot in subtle ways.
@@ -147,7 +147,7 @@ $ dub build -c twitch
 The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is a completely valid use-case. To define these you can either supply them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file with `--save` and enter them there.
 
 ```shell
-$ ./kameloso --save
+./kameloso --save
 ```
 
 A new `kameloso.conf` will be created in a directory dependent on your platform.
@@ -183,7 +183,7 @@ Settings not touched will keep their values.
 
 #### Display settings
 
-The bot uses [terminal ANSI colouring](https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit), and text colours are by default set to go well with dark terminal backgrounds. If you instead have a bright background, text may be difficult to read (e.g. white on white), depending on your terminal emulator. If so, try passing the `--bright` argument, and/or modify the configuration file to enable `brightTerminal` under `[Core]`. If only some colours work, try limiting colouring to only those by disabling `extendedColours`, also under `[Core]`. If one or more colours are still too dark or too bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
+The bot uses [terminal ANSI colouring](https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit), and text colours are by default set to go well with dark terminal backgrounds. If you instead have a bright background, text may be difficult to read (e.g. white on white), depending on your terminal emulator. If so, try passing the `--bright` argument, or modify the configuration file to enable `brightTerminal` under `[Core]` to make the setting persistent. If only some colours work, try limiting colouring to only those by disabling `extendedColours`, also under `[Core]`. If one or more colours are still too dark or too bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
 
 An alternative is to disable colours entirely with `--monochrome`.
 
@@ -395,9 +395,9 @@ The program can then be run normally.
 
 It should now connect to Twitch and start the guide to requesting a new *authorisation token* in your terminal, upon detecting it's missing one. See the ["long story"](#long-story) section below for details.
 
-**Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different "bot user" instead, open up a private/incognito window, log into Twitch normally **with the bot account** there, copy [**this link**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true), then paste it into that browser window instead. (Then follow the terminal instructions again.)
+**Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different **bot user** instead, open up a private/incognito window, log into Twitch normally *with the bot account* there, copy [**this link**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true), then follow it in that browser window instead. (Then follow the terminal instructions again.)
 
-After obtaining a token it will save it to your configuration file and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in your channel's chat in your browser, and it should show in your terminal. If there were errors or snags, please [report them](https://github.com/zorael/kameloso/issues/new).
+After obtaining a token it will save it to your configuration file and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in your channel's chat in your browser, and it should show in your terminal. If there were errors or snags, [please report them](https://github.com/zorael/kameloso/issues/new).
 
 > If you don't like the terminal colouring, `--monochrome` disables it.
 
@@ -442,9 +442,9 @@ You will also require an [*authorisation token*](https://en.wikipedia.org/wiki/O
 
 It will open a browser window in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
 
-> Note: At no point is the bot privy to your Twitch login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. Note that the generated token should still be kept secret. The code that deals with all this is open for audit; [`requestTwitchKey` in `plugins/twitch/keygen.d`](source/kameloso/plugins/twitch/keygen.d).
+> Do note that at no point is the bot privy to your Twitch login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. Note that the generated token should still be kept secret. The code that deals with all this is open for audit; [`requestTwitchKey` in `plugins/twitch/keygen.d`](source/kameloso/plugins/twitch/keygen.d).
 
-After entering your login and password and clicking **Authorize**, you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. **Copy the URL address of it** and **paste** it into the terminal, when prompted to. It will parse the address, extract your authorisation token, and save it to your configuration file.
+After entering your login and password and clicking **Authorize**, you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. **Copy the URL address of it** and **paste** it into the terminal, when prompted to. It will parse the address, extract your authorisation token, save it to your configuration file, and then finally connect to the server.
 
 If you prefer to generate the token manually, [**here is the URL you need to follow**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true). The only thing the generation process does is open it for you, as well as automating saving the resulting token to your configuration file (as `pass` under `[IRCBot]`).
 
@@ -480,10 +480,10 @@ To get song requests to work, you need to register an *application* to interface
 
 ##### Certain commands require higher permissions
 
-Some functionality, such as setting the channel title or currently played game, require elevated credentials with the permissions of the channel owner (broadcaster), as opposed to those of any moderator. As such, if you want to use such commands, you will need to generate an OAuth authorisation token for **your main account** separately, much as you generated one to be able to connect with the (presumably) bot account. This will request a token from Twitch with more permissions, and the authorisation browser page should reflect this.
+Some functionality, such as setting the channel title or currently played game, require elevated credentials with the permissions of the channel owner (broadcaster), as opposed to those of any moderator. As such, if you want to use such commands, you will need to generate an OAuth authorisation token for **your main account** separately, much as you generated one to be able to connect with the bot account. This will request a token from Twitch with more permissions, and the authorisation browser page should reflect this.
 
 ```shell
-$ ./kameloso --set twitch.superKeygen
+./kameloso --set twitch.superKeygen
 ```
 
 > Mind that you need to be logged into Twitch (in your browser) with your **main (broadcaster) account** while doing this, or the token obtained will be with permissions for the wrong channel.
@@ -491,7 +491,7 @@ $ ./kameloso --set twitch.superKeygen
 All keygens can be triggered at the same time.
 
 ```shell
-$ ./kameloso \
+./kameloso \
     --set twitch.keygen \
     --set twitch.superKeygen \
     --set twitch.googleKeygen \
@@ -513,7 +513,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 The bot uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library for such in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, pass the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows v1.1.\***](https://slproweb.com/products/Win32OpenSSL.html). Make sure to opt to install to Windows system directories when asked.
 
-### Google/YouTube song request playlist integration
+### Google/YouTube song request playlist integration errors
 
 If you're doing everything right and you still get permissions errors when attempting to add a YouTube video clip to a playlist, make sure that you pick a **YouTube account** during the keygen process when you're asked to select one of your accounts, as opposed to an overarching **Google account**. It should say **YouTube** underneath the option.
 
@@ -541,5 +541,5 @@ This project is licensed under the **Boost Software License 1.0** - see the [LIC
 * [Kamelåså](https://youtu.be/ykj3Kpm3O0g)
 * [ikod](https://github.com/ikod) for [`dlang-requests`](https://github.com/ikod/dlang-requests)
 * [Adam D. Ruppe](https://github.com/adamdruppe) for [`arsd`](https://github.com/adamdruppe/arsd)
-* [`#d` on libera.chat](irc://irc.libera.chat:6697/#d)
-* [IRC Definition Files](http://defs.ircdocs.horse) and [`#ircdocs` on libera.chat](irc://irc.libera.chat:6667/#ircdocs)
+* [`#d` on Libera.Chat](irc://irc.libera.chat:6697/#d)
+* [IRC Definition Files](http://defs.ircdocs.horse) and [`#ircdocs` on Libera.Chat](irc://irc.libera.chat:6667/#ircdocs)
