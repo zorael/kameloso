@@ -51,7 +51,7 @@ auto applyCustomSettings(
     CoreSettings copyOfSettings)
 {
     import lu.objmanip : SetMemberException;
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.conv : ConvException;
     import std.string : indexOf;
 
@@ -69,8 +69,8 @@ auto applyCustomSettings(
         }
 
         string slice = line;  // mutable
-        immutable pluginstring = slice.nom(".");
-        immutable setting = slice.nom('=', Yes.inherit);
+        immutable pluginstring = slice.advancePast(".");
+        immutable setting = slice.advancePast('=', Yes.inherit);
         immutable value = slice;
 
         try

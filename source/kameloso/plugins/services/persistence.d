@@ -488,7 +488,7 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
     import kameloso.plugins.common.misc : catchUser;
     import kameloso.irccolours : stripColours;
     import dialect.common : IRCControlCharacter, stripModesign;
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.algorithm.iteration : splitter;
     import std.string : indexOf;
 
@@ -512,10 +512,10 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
 
         // SpotChat-like, names are rich in full nick!ident@address form
         string slice = userstring;  // mutable
-        immutable signed = slice.nom('!');
+        immutable signed = slice.advancePast('!');
         immutable nickname = signed.stripModesign(service.state.server);
         //if (nickname == service.state.client.nickname) continue;
-        immutable ident = slice.nom('@');
+        immutable ident = slice.advancePast('@');
 
         // Do addresses ever contain bold, italics, underlined?
         immutable address = (slice.indexOf(cast(char)IRCControlCharacter.colour) != -1) ?

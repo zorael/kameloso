@@ -543,7 +543,7 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
     import kameloso.plugins.common.misc : catchUser;
     import kameloso.irccolours : stripColours;
     import dialect.common : IRCControlCharacter, stripModesign;
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.algorithm.iteration : splitter;
     import std.string : indexOf;
 
@@ -574,10 +574,10 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
         else
         {
             // SpotChat-like, names are in full nick!ident@address form
-            immutable signed = slice.nom('!');
+            immutable signed = slice.advancePast('!');
             immutable nickname = signed.stripModesign(plugin.state.server);
             if (nickname == plugin.state.client.nickname) continue;
-            immutable ident = slice.nom('@');
+            immutable ident = slice.advancePast('@');
 
             // Do addresses ever contain bold, italics, underlined?
             immutable address = (slice.indexOf(cast(char)IRCControlCharacter.colour) != -1) ?
@@ -1225,9 +1225,9 @@ void onChannelAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
 
         if (userstring.indexOf('!') != -1)// && userstring.contains('@'))  // No need to check both
         {
-            import lu.string : nom;
+            import lu.string : advancePast;
             // SpotChat-like, names are in full nick!ident@address form
-            nickname = slice.nom('!');
+            nickname = slice.advancePast('!');
         }
         else
         {

@@ -722,7 +722,7 @@ void teardown(PrinterPlugin plugin)
 void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable content)
 {
     import kameloso.thread : Boxed;
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.typecons : Flag, No, Yes;
 
     if (header != "printer") return;
@@ -731,7 +731,7 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     string slice = message.payload;
-    immutable verb = slice.nom(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', Yes.inherit);
     immutable target = slice;
 
     switch (verb)

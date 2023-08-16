@@ -47,7 +47,7 @@ void manageClassLists(
     const ref IRCEvent event,
     const IRCUser.Class class_)
 {
-    import lu.string : nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.algorithm.searching : startsWith;
     import std.typecons : Flag, No, Yes;
 
@@ -67,7 +67,7 @@ void manageClassLists(
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', Yes.inherit);
     if (slice.startsWith('@')) slice = slice[1..$];
 
     switch (verb)

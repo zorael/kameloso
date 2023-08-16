@@ -739,7 +739,7 @@ void reportStreamTime(
 )
 void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import lu.string : nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.algorithm.searching : startsWith;
     import std.conv : to;
 
@@ -762,7 +762,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
     else
     {
-        string givenName = slice.nom(' ', Yes.inherit);  // mutable
+        string givenName = slice.advancePast(' ', Yes.inherit);  // mutable
         if (givenName.startsWith('@')) givenName = givenName[1..$];
         immutable user = getTwitchUser(plugin, givenName, string.init, Yes.searchByDisplayName);
         if (!user.nickname.length) return sendNoSuchUser(givenName);
@@ -1162,7 +1162,7 @@ void onCommandVanish(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.algorithm.searching : count;
     import std.algorithm.comparison : min;
     import std.conv : ConvException, to;
@@ -1184,7 +1184,7 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
     if (!event.content.length || !event.content.count(' ')) return sendUsage();
 
     string slice = event.content.stripped;  // mutable
-    immutable numTimesString = slice.nom(' ');
+    immutable numTimesString = slice.advancePast(' ');
 
     try
     {
@@ -1292,7 +1292,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import lu.string : nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.format : format;
     import std.string : indexOf;
     import core.time : seconds;
@@ -1434,13 +1434,13 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else if (slice.indexOf("youtube.com/watch?v=") != -1)
         {
-            slice.nom("youtube.com/watch?v=");
-            videoID = slice.nom('&', Yes.inherit);
+            slice.advancePast("youtube.com/watch?v=");
+            videoID = slice.advancePast('&', Yes.inherit);
         }
         else if (slice.indexOf("youtu.be/") != -1)
         {
-            slice.nom("youtu.be/");
-            videoID = slice.nom('?', Yes.inherit);
+            slice.advancePast("youtu.be/");
+            videoID = slice.advancePast('?', Yes.inherit);
         }
         else
         {
@@ -1513,8 +1513,8 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else if (slice.indexOf("spotify.com/track/") != -1)
         {
-            slice.nom("spotify.com/track/");
-            trackID = slice.nom('?', Yes.inherit);
+            slice.advancePast("spotify.com/track/");
+            trackID = slice.advancePast('?', Yes.inherit);
         }
         else
         {
@@ -1802,7 +1802,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
     // ecount!
     if (plugin.twitchSettings.ecount && event.emotes.length)
     {
-        import lu.string : nom;
+        import lu.string : advancePast;
         import std.algorithm.iteration : splitter;
         import std.algorithm.searching : count;
         import std.conv : to;
@@ -1820,7 +1820,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
             }
 
             string slice = emotestring;  // mutable
-            immutable id = slice.nom(':');
+            immutable id = slice.advancePast(':');
 
             auto thisEmoteCount = id in *channelcount;
             if (!thisEmoteCount)
@@ -1911,7 +1911,7 @@ void onEndOfMOTD(TwitchPlugin plugin)
 )
 void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.array : replace;
     import std.format : format;
     import std.conv  : to;
@@ -1935,17 +1935,17 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
     {
         // 425618:3-5,7-8/peepoLeave:9-18
         string slice = event.emotes;  // mutable
-        slice.nom(':');
+        slice.advancePast(':');
 
-        immutable start = slice.nom('-').to!size_t;
+        immutable start = slice.advancePast('-').to!size_t;
         immutable end = slice
-            .nom('/', Yes.inherit)
-            .nom(',', Yes.inherit)
+            .advancePast('/', Yes.inherit)
+            .advancePast(',', Yes.inherit)
             .to!size_t + 1;  // upper-bound inclusive!
 
         string rawSlice = event.raw;  // mutable
-        rawSlice.nom(event.channel);
-        rawSlice.nom(" :");
+        rawSlice.advancePast(event.channel);
+        rawSlice.advancePast(" :");
 
         // Slice it as a dstring to (hopefully) get full characters
         // Undo replacements
@@ -1976,7 +1976,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 
     // Replace emote colons so as not to conflict with emote tag syntax
     immutable id = slice
-        .nom(':')
+        .advancePast(':')
         .replace(':', ';');
 
     auto thisEmoteCount = id in *channelcounts;
@@ -2019,7 +2019,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.time : timeSince;
-    import lu.string : nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.algorithm.searching : startsWith;
     import std.format : format;
     import core.time : Duration;
@@ -2039,7 +2039,7 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
     else
     {
-        string givenName = slice.nom(' ', Yes.inherit);  // mutable
+        string givenName = slice.advancePast(' ', Yes.inherit);  // mutable
         if (givenName.startsWith('@')) givenName = givenName[1..$];
         immutable user = getTwitchUser(plugin, givenName, string.init, Yes.searchByDisplayName);
 

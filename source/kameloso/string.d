@@ -49,7 +49,7 @@ auto stripSeparatedPrefix(
     const Flag!"demandSeparatingChars" demandSep = Yes.demandSeparatingChars) pure
 in (prefix.length, "Tried to strip separated prefix but no prefix was given")
 {
-    import lu.string : nom, strippedLeft;
+    import lu.string : advancePast, strippedLeft;
     import std.algorithm.comparison : among;
     import std.meta : aliasSeqOf;
 
@@ -58,7 +58,7 @@ in (prefix.length, "Tried to strip separated prefix but no prefix was given")
     string slice = line.strippedLeft;  // mutable
 
     // the onus is on the caller that slice begins with prefix, else this will throw
-    slice.nom(prefix);
+    slice.advancePast(prefix);
 
     if (demandSep)
     {
@@ -285,25 +285,25 @@ auto replaceRandom(
 ///
 unittest
 {
-    import lu.string : nom, splitInto;
+    import lu.string : advancePast, splitInto;
     import std.conv : to;
 
     {
         enum line = "$random bottles of beer on the wall";
         string replaced = line.replaceRandom();  // mutable
-        immutable number = replaced.nom(' ').to!int;
+        immutable number = replaced.advancePast(' ').to!int;
         assert(((number >= 0) && (number < 100)), number.to!string);
     }
     {
         enum line = "$random(100..200) bottles of beer on the wall";
         string replaced = line.replaceRandom();  // mutable
-        immutable number = replaced.nom(' ').to!int;
+        immutable number = replaced.advancePast(' ').to!int;
         assert(((number >= 100) && (number < 200)), number.to!string);
     }
     {
         enum line = "$random(-20..-10) bottles of beer on the wall";
         string replaced = line.replaceRandom();  // mutable
-        immutable number = replaced.nom(' ').to!int;
+        immutable number = replaced.advancePast(' ').to!int;
         assert(((number >= -20) && (number < -10)), number.to!string);
     }
     /*{
@@ -312,7 +312,7 @@ unittest
             // Fails pre-2.090 with Error: signed integer overflow
             enum line = "$random(-9223372036854775808..9223372036854775807) bottles of beer on the wall";
             string replaced = line.replaceRandom();  // mutable
-            immutable number = replaced.nom(' ').to!long;
+            immutable number = replaced.advancePast(' ').to!long;
             //assert(((number >= cast(long)-9223372036854775808) && (number < 9223372036854775807)), number.to!string);
         }
     }*/

@@ -393,7 +393,7 @@ instructions and log in to authorise the use of this program with your <w>STREAM
  +/
 private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
 {
-    import lu.string : nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.stdio : readln, stdin, stdout, write, writeln;
     import std.string : indexOf;
 
@@ -448,8 +448,8 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
         }
 
         string slice = readURL;  // mutable
-        slice.nom("access_token=");
-        key = slice.nom('&');
+        slice.advancePast("access_token=");
+        key = slice.advancePast('&');
 
         if (key.length != 30L)
         {

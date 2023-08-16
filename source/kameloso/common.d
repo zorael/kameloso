@@ -238,7 +238,7 @@ struct OutgoingLine
  +/
 auto findURLs(const string line) @safe pure
 {
-    import lu.string : nom, strippedRight;
+    import lu.string : advancePast, strippedRight;
     import std.string : indexOf;
     import std.typecons : Flag, No, Yes;
 
@@ -289,9 +289,9 @@ auto findURLs(const string line) @safe pure
             break;
         }
 
-        // nom until the next space if there is one, otherwise just inherit slice
+        // advancePast until the next space if there is one, otherwise just inherit slice
         // Also strip away common punctuation
-        immutable hit = slice.nom(' ', Yes.inherit).strippedRight(wordBoundaryTokens);
+        immutable hit = slice.advancePast(' ', Yes.inherit).strippedRight(wordBoundaryTokens);
         if (hit.indexOf('.') != -1) hits ~= hit;
         httpPos = slice.indexOf("http");
     }

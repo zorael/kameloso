@@ -46,7 +46,7 @@ package void requestGoogleKeys(TwitchPlugin plugin)
     import kameloso.logger : LogLevel;
     import kameloso.terminal.colours.tags : expandTags;
     import kameloso.time : timeSince;
-    import lu.string : nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.conv : to;
     import std.format : format;
     import std.process : Pid, ProcessException, wait;
@@ -128,8 +128,8 @@ A normal URL to any playlist you can modify will work fine.
         else if (playlistURL.indexOf("/playlist?list=") != -1)
         {
             string slice = playlistURL;  // mutable
-            slice.nom("/playlist?list=");
-            creds.youtubePlaylistID = slice.nom('&', Yes.inherit);
+            slice.advancePast("/playlist?list=");
+            creds.youtubePlaylistID = slice.advancePast('&', Yes.inherit);
         }
         else
         {
@@ -246,8 +246,8 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
         }
 
         string slice = readCode;  // mutable
-        slice.nom("?code=");
-        code = slice.nom('&', Yes.inherit);
+        slice.advancePast("?code=");
+        code = slice.advancePast('&', Yes.inherit);
 
         if (code.length != 73L)
         {

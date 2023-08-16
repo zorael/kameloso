@@ -136,12 +136,12 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
             }
             else /*if (mutEvent.content.count(' ') > 1)*/
             {
-                import lu.string : nom;
+                import lu.string : advancePast;
                 import std.format : format;
 
                 // More than two words; too many
                 string slice = mutEvent.content;  // mutable
-                immutable pluginName = slice.nom(' ');
+                immutable pluginName = slice.advancePast(' ');
                 enum pattern = "Invalid <b>%s<b> plugin command name: <b>%s<b>";
                 immutable message = pattern.format(pluginName, slice);
                 privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
@@ -355,7 +355,7 @@ void sendPluginCommandHelp(
     const ref IRCEvent event,
     /*const*/ IRCPlugin.CommandMetadata[string][string] allPluginCommands)
 {
-    import lu.string : nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.format : format;
     import std.string : indexOf;
 
@@ -371,7 +371,7 @@ void sendPluginCommandHelp(
     }
 
     string slice = event.content.stripped;
-    immutable specifiedPlugin = slice.nom(' ');
+    immutable specifiedPlugin = slice.advancePast(' ');
     immutable specifiedCommand = stripPrefix(plugin, slice);
 
     if (const pluginCommands = specifiedPlugin in allPluginCommands)

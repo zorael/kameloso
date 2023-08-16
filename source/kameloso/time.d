@@ -909,7 +909,7 @@ unittest
  +/
 auto asAbbreviatedDuration(const string line)
 {
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.conv : to;
     import std.string : indexOf;
     import core.time : days, hours, minutes, seconds;
@@ -918,7 +918,7 @@ auto asAbbreviatedDuration(const string line)
     {
         if (slice.indexOf(c) != -1)
         {
-            immutable valueString = slice.nom(c);
+            immutable valueString = slice.advancePast(c);
             immutable value = valueString.length ? valueString.to!int : 0;
 
             if (value < 0)
@@ -946,7 +946,7 @@ auto asAbbreviatedDuration(const string line)
 
     if (slice.length)
     {
-        immutable valueString = slice.nom('s', Yes.inherit);
+        immutable valueString = slice.advancePast('s', Yes.inherit);
         if (!valueString.length) throw new DurationStringException("Invalid duration pattern");
         numSeconds = valueString.length ? valueString.to!int : 0;
     }

@@ -208,7 +208,7 @@ public:
 void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.constants : BufferSize;
-    import lu.string : nom, stripped, strippedLeft;
+    import lu.string : advancePast, stripped, strippedLeft;
     import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
     import std.format : format;
@@ -295,7 +295,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', Yes.inherit);
     slice = slice.strippedLeft;
 
     switch (verb)

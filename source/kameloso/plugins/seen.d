@@ -724,11 +724,11 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
     foreach (immutable entry; event.content.splitter(' '))
     {
         import dialect.common : stripModesign;
-        import lu.string : nom;
+        import lu.string : advancePast;
         import std.typecons : Flag, No, Yes;
 
         string slice = entry;  // mutable
-        slice = slice.nom('!', Yes.inherit); // In case SpotChat-like, full nick!ident@address form
+        slice = slice.advancePast('!', Yes.inherit); // In case SpotChat-like, full nick!ident@address form
         slice = slice.stripModesign(plugin.state.server);
         updateUser(plugin, slice, event.time);
     }

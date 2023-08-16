@@ -729,14 +729,14 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 
         foreach (immutable rawCap; event.aux[])
         {
-            import lu.string : nom;
+            import lu.string : advancePast;
             import std.algorithm.searching : startsWith;
             import std.string : indexOf;
 
             if (!rawCap.length) continue;
 
             string slice = rawCap;  // mutable
-            immutable cap = slice.nom('=', Yes.inherit);
+            immutable cap = slice.advancePast('=', Yes.inherit);
             immutable sub = slice;
 
             switch (cap)

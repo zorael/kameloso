@@ -1394,9 +1394,9 @@ void highlightEmotesImpl(Sink)
 
     foreach (/*const*/ emote; emotes.splitter('/'))
     {
-        import lu.string : nom;
+        import lu.string : advancePast;
 
-        immutable emoteID = emote.nom(':');
+        immutable emoteID = emote.advancePast(':');
 
         foreach (immutable location; emote.splitter(','))
         {

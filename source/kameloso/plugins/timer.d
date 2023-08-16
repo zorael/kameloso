@@ -349,7 +349,7 @@ unittest
 )
 void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.format : format;
 
     void sendUsage()
@@ -360,7 +360,7 @@ void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -753,7 +753,7 @@ void handleAddToTimer(
     const /*ref*/ IRCEvent event,
     /*const*/ string slice)
 {
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.format : format;
 
     void sendAddUsage()
@@ -770,7 +770,7 @@ void handleAddToTimer(
         chan(plugin.state, event.channel, noSuchTimerMessage);
     }
 
-    immutable name = slice.nom(' ', Yes.inherit);
+    immutable name = slice.advancePast(' ', Yes.inherit);
     if (!slice.length) return sendAddUsage();
 
     auto channel = event.channel in plugin.channels;

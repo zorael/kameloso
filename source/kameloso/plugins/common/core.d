@@ -820,12 +820,12 @@ mixin template IRCPluginImpl(
 
                         if (!commandWordInEvent.length)
                         {
-                            import lu.string : nom;
+                            import lu.string : advancePast;
                             import std.typecons : No, Yes;
                             import std.uni : toLower;
 
                             // Cache it
-                            commandWordInEvent = event.content.nom(' ', Yes.inherit);
+                            commandWordInEvent = event.content.advancePast(' ', Yes.inherit);
                             commandWordInEventLower = commandWordInEvent.toLower();
                             contentSansCommandWordInEvent = event.content;
                         }

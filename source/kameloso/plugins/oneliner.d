@@ -248,7 +248,7 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
     import kameloso.string : replaceRandom;
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.algorithm.searching : startsWith;
     import std.array : replace;
     import std.conv : text, to;
@@ -273,7 +273,7 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     auto channelOneliners = event.channel in plugin.onelinersByChannel;  // mustn't be const
     if (!channelOneliners) return;
 
-    immutable trigger = slice.nom(' ', Yes.inherit).toLower;
+    immutable trigger = slice.advancePast(' ', Yes.inherit).toLower;
 
     auto oneliner = trigger in *channelOneliners;  // mustn't be const
     if (!oneliner) return;
@@ -350,7 +350,7 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
 )
 void onCommandModifyOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
 
@@ -366,7 +366,7 @@ void onCommandModifyOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     if (!event.content.length) return sendUsage();
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -784,7 +784,7 @@ void handleDelFromOneliner(
     const ref IRCEvent event,
     /*const*/ string slice)
 {
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.conv : ConvException, to;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
@@ -844,7 +844,7 @@ void handleDelFromOneliner(
 
     if (!slice.length) return sendDelUsage();
 
-    immutable trigger = stripPrefix(slice.nom(' ', Yes.inherit)).toLower;
+    immutable trigger = stripPrefix(slice.advancePast(' ', Yes.inherit)).toLower;
 
     auto channelOneliners = event.channel in plugin.onelinersByChannel;
     if (!channelOneliners) return sendNoSuchOneliner(trigger);

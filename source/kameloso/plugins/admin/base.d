@@ -319,7 +319,7 @@ void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom, strippedRight;
+    import lu.string : advancePast, strippedRight;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
 
@@ -336,7 +336,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.strippedRight;  // mutable
-    immutable verb = slice.nom(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -1057,7 +1057,7 @@ void onCommandSummary(AdminPlugin plugin)
 void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.time : DurationStringException, asAbbreviatedDuration;
-    import lu.string : nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.conv : ConvException;
 
     string slice = event.content.stripped;  // mutable
@@ -1067,7 +1067,7 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         return cycle(plugin, event.channel);
     }
 
-    immutable channelName = slice.nom(' ', Yes.inherit);
+    immutable channelName = slice.advancePast(' ', Yes.inherit);
 
     if (channelName !in plugin.state.channels)
     {
@@ -1080,7 +1080,7 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         return cycle(plugin, channelName);
     }
 
-    immutable delaystring = slice.nom(' ', Yes.inherit);
+    immutable delaystring = slice.advancePast(' ', Yes.inherit);
 
     try
     {
@@ -1186,7 +1186,7 @@ void cycle(
 )
 void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : SplitResults, nom, splitInto, stripped;
+    import lu.string : SplitResults, advancePast, splitInto, stripped;
     import std.format : format;
 
     if (!plugin.state.settings.preferHostmasks)
@@ -1203,7 +1203,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -1421,7 +1421,7 @@ void onBusMessage(
     shared Sendable content)
 {
     import kameloso.thread : Boxed;
-    import lu.string : nom, strippedRight;
+    import lu.string : advancePast, strippedRight;
 
     // Don't return if disabled, as it blocks us from re-enabling with verb set
     if (header != "admin") return;
@@ -1430,7 +1430,7 @@ void onBusMessage(
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     string slice = message.payload.strippedRight;
-    immutable verb = slice.nom(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -1613,9 +1613,9 @@ void onBusMessage(
         break;
 
     case "hostmask":
-        import lu.string : nom;
+        import lu.string : advancePast;
 
-        immutable subverb = slice.nom(' ', Yes.inherit);
+        immutable subverb = slice.advancePast(' ', Yes.inherit);
 
         switch (subverb)
         {

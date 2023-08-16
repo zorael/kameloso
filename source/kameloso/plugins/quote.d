@@ -1022,7 +1022,7 @@ auto removeWeeChatHead(
     const string prefixes) pure @safe
 in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickname was empty")
 {
-    import lu.string : nom, strippedLeft;
+    import lu.string : advancePast, strippedLeft;
     import std.algorithm.searching : startsWith;
     import std.string : indexOf;
 
@@ -1056,7 +1056,7 @@ in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickna
             slice[1..$].startsWith(nickname)) ||
             slice.startsWith(nickname))
         {
-            slice.nom(nickname);
+            slice.advancePast(nickname);
             slice = slice.strippedLeft;
 
             if ((slice.length > 2) && (slice[0] == '|'))

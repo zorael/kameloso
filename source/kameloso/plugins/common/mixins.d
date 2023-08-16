@@ -327,7 +327,7 @@ mixin template WHOISFiberDelegate(
         import kameloso.constants : BufferSize;
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
-        import lu.string : nom;
+        import lu.string : advancePast;
         import lu.traits : TakesParams;
         import std.string : indexOf;
         import std.traits : arity;
@@ -476,7 +476,7 @@ mixin template WHOISFiberDelegate(
 
         string slice = nickname;  // mutable
         immutable nicknamePart = (slice.indexOf('!') != -1) ?
-            slice.nom('!') :
+            slice.advancePast('!') :
             slice;
 
         version(WithPrinterPlugin)

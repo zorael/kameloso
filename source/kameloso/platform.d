@@ -338,7 +338,7 @@ Pid execvp(/*const*/ string[] args) @system
 
         for (size_t i=1; i<args.length; ++i)
         {
-            import lu.string : nom;
+            import lu.string : advancePast;
             import std.algorithm.searching : startsWith;
             import std.typecons : Flag, No, Yes;
 
@@ -350,7 +350,7 @@ Pid execvp(/*const*/ string[] args) @system
 
                 if (slice.startsWith("twitch."))
                 {
-                    immutable setting = slice.nom('=', Yes.inherit);
+                    immutable setting = slice.advancePast('=', Yes.inherit);
 
                     if (setting.among!(
                         "twitch.keygen",
@@ -368,7 +368,7 @@ Pid execvp(/*const*/ string[] args) @system
             else
             {
                 string slice = args[i];  // mutable
-                immutable setting = slice.nom('=', Yes.inherit);
+                immutable setting = slice.advancePast('=', Yes.inherit);
 
                 if (setting.among!(
                     //"--setup-twitch",  // this only does the keygen, then exits

@@ -321,8 +321,8 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
 
     try
     {
-        import lu.string : nom;
-        poll.duration = slice.nom(' ').asAbbreviatedDuration;
+        import lu.string : advancePast;
+        poll.duration = slice.advancePast(' ').asAbbreviatedDuration;
     }
     catch (ConvException _)
     {

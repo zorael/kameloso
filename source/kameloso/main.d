@@ -376,10 +376,10 @@ void messageFiber(ref Kameloso instance)
 
                 foreach (immutable i, immutable line; instance.customSettings)
                 {
-                    import lu.string : nom;
+                    import lu.string : advancePast;
 
                     string slice = line;  // mutable
-                    immutable setting = slice.nom('=', Yes.inherit);
+                    immutable setting = slice.advancePast('=', Yes.inherit);
                     if (setting == message.content) toRemove ~= i;
                 }
 
@@ -1334,13 +1334,13 @@ void logPluginActionException(
     const IRCEvent event,
     const string fun)
 {
-    import lu.string : NomException;
+    import lu.string : AdvanceException;
     import std.utf : UTFException;
     import core.exception : UnicodeException;
 
-    if (auto e = cast(NomException)base)
+    if (auto e = cast(AdvanceException)base)
     {
-        enum pattern = `NomException %s.%s: tried to nom "<t>%s</>" with "<l>%s</>"`;
+        enum pattern = `AdvanceException %s.%s: tried to advance past "<t>%s</>" with "<l>%s</>"`;
         logger.warningf(pattern, plugin.name, fun, e.haystack, e.needle);
         if (event.raw.length) printEventDebugDetails(event, event.raw);
         version(PrintStacktraces) logger.trace(e.info);
@@ -1384,7 +1384,7 @@ void processLineFromServer(
 {
     import kameloso.string : doublyBackslashed;
     import dialect.common : IRCParseException;
-    import lu.string : NomException;
+    import lu.string : AdvanceException;
     import std.typecons : Flag, No, Yes;
     import std.utf : UTFException;
     import core.exception : UnicodeException;
@@ -1608,9 +1608,9 @@ void processLineFromServer(
         printEventDebugDetails(event, raw);
         version(PrintStacktraces) logger.trace(e.info);
     }
-    catch (NomException e)
+    catch (AdvanceException e)
     {
-        enum pattern = `NomException: tried to nom "<l>%s</>" with "<l>%s</>" (at <l>%s</>:<l>%d</>)`;
+        enum pattern = `AdvanceException: tried to advance past "<l>%s</>" with "<l>%s</>" (at <l>%s</>:<l>%d</>)`;
         logger.warningf(pattern, e.haystack, e.needle, e.file.doublyBackslashed, e.line);
         printEventDebugDetails(event, raw);
         version(PrintStacktraces) logger.trace(e.info);
@@ -2130,14 +2130,14 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
         }
         else if (auto fiber = cast(CarryingFiber!(GetSettingPayload))(request.fiber))
         {
-            import lu.string : nom;
+            import lu.string : advancePast;
             import std.algorithm.iteration : splitter;
             import std.algorithm.searching : startsWith;
             import std.array : Appender;
 
             immutable expression = request.context;
             string slice = expression;  // mutable
-            immutable pluginName = slice.nom('.', Yes.inherit);
+            immutable pluginName = slice.advancePast('.', Yes.inherit);
             alias setting = slice;
 
             Appender!(char[]) sink;
@@ -2151,9 +2151,9 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
 
                     foreach (const line; sink.data.splitter('\n'))
                     {
-                        string lineslice = cast(string)line;  // need a string for nom and strippedLeft...
+                        string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
                         if (lineslice.startsWith('#')) lineslice = lineslice[1..$];
-                        const thisSetting = lineslice.nom(' ', Yes.inherit);
+                        const thisSetting = lineslice.advancePast(' ', Yes.inherit);
 
                         if (thisSetting != setting) continue;
 
@@ -2173,8 +2173,8 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
 
                     foreach (const line; sink.data.splitter('\n'))
                     {
-                        string lineslice = cast(string)line;  // need a string for nom and strippedLeft...
-                        if (!lineslice.startsWith('[')) allSettings ~= lineslice.nom(' ', Yes.inherit);
+                        string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
+                        if (!lineslice.startsWith('[')) allSettings ~= lineslice.advancePast(' ', Yes.inherit);
                     }
 
                     fiber.payload[0] = pluginName;
@@ -4037,10 +4037,10 @@ auto run(string[] args)
 
                 foreach (immutable i, immutable line; instance.customSettings)
                 {
-                    import lu.string : nom;
+                    import lu.string : advancePast;
 
                     string slice = line;  // mutable
-                    immutable setting = slice.nom('=', Yes.inherit);
+                    immutable setting = slice.advancePast('=', Yes.inherit);
                     if (setting == message.content) toRemove ~= i;
                 }
 

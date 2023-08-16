@@ -169,7 +169,7 @@ void onMessage(WebtitlePlugin plugin, const ref IRCEvent event)
         if (nicknameStripped != content) return;
     }
 
-    auto urls = findURLs(event.content);  // mutable so nom works
+    auto urls = findURLs(event.content);  // mutable so advancePast works
     if (!urls.length) return;
     lookupURLs(plugin, event, urls);
 }
@@ -191,7 +191,7 @@ void lookupURLs(WebtitlePlugin plugin, const /*ref*/ IRCEvent event, string[] ur
 {
     import kameloso.common : logger;
     import kameloso.thread : ThreadMessage;
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.concurrency : prioritySend, spawn;
 
     bool[string] uniques;
@@ -201,7 +201,7 @@ void lookupURLs(WebtitlePlugin plugin, const /*ref*/ IRCEvent event, string[] ur
         // If the URL contains an octothorpe fragment identifier, like
         // https://www.google.com/index.html#this%20bit
         // then strip that.
-        url = url.nom('#', Yes.inherit);
+        url = url.advancePast('#', Yes.inherit);
 
         while (url[$-1] == '/')
         {
@@ -282,7 +282,7 @@ void worker(
     const Flag!"descriptions" descriptions,
     const string caBundleFile)
 {
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.algorithm.searching : startsWith;
     import std.datetime.systime : Clock;
     import std.format : format;
@@ -322,7 +322,7 @@ void worker(
         // Do our own slicing instead of using regexes, because footprint.
         string slice = request.url;
 
-        slice.nom("http");
+        slice.advancePast("http");
         if (slice[0] == 's') slice = slice[1..$];
         slice = slice[3..$];  // ://
 
@@ -529,7 +529,7 @@ auto lookupTitle(
     const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
-    import lu.string : nom;
+    import lu.string : advancePast;
     import arsd.dom : Document;
     import arsd.http2 : HttpClient, Uri;
     import std.algorithm.comparison : among;
@@ -588,8 +588,8 @@ auto lookupTitle(
     }
 
     string slice = url;  // mutable
-    slice.nom("//");
-    string host = slice.nom('/', Yes.inherit).toLower;
+    slice.advancePast("//");
+    string host = slice.advancePast('/', Yes.inherit).toLower;
     if (host.startsWith("www.")) host = host[4..$];
 
     TitleLookupResults results;
@@ -692,18 +692,18 @@ void reportYouTubeTitle(TitleLookupRequest request)
  +/
 auto rewriteDirectImgurURL(const string url) @safe pure
 {
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.algorithm.searching : startsWith;
     import std.typecons : No, Yes;
 
     if (url.startsWith("https://i.imgur.com/"))
     {
-        immutable path = url[20..$].nom('.');
+        immutable path = url[20..$].advancePast('.');
         return "https://imgur.com/" ~ path;
     }
     else if (url.startsWith("http://i.imgur.com/"))
     {
-        immutable path = url[19..$].nom('.');
+        immutable path = url[19..$].advancePast('.');
         return "https://imgur.com/" ~ path;
     }
 

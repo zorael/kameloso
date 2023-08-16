@@ -301,7 +301,7 @@ unittest
 void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import dialect.common : isValidNickname;
-    import lu.string : SplitResults, nom, splitInto, stripped;
+    import lu.string : SplitResults, advancePast, splitInto, stripped;
     import std.algorithm.searching : count, startsWith;
     import std.format : format;
 
@@ -359,7 +359,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     string line = event.content.stripped;  // mutable
-    immutable verb = line.nom(' ', Yes.inherit);
+    immutable verb = line.advancePast(' ', Yes.inherit);
 
     switch (verb)
     {

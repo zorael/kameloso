@@ -271,7 +271,7 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
     }
 
     string slice = (char_ == ' ') ? expr : expr.strippedRight;  // mutable
-    slice = slice[2..$];  // nom 's' ~ char_
+    slice = slice[2..$];  // advance past 's' ~ char_
 
     bool global;
 
