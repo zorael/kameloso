@@ -150,13 +150,14 @@ struct TitleLookupRequest
 void onMessage(WebtitlePlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : findURLs;
-    import lu.string : beginsWith, strippedLeft;
+    import lu.string : strippedLeft;
+    import std.algorithm.searching : startsWith;
 
     immutable content = event.content.strippedLeft;  // mutable
 
-    if (content.beginsWith(plugin.state.settings.prefix)) return;
+    if (content.startsWith(plugin.state.settings.prefix)) return;
 
-    if (content.beginsWith(plugin.state.client.nickname))
+    if (content.startsWith(plugin.state.client.nickname))
     {
         import kameloso.string : stripSeparatedPrefix;
 
@@ -190,7 +191,7 @@ void lookupURLs(WebtitlePlugin plugin, const /*ref*/ IRCEvent event, string[] ur
 {
     import kameloso.common : logger;
     import kameloso.thread : ThreadMessage;
-    import lu.string : beginsWith, nom;
+    import lu.string : nom;
     import std.concurrency : prioritySend, spawn;
 
     bool[string] uniques;
@@ -200,7 +201,7 @@ void lookupURLs(WebtitlePlugin plugin, const /*ref*/ IRCEvent event, string[] ur
         // If the URL contains an octothorpe fragment identifier, like
         // https://www.google.com/index.html#this%20bit
         // then strip that.
-        url = url.nom!(Yes.inherit, Yes.decode)('#');
+        url = url.nom('#', Yes.inherit);
 
         while (url[$-1] == '/')
         {
@@ -281,9 +282,11 @@ void worker(
     const Flag!"descriptions" descriptions,
     const string caBundleFile)
 {
-    import lu.string : beginsWith, contains, nom;
+    import lu.string : nom;
+    import std.algorithm.searching : startsWith;
     import std.datetime.systime : Clock;
     import std.format : format;
+    import std.string : indexOf;
     import std.typecons : No, Yes;
     static import kameloso.common;
 
@@ -306,26 +309,27 @@ void worker(
     TitleLookupRequest request = cast()sRequest;
     immutable now = Clock.currTime.toUnixTime;
 
-    if (request.url.contains("://i.imgur.com/"))
+    if (request.url.indexOf("://i.imgur.com/") != -1)
     {
         // imgur direct links naturally have no titles, but the normal pages do.
         // Rewrite and look those up instead.
         request.url = rewriteDirectImgurURL(request.url);
     }
-    else if (request.url.contains("youtube.com/watch?v=") ||
-        request.url.contains("youtu.be/"))
+    else if (
+        (request.url.indexOf("youtube.com/watch?v=") != -1) ||
+        (request.url.indexOf("youtu.be/") != -1))
     {
         // Do our own slicing instead of using regexes, because footprint.
         string slice = request.url;
 
-        slice.nom!(Yes.decode)("http");
+        slice.nom("http");
         if (slice[0] == 's') slice = slice[1..$];
         slice = slice[3..$];  // ://
 
-        if (slice.beginsWith("www.")) slice = slice[4..$];
+        if (slice.startsWith("www.")) slice = slice[4..$];
 
-        if (slice.beginsWith("youtube.com/watch?v=") ||
-            slice.beginsWith("youtu.be/"))
+        if (slice.startsWith("youtube.com/watch?v=") ||
+            slice.startsWith("youtu.be/"))
         {
             import std.json : JSONException;
 
@@ -525,10 +529,11 @@ auto lookupTitle(
     const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
-    import lu.string : beginsWith, nom;
+    import lu.string : nom;
     import arsd.dom : Document;
     import arsd.http2 : HttpClient, Uri;
     import std.algorithm.comparison : among;
+    import std.algorithm.searching : startsWith;
     import std.array : Appender;
     import std.uni : toLower;
     import core.time : seconds;
@@ -584,8 +589,8 @@ auto lookupTitle(
 
     string slice = url;  // mutable
     slice.nom("//");
-    string host = slice.nom!(Yes.inherit)('/').toLower;
-    if (host.beginsWith("www.")) host = host[4..$];
+    string host = slice.nom('/', Yes.inherit).toLower;
+    if (host.startsWith("www.")) host = host[4..$];
 
     TitleLookupResults results;
     results.title = decodeEntities(doc.title);
@@ -687,17 +692,18 @@ void reportYouTubeTitle(TitleLookupRequest request)
  +/
 auto rewriteDirectImgurURL(const string url) @safe pure
 {
-    import lu.string : beginsWith, nom;
+    import lu.string : nom;
+    import std.algorithm.searching : startsWith;
     import std.typecons : No, Yes;
 
-    if (url.beginsWith("https://i.imgur.com/"))
+    if (url.startsWith("https://i.imgur.com/"))
     {
-        immutable path = url[20..$].nom!(Yes.decode)('.');
+        immutable path = url[20..$].nom('.');
         return "https://imgur.com/" ~ path;
     }
-    else if (url.beginsWith("http://i.imgur.com/"))
+    else if (url.startsWith("http://i.imgur.com/"))
     {
-        immutable path = url[19..$].nom!(Yes.decode)('.');
+        immutable path = url[19..$].nom('.');
         return "https://imgur.com/" ~ path;
     }
 

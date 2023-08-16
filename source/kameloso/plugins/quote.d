@@ -419,8 +419,8 @@ void onCommandModQuote(QuotePlugin plugin, const ref IRCEvent event)
 
     try
     {
-        import lu.string : beginsWith;
-        if (indexString.beginsWith('#')) indexString = indexString[1..$];
+        import std.algorithm.searching : startsWith;
+        if (indexString.startsWith('#')) indexString = indexString[1..$];
         index = indexString.to!ptrdiff_t;
     }
     catch (ConvException _)
@@ -611,8 +611,8 @@ void onCommandDelQuote(QuotePlugin plugin, const ref IRCEvent event)
 
     try
     {
-        import lu.string : beginsWith;
-        if (indexString.beginsWith('#')) indexString = indexString[1..$];
+        import std.algorithm.searching : startsWith;
+        if (indexString.startsWith('#')) indexString = indexString[1..$];
         index = indexString.to!ptrdiff_t;
     }
     catch (ConvException _)
@@ -839,11 +839,11 @@ auto getQuoteByIndexString(
     /*const*/ string indexString,
     out size_t index)
 {
-    import lu.string : beginsWith;
+    import std.algorithm.searching : startsWith;
     import std.conv : to;
     import std.random : uniform;
 
-    indexString = indexString.beginsWith('#') ?
+    indexString = indexString.startsWith('#') ?
         indexString[1..$] :
         indexString;
     index = indexString.to!size_t;
@@ -882,8 +882,8 @@ Quote getQuoteBySearchTerms(
     const string searchTermsCased,
     out size_t index)
 {
-    import lu.string : contains;
     import std.random : uniform;
+    import std.string : indexOf;
     import std.uni : toLower;
 
     auto stripPunctuation(const string inputString)
@@ -912,13 +912,13 @@ Quote getQuoteBySearchTerms(
     {
         string output = inputString;  // mutable
 
-        bool hasDoubleSpace = output.contains("  ");  // mutable
+        bool hasDoubleSpace = (output.indexOf("  ") != -1);  // mutable
 
         while (hasDoubleSpace)
         {
             import std.array : replace;
             output = output.replace("  ", " ");
-            hasDoubleSpace = output.contains("  ");
+            hasDoubleSpace = (output.indexOf("  ") != -1);
         }
 
         return output;
@@ -949,7 +949,7 @@ Quote getQuoteBySearchTerms(
 
     foreach (immutable i, immutable flattenedQuote; flattenedQuotes)
     {
-        if (!flattenedQuote.contains(searchTerms)) continue;
+        if (flattenedQuote.indexOf(searchTerms) == -1) continue;
 
         if (plugin.quoteSettings.alwaysPickFirstMatch)
         {
@@ -975,7 +975,7 @@ Quote getQuoteBySearchTerms(
 
     foreach (immutable i, immutable flattenedQuote; flattenedQuotes)
     {
-        if (!stripBoth(flattenedQuote).contains(strippedSearchTerms)) continue;
+        if (stripBoth(flattenedQuote).indexOf(strippedSearchTerms) == -1) continue;
 
         if (plugin.quoteSettings.alwaysPickFirstMatch)
         {
@@ -1022,7 +1022,9 @@ auto removeWeeChatHead(
     const string prefixes) pure @safe
 in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickname was empty")
 {
-    import lu.string : beginsWith, contains, nom, strippedLeft;
+    import lu.string : nom, strippedLeft;
+    import std.algorithm.searching : startsWith;
+    import std.string : indexOf;
 
     static bool isN(const char c)
     {
@@ -1050,9 +1052,9 @@ in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickna
 
     if (slice.length > nickname.length)
     {
-        if ((prefixes.contains(slice[0]) &&
-            slice[1..$].beginsWith(nickname)) ||
-            slice.beginsWith(nickname))
+        if (((prefixes.indexOf(slice[0]) != -1) &&
+            slice[1..$].startsWith(nickname)) ||
+            slice.startsWith(nickname))
         {
             slice.nom(nickname);
             slice = slice.strippedLeft;
@@ -1316,7 +1318,7 @@ final class NoQuotesSearchMatchException : Exception
 void initResources(QuotePlugin plugin)
 {
     import lu.json : JSONStorage;
-    import lu.string : beginsWith;
+    import std.algorithm.searching : startsWith;
     import std.json : JSONException;
 
     enum placeholderChannel = "#<lost+found>";
@@ -1333,7 +1335,7 @@ void initResources(QuotePlugin plugin)
 
         foreach (immutable key, firstLevel; json.object)
         {
-            if (key.beginsWith('#')) continue;
+            if (key.startsWith('#')) continue;
 
             scratchJSON[placeholderChannel] = null;
             scratchJSON[placeholderChannel].object = null;
@@ -1345,7 +1347,7 @@ void initResources(QuotePlugin plugin)
         {
             foreach (immutable key, firstLevel; json.object)
             {
-                if (!key.beginsWith('#')) continue;
+                if (!key.startsWith('#')) continue;
                 scratchJSON[key] = firstLevel;
             }
 

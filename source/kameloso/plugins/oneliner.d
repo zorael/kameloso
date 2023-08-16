@@ -248,14 +248,15 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
     import kameloso.string : replaceRandom;
-    import lu.string : beginsWith, nom;
+    import lu.string : nom;
+    import std.algorithm.searching : startsWith;
     import std.array : replace;
     import std.conv : text, to;
     import std.random : uniform;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
 
-    if (!event.content.beginsWith(plugin.state.settings.prefix)) return;
+    if (!event.content.startsWith(plugin.state.settings.prefix)) return;
 
     void sendEmptyOneliner(const string trigger)
     {
@@ -272,7 +273,7 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     auto channelOneliners = event.channel in plugin.onelinersByChannel;  // mustn't be const
     if (!channelOneliners) return;
 
-    immutable trigger = slice.nom!(Yes.inherit)(' ').toLower;
+    immutable trigger = slice.nom(' ', Yes.inherit).toLower;
 
     auto oneliner = trigger in *channelOneliners;  // mustn't be const
     if (!oneliner) return;
@@ -311,7 +312,7 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
         }
     }
 
-    immutable target = slice.beginsWith('@') ? slice[1..$] : slice;
+    immutable target = slice.startsWith('@') ? slice[1..$] : slice;
     immutable message = target.length ?
         text('@', nameOf(plugin, target), ' ', line) :
         line;
@@ -365,7 +366,7 @@ void onCommandModifyOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     if (!event.content.length) return sendUsage();
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom!(Yes.inherit, Yes.decode)(' ');
+    immutable verb = slice.nom(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -415,8 +416,8 @@ void handleNewOneliner(
     // copy/pasted
     auto stripPrefix(const string trigger)
     {
-        import lu.string : beginsWith;
-        return trigger.beginsWith(plugin.state.settings.prefix) ?
+        import std.algorithm.searching : startsWith;
+        return trigger.startsWith(plugin.state.settings.prefix) ?
             trigger[plugin.state.settings.prefix.length..$] :
             trigger;
     }
@@ -655,8 +656,8 @@ void handleAddToOneliner(
     // copy/pasted
     auto stripPrefix(const string trigger)
     {
-        import lu.string : beginsWith;
-        return trigger.beginsWith(plugin.state.settings.prefix) ?
+        import std.algorithm.searching : startsWith;
+        return trigger.startsWith(plugin.state.settings.prefix) ?
             trigger[plugin.state.settings.prefix.length..$] :
             trigger;
     }
@@ -835,15 +836,15 @@ void handleDelFromOneliner(
     // copy/pasted
     auto stripPrefix(const string trigger)
     {
-        import lu.string : beginsWith;
-        return trigger.beginsWith(plugin.state.settings.prefix) ?
+        import std.algorithm.searching : startsWith;
+        return trigger.startsWith(plugin.state.settings.prefix) ?
             trigger[plugin.state.settings.prefix.length..$] :
             trigger;
     }
 
     if (!slice.length) return sendDelUsage();
 
-    immutable trigger = stripPrefix(slice.nom!(Yes.inherit)(' ')).toLower;
+    immutable trigger = stripPrefix(slice.nom(' ', Yes.inherit)).toLower;
 
     auto channelOneliners = event.channel in plugin.onelinersByChannel;
     if (!channelOneliners) return sendNoSuchOneliner(trigger);

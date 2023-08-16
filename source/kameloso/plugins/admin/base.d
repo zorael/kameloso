@@ -336,7 +336,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.strippedRight;  // mutable
-    immutable verb = slice.nom!(Yes.inherit)(' ');
+    immutable verb = slice.nom(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -928,10 +928,10 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else if (setting.length)
         {
-            import lu.string : contains;
             import std.format : format;
+            import std.string : indexOf;
 
-            immutable pattern = value.contains(' ') ?
+            immutable pattern = (value.indexOf(' ') != -1) ?
                 "%s.%s=\"%s\"" :
                 "%s.%s=%s";
             immutable message = pattern.format(pluginName, setting, value);
@@ -1067,7 +1067,7 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         return cycle(plugin, event.channel);
     }
 
-    immutable channelName = slice.nom!(Yes.inherit)(' ');
+    immutable channelName = slice.nom(' ', Yes.inherit);
 
     if (channelName !in plugin.state.channels)
     {
@@ -1080,7 +1080,7 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         return cycle(plugin, channelName);
     }
 
-    immutable delaystring = slice.nom!(Yes.inherit)(' ');
+    immutable delaystring = slice.nom(' ', Yes.inherit);
 
     try
     {
@@ -1186,7 +1186,7 @@ void cycle(
 )
 void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : SplitResults, contains, nom, splitInto, stripped;
+    import lu.string : SplitResults, nom, splitInto, stripped;
     import std.format : format;
 
     if (!plugin.state.settings.preferHostmasks)
@@ -1203,7 +1203,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom!(Yes.inherit)(' ');
+    immutable verb = slice.nom(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -1223,7 +1223,9 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 
     case "del":
     case "remove":
-        if (!slice.length || slice.contains(' '))
+        import std.string : indexOf;
+
+        if (!slice.length || (slice.indexOf(' ') != -1))
         {
             enum pattern = "Usage: <b>%s%s del<b> [hostmask]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
@@ -1419,7 +1421,7 @@ void onBusMessage(
     shared Sendable content)
 {
     import kameloso.thread : Boxed;
-    import lu.string : contains, nom, strippedRight;
+    import lu.string : nom, strippedRight;
 
     // Don't return if disabled, as it blocks us from re-enabling with verb set
     if (header != "admin") return;
@@ -1428,7 +1430,7 @@ void onBusMessage(
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     string slice = message.payload.strippedRight;
-    immutable verb = slice.nom!(Yes.inherit)(' ');
+    immutable verb = slice.nom(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -1613,7 +1615,7 @@ void onBusMessage(
     case "hostmask":
         import lu.string : nom;
 
-        immutable subverb = slice.nom!(Yes.inherit)(' ');
+        immutable subverb = slice.nom(' ', Yes.inherit);
 
         switch (subverb)
         {

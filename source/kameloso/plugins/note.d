@@ -410,7 +410,8 @@ void playbackNotesImpl(
 void onCommandAddNote(NotePlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
-    import lu.string : SplitResults, beginsWith, splitInto, stripped;
+    import lu.string : SplitResults, splitInto, stripped;
+    import std.algorithm.searching : startsWith;
 
     void sendUsage()
     {
@@ -432,7 +433,7 @@ void onCommandAddNote(NotePlugin plugin, const ref IRCEvent event)
     string target; // ditto
     immutable results = slice.splitInto(target);
 
-    if (target.beginsWith('@')) target = target[1..$];
+    if (target.startsWith('@')) target = target[1..$];
     if ((results != SplitResults.overrun) || !target.length) return sendUsage();
     if (target == plugin.state.client.nickname) return sendNoBotMessages();
 

@@ -303,11 +303,12 @@ void onPing(ConnectService service, const ref IRCEvent event)
  +/
 void tryAuth(ConnectService service)
 {
-    import lu.string : beginsWith, decode64;
+    import lu.string : decode64;
+    import std.algorithm.searching : startsWith;
 
     string serviceNick = "NickServ";  // mutable, default value
     string verb = "IDENTIFY";  // ditto
-    immutable password = service.state.bot.password.beginsWith("base64:") ?
+    immutable password = service.state.bot.password.startsWith("base64:") ?
         decode64(service.state.bot.password[7..$]) : service.state.bot.password;
 
     // Specialcase networks
@@ -728,12 +729,14 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 
         foreach (immutable rawCap; event.aux[])
         {
-            import lu.string : beginsWith, contains, nom;
+            import lu.string : nom;
+            import std.algorithm.searching : startsWith;
+            import std.string : indexOf;
 
             if (!rawCap.length) continue;
 
             string slice = rawCap;  // mutable
-            immutable cap = slice.nom!(Yes.inherit)('=');
+            immutable cap = slice.nom('=', Yes.inherit);
             immutable sub = slice;
 
             switch (cap)
@@ -743,16 +746,19 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 // https://issues.dlang.org/show_bug.cgi?id=21427
                 // feep[work] | the quick workaround is to wrap the switch body in a {}
                 {
-                    immutable acceptsExternal = !sub.length || sub.contains("EXTERNAL");
-                    immutable acceptsPlain = !sub.length || sub.contains("PLAIN");
-                    immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
+                    immutable acceptsExternal = !sub.length || (sub.indexOf("EXTERNAL") != -1);
+                    immutable acceptsPlain = !sub.length || (sub.indexOf("PLAIN") != -1);
+                    immutable hasKey =
+                        (service.state.connSettings.privateKeyFile.length ||
                         service.state.connSettings.certFile.length);
 
                     if (service.state.connSettings.ssl && acceptsExternal && hasKey)
                     {
                         // Proceed
                     }
-                    else if (service.connectSettings.sasl && acceptsPlain &&
+                    else if (
+                        service.connectSettings.sasl &&
+                        acceptsPlain &&
                         service.state.bot.password.length)
                     {
                         // Likewise
@@ -952,7 +958,8 @@ void onSASLAuthenticate(ConnectService service)
  +/
 auto trySASLPlain(ConnectService service)
 {
-    import lu.string : beginsWith, decode64, encode64;
+    import lu.string : decode64, encode64;
+    import std.algorithm.searching : startsWith;
     import std.base64 : Base64Exception;
     import std.conv : text;
 
@@ -962,7 +969,7 @@ auto trySASLPlain(ConnectService service)
             service.state.bot.account :
             service.state.client.origNickname;
 
-        immutable password_ = service.state.bot.password.beginsWith("base64:") ?
+        immutable password_ = service.state.bot.password.startsWith("base64:") ?
             decode64(service.state.bot.password[7..$]) :
             service.state.bot.password;
 
@@ -1147,7 +1154,7 @@ void onWelcome(ConnectService service)
 
             version(TwitchSupport)
             {
-                import lu.string : beginsWith;
+                import std.algorithm.searching : startsWith;
 
                 /+
                     Upon having connected, registered and logged onto the Twitch servers,
@@ -1163,8 +1170,8 @@ void onWelcome(ConnectService service)
                 service.state.settings.colouredOutgoing = false;
                 service.state.updates |= typeof(service.state.updates).settings;
 
-                if (service.state.settings.prefix.beginsWith(".") ||
-                    service.state.settings.prefix.beginsWith("/"))
+                if (service.state.settings.prefix.startsWith(".") ||
+                    service.state.settings.prefix.startsWith("/"))
                 {
                     enum pattern = `WARNING: A prefix of "<l>%s</>" will *not* work on Twitch servers, ` ~
                         "as <l>.</> and <l>/</> are reserved for Twitch's own commands.";
@@ -1536,8 +1543,7 @@ void startPingMonitorFiber(ConnectService service)
  +/
 void register(ConnectService service)
 {
-    import lu.string : beginsWith;
-    import std.algorithm.searching : canFind, endsWith;
+    import std.algorithm.searching : canFind, endsWith, startsWith;
     import std.uni : toLower;
 
     service.registration = Progress.inProgress;
@@ -1586,7 +1592,7 @@ void register(ConnectService service)
     immutable serverWhitelisted = capabilityServerWhitelistSuffix
         .canFind!((a,b) => b.endsWith(a))(serverToLower) ||
         capabilityServerWhitelistPrefix
-            .canFind!((a,b) => b.beginsWith(a))(serverToLower);
+            .canFind!((a,b) => b.startsWith(a))(serverToLower);
     immutable serverBlacklisted = !serverWhitelisted &&
         capabilityServerBlacklistSuffix
             .canFind!((a,b) => b.endsWith(a))(serverToLower);
@@ -1608,10 +1614,11 @@ void register(ConnectService service)
     {
         static string decodeIfPrefixedBase64(const string encoded)
         {
-            import lu.string : beginsWith, decode64;
+            import lu.string : decode64;
+            import std.algorithm.searching : startsWith;
             import std.base64 : Base64Exception;
 
-            if (encoded.beginsWith("base64:"))
+            if (encoded.startsWith("base64:"))
             {
                 try
                 {
@@ -1636,8 +1643,8 @@ void register(ConnectService service)
         {
             if (serverIsTwitch)
             {
-                import lu.string : beginsWith;
-                service.state.bot.pass = decoded.beginsWith("oauth:") ? decoded : ("oauth:" ~ decoded);
+                import std.algorithm.searching : startsWith;
+                service.state.bot.pass = decoded.startsWith("oauth:") ? decoded : ("oauth:" ~ decoded);
             }
         }
 

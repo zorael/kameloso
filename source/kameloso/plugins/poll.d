@@ -322,7 +322,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
     try
     {
         import lu.string : nom;
-        poll.duration = slice.nom!(Yes.decode)(' ').asAbbreviatedDuration;
+        poll.duration = slice.nom(' ').asAbbreviatedDuration;
     }
     catch (ConvException _)
     {
@@ -420,10 +420,12 @@ auto getPollChoices(
 
     foreach (immutable rawChoice; splitWithQuotes(slice))
     {
-        import lu.string : beginsWith, strippedRight;
+        import lu.string : strippedRight;
+        import std.algorithm.searching : startsWith;
         import std.uni : toLower;
 
-        if (plugin.pollSettings.forbidPrefixedChoices && rawChoice.beginsWith(plugin.state.settings.prefix))
+        if (plugin.pollSettings.forbidPrefixedChoices &&
+            rawChoice.startsWith(plugin.state.settings.prefix))
         {
             /*return*/ sendChoiceMustNotStartWithPrefix();
             return result;

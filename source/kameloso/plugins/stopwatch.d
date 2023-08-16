@@ -131,7 +131,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom!(Yes.inherit)(' ');
+    immutable verb = slice.nom(' ', Yes.inherit);
     slice = slice.strippedLeft;
 
     string getDiff(const string id)

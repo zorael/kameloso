@@ -272,7 +272,7 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 
     enum allCTCPTypes = ()
     {
-        import lu.string : beginsWith;
+        import std.algorithm.searching : startsWith;
         import std.array : Appender;
         import std.traits : getUDAs;
 
@@ -288,7 +288,7 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 
                 enum typestring = Enum!(IRCEvent.Type).toString(type);
 
-                static if (typestring.beginsWith("CTCP_"))
+                static if (typestring.startsWith("CTCP_"))
                 {
                     sink.put(' ');
                     sink.put(typestring[5..$]);

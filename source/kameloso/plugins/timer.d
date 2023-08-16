@@ -360,7 +360,7 @@ void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom!(Yes.inherit)(' ');
+    immutable verb = slice.nom(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -770,7 +770,7 @@ void handleAddToTimer(
         chan(plugin.state, event.channel, noSuchTimerMessage);
     }
 
-    immutable name = slice.nom!(Yes.inherit)(' ');
+    immutable name = slice.nom(' ', Yes.inherit);
     if (!slice.length) return sendAddUsage();
 
     auto channel = event.channel in plugin.channels;

@@ -46,11 +46,12 @@ package void requestGoogleKeys(TwitchPlugin plugin)
     import kameloso.logger : LogLevel;
     import kameloso.terminal.colours.tags : expandTags;
     import kameloso.time : timeSince;
-    import lu.string : contains, nom, stripped;
+    import lu.string : nom, stripped;
     import std.conv : to;
     import std.format : format;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : File, readln, stdin, stdout, write, writeln;
+    import std.string : indexOf;
     import core.time : seconds;
 
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
@@ -124,11 +125,11 @@ A normal URL to any playlist you can modify will work fine.
             // Likely a playlist ID
             creds.youtubePlaylistID = playlistURL;
         }
-        else if (playlistURL.contains("/playlist?list="))
+        else if (playlistURL.indexOf("/playlist?list=") != -1)
         {
             string slice = playlistURL;  // mutable
             slice.nom("/playlist?list=");
-            creds.youtubePlaylistID = slice.nom!(Yes.inherit)('&');
+            creds.youtubePlaylistID = slice.nom('&', Yes.inherit);
         }
         else
         {
@@ -223,13 +224,13 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
             return;
         }
 
-        if (!readCode.contains("code="))
+        if (readCode.indexOf("code=") == -1)
         {
-            import lu.string : beginsWith;
+            import std.algorithm.searching : startsWith;
 
             writeln();
 
-            if (readCode.beginsWith(authNode))
+            if (readCode.startsWith(authNode))
             {
                 enum wrongPageMessage = "Not that page; the empty page you're " ~
                     "lead to after clicking <l>Allow</>.";
@@ -246,7 +247,7 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
 
         string slice = readCode;  // mutable
         slice.nom("?code=");
-        code = slice.nom!(Yes.inherit)('&');
+        code = slice.nom('&', Yes.inherit);
 
         if (code.length != 73L)
         {

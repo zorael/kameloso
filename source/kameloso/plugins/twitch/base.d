@@ -492,10 +492,10 @@ in (channelName.length, "Tried to init Room with an empty channel string")
 )
 void onUserstate(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : contains;
+    import std.string : indexOf;
 
-    if (event.target.badges.contains("moderator/") ||
-        event.target.badges.contains("broadcaster/"))
+    if ((event.target.badges.indexOf("moderator/") != -1) ||
+        (event.target.badges.indexOf("broadcaster/") != -1))
     {
         if (auto channel = event.channel in plugin.state.channels)
         {
@@ -739,7 +739,8 @@ void reportStreamTime(
 )
 void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import lu.string : beginsWith, nom, stripped;
+    import lu.string : nom, stripped;
+    import std.algorithm.searching : startsWith;
     import std.conv : to;
 
     void sendNoSuchUser(const string givenName)
@@ -761,8 +762,8 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
     else
     {
-        string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
-        if (givenName.beginsWith('@')) givenName = givenName[1..$];
+        string givenName = slice.nom(' ', Yes.inherit);  // mutable
+        if (givenName.startsWith('@')) givenName = givenName[1..$];
         immutable user = getTwitchUser(plugin, givenName, string.init, Yes.searchByDisplayName);
         if (!user.nickname.length) return sendNoSuchUser(givenName);
 
@@ -985,7 +986,8 @@ void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.plugins.common.misc : idOf;
-    import lu.string : SplitResults, beginsWith, splitInto, stripped;
+    import lu.string : SplitResults, splitInto, stripped;
+    import std.algorithm.searching : startsWith;
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
@@ -1037,7 +1039,7 @@ void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     string numTimesString;  // ditto
     immutable results = slice.splitInto(target, numTimesString);
 
-    if (target.beginsWith('@')) target = target[1..$].stripped;
+    if (target.startsWith('@')) target = target[1..$].stripped;
 
     if (!target.length || (results == SplitResults.overrun))
     {
@@ -1290,8 +1292,9 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import lu.string : contains, nom, stripped;
+    import lu.string : nom, stripped;
     import std.format : format;
+    import std.string : indexOf;
     import core.time : seconds;
 
     /+
@@ -1403,8 +1406,8 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else if (
             !url.length ||
-            url.contains(' ') ||
-            (!url.contains("youtube.com/") && !url.contains("youtu.be/")))
+            (url.indexOf(' ') != -1) ||
+            ((url.indexOf("youtube.com/") == -1) && (url.indexOf("youtu.be/") == -1)))
         {
             return sendUsage();
         }
@@ -1429,15 +1432,15 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             videoID = slice;
         }
-        else if (slice.contains("youtube.com/watch?v="))
+        else if (slice.indexOf("youtube.com/watch?v=") != -1)
         {
             slice.nom("youtube.com/watch?v=");
-            videoID = slice.nom!(Yes.inherit)('&');
+            videoID = slice.nom('&', Yes.inherit);
         }
-        else if (slice.contains("youtu.be/"))
+        else if (slice.indexOf("youtu.be/") != -1)
         {
             slice.nom("youtu.be/");
-            videoID = slice.nom!(Yes.inherit)('?');
+            videoID = slice.nom('?', Yes.inherit);
         }
         else
         {
@@ -1486,8 +1489,8 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else if (
             !url.length ||
-            url.contains(' ') ||
-            !url.contains("spotify.com/track/"))
+            (url.indexOf(' ') != -1) ||
+            (url.indexOf("spotify.com/track/") == -1))
         {
             return sendUsage();
         }
@@ -1508,10 +1511,10 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             trackID = slice;
         }
-        else if (slice.contains("spotify.com/track/"))
+        else if (slice.indexOf("spotify.com/track/") != -1)
         {
             slice.nom("spotify.com/track/");
-            trackID = slice.nom!(Yes.inherit)('?');
+            trackID = slice.nom('?', Yes.inherit);
         }
         else
         {
@@ -1862,12 +1865,12 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onEndOfMOTD(TwitchPlugin plugin)
 {
-    import lu.string : beginsWith;
+    import std.algorithm.searching : startsWith;
     import std.concurrency : spawn;
 
     // Concatenate the Bearer and OAuth headers once.
     // This has to be done *after* connect's register
-    immutable pass = plugin.state.bot.pass.beginsWith("oauth:") ?
+    immutable pass = plugin.state.bot.pass.startsWith("oauth:") ?
         plugin.state.bot.pass[6..$] :
         plugin.state.bot.pass;
     plugin.authorizationBearer = "Bearer " ~ pass;
@@ -1936,8 +1939,8 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 
         immutable start = slice.nom('-').to!size_t;
         immutable end = slice
-            .nom!(Yes.inherit)('/')
-            .nom!(Yes.inherit)(',')
+            .nom('/', Yes.inherit)
+            .nom(',', Yes.inherit)
             .to!size_t + 1;  // upper-bound inclusive!
 
         string rawSlice = event.raw;  // mutable
@@ -2016,7 +2019,8 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.time : timeSince;
-    import lu.string : beginsWith, nom, stripped;
+    import lu.string : nom, stripped;
+    import std.algorithm.searching : startsWith;
     import std.format : format;
     import core.time : Duration;
 
@@ -2035,8 +2039,8 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
     else
     {
-        string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
-        if (givenName.beginsWith('@')) givenName = givenName[1..$];
+        string givenName = slice.nom(' ', Yes.inherit);  // mutable
+        if (givenName.startsWith('@')) givenName = givenName[1..$];
         immutable user = getTwitchUser(plugin, givenName, string.init, Yes.searchByDisplayName);
 
         if (!user.nickname.length)
@@ -3515,7 +3519,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         const ref IRCEvent event,
         ref IRCUser user)
     {
-        import lu.string : contains;
+        import std.string : indexOf;
 
         if (user.class_ == IRCUser.Class.blacklist) return;
 
@@ -3536,7 +3540,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         if (plugin.twitchSettings.promoteModerators)
         {
             if ((user.class_ < IRCUser.Class.operator) &&
-                user.badges.contains("moderator/"))
+                (user.badges.indexOf("moderator/") != -1))
             {
                 // User is moderator but is not registered as at least operator
                 user.class_ = IRCUser.Class.operator;
@@ -3547,7 +3551,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         if (plugin.twitchSettings.promoteVIPs)
         {
             if ((user.class_ < IRCUser.Class.elevated) &&
-                user.badges.contains("vip/"))
+                (user.badges.indexOf("vip/") != -1))
             {
                 // User is VIP but is not registered as at least elevated
                 user.class_ = IRCUser.Class.elevated;
@@ -3557,7 +3561,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
         // There is no "registered" list; just map subscribers to registered 1:1
         if ((user.class_ < IRCUser.Class.registered) &&
-            user.badges.contains("subscriber/"))
+            (user.badges.indexOf("subscriber/") != -1))
         {
             user.class_ = IRCUser.Class.registered;
         }

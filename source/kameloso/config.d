@@ -1080,7 +1080,8 @@ void writeConfigurationFile(
 {
     import kameloso.platform : rbd = resourceBaseDirectory;
     import lu.serialisation : justifiedEntryValueText, serialise;
-    import lu.string : beginsWith, encode64;
+    import lu.string : encode64;
+    import std.algorithm.searching : startsWith;
     import std.array : Appender;
     import std.file : exists;
     import std.path : buildNormalizedPath, expandTilde;
@@ -1110,12 +1111,12 @@ void writeConfigurationFile(
     // --force opts out
     if (!instance.settings.force)
     {
-        if (!instance.bot.password.beginsWith("base64:"))
+        if (!instance.bot.password.startsWith("base64:"))
         {
             instance.bot.password = "base64:" ~ encode64(instance.bot.password);
         }
 
-        if (!instance.bot.pass.beginsWith("base64:"))
+        if (!instance.bot.pass.startsWith("base64:"))
         {
             instance.bot.pass = "base64:" ~ encode64(instance.bot.pass);
         }

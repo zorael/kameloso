@@ -444,7 +444,7 @@ void emote(
     const string caller = __FUNCTION__)
 in (emoteTarget.length, "Tried to send an emote but no target was given")
 {
-    import lu.string : contains;
+    import std.string : indexOf;
 
     Message m;
 
@@ -453,7 +453,7 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (state.server.chantypes.contains(emoteTarget[0]))
+    if (state.server.chantypes.indexOf(emoteTarget[0]) != -1)
     {
         m.event.channel = emoteTarget;
     }

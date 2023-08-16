@@ -58,7 +58,7 @@ in (prefix.length, "Tried to strip separated prefix but no prefix was given")
     string slice = line.strippedLeft;  // mutable
 
     // the onus is on the caller that slice begins with prefix, else this will throw
-    slice.nom!(Yes.decode)(prefix);
+    slice.nom(prefix);
 
     if (demandSep)
     {

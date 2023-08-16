@@ -825,7 +825,7 @@ mixin template IRCPluginImpl(
                             import std.uni : toLower;
 
                             // Cache it
-                            commandWordInEvent = event.content.nom!(Yes.inherit, Yes.decode)(' ');
+                            commandWordInEvent = event.content.nom(' ', Yes.inherit);
                             commandWordInEventLower = commandWordInEvent.toLower();
                             contentSansCommandWordInEvent = event.content;
                         }
@@ -1809,11 +1809,11 @@ mixin template IRCPluginImpl(
     pragma(inline, true)
     override public string name() const pure nothrow @nogc
     {
-        import lu.string : beginsWith;
+        import std.algorithm.searching : startsWith;
 
         enum modulePrefix = "kameloso.plugins.";
 
-        static if (module_.beginsWith(modulePrefix))
+        static if (module_.startsWith(modulePrefix))
         {
             import std.string : indexOf;
 
@@ -2034,7 +2034,7 @@ auto prefixPolicyMatches(bool verbose)
     const IRCPluginState state)
 {
     import kameloso.string : stripSeparatedPrefix;
-    import lu.string : beginsWith;
+    import std.algorithm.searching : startsWith;
     import std.typecons : No, Yes;
 
     static if (verbose)
@@ -2065,7 +2065,7 @@ auto prefixPolicyMatches(bool verbose)
 
             goto case nickname;
         }
-        else if (event.content.beginsWith(state.settings.prefix))
+        else if (event.content.startsWith(state.settings.prefix))
         {
             static if (verbose)
             {
@@ -2087,7 +2087,7 @@ auto prefixPolicyMatches(bool verbose)
         break;
 
     case nickname:
-        if (event.content.beginsWith('@'))
+        if (event.content.startsWith('@'))
         {
             static if (verbose)
             {
@@ -2103,7 +2103,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             if ((state.server.daemon == IRCServer.Daemon.twitch) &&
                 state.client.displayName.length &&
-                event.content.beginsWith(state.client.displayName))
+                event.content.startsWith(state.client.displayName))
             {
                 static if (verbose)
                 {
@@ -2113,7 +2113,7 @@ auto prefixPolicyMatches(bool verbose)
                 event.content = event.content
                     .stripSeparatedPrefix(state.client.displayName, Yes.demandSeparatingChars);
 
-                if (state.settings.prefix.length && event.content.beginsWith(state.settings.prefix))
+                if (state.settings.prefix.length && event.content.startsWith(state.settings.prefix))
                 {
                     static if (verbose)
                     {
@@ -2133,7 +2133,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             // Already did something
         }
-        else if (event.content.beginsWith(state.client.nickname))
+        else if (event.content.startsWith(state.client.nickname))
         {
             static if (verbose)
             {
@@ -2143,7 +2143,7 @@ auto prefixPolicyMatches(bool verbose)
             event.content = event.content
                 .stripSeparatedPrefix(state.client.nickname, Yes.demandSeparatingChars);
 
-            if (state.settings.prefix.length && event.content.beginsWith(state.settings.prefix))
+            if (state.settings.prefix.length && event.content.startsWith(state.settings.prefix))
             {
                 static if (verbose)
                 {
@@ -2481,10 +2481,10 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
 
     if (uda.commands.length)
     {
-        import lu.string : contains;
-
         foreach (const command; uda.commands)
         {
+            import std.string : indexOf;
+
             if (!command._word.length)
             {
                 enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
@@ -2492,7 +2492,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
                 immutable message = pattern.format(uda.fqn).idup;
                 assert(0, message);
             }
-            else if (command._word.contains(' '))
+            else if (command._word.indexOf(' ') != -1)
             {
                 enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a `Command` whose trigger " ~

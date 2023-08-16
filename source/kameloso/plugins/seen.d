@@ -728,7 +728,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
         import std.typecons : Flag, No, Yes;
 
         string slice = entry;  // mutable
-        slice = slice.nom!(Yes.inherit)('!'); // In case SpotChat-like, full nick!ident@address form
+        slice = slice.nom('!', Yes.inherit); // In case SpotChat-like, full nick!ident@address form
         slice = slice.stripModesign(plugin.state.server);
         updateUser(plugin, slice, event.time);
     }
@@ -817,8 +817,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.time : timeSince;
     import dialect.common : isValidNickname;
-    import lu.string : beginsWith;
-    import std.algorithm.searching : canFind;
+    import std.algorithm.searching : canFind, startsWith;
     import std.datetime.systime : SysTime;
     import std.format : format;
 
@@ -853,7 +852,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
         `query` message.
      +/
 
-    immutable requestedUser = event.content.beginsWith('@') ?
+    immutable requestedUser = event.content.startsWith('@') ?
         event.content[1..$] :
         event.content;
 

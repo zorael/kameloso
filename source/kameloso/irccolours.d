@@ -597,9 +597,9 @@ version(Colours)
 auto mapEffects(
     const string origLine,
     const TerminalForeground fgBase = TerminalForeground.default_,
-    const TerminalBackground bgBase = TerminalBackground.default_) pure nothrow
+    const TerminalBackground bgBase = TerminalBackground.default_) pure
 {
-    import lu.string : contains;
+    import std.string : indexOf;
 
     alias I = IRCControlCharacter;
     alias TF = TerminalFormat;
@@ -608,25 +608,25 @@ auto mapEffects(
 
     string line = origLine;  // mutable
 
-    if (line.contains(I.colour))
+    if (line.indexOf(cast(char)I.colour) != -1)
     {
         // Colour is mIRC 3
         line = mapColours(line, fgBase, bgBase);
     }
 
-    if (line.contains(I.bold))
+    if (line.indexOf(cast(char)I.bold) != -1)
     {
         // Bold is terminal 1, mIRC 2
         line = mapEffectsImpl!(No.strip, I.bold, TF.bold)(line);
     }
 
-    if (line.contains(I.italics))
+    if (line.indexOf(cast(char)I.italics) != -1)
     {
         // Italics is terminal 3 (not really), mIRC 29
         line = mapEffectsImpl!(No.strip, I.italics, TF.italics)(line);
     }
 
-    if (line.contains(I.underlined))
+    if (line.indexOf(cast(char)I.underlined) != -1)
     {
         // Underlined is terminal 4, mIRC 31
         line = mapEffectsImpl!(No.strip, I.underlined, TF.underlined)(line);
@@ -781,7 +781,7 @@ private string mapColoursImpl(Flag!"strip" strip = No.strip)
 
     string slice = line;  // mutable
 
-    ptrdiff_t pos = slice.indexOf(IRCControlCharacter.colour);
+    ptrdiff_t pos = slice.indexOf(cast(char)IRCControlCharacter.colour);
 
     if (pos == -1) return line;  // Return line as is, don't allocate a new one
 
@@ -880,7 +880,7 @@ private string mapColoursImpl(Flag!"strip" strip = No.strip)
             segment.isReset = true;
         }
 
-        pos = slice.indexOf(IRCControlCharacter.colour);
+        pos = slice.indexOf(cast(char)IRCControlCharacter.colour);
     }
 
     immutable tail = slice;
@@ -1577,15 +1577,14 @@ private T expandIRCTagsImpl(T)
     const Flag!"strip" strip = No.strip) pure
 {
     import dialect.common : IRCControlCharacter;
-    import lu.string : contains;
     import std.array : Appender;
     import std.range : ElementEncodingType;
-    import std.string : representation;
+    import std.string : indexOf, representation;
     import std.traits : Unqual;
 
     alias E = Unqual!(ElementEncodingType!T);
 
-    if (!line.length || !line.contains('<')) return line;
+    if (!line.length || line.indexOf('<') == -1) return line;
 
     Appender!(E[]) sink;
     bool dirty;
@@ -1629,8 +1628,6 @@ private T expandIRCTagsImpl(T)
             }
             else
             {
-                import std.string : indexOf;
-
                 immutable ptrdiff_t closingBracketPos = (cast(T)asBytes[i..$]).indexOf('>');
 
                 if ((closingBracketPos == -1) || (closingBracketPos > 6))

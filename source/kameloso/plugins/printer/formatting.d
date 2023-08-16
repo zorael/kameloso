@@ -644,6 +644,7 @@ void formatMessageColoured(Sink)
     import kameloso.terminal.colours : applyANSI;
     import lu.conv : Enum;
     import std.algorithm.iteration : filter;
+    import std.algorithm.searching : startsWith;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
@@ -1028,11 +1029,9 @@ void formatMessageColoured(Sink)
 
     sink.put(']');
 
-    import lu.string : beginsWith;
-
     if ((event.type == IRCEvent.Type.ERROR) ||
         (event.type == IRCEvent.Type.TWITCH_ERROR) ||
-        rawTypestring.beginsWith("ERR_"))
+        rawTypestring.startsWith("ERR_"))
     {
         sink.applyANSI(bright ? Bright.error : Dark.error);
     }
@@ -1181,9 +1180,9 @@ void formatMessageColoured(Sink)
  +/
 auto withoutTypePrefix(const string typestring) pure @safe nothrow @nogc
 {
-    import lu.string : beginsWith;
+    import std.algorithm.searching : startsWith;
 
-    if (typestring.beginsWith("RPL_") || typestring.beginsWith("ERR_"))
+    if (typestring.startsWith("RPL_") || typestring.startsWith("ERR_"))
     {
         return typestring[4..$];
     }
@@ -1191,7 +1190,7 @@ auto withoutTypePrefix(const string typestring) pure @safe nothrow @nogc
     {
         version(TwitchSupport)
         {
-            if (typestring.beginsWith("TWITCH_"))
+            if (typestring.startsWith("TWITCH_"))
             {
                 return typestring[7..$];
             }
@@ -1253,8 +1252,8 @@ auto highlightEmotes(
 {
     import kameloso.constants : DefaultColours;
     import kameloso.terminal.colours : applyANSI;
-    import lu.string : contains;
     import std.array : Appender;
+    import std.string : indexOf;
 
     alias Bright = EventPrintingBright;
     alias Dark = EventPrintingDark;
@@ -1268,7 +1267,7 @@ auto highlightEmotes(
     immutable TerminalForeground highlight = settings.brightTerminal ?
         Bright.highlight :
         Dark.highlight;
-    immutable isEmoteOnly = !colourful && event.tags.contains("emote-only=1");
+    immutable isEmoteOnly = !colourful && (event.tags.indexOf("emote-only=1") != -1);
 
     with (IRCEvent.Type)
     switch (event.type)

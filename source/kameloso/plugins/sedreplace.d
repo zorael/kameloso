@@ -50,7 +50,7 @@ import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
 import lu.container : CircularBuffer;
-import lu.string : beginsWith;
+import std.algorithm.searching : startsWith;
 import std.meta : AliasSeq;
 import std.typecons : Flag, No, Yes;
 
@@ -128,7 +128,7 @@ auto sedReplace(
     const Flag!"relaxSyntax" relaxSyntax)
 in (line.length, "Tried to `sedReplace` an empty line")
 in ((expr.length >= 5), "Tried to `sedReplace` with an invalid-length expression")
-in (expr.beginsWith('s'), "Tried to `sedReplace` with a non-expression expression")
+in (expr.startsWith('s'), "Tried to `sedReplace` with a non-expression expression")
 {
     immutable delimiter = expr[1];
 
@@ -406,7 +406,8 @@ unittest
 )
 void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : beginsWith, stripped;
+    import lu.string : stripped;
+    import std.algorithm.searching : startsWith;
 
     immutable stripped_ = event.content.stripped;
     if (!stripped_.length) return;
@@ -435,7 +436,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
         senderLines.put(line);
     }
 
-    if (stripped_.beginsWith('s') && (stripped_.length >= 5))
+    if (stripped_.startsWith('s') && (stripped_.length >= 5))
     {
         immutable delimiter = stripped_[1];
 

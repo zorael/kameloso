@@ -1204,8 +1204,8 @@ private void formatObjectImpl(Flag!"all" all = No.all,
 @system unittest
 {
     import kameloso.common : assertMultilineOpEquals;
-    import lu.string : contains;
     import std.array : Appender;
+    import std.string : indexOf;
 
     Appender!(char[]) sink;
     sink.reserve(512);  // ~323
@@ -1368,21 +1368,21 @@ private void formatObjectImpl(Flag!"all" all = No.all,
 
             assert((sink.data.length > 12), "Empty sink after coloured fill");
 
-            assert(sink.data.contains("-- StructName2\n"));  // Settings stripped
-            assert(sink.data.contains("int_"));
-            assert(sink.data.contains("12345"));
+            assert(sink.data.indexOf("-- StructName2\n") != -1);  // Settings stripped
+            assert(sink.data.indexOf("int_") != -1);
+            assert(sink.data.indexOf("12345") != -1);
 
-            assert(sink.data.contains("string_"));
-            assert(sink.data.contains(`"foo"`));
+            assert(sink.data.indexOf("string_") != -1);
+            assert(sink.data.indexOf(`"foo"`) != -1);
 
-            assert(sink.data.contains("bool_"));
-            assert(sink.data.contains("true"));
+            assert(sink.data.indexOf("bool_") != -1);
+            assert(sink.data.indexOf("true") != -1);
 
-            assert(sink.data.contains("float_"));
-            assert(sink.data.contains("3.14"));
+            assert(sink.data.indexOf("float_") != -1);
+            assert(sink.data.indexOf("3.14") != -1);
 
-            assert(sink.data.contains("double_"));
-            assert(sink.data.contains("99.9"));
+            assert(sink.data.indexOf("double_") != -1);
+            assert(sink.data.indexOf("99.9") != -1);
 
             sink.clear();
         }

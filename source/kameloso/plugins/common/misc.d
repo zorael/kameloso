@@ -51,15 +51,16 @@ auto applyCustomSettings(
     CoreSettings copyOfSettings)
 {
     import lu.objmanip : SetMemberException;
-    import lu.string : contains, nom;
+    import lu.string : nom;
     import std.conv : ConvException;
+    import std.string : indexOf;
 
     bool noErrors = true;
 
     top:
     foreach (immutable line; customSettings)
     {
-        if (!line.contains!(Yes.decode)('.'))
+        if (line.indexOf('.') == -1)
         {
             enum pattern = `Bad <l>plugin</>.<l>setting</>=<l>value</> format. (<l>%s</>)`;
             logger.warningf(pattern, line);
@@ -68,8 +69,8 @@ auto applyCustomSettings(
         }
 
         string slice = line;  // mutable
-        immutable pluginstring = slice.nom!(Yes.decode)(".");
-        immutable setting = slice.nom!(Yes.inherit, Yes.decode)('=');
+        immutable pluginstring = slice.nom(".");
+        immutable setting = slice.nom('=', Yes.inherit);
         immutable value = slice;
 
         try
@@ -384,9 +385,8 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 
     version(ExplainReplay)
     {
-        import lu.string : beginsWith;
-
-        immutable callerSlice = caller.beginsWith("kameloso.plugins.") ?
+        import std.algorithm.searching : startsWith;
+        immutable callerSlice = caller.startsWith("kameloso.plugins.") ?
             caller[17..$] :
             caller;
     }
@@ -456,12 +456,12 @@ auto replay(Plugin, Fun)
     void replayDg(Replay replay)
     {
         import lu.conv : Enum;
-        import lu.string : beginsWith;
+        import std.algorithm.searching : startsWith;
 
         version(ExplainReplay)
         void explainReplay()
         {
-            immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
+            immutable caller = replay.caller.startsWith("kameloso.plugins.") ?
                 replay.caller[17..$] :
                 replay.caller;
 
@@ -478,7 +478,7 @@ auto replay(Plugin, Fun)
         version(ExplainReplay)
         void explainRefuse()
         {
-            immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
+            immutable caller = replay.caller.startsWith("kameloso.plugins.") ?
                 replay.caller[17..$] :
                 replay.caller;
 
@@ -721,9 +721,9 @@ auto nameOf(const IRCPlugin plugin, const string specified) pure @safe nothrow @
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            import lu.string : beginsWith;
+            import std.algorithm.searching : startsWith;
 
-            immutable nickname = specified.beginsWith('@') ?
+            immutable nickname = specified.startsWith('@') ?
                 specified[1..$] :
                 specified;
 
@@ -828,10 +828,10 @@ auto getUser(IRCPlugin plugin, const string specified)
 {
     version(TwitchSupport)
     {
-        import lu.string : beginsWith;
+        import std.algorithm.searching : startsWith;
 
         immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
-        immutable nickname = (isTwitch && specified.beginsWith('@')) ?
+        immutable nickname = (isTwitch && specified.startsWith('@')) ?
             specified[1..$] :
             specified;
     }

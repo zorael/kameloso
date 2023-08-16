@@ -91,10 +91,10 @@ void worker(
     const /*ref*/ IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
-    import lu.string : beginsWith;
     import arsd.dom : Document, htmlEntitiesDecode;
     import arsd.http2 : HttpClient, Uri;
     import std.algorithm.iteration : splitter;
+    import std.algorithm.searching : startsWith;
     import std.array : replace;
     import std.exception : assumeUnique;
     import std.format : format;
@@ -133,7 +133,7 @@ void worker(
     // Set the global settings so messaging functions don't segfault us
     kameloso.common.settings = &state.settings;
 
-    immutable quoteID = event.content.beginsWith('#') ?
+    immutable quoteID = event.content.startsWith('#') ?
         event.content[1..$] :
         event.content;
     immutable url = quoteID.length ?

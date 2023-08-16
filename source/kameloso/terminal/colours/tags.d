@@ -74,10 +74,9 @@ public:
 auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip) @safe
 {
     import kameloso.common : logger;
-    import lu.string : contains;
     import std.array : Appender;
     import std.range : ElementEncodingType;
-    import std.string : representation;
+    import std.string : indexOf, representation;
     import std.traits : Unqual, isSomeString;
 
     static if (!isSomeString!T)
@@ -93,10 +92,10 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
 
     alias E = Unqual!(ElementEncodingType!T);
 
-    if (!line.length || !line.contains('<')) return line;
+    if (!line.length || (line.indexOf('<') == -1)) return line;
 
     // Without marking this as @trusted, we can't have @safe expandTags...
-    static auto indexOf(H, N)(const H haystack, const N rawNeedle) @trusted
+    static auto wrappedIndexOf(H, N)(const H haystack, const N rawNeedle) @trusted
     {
         import std.string : indexOf;
 
@@ -160,7 +159,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
             }
             else
             {
-                immutable ptrdiff_t closingBracketPos = indexOf(asBytes[i..$], '>');
+                immutable ptrdiff_t closingBracketPos = wrappedIndexOf(asBytes[i..$], '>');
 
                 if ((closingBracketPos == -1) || (closingBracketPos > 6))
                 {
@@ -287,7 +286,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
 
                     case 'h':
                         i += 3;  // advance past "<h>".length
-                        immutable closingHashMarkPos = indexOf(asBytes[i..$], "</>");
+                        immutable closingHashMarkPos = wrappedIndexOf(asBytes[i..$], "</>");
 
                         if (closingHashMarkPos == -1)
                         {

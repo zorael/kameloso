@@ -379,7 +379,7 @@ void messageFiber(ref Kameloso instance)
                     import lu.string : nom;
 
                     string slice = line;  // mutable
-                    immutable setting = slice.nom!(Yes.inherit)('=');
+                    immutable setting = slice.nom('=', Yes.inherit);
                     if (setting == message.content) toRemove ~= i;
                 }
 
@@ -1398,7 +1398,6 @@ void processLineFromServer(
     {
         if (!instance.settings.headless)
         {
-            import lu.string : contains;
             import std.algorithm.searching : canFind;
 
             // Something asserted
@@ -2131,13 +2130,14 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
         }
         else if (auto fiber = cast(CarryingFiber!(GetSettingPayload))(request.fiber))
         {
-            import lu.string : beginsWith, nom;
-            import std.array : Appender;
+            import lu.string : nom;
             import std.algorithm.iteration : splitter;
+            import std.algorithm.searching : startsWith;
+            import std.array : Appender;
 
             immutable expression = request.context;
             string slice = expression;  // mutable
-            immutable pluginName = slice.nom!(Yes.inherit)('.');
+            immutable pluginName = slice.nom('.', Yes.inherit);
             alias setting = slice;
 
             Appender!(char[]) sink;
@@ -2152,8 +2152,8 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
                     foreach (const line; sink.data.splitter('\n'))
                     {
                         string lineslice = cast(string)line;  // need a string for nom and strippedLeft...
-                        if (lineslice.beginsWith('#')) lineslice = lineslice[1..$];
-                        const thisSetting = lineslice.nom!(Yes.inherit)(' ');
+                        if (lineslice.startsWith('#')) lineslice = lineslice[1..$];
+                        const thisSetting = lineslice.nom(' ', Yes.inherit);
 
                         if (thisSetting != setting) continue;
 
@@ -2174,7 +2174,7 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
                     foreach (const line; sink.data.splitter('\n'))
                     {
                         string lineslice = cast(string)line;  // need a string for nom and strippedLeft...
-                        if (!lineslice.beginsWith('[')) allSettings ~= lineslice.nom!(Yes.inherit)(' ');
+                        if (!lineslice.startsWith('[')) allSettings ~= lineslice.nom(' ', Yes.inherit);
                     }
 
                     fiber.payload[0] = pluginName;
@@ -2462,7 +2462,7 @@ auto tryConnect(ref Kameloso instance)
 
     foreach (const attempt; connector)
     {
-        import lu.string : beginsWith;
+        import std.algorithm.searching : startsWith;
         import core.time : seconds;
 
         if (*instance.abort) return Next.returnFailure;
@@ -2471,7 +2471,7 @@ auto tryConnect(ref Kameloso instance)
 
         enum unableToConnectString = "Unable to connect socket: ";
         immutable errorString = attempt.error.length ?
-            (attempt.error.beginsWith(unableToConnectString) ?
+            (attempt.error.startsWith(unableToConnectString) ?
                 attempt.error[unableToConnectString.length..$] :
                 attempt.error) :
             string.init;
@@ -2631,7 +2631,7 @@ auto tryConnect(ref Kameloso instance)
             continue;
 
         case transientSSLFailure:
-            import lu.string : contains;
+            import std.string : indexOf;
 
             // "Failed to establish SSL connection after successful connect (system lib)"
             // "Failed to establish SSL connection after successful connect" --> attempted SSL on non-SSL server
@@ -2641,7 +2641,7 @@ auto tryConnect(ref Kameloso instance)
             if (*instance.abort) return Next.returnFailure;
 
             if ((numTransientSSLFailures++ < transientSSLFailureTolerance) &&
-                attempt.error.contains("(system lib)"))
+                (attempt.error.indexOf("(system lib)") != -1))
             {
                 // Random failure, just reconnect immediately
                 // but only `transientSSLFailureTolerance` times
@@ -2748,13 +2748,13 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 
     foreach (const attempt; resolver)
     {
-        import lu.string : beginsWith;
+        import std.algorithm.searching : startsWith;
 
         if (*instance.abort) return Next.returnFailure;
 
         enum getaddrinfoErrorString = "getaddrinfo error: ";
         immutable errorString = attempt.error.length ?
-            (attempt.error.beginsWith(getaddrinfoErrorString) ?
+            (attempt.error.startsWith(getaddrinfoErrorString) ?
                 attempt.error[getaddrinfoErrorString.length..$] :
                 attempt.error) :
             string.init;
@@ -2927,15 +2927,16 @@ auto verifySettings(ref Kameloso instance)
 
     version(Posix)
     {
-        import lu.string : contains;
+        import std.string : indexOf;
 
         // Workaround for Issue 19247:
         // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
         // the workaround being never resolve addresses that don't contain at least one dot
-        immutable addressIsResolvable = instance.settings.force ||
+        immutable addressIsResolvable =
+            instance.settings.force ||
             instance.parser.server.address == "localhost" ||
-            instance.parser.server.address.contains('.') ||
-            instance.parser.server.address.contains(':');
+            (instance.parser.server.address.indexOf('.') != -1) ||
+            (instance.parser.server.address.indexOf(':') != -1);
     }
     else version(Windows)
     {
@@ -3438,7 +3439,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         {
             void dumpCallgrind()
             {
-                import lu.string : beginsWith;
+                import std.algorithm.searching : startsWith;
                 import std.conv : to;
                 import std.process : execute, thisProcessID;
                 import std.stdio : writeln;
@@ -3454,7 +3455,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                 logger.info("$ callgrind_control -d ", thisProcessID);
                 immutable result = execute(dumpCommand);
                 writeln(result.output.chomp);
-                instance.callgrindRunning = !result.output.beginsWith("Error: Callgrind task with PID");
+                instance.callgrindRunning = !result.output.startsWith("Error: Callgrind task with PID");
             }
 
             if (instance.callgrindRunning)
@@ -4039,7 +4040,7 @@ auto run(string[] args)
                     import lu.string : nom;
 
                     string slice = line;  // mutable
-                    immutable setting = slice.nom!(Yes.inherit)('=');
+                    immutable setting = slice.nom('=', Yes.inherit);
                     if (setting == message.content) toRemove ~= i;
                 }
 

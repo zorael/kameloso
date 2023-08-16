@@ -543,8 +543,9 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
     import kameloso.plugins.common.misc : catchUser;
     import kameloso.irccolours : stripColours;
     import dialect.common : IRCControlCharacter, stripModesign;
-    import lu.string : contains, nom;
+    import lu.string : nom;
     import std.algorithm.iteration : splitter;
+    import std.string : indexOf;
 
     version(TwitchSupport)
     {
@@ -562,7 +563,7 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
         string slice = userstring;  // mutable
         IRCUser user;  // ditto
 
-        if (!slice.contains('!'))
+        if (slice.indexOf('!') == -1)
         {
             // No need to check for slice.contains('@'))
             // Freenode-like, only nicknames with possible modesigns
@@ -579,7 +580,7 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
             immutable ident = slice.nom('@');
 
             // Do addresses ever contain bold, italics, underlined?
-            immutable address = slice.contains(IRCControlCharacter.colour) ?
+            immutable address = (slice.indexOf(cast(char)IRCControlCharacter.colour) != -1) ?
                 stripColours(slice) :
                 slice;
 
@@ -1207,9 +1208,8 @@ void onChannelAwarenessWhoReply(IRCPlugin plugin, const ref IRCEvent event)
 void onChannelAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
 {
     import dialect.common : stripModesign;
-    import lu.string : contains;
     import std.algorithm.iteration : splitter;
-    import std.string : representation;
+    import std.string : indexOf, representation;
 
     if (!event.content.length) return;
 
@@ -1223,7 +1223,7 @@ void onChannelAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
         string slice = userstring;  // mutable
         string nickname;  // ditto
 
-        if (userstring.contains('!'))// && userstring.contains('@'))  // No need to check both
+        if (userstring.indexOf('!') != -1)// && userstring.contains('@'))  // No need to check both
         {
             import lu.string : nom;
             // SpotChat-like, names are in full nick!ident@address form

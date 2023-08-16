@@ -785,14 +785,14 @@ auto getValidation(
 in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from outside a Fiber")
 in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
-    import lu.string : beginsWith;
+    import std.algorithm.searching : startsWith;
     import std.json : JSONType, parseJSON;
 
     enum url = "https://id.twitch.tv/oauth2/validate";
 
     // Validation needs an "Authorization: OAuth xxx" header, as opposed to the
     // "Authorization: Bearer xxx" used everywhere else.
-    authToken = plugin.state.bot.pass.beginsWith("oauth:") ?
+    authToken = plugin.state.bot.pass.startsWith("oauth:") ?
         authToken[6..$] :
         authToken;
     immutable authorizationHeader = "OAuth " ~ authToken;

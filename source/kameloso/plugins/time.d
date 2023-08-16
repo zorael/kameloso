@@ -311,7 +311,6 @@ in (specified.length, "Tried to get timezone of an empty string")
 
     string getZonestring()
     {
-        import lu.string : contains;
         import std.algorithm.searching : canFind;
 
         if (immutable zonestringAlias = specified in zonestringAliases)
@@ -322,10 +321,11 @@ in (specified.length, "Tried to get timezone of an empty string")
         version(Posix)
         {
             import std.array : replace;
+            import std.string : indexOf;
 
             string resolvePrefixedTimezone(const string zonestring)
             {
-                if (zonestring.contains('/')) return string.init;
+                if (zonestring.indexOf('/') != -1) return string.init;
 
                 static immutable string[7] prefixes =
                 [

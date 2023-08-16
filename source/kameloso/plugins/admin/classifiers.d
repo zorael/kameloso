@@ -47,7 +47,8 @@ void manageClassLists(
     const ref IRCEvent event,
     const IRCUser.Class class_)
 {
-    import lu.string : beginsWith, nom, stripped;
+    import lu.string : nom, stripped;
+    import std.algorithm.searching : startsWith;
     import std.typecons : Flag, No, Yes;
 
     void sendUsage()
@@ -66,8 +67,8 @@ void manageClassLists(
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom!(Yes.inherit)(' ');
-    if (slice.beginsWith('@')) slice = slice[1..$];
+    immutable verb = slice.nom(' ', Yes.inherit);
+    if (slice.startsWith('@')) slice = slice[1..$];
 
     switch (verb)
     {
@@ -174,7 +175,6 @@ void lookupEnlist(
 {
     import kameloso.plugins.common.mixins : WHOISFiberDelegate;
     import dialect.common : isValidNickname;
-    import lu.string : beginsWith, contains;
 
     static immutable IRCUser.Class[5] validClasses =
     [
@@ -711,7 +711,6 @@ in (mask.length, "Tried to add an empty hostmask definition")
     import kameloso.pods : CoreSettings;
     import kameloso.thread : ThreadMessage;
     import lu.json : JSONStorage, populateFromJSON;
-    import lu.string : contains;
     import std.concurrency : send;
     import std.conv : text;
     import std.format : format;

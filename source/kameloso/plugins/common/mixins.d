@@ -327,8 +327,9 @@ mixin template WHOISFiberDelegate(
         import kameloso.constants : BufferSize;
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
-        import lu.string : contains, nom;
+        import lu.string : nom;
         import lu.traits : TakesParams;
+        import std.string : indexOf;
         import std.traits : arity;
         import std.typecons : Flag, No, Yes;
         import core.thread : Fiber;
@@ -474,7 +475,7 @@ mixin template WHOISFiberDelegate(
         await(_context, fiber, whoisEventTypes[]);
 
         string slice = nickname;  // mutable
-        immutable nicknamePart = slice.contains('!') ?
+        immutable nicknamePart = (slice.indexOf('!') != -1) ?
             slice.nom('!') :
             slice;
 
@@ -944,15 +945,15 @@ unittest
 
         foreach (immutable funstring; __traits(derivedMembers, kameloso.messaging))
         {
-            import lu.string : beginsWith;
             import std.algorithm.comparison : among;
+            import std.algorithm.searching : startsWith;
 
             static if (funstring.among!(
                     "object",
                     "dialect",
                     "kameloso",
                     "Message") ||
-                funstring.beginsWith("askTo"))
+                funstring.startsWith("askTo"))
             {
                 //pragma(msg, "ignoring " ~ funstring);
             }

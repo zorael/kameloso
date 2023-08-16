@@ -393,8 +393,9 @@ instructions and log in to authorise the use of this program with your <w>STREAM
  +/
 private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
 {
-    import lu.string : contains, nom, stripped;
+    import lu.string : nom, stripped;
     import std.stdio : readln, stdin, stdout, write, writeln;
+    import std.string : indexOf;
 
     string key;
 
@@ -425,13 +426,13 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
             // As is
             key = readURL;
         }
-        else if (!readURL.contains("access_token="))
+        else if (readURL.indexOf("access_token=") == -1)
         {
-            import lu.string : beginsWith;
+            import std.algorithm.searching : startsWith;
 
             writeln();
 
-            if (readURL.beginsWith(authNode))
+            if (readURL.startsWith(authNode))
             {
                 enum wrongPageMessage = "Not that page; the empty page you're " ~
                     "lead to after clicking <l>Authorize</>.";

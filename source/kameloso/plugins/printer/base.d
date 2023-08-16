@@ -447,8 +447,6 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         break;
 
     case PING:
-        import lu.string : contains;
-
         // Show the on-connect-ping-this type of events if !filterMost
         // Assume those containing dots are real pings for the server address
         if (!plugin.printerSettings.filterMost && event.content.length) goto default;
@@ -733,7 +731,7 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     string slice = message.payload;
-    immutable verb = slice.nom!(Yes.inherit)(' ');
+    immutable verb = slice.nom(' ', Yes.inherit);
     immutable target = slice;
 
     switch (verb)
