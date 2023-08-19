@@ -1111,12 +1111,12 @@ void writeConfigurationFile(
     // --force opts out
     if (!instance.settings.force)
     {
-        if (!instance.bot.password.startsWith("base64:"))
+        if (instance.bot.password.length && !instance.bot.password.startsWith("base64:"))
         {
             instance.bot.password = "base64:" ~ encode64(instance.bot.password);
         }
 
-        if (!instance.bot.pass.startsWith("base64:"))
+        if (instance.bot.pass.length && !instance.bot.pass.startsWith("base64:"))
         {
             instance.bot.pass = "base64:" ~ encode64(instance.bot.pass);
         }
