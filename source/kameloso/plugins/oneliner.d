@@ -965,7 +965,7 @@ void reload(OnelinerPlugin plugin)
 
     JSONStorage allOnelinersJSON;
     allOnelinersJSON.load(plugin.onelinerFile);
-    plugin.onelinersByChannel.clear();
+    plugin.onelinersByChannel = null;
 
     foreach (immutable channelName, const channelOnelinersJSON; allOnelinersJSON.object)
     {

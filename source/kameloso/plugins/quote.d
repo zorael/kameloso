@@ -1142,7 +1142,7 @@ void loadQuotes(QuotePlugin plugin)
 
     // No need to try-catch loading the JSON; trust in initResources
     json.load(plugin.quotesFile);
-    plugin.quotes.clear();
+    plugin.quotes = null;
 
     foreach (immutable channelName, channelQuotes; json.object)
     {

@@ -656,7 +656,7 @@ void setup(PrinterPlugin plugin)
                 if (plugin.printerSettings.logs)
                 {
                     commitAllLogs(plugin);
-                    plugin.buffers.clear();  // Uncommitted lines will be LOST. Not trivial to work around.
+                    plugin.buffers = null;  // Uncommitted lines will be LOST. Not trivial to work around.
                 }
             }
 

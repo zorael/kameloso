@@ -1016,7 +1016,7 @@ void loadSeen(SeenPlugin plugin)
         logger.warningf(pattern, plugin.seenFile.doublyBackslashed);
     }
 
-    plugin.seenUsers.clear();
+    plugin.seenUsers = null;
 
     try
     {

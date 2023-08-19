@@ -524,7 +524,7 @@ void reload(TimePlugin plugin)
 
     JSONStorage channelTimezonesJSON;
     channelTimezonesJSON.load(plugin.timezonesFile);
-    plugin.channelTimezones.clear();
+    plugin.channelTimezones = null;
     plugin.channelTimezones.populateFromJSON(channelTimezonesJSON, Yes.lowercaseKeys);
 }
 

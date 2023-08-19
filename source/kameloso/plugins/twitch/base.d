@@ -2444,7 +2444,7 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
     }
 
     //(*customEmotes).remove(dstring.init);
-    customEmotes.clear();  // In case we're reimporting definitions
+    customEmotes = null;  // In case we're reimporting definitions
     getEmoteSet(&getBTTVEmotes, "BetterTTV");
     getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
     getEmoteSet(&get7tvEmotes, "7tv");
@@ -2487,7 +2487,7 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
         }
     }
 
-    plugin.customGlobalEmotes.clear();  // In case we're reimporting definitions
+    plugin.customGlobalEmotes = null;  // In case we're reimporting definitions
     getGlobalEmoteSet(&getBTTVGlobalEmotes, "BetterTTV");
     getGlobalEmoteSet(&get7tvGlobalEmotes, "7tv");
     plugin.customGlobalEmotes.rehash();
@@ -3698,7 +3698,7 @@ void loadResources(TwitchPlugin plugin)
     long[string][string] tempEcount;
     ecountJSON.load(plugin.ecountFile);
     tempEcount.populateFromJSON(ecountJSON);
-    plugin.ecount.clear();
+    plugin.ecount = null;
 
     foreach (immutable channelName, channelCounts; tempEcount)
     {
@@ -3709,7 +3709,7 @@ void loadResources(TwitchPlugin plugin)
     long[string][string] tempViewers;
     viewersJSON.load(plugin.viewersFile);
     tempViewers.populateFromJSON(viewersJSON);
-    plugin.viewerTimesByChannel.clear();
+    plugin.viewerTimesByChannel = null;
 
     foreach (immutable channelName, channelViewers; tempViewers)
     {
@@ -3718,7 +3718,7 @@ void loadResources(TwitchPlugin plugin)
 
     JSONStorage secretsJSON;
     secretsJSON.load(plugin.secretsFile);
-    plugin.secretsByChannel.clear();
+    plugin.secretsByChannel = null;
 
     foreach (immutable channelName, credsJSON; secretsJSON.storage.object)
     {
@@ -3742,7 +3742,7 @@ void reload(TwitchPlugin plugin)
 
     void importDg()
     {
-        plugin.customGlobalEmotes.clear();
+        plugin.customGlobalEmotes = null;
         importCustomGlobalEmotes(plugin);
 
         foreach (immutable channelName, const room; plugin.rooms)

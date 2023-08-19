@@ -1273,7 +1273,7 @@ void loadTimers(TimerPlugin plugin)
 
     JSONStorage allTimersJSON;
     allTimersJSON.load(plugin.timerFile);
-    plugin.timersByChannel.clear();
+    plugin.timersByChannel = null;
 
     foreach (immutable channelName, const timersJSON; allTimersJSON.object)
     {

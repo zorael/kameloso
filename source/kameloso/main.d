@@ -1048,7 +1048,7 @@ auto mainLoop(ref Kameloso instance)
         // That should be enough to stop it from being a memory leak.
         if ((nowInUnix % 86_400) == 0)
         {
-            instance.previousWhoisTimestamps.clear();
+            instance.previousWhoisTimestamps = null;
             propagateWhoisTimestamps(instance);
         }
 
@@ -3226,7 +3226,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             instance.throttle.reset();
 
             // Clear WHOIS history
-            instance.previousWhoisTimestamps.clear();
+            instance.previousWhoisTimestamps = null;
 
             // Reset the server but keep the address and port
             immutable addressSnapshot = instance.parser.server.address;

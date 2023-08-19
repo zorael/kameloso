@@ -222,7 +222,7 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
         }
     }
 
-    plugin.state.pendingReplays.clear();
+    plugin.state.pendingReplays = null;
     plugin.state.hasPendingReplays = false;
 }
 

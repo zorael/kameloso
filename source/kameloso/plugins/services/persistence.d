@@ -573,7 +573,7 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
     JSONStorage json;
     json.load(service.userFile);
 
-    service.channelUsers.clear();
+    service.channelUsers = null;
 
     static immutable classes =
     [
@@ -652,7 +652,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
     accountByHostmask.populateFromJSON(hostmasksJSON);
 
     service.hostmaskUsers = null;
-    service.hostmaskNicknameAccountCache.clear();
+    service.hostmaskNicknameAccountCache = null;
 
     foreach (immutable hostmask, immutable account; accountByHostmask)
     {

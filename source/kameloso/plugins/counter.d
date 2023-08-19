@@ -807,7 +807,7 @@ void loadCounters(CounterPlugin plugin)
 
     JSONStorage json;
     json.load(plugin.countersFile);
-    plugin.counters.clear();
+    plugin.counters = null;
 
     foreach (immutable channelName, channelCountersJSON; json.object)
     {

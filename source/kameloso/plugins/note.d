@@ -509,7 +509,7 @@ void loadNotes(NotePlugin plugin)
 
     JSONStorage json;
     json.load(plugin.notesFile);
-    plugin.notes.clear();
+    plugin.notes = null;
 
     foreach (immutable channelName, channelNotesJSON; json.object)
     {

@@ -527,9 +527,9 @@ void reload(AutomodePlugin plugin)
 
     JSONStorage automodesJSON;
     automodesJSON.load(plugin.automodeFile);
-    plugin.automodes.clear();
+    plugin.automodes = null;
     plugin.automodes.populateFromJSON(automodesJSON, Yes.lowercaseKeys);
-    plugin.automodes = plugin.automodes.rehash();
+    plugin.automodes.rehash();
 }
 
 
