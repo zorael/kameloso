@@ -1,5 +1,5 @@
 /++
-    The Oneliners plugin serves to provide custom commands, like `!vods`, `!youtube`,
+    The Oneliner plugin serves to provide custom commands, like `!vods`, `!youtube`,
     and any other static-reply `!command` (provided a prefix of "`!`").
 
     More advanced commands that do more than just repeat the preset lines of text
@@ -16,9 +16,9 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-module kameloso.plugins.oneliners;
+module kameloso.plugins.oneliner;
 
-version(WithOnelinersPlugin):
+version(WithOnelinerPlugin):
 
 private:
 
@@ -30,11 +30,11 @@ import kameloso.messaging;
 import dialect.defs;
 
 
-// OnelinersSettings
+// OnelinerSettings
 /++
     All Oneliner plugin runtime settings.
  +/
-@Settings struct OnelinersSettings
+@Settings struct OnelinerSettings
 {
     /++
         Toggle whether or not this plugin should do anything at all.
@@ -145,7 +145,7 @@ public:
             string is returned instead.
      +/
     auto nextOrderedResponse() /*const*/
-    in ((type == Type.ordered), "Tried to get an ordered reponse from a random Oneliner")
+    in ((type == Type.ordered), "Tried to get an ordered response from a random Oneliner")
     {
         if (!responses.length) return string.init;
 
@@ -169,7 +169,7 @@ public:
             string is returned instead.
      +/
     auto randomResponse() const
-    //in ((type == Type.random), "Tried to get an random reponse from an ordered Oneliner")
+    //in ((type == Type.random), "Tried to get an random response from an ordered Oneliner")
     {
         import std.random : uniform;
 
@@ -236,7 +236,7 @@ public:
 /++
     Responds to oneliners.
 
-    Responses are stored in [OnelinersPlugin.onelinersByChannel].
+    Responses are stored in [OnelinerPlugin.onelinersByChannel].
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -244,18 +244,19 @@ public:
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
+void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
     import kameloso.string : replaceRandom;
-    import lu.string : beginsWith, nom;
+    import lu.string : advancePast;
+    import std.algorithm.searching : startsWith;
     import std.array : replace;
     import std.conv : text, to;
     import std.random : uniform;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
 
-    if (!event.content.beginsWith(plugin.state.settings.prefix)) return;
+    if (!event.content.startsWith(plugin.state.settings.prefix)) return;
 
     void sendEmptyOneliner(const string trigger)
     {
@@ -272,7 +273,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     auto channelOneliners = event.channel in plugin.onelinersByChannel;  // mustn't be const
     if (!channelOneliners) return;
 
-    immutable trigger = slice.nom!(Yes.inherit)(' ').toLower;
+    immutable trigger = slice.advancePast(' ', Yes.inherit).toLower;
 
     auto oneliner = trigger in *channelOneliners;  // mustn't be const
     if (!oneliner) return;
@@ -311,7 +312,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         }
     }
 
-    immutable target = slice.beginsWith('@') ? slice[1..$] : slice;
+    immutable target = slice.startsWith('@') ? slice[1..$] : slice;
     immutable message = target.length ?
         text('@', nameOf(plugin, target), ' ', line) :
         line;
@@ -347,9 +348,9 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
+void onCommandModifyOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
 
@@ -365,7 +366,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     if (!event.content.length) return sendUsage();
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom!(Yes.inherit, Yes.decode)(' ');
+    immutable verb = slice.advancePast(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -395,12 +396,12 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     Creates a new and empty oneliner.
 
     Params:
-        plugin = The current [OnelinersPlugin].
+        plugin = The current [OnelinerPlugin].
         event = The [dialect.defs.IRCEvent|IRCEvent] that requested the creation.
         slice = Relevant slice of the original request string.
  +/
 void handleNewOneliner(
-    OnelinersPlugin plugin,
+    OnelinerPlugin plugin,
     const /*ref*/ IRCEvent event,
     /*const*/ string slice)
 {
@@ -415,8 +416,8 @@ void handleNewOneliner(
     // copy/pasted
     auto stripPrefix(const string trigger)
     {
-        import lu.string : beginsWith;
-        return trigger.beginsWith(plugin.state.settings.prefix) ?
+        import std.algorithm.searching : startsWith;
+        return trigger.startsWith(plugin.state.settings.prefix) ?
             trigger[plugin.state.settings.prefix.length..$] :
             trigger;
     }
@@ -489,11 +490,11 @@ void handleNewOneliner(
 
     if (cooldownString.length)
     {
-        import kameloso.time : DurationStringException, abbreviatedDuration;
+        import kameloso.time : DurationStringException, asAbbreviatedDuration;
 
         try
         {
-            cooldownSeconds = cast(int)abbreviatedDuration(cooldownString).total!"seconds";
+            cooldownSeconds = cast(int)cooldownString.asAbbreviatedDuration.total!"seconds";
             if (cooldownSeconds < 0) return sendCooldownMustBeValidPositiveDurationString();
         }
         catch (DurationStringException _)
@@ -510,7 +511,12 @@ void handleNewOneliner(
     {
         foreach (immutable pluginName, pluginCommands; aa)
         {
-            if (!pluginCommands.length || (pluginName == "oneliners")) continue;
+            if (!pluginCommands.length ||
+                (pluginName == "oneliner") ||
+                (pluginName == "oneliners"))
+            {
+                continue;
+            }
 
             foreach (/*mutable*/ word; pluginCommands.byKey)
             {
@@ -570,13 +576,13 @@ void handleNewOneliner(
     Adds or inserts a line into a oneliner, or modifies an existing line.
 
     Params:
-        plugin = The current [OnelinersPlugin].
+        plugin = The current [OnelinerPlugin].
         event = The [dialect.defs.IRCEvent|IRCEvent] that requested the addition (or modification).
         slice = Relevant slice of the original request string.
         verb = The string verb of what action was requested; "add", "insert" or "edit".
  +/
 void handleAddToOneliner(
-    OnelinersPlugin plugin,
+    OnelinerPlugin plugin,
     const ref IRCEvent event,
     /*const*/ string slice,
     const string verb)
@@ -650,8 +656,8 @@ void handleAddToOneliner(
     // copy/pasted
     auto stripPrefix(const string trigger)
     {
-        import lu.string : beginsWith;
-        return trigger.beginsWith(plugin.state.settings.prefix) ?
+        import std.algorithm.searching : startsWith;
+        return trigger.startsWith(plugin.state.settings.prefix) ?
             trigger[plugin.state.settings.prefix.length..$] :
             trigger;
     }
@@ -769,16 +775,16 @@ void handleAddToOneliner(
     Deletes a oneliner entirely, alternatively a line from one.
 
     Params:
-        plugin = The current [OnelinersPlugin].
+        plugin = The current [OnelinerPlugin].
         event = The [dialect.defs.IRCEvent|IRCEvent] that requested the deletion.
         slice = Relevant slice of the original request string.
  +/
 void handleDelFromOneliner(
-    OnelinersPlugin plugin,
+    OnelinerPlugin plugin,
     const ref IRCEvent event,
     /*const*/ string slice)
 {
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.conv : ConvException, to;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
@@ -830,15 +836,15 @@ void handleDelFromOneliner(
     // copy/pasted
     auto stripPrefix(const string trigger)
     {
-        import lu.string : beginsWith;
-        return trigger.beginsWith(plugin.state.settings.prefix) ?
+        import std.algorithm.searching : startsWith;
+        return trigger.startsWith(plugin.state.settings.prefix) ?
             trigger[plugin.state.settings.prefix.length..$] :
             trigger;
     }
 
     if (!slice.length) return sendDelUsage();
 
-    immutable trigger = stripPrefix(slice.nom!(Yes.inherit)(' ')).toLower;
+    immutable trigger = stripPrefix(slice.advancePast(' ', Yes.inherit)).toLower;
 
     auto channelOneliners = event.channel in plugin.onelinersByChannel;
     if (!channelOneliners) return sendNoSuchOneliner(trigger);
@@ -902,7 +908,7 @@ void handleDelFromOneliner(
             .description("Lists all available oneliners.")
     )
 )
-void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
+void onCommandCommands(OnelinerPlugin plugin, const ref IRCEvent event)
 {
     listCommands(plugin, event);
 }
@@ -913,10 +919,10 @@ void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
     Lists the current commands to the passed channel.
 
     Params:
-        plugin = The current [OnelinersPlugin].
+        plugin = The current [OnelinerPlugin].
         event = The querying [dialect.defs.IRCEvent|IRCEvent].
  +/
-void listCommands(OnelinersPlugin plugin, const ref IRCEvent event)
+void listCommands(OnelinerPlugin plugin, const ref IRCEvent event)
 {
     import std.format : format;
 
@@ -943,7 +949,7 @@ void listCommands(OnelinersPlugin plugin, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(OnelinersPlugin plugin)
+void onWelcome(OnelinerPlugin plugin)
 {
     plugin.reload();
 }
@@ -953,13 +959,13 @@ void onWelcome(OnelinersPlugin plugin)
 /++
     Reloads oneliners from disk.
  +/
-void reload(OnelinersPlugin plugin)
+void reload(OnelinerPlugin plugin)
 {
     import lu.json : JSONStorage;
 
     JSONStorage allOnelinersJSON;
     allOnelinersJSON.load(plugin.onelinerFile);
-    plugin.onelinersByChannel.clear();
+    plugin.onelinersByChannel = null;
 
     foreach (immutable channelName, const channelOnelinersJSON; allOnelinersJSON.object)
     {
@@ -996,23 +1002,23 @@ void reload(OnelinersPlugin plugin)
     Sends a oneliner reply.
 
     If connected to a Twitch server and with version `TwitchSupport` set and
-    [OnelinersSettings.onelinersAsReplies] true, sends the message as a
+    [OnelinerSettings.onelinersAsReplies] true, sends the message as a
     Twitch [kameloso.messaging.reply|reply].
 
     Params:
-        plugin = The current [OnelinersPlugin].
+        plugin = The current [OnelinerPlugin].
         event = The querying [dialect.defs.IRCEvent|IRCEvent].
         message = The message string to send.
  +/
 void sendOneliner(
-    OnelinersPlugin plugin,
+    OnelinerPlugin plugin,
     const ref IRCEvent event,
     const string message)
 {
     version(TwitchSupport)
     {
         if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-            (plugin.onelinersSettings.onelinersAsReplies))
+            (plugin.onelinerSettings.onelinersAsReplies))
         {
             return reply(plugin.state, event, message);
         }
@@ -1072,7 +1078,7 @@ in (filename.length, "Tried to save resources to an empty filename string")
     Reads and writes the file of oneliners and administrators to disk, ensuring
     that they're there and properly formatted.
  +/
-void initResources(OnelinersPlugin plugin)
+void initResources(OnelinerPlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
@@ -1103,7 +1109,7 @@ void initResources(OnelinersPlugin plugin)
 
 mixin UserAwareness;
 mixin ChannelAwareness;
-mixin PluginRegistration!OnelinersPlugin;
+mixin PluginRegistration!OnelinerPlugin;
 
 version(TwitchSupport)
 {
@@ -1113,18 +1119,18 @@ version(TwitchSupport)
 public:
 
 
-// OnelinersPlugin
+// OnelinerPlugin
 /++
-    The Oneliners plugin serves to listen to custom commands that can be added,
-    modified and removed at runtime. Think `!info`.
+    The Oneliner plugin serves to listen to custom commands that can be added,
+    modified and removed at runtime. Think `!info`, `!vods` and `!socials`.
  +/
-final class OnelinersPlugin : IRCPlugin
+final class OnelinerPlugin : IRCPlugin
 {
 private:
     /++
-        All Oneliners plugin settings.
+        All Oneliner plugin settings.
      +/
-    OnelinersSettings onelinersSettings;
+    OnelinerSettings onelinerSettings;
 
     /++
         Associative array of oneliners; [Oneliner] array, keyed by trigger, keyed by channel.

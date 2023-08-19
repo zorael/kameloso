@@ -118,7 +118,6 @@ void onAnyEvent(AdminPlugin plugin, const ref IRCEvent event)
     It basically prints the matching [dialect.defs.IRCUser|IRCUsers].
  +/
 debug
-version(IncludeHeavyStuff)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -223,7 +222,6 @@ void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
     [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] to the local terminal.
  +/
 debug
-version(IncludeHeavyStuff)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -321,7 +319,7 @@ void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom, strippedRight;
+    import lu.string : advancePast, strippedRight;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
 
@@ -338,7 +336,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.strippedRight;  // mutable
-    immutable verb = slice.nom!(Yes.inherit)(' ');
+    immutable verb = slice.advancePast(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -930,10 +928,10 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else if (setting.length)
         {
-            import lu.string : contains;
             import std.format : format;
+            import std.string : indexOf;
 
-            immutable pattern = value.contains(' ') ?
+            immutable pattern = (value.indexOf(' ') != -1) ?
                 "%s.%s=\"%s\"" :
                 "%s.%s=%s";
             immutable message = pattern.format(pluginName, setting, value);
@@ -1058,8 +1056,8 @@ void onCommandSummary(AdminPlugin plugin)
 )
 void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.time : DurationStringException, abbreviatedDuration;
-    import lu.string : nom, stripped;
+    import kameloso.time : DurationStringException, asAbbreviatedDuration;
+    import lu.string : advancePast, stripped;
     import std.conv : ConvException;
 
     string slice = event.content.stripped;  // mutable
@@ -1069,7 +1067,7 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         return cycle(plugin, event.channel);
     }
 
-    immutable channelName = slice.nom!(Yes.inherit)(' ');
+    immutable channelName = slice.advancePast(' ', Yes.inherit);
 
     if (channelName !in plugin.state.channels)
     {
@@ -1082,11 +1080,11 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         return cycle(plugin, channelName);
     }
 
-    immutable delaystring = slice.nom!(Yes.inherit)(' ');
+    immutable delaystring = slice.advancePast(' ', Yes.inherit);
 
     try
     {
-        immutable delay = abbreviatedDuration(delaystring);
+        immutable delay = delaystring.asAbbreviatedDuration;
         cycle(plugin, channelName, delay, slice);
     }
     catch (ConvException _)
@@ -1188,7 +1186,7 @@ void cycle(
 )
 void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : SplitResults, contains, nom, splitInto, stripped;
+    import lu.string : SplitResults, advancePast, splitInto, stripped;
     import std.format : format;
 
     if (!plugin.state.settings.preferHostmasks)
@@ -1205,7 +1203,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom!(Yes.inherit)(' ');
+    immutable verb = slice.advancePast(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -1225,7 +1223,9 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 
     case "del":
     case "remove":
-        if (!slice.length || slice.contains(' '))
+        import std.string : indexOf;
+
+        if (!slice.length || (slice.indexOf(' ') != -1))
         {
             enum pattern = "Usage: <b>%s%s del<b> [hostmask]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
@@ -1393,8 +1393,8 @@ void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)
     {
         import std.format : format;
 
-        enum pattern = "Usage: <b>%s%s<b> [header] [content...]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        enum pattern = "Usage: <b>%s<b> [header] [content...]";
+        immutable message = pattern.format(event.aux[$-1]);
         return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
@@ -1421,7 +1421,7 @@ void onBusMessage(
     shared Sendable content)
 {
     import kameloso.thread : Boxed;
-    import lu.string : contains, nom, strippedRight;
+    import lu.string : advancePast, strippedRight;
 
     // Don't return if disabled, as it blocks us from re-enabling with verb set
     if (header != "admin") return;
@@ -1430,7 +1430,7 @@ void onBusMessage(
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     string slice = message.payload.strippedRight;
-    immutable verb = slice.nom!(Yes.inherit)(' ');
+    immutable verb = slice.advancePast(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -1438,36 +1438,22 @@ void onBusMessage(
     {
         version(IncludeHeavyStuff)
         {
-            import kameloso.printing : printObject;
             import core.memory : GC;
 
-            case "users":
-                return onCommandShowUsers(plugin);
-
             case "status":
-                return onCommandStatus(plugin);
-
-            case "user":
-                if (const user = slice in plugin.state.users)
-                {
-                    printObject(*user);
-                }
-                else
-                {
-                    logger.error("No such user: <l>", slice);
-                }
-                break;
+                return onCommandStatusImpl(plugin);
 
             case "state":
+                import kameloso.printing : printObject;
+                // Adds 350 mb to compilation memory usage
+                if (plugin.state.settings.headless) return;
                 return printObject(plugin.state);
-
-            case "gc.stats":
-                import kameloso.common : printGCStats;
-                return printGCStats();
 
             case "gc.collect":
                 import std.datetime.systime : Clock;
 
+                // Only adds some 10 mb to compilation memory usage but it's
+                // very rarely needed, so keep it behind IncludeHeavyStuff
                 immutable statsPre = GC.stats();
                 immutable timestampPre = Clock.currTime;
                 immutable memoryUsedPre = statsPre.usedSize;
@@ -1487,6 +1473,28 @@ void onBusMessage(
                 GC.minimize();
                 return logger.info("Memory minimised.");
         }
+
+        case "gc.stats":
+            import kameloso.common : printGCStats;
+            if (plugin.state.settings.headless) return;
+            return printGCStats();
+
+        case "user":
+            if (plugin.state.settings.headless) return;
+
+            if (const user = slice in plugin.state.users)
+            {
+                import kameloso.printing : printObject;
+                printObject(*user);
+            }
+            else
+            {
+                logger.error("No such user: <l>", slice);
+            }
+            break;
+
+        case "users":
+            return onCommandShowUsersImpl(plugin);
 
         case "printraw":
             plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
@@ -1605,9 +1613,9 @@ void onBusMessage(
         break;
 
     case "hostmask":
-        import lu.string : nom;
+        import lu.string : advancePast;
 
-        immutable subverb = slice.nom!(Yes.inherit)(' ');
+        immutable subverb = slice.advancePast(' ', Yes.inherit);
 
         switch (subverb)
         {

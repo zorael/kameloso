@@ -488,8 +488,9 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
     import kameloso.plugins.common.misc : catchUser;
     import kameloso.irccolours : stripColours;
     import dialect.common : IRCControlCharacter, stripModesign;
-    import lu.string : contains, nom;
+    import lu.string : advancePast;
     import std.algorithm.iteration : splitter;
+    import std.string : indexOf;
 
     if (service.state.server.daemon == IRCServer.Daemon.twitch)
     {
@@ -501,7 +502,7 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
 
     foreach (immutable userstring; names)
     {
-        if (!userstring.contains('!'))
+        if (userstring.indexOf('!') == -1)
         {
             // No need to check for slice.contains('@')
             // Freenode-like, only nicknames with possible modesigns
@@ -511,13 +512,13 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
 
         // SpotChat-like, names are rich in full nick!ident@address form
         string slice = userstring;  // mutable
-        immutable signed = slice.nom('!');
+        immutable signed = slice.advancePast('!');
         immutable nickname = signed.stripModesign(service.state.server);
         //if (nickname == service.state.client.nickname) continue;
-        immutable ident = slice.nom('@');
+        immutable ident = slice.advancePast('@');
 
         // Do addresses ever contain bold, italics, underlined?
-        immutable address = slice.contains(IRCControlCharacter.colour) ?
+        immutable address = (slice.indexOf(cast(char)IRCControlCharacter.colour) != -1) ?
             stripColours(slice) :
             slice;
 
@@ -572,7 +573,7 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
     JSONStorage json;
     json.load(service.userFile);
 
-    service.channelUsers.clear();
+    service.channelUsers = null;
 
     static immutable classes =
     [
@@ -598,9 +599,9 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
         {
             foreach (immutable channelName, const channelAccountJSON; listFromJSON.object)
             {
-                import lu.string : beginsWith;
+                import std.algorithm.searching : startsWith;
 
-                if (channelName.beginsWith('<')) continue;
+                if (channelName.startsWith('<')) continue;
 
                 foreach (immutable userJSON; channelAccountJSON.array)
                 {
@@ -651,13 +652,13 @@ void reloadHostmasksFromDisk(PersistenceService service)
     accountByHostmask.populateFromJSON(hostmasksJSON);
 
     service.hostmaskUsers = null;
-    service.hostmaskNicknameAccountCache.clear();
+    service.hostmaskNicknameAccountCache = null;
 
     foreach (immutable hostmask, immutable account; accountByHostmask)
     {
         import kameloso.string : doublyBackslashed;
         import dialect.common : isValidHostmask;
-        import lu.string : contains;
+        import std.string : indexOf;
 
         alias examplePlaceholderKey1 = PersistenceService.Placeholder.hostmask1;
         alias examplePlaceholderKey2 = PersistenceService.Placeholder.hostmask2;
@@ -687,7 +688,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
             user.account = account;
             service.hostmaskUsers ~= user;
 
-            if (user.nickname.length && !user.nickname.contains('*'))
+            if (user.nickname.length && (user.nickname.indexOf('*') == -1))
             {
                 // Nickname has length and is not a glob
                 // (adding a glob to hostmaskUsers is okay)

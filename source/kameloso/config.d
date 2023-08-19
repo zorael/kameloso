@@ -130,8 +130,8 @@ void verboselyWriteConfig(
         if (instance.settings.flush) stdout.flush();
     }
 
-    // If we don't initialise the plugins there'll be no plugins array
-    instance.initPlugins();
+    // If we don't instantiate the plugins there'll be no plugins array
+    instance.instantiatePlugins();
 
     immutable shouldGiveBrightTerminalHint =
         !instance.settings.monochrome &&
@@ -187,7 +187,7 @@ void printSettings(ref Kameloso instance) @system
         instance.connSettings,
         instance.settings);
 
-    instance.initPlugins();
+    instance.instantiatePlugins();
 
     foreach (plugin; instance.plugins) plugin.printSettings();
 
@@ -385,8 +385,8 @@ void writeToDisk(
         auto timestamp = Clock.currTime;
         timestamp.fracSecs = 0.msecs;
 
-        file.writefln("# kameloso v%s configuration file (%s)\n",
-            cast(string)KamelosoInfo.version_, timestamp);
+        enum pattern = "# kameloso v%s configuration file (%s)\n";
+        file.writefln(pattern, cast(string)KamelosoInfo.version_, timestamp);
     }
 
     file.writeln(configurationText);
@@ -514,7 +514,11 @@ auto handleGetopt(ref Kameloso instance) @system
 {
     import kameloso.common : printVersionInfo;
     import kameloso.configreader : readConfigInto;
+    import kameloso.logger : KamelosoLogger;
+    import kameloso.terminal : applyMonochromeAndFlushOverrides;
+    import lu.objmanip : replaceMembers;
     import std.getopt : arraySep, config, getopt;
+    static import kameloso.common;
 
     bool shouldWriteConfig;
     bool shouldOpenTerminalEditor;
@@ -570,12 +574,7 @@ auto handleGetopt(ref Kameloso instance) @system
         instance.connSettings,
         instance.settings);
 
-    applyDefaults(
-        instance.parser.client,
-        instance.parser.server,
-        instance.bot);
-
-    import kameloso.terminal : applyMonochromeAndFlushOverrides;
+    applyDefaults(instance);
 
     // Non-TTYs (eg. pagers) can't show colours.
     // Apply overrides here after having read config file
@@ -678,6 +677,17 @@ auto handleGetopt(ref Kameloso instance) @system
             enum setupTwitchString = "(Requires Twitch support)";
         }
 
+        version(Windows)
+        {
+            enum editorMessage = "Open the configuration file in a *terminal* text editor " ~
+                "(or the application defined in the <i>%EDITOR%</> environment variable)";
+        }
+        else
+        {
+            enum editorMessage = "Open the configuration file in a *terminal* text editor " ~
+                "(or the application defined in the <i>$EDITOR</> environment variable)";
+        }
+
         return getopt(theseArgs,
             config.caseSensitive,
             config.bundling,
@@ -774,7 +784,7 @@ auto handleGetopt(ref Kameloso instance) @system
                     "Use monochrome output [<i>%s</>]"
                         .expandTags(LogLevel.trace)
                         .format(instance.settings.monochrome),
-                //&settings.monochrome,
+                //&settings.monochrome,  // already handled
                 &noop,
             "set",
                 quiet ? string.init :
@@ -785,7 +795,7 @@ auto handleGetopt(ref Kameloso instance) @system
                     "Specify a different configuration file [<i>%s</>]"
                         .expandTags(LogLevel.trace)
                         .format(instance.settings.configFile),
-                //&settings.configFile,
+                //&settings.configFile,  // already handled
                 &noop,
             "r|resourceDir",
                 quiet ? string.init :
@@ -852,9 +862,7 @@ auto handleGetopt(ref Kameloso instance) @system
                 &shouldWriteConfig,
             "edit",
                 quiet ? string.init :
-                    ("Open the configuration file in a *terminal* text editor " ~
-                        "(or the application defined in the <i>$EDITOR</> " ~
-                        "environment variable)").expandTags(LogLevel.trace) ~ editorVariableValue,
+                    editorMessage.expandTags(LogLevel.trace) ~ editorVariableValue,
                 &shouldOpenTerminalEditor,
             "gedit",
                 quiet ? string.init :
@@ -902,8 +910,6 @@ auto handleGetopt(ref Kameloso instance) @system
     }
 
     // Reinitialise the logger with new settings
-    import kameloso.logger : KamelosoLogger;
-    static import kameloso.common;
     kameloso.common.logger = new KamelosoLogger(instance.settings);
 
     // Support channels and admins being separated by spaces (mirror config file behaviour)
@@ -964,13 +970,10 @@ auto handleGetopt(ref Kameloso instance) @system
     }
 
     // Clear entries that are dashes
-    import lu.objmanip : replaceMembers;
-
     instance.parser.client.replaceMembers("-");
     instance.bot.replaceMembers("-");
 
     // Handle showstopper arguments (that display something and then exits)
-
     if (configFileResults.helpWanted)
     {
         // --help|-h was passed, show the help table and quit
@@ -1071,22 +1074,53 @@ auto handleGetopt(ref Kameloso instance) @system
             with all its plugins and settings.
         filename = String filename of the file to write to.
  +/
-void writeConfigurationFile(ref Kameloso instance, const string filename) @system
+void writeConfigurationFile(
+    ref Kameloso instance,
+    const string filename) @system
 {
-    import kameloso.constants : KamelosoDefaults;
     import kameloso.platform : rbd = resourceBaseDirectory;
     import lu.serialisation : justifiedEntryValueText, serialise;
-    import lu.string : beginsWith, encode64;
+    import lu.string : encode64;
+    import std.algorithm.searching : startsWith;
     import std.array : Appender;
+    import std.file : exists;
     import std.path : buildNormalizedPath, expandTilde;
 
     Appender!(char[]) sink;
     sink.reserve(4096);  // ~2234
 
-    // Take the opportunity to set a default quit reason. We can't do this in
-    // applyDefaults because it's a perfectly valid use-case not to have a quit
-    // string, and having it there would enforce the default string if none present.
-    if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaults.quitReason;
+    // Only make some changes if we're creating a new file
+    if (!filename.exists)
+    {
+        import kameloso.constants : KamelosoDefaults;
+
+        if (!instance.bot.quitReason.length)
+        {
+            // Set a the quit reason here and nowhere else.
+            instance.bot.quitReason = KamelosoDefaults.quitReason;
+        }
+
+        if (!instance.settings.prefix.length)
+        {
+            // Only set the prefix if we're creating a new file, to allow for empty prefixes
+            instance.settings.prefix = KamelosoDefaults.prefix;
+        }
+    }
+
+    // Base64-encode passwords if they're not already encoded
+    // --force opts out
+    if (!instance.settings.force)
+    {
+        if (!instance.bot.password.startsWith("base64:"))
+        {
+            instance.bot.password = "base64:" ~ encode64(instance.bot.password);
+        }
+
+        if (!instance.bot.pass.startsWith("base64:"))
+        {
+            instance.bot.pass = "base64:" ~ encode64(instance.bot.pass);
+        }
+    }
 
     // Copied from kameloso.main.resolvePaths
     version(Windows)
@@ -1104,7 +1138,6 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
     }
 
     immutable defaultResourceHomeDir = buildNormalizedPath(rbd, "kameloso");
-    immutable settingsResourceDir = instance.settings.resourceDirectory.expandTilde();
     immutable defaultFullServerResourceDir = escapedServerDirName.length ?
         buildNormalizedPath(
             defaultResourceHomeDir,
@@ -1112,29 +1145,19 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
             escapedServerDirName) :
         string.init;
 
-    // Snapshot resource dir in case we change it
-    immutable resourceDirSnapshot = settingsResourceDir;
+    string settingsResourceDirSnapshot = instance.settings.resourceDirectory.expandTilde();  // mutable
 
-    if ((settingsResourceDir == defaultResourceHomeDir) ||
-        (settingsResourceDir == defaultFullServerResourceDir))
+    if (settingsResourceDirSnapshot == defaultResourceHomeDir)
+    {
+        settingsResourceDirSnapshot = defaultFullServerResourceDir;
+    }
+
+    if (!instance.settings.force &&
+        (settingsResourceDirSnapshot == defaultFullServerResourceDir))
     {
         // If the resource directory is the default (unset),
         // or if it is what would be automatically inferred, write it out as empty
         instance.settings.resourceDirectory = string.init;
-    }
-
-    if (!instance.settings.force &&
-        instance.bot.password.length &&
-        !instance.bot.password.beginsWith("base64:"))
-    {
-        instance.bot.password = "base64:" ~ encode64(instance.bot.password);
-    }
-
-    if (!instance.settings.force &&
-        instance.bot.pass.length &&
-        !instance.bot.pass.beginsWith("base64:"))
-    {
-        instance.bot.pass = "base64:" ~ encode64(instance.bot.pass);
     }
 
     sink.serialise(
@@ -1159,7 +1182,7 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
     writeToDisk(filename, justified, Yes.addBanner);
 
     // Restore resource dir in case we aren't exiting
-    instance.settings.resourceDirectory = resourceDirSnapshot;
+    instance.settings.resourceDirectory = settingsResourceDirSnapshot;
 }
 
 
@@ -1174,7 +1197,8 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
         binaryPath = The program's `args[0]`.
         configFile = (Relative) path of the configuration file.
  +/
-void notifyAboutMissingSettings(const string[][string] missingEntries,
+void notifyAboutMissingSettings(
+    const string[][string] missingEntries,
     const string binaryPath,
     const string configFile)
 {
@@ -1209,7 +1233,9 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
         configFile = Full path to the configuration file.
         binaryPath = Full path to the current binary.
  +/
-void notifyAboutIncompleteConfiguration(const string configFile, const string binaryPath)
+void notifyAboutIncompleteConfiguration(
+    const string configFile,
+    const string binaryPath)
 {
     import kameloso.string : doublyBackslashed;
     import std.file : exists;
@@ -1270,65 +1296,69 @@ void giveBrightTerminalHint(
     (and [kameloso.constants.KamelosoDefaultIntegers|KamelosoDefaultIntegers]).
 
     Params:
-        client = Reference to the [dialect.defs.IRCClient|IRCClient] to complete.
-        server = Reference to the [dialect.defs.IRCServer|IRCServer] to complete.
-        bot = Reference to the [kameloso.pods.IRCBot|IRCBot] to complete.
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
  +/
-void applyDefaults(ref IRCClient client, ref IRCServer server, ref IRCBot bot)
-out (; (client.nickname.length), "Empty client nickname")
-out (; (client.user.length), "Empty client username")
-out (; (client.realName.length), "Empty client GECOS/real name")
-out (; (server.address.length), "Empty server address")
-out (; (server.port != 0), "Server port of 0")
-out (; (bot.quitReason.length), "Empty bot quit reason")
-out (; (bot.partReason.length), "Empty bot part reason")
+void applyDefaults(ref Kameloso instance)
+out (; (instance.parser.client.nickname.length), "Empty client nickname")
+out (; (instance.parser.client.user.length), "Empty client username")
+out (; (instance.parser.client.realName.length), "Empty client GECOS/real name")
+out (; (instance.parser.server.address.length), "Empty server address")
+out (; (instance.parser.server.port != 0), "Server port of 0")
+out (; (instance.bot.quitReason.length), "Empty bot quit reason")
+out (; (instance.bot.partReason.length), "Empty bot part reason")
+//out (; (instance.settings.prefix.length), "Empty prefix")
 {
     import kameloso.constants : KamelosoDefaults, KamelosoDefaultIntegers;
 
     // If no client.nickname set, generate a random guest name.
-    if (!client.nickname.length)
+    if (!instance.parser.client.nickname.length)
     {
         import std.format : format;
         import std.random : uniform;
 
         enum pattern = "guest%03d";
-        client.nickname = pattern.format(uniform(0, 1000));
-        bot.hasGuestNickname = true;
+        instance.parser.client.nickname = pattern.format(uniform(0, 1000));
+        instance.bot.hasGuestNickname = true;
     }
 
     // If no client.user set, inherit from [kameloso.constants.KamelosoDefaults|KamelosoDefaults].
-    if (!client.user.length)
+    if (!instance.parser.client.user.length)
     {
-        client.user = KamelosoDefaults.user;
+        instance.parser.client.user = KamelosoDefaults.user;
     }
 
     // If no client.realName set, inherit.
-    if (!client.realName.length)
+    if (!instance.parser.client.realName.length)
     {
-        client.realName = KamelosoDefaults.realName;
+        instance.parser.client.realName = KamelosoDefaults.realName;
     }
 
     // If no server.address set, inherit.
-    if (!server.address.length)
+    if (!instance.parser.server.address.length)
     {
-        server.address = KamelosoDefaults.serverAddress;
+        instance.parser.server.address = KamelosoDefaults.serverAddress;
     }
 
     // Ditto but [kameloso.constants.KamelosoDefaultIntegers|KamelosoDefaultIntegers].
-    if (server.port == 0)
+    if (instance.parser.server.port == 0)
     {
-        server.port = KamelosoDefaultIntegers.port;
+        instance.parser.server.port = KamelosoDefaultIntegers.port;
     }
 
-    if (!bot.quitReason.length)
+    if (!instance.bot.quitReason.length)
     {
-        bot.quitReason = KamelosoDefaults.quitReason;
+        instance.bot.quitReason = KamelosoDefaults.quitReason;
     }
 
-    if (!bot.partReason.length)
+    if (!instance.bot.partReason.length)
     {
-        bot.partReason = KamelosoDefaults.partReason;
+        instance.bot.partReason = KamelosoDefaults.partReason;
     }
+
+    /*if (!instance.settings.prefix.length)
+    {
+        instance.settings.prefix = KamelosoDefaults.prefix;
+    }*/
 }
 
 ///
@@ -1337,30 +1367,31 @@ unittest
     import kameloso.constants : KamelosoDefaults, KamelosoDefaultIntegers;
     import std.conv : to;
 
-    IRCClient client;
-    IRCServer server;
-    IRCBot bot;
+    Kameloso instance;
 
-    assert(!client.nickname.length, client.nickname);
-    assert(!client.user.length, client.user);
-    assert(!client.ident.length, client.ident);
-    assert(!client.realName.length, client.realName);
-    assert(!server.address, server.address);
-    assert((server.port == 0), server.port.to!string);
+    with (instance.parser)
+    {
+        assert(!client.nickname.length, client.nickname);
+        assert(!client.user.length, client.user);
+        assert(!client.ident.length, client.ident);
+        assert(!client.realName.length, client.realName);
+        assert(!server.address, server.address);
+        assert((server.port == 0), server.port.to!string);
 
-    applyDefaults(client, server, bot);
+        applyDefaults(instance);
 
-    assert(client.nickname.length);
-    assert((client.user == KamelosoDefaults.user), client.user);
-    assert(!client.ident.length, client.ident);
-    assert((client.realName == KamelosoDefaults.realName), client.realName);
-    assert((server.address == KamelosoDefaults.serverAddress), server.address);
-    assert((server.port == KamelosoDefaultIntegers.port), server.port.to!string);
-    assert((bot.quitReason == KamelosoDefaults.quitReason), bot.quitReason);
-    assert((bot.partReason == KamelosoDefaults.partReason), bot.partReason);
+        assert(client.nickname.length);
+        assert((client.user == KamelosoDefaults.user), client.user);
+        assert(!client.ident.length, client.ident);
+        assert((client.realName == KamelosoDefaults.realName), client.realName);
+        assert((server.address == KamelosoDefaults.serverAddress), server.address);
+        assert((server.port == KamelosoDefaultIntegers.port), server.port.to!string);
+        assert((instance.bot.quitReason == KamelosoDefaults.quitReason), instance.bot.quitReason);
+        assert((instance.bot.partReason == KamelosoDefaults.partReason), instance.bot.partReason);
 
-    client.nickname = string.init;
-    applyDefaults(client, server, bot);
+        client.nickname = string.init;
+        applyDefaults(instance);
 
-    assert(client.nickname.length, client.nickname);
+        assert(client.nickname.length, client.nickname);
+    }
 }

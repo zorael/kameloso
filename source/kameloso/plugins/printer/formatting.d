@@ -26,7 +26,6 @@ import kameloso.plugins.printer.base;
 
 import kameloso.pods : CoreSettings;
 import dialect.defs;
-import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 version(Colours) import kameloso.terminal.colours.defs : TerminalForeground;
@@ -53,7 +52,7 @@ version(Colours)
         aux       = TF.darkgrey,
         count     = TF.green,
         num       = TF.darkgrey,
-        badge     = TF.white,
+        badge     = TF.darkgrey,
         emote     = TF.cyan,
         highlight = TF.white,
         query     = TF.lightgreen,
@@ -73,7 +72,7 @@ version(Colours)
         aux       = TF.default_,
         count     = TF.lightgreen,
         num       = TF.default_,
-        badge     = TF.black,
+        badge     = TF.default_,
         emote     = TF.lightcyan,
         highlight = TF.black,
         query     = TF.green,
@@ -93,8 +92,18 @@ version(Colours)
  +/
 void put(Flag!"colours" colours = No.colours, Sink, Args...)
     (auto ref Sink sink, Args args)
-if (isOutputRange!(Sink, char[]))
 {
+    import std.range.primitives : isOutputRange;
+
+    static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+
     foreach (arg; args)
     {
         alias T = typeof(arg);
@@ -160,7 +169,6 @@ void formatMessageMonochrome(Sink)
     const ref IRCEvent event,
     const Flag!"bellOnMention" bellOnMention,
     const Flag!"bellOnError" bellOnError)
-if (isOutputRange!(Sink, char[]))
 {
     import kameloso.irccolours : stripEffects;
     import lu.conv : Enum;
@@ -169,7 +177,17 @@ if (isOutputRange!(Sink, char[]))
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
+    import std.range.primitives : isOutputRange;
     import std.uni : asLowerCase;
+
+    static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
 
     immutable typestring = Enum!(IRCEvent.Type).toString(event.type).withoutTypePrefix;
     string content = stripEffects(event.content);  // mutable
@@ -421,11 +439,11 @@ if (isOutputRange!(Sink, char[]))
     {
         enum pattern = " (%-(%s%|) (%))";
 
-        static if ((__VERSION__ == 2101L) || (__VERSION__ == 2102L))
+        static if ((__VERSION__ >= 2099L) && (__VERSION__ <= 2102L))
         {
             import std.array : array;
             // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
-            // Seemingly only on 2.101 and 2.102
+            // Seemingly only between 2.099 and 2.102
             sink.formattedWrite(pattern, auxRange.array.dup);
         }
         else
@@ -460,7 +478,7 @@ if (isOutputRange!(Sink, char[]))
         ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
         (event.errors.length && bellOnError);
 
-    if (shouldBell) sink.put(plugin.bell);
+    if (shouldBell) sink.put(PrinterPlugin.bell);
 }
 
 ///
@@ -482,52 +500,75 @@ if (isOutputRange!(Sink, char[]))
         nickname = "nickname";
         address = "127.0.0.1";
         version(TwitchSupport) displayName = "Nickname";
-        //account = "n1ckn4m3";
+        account = "n1ckn4m3";
         class_ = IRCUser.Class.whitelist;
     }
 
     event.type = IRCEvent.Type.JOIN;
     event.channel = "#channel";
 
-    formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
-    immutable joinLine = sink.data[11..$].idup;
-    version(TwitchSupport) assert((joinLine == "[join] [#channel] Nickname"), joinLine);
-    else assert((joinLine == "[join] [#channel] nickname"), joinLine);
-    sink.clear();
+    {
+        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        immutable joinLine = sink.data[11..$].idup;
+        version(TwitchSupport) string nickstring = "Nickname";
+        else string nickstring = "nickname";
+        version(PrintClassNamesToo) nickstring ~= ":whitelist";
+        immutable expected = "[join] [#channel] " ~ nickstring;
+        assert((joinLine == expected), joinLine);
+        sink.clear();
+    }
 
     event.type = IRCEvent.Type.CHAN;
     event.content = "Harbl snarbl";
 
-    formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
-    immutable chanLine = sink.data[11..$].idup;
-    version(TwitchSupport) assert((chanLine == `[chan] [#channel] Nickname: "Harbl snarbl"`), chanLine);
-    else assert((chanLine == `[chan] [#channel] nickname: "Harbl snarbl"`), chanLine);
-    sink.clear();
-
-    version(TwitchSupport)
     {
-        event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
-        //colour = "#3c507d";
-
         formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
-        immutable twitchLine = sink.data[11..$].idup;
-        assert((twitchLine == `[chan] [#channel] Nickname [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`),
-            twitchLine);
+        immutable chanLine = sink.data[11..$].idup;
+        version(TwitchSupport) string nickstring = "Nickname";
+        else string nickstring = "nickname";
+        version(PrintClassNamesToo) nickstring ~= ":whitelist";
+        immutable expected = "[chan] [#channel] " ~ nickstring ~ `: "Harbl snarbl"`;
+        assert((chanLine == expected), chanLine);
         sink.clear();
-        event.sender.badges = string.init;
     }
 
+    event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
+    event.sender.class_ = IRCUser.Class.staff;
+    //colour = "#3c507d";
+
+    version(TwitchSupport)
+    {{
+        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        immutable twitchLine = sink.data[11..$].idup;
+        version(TwitchSupport) string nickstring = "Nickname";
+        else string nickstring = "nickname";
+        version(PrintClassNamesToo) nickstring ~= ":staff";
+        immutable expected = "[chan] [#channel] " ~ nickstring ~
+            ` [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`;
+        assert((twitchLine == expected), twitchLine);
+        sink.clear();
+        event.sender.badges = string.init;
+    }}
+
+    plugin.state.server.daemon = IRCServer.Daemon.inspircd;
+    event.sender.class_ = IRCUser.Class.anyone;
     event.type = IRCEvent.Type.ACCOUNT;
     event.channel = string.init;
     event.content = string.init;
-    event.sender.account = "n1ckn4m3";
+    //event.sender.account = "n1ckn4m3";
     event.aux[0] = "n1ckn4m3";
 
-    formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
-    immutable accountLine = sink.data[11..$].idup;
-    version(TwitchSupport) assert((accountLine == "[account] Nickname (n1ckn4m3)"), accountLine);
-    else assert((accountLine == "[account] nickname (n1ckn4m3)"), accountLine);
-    sink.clear();
+    {
+        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        immutable accountLine = sink.data[11..$].idup;
+        version(TwitchSupport) string nickstring = "Nickname";
+        else string nickstring = "nickname";
+        version(PrintClassNamesToo) nickstring ~= ":anyone";
+        version(PrintAccountNamesToo) nickstring ~= "(n1ckn4m3)";
+        immutable expected = "[account] " ~ nickstring ~ " (n1ckn4m3)";
+        assert((accountLine == expected), accountLine);
+        sink.clear();
+    }
 
     event.errors = "DANGER WILL ROBINSON";
     event.content = "Blah balah";
@@ -540,21 +581,37 @@ if (isOutputRange!(Sink, char[]))
     event.aux[4] = "aux5";
     event.type = IRCEvent.Type.ERROR;
 
-    formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
-    immutable errorLine = sink.data[11..$].idup;
-    version(TwitchSupport)
     {
-        enum expected = `[error] Nickname: "Blah balah" (aux1) (aux5) ` ~
+        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        immutable errorLine = sink.data[11..$].idup;
+        version(TwitchSupport) string nickstring = "Nickname";
+        else string nickstring = "nickname";
+        version(PrintClassNamesToo) nickstring ~= ":anyone";
+        version(PrintAccountNamesToo) nickstring ~= "(n1ckn4m3)";
+        immutable expected = "[error] " ~ nickstring ~ `: "Blah balah" (aux1) (aux5) ` ~
             "{-42} {123} {420} [#666] ! DANGER WILL ROBINSON !";
         assert((errorLine == expected), errorLine);
+        sink.clear();
     }
-    else
+
+    event.type = IRCEvent.Type.CHAN;
+    event.channel = "#nickname";
+    event.num = 0;
+    event.count = typeof(IRCEvent.count).init;
+    event.aux = typeof(IRCEvent.aux).init;
+    event.errors = string.init;
+
     {
-        enum expected = `[error] nickname: "Blah balah" (aux1) (aux5) ` ~
-            "{-42} {123} {420} [#666] ! DANGER WILL ROBINSON !";
-        assert((errorLine == expected), errorLine);
+        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        immutable queryLine = sink.data[11..$].idup;
+        version(TwitchSupport) string nickstring = "Nickname";
+        else string nickstring = "nickname";
+        version(PrintClassNamesToo) nickstring ~= ":anyone";
+        version(PrintAccountNamesToo) nickstring ~= "(n1ckn4m3)";
+        immutable expected = "[chan] [#nickname] " ~ nickstring ~ `: "Blah balah"`;
+        assert((queryLine == expected), queryLine);
+        //sink.clear();
     }
-    //sink.clear();
 }
 
 
@@ -581,17 +638,27 @@ void formatMessageColoured(Sink)
     const ref IRCEvent event,
     const Flag!"bellOnMention" bellOnMention,
     const Flag!"bellOnError" bellOnError)
-if (isOutputRange!(Sink, char[]))
 {
     import kameloso.constants : DefaultColours;
     import kameloso.terminal.colours.defs : ANSICodeType, TerminalReset;
     import kameloso.terminal.colours : applyANSI;
     import lu.conv : Enum;
     import std.algorithm.iteration : filter;
+    import std.algorithm.searching : startsWith;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
+    import std.range.primitives : isOutputRange;
     import std.uni : asLowerCase;
+
+    static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
 
     alias Bright = EventPrintingBright;
     alias Dark = EventPrintingDark;
@@ -835,7 +902,7 @@ if (isOutputRange!(Sink, char[]))
                 event.target.account.length)
             {
                 sink.applyANSI(TerminalReset.all);
-                sink.put('(', event.target.account, ')');
+                .put(sink, '(', event.target.account, ')');
             }
         }
 
@@ -962,11 +1029,9 @@ if (isOutputRange!(Sink, char[]))
 
     sink.put(']');
 
-    import lu.string : beginsWith;
-
     if ((event.type == IRCEvent.Type.ERROR) ||
         (event.type == IRCEvent.Type.TWITCH_ERROR) ||
-        rawTypestring.beginsWith("ERR_"))
+        rawTypestring.startsWith("ERR_"))
     {
         sink.applyANSI(bright ? Bright.error : Dark.error);
     }
@@ -1039,11 +1104,11 @@ if (isOutputRange!(Sink, char[]))
         enum pattern = " (%-(%s%|) (%))";
         sink.applyANSI(bright ? Bright.aux : Dark.aux);
 
-        static if ((__VERSION__ == 2101L) || (__VERSION__ == 2102L))
+        static if ((__VERSION__ >= 2099L) && (__VERSION__ <= 2102L))
         {
             import std.array : array;
             // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
-            // Seemingly only on 2.101 and 2.102
+            // Seemingly only between 2.099 and 2.102
             sink.formattedWrite(pattern, auxRange.array.dup);
         }
         else
@@ -1084,7 +1149,7 @@ if (isOutputRange!(Sink, char[]))
         ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
         (event.errors.length && bellOnError);
 
-    if (shouldBell) sink.put(plugin.bell);
+    if (shouldBell) sink.put(PrinterPlugin.bell);
 }
 
 
@@ -1113,11 +1178,11 @@ if (isOutputRange!(Sink, char[]))
     Returns:
         A slice of the passed `typestring`, excluding any prefixes if present.
  +/
-auto withoutTypePrefix(const string typestring) @safe pure nothrow @nogc @property
+auto withoutTypePrefix(const string typestring) pure @safe nothrow @nogc
 {
-    import lu.string : beginsWith;
+    import std.algorithm.searching : startsWith;
 
-    if (typestring.beginsWith("RPL_") || typestring.beginsWith("ERR_"))
+    if (typestring.startsWith("RPL_") || typestring.startsWith("ERR_"))
     {
         return typestring[4..$];
     }
@@ -1125,7 +1190,7 @@ auto withoutTypePrefix(const string typestring) @safe pure nothrow @nogc @proper
     {
         version(TwitchSupport)
         {
-            if (typestring.beginsWith("TWITCH_"))
+            if (typestring.startsWith("TWITCH_"))
             {
                 return typestring[7..$];
             }
@@ -1172,8 +1237,7 @@ unittest
     Params:
         event = [dialect.defs.IRCEvent|IRCEvent] whose content text to highlight.
         colourful = Whether or not emotes should be highlit in colours.
-        brightTerminal = Whether or not the terminal has a bright background
-            and colours should be adapted to suit.
+        settings = Current [kameloso.pods.CoreSettings|settings].
 
     Returns:
         A new string of the passed [dialect.defs.IRCEvent|IRCEvent]'s `content` member
@@ -1188,8 +1252,8 @@ auto highlightEmotes(
 {
     import kameloso.constants : DefaultColours;
     import kameloso.terminal.colours : applyANSI;
-    import lu.string : contains;
     import std.array : Appender;
+    import std.string : indexOf;
 
     alias Bright = EventPrintingBright;
     alias Dark = EventPrintingDark;
@@ -1203,7 +1267,7 @@ auto highlightEmotes(
     immutable TerminalForeground highlight = settings.brightTerminal ?
         Bright.highlight :
         Dark.highlight;
-    immutable isEmoteOnly = !colourful && event.tags.contains("emote-only=1");
+    immutable isEmoteOnly = !colourful && (event.tags.indexOf("emote-only=1") != -1);
 
     with (IRCEvent.Type)
     switch (event.type)
@@ -1271,8 +1335,7 @@ auto highlightEmotes(
         pre = Terminal foreground tint to colour the emotes with.
         post = Terminal foreground tint to reset to after colouring an emote.
         colourful = Whether or not emotes should be highlit in colours.
-        brightTerminal = Whether or not the terminal has a bright background
-            and colours should be adapted to suit.
+        settings = Current [kameloso.pods.CoreSettings|settings].
  +/
 version(Colours)
 version(TwitchSupport)
@@ -1284,12 +1347,21 @@ void highlightEmotesImpl(Sink)
     const TerminalForeground post,
     const Flag!"colourful" colourful,
     const CoreSettings settings)
-if (isOutputRange!(Sink, char[]))
 {
     import std.algorithm.iteration : splitter, uniq;
     import std.algorithm.sorting : sort;
     import std.array : Appender;
     import std.conv : to;
+    import std.range.primitives : isOutputRange;
+
+    static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
 
     static struct Highlight
     {
@@ -1322,9 +1394,9 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (/*const*/ emote; emotes.splitter('/'))
     {
-        import lu.string : nom;
+        import lu.string : advancePast;
 
-        immutable emoteID = emote.nom(':');
+        immutable emoteID = emote.advancePast(':');
 
         foreach (immutable location; emote.splitter(','))
         {

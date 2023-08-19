@@ -301,8 +301,8 @@ unittest
 void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import dialect.common : isValidNickname;
-    import lu.string : SplitResults, beginsWith, nom, splitInto, stripped;
-    import std.algorithm.searching : count;
+    import lu.string : SplitResults, advancePast, splitInto, stripped;
+    import std.algorithm.searching : count, startsWith;
     import std.format : format;
 
     void sendUsage()
@@ -359,7 +359,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     string line = event.content.stripped;  // mutable
-    immutable verb = line.nom!(Yes.inherit)(' ');
+    immutable verb = line.advancePast(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -370,12 +370,12 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
         immutable result = line.splitInto(nickname, mode);
         if (result != SplitResults.match) goto default;
 
-        if (mode.beginsWith('-')) return sendCannotBeNegative();
-        if (nickname.beginsWith('@')) nickname = nickname[1..$];
+        if (mode.startsWith('-')) return sendCannotBeNegative();
+        if (nickname.startsWith('@')) nickname = nickname[1..$];
         if (!nickname.length) goto default;
         if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname();
 
-        while (mode.beginsWith('+')) mode = mode[1..$];
+        while (mode.startsWith('+')) mode = mode[1..$];
         if (!mode.length) return sendMustSupplyMode();
 
         modifyAutomode(plugin, Yes.add, nickname, event.channel, mode);
@@ -385,7 +385,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
     case "del":
         string nickname = line;  // mutable
 
-        if (nickname.beginsWith('@')) nickname = nickname[1..$];
+        if (nickname.startsWith('@')) nickname = nickname[1..$];
         if (!nickname.length) goto default;
         //if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname();
 
@@ -527,9 +527,9 @@ void reload(AutomodePlugin plugin)
 
     JSONStorage automodesJSON;
     automodesJSON.load(plugin.automodeFile);
-    plugin.automodes.clear();
+    plugin.automodes = null;
     plugin.automodes.populateFromJSON(automodesJSON, Yes.lowercaseKeys);
-    plugin.automodes = plugin.automodes.rehash();
+    plugin.automodes.rehash();
 }
 
 
@@ -634,7 +634,7 @@ private:
             `true` if this plugin should react to events; `false` if not.
      +/
     version(TwitchSupport)
-    override public bool isEnabled() const @property pure nothrow @nogc
+    override public bool isEnabled() const pure nothrow @nogc
     {
         return (state.server.daemon != IRCServer.Daemon.twitch) && automodeSettings.enabled;
     }

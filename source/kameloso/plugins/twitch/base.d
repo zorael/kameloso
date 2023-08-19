@@ -137,6 +137,11 @@ public:
         bool googleKeygen = false;
 
         /++
+            Runtime "alias" to [googleKeygen].
+         +/
+        bool youtubeKeygen = false;
+
+        /++
             Whether or not to start a captive session for requesting Spotify
             access tokens.
          +/
@@ -429,7 +434,7 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
 
     if (plugin.twitchSettings.bellOnImportant)
     {
-        write(plugin.bell);
+        write(TwitchPlugin.bell);
         stdout.flush();
     }
 }
@@ -487,10 +492,10 @@ in (channelName.length, "Tried to init Room with an empty channel string")
 )
 void onUserstate(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : contains;
+    import std.string : indexOf;
 
-    if (event.target.badges.contains("moderator/") ||
-        event.target.badges.contains("broadcaster/"))
+    if ((event.target.badges.indexOf("moderator/") != -1) ||
+        (event.target.badges.indexOf("broadcaster/") != -1))
     {
         if (auto channel = event.channel in plugin.state.channels)
         {
@@ -734,7 +739,8 @@ void reportStreamTime(
 )
 void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import lu.string : beginsWith, nom, stripped;
+    import lu.string : advancePast, stripped;
+    import std.algorithm.searching : startsWith;
     import std.conv : to;
 
     void sendNoSuchUser(const string givenName)
@@ -756,8 +762,8 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
     else
     {
-        string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
-        if (givenName.beginsWith('@')) givenName = givenName[1..$];
+        string givenName = slice.advancePast(' ', Yes.inherit);  // mutable
+        if (givenName.startsWith('@')) givenName = givenName[1..$];
         immutable user = getTwitchUser(plugin, givenName, string.init, Yes.searchByDisplayName);
         if (!user.nickname.length) return sendNoSuchUser(givenName);
 
@@ -980,7 +986,8 @@ void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.plugins.common.misc : idOf;
-    import lu.string : SplitResults, beginsWith, splitInto, stripped;
+    import lu.string : SplitResults, splitInto, stripped;
+    import std.algorithm.searching : startsWith;
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
@@ -1023,7 +1030,7 @@ void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     void sendOtherError()
     {
-        enum message = "An error occured when preparing the shoutout.";
+        enum message = "An error occurred when preparing the shoutout.";
         chan(plugin.state, event.channel, message);
     }
 
@@ -1032,7 +1039,7 @@ void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     string numTimesString;  // ditto
     immutable results = slice.splitInto(target, numTimesString);
 
-    if (target.beginsWith('@')) target = target[1..$].stripped;
+    if (target.startsWith('@')) target = target[1..$].stripped;
 
     if (!target.length || (results == SplitResults.overrun))
     {
@@ -1155,7 +1162,7 @@ void onCommandVanish(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.algorithm.searching : count;
     import std.algorithm.comparison : min;
     import std.conv : ConvException, to;
@@ -1177,7 +1184,7 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
     if (!event.content.length || !event.content.count(' ')) return sendUsage();
 
     string slice = event.content.stripped;  // mutable
-    immutable numTimesString = slice.nom(' ');
+    immutable numTimesString = slice.advancePast(' ');
 
     try
     {
@@ -1285,8 +1292,9 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import lu.string : contains, nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.format : format;
+    import std.string : indexOf;
     import core.time : seconds;
 
     /+
@@ -1398,8 +1406,8 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else if (
             !url.length ||
-            url.contains(' ') ||
-            (!url.contains("youtube.com/") && !url.contains("youtu.be/")))
+            (url.indexOf(' ') != -1) ||
+            ((url.indexOf("youtube.com/") == -1) && (url.indexOf("youtu.be/") == -1)))
         {
             return sendUsage();
         }
@@ -1424,15 +1432,15 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             videoID = slice;
         }
-        else if (slice.contains("youtube.com/watch?v="))
+        else if (slice.indexOf("youtube.com/watch?v=") != -1)
         {
-            slice.nom("youtube.com/watch?v=");
-            videoID = slice.nom!(Yes.inherit)('&');
+            slice.advancePast("youtube.com/watch?v=");
+            videoID = slice.advancePast('&', Yes.inherit);
         }
-        else if (slice.contains("youtu.be/"))
+        else if (slice.indexOf("youtu.be/") != -1)
         {
-            slice.nom("youtu.be/");
-            videoID = slice.nom!(Yes.inherit)('?');
+            slice.advancePast("youtu.be/");
+            videoID = slice.advancePast('?', Yes.inherit);
         }
         else
         {
@@ -1481,8 +1489,8 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else if (
             !url.length ||
-            url.contains(' ') ||
-            !url.contains("spotify.com/track/"))
+            (url.indexOf(' ') != -1) ||
+            (url.indexOf("spotify.com/track/") == -1))
         {
             return sendUsage();
         }
@@ -1503,10 +1511,10 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             trackID = slice;
         }
-        else if (slice.contains("spotify.com/track/"))
+        else if (slice.indexOf("spotify.com/track/") != -1)
         {
-            slice.nom("spotify.com/track/");
-            trackID = slice.nom!(Yes.inherit)('?');
+            slice.advancePast("spotify.com/track/");
+            trackID = slice.advancePast('?', Yes.inherit);
         }
         else
         {
@@ -1578,7 +1586,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.time : DurationStringException, abbreviatedDuration;
+    import kameloso.time : DurationStringException, asAbbreviatedDuration;
     import lu.string : splitWithQuotes;
     import std.conv : ConvException, to;
     import std.format : format;
@@ -1602,7 +1610,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     try
     {
         durationString = durationString
-            .abbreviatedDuration
+            .asAbbreviatedDuration
             .total!"seconds"
             .to!string;
     }
@@ -1781,7 +1789,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
         import kameloso.terminal : TerminalToken;
         import std.stdio : stdout, write;
 
-        write(plugin.bell);
+        write(TwitchPlugin.bell);
         stdout.flush();
     }
 
@@ -1794,7 +1802,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
     // ecount!
     if (plugin.twitchSettings.ecount && event.emotes.length)
     {
-        import lu.string : nom;
+        import lu.string : advancePast;
         import std.algorithm.iteration : splitter;
         import std.algorithm.searching : count;
         import std.conv : to;
@@ -1812,7 +1820,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
             }
 
             string slice = emotestring;  // mutable
-            immutable id = slice.nom(':');
+            immutable id = slice.advancePast(':');
 
             auto thisEmoteCount = id in *channelcount;
             if (!thisEmoteCount)
@@ -1857,12 +1865,12 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onEndOfMOTD(TwitchPlugin plugin)
 {
-    import lu.string : beginsWith;
+    import std.algorithm.searching : startsWith;
     import std.concurrency : spawn;
 
     // Concatenate the Bearer and OAuth headers once.
     // This has to be done *after* connect's register
-    immutable pass = plugin.state.bot.pass.beginsWith("oauth:") ?
+    immutable pass = plugin.state.bot.pass.startsWith("oauth:") ?
         plugin.state.bot.pass[6..$] :
         plugin.state.bot.pass;
     plugin.authorizationBearer = "Bearer " ~ pass;
@@ -1903,7 +1911,7 @@ void onEndOfMOTD(TwitchPlugin plugin)
 )
 void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.array : replace;
     import std.format : format;
     import std.conv  : to;
@@ -1927,17 +1935,17 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
     {
         // 425618:3-5,7-8/peepoLeave:9-18
         string slice = event.emotes;  // mutable
-        slice.nom(':');
+        slice.advancePast(':');
 
-        immutable start = slice.nom('-').to!size_t;
+        immutable start = slice.advancePast('-').to!size_t;
         immutable end = slice
-            .nom!(Yes.inherit)('/')
-            .nom!(Yes.inherit)(',')
+            .advancePast('/', Yes.inherit)
+            .advancePast(',', Yes.inherit)
             .to!size_t + 1;  // upper-bound inclusive!
 
         string rawSlice = event.raw;  // mutable
-        rawSlice.nom(event.channel);
-        rawSlice.nom(" :");
+        rawSlice.advancePast(event.channel);
+        rawSlice.advancePast(" :");
 
         // Slice it as a dstring to (hopefully) get full characters
         // Undo replacements
@@ -1968,7 +1976,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 
     // Replace emote colons so as not to conflict with emote tag syntax
     immutable id = slice
-        .nom(':')
+        .advancePast(':')
         .replace(':', ';');
 
     auto thisEmoteCount = id in *channelcounts;
@@ -2011,7 +2019,8 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.time : timeSince;
-    import lu.string : beginsWith, nom, stripped;
+    import lu.string : advancePast, stripped;
+    import std.algorithm.searching : startsWith;
     import std.format : format;
     import core.time : Duration;
 
@@ -2030,8 +2039,8 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
     else
     {
-        string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
-        if (givenName.beginsWith('@')) givenName = givenName[1..$];
+        string givenName = slice.advancePast(' ', Yes.inherit);  // mutable
+        if (givenName.startsWith('@')) givenName = givenName[1..$];
         immutable user = getTwitchUser(plugin, givenName, string.init, Yes.searchByDisplayName);
 
         if (!user.nickname.length)
@@ -2412,9 +2421,12 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
     // Initialise the AA so we can get a pointer to it.
     plugin.customEmotesByChannel[channelName][dstring.init] = false;
     auto customEmotes = channelName in plugin.customEmotesByChannel;
-    (*customEmotes).remove(dstring.init);
 
-    alias GetEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string, const string);
+    alias GetEmoteFun = void function(
+        TwitchPlugin,
+        ref bool[dstring],
+        const string,
+        const string);
 
     void getEmoteSet(GetEmoteFun fun, const string setName)
     {
@@ -2431,6 +2443,8 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
         }
     }
 
+    //(*customEmotes).remove(dstring.init);
+    customEmotes = null;  // In case we're reimporting definitions
     getEmoteSet(&getBTTVEmotes, "BetterTTV");
     getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
     getEmoteSet(&get7tvEmotes, "7tv");
@@ -2453,7 +2467,10 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
     GC.disable();
     scope(exit) GC.enable();
 
-    alias GetGlobalEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string);
+    alias GetGlobalEmoteFun = void function(
+        TwitchPlugin,
+        ref bool[dstring],
+        const string);
 
     void getGlobalEmoteSet(GetGlobalEmoteFun fun, const string setName)
     {
@@ -2470,6 +2487,7 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
         }
     }
 
+    plugin.customGlobalEmotes = null;  // In case we're reimporting definitions
     getGlobalEmoteSet(&getBTTVGlobalEmotes, "BetterTTV");
     getGlobalEmoteSet(&get7tvGlobalEmotes, "7tv");
     plugin.customGlobalEmotes.rehash();
@@ -2649,19 +2667,26 @@ unittest
 }
 
 
-// start
+// initialise
 /++
-    Start the captive key generation routine immediately after connection has
-    been established.
+    Start the captive key generation routine(s) before connecting to the server.
  +/
-void start(TwitchPlugin plugin)
+auto initialise(TwitchPlugin plugin)
 {
+    import kameloso.terminal : isTerminal;
     import std.algorithm.searching : endsWith;
+
+    if (!isTerminal)
+    {
+        // Not a TTY so replace our bell string with an empty one
+        TwitchPlugin.bell = string.init;
+    }
 
     immutable someKeygenWanted =
         plugin.twitchSettings.keygen ||
         plugin.twitchSettings.superKeygen ||
         plugin.twitchSettings.googleKeygen ||
+        plugin.twitchSettings.youtubeKeygen ||
         plugin.twitchSettings.spotifyKeygen;
 
     if (!plugin.state.server.address.endsWith(".twitch.tv"))
@@ -2675,25 +2700,31 @@ void start(TwitchPlugin plugin)
             logger.trace();
         }
 
-        // Not connecting to Twitch, return early
-        return;
+        // Not connecting to Twitch yet keygens requested, return false unless forcing
+        if (!plugin.state.settings.force) return false;
     }
 
     if (someKeygenWanted || (!plugin.state.bot.pass.length && !plugin.state.settings.force))
     {
         import kameloso.thread : ThreadMessage;
-        import std.concurrency : prioritySend;
+        import lu.json : JSONStorage;
+        import std.concurrency : send;
 
         if (plugin.state.settings.headless)
         {
             // Headless mode is enabled, so a captive keygen session doesn't make sense
-            enum message = "Cannot start a Twitch keygen session when in headless mode";
-            return quit(plugin.state, message);
+            return false;
         }
 
         // Some keygen, reload to load secrets so existing ones are read
-        // Not strictly needed for normal keygen
-        loadResources(plugin);
+        // Not strictly needed for normal keygen but for everything else
+        JSONStorage secretsJSON;
+        secretsJSON.load(plugin.secretsFile);
+
+        foreach (immutable channelName, credsJSON; secretsJSON.storage.object)
+        {
+            plugin.secretsByChannel[channelName] = Credentials.fromJSON(credsJSON);
+        }
 
         bool needSeparator;
         enum separator = "---------------------------------------------------------------------";
@@ -2704,8 +2735,9 @@ void start(TwitchPlugin plugin)
         {
             import kameloso.plugins.twitch.keygen : requestTwitchKey;
             requestTwitchKey(plugin);
-            if (*plugin.state.abort) return;
+            if (*plugin.state.abort) return false;
             plugin.twitchSettings.keygen = false;
+            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.keygen"));
             needSeparator = true;
         }
 
@@ -2714,18 +2746,23 @@ void start(TwitchPlugin plugin)
             import kameloso.plugins.twitch.keygen : requestTwitchSuperKey;
             if (needSeparator) logger.trace(separator);
             requestTwitchSuperKey(plugin);
-            if (*plugin.state.abort) return;
+            if (*plugin.state.abort) return false;
             plugin.twitchSettings.superKeygen = false;
+            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.superKeygen"));
             needSeparator = true;
         }
 
-        if (plugin.twitchSettings.googleKeygen)
+        if (plugin.twitchSettings.googleKeygen ||
+            plugin.twitchSettings.youtubeKeygen)
         {
             import kameloso.plugins.twitch.google : requestGoogleKeys;
             if (needSeparator) logger.trace(separator);
             requestGoogleKeys(plugin);
-            if (*plugin.state.abort) return;
+            if (*plugin.state.abort) return false;
             plugin.twitchSettings.googleKeygen = false;
+            plugin.twitchSettings.youtubeKeygen = false;
+            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.googleKeygen"));
+            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.youtubeKeygen"));
             needSeparator = true;
         }
 
@@ -2734,27 +2771,13 @@ void start(TwitchPlugin plugin)
             import kameloso.plugins.twitch.spotify : requestSpotifyKeys;
             if (needSeparator) logger.trace(separator);
             requestSpotifyKeys(plugin);
-            if (*plugin.state.abort) return;
+            if (*plugin.state.abort) return false;
+            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.spotifyKeygen"));
             plugin.twitchSettings.spotifyKeygen = false;
         }
-
-        // Remove custom Twitch settings so we can reconnect without jumping
-        // back into keygens.
-        static immutable string[4] settingsToPop =
-        [
-            "twitch.keygen",
-            "twitch.superKeygen",
-            "twitch.googleKeygen",
-            "twitch.spotifyKeygen",
-        ];
-
-        foreach (immutable setting; settingsToPop[])
-        {
-            plugin.state.mainThread.prioritySend(ThreadMessage.popCustomSetting(setting));
-        }
-
-        plugin.state.mainThread.prioritySend(ThreadMessage.reconnect);
     }
+
+    return true;
 }
 
 
@@ -3390,22 +3413,6 @@ void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream s
 }
 
 
-// initialise
-/++
-    Initialises the Twitch plugin.
- +/
-void initialise(TwitchPlugin plugin)
-{
-    import kameloso.terminal : isTerminal;
-
-    if (!isTerminal)
-    {
-        // Not a TTY so replace our bell string with an empty one
-        plugin.bell = string.init;
-    }
-}
-
-
 // teardown
 /++
     De-initialises the plugin. Shuts down any persistent worker threads.
@@ -3512,7 +3519,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         const ref IRCEvent event,
         ref IRCUser user)
     {
-        import lu.string : contains;
+        import std.string : indexOf;
 
         if (user.class_ == IRCUser.Class.blacklist) return;
 
@@ -3533,7 +3540,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         if (plugin.twitchSettings.promoteModerators)
         {
             if ((user.class_ < IRCUser.Class.operator) &&
-                user.badges.contains("moderator/"))
+                (user.badges.indexOf("moderator/") != -1))
             {
                 // User is moderator but is not registered as at least operator
                 user.class_ = IRCUser.Class.operator;
@@ -3544,7 +3551,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         if (plugin.twitchSettings.promoteVIPs)
         {
             if ((user.class_ < IRCUser.Class.elevated) &&
-                user.badges.contains("vip/"))
+                (user.badges.indexOf("vip/") != -1))
             {
                 // User is VIP but is not registered as at least elevated
                 user.class_ = IRCUser.Class.elevated;
@@ -3554,7 +3561,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
         // There is no "registered" list; just map subscribers to registered 1:1
         if ((user.class_ < IRCUser.Class.registered) &&
-            user.badges.contains("subscriber/"))
+            (user.badges.indexOf("subscriber/") != -1))
         {
             user.class_ = IRCUser.Class.registered;
         }
@@ -3691,7 +3698,7 @@ void loadResources(TwitchPlugin plugin)
     long[string][string] tempEcount;
     ecountJSON.load(plugin.ecountFile);
     tempEcount.populateFromJSON(ecountJSON);
-    plugin.ecount.clear();
+    plugin.ecount = null;
 
     foreach (immutable channelName, channelCounts; tempEcount)
     {
@@ -3702,7 +3709,7 @@ void loadResources(TwitchPlugin plugin)
     long[string][string] tempViewers;
     viewersJSON.load(plugin.viewersFile);
     tempViewers.populateFromJSON(viewersJSON);
-    plugin.viewerTimesByChannel.clear();
+    plugin.viewerTimesByChannel = null;
 
     foreach (immutable channelName, channelViewers; tempViewers)
     {
@@ -3711,7 +3718,7 @@ void loadResources(TwitchPlugin plugin)
 
     JSONStorage secretsJSON;
     secretsJSON.load(plugin.secretsFile);
-    plugin.secretsByChannel.clear();
+    plugin.secretsByChannel = null;
 
     foreach (immutable channelName, credsJSON; secretsJSON.storage.object)
     {
@@ -3881,7 +3888,7 @@ package:
                 Takes a second [Stream] and updates this one with values from it.
 
                 Params:
-                    A second [Stream] from which to inherit values.
+                    updated =  A second [Stream] from which to inherit values.
              +/
             void update(const Stream updated)
             {
@@ -3906,7 +3913,7 @@ package:
                 Params:
                     idString = This stream's ID, as reported by Twitch, in string form.
              +/
-            this(const string idString)
+            this(const string idString) pure @safe nothrow @nogc
             {
                 this._idString = idString;
             }
@@ -3985,7 +3992,7 @@ package:
             Params:
                 channelName = Name of the channel.
          +/
-        this(const string channelName)
+        this(const string channelName) /*pure nothrow @nogc*/ @safe
         {
             import std.random : uniform;
 
@@ -4086,15 +4093,9 @@ package:
     bool[dstring] customGlobalEmotes;
 
     /++
-        [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string,
-        for use as bell.
-     +/
-    private enum bellString = "" ~ cast(char)(TerminalToken.bell);
-
-    /++
         Effective bell after [kameloso.terminal.isTerminal] checks.
      +/
-    string bell = bellString;
+    static string bell = "" ~ cast(char)(TerminalToken.bell);
 
     /++
         The Twitch application ID for the kameloso bot.
@@ -4226,7 +4227,7 @@ package:
         Returns:
             `true` if this plugin should react to events; `false` if not.
      +/
-    override public bool isEnabled() const @property pure nothrow @nogc
+    override public bool isEnabled() const pure nothrow @nogc
     {
         return (
             (state.server.daemon == IRCServer.Daemon.twitch) ||
@@ -4235,6 +4236,7 @@ package:
                 twitchSettings.keygen ||
                 twitchSettings.superKeygen ||
                 twitchSettings.googleKeygen ||
+                twitchSettings.youtubeKeygen ||
                 twitchSettings.spotifyKeygen);
     }
 

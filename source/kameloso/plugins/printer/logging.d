@@ -69,7 +69,7 @@ public:
         Constructor taking a [std.datetime.systime.SysTime|SysTime], to save as the date
         the buffer was created.
      +/
-    this(const string dir, const SysTime now)
+    this(const string dir, const SysTime now) /*pure @nogc*/ @safe nothrow
     {
         import std.datetime.date : Date;
         import std.path : buildNormalizedPath;
@@ -88,7 +88,7 @@ public:
         Constructor not taking a [std.datetime.systime.SysTime|SysTime], for use with
         buffers that should not be dated, such as the error log and the raw log.
      +/
-    this(const string dir, const string filename)
+    this(const string dir, const string filename) pure @safe nothrow /*@nogc*/
     {
         import std.path : buildNormalizedPath;
 
@@ -268,6 +268,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     {
                         import kameloso.printing : formatObjects;
 
+                        // Adds some 220 mb to compilation memory usage
                         errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
                             (No.brightTerminal, event);
 
@@ -631,7 +632,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
 
     foreach (ref buffer; plugin.buffers)
     {
-        commitLog(plugin, buffer);
+        commitLog(buffer);
     }
 }
 
@@ -645,13 +646,12 @@ void commitAllLogsImpl(PrinterPlugin plugin)
     losing uncommitted lines in a catastrophical crash.
 
     Params:
-        plugin = The current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
         buffer = [LogLineBuffer] whose lines to commit to disk.
 
     See_Also:
         [commitAllLogsImpl]
  +/
-void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
+void commitLog(ref LogLineBuffer buffer)
 {
     import kameloso.string : doublyBackslashed;
     import std.exception : ErrnoException;
@@ -697,7 +697,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     catch (FileException e)
     {
         enum pattern = "File exception caught when committing log <l>%s</>: <t>%s%s";
-        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, plugin.bell);
+        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, PrinterPlugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
@@ -706,12 +706,12 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         {
             import kameloso.common : errnoStrings;
             enum pattern = "ErrnoException <l>%s</> caught when committing log to <l>%s</>: <t>%s%s";
-            logger.warningf(pattern, errnoStrings[e.errno], buffer.file.doublyBackslashed, e.msg, plugin.bell);
+            logger.warningf(pattern, errnoStrings[e.errno], buffer.file.doublyBackslashed, e.msg, PrinterPlugin.bell);
         }
         else version(Windows)
         {
             enum pattern = "ErrnoException <l>%d</> caught when committing log to <l>%s</>: <t>%s%s";
-            logger.warningf(pattern, e.errno, buffer.file.doublyBackslashed, e.msg, plugin.bell);
+            logger.warningf(pattern, e.errno, buffer.file.doublyBackslashed, e.msg, PrinterPlugin.bell);
         }
         else
         {
@@ -723,7 +723,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     catch (Exception e)
     {
         enum pattern = "Unexpected exception caught when committing log <l>%s</>: <t>%s%s";
-        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, plugin.bell);
+        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, PrinterPlugin.bell);
         version(PrintStacktraces) logger.trace(e);
     }
 }

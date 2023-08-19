@@ -1,7 +1,5 @@
 /++
-    Bits and bobs to register plugins to be instantiated on program startup/connect.
-
-    This should really only have to be used internally.
+    Package module for plugins.
 
     Example:
     ---
@@ -13,7 +11,7 @@
         mixin IRCPluginImpl;
     }
 
-    mixin ModuleRegistration;
+    mixin PluginRegistration!MyPlugin;
     ---
 
     Example:
@@ -176,6 +174,12 @@ mixin template PluginRegistration(
     Priority priority = 0.priority,
     string module_ = __MODULE__)
 {
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.module_, "PluginRegistration");
+    }
+
     // module constructor
     /++
         Mixed-in module constructor that registers the passed [Plugin] class

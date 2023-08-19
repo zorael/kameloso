@@ -44,9 +44,7 @@ module kameloso.printing;
 
 private:
 
-import std.range.primitives : isOutputRange;
-import std.meta : allSatisfy;
-import std.traits : isAggregateType;
+import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -150,12 +148,36 @@ unittest
         things = Variadic list of aggregate objects to enumerate.
  +/
 void printObjects(Flag!"all" all = No.all, Things...)(auto ref Things things) @trusted // for stdout.flush()
-if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
 {
-    static import kameloso.common;
     import kameloso.constants : BufferSize;
     import std.array : Appender;
+    import std.meta : allSatisfy;
     import std.stdio : stdout, writeln;
+    import std.traits : isAggregateType;
+    static import kameloso.common;
+
+    static if (!Things.length)
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` was not passed anything to print";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+    else static if (!allSatisfy!(isAggregateType, Things))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` was passed one or more non-aggregate types";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+
+    if (kameloso.common.globalHeadless && *kameloso.common.globalHeadless)
+    {
+        // Don't print anything if we're headless
+        return;
+    }
 
     alias widths = Widths!(all, Things);
 
@@ -190,7 +212,7 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
 
         if (!put)
         {
-            // Brightness setting is irrelevant; pass false
+            // Brightness setting is irrelevant; pass No
             formatObjectImpl!(all, No.coloured)
                 (outbuffer,
                 No.brightTerminal,
@@ -253,8 +275,36 @@ void formatObjects(Flag!"all" all = No.all,
     (auto ref Sink sink,
     const Flag!"brightTerminal" bright,
     auto ref Things things)
-if ((Things.length > 0) && allSatisfy!(isAggregateType, Things) && isOutputRange!(Sink, char[]))
 {
+    import std.meta : allSatisfy;
+    import std.traits : isAggregateType;
+    import std.range.primitives : isOutputRange;
+
+    static if (!Things.length)
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` was not passed anything to print";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+    else static if (!allSatisfy!(isAggregateType, Things))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` was passed one or more non-aggregate types";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+    else static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+
     alias widths = Widths!(all, Things);
 
     foreach (immutable i, ref thing; things)
@@ -311,15 +361,16 @@ private struct FormatStringMemberArguments
     bool bright;
 
     /++
-        Whether or not to truncate long lines.
+        How many characters to truncate the string to, if it's too long.
      +/
-    bool truncate = true;
+    size_t truncateAfter;
 }
 
 
 // formatStringMemberImpl
 /++
     Formats the description of a string for insertion into a [formatObjects] listing.
+    The full string is passed and the function will truncate it if it's too long.
 
     Broken out of [formatObjects] to reduce template bloat.
 
@@ -329,28 +380,28 @@ private struct FormatStringMemberArguments
         args = Argument aggregate for easier passing.
         content = The contents of the string member we're describing.
  +/
-private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
-    (auto ref Sink sink, const FormatStringMemberArguments args, const auto ref T content)
+private void formatStringMemberImpl(Flag!"coloured" coloured, Sink)
+    (auto ref Sink sink,
+    const FormatStringMemberArguments args,
+    const string content)
 {
     import std.format : formattedWrite;
-
-    enum truncateAfter = 128;
 
     static if (coloured)
     {
         import kameloso.terminal.colours.defs : F = TerminalForeground;
         import kameloso.terminal.colours : asANSI;
 
-        if (args.truncate && (content.length > truncateAfter))
+        if (content.length > args.truncateAfter)
         {
-            enum stringPattern = `%s%*s %s%-*s %s"%s"%s ... (%d)` ~ '\n';
+            enum pattern = `%s%*s %s%-*s %s"%s"%s ... (%d)` ~ '\n';
             immutable memberCode = args.bright ? F.black : F.white;
             immutable valueCode  = args.bright ? F.green : F.lightgreen;
             immutable lengthCode = args.bright ? F.default_ : F.darkgrey;
             immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
             sink.formattedWrite(
-                stringPattern,
+                pattern,
                 typeCode.asANSI,
                 args.typewidth,
                 args.typestring,
@@ -359,20 +410,20 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
                 args.memberstring,
                 //(content.length ? string.init : " "),
                 valueCode.asANSI,
-                content[0..truncateAfter],
+                content[0..args.truncateAfter],
                 lengthCode.asANSI,
                 content.length);
         }
         else
         {
-            enum stringPattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
+            enum pattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
             immutable memberCode = args.bright ? F.black : F.white;
             immutable valueCode  = args.bright ? F.green : F.lightgreen;
             immutable lengthCode = args.bright ? F.default_ : F.darkgrey;
             immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
             sink.formattedWrite(
-                stringPattern,
+                pattern,
                 typeCode.asANSI,
                 args.typewidth,
                 args.typestring,
@@ -388,24 +439,24 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
     }
     else
     {
-        if (args.truncate && (content.length > truncateAfter))
+        if (content.length > args.truncateAfter)
         {
-            enum stringPattern = `%*s %-*s "%s" ... (%d)` ~ '\n';
+            enum pattern = `%*s %-*s "%s" ... (%d)` ~ '\n';
             sink.formattedWrite(
-                stringPattern,
+                pattern,
                 args.typewidth,
                 args.typestring,
                 args.namewidth,
                 args.memberstring,
                 //(content.length ? string.init : " "),
-                content[0..truncateAfter],
+                content[0..args.truncateAfter],
                 content.length);
         }
         else
         {
-            enum stringPattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
+            enum pattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
             sink.formattedWrite(
-                stringPattern,
+                pattern,
                 args.typewidth,
                 args.typestring,
                 args.namewidth,
@@ -425,6 +476,31 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
 private struct FormatArrayMemberArguments
 {
     /++
+        Refers to different kinds of quotation signs (e.g. ´"´ or ´'´).
+     +/
+    enum QuoteSign
+    {
+        string_, /// ´"´
+        char_,   /// ´'´
+        none,    /// Nothing.
+    }
+
+    /++
+        What sign (e.g. ´"´ or ´'´) to use when quoting the key.
+     +/
+    QuoteSign keyQuoteSign;
+
+    /++
+        What sign (e.g. ´"´ or ´'´) to use when quoting the value.
+     +/
+    QuoteSign valueQuoteSign;
+
+    /++
+        Alias to [valueQuoteSign] for consistency.
+     +/
+    alias elemQuoteSign = valueQuoteSign;
+
+    /++
         Type name.
      +/
     string typestring;
@@ -433,16 +509,6 @@ private struct FormatArrayMemberArguments
         Member name.
      +/
     string memberstring;
-
-    /++
-        Element type name.
-     +/
-    string elemstring;
-
-    /++
-        Whether or not the element is a `char`.
-     +/
-    bool elemIsCharacter;
 
     /++
         Width (length) of longest type name.
@@ -460,9 +526,14 @@ private struct FormatArrayMemberArguments
     bool bright;
 
     /++
-        Whether or not to truncate big arrays.
+        Whether or not the array was truncated due to being too large.
      +/
-    bool truncate = true;
+    bool truncated;
+
+    /++
+        Original length of the array, prior to truncation.
+     +/
+    size_t length;
 }
 
 
@@ -476,43 +547,24 @@ private struct FormatArrayMemberArguments
         coloured = Whether or no to display terminal colours.
         sink = Output range to store output in.
         args = Argument aggregate for easier passing.
-        rawContent = The array we're describing.
+        content = The array we're describing.
  +/
-private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
-    (auto ref Sink sink, const FormatArrayMemberArguments args, const auto ref T rawContent)
+private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink)
+    (auto ref Sink sink,
+    const FormatArrayMemberArguments args,
+    const string[] content)
 {
     import std.format : formattedWrite;
     import std.range.primitives : ElementEncodingType;
     import std.traits : TemplateOf;
     import std.typecons : Nullable;
 
-    enum truncateAfter = 5;
-
-    static if (__traits(isSame, TemplateOf!(ElementEncodingType!T), Nullable))
-    {
-        import std.array : replace;
-        import std.conv : to;
-        import std.traits : TemplateArgsOf;
-
-        immutable typestring = "N!" ~ TemplateArgsOf!(ElementEncodingType!T).stringof;
-        immutable endIndex = (args.truncate && (rawContent.length > truncateAfter)) ?
-            truncateAfter :
-            rawContent.length;
-        immutable content = rawContent[0..endIndex]
-            .to!string
-            .replace("Nullable.null", "N.null");
-        immutable length = rawContent.length;
-        enum alreadyTruncated = true;
-    }
-    else
-    {
-        import lu.traits : UnqualArray;
-
-        immutable typestring = UnqualArray!T.stringof;
-        alias content = rawContent;
-        immutable length = content.length;
-        enum alreadyTruncated = false;
-    }
+    /// Quote character to enclose elements in
+    immutable elemQuote =
+        !content.length ? string.init :
+        (args.elemQuoteSign == FormatArrayMemberArguments.QuoteSign.string_) ? `"` :
+        (args.elemQuoteSign == FormatArrayMemberArguments.QuoteSign.char_) ? "'" :
+        string.init;
 
     static if (coloured)
     {
@@ -524,36 +576,34 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         immutable lengthCode = args.bright ? F.default_ : F.darkgrey;
         immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
-        if (!alreadyTruncated && args.truncate && (content.length > truncateAfter))
+        if (args.truncated)
         {
-            immutable rtArrayPattern = args.elemIsCharacter ?
-                "%s%*s %s%-*s %s[%(%s, %)]%s ... (%d)\n" :
-                "%s%*s %s%-*s %s%s%s ... (%d)\n";
+            immutable rtPattern = "%s%*s %s%-*s %s[%-(" ~
+                elemQuote ~ "%s" ~ elemQuote ~ ", %)" ~ elemQuote ~ "]%s ... (%d)\n";
 
             sink.formattedWrite(
-                rtArrayPattern,
+                rtPattern,
                 typeCode.asANSI,
                 args.typewidth,
-                typestring,
+                args.typestring,
                 memberCode.asANSI,
                 args.namewidth,
                 args.memberstring,
                 valueCode.asANSI,
-                content[0..truncateAfter],
+                content,
                 lengthCode.asANSI,
-                length);
+                args.length);
         }
         else
         {
-            immutable rtArrayPattern = args.elemIsCharacter ?
-                "%s%*s %s%-*s %s%s[%(%s, %)]%s(%d)\n" :
-                "%s%*s %s%-*s %s%s%s%s(%d)\n";
+            immutable rtPattern = "%s%*s %s%-*s %s%s[%-(" ~
+                elemQuote ~ "%s" ~ elemQuote ~ ", %)" ~ elemQuote ~ "]%s(%d)\n";
 
             sink.formattedWrite(
-                rtArrayPattern,
+                rtPattern,
                 typeCode.asANSI,
                 args.typewidth,
-                typestring,
+                args.typestring,
                 memberCode.asANSI,
                 args.namewidth,
                 args.memberstring,
@@ -561,41 +611,39 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
                 valueCode.asANSI,
                 content,
                 lengthCode.asANSI,
-                length);
+                args.length);
         }
     }
     else
     {
-        if (!alreadyTruncated && args.truncate && (content.length > truncateAfter))
+        if (args.truncated)
         {
-            immutable rtArrayPattern = args.elemIsCharacter ?
-                "%*s %-*s [%(%s, %)] ... (%d)\n" :
-                "%*s %-*s %s ... (%d)\n";
+            immutable rtPattern = "%*s %-*s [%-(" ~
+                elemQuote ~ "%s" ~ elemQuote ~ ", %)" ~ elemQuote ~ "] ... (%d)\n";
 
             sink.formattedWrite(
-                rtArrayPattern,
+                rtPattern,
                 args.typewidth,
-                typestring,
+                args.typestring,
                 args.namewidth,
                 args.memberstring,
-                content[0..truncateAfter],
-                length);
+                content,
+                args.length);
         }
         else
         {
-            immutable rtArrayPattern = args.elemIsCharacter ?
-                "%*s %-*s %s[%(%s, %)](%d)\n" :
-                "%*s %-*s %s%s(%d)\n";
+            immutable rtPattern = "%*s %-*s %s[%-(" ~
+                elemQuote ~ "%s" ~ elemQuote ~ ", %)" ~ elemQuote ~ "](%d)\n";
 
             sink.formattedWrite(
-                rtArrayPattern,
+                rtPattern,
                 args.typewidth,
-                typestring,
+                args.typestring,
                 args.namewidth,
                 args.memberstring,
                 (content.length ? string.init : " "),
                 content,
-                length);
+                args.length);
         }
     }
 }
@@ -614,12 +662,26 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         args = Argument aggregate for easier passing.
         content = The associative array we're describing.
  +/
-private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
-    (auto ref Sink sink, const FormatArrayMemberArguments args, const auto ref T content)
+private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Sink)
+    (auto ref Sink sink,
+    const FormatArrayMemberArguments args,
+    const string[string] content)
 {
     import std.format : formattedWrite;
 
-    enum truncateAfter = 5;
+    /// Quote character to enclose keys in
+    immutable keyQuote =
+        !content.length ? string.init :
+        (args.keyQuoteSign == FormatArrayMemberArguments.QuoteSign.string_) ? `"` :
+        (args.keyQuoteSign == FormatArrayMemberArguments.QuoteSign.char_) ? "'" :
+        string.init;
+
+    /// Quote character to enclose values in
+    immutable valueQuote =
+        !content.length ? string.init :
+        (args.valueQuoteSign == FormatArrayMemberArguments.QuoteSign.string_) ? `"` :
+        (args.valueQuoteSign == FormatArrayMemberArguments.QuoteSign.char_) ? "'" :
+        string.init;
 
     static if (coloured)
     {
@@ -631,12 +693,14 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         immutable lengthCode = args.bright ? F.default_ : F.darkgrey;
         immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
-        if (args.truncate && (content.length > truncateAfter))
+        if (args.truncated)
         {
-            enum aaPattern = "%s%*s %s%-*s %s%s%s ... (%d)\n";
+            immutable rtPattern = "%s%*s %s%-*s %s[%-(" ~
+                keyQuote ~ "%s" ~ keyQuote ~ ":" ~
+                valueQuote ~ "%s" ~ valueQuote~  ", %)" ~ valueQuote ~ "]%s ... (%d)\n";
 
             sink.formattedWrite(
-                aaPattern,
+                rtPattern,
                 typeCode.asANSI,
                 args.typewidth,
                 args.typestring,
@@ -644,16 +708,18 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
                 args.namewidth,
                 args.memberstring,
                 valueCode.asANSI,
-                content.keys[0..truncateAfter],
+                content,
                 lengthCode.asANSI,
-                content.length);
+                args.length);
         }
         else
         {
-            enum aaPattern = "%s%*s %s%-*s %s%s%s%s(%d)\n";
+            immutable rtPattern = "%s%*s %s%-*s %s%s[%-(" ~
+                keyQuote ~ "%s" ~ keyQuote ~ ":" ~
+                valueQuote ~ "%s" ~ valueQuote ~ ", %)" ~ valueQuote ~ "]%s(%d)\n";
 
             sink.formattedWrite(
-                aaPattern,
+                rtPattern,
                 typeCode.asANSI,
                 args.typewidth,
                 args.typestring,
@@ -662,39 +728,43 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
                 args.memberstring,
                 (content.length ? string.init : " "),
                 valueCode.asANSI,
-                content.keys,
+                content,
                 lengthCode.asANSI,
-                content.length);
+                args.length);
         }
     }
     else
     {
-        if (args.truncate && (content.length > truncateAfter))
+        if (args.truncated)
         {
-            enum aaPattern = "%*s %-*s %s ... (%d)\n";
+            immutable rtPattern = "%*s %-*s [%-(" ~
+                keyQuote ~ "%s" ~ keyQuote  ~ ":" ~
+                valueQuote ~ "%s" ~ valueQuote ~ ", %)" ~ valueQuote ~ "] ... (%d)\n";
 
             sink.formattedWrite(
-                aaPattern,
+                rtPattern,
                 args.typewidth,
                 args.typestring,
                 args.namewidth,
                 args.memberstring,
-                content.keys[0..truncateAfter],
-                content.length);
+                content,
+                args.length);
         }
         else
         {
-            enum aaPattern = "%*s %-*s %s%s(%d)\n";
+            immutable rtPattern = "%*s %-*s %s[%-(" ~
+                keyQuote ~ "%s" ~ keyQuote  ~ ":" ~
+                valueQuote ~ "%s" ~ valueQuote ~ ", %)" ~ valueQuote ~ "](%d)\n";
 
             sink.formattedWrite(
-                aaPattern,
+                rtPattern,
                 args.typewidth,
                 args.typestring,
                 args.namewidth,
                 args.memberstring,
                 (content.length ? string.init : " "),
                 content,
-                content.length);
+                args.length);
         }
     }
 }
@@ -764,13 +834,13 @@ private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
         import kameloso.terminal.colours.defs : F = TerminalForeground;
         import kameloso.terminal.colours : asANSI;
 
-        enum normalPattern = "%s%*s %s%-*s %s<%s>%s\n";
+        enum pattern = "%s%*s %s%-*s %s<%s>%s\n";
         immutable memberCode = args.bright ? F.black : F.white;
         immutable valueCode  = args.bright ? F.green : F.lightgreen;
         immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
         sink.formattedWrite(
-            normalPattern,
+            pattern,
             typeCode.asANSI,
             args.typewidth,
             args.typestring,
@@ -783,14 +853,15 @@ private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
     }
     else
     {
-        enum normalPattern = "%*s %-*s <%s>%s\n";
+        enum pattern = "%*s %-*s <%s>%s\n";
         sink.formattedWrite(
-            normalPattern,
+            pattern,
             args.typewidth,
             args.typestring,
             args.namewidth,
             args.memberstring,
-            args.aggregateType,args.initText);
+            args.aggregateType,
+            args.initText);
     }
 }
 
@@ -842,7 +913,9 @@ private struct FormatOtherMemberArguments
         content = The value we're describing.
  +/
 private void formatOtherMemberImpl(Flag!"coloured" coloured, T, Sink)
-    (auto ref Sink sink, const FormatOtherMemberArguments args, const auto ref T content)
+    (auto ref Sink sink,
+    const FormatOtherMemberArguments args,
+    const auto ref T content)
 {
     import std.format : formattedWrite;
 
@@ -851,13 +924,13 @@ private void formatOtherMemberImpl(Flag!"coloured" coloured, T, Sink)
         import kameloso.terminal.colours.defs : F = TerminalForeground;
         import kameloso.terminal.colours : asANSI;
 
-        enum normalPattern = "%s%*s %s%-*s  %s%s\n";
+        enum pattern = "%s%*s %s%-*s  %s%s\n";
         immutable memberCode = args.bright ? F.black : F.white;
         immutable valueCode  = args.bright ? F.green : F.lightgreen;
         immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
         sink.formattedWrite(
-            normalPattern,
+            pattern,
             typeCode.asANSI,
             args.typewidth,
             args.typestring,
@@ -869,9 +942,9 @@ private void formatOtherMemberImpl(Flag!"coloured" coloured, T, Sink)
     }
     else
     {
-        enum normalPattern = "%*s %-*s  %s\n";
+        enum pattern = "%*s %-*s  %s\n";
         sink.formattedWrite(
-            normalPattern,
+            pattern,
             args.typewidth,
             args.typestring,
             args.namewidth,
@@ -906,38 +979,59 @@ private void formatObjectImpl(Flag!"all" all = No.all,
     auto ref Thing thing,
     const uint typewidth,
     const uint namewidth)
-if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 {
+    import lu.string : stripSuffix;
+    import std.format : formattedWrite;
+    import std.meta : allSatisfy;
+    import std.range.primitives : isOutputRange;
+    import std.traits : Unqual, isAggregateType;
+
+    static if (!isAggregateType!Thing)
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` was passed a non-aggregate type `%s`";
+        immutable message = pattern.format(__FUNCTION__, T.stringof);
+        static assert(0, message);
+    }
+    else static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+
     static if (coloured)
     {
         import kameloso.terminal.colours.defs : F = TerminalForeground;
         import kameloso.terminal.colours : applyANSI;
-    }
 
-    import lu.string : stripSuffix;
-    import std.format : formattedWrite;
-    import std.traits : Unqual;
-
-    alias Thing = Unqual!(typeof(thing));
-
-    static if (coloured)
-    {
         immutable titleCode = bright ? F.black : F.white;
         sink.applyANSI(titleCode);
         scope(exit) sink.applyANSI(F.default_);
     }
 
+    alias Thing = Unqual!(typeof(thing));
+
     sink.formattedWrite("-- %s\n", Thing.stringof.stripSuffix("Settings"));
 
     foreach (immutable memberstring; __traits(derivedMembers, Thing))
     {
-        import kameloso.traits : memberIsMutable, memberIsValue,
-            memberIsVisibleAndNotDeprecated, memberstringIsThisCtorOrDtor;
+        import kameloso.traits :
+            memberIsMutable,
+            memberIsValue,
+            memberIsVisibleAndNotDeprecated,
+            memberstringIsThisCtorOrDtor;
         import lu.traits : isSerialisable;
         import lu.uda : Hidden, Unserialisable;
         import std.traits : hasUDA;
 
         enum namePadding = 2;
+        enum stringTruncation = 128;
+        enum arrayTruncation = 5;
+        enum aaTruncation = 5;
 
         static if (
             !memberstringIsThisCtorOrDtor(memberstring) &&
@@ -957,50 +1051,104 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
             static if (isTrulyString!T)
             {
                 FormatStringMemberArguments args;
+                auto content = __traits(getMember, thing, memberstring);
                 args.typestring = T.stringof;
                 args.memberstring = memberstring;
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
                 args.bright = bright;
-                args.truncate = !all;
-                formatStringMemberImpl!(coloured, T)(sink, args, __traits(getMember, thing, memberstring));
+                args.truncateAfter = all ? uint.max : stringTruncation;
+                formatStringMemberImpl!coloured(sink, args, content);
             }
             else static if (isArray!T || isAssociativeArray!T)
             {
                 import lu.traits : UnqualArray;
+                import std.conv : to;
+                import std.range : take;
                 import std.range.primitives : ElementEncodingType;
 
-                alias ElemType = Unqual!(ElementEncodingType!T);
+                enum quoteSign(Type) =
+                    (is(Type == char) ||
+                     is(Type == dchar) ||
+                     is(Type == wchar)) ? FormatArrayMemberArguments.QuoteSign.char_ :
+                    (is(Type == string) ||
+                     is(Type == dstring) ||
+                     is(Type == wstring)) ? FormatArrayMemberArguments.QuoteSign.string_ :
+                    FormatArrayMemberArguments.QuoteSign.none;
 
                 FormatArrayMemberArguments args;
+                auto content = __traits(getMember, thing, memberstring);
                 args.typestring = UnqualArray!T.stringof;
                 args.memberstring = memberstring;
-                args.elemstring = ElemType.stringof;
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
-                args.truncate = !all;
+                args.truncated = !all && (content.length > arrayTruncation);
                 args.bright = bright;
 
                 static if (isArray!T)
                 {
-                    enum elemIsCharacter =
-                        is(ElemType == char) ||
-                        is(ElemType == dchar) ||
-                        is(ElemType == wchar);
+                    import std.algorithm.iteration : map;
+                    import std.array : array;
+                    import std.traits : TemplateOf;
+                    import std.typecons : Nullable;
 
-                    args.elemIsCharacter = elemIsCharacter;
-                    formatArrayMemberImpl!(coloured, T)
+                    alias ElemType = Unqual!(ElementEncodingType!T);
+
+                    static if (__traits(isSame, TemplateOf!ElemType, Nullable))
+                    {
+                        import std.traits : TemplateArgsOf;
+                        args.typestring = "N!" ~ TemplateArgsOf!ElemType.stringof;
+                    }
+                    else
+                    {
+                        args.typestring = UnqualArray!T.stringof;
+                    }
+
+                    enum truncateAfter = all ? uint.max : arrayTruncation;
+                    args.elemQuoteSign = quoteSign!ElemType;
+                    args.length = content.length;
+
+                    auto asStringArray = content[]
+                        .take(truncateAfter)
+                        .map!(a => a.to!string)
+                        .array;
+
+                    formatArrayMemberImpl!coloured
                         (sink,
                         args,
-                        __traits(getMember, thing, memberstring));
+                        asStringArray);
                 }
                 else /*static if (isAssociativeArray!T)*/
                 {
-                    // Can't pass T for some reason, nor UnqualArray
-                    formatAssociativeArrayMemberImpl!(coloured, T)
-                        (sink,
-                        args,
-                        __traits(getMember, thing, memberstring));
+                    import std.traits : KeyType, ValueType;
+
+                    alias AAKeyType = Unqual!(KeyType!T);
+                    alias AAValueType = Unqual!(ValueType!T);
+
+                    enum truncateAfter = all ? uint.max : aaTruncation;
+                    args.keyQuoteSign = quoteSign!(AAKeyType);
+                    args.valueQuoteSign = quoteSign!(AAValueType);
+                    args.length = content.length;
+
+                    static if (!is(T : string[string]))
+                    {
+                        //pragma(msg, T);
+                        string[string] asStringAA;
+                        auto range = content
+                            .byKeyValue
+                            .take(truncateAfter);
+
+                        foreach (kv; range)
+                        {
+                            asStringAA[kv.key.to!string] = kv.value.to!string;
+                        }
+                    }
+                    else
+                    {
+                        alias asStringAA = content;
+                    }
+
+                    formatAssociativeArrayMemberImpl!coloured(sink, args, asStringAA);
                 }
             }
             else static if (isAggregateType!T)
@@ -1011,29 +1159,27 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                     is(T == interface) ? "interface" :
                     /*is(T == union) ?*/ "union"; //: "<error>";
 
+                FormatAggregateMemberArguments args;
+
                 static if (is(Thing == struct) && is(T == struct))
                 {
-                    immutable initText = (__traits(getMember, thing, memberstring) ==
-                        __traits(getMember, Thing.init, memberstring)) ?
-                            " (init)" :
-                            string.init;
+                    immutable isInit = (__traits(getMember, thing, memberstring) ==
+                        __traits(getMember, Thing.init, memberstring));
+                    args.initText = isInit ?
+                        " (init)" :
+                        string.init;
                 }
                 else static if (is(T == class) || is(T == interface))
                 {
-                    immutable initText = (__traits(getMember, thing, memberstring) is null) ?
+                    immutable isInit = (__traits(getMember, thing, memberstring) is null);
+                    args.initText = isInit ?
                         " (null)" :
                         string.init;
                 }
-                else
-                {
-                    enum initText = string.init;
-                }
 
-                FormatAggregateMemberArguments args;
                 args.typestring = T.stringof;
                 args.memberstring = memberstring;
                 args.aggregateType = aggregateType;
-                args.initText = initText;
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
                 args.bright = bright;
@@ -1042,12 +1188,13 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
             else
             {
                 FormatOtherMemberArguments args;
+                auto content = __traits(getMember, thing, memberstring);
                 args.typestring = T.stringof;
                 args.memberstring = memberstring;
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
                 args.bright = bright;
-                formatOtherMemberImpl!(coloured, T)(sink, args, __traits(getMember, thing, memberstring));
+                formatOtherMemberImpl!coloured(sink, args, content);
             }
         }
     }
@@ -1056,50 +1203,46 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 ///
 @system unittest
 {
-    import lu.string : contains;
+    import kameloso.common : assertMultilineOpEquals;
     import std.array : Appender;
+    import std.string : indexOf;
 
     Appender!(char[]) sink;
     sink.reserve(512);  // ~323
 
-    struct Struct
     {
-        string members;
-        int asdf;
-    }
+        struct Struct
+        {
+            string members;
+            int asdf;
+        }
 
-    // Monochrome
+        struct StructName
+        {
+            Struct struct_;
+            int i = 12_345;
+            string s = "the moon; the sign of hope! it appeared when we left the pain " ~
+                "of the ice desert behind. we faced up to the curse and endured " ~
+                "misery. condemned we are! we brought hope but also lies, and treachery...";
+            string p = "!";
+            string p2;
+            bool b = true;
+            float f = 3.14f;
+            double d = 99.9;
+            const(char)[] c = [ 'a', 'b', 'c' ];
+            const(char)[] emptyC;
+            string[] dynA = [ "foo", "bar", "baz" ];
+            int[] iA = [ 1, 2, 3, 4 ];
+            const(char)[char] cC;
+        }
 
-    struct StructName
-    {
-        Struct struct_;
-        int i = 12_345;
-        string s = "the moon; the sign of hope! it appeared when we left the pain " ~
-            "of the ice desert behind. we faced up to the curse and endured " ~
-            "misery. condemned we are! we brought hope but also lies, and treachery...";
-        string p = "!";
-        string p2;
-        bool b = true;
-        float f = 3.14f;
-        double d = 99.9;
-        const(char)[] c = [ 'a', 'b', 'c' ];
-        const(char)[] emptyC;
-        string[] dynA = [ "foo", "bar", "baz" ];
-        int[] iA = [ 1, 2, 3, 4 ];
-        const(char)[char] cC;
-    }
+        StructName s;
+        s.cC = [ 'k':'v', 'K':'V' ];
 
-    StructName s;
-    s.cC = [ 'a':'a', 'b':'b' ];
-    assert('a' in s.cC);
-    assert('b' in s.cC);
+        enum theMoon = `"the moon; the sign of hope! it appeared when we left the ` ~
+            `pain of the ice desert behind. we faced up to the curse and endured mis"`;
 
-    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
-
-    enum theMoon = `"the moon; the sign of hope! it appeared when we left the ` ~
-        `pain of the ice desert behind. we faced up to the curse and endured mis"`;
-
-    enum structNameSerialised =
+        enum structNameSerialised =
 `-- StructName
      Struct struct_                    <struct> (init)
         int i                           12345
@@ -1113,83 +1256,85 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
      char[] emptyC                      [](0)
    string[] dynA                       ["foo", "bar", "baz"](3)
       int[] iA                         [1, 2, 3, 4](4)
- char[char] cC                         ['b':'b', 'a':'a'](2)
+ char[char] cC                         ['k':'v', 'K':'V'](2)
 `;
-    assert((sink.data == structNameSerialised), "\n" ~ sink.data);
 
-    // Adding Settings does nothing
-    alias StructNameSettings = StructName;
-    StructNameSettings so = s;
-    sink.clear();
-    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, so);
+        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
+        sink.data.assertMultilineOpEquals(structNameSerialised);
+        sink.clear();
 
-    assert((sink.data == structNameSerialised), "\n" ~ sink.data);
+        // Class copy
+        class ClassName
+        {
+            Struct struct_;
+            int i = 12_345;
+            string s = "foo";
+            string p = "!";
+            string p2;
+            bool b = true;
+            float f = 3.14f;
+            double d = 99.9;
+            const(char)[] c = [ 'a', 'b', 'c' ];
+            const(char)[] emptyC;
+            string[] dynA = [ "foo", "bar", "baz" ];
+            int[] iA = [ 1, 2, 3, 4 ];
+            int[] iA2 = [ 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+            const(char)[char] cC;
+            bool[int] aa;
+            string[string] aa2;
+        }
 
-    // Class copy
-    class ClassName
-    {
-        Struct struct_;
-        int i = 12_345;
-        string s = "foo";
-        string p = "!";
-        string p2;
-        bool b = true;
-        float f = 3.14f;
-        double d = 99.9;
-        const(char)[] c = [ 'a', 'b', 'c' ];
-        const(char)[] emptyC;
-        string[] dynA = [ "foo", "bar", "baz" ];
-        int[] iA = [ 1, 2, 3, 4 ];
-        const(char)[char] cC;
-    }
+        auto c1 = new ClassName;
+        c1.aa = [ 1 : true, 2 : false, 3 : true, 4 : false, 5: true, 6 : false];
+        c1.aa2 = [ "harbl" : "snarbl", "foo" : "bar"];
 
-    auto c1 = new ClassName;
-    sink.clear();
-    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c1);
-
-    enum classNameSerialised =
+        enum classNameSerialised =
 `-- ClassName
-     Struct struct_                    <struct>
-        int i                           12345
-     string s                          "foo"(3)
-     string p                          "!"(1)
-     string p2                          ""(0)
-       bool b                           true
-      float f                           3.14
-     double d                           99.9
-     char[] c                          ['a', 'b', 'c'](3)
-     char[] emptyC                      [](0)
-   string[] dynA                       ["foo", "bar", "baz"](3)
-      int[] iA                         [1, 2, 3, 4](4)
- char[char] cC                          [](0)
+         Struct struct_                    <struct>
+            int i                           12345
+         string s                          "foo"(3)
+         string p                          "!"(1)
+         string p2                          ""(0)
+           bool b                           true
+          float f                           3.14
+         double d                           99.9
+         char[] c                          ['a', 'b', 'c'](3)
+         char[] emptyC                      [](0)
+       string[] dynA                       ["foo", "bar", "baz"](3)
+          int[] iA                         [1, 2, 3, 4](4)
+          int[] iA2                        [5, 6, 7, 8, 9] ... (11)
+     char[char] cC                          [](0)
+      bool[int] aa                         [6:false, 4:false, 1:true, 3:true, 5:true] ... (6)
+ string[string] aa2                        ["foo":"bar", "harbl":"snarbl"](2)
 `;
 
-    assert((sink.data == classNameSerialised), '\n' ~ sink.data);
-
-    // Two at a time
-    struct Struct1
-    {
-        string members;
-        int asdf;
+        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c1);
+        sink.data.assertMultilineOpEquals(classNameSerialised);
+        sink.clear();
     }
-
-    struct Struct2
     {
-        string mumburs;
-        int fdsa;
-    }
+        // Two at a time
+        struct Struct1
+        {
+            string members;
+            int asdf;
+        }
 
-    Struct1 st1;
-    Struct2 st2;
+        struct Struct2
+        {
+            string mumburs;
+            int fdsa;
+        }
 
-    st1.members = "harbl";
-    st1.asdf = 42;
-    st2.mumburs = "hirrs";
-    st2.fdsa = -1;
+        Struct1 st1;
+        Struct2 st2;
 
-    sink.clear();
-    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, st1, st2);
-    enum st1st2Formatted =
+        st1.members = "harbl";
+        st1.asdf = 42;
+        st2.mumburs = "hirrs";
+        st2.fdsa = -1;
+
+        enum st1st2Formatted =
 `-- Struct1
    string members                    "harbl"(5)
       int asdf                        42
@@ -1198,100 +1343,96 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
    string mumburs                    "hirrs"(5)
       int fdsa                        -1
 `;
-    assert((sink.data == st1st2Formatted), '\n' ~ sink.data);
 
-    // Colour
-    struct StructName2
-    {
-        int int_ = 12_345;
-        string string_ = "foo";
-        bool bool_ = true;
-        float float_ = 3.14f;
-        double double_ = 99.9;
-    }
-
-    version(Colours)
-    {
-        StructName2 s2;
-
+        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, st1, st2);
+        sink.data.assertMultilineOpEquals(st1st2Formatted);
         sink.clear();
-        sink.reserve(256);  // ~239
-        sink.formatObjects!(No.all, Yes.coloured)(No.brightTerminal, s2);
-
-        assert((sink.data.length > 12), "Empty sink after coloured fill");
-
-        assert(sink.data.contains("-- StructName"));
-        assert(sink.data.contains("int_"));
-        assert(sink.data.contains("12345"));
-
-        assert(sink.data.contains("string_"));
-        assert(sink.data.contains(`"foo"`));
-
-        assert(sink.data.contains("bool_"));
-        assert(sink.data.contains("true"));
-
-        assert(sink.data.contains("float_"));
-        assert(sink.data.contains("3.14"));
-
-        assert(sink.data.contains("double_"));
-        assert(sink.data.contains("99.9"));
-
-        // Adding Settings does nothing
-        alias StructName2Settings = StructName2;
-        immutable sinkCopy = sink.data.idup;
-        StructName2Settings s2o;
-
-        sink.clear();
-        sink.formatObjects!(No.all, Yes.coloured)(No.brightTerminal, s2o);
-        assert((sink.data == sinkCopy), sink.data);
     }
-
-    class C
     {
-        string a = "abc";
-        bool b = true;
-        int i = 42;
+        version(Colours)
+        {
+            // Colour
+            struct StructName2Settings
+            {
+                int int_ = 12_345;
+                string string_ = "foo";
+                bool bool_ = true;
+                float float_ = 3.14f;
+                double double_ = 99.9;
+            }
+            StructName2Settings s2;
+
+            sink.clear();
+            sink.reserve(256);  // ~239
+            sink.formatObjects!(No.all, Yes.coloured)(No.brightTerminal, s2);
+
+            assert((sink.data.length > 12), "Empty sink after coloured fill");
+
+            assert(sink.data.indexOf("-- StructName2\n") != -1);  // Settings stripped
+            assert(sink.data.indexOf("int_") != -1);
+            assert(sink.data.indexOf("12345") != -1);
+
+            assert(sink.data.indexOf("string_") != -1);
+            assert(sink.data.indexOf(`"foo"`) != -1);
+
+            assert(sink.data.indexOf("bool_") != -1);
+            assert(sink.data.indexOf("true") != -1);
+
+            assert(sink.data.indexOf("float_") != -1);
+            assert(sink.data.indexOf("3.14") != -1);
+
+            assert(sink.data.indexOf("double_") != -1);
+            assert(sink.data.indexOf("99.9") != -1);
+
+            sink.clear();
+        }
     }
+    {
+        class C
+        {
+            string a = "abc";
+            bool b = true;
+            int i = 42;
+        }
 
-    C c2 = new C;
+        C c2 = new C;
 
-    sink.clear();
-    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c2);
-    enum cFormatted =
+        enum cFormatted =
 `-- C
    string a                          "abc"(3)
      bool b                           true
       int i                           42
 `;
-    assert((sink.data == cFormatted), '\n' ~ sink.data);
 
-    sink.clear();
-
-    interface I3
-    {
-        void foo();
+        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c2);
+        sink.data.assertMultilineOpEquals(cFormatted);
+        sink.clear();
     }
-
-    class C3 : I3
     {
-        void foo() {}
-        int i;
-    }
+        interface I3
+        {
+            void foo();
+        }
 
-    class C4
-    {
-        I3 i3;
-        C3 c3;
-        int i = 42;
-    }
+        class C3 : I3
+        {
+            void foo() {}
+            int i;
+        }
 
-    C4 c4 = new C4;
-    //c4.i3 = new C3;
-    c4.c3 = new C3;
-    c4.c3.i = -1;
+        class C4
+        {
+            I3 i3;
+            C3 c3;
+            int i = 42;
+        }
 
-    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c4, c4.i3, c4.c3);
-    enum c4Formatted =
+        C4 c4 = new C4;
+        //c4.i3 = new C3;
+        c4.c3 = new C3;
+        c4.c3.i = -1;
+
+        enum c4Formatted =
 `-- C4
        I3 i3                         <interface> (null)
        C3 c3                         <class>
@@ -1302,7 +1443,11 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 -- C3
       int i                           -1
 `;
-    assert((sink.data == c4Formatted), '\n' ~ sink.data);
+
+        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c4, c4.i3, c4.c3);
+        sink.data.assertMultilineOpEquals(c4Formatted);
+        //sink.clear();
+    }
 }
 
 
@@ -1344,8 +1489,8 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
  +/
 string formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Things...)
-    (const Flag!"brightTerminal" bright, auto ref Things things)
-if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
+    (const Flag!"brightTerminal" bright, auto ref Things things) pure
+if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))  // must be a constraint
 {
     import kameloso.constants : BufferSize;
     import std.array : Appender;
@@ -1360,84 +1505,97 @@ if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
 ///
 unittest
 {
+    import kameloso.common : assertMultilineOpEquals;
+
     // Rely on the main unit tests of the output range version of formatObjects
-
-    struct Struct
     {
-        string members;
-        int asdf;
-    }
+        struct Struct
+        {
+            string members;
+            int asdf;
+        }
 
-    Struct s;
-    s.members = "foo";
-    s.asdf = 42;
+        Struct s;
+        s.members = "foo";
+        s.asdf = 42;
 
-    immutable formatted = formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
-    assert((formatted ==
+        enum expected =
 `-- Struct
    string members                    "foo"(3)
       int asdf                        42
-`), '\n' ~ formatted);
+`;
 
-    class Nested
-    {
-        int harbl;
-        string snarbl;
+        immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
+        actual.assertMultilineOpEquals(expected);
     }
-
-    class ClassSettings
     {
-        string s = "arb";
-        int i;
-        string someLongConfiguration = "acdc adcadcad acacdadc";
-        int[] arrMatey = [ 1, 2, 3, 42 ];
-        Nested nest;
-    }
+        class Nested
+        {
+            int harbl;
+            string snarbl;
+        }
 
-    auto c = new ClassSettings;
-    c.i = 2;
+        class ClassSettings
+        {
+            string s = "arb";
+            int i;
+            string someLongConfiguration = "acdc adcadcad acacdadc";
+            int[] arrMatey = [ 1, 2, 3, 42 ];
+            Nested nest;
+        }
 
-    immutable formattedClass = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
-    assert((formattedClass ==
+        auto c = new ClassSettings;
+        c.i = 2;
+
+        enum expected =
 `-- Class
    string s                          "arb"(3)
       int i                           2
    string someLongConfiguration      "acdc adcadcad acacdadc"(22)
     int[] arrMatey                   [1, 2, 3, 42](4)
    Nested nest                       <class> (null)
-`), '\n' ~ formattedClass);
+`;
 
-    c.nest = new Nested;
-    immutable formattedClass2 = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
-    assert((formattedClass2 ==
+        immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
+        actual.assertMultilineOpEquals(expected);
+
+        c.nest = new Nested;
+        enum expected2 =
 `-- Class
    string s                          "arb"(3)
       int i                           2
    string someLongConfiguration      "acdc adcadcad acacdadc"(22)
     int[] arrMatey                   [1, 2, 3, 42](4)
    Nested nest                       <class>
-`), '\n' ~ formattedClass2);
+`;
 
-    struct Reparse {}
-    struct Client {}
-    struct Server {}
-
-    struct State
-    {
-        Client client;
-        Server server;
-        Reparse[] reparses;
-        bool hasReplays;
+        immutable actual2 = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
+        actual2.assertMultilineOpEquals(expected2);
     }
+    {
+        struct Reparse {}
+        struct Client {}
+        struct Server {}
 
-    State state;
+        struct State
+        {
+            Client client;
+            Server server;
+            Reparse[] reparses;
+            bool hasReplays;
+        }
 
-    immutable formattedState = formatObjects!(No.all, No.coloured)(No.brightTerminal, state);
-    assert((formattedState ==
+        State state;
+
+        enum expected =
 `-- State
     Client client                     <struct> (init)
     Server server                     <struct> (init)
  Reparse[] reparses                    [](0)
       bool hasReplays                  false
-`), '\n' ~ formattedState);
+`;
+
+        immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, state);
+        actual.assertMultilineOpEquals(expected);
+    }
 }

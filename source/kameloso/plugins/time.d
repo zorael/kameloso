@@ -51,7 +51,7 @@ import dialect.defs;
     Module-level since we can't have static immutable associative arrays, and as
     such populated in a module constructor.
 
-    The alternative is to put it in [TimePlugin] and have a modul-level `setup`
+    The alternative is to put it in [TimePlugin] and have a module-level `setup`
     that populates it, but since it never changes during the program's run time,
     it may as well be here.
  +/
@@ -311,7 +311,6 @@ in (specified.length, "Tried to get timezone of an empty string")
 
     string getZonestring()
     {
-        import lu.string : contains;
         import std.algorithm.searching : canFind;
 
         if (immutable zonestringAlias = specified in zonestringAliases)
@@ -322,10 +321,11 @@ in (specified.length, "Tried to get timezone of an empty string")
         version(Posix)
         {
             import std.array : replace;
+            import std.string : indexOf;
 
             string resolvePrefixedTimezone(const string zonestring)
             {
-                if (zonestring.contains('/')) return string.init;
+                if (zonestring.indexOf('/') != -1) return string.init;
 
                 static immutable string[7] prefixes =
                 [
@@ -524,7 +524,7 @@ void reload(TimePlugin plugin)
 
     JSONStorage channelTimezonesJSON;
     channelTimezonesJSON.load(plugin.timezonesFile);
-    plugin.channelTimezones.clear();
+    plugin.channelTimezones = null;
     plugin.channelTimezones.populateFromJSON(channelTimezonesJSON, Yes.lowercaseKeys);
 }
 

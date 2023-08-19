@@ -50,10 +50,11 @@ package void requestSpotifyKeys(TwitchPlugin plugin)
 {
     import kameloso.logger : LogLevel;
     import kameloso.terminal.colours.tags : expandTags;
-    import lu.string : contains, nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.format : format;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : File, readln, stdin, stdout, write, writeln;
+    import std.string : indexOf;
 
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
@@ -117,11 +118,11 @@ A normal URL to any playlist you can modify will work fine.
             // Likely a playlist ID
             creds.spotifyPlaylistID = playlistURL;
         }
-        else if (playlistURL.contains("spotify.com/playlist/"))
+        else if (playlistURL.indexOf("spotify.com/playlist/") != -1)
         {
             string slice = playlistURL;  // mutable
-            slice.nom("spotify.com/playlist/");
-            creds.spotifyPlaylistID = slice.nom!(Yes.inherit)('?');
+            slice.advancePast("spotify.com/playlist/");
+            creds.spotifyPlaylistID = slice.advancePast('?', Yes.inherit);
         }
         else
         {
@@ -209,17 +210,17 @@ A normal URL to any playlist you can modify will work fine.
             writeln();
             logger.warning("Aborting.");
             logger.trace();
-            *plugin.state.abort = true;
+            *plugin.state.abort = Yes.abort;
             return;
         }
 
-        if (!readCode.contains("code="))
+        if (readCode.indexOf("code=") == -1)
         {
-            import lu.string : beginsWith;
+            import std.algorithm.searching : startsWith;
 
             writeln();
 
-            if (readCode.beginsWith(authNode))
+            if (readCode.startsWith(authNode))
             {
                 enum wrongPageMessage = "Not that page; the empty page you're " ~
                     "lead to after clicking <l>Allow</>.";
@@ -235,7 +236,7 @@ A normal URL to any playlist you can modify will work fine.
         }
 
         string slice = readCode;  // mutable
-        slice.nom("?code=");
+        slice.advancePast("?code=");
         code = slice;
 
         if (!code.length)
@@ -298,7 +299,7 @@ A normal URL to any playlist you can modify will work fine.
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
         creds = [Credentials] aggregate.
-        code = Spotify authorization code.
+        code = Spotify authorisation code.
 
     Throws:
         [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]

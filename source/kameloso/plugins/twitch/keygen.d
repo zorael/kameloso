@@ -39,7 +39,7 @@ package:
 void requestTwitchKey(TwitchPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : prioritySend;
+    import std.concurrency : send;
     import std.datetime.systime : Clock;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : stdout, writeln;
@@ -190,7 +190,7 @@ instructions and log in to authorise the use of this program with your <w>BOT</>
     logger.trace();
 
     plugin.state.updates |= typeof(plugin.state.updates).bot;
-    plugin.state.mainThread.prioritySend(ThreadMessage.save);
+    plugin.state.mainThread.send(ThreadMessage.save);
 }
 
 
@@ -393,8 +393,9 @@ instructions and log in to authorise the use of this program with your <w>STREAM
  +/
 private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
 {
-    import lu.string : contains, nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.stdio : readln, stdin, stdout, write, writeln;
+    import std.string : indexOf;
 
     string key;
 
@@ -416,7 +417,7 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
             writeln();
             logger.warning("Aborting.");
             logger.trace();
-            *plugin.state.abort = true;
+            *plugin.state.abort = Yes.abort;
             return string.init;
         }
 
@@ -425,13 +426,13 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
             // As is
             key = readURL;
         }
-        else if (!readURL.contains("access_token="))
+        else if (readURL.indexOf("access_token=") == -1)
         {
-            import lu.string : beginsWith;
+            import std.algorithm.searching : startsWith;
 
             writeln();
 
-            if (readURL.beginsWith(authNode))
+            if (readURL.startsWith(authNode))
             {
                 enum wrongPageMessage = "Not that page; the empty page you're " ~
                     "lead to after clicking <l>Authorize</>.";
@@ -447,8 +448,8 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
         }
 
         string slice = readURL;  // mutable
-        slice.nom("access_token=");
-        key = slice.nom('&');
+        slice.advancePast("access_token=");
+        key = slice.advancePast('&');
 
         if (key.length != 30L)
         {
@@ -512,6 +513,8 @@ auto getTokenExpiry(TwitchPlugin plugin, const string authToken)
         try
         {
             immutable validationJSON = getValidation(plugin, authToken, No.async);
+            plugin.state.client.nickname = validationJSON["login"].str;
+            plugin.state.updates |= typeof(plugin.state.updates).client;
             immutable expiresIn = validationJSON["expires_in"].integer;
             immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
             return expiresWhen;

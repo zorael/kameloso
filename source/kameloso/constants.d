@@ -86,9 +86,9 @@ auto buildCompilerVersionString()
     ---
     enum version_ = "%d.%d.%d%s%s"
         .format(
-            KamelosoSemVer.majorVersion,
-            KamelosoSemVer.minorVersion,
-            KamelosoSemVer.patchVersion,
+            KamelosoSemVer.major,
+            KamelosoSemVer.minor,
+            KamelosoSemVer.patch,
             KamelosoSemVerPrerelease.length ? "-" : string.init,
             KamelosoSemVerPrerelease);
     ---
@@ -108,11 +108,11 @@ auto buildVersionString()
 
     with (KamelosoSemVer)
     {
-        majorVersion.toAlphaInto(sink);
+        major.toAlphaInto(sink);
         sink.put('.');
-        minorVersion.toAlphaInto(sink);
+        minor.toAlphaInto(sink);
         sink.put('.');
-        patchVersion.toAlphaInto(sink);
+        patch.toAlphaInto(sink);
 
         if (KamelosoSemVerPrerelease.length)
         {
@@ -202,6 +202,11 @@ enum KamelosoDefaults
         A separator of "^" gives nicknames like "guest^2".
      +/
     altNickSeparator = "|",
+
+    /++
+        The default prefix to use for commands.
+     +/
+    prefix = "!",
 }
 
 
@@ -362,7 +367,7 @@ enum BufferSize
         How large to make [core.thread.fiber.Fiber|Fiber] stacks, so they don't
         overflow (which they seem to have a knack for doing).
      +/
-    fiberStack = 131_072,
+    fiberStack = 32_768,
 }
 
 
@@ -538,6 +543,26 @@ enum ShellReturnValue
         Generic exception was thrown when a plugin tried to setup.
      +/
     pluginSetupException = 34,
+
+    /++
+        Failure encountered during plugin start.
+     +/
+    pluginStartFailure = 35,
+
+    /++
+        Generic exception was thrown when a plugin tried to start.
+     +/
+    pluginStartException = 36,
+
+    /++
+        Failure encountered during plugin init.
+     +/
+    pluginInitialisationFailure = 37,
+
+    /++
+        Generic exception was thrown when a plugin tried to initialise.
+     +/
+    pluginInitialisationException = 38,
 }
 
 

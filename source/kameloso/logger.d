@@ -189,12 +189,11 @@ public:
      +/
     this(const CoreSettings settings) pure nothrow @safe
     {
-        linebuffer.reserve(bufferInitialSize);
-        messagebuffer.reserve(bufferInitialSize);
-        this.monochrome = settings.monochrome;
-        this.brightTerminal = settings.brightTerminal;
-        this.headless = settings.headless;
-        this.flush = settings.flush;
+        this(
+            cast(Flag!"monochrome")settings.monochrome,
+            cast(Flag!"brightTerminal")settings.brightTerminal,
+            cast(Flag!"headless")settings.headless,
+            cast(Flag!"flush")settings.flush);
     }
 
     version(Colours)
@@ -271,7 +270,7 @@ public:
             Returns:
                 A tint string.
          +/
-        private auto tintImpl(LogLevel level)() const @property pure nothrow @nogc @safe
+        private auto tintImpl(LogLevel level)() const pure @safe nothrow @nogc
         {
             if (headless || monochrome)
             {
@@ -296,7 +295,7 @@ public:
         static foreach (const lv; EnumMembers!LogLevel)
         {
             mixin(
-"auto " ~ Enum!LogLevel.toString(lv) ~ "tint() const @property pure nothrow @nogc @safe
+"auto " ~ Enum!LogLevel.toString(lv) ~ "tint() const pure @safe nothrow @nogc
 {
     return tintImpl!(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ");
 }");
@@ -385,13 +384,13 @@ public:
      +/
     private void finishLogMsg() @trusted  // writeln trusts stdout.flush, so we should be able to too
     {
-        import kameloso.terminal.colours : applyANSI;
         import std.stdio : stdout, writeln;
 
         version(Colours)
         {
             if (!monochrome)
             {
+                import kameloso.terminal.colours : applyANSI;
                 // Reset.blink in case a fatal message was thrown
                 linebuffer.applyANSI(TerminalReset.all);
             }

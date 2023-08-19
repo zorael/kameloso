@@ -21,6 +21,7 @@ version(WithTwitchPlugin):
 private:
 
 import std.json : JSONValue;
+import std.typecons : Flag, No, Yes;
 
 package:
 
@@ -70,7 +71,7 @@ auto getHTTPClient()
 auto readNamedString(
     const string wording,
     const size_t expectedLength,
-    ref bool abort)
+    ref Flag!"abort" abort)
 {
     import kameloso.common : logger;
     import kameloso.logger : LogLevel;

@@ -93,7 +93,9 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
     void sendHelpDg()
     {
-        import lu.string : beginsWith, contains, stripped;
+        import lu.string : stripped;
+        import std.algorithm.searching : startsWith;
+        import std.string : indexOf;
 
         auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -105,32 +107,50 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
         if (plugin.helpSettings.repliesInQuery) mutEvent.channel = string.init;
 
-        if (mutEvent.content.length)
+        if (!mutEvent.content.length)
         {
-            immutable shorthandNicknamePrefix = plugin.state.client.nickname[0..1] ~ ':';
+            // Nothing supplied, send the big list
+            return sendFullPluginListing(plugin, mutEvent, allPluginCommands);
+        }
 
-            if (mutEvent.content.beginsWith(plugin.state.settings.prefix) ||
-                mutEvent.content.beginsWith(plugin.state.client.nickname) ||
-                mutEvent.content.beginsWith(shorthandNicknamePrefix))
-            {
-                // Not a plugin, just a prefixed command (probably)
-                sendOnlyCommandHelp(plugin, mutEvent, allPluginCommands);
-            }
-            else if (mutEvent.content.contains!(Yes.decode)(' '))
+        immutable shorthandNicknamePrefix = plugin.state.client.nickname[0..1] ~ ':';
+        immutable startsWithPrefix = plugin.state.settings.prefix.length &&
+            mutEvent.content.startsWith(plugin.state.settings.prefix);
+
+        if (
+            startsWithPrefix ||
+            mutEvent.content.startsWith(plugin.state.client.nickname) ||
+            mutEvent.content.startsWith(shorthandNicknamePrefix))
+        {
+            // Not a plugin, just a prefixed command (probably)
+            sendOnlyCommandHelp(plugin, mutEvent, allPluginCommands);
+        }
+        else if (mutEvent.content.indexOf(' ') != -1)
+        {
+            import std.algorithm.searching : count;
+
+            if (mutEvent.content.count(' ') == 1)
             {
                 // Likely a plugin and a command
                 sendPluginCommandHelp(plugin, mutEvent, allPluginCommands);
             }
-            else
+            else /*if (mutEvent.content.count(' ') > 1)*/
             {
-                // Just one word; print a specified plugin's commands
-                sendSpecificPluginListing(plugin, mutEvent, allPluginCommands);
+                import lu.string : advancePast;
+                import std.format : format;
+
+                // More than two words; too many
+                string slice = mutEvent.content;  // mutable
+                immutable pluginName = slice.advancePast(' ');
+                enum pattern = "Invalid <b>%s<b> plugin command name: <b>%s<b>";
+                immutable message = pattern.format(pluginName, slice);
+                privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
             }
         }
         else
         {
-            // Nothing supplied, send the big list
-            sendFullPluginListing(plugin, mutEvent, allPluginCommands);
+            // Just one word; print a specified plugin's commands
+            sendSpecificPluginListing(plugin, mutEvent, allPluginCommands);
         }
     }
 
@@ -147,42 +167,66 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         otherPluginName = The name of the plugin that hosts the command we're to
             send the help text for.
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
-        command = String of the command we're to send help text for (sans prefix).
-        description = The description text that the event handler function is annotated with.
-        syntaxes = The declared different syntaxes of the command.
+        commandString = String of the command we're to send help text for (sans prefix).
+        command = Actual [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|CommandMetadata]
+            of the command we're to send help text for.
  +/
 void sendCommandHelpImpl(
     HelpPlugin plugin,
     const string otherPluginName,
     const ref IRCEvent event,
-    const string command,
-    const string description,
-    const string[] syntaxes)
+    const string commandString,
+    const IRCPlugin.CommandMetadata command)
 {
-    import lu.string : beginsWith;
+    import std.algorithm.searching : startsWith;
     import std.array : replace;
     import std.conv : text;
     import std.format : format;
 
-    enum pattern = "[<b>%s<b>] <b>%s<b>: %s";
-    immutable message = pattern.format(otherPluginName, command, description);
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
-
-    foreach (immutable syntax; syntaxes)
+    auto getHumanlyReadable(const string syntax)
     {
-        immutable humanlyReadable = syntax
-            .replace("$command", command)
+        import lu.string : strippedLeft;
+
+        return syntax
+            .replace("$command", commandString)
             .replace("$bot", plugin.state.client.nickname)
             .replace("$prefix", plugin.state.settings.prefix)
-            .replace("$nickname", event.sender.nickname);
+            .replace("$nickname", event.sender.nickname)
+            .replace("$header", string.init)
+            .strippedLeft;
+    }
 
-        // Prepend the prefix to non-PrefixPolicy.nickname commands
-        immutable prefixedSyntax = (syntax.beginsWith("$bot") || syntax.beginsWith("$prefix")) ?
-            humanlyReadable :
-            plugin.state.settings.prefix ~ humanlyReadable;
-        immutable usage = (syntaxes.length == 1) ?
-            "<b>Usage<b>: " ~ prefixedSyntax :
-            "* " ~ prefixedSyntax;
+    enum pattern = "[<b>%s<b>] <b>%s<b>: %s";
+    immutable message = pattern.format(otherPluginName, commandString, command.description);
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+
+    foreach (immutable syntax; command.syntaxes)
+    {
+        immutable shouldNotTouch = syntax.startsWith("$header");
+        immutable humanlyReadable = getHumanlyReadable(syntax);
+        string contentLine;  // mutable
+
+        if (plugin.state.settings.prefix.length && (command.policy == PrefixPolicy.prefixed))
+        {
+            contentLine = (shouldNotTouch || syntax.startsWith("$prefix")) ?
+                humanlyReadable :
+                plugin.state.settings.prefix ~ humanlyReadable;
+        }
+        else if (command.policy == PrefixPolicy.direct)
+        {
+            contentLine = humanlyReadable;
+        }
+        else
+        {
+            // Either PrefixPolicy.nickname or no prefix
+            contentLine = shouldNotTouch || syntax.startsWith("$bot") ?
+                humanlyReadable :
+                plugin.state.client.nickname ~ ": " ~ humanlyReadable;
+        }
+
+        immutable usage = (command.syntaxes.length == 1) ?
+            "<b>Usage<b>: " ~ contentLine :
+            "* " ~ contentLine;
         privmsg(plugin.state, event.channel, event.sender.nickname, usage);
     }
 }
@@ -311,10 +355,11 @@ void sendPluginCommandHelp(
     const ref IRCEvent event,
     /*const*/ IRCPlugin.CommandMetadata[string][string] allPluginCommands)
 {
-    import lu.string : contains, nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.format : format;
+    import std.string : indexOf;
 
-    assert(event.content.contains(' '),
+    assert((event.content.indexOf(' ') != -1),
         "`sendPluginCommandHelp` was called incorrectly; the content does not " ~
         "have a space-separated plugin and command");
 
@@ -326,7 +371,7 @@ void sendPluginCommandHelp(
     }
 
     string slice = event.content.stripped;
-    immutable specifiedPlugin = slice.nom!(Yes.decode)(' ');
+    immutable specifiedPlugin = slice.advancePast(' ');
     immutable specifiedCommand = stripPrefix(plugin, slice);
 
     if (const pluginCommands = specifiedPlugin in allPluginCommands)
@@ -338,8 +383,7 @@ void sendPluginCommandHelp(
                 specifiedPlugin,
                 event,
                 specifiedCommand,
-                command.description,
-                command.syntaxes);
+                *command);
         }
         else
         {
@@ -369,7 +413,7 @@ void sendOnlyCommandHelp(
     const ref IRCEvent event,
     /*const*/ IRCPlugin.CommandMetadata[string][string] allPluginCommands)
 {
-    import lu.string : beginsWith;
+    import std.algorithm.searching : startsWith;
 
     void sendNoCommandSpecified()
     {
@@ -394,8 +438,7 @@ void sendOnlyCommandHelp(
                 pluginName,
                 event,
                 specifiedCommand,
-                command.description,
-                command.syntaxes);
+                *command);
         }
     }
 
@@ -451,7 +494,9 @@ auto addPrefix(HelpPlugin plugin, const string word, const PrefixPolicy policy)
         return word;
 
     case prefixed:
-        return plugin.state.settings.prefix ~ word;
+        return plugin.state.settings.prefix.length ?
+            plugin.state.settings.prefix ~ word :
+            plugin.state.client.nickname[0..1] ~ ':' ~ word;
 
     case nickname:
         return plugin.state.client.nickname[0..1] ~ ':' ~ word;
@@ -473,7 +518,7 @@ auto addPrefix(HelpPlugin plugin, const string word, const PrefixPolicy policy)
  +/
 auto stripPrefix(HelpPlugin plugin, const string prefixed)
 {
-    import lu.string : beginsWith;
+    import std.algorithm.searching : startsWith;
 
     static string sliceAwaySeparators(const string orig)
     {
@@ -499,15 +544,15 @@ auto stripPrefix(HelpPlugin plugin, const string prefixed)
         return slice;
     }
 
-    if (prefixed.beginsWith(plugin.state.settings.prefix))
+    if (prefixed.startsWith(plugin.state.settings.prefix))
     {
         return prefixed[plugin.state.settings.prefix.length..$];
     }
-    else if (prefixed.beginsWith(plugin.state.client.nickname))
+    else if (prefixed.startsWith(plugin.state.client.nickname))
     {
         return sliceAwaySeparators(prefixed[plugin.state.client.nickname.length..$]);
     }
-    else if (prefixed.beginsWith(plugin.state.client.nickname[0..1] ~ ':'))
+    else if (prefixed.startsWith(plugin.state.client.nickname[0..1] ~ ':'))
     {
         return sliceAwaySeparators(prefixed[2..$]);
     }

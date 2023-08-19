@@ -447,8 +447,6 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         break;
 
     case PING:
-        import lu.string : contains;
-
         // Show the on-connect-ping-this type of events if !filterMost
         // Assume those containing dots are real pings for the server address
         if (!plugin.printerSettings.filterMost && event.content.length) goto default;
@@ -612,35 +610,27 @@ package auto datestamp()
 }
 
 
-// initialise
+// setup
 /++
     Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
+    Sets up a Fiber to print the date in `YYYY-MM-DD` format to the screen and
+    to any active log files upon day change.
  +/
-void initialise(PrinterPlugin plugin)
+void setup(PrinterPlugin plugin)
 {
+    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
     import kameloso.terminal : isTerminal;
+    import core.thread : Fiber;
+    import core.time : Duration;
 
     plugin.linebuffer.reserve(PrinterPlugin.linebufferInitialSize);
 
     if (!isTerminal)
     {
         // Not a TTY so replace our bell string with an empty one
-        plugin.bell = string.init;
+        PrinterPlugin.bell = string.init;
     }
-}
-
-
-// start
-/++
-    Sets up a Fiber to print the date in `YYYY-MM-DD` format to the screen and
-    to any active log files upon day change.
- +/
-void start(PrinterPlugin plugin)
-{
-    import kameloso.plugins.common.delayawait : delay;
-    import kameloso.constants : BufferSize;
-    import core.thread : Fiber;
-    import core.time : Duration;
 
     static Duration untilNextMidnight()
     {
@@ -666,7 +656,7 @@ void start(PrinterPlugin plugin)
                 if (plugin.printerSettings.logs)
                 {
                     commitAllLogs(plugin);
-                    plugin.buffers.clear();  // Uncommitted lines will be LOST. Not trivial to work around.
+                    plugin.buffers = null;  // Uncommitted lines will be LOST. Not trivial to work around.
                 }
             }
 
@@ -721,7 +711,7 @@ void teardown(PrinterPlugin plugin)
 /++
     Receives a passed [kameloso.thread.Boxed|Boxed] instance with the "`printer`" header,
     listening for cues to ignore the next events caused by the
-    [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService]
+    [kameloso.plugins.services.chanquery.ChanQueryService|ChanQueryService]
     querying current channel for information on the channels and their users.
 
     Params:
@@ -732,7 +722,7 @@ void teardown(PrinterPlugin plugin)
 void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable content)
 {
     import kameloso.thread : Boxed;
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.typecons : Flag, No, Yes;
 
     if (header != "printer") return;
@@ -741,7 +731,7 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     string slice = message.payload;
-    immutable verb = slice.nom!(Yes.inherit)(' ');
+    immutable verb = slice.advancePast(' ', Yes.inherit);
     immutable target = slice;
 
     switch (verb)
@@ -933,14 +923,9 @@ package:
     @Resource string logDirectory = "logs";
 
     /++
-        [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string, for use as bell.
-     +/
-    private enum bellString = "" ~ cast(char)(TerminalToken.bell);
-
-    /++
         Effective bell after [kameloso.terminal.isTerminal] checks.
      +/
-    string bell = bellString;
+    static string bell = "" ~ cast(char)(TerminalToken.bell);
 
     mixin IRCPluginImpl;
 }

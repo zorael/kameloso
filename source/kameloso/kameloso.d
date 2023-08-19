@@ -137,7 +137,7 @@ public:
     /++
         Constructor taking an [args] string array.
      +/
-    this(string[] args)
+    this(string[] args) pure @safe nothrow @nogc
     {
         this.args = args;
     }
@@ -211,13 +211,13 @@ public:
         When this is set by signal handlers, the program should exit. Other
         parts of the program will be monitoring it.
      +/
-    bool* abort;
+    Flag!"abort"* abort;
 
     // outbuffer
     /++
         Buffer of outgoing message strings.
 
-        The buffer size is "how many string pointers", now how many bytes. So
+        The buffer size is "how many string pointers", not how many bytes. So
         we can comfortably keep it arbitrarily high.
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) outbuffer;
@@ -226,7 +226,7 @@ public:
     /++
         Buffer of outgoing background message strings.
 
-        The buffer size is "how many string pointers", now how many bytes. So
+        The buffer size is "how many string pointers", not how many bytes. So
         we can comfortably keep it arbitrarily high.
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) backgroundBuffer;
@@ -235,7 +235,7 @@ public:
     /++
         Buffer of outgoing priority message strings.
 
-        The buffer size is "how many string pointers", now how many bytes. So
+        The buffer size is "how many string pointers", not how many bytes. So
         we can comfortably keep it arbitrarily high.
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) priorityBuffer;
@@ -244,7 +244,7 @@ public:
     /++
         Buffer of outgoing message strings to be sent immediately.
 
-        The buffer size is "how many string pointers", now how many bytes. So
+        The buffer size is "how many string pointers", not how many bytes. So
         we can comfortably keep it arbitrarily high.
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) immediateBuffer;
@@ -255,7 +255,7 @@ public:
         /++
             Buffer of outgoing fast message strings, used on Twitch servers.
 
-            The buffer size is "how many string pointers", now how many bytes. So
+            The buffer size is "how many string pointers", not how many bytes. So
             we can comfortably keep it arbitrarily high.
          +/
         Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) fastbuffer;
@@ -277,7 +277,7 @@ public:
 
     // customSettings
     /++
-        Custom settings specfied at the command line with the `--set` parameter.
+        Custom settings specified at the command line with the `--set` parameter.
      +/
     string[] customSettings;
 
@@ -346,7 +346,6 @@ public:
         lines are to be sent at once.
 
         Params:
-            Buffer = Buffer type, generally [lu.container.Buffer].
             buffer = Buffer instance.
             dryRun = Whether or not to send anything or just do a dry run,
                 incrementing the graph by [Throttle.increment].
@@ -451,9 +450,9 @@ public:
         return 0.0;
     }
 
-    // initPlugins
+    // instantiatePlugins
     /++
-        Resets and *minimally* initialises all plugins.
+        Instantiates and *minimally* initialises all plugins.
 
         It only initialises them to the point where they're aware of their
         settings, and not far enough to have loaded any resources.
@@ -462,7 +461,8 @@ public:
             [kameloso.plugins.common.misc.IRCPluginSettingsException|IRCPluginSettingsException]
             on failure to apply custom settings.
      +/
-    void initPlugins() @system
+    void instantiatePlugins() @system
+    in (!this.plugins.length, "Tried to instantiate plugins but the array was not empty")
     {
         import kameloso.plugins.common.core : IRCPluginState;
         import kameloso.plugins.common.misc : applyCustomSettings;
@@ -481,7 +481,7 @@ public:
         state.abort = abort;
 
         // Leverage kameloso.plugins.instantiatePlugins to construct all plugins.
-        plugins = kameloso.plugins.instantiatePlugins(state);
+        this.plugins = kameloso.plugins.instantiatePlugins(state);
 
         foreach (plugin; plugins)
         {
@@ -506,7 +506,7 @@ public:
             }
         }
 
-        immutable allCustomSuccess = plugins.applyCustomSettings(this.customSettings, settings);
+        immutable allCustomSuccess = plugins.applyCustomSettings(this.customSettings, this.settings);
 
         if (!allCustomSuccess)
         {
@@ -528,28 +528,31 @@ public:
             call = String name of call to issue to all plugins.
      +/
     private void issuePluginCallImpl(string call)()
-    if (call.among!("setup", "start", "reload", "initResources"))
+    if (call.among!("setup", "reload", "initResources"))
     {
-        foreach (plugin; plugins)
+        foreach (plugin; this.plugins)
         {
-            static if (call == "initResources")
+            static if (call != "initResources")
             {
                 // Always init resources, even if the plugin is disabled
-                mixin("plugin." ~ call ~ "();");
-            }
-            else
-            {
                 if (!plugin.isEnabled) continue;
-
-                mixin("plugin." ~ call ~ "();");
-                checkPluginForUpdates(plugin);
             }
+
+            mixin("plugin." ~ call ~ "();");
+            checkPluginForUpdates(plugin);
         }
     }
 
     // setupPlugins
     /++
         Sets up all plugins, calling any module-level `setup` functions.
+        This happens after connection has been established.
+
+        This merely calls
+        [kameloso.plugins.common.core.IRCPlugin.setupIRCPlugin.setup]
+        on each plugin.
+
+        Don't setup disabled plugins.
      +/
     alias setupPlugins = issuePluginCallImpl!"setup";
 
@@ -563,19 +566,13 @@ public:
      +/
     alias initPluginResources = issuePluginCallImpl!"initResources";
 
-    // startPlugins
-    /++
-        Starts all plugins by calling any module-level `start` functions.
-
-        This happens after connection has been established.
-
-        Don't start disabled plugins.
-     +/
-    alias startPlugins = issuePluginCallImpl!"start";
-
     // reloadPlugins
     /++
         Reloads all plugins by calling any module-level `reload` functions.
+
+        This merely calls
+        [kameloso.plugins.common.core.IRCPlugin.reload|IRCPlugin.reload]
+        on each plugin.
 
         What this actually does is up to the plugins.
      +/
@@ -594,7 +591,7 @@ public:
     {
         if (!plugins.length) return;
 
-        foreach (plugin; plugins)
+        foreach (ref plugin; plugins)
         {
             import std.exception : ErrnoException;
             import core.thread : Fiber;
@@ -611,6 +608,7 @@ public:
                     if (scheduledFiber.fiber.state != Fiber.State.EXEC)
                     {
                         destroy(scheduledFiber.fiber);
+                        scheduledFiber.fiber = null;
                     }
                 }
 
@@ -619,6 +617,7 @@ public:
                 foreach (scheduledDelegate; plugin.state.scheduledDelegates)
                 {
                     destroy(scheduledDelegate.dg);
+                    scheduledDelegate.dg = null;
                 }
 
                 plugin.state.scheduledDelegates = null;
@@ -631,6 +630,7 @@ public:
                         if (fiber.state != Fiber.State.EXEC)
                         {
                             destroy(fiber);
+                            fiber = null;
                         }
                     }
                 }
@@ -642,6 +642,7 @@ public:
                     foreach (ref dg; dgsForType)
                     {
                         destroy(dg);
+                        dg = null;
                     }
                 }
 
@@ -672,10 +673,70 @@ public:
             }
 
             destroy(plugin);
+            plugin = null;   // needs ref
         }
 
         // Zero out old plugins array
         plugins = null;
+    }
+
+    // initialisePlugins
+    /++
+        Initialises all plugins, calling any module-level `.initialise` functions.
+
+        This merely calls
+        [kameloso.plugins.common.core.IRCPlugin.initialise|IRCPlugin.initialise]
+        on each plugin.
+
+        If any plugin fails to initialise, this function returns false and
+        the bot will not start.
+
+        Don't use an in-contract to enforce `plugins.length`, as not having any
+        plugins is technically a valid use-case (even if it's a fairly pointless one).
+
+        Returns:
+            `true` if all plugins initialised successfully, `false` otherwise.
+     +/
+    auto initialisePlugins() @system
+    //in (this.plugins.length, "Tried to initialise plugins but there were no plugins instantiated")
+    {
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+
+        string[] failedPlugins;
+
+        foreach (plugin; this.plugins)
+        {
+            try
+            {
+                immutable success = plugin.initialise();
+                if (*this.abort) return false;
+                if (!success) failedPlugins ~= plugin.name;
+            }
+            catch (IRCPluginInitialisationException e)
+            {
+                enum pattern = "Exception when initialising <l>%s</>: <l>%s";
+                logger.warningf(pattern, plugin.name, e.msg);
+                version(PrintStacktraces) logger.trace(e.info);
+                if (!this.settings.force) return false;
+                failedPlugins ~= plugin.name;
+            }
+            catch (Exception e)
+            {
+                enum pattern = "General exception when initialising <l>%s</>: <l>%s";
+                logger.warningf(pattern, plugin.name, e.msg);
+                version(PrintStacktraces) logger.trace(e.info);
+                if (!this.settings.force) throw e;
+            }
+        }
+
+        if (failedPlugins.length)
+        {
+            enum pattern = "Failed to initialise plugin(s): <l>%-(%s, %)";
+            logger.errorf(pattern, failedPlugins);
+            return false;
+        }
+
+        return true;
     }
 
     // checkPluginForUpdates
@@ -691,6 +752,10 @@ public:
     void checkPluginForUpdates(IRCPlugin plugin)
     {
         alias Update = typeof(plugin.state.updates);
+
+        if (*this.abort) return;
+
+        if (plugin.state.updates == Update.nothing) return;
 
         if (plugin.state.updates & Update.bot)
         {
@@ -725,7 +790,7 @@ public:
         }
 
         assert((plugin.state.updates == Update.nothing),
-            "`IRCPluginState.updates` was not reset after checking and propagation");
+            "`IRCPluginState.updates` was not reset after checking and propagating");
     }
 
     // propagate

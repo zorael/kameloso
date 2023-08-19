@@ -46,11 +46,12 @@ package void requestGoogleKeys(TwitchPlugin plugin)
     import kameloso.logger : LogLevel;
     import kameloso.terminal.colours.tags : expandTags;
     import kameloso.time : timeSince;
-    import lu.string : contains, nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.conv : to;
     import std.format : format;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : File, readln, stdin, stdout, write, writeln;
+    import std.string : indexOf;
     import core.time : seconds;
 
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
@@ -124,11 +125,11 @@ A normal URL to any playlist you can modify will work fine.
             // Likely a playlist ID
             creds.youtubePlaylistID = playlistURL;
         }
-        else if (playlistURL.contains("/playlist?list="))
+        else if (playlistURL.indexOf("/playlist?list=") != -1)
         {
             string slice = playlistURL;  // mutable
-            slice.nom("/playlist?list=");
-            creds.youtubePlaylistID = slice.nom!(Yes.inherit)('&');
+            slice.advancePast("/playlist?list=");
+            creds.youtubePlaylistID = slice.advancePast('&', Yes.inherit);
         }
         else
         {
@@ -219,17 +220,17 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
             writeln();
             logger.warning("Aborting.");
             logger.trace();
-            *plugin.state.abort = true;
+            *plugin.state.abort = Yes.abort;
             return;
         }
 
-        if (!readCode.contains("code="))
+        if (readCode.indexOf("code=") == -1)
         {
-            import lu.string : beginsWith;
+            import std.algorithm.searching : startsWith;
 
             writeln();
 
-            if (readCode.beginsWith(authNode))
+            if (readCode.startsWith(authNode))
             {
                 enum wrongPageMessage = "Not that page; the empty page you're " ~
                     "lead to after clicking <l>Allow</>.";
@@ -245,8 +246,8 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
         }
 
         string slice = readCode;  // mutable
-        slice.nom("?code=");
-        code = slice.nom!(Yes.inherit)('&');
+        slice.advancePast("?code=");
+        code = slice.advancePast('&', Yes.inherit);
 
         if (code.length != 73L)
         {
@@ -503,7 +504,7 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
         creds = [Credentials] aggregate.
-        code = Google authorization code.
+        code = Google authorisation code.
 
     Throws:
         [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]

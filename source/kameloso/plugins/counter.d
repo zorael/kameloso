@@ -108,7 +108,7 @@ public:
         Constructor. Only kept as a compatibility measure to ensure [word] alawys
         has a value. Remove later.
      +/
-    this(const string word)
+    this(const string word) pure @safe nothrow @nogc
     {
         this.word = word;
     }
@@ -208,7 +208,7 @@ public:
 void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.constants : BufferSize;
-    import lu.string : nom, stripped, strippedLeft;
+    import lu.string : advancePast, stripped, strippedLeft;
     import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
     import std.format : format;
@@ -295,7 +295,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom!(Yes.inherit)(' ');
+    immutable verb = slice.advancePast(' ', Yes.inherit);
     slice = slice.strippedLeft;
 
     switch (verb)
@@ -491,7 +491,8 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.string : stripSeparatedPrefix;
-    import lu.string : beginsWith, stripped, strippedLeft, strippedRight;
+    import lu.string : stripped, strippedLeft, strippedRight;
+    import std.algorithm.searching : startsWith;
     import std.conv : ConvException, text, to;
     import std.format : format;
     import std.meta : aliasSeqOf;
@@ -547,11 +548,11 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     if ((slice.length < (plugin.state.settings.prefix.length+1)) &&  // !w
         (slice.length < (plugin.state.client.nickname.length+2))) return;  // nickname:w
 
-    if (slice.beginsWith(plugin.state.settings.prefix))
+    if (slice.startsWith(plugin.state.settings.prefix))
     {
         slice = slice[plugin.state.settings.prefix.length..$];
     }
-    else if (slice.beginsWith(plugin.state.client.nickname))
+    else if (slice.startsWith(plugin.state.client.nickname))
     {
         slice = slice.stripSeparatedPrefix(plugin.state.client.nickname, Yes.demandSeparatingChars);
     }
@@ -559,7 +560,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     {
         version(TwitchSupport)
         {
-            if (plugin.state.client.displayName.length && slice.beginsWith(plugin.state.client.displayName))
+            if (plugin.state.client.displayName.length && slice.startsWith(plugin.state.client.displayName))
             {
                 slice = slice.stripSeparatedPrefix(plugin.state.client.displayName, Yes.demandSeparatingChars);
             }
@@ -806,7 +807,7 @@ void loadCounters(CounterPlugin plugin)
 
     JSONStorage json;
     json.load(plugin.countersFile);
-    plugin.counters.clear();
+    plugin.counters = null;
 
     foreach (immutable channelName, channelCountersJSON; json.object)
     {

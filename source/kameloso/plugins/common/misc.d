@@ -51,15 +51,16 @@ auto applyCustomSettings(
     CoreSettings copyOfSettings)
 {
     import lu.objmanip : SetMemberException;
-    import lu.string : contains, nom;
+    import lu.string : advancePast;
     import std.conv : ConvException;
+    import std.string : indexOf;
 
     bool noErrors = true;
 
     top:
     foreach (immutable line; customSettings)
     {
-        if (!line.contains!(Yes.decode)('.'))
+        if (line.indexOf('.') == -1)
         {
             enum pattern = `Bad <l>plugin</>.<l>setting</>=<l>value</> format. (<l>%s</>)`;
             logger.warningf(pattern, line);
@@ -68,8 +69,8 @@ auto applyCustomSettings(
         }
 
         string slice = line;  // mutable
-        immutable pluginstring = slice.nom!(Yes.decode)(".");
-        immutable setting = slice.nom!(Yes.inherit, Yes.decode)('=');
+        immutable pluginstring = slice.advancePast(".");
+        immutable setting = slice.advancePast('=', Yes.inherit);
         immutable value = slice;
 
         try
@@ -177,7 +178,7 @@ unittest
     {
         MyPluginSettings myPluginSettings;
 
-        override string name() @property const
+        override string name() const
         {
             return "myplugin";
         }
@@ -351,7 +352,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 {
     import std.traits : isSomeFunction;
 
-    static assert (isSomeFunction!Fun, "Tried to `enqueue` with a non-function function");
+    static assert (isSomeFunction!Fun, "Tried to `enqueue` with a non-function function parameter");
 
     version(TwitchSupport)
     {
@@ -384,9 +385,8 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 
     version(ExplainReplay)
     {
-        import lu.string : beginsWith;
-
-        immutable callerSlice = caller.beginsWith("kameloso.plugins.") ?
+        import std.algorithm.searching : startsWith;
+        immutable callerSlice = caller.startsWith("kameloso.plugins.") ?
             caller[17..$] :
             caller;
     }
@@ -456,12 +456,12 @@ auto replay(Plugin, Fun)
     void replayDg(Replay replay)
     {
         import lu.conv : Enum;
-        import lu.string : beginsWith;
+        import std.algorithm.searching : startsWith;
 
         version(ExplainReplay)
         void explainReplay()
         {
-            immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
+            immutable caller = replay.caller.startsWith("kameloso.plugins.") ?
                 replay.caller[17..$] :
                 replay.caller;
 
@@ -478,7 +478,7 @@ auto replay(Plugin, Fun)
         version(ExplainReplay)
         void explainRefuse()
         {
-            immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
+            immutable caller = replay.caller.startsWith("kameloso.plugins.") ?
                 replay.caller[17..$] :
                 replay.caller;
 
@@ -549,14 +549,13 @@ auto replay(Plugin, Fun)
             break;
 
         case ignore:
-
-            import lu.traits : TakesParams;
-            import std.traits : arity;
-
             version(ExplainReplay) explainReplay();
 
             void call()
             {
+                import lu.traits : TakesParams;
+                import std.traits : arity;
+
                 static if (
                     TakesParams!(fun, Plugin, IRCEvent) ||
                     TakesParams!(fun, IRCPlugin, IRCEvent))
@@ -582,7 +581,8 @@ auto replay(Plugin, Fun)
                 {
                     // onEventImpl.call should already have statically asserted all
                     // event handlers are of the types above
-                    static assert(0, "Failed to cover all event handler function signature cases");
+                    enum message = "Failed to cover all event handler function signature cases";
+                    static assert(0, message);
                 }
             }
 
@@ -602,6 +602,7 @@ auto replay(Plugin, Fun)
                 {
                     // Ended immediately, so just destroy
                     destroy(fiber);
+                    fiber = null;
                 }
             }
             else
@@ -638,12 +639,12 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
 {
     if (!channelName.length)
     {
-        plugin.state.users = plugin.state.users.rehash();
+        plugin.state.users.rehash();
     }
     else if (auto channel = channelName in plugin.state.channels)
     {
         // created in `onChannelAwarenessSelfjoin`
-        channel.users = channel.users.rehash();
+        channel.users.rehash();
     }
 }
 
@@ -720,9 +721,9 @@ auto nameOf(const IRCPlugin plugin, const string specified) pure @safe nothrow @
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            import lu.string : beginsWith;
+            import std.algorithm.searching : startsWith;
 
-            immutable nickname = specified.beginsWith('@') ?
+            immutable nickname = specified.startsWith('@') ?
                 specified[1..$] :
                 specified;
 
@@ -827,10 +828,10 @@ auto getUser(IRCPlugin plugin, const string specified)
 {
     version(TwitchSupport)
     {
-        import lu.string : beginsWith;
+        import std.algorithm.searching : startsWith;
 
         immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
-        immutable nickname = (isTwitch && specified.beginsWith('@')) ?
+        immutable nickname = (isTwitch && specified.startsWith('@')) ?
             specified[1..$] :
             specified;
     }

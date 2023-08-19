@@ -135,7 +135,7 @@ public:
         "~" for "~command", "." for ".command", etc. It can be any string and
         not just one character.
      +/
-    @Quoted string prefix = "!";
+    @Quoted string prefix;  // = "!";
 
     @Unserialisable
     {

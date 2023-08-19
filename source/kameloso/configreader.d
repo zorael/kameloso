@@ -54,7 +54,7 @@ void readConfigInto(T...)
     ref string[][string] missingEntries,
     ref string[][string] invalidEntries,
     ref T things)
-if (allSatisfy!(isStruct, T))
+if (allSatisfy!(isStruct, T))  // must be a constraint
 {
     import lu.serialisation : deserialise;
     import std.algorithm.iteration : splitter;
@@ -78,7 +78,7 @@ if (allSatisfy!(isStruct, T))
             to the text in the configuration file.
  +/
 void readConfigInto(T...)(const string configFile, ref T things)
-if (allSatisfy!(isStruct, T))
+if (allSatisfy!(isStruct, T))  // must be a constraint
 {
     // Use two variables to satisfy -preview=dip1021
     string[][string] ignore1;
@@ -133,13 +133,39 @@ auto configurationText(const string configFile)
         import std.array : replace;
         import std.string : chomp;
 
+        // Ideally we'd do this, but it increases compilation memory by ~15 Mb
+        /*return configFile
+            .readText
+            .substitute(
+                "[Notes]\n", "[Note]\n",
+                "[Notes]\r\n", "[Note]\r\n",
+                "[Votes]\n", "[Poll]\n",
+                "[Votes]\r\n", "[Poll]\r\n",
+                "[Quotes]\n", "[Quote]\n",
+                "[Quotes]\r\n", "[Quote]\r\n",
+                "[TwitchBot]\n", "[Twitch]\n",
+                "[TwitchBot]\r\n", "[Twitch]\r\n",
+                "[Oneliners]\n", "[Oneliner]\n",
+                "[Oneliners]\r\n", "[Oneliner]\r\n")
+            .to!string
+            .chomp;*/
+
         return configFile
             .readText
+            .replace("[Notes]\n", "[Note]\n")
+            .replace("[Notes]\r\n", "[Note]\r\n")
             .replace("[Votes]\n", "[Poll]\n")
             .replace("[Votes]\r\n", "[Poll]\r\n")
+            .replace("[Quotes]\n", "[Quote]\n")
+            .replace("[Quotes]\r\n", "[Quote]\r\n")
             .replace("[TwitchBot]\n", "[Twitch]\n")
             .replace("[TwitchBot]\r\n", "[Twitch]\r\n")
+            .replace("[Oneliners]\n", "[Oneliner]\n")
+            .replace("[Oneliners]\r\n", "[Oneliner]\r\n")
+            .replace("[Webtitles]\n", "[Webtitle]\n")
+            .replace("[Webtitles]\r\n", "[Webtitle]\r\n")
             .chomp;
+
     }
     catch (Exception e)
     {

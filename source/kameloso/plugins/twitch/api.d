@@ -90,7 +90,7 @@ auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
                 import kameloso.plugins.common.delayawait : delay;
                 import core.time : seconds;
 
-                static immutable retryDelay = 3.seconds;
+                static immutable retryDelay = 1.seconds;
                 delay(plugin, retryDelay, Yes.yield);
             }
             return dg();
@@ -128,49 +128,47 @@ auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
     Gated behind version `PrintStacktraces`.
 
     Params:
-        e = The exception to print.
+        base = The exception to print.
  +/
 version(PrintStacktraces)
-void printRetryDelegateException(/*const*/ Exception e)
+void printRetryDelegateException(/*const*/ Exception base)
 {
     import kameloso.common : logger;
     import std.json : JSONException, parseJSON;
     import std.stdio : stdout, writeln;
 
-    if (auto twitchQueryException = cast(TwitchQueryException)e)
+    logger.trace(base);
+
+    if (auto e = cast(TwitchQueryException)base)
     {
-        logger.trace(twitchQueryException);
+        //logger.trace(e);
 
         try
         {
-            writeln(parseJSON(twitchQueryException.responseBody).toPrettyString);
+            writeln(parseJSON(e.responseBody).toPrettyString);
         }
         catch (JSONException _)
         {
-            writeln(twitchQueryException.responseBody);
+            writeln(e.responseBody);
         }
 
         stdout.flush();
-        //throw twitchQueryException;
     }
-    else if (auto emptyDataJSONException = cast(EmptyDataJSONException)e)
+    else if (auto e = cast(EmptyDataJSONException)base)
     {
         // Must be before TwitchJSONException below
-        logger.trace(emptyDataJSONException);
-        //throw emptyDataJSONException;
+        //logger.trace(e);
     }
-    else if (auto twitchJSONException = cast(TwitchJSONException)e)
+    else if (auto e = cast(TwitchJSONException)base)
     {
-        // UnexpectedJSONException and ErrorJSONException
-        logger.trace(twitchJSONException);
-        writeln(twitchJSONException.json.toPrettyString);
+        // UnexpectedJSONException or ErrorJSONException
+        //logger.trace(e);
+        writeln(e.json.toPrettyString);
         stdout.flush();
-        //throw twitchJSONException;
     }
-    else /*if (auto plainException = cast(Exception)e)*/
+    else /*if (auto e = cast(Exception)base)*/
     {
-        logger.trace(e);
-        //throw e;
+        //logger.trace(e);
     }
 }
 
@@ -237,7 +235,8 @@ void persistentQuerier(
         {
             import std.stdio : stdout, writefln;
             immutable post = Clock.currTime;
-            writefln("%s (%s)", post-pre, url);
+            enum pattern = "%s (%s)";
+            writefln(pattern, post-pre, url);
             stdout.flush();
         }
     }
@@ -429,7 +428,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
             import std.string : chomp;
 
             // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-            /*
+            /+
             {
                 "error": "Unauthorized",
                 "message": "Client ID and OAuth token do not match",
@@ -444,15 +443,16 @@ in (url.length, "Tried to send an HTTP request without a URL")
             {
                 "message": "user not found"
             }
-            */
+             +/
+
             immutable json = parseJSON(response.str);
-            long code = response.code;
+            uint code = response.code;
             string status;
             string message;
 
             if (immutable statusCodeJSON = "status_code" in json)
             {
-                code = (*statusCodeJSON).integer;
+                code = cast(uint)(*statusCodeJSON).integer;
                 status = json["status"].str;
                 message = json["error"].str;
             }
@@ -462,7 +462,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
                 try
                 {
-                    code = (*statusJSON).integer;
+                    code = cast(uint)(*statusJSON).integer;
                     status = json["error"].str;
                     message = json["message"].str;
                 }
@@ -479,19 +479,18 @@ in (url.length, "Tried to send an HTTP request without a URL")
             }
             else
             {
-                status = "Error";
-                message = "An unspecified error occured";
-
                 version(PrintStacktraces)
                 {
                     if (!plugin.state.settings.headless)
                     {
                         import std.stdio : stdout, writeln;
-
                         writeln(json.toPrettyString);
                         stdout.flush();
                     }
                 }
+
+                status = "Error";
+                message = "An unspecified error occured";
             }
 
             enum pattern = "%3d %s: %s";
@@ -499,17 +498,18 @@ in (url.length, "Tried to send an HTTP request without a URL")
                 code,
                 status.chomp.unquoted,
                 message.chomp.unquoted);
-
             throw new ErrorJSONException(exceptionMessage, json);
         }
         catch (JSONException e)
         {
+            import kameloso.string : doublyBackslashed;
+
             throw new TwitchQueryException(
                 e.msg,
                 response.str,
                 response.error,
                 response.code,
-                e.file,
+                e.file.doublyBackslashed,
                 e.line);
         }
     }
@@ -662,12 +662,14 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
     }
     catch (JSONException e)
     {
+        import kameloso.string : doublyBackslashed;
+
         throw new TwitchQueryException(
             e.msg,
             response.str,
             response.error,
             response.code,
-            e.file,
+            e.file.doublyBackslashed,
             e.line);
     }
 }
@@ -783,14 +785,14 @@ auto getValidation(
 in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from outside a Fiber")
 in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
-    import lu.string : beginsWith;
+    import std.algorithm.searching : startsWith;
     import std.json : JSONType, parseJSON;
 
     enum url = "https://id.twitch.tv/oauth2/validate";
 
     // Validation needs an "Authorization: OAuth xxx" header, as opposed to the
     // "Authorization: Bearer xxx" used everywhere else.
-    authToken = plugin.state.bot.pass.beginsWith("oauth:") ?
+    authToken = plugin.state.bot.pass.startsWith("oauth:") ?
         authToken[6..$] :
         authToken;
     immutable authorizationHeader = "OAuth " ~ authToken;
@@ -950,6 +952,7 @@ auto getMultipleTwitchData(
     const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
 {
+    import std.conv : text;
     import std.json : JSONValue, parseJSON;
 
     JSONValue allEntitiesJSON;
@@ -960,7 +963,7 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
     do
     {
         immutable paginatedURL = after.length ?
-            (url ~ "&after=" ~ after) :
+            text(url, "&after=", after) :
             url;
         immutable response = sendHTTPRequest(plugin, paginatedURL, caller, plugin.authorizationBearer);
         immutable responseJSON = parseJSON(response.str);
@@ -1060,8 +1063,6 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         id = Numerical ID to use as key when storing the response in the bucket AA.
-        leaveTimingAlone = Whether or not to adjust the approximate query time.
-            Enabled by default but can be disabled if the caller wants to do it.
 
     Returns:
         A [QueryResponse] as constructed by other parts of the program.
@@ -1205,8 +1206,8 @@ in ((givenName.length || givenIDString.length),
 
     // None on record, look up
     immutable userURL = givenName ?
-        ("https://api.twitch.tv/helix/users?login=" ~ givenName) :
-        ("https://api.twitch.tv/helix/users?id=" ~ givenIDString);
+        "https://api.twitch.tv/helix/users?login=" ~ givenName :
+        "https://api.twitch.tv/helix/users?id=" ~ givenIDString;
 
     auto getTwitchUserDg()
     {
@@ -1255,8 +1256,8 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
     }
 
     immutable gameURL = id.length ?
-        ("https://api.twitch.tv/helix/games?id=" ~ id) :
-        ("https://api.twitch.tv/helix/games?name=" ~ name);
+        "https://api.twitch.tv/helix/games?id=" ~ id :
+        "https://api.twitch.tv/helix/games?name=" ~ name;
 
     auto getTwitchGameDg()
     {
@@ -1517,7 +1518,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
     import std.format : format;
 
     const room = channelName in plugin.rooms;
-    assert(room, "Tried to look up start commerical in a channel for which there existed no room");
+    assert(room, "Tried to look up start commercial in a channel for which there existed no room");
 
     enum url = "https://api.twitch.tv/helix/channels/commercial";
     enum pattern = `
@@ -1570,6 +1571,7 @@ auto getPolls(
 in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
 in (channelName.length, "Tried to get polls with an empty channel name string")
 {
+    import std.conv : text;
     import std.json : JSONType, JSONValue, parseJSON;
 
     const room = channelName in plugin.rooms;
@@ -1594,7 +1596,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
         do
         {
             immutable paginatedURL = after.length ?
-                (url ~ "&after=" ~ after) :
+                text(url, "&after=", after) :
                 url;
             immutable response = sendHTTPRequest(
                 plugin,
@@ -1919,6 +1921,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        caller = String name of calling function.
 
     Returns:
         A `string[]` array of online bot account names.
@@ -2500,10 +2503,10 @@ void get7tvEmotes(
 in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
 in (idString.length, "Tried to get 7tv emotes with an empty ID string")
 {
-    import std.conv : to;
+    import std.conv : text, to;
     import std.json : JSONType, parseJSON;
 
-    immutable url = "https://api.7tv.app/v2/users/" ~ idString ~ "/emotes";
+    immutable url = text("https://api.7tv.app/v2/users/", idString, "/emotes");
 
     auto get7tvEmotesDg()
     {

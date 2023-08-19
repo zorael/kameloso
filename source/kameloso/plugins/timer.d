@@ -349,7 +349,7 @@ unittest
 )
 void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom, stripped;
+    import lu.string : advancePast, stripped;
     import std.format : format;
 
     void sendUsage()
@@ -360,7 +360,7 @@ void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom!(Yes.inherit)(' ');
+    immutable verb = slice.advancePast(' ', Yes.inherit);
 
     switch (verb)
     {
@@ -408,7 +408,7 @@ void handleNewTimer(
     const /*ref*/ IRCEvent event,
     /*const*/ string slice)
 {
-    import kameloso.time : DurationStringException, abbreviatedDuration;
+    import kameloso.time : DurationStringException, asAbbreviatedDuration;
     import lu.string : SplitResults, splitInto;
     import std.conv : ConvException, to;
     import std.format : format;
@@ -500,9 +500,9 @@ void handleNewTimer(
     try
     {
         timer.messageCountThreshold = messageCountThreshold.to!long;
-        timer.timeThreshold = abbreviatedDuration(timeThreshold).total!"seconds";
+        timer.timeThreshold = timeThreshold.asAbbreviatedDuration.total!"seconds";
         if (messageCountStagger.length) timer.messageCountStagger = messageCountStagger.to!long;
-        if (timeStagger.length) timer.timeStagger = abbreviatedDuration(timeStagger).total!"seconds";
+        if (timeStagger.length) timer.timeStagger = timeStagger.asAbbreviatedDuration.total!"seconds";
     }
     catch (ConvException _)
     {
@@ -753,7 +753,7 @@ void handleAddToTimer(
     const /*ref*/ IRCEvent event,
     /*const*/ string slice)
 {
-    import lu.string : nom;
+    import lu.string : advancePast;
     import std.format : format;
 
     void sendAddUsage()
@@ -770,7 +770,7 @@ void handleAddToTimer(
         chan(plugin.state, event.channel, noSuchTimerMessage);
     }
 
-    immutable name = slice.nom!(Yes.inherit)(' ');
+    immutable name = slice.advancePast(' ', Yes.inherit);
     if (!slice.length) return sendAddUsage();
 
     auto channel = event.channel in plugin.channels;
@@ -1123,7 +1123,7 @@ auto createTimerFiber(
         assert(channel, channelName ~ " not in plugin.channels");
 
         auto channelTimers = channelName in plugin.timersByChannel;
-        assert(channelTimers, channelName ~ " not in plugin.timersByChanel");
+        assert(channelTimers, channelName ~ " not in plugin.timersByChannel");
 
         auto timer = name in *channelTimers;
         assert(timer, name ~ " not in *channelTimers");
@@ -1273,7 +1273,7 @@ void loadTimers(TimerPlugin plugin)
 
     JSONStorage allTimersJSON;
     allTimersJSON.load(plugin.timerFile);
-    plugin.timersByChannel.clear();
+    plugin.timersByChannel = null;
 
     foreach (immutable channelName, const timersJSON; allTimersJSON.object)
     {

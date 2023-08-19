@@ -68,7 +68,8 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
             import std.utf : replacementDchar;
 
             immutable dc = isValidCodeUnit(c) ? dchar(c) : replacementDchar;
-            writefln("[%3d] %s : %03d", i, dc, c);
+            enum pattern = "[%3d] %s : %03d";
+            writefln(pattern, i, dc, c);
         }
         wroteSomething = true;
     }
@@ -83,7 +84,6 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
 
     It basically prints the matching [dialect.defs.IRCUser|IRCUser].
  +/
-version(IncludeHeavyStuff)
 void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.printing : printObject;
@@ -114,7 +114,6 @@ void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
     Prints out the current `users` array of the [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin]'s
     [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] to the local terminal.
  +/
-version(IncludeHeavyStuff)
 void onCommandShowUsersImpl(AdminPlugin plugin)
 {
     import kameloso.printing : printObject;
@@ -192,6 +191,8 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const ref IRCEvent event)
     Dumps information about the current state of the bot to the local terminal.
 
     This can be very spammy.
+
+    Adds ~85 Mb to compilation memory usage.
  +/
 version(IncludeHeavyStuff)
 void onCommandStatusImpl(AdminPlugin plugin)

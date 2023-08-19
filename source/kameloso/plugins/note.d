@@ -1,5 +1,5 @@
 /++
-    The Notes plugin allows for storing notes to offline users, to be replayed
+    The Note plugin allows for storing notes to offline users, to be replayed
     when they next join the channel.
 
     If a note is left in a channel, it is stored as a note under that channel
@@ -12,7 +12,7 @@
     but anything will trigger private message playback.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#notes,
+        https://github.com/zorael/kameloso/wiki/Current-plugins#note,
         [kameloso.plugins.common.core],
         [kameloso.plugins.common.misc]
 
@@ -22,9 +22,9 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-module kameloso.plugins.notes;
+module kameloso.plugins.note;
 
-version(WithNotesPlugin):
+version(WithNotePlugin):
 
 private:
 
@@ -36,21 +36,21 @@ import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
-version(WithChanQueriesService) {}
+version(WithChanQueryService) {}
 else
 {
-    pragma(msg, "Warning: The `Notes` plugin will work but not well without the `ChanQueries` service.");
+    pragma(msg, "Warning: The `Note` plugin will work but not well without the `ChanQuery` service.");
 }
 
 mixin MinimalAuthentication;
-mixin PluginRegistration!NotesPlugin;
+mixin PluginRegistration!NotePlugin;
 
 
-// NotesSettings
+// NoteSettings
 /++
-    Notes plugin settings.
+    Note plugin settings.
  +/
-@Settings struct NotesSettings
+@Settings struct NoteSettings
 {
     /++
         Toggles whether or not the plugin should react to events at all.
@@ -155,7 +155,7 @@ public:
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
 )
-void onJoinOrAccount(NotesPlugin plugin, const ref IRCEvent event)
+void onJoinOrAccount(NotePlugin plugin, const ref IRCEvent event)
 {
     version(TwitchSupport)
     {
@@ -173,7 +173,7 @@ void onJoinOrAccount(NotesPlugin plugin, const ref IRCEvent event)
 // onChannelMessage
 /++
     Plays back notes upon someone saying something in the channel, provided
-    [NotesSettings.playBackOnAnyActivity] is set.
+    [NoteSettings.playBackOnAnyActivity] is set.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -183,9 +183,9 @@ void onJoinOrAccount(NotesPlugin plugin, const ref IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onChannelMessage(NotesPlugin plugin, const ref IRCEvent event)
+void onChannelMessage(NotePlugin plugin, const ref IRCEvent event)
 {
-    if (plugin.notesSettings.playBackOnAnyActivity ||
+    if (plugin.noteSettings.playBackOnAnyActivity ||
         (plugin.state.server.daemon == IRCServer.Daemon.twitch))
     {
         playbackNotes(plugin, event);
@@ -220,7 +220,7 @@ version(TwitchSupport)
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onTwitchChannelEvent(NotesPlugin plugin, const ref IRCEvent event)
+void onTwitchChannelEvent(NotePlugin plugin, const ref IRCEvent event)
 {
     // No need to check whether we're on Twitch
     playbackNotes(plugin, event);
@@ -235,7 +235,7 @@ void onTwitchChannelEvent(NotesPlugin plugin, const ref IRCEvent event)
 
     Do nothing if
     [kameloso.pods.CoreSettings.eagerLookups|CoreSettings.eagerLookups] is true,
-    as we'd collide with ChanQueries' queries.
+    as we'd collide with ChanQuery queries.
 
     Passes `Yes.background` to [playbackNotes] to ensure it does low-priority
     background WHOIS queries.
@@ -244,7 +244,7 @@ void onTwitchChannelEvent(NotesPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.RPL_WHOREPLY)
     .channelPolicy(ChannelPolicy.home)
 )
-void onWhoReply(NotesPlugin plugin, const ref IRCEvent event)
+void onWhoReply(NotePlugin plugin, const ref IRCEvent event)
 {
     if (plugin.state.settings.eagerLookups) return;
     playbackNotes(plugin, event, Yes.background);
@@ -261,12 +261,12 @@ void onWhoReply(NotesPlugin plugin, const ref IRCEvent event)
     member is empty, only private message ones.
 
     Params:
-        plugin = The current [NotesPlugin].
+        plugin = The current [NotePlugin].
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         background = Whether or not to issue WHOIS queries as low-priority background messages.
  +/
 void playbackNotes(
-    NotesPlugin plugin,
+    NotePlugin plugin,
     const /*ref*/ IRCEvent event,
     const Flag!"background" background = No.background)
 {
@@ -296,14 +296,14 @@ void playbackNotes(
     Plays back notes. Implementation function.
 
     Params:
-        plugin = The current [NotesPlugin].
+        plugin = The current [NotePlugin].
         channelName = The name of the channel in which the playback is to take place,
             or an empty string if it's supposed to take place in a private message.
         user = [dialect.defs.IRCUser|IRCUser] to replay notes for.
         background = Whether or not to issue WHOIS queries as low-priority background messages.
  +/
 void playbackNotesImpl(
-    NotesPlugin plugin,
+    NotePlugin plugin,
     const string channelName,
     const IRCUser user,
     const Flag!"background" background)
@@ -407,10 +407,11 @@ void playbackNotesImpl(
             .addSyntax("$command [nickname] [note text]")
     )
 )
-void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
+void onCommandAddNote(NotePlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
-    import lu.string : SplitResults, beginsWith, splitInto, stripped;
+    import lu.string : SplitResults, splitInto, stripped;
+    import std.algorithm.searching : startsWith;
 
     void sendUsage()
     {
@@ -432,7 +433,7 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
     string target; // ditto
     immutable results = slice.splitInto(target);
 
-    if (target.beginsWith('@')) target = target[1..$];
+    if (target.startsWith('@')) target = target[1..$];
     if ((results != SplitResults.overrun) || !target.length) return sendUsage();
     if (target == plugin.state.client.nickname) return sendNoBotMessages();
 
@@ -452,12 +453,12 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 
 // onWelcome
 /++
-    Initialises the Notes plugin. Loads the notes from disk.
+    Initialises the Note plugin. Loads the notes from disk.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(NotesPlugin plugin)
+void onWelcome(NotePlugin plugin)
 {
     loadNotes(plugin);
 }
@@ -465,9 +466,9 @@ void onWelcome(NotesPlugin plugin)
 
 // saveNotes
 /++
-    Saves notes to disk, to the [NotesPlugin.notesFile] JSON file.
+    Saves notes to disk, to the [NotePlugin.notesFile] JSON file.
  +/
-void saveNotes(NotesPlugin plugin)
+void saveNotes(NotePlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONType;
@@ -500,15 +501,15 @@ void saveNotes(NotesPlugin plugin)
 
 // loadNotes
 /++
-    Loads notes from disk into [NotesPlugin.notes].
+    Loads notes from disk into [NotePlugin.notes].
  +/
-void loadNotes(NotesPlugin plugin)
+void loadNotes(NotePlugin plugin)
 {
     import lu.json : JSONStorage;
 
     JSONStorage json;
     json.load(plugin.notesFile);
-    plugin.notes.clear();
+    plugin.notes = null;
 
     foreach (immutable channelName, channelNotesJSON; json.object)
     {
@@ -531,7 +532,7 @@ void loadNotes(NotesPlugin plugin)
 /++
     Reloads notes from disk.
  +/
-void reload(NotesPlugin plugin)
+void reload(NotePlugin plugin)
 {
     loadNotes(plugin);
 }
@@ -541,7 +542,7 @@ void reload(NotesPlugin plugin)
 /++
     Ensures that there is a notes file, creating one if there isn't.
  +/
-void initResources(NotesPlugin plugin)
+void initResources(NotePlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
@@ -573,21 +574,21 @@ void initResources(NotesPlugin plugin)
 public:
 
 
-// NotesPlugin
+// NotePlugin
 /++
-    The Notes plugin, which allows people to leave messages to each other,
+    The Note plugin, which allows people to leave messages to each other,
     for offline communication and such.
  +/
-final class NotesPlugin : IRCPlugin
+final class NotePlugin : IRCPlugin
 {
 private:
     import lu.json : JSONStorage;
 
-    // notesSettings
+    // noteSettings
     /++
-        All Notes plugin settings gathered.
+        All Note plugin settings gathered.
      +/
-    NotesSettings notesSettings;
+    NoteSettings noteSettings;
 
     // notes
     /++

@@ -10,7 +10,7 @@
     minutes.
 
     We will rely on the
-    [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService] to query
+    [kameloso.plugins.services.chanquery.ChanQueryService|ChanQueryService] to query
     channels for full lists of users upon joining new ones, including the
     ones we join upon connecting. Elsewise, a completely silent user will never
     be recorded as having been seen, as they would never be triggering any of
@@ -682,7 +682,7 @@ void onNick(SeenPlugin plugin, const ref IRCEvent event)
 
     A WHO request enumerates all members in a channel. It returns several
     replies, one event per each user in the channel. The
-    [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService] services
+    [kameloso.plugins.services.chanquery.ChanQueryService|ChanQueryService] services
     instigates this shortly after having joined one, as a service to other plugins.
  +/
 @(IRCEventHandler()
@@ -724,11 +724,11 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
     foreach (immutable entry; event.content.splitter(' '))
     {
         import dialect.common : stripModesign;
-        import lu.string : nom;
+        import lu.string : advancePast;
         import std.typecons : Flag, No, Yes;
 
         string slice = entry;  // mutable
-        slice = slice.nom!(Yes.inherit)('!'); // In case SpotChat-like, full nick!ident@address form
+        slice = slice.advancePast('!', Yes.inherit); // In case SpotChat-like, full nick!ident@address form
         slice = slice.stripModesign(plugin.state.server);
         updateUser(plugin, slice, event.time);
     }
@@ -817,8 +817,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.time : timeSince;
     import dialect.common : isValidNickname;
-    import lu.string : beginsWith;
-    import std.algorithm.searching : canFind;
+    import std.algorithm.searching : canFind, startsWith;
     import std.datetime.systime : SysTime;
     import std.format : format;
 
@@ -853,7 +852,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
         `query` message.
      +/
 
-    immutable requestedUser = event.content.beginsWith('@') ?
+    immutable requestedUser = event.content.startsWith('@') ?
         event.content[1..$] :
         event.content;
 
@@ -1017,7 +1016,7 @@ void loadSeen(SeenPlugin plugin)
         logger.warningf(pattern, plugin.seenFile.doublyBackslashed);
     }
 
-    plugin.seenUsers.clear();
+    plugin.seenUsers = null;
 
     try
     {

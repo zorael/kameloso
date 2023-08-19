@@ -204,7 +204,7 @@ public:
 )
 void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.time : DurationStringException, abbreviatedDuration, timeSince;
+    import kameloso.time : DurationStringException, asAbbreviatedDuration, timeSince;
     import lu.string : stripped;
     import std.algorithm.searching : count;
     import std.algorithm.sorting : sort;
@@ -321,8 +321,8 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
 
     try
     {
-        import lu.string : nom;
-        poll.duration = abbreviatedDuration(slice.nom!(Yes.decode)(' '));
+        import lu.string : advancePast;
+        poll.duration = slice.advancePast(' ').asAbbreviatedDuration;
     }
     catch (ConvException _)
     {
@@ -420,10 +420,12 @@ auto getPollChoices(
 
     foreach (immutable rawChoice; splitWithQuotes(slice))
     {
-        import lu.string : beginsWith, strippedRight;
+        import lu.string : strippedRight;
+        import std.algorithm.searching : startsWith;
         import std.uni : toLower;
 
-        if (plugin.pollSettings.forbidPrefixedChoices && rawChoice.beginsWith(plugin.state.settings.prefix))
+        if (plugin.pollSettings.forbidPrefixedChoices &&
+            rawChoice.startsWith(plugin.state.settings.prefix))
         {
             /*return*/ sendChoiceMustNotStartWithPrefix();
             return result;
@@ -904,6 +906,8 @@ void generateEndFiber(
 void serialisePolls(PollPlugin plugin)
 {
     import lu.json : JSONStorage;
+
+    if (!plugin.channelPolls.length) return;
 
     JSONStorage json;
     json.reset();

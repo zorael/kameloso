@@ -7,15 +7,15 @@ license "BSL-1.0"
 
 targetType "executable"
 mainSourceFile "source/kameloso/entrypoint.d"
-dflags "-dip25" "-dip1008"
-dflags "-fall-instantiations" platform="gdc"
+dflags "-dip1000" "-dip1008"
+#dflags "-fall-instantiations" platform="gdc"
 dflags "-linkonce-templates" "-disable-verify" platform="ldc"
 #dflags "-link-defaultlib-shared=false" platform="ldc"
 #dflags "-ftime-trace" "-ftime-trace-file=trace.json" platform="ldc"
 #postBuildCommands "tracy-import-chrome ./trace.json ./trace.tracy" platform="ldc"
 
-dependency "lu" version="~>1.2.1"
-dependency "dialect" version="~>2.0.0"
+dependency "lu" version="~>2.0.0"
+dependency "dialect" version="~>2.0.4"
 dependency "arsd-official:dom" version="~>10.9.0"
 dependency "arsd-official:http" version="~>10.9.0"
 dependency "requests" version="~>2.1.0"
@@ -24,38 +24,37 @@ sourcePaths "source"
 importPaths "source"
 
 /**
-    Plugins; add or remove a letter to the strings to disable that plugin.
+    Plugins; add a letter to a string to disable that plugin.
     (Or remove the line entirely.)
  */
 versions \
     "WithAdminPlugin" \
     "WithAutomodePlugin" \
+    "WithBashPlugin" \
     "WithChatbotPlugin" \
     "WithCounterPlugin" \
     "WithHelpPlugin" \
-    "WithNotesPlugin" \
-    "WithOnelinersPlugin" \
+    "WithNotePlugin" \
+    "WithOnelinerPlugin" \
     "WithPipelinePlugin" \
+    "WithPollPlugin" \
     "WithPrinterPlugin" \
-    "WithQuotesPlugin" \
+    "WithQuotePlugin" \
     "WithSedReplacePlugin" \
     "WithSeenPlugin" \
     "WithStopwatchPlugin" \
-    "WithPollPlugin" \
-    "WithTimerPlugin" \
-    "WithWebtitlesPlugin" \
     "WithTimePlugin" \
-    "WithBashPlugin"
+    "WithTimerPlugin" \
+    "WithWebtitlePlugin"
     //"WithSamePlugin"
 
 /**
     Services; needed for everything to work right.
-
     Program exhibits undefined behaviour (read: breaks) when any of these are disabled.
  */
 versions \
     "WithCTCPService" \
-    "WithChanQueriesService" \
+    "WithChanQueryService" \
     "WithConnectService" \
     "WithPersistenceService"
 
@@ -70,7 +69,6 @@ versions \
 
 /**
     Non-default features.
-
     May be enabled in some configurations.
  */
 /*
@@ -138,6 +136,7 @@ configuration "dev" {
         "ExplainReplay" \
         "GCStatsOnExit" \
         "IncludeHeavyStuff"
+        //"Callgrind" \
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
         //"OmniscientSeen" \
@@ -162,6 +161,7 @@ configuration "dev-lowmem" {
         "ExplainReplay" \
         "GCStatsOnExit" \
         "IncludeHeavyStuff"
+        //"Callgrind" \
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
         //"OmniscientSeen" \
@@ -180,19 +180,17 @@ configuration "unittest" {
         "TwitchSupport" \
         "WithTwitchPlugin" \
         "TwitchWarnings" \
-        "OmniscientAdmin" \
-        "OmniscientQueries" \
-        "OmniscientSeen" \
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "IncludeHeavyStuff" \
+        "TraceWhois" \
+        "TwitchPromoteEverywhere" \
+        "TwitchCustomEmotesEverywhere" \
+        "PrintAccountNamesToo" \
+        "PrintClassNamesToo" \
+        "BenchmarkHTTPRequests" \
         "OSXTMPDIR"
-        //"TraceWhois" \
-        //"TwitchPromoteEverywhere" \
-        //"TwitchCustomEmotesEverywhere" \
-        //"PrintAccountNamesToo" \
-        //"PrintClassNamesToo" \
-        //"BenchmarkHTTPRequests" \
 }
 
 configuration "unittest-lowmem" {
@@ -203,17 +201,15 @@ configuration "unittest-lowmem" {
         "TwitchSupport" \
         "WithTwitchPlugin" \
         "TwitchWarnings" \
-        "OmniscientAdmin" \
-        "OmniscientQueries" \
-        "OmniscientSeen" \
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "IncludeHeavyStuff" \
+        "TraceWhois" \
+        "TwitchPromoteEverywhere" \
+        "TwitchCustomEmotesEverywhere" \
+        "PrintAccountNamesToo" \
+        "PrintClassNamesToo" \
+        "BenchmarkHTTPRequests" \
         "OSXTMPDIR"
-        //"TraceWhois" \
-        //"TwitchPromoteEverywhere" \
-        //"TwitchCustomEmotesEverywhere" \
-        //"PrintAccountNamesToo" \
-        //"PrintClassNamesToo" \
-        //"BenchmarkHTTPRequests" \
 }

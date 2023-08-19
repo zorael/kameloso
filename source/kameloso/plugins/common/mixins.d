@@ -18,7 +18,6 @@ module kameloso.plugins.common.mixins;
 private:
 
 import dialect.defs;
-import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -57,11 +56,33 @@ mixin template WHOISFiberDelegate(
     alias onSuccess,
     alias onFailure = null,
     Flag!"alwaysLookup" alwaysLookup = No.alwaysLookup)
-if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {
     import kameloso.plugins.common.core : IRCPlugin;
-    import std.traits : ParameterIdentifierTuple;
+    import std.traits : ParameterIdentifierTuple, isSomeFunction;
     import std.typecons : Flag, No, Yes;
+
+    static if (!isSomeFunction!onSuccess)
+    {
+        import std.format : format;
+
+        enum pattern = "First parameter of `%s` is not a success function";
+        enum message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+    else static if (!isSomeFunction!onFailure && !is(typeof(onFailure) == typeof(null)))
+    {
+        import std.format : format;
+
+        enum pattern = "Second parameter of `%s` is not a failure function";
+        enum message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.function_, "WHOISFiberDelegate");
+    }
 
     alias paramNames = ParameterIdentifierTuple!(mixin(__FUNCTION__));
 
@@ -78,25 +99,14 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     {
         //alias context = mixin(paramNames[0]);  // Only works on 2.088 and later
         // The mixin must be a concatenated string for 2.083 and earlier,
-        // but we only support 2.085+
-        mixin("alias context = ", paramNames[0], ";");
+        // but we only support 2.087+
+        mixin("alias _context = ", paramNames[0], ";");
     }
 
-    static if (__traits(compiles, { alias _ = hasWHOISFiber; }))
-    {
-        import std.format : format;
-
-        enum pattern = "Double mixin of `%s` in `%s`";
-        enum message = pattern.format("WHOISFiberDelegate", __FUNCTION__);
-        static assert(0, message);
-    }
-    else
-    {
-        /++
-            Flag denoting that [WHOISFiberDelegate] has been mixed in.
-         +/
-        enum hasWHOISFiber = true;
-    }
+    /++
+        Flag denoting that [WHOISFiberDelegate] has been mixed in.
+     +/
+    enum hasWHOISFiber = true;
 
     static if (!alwaysLookup && !__traits(compiles, { alias _ = .hasUserAwareness; }))
     {
@@ -104,12 +114,12 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             "but its parent module does not mix in `UserAwareness`");
     }
 
-    // _kamelosoCarriedNickname
+    // _carriedNickname
     /++
         Nickname being looked up, stored outside of any separate function to make
         it available to all of them.
      +/
-    string _kamelosoCarriedNickname;
+    string _carriedNickname;
 
     /++
         Event types that we may encounter as responses to WHOIS queries.
@@ -245,9 +255,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 }
             }
 
-            immutable m = context.state.server.caseMapping;
+            immutable m = _context.state.server.caseMapping;
 
-            if (!whoisEvent.target.nickname.opEqualsCaseInsensitive(_kamelosoCarriedNickname, m))
+            if (!whoisEvent.target.nickname.opEqualsCaseInsensitive(_carriedNickname, m))
             {
                 // Wrong WHOIS; await a new one
                 Fiber.yield();
@@ -255,7 +265,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
 
             // Clean up awaiting fiber entries on exit, just to be neat.
-            scope(exit) unawait(context, thisFiber, whoisEventTypes[]);
+            scope(exit) unawait(_context, thisFiber, whoisEventTypes[]);
 
             with (IRCEvent.Type)
             switch (whoisEvent.type)
@@ -265,7 +275,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 return callOnSuccess();
 
             case RPL_WHOISUSER:
-                if (context.state.settings.preferHostmasks)
+                if (_context.state.settings.preferHostmasks)
                 {
                     return callOnSuccess();
                 }
@@ -317,21 +327,23 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import kameloso.constants : BufferSize;
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
-        import lu.string : contains, nom;
+        import lu.string : advancePast;
         import lu.traits : TakesParams;
+        import std.string : indexOf;
         import std.traits : arity;
         import std.typecons : Flag, No, Yes;
         import core.thread : Fiber;
 
         version(TwitchSupport)
         {
-            if (context.state.server.daemon == IRCServer.Daemon.twitch)
+            if (_context.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 // Define Twitch queries as always succeeding, since WHOIS isn't applicable
 
                 version(TwitchWarnings)
                 {
                     import kameloso.common : logger;
+
                     logger.warning("Tried to enqueue and WHOIS on Twitch");
 
                     version(PrintStacktraces)
@@ -343,7 +355,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
                 static if (__traits(compiles, { alias _ = .hasUserAwareness; }))
                 {
-                    if (const user = nickname in context.state.users)
+                    if (const user = nickname in _context.state.users)
                     {
                         static if (TakesParams!(onSuccess, IRCEvent))
                         {
@@ -399,7 +411,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         static if (!alwaysLookup && __traits(compiles, { alias _ = .hasUserAwareness; }))
         {
-            if (const user = nickname in context.state.users)
+            if (const user = nickname in _context.state.users)
             {
                 if (user.account.length)
                 {
@@ -460,11 +472,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         }
 
         Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, BufferSize.fiberStack);
-        await(context, fiber, whoisEventTypes[]);
+        await(_context, fiber, whoisEventTypes[]);
 
         string slice = nickname;  // mutable
-        immutable nicknamePart = slice.contains('!') ?
-            slice.nom('!') :
+        immutable nicknamePart = (slice.indexOf('!') != -1) ?
+            slice.advancePast('!') :
             slice;
 
         version(WithPrinterPlugin)
@@ -484,7 +496,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     Message.Property.forced |
                     Message.Property.quiet |
                     Message.Property.background;
-                whois(context.state, nicknamePart, properties);
+                whois(_context.state, nicknamePart, properties);
             }
             else
             {
@@ -493,11 +505,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     Message.Property.forced |
                     Message.Property.quiet |
                     Message.Property.priority;
-                whois(context.state, nicknamePart, properties);
+                whois(_context.state, nicknamePart, properties);
             }
         }
 
-        _kamelosoCarriedNickname = nicknamePart;
+        _carriedNickname = nicknamePart;
     }
 }
 
@@ -524,28 +536,32 @@ private:
     import std.typecons : Flag, No, Yes;
     static import kameloso.messaging;
 
-    static if (__traits(compiles, { alias _ = this.hasMessagingProxy; }))
+    version(unittest)
     {
-        import std.format : format;
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.class_, "MessagingProxy");
 
-        enum pattern = "Double mixin of `%s` in `%s`";
-        enum message = pattern.format("MessagingProxy", typeof(this).stringof);
-        static assert(0, message);
-    }
-    else
-    {
-        /++
-            Flag denoting that [MessagingProxy] has been mixed in.
-         +/
-        private enum hasMessagingProxy = true;
+        static if (!is(typeof(this) : IRCPlugin))
+        {
+            import std.format : format;
+
+            enum wrongThisPattern = "`%s` mixes in `MessagingProxy` but is " ~
+                "itself not an `IRCPlugin` subclass";
+            enum wrongThisMessage = wrongThisPattern.format(typeof(this).stringof);
+            static assert(0, wrongThisMessage);
+        }
     }
 
-    pragma(inline, true);
+    /++
+        Flag denoting that [MessagingProxy] has been mixed in.
+     +/
+    enum hasMessagingProxy = true;
 
     // chan
     /++
         Sends a channel message.
      +/
+    pragma(inline, true)
     void chan(
         const string channelName,
         const string content,
@@ -564,6 +580,7 @@ private:
     /++
         Replies to a channel message.
      +/
+    pragma(inline, true)
     void reply(
         const ref IRCEvent event,
         const string content,
@@ -582,6 +599,7 @@ private:
     /++
         Sends a private query message to a user.
      +/
+    pragma(inline, true)
     void query(
         const string nickname,
         const string content,
@@ -604,6 +622,7 @@ private:
         This reflects how channel messages and private messages are both the
         underlying same type; [dialect.defs.IRCEvent.Type.PRIVMSG].
      +/
+    pragma(inline, true)
     void privmsg(
         const string channel,
         const string nickname,
@@ -624,6 +643,7 @@ private:
     /++
         Sends an `ACTION` "emote" to the supplied target (nickname or channel).
      +/
+    pragma(inline, true)
     void emote(
         const string emoteTarget,
         const string content,
@@ -644,6 +664,7 @@ private:
 
         This includes modes that pertain to a user in the context of a channel, like bans.
      +/
+    pragma(inline, true)
     void mode(
         const string channel,
         const const(char)[] modes,
@@ -664,6 +685,7 @@ private:
     /++
         Sets the topic of a channel.
      +/
+    pragma(inline, true)
     void topic(
         const string channel,
         const string content,
@@ -682,6 +704,7 @@ private:
     /++
         Invites a user to a channel.
      +/
+    pragma(inline, true)
     void invite(
         const string channel,
         const string nickname,
@@ -700,6 +723,7 @@ private:
     /++
         Joins a channel.
      +/
+    pragma(inline, true)
     void join(
         const string channel,
         const string key = string.init,
@@ -718,6 +742,7 @@ private:
     /++
         Kicks a user from a channel.
      +/
+    pragma(inline, true)
     void kick(
         const string channel,
         const string nickname,
@@ -738,6 +763,7 @@ private:
     /++
         Leaves a channel.
      +/
+    pragma(inline, true)
     void part(
         const string channel,
         const string reason = string.init,
@@ -756,6 +782,7 @@ private:
     /++
         Disconnects from the server, optionally with a quit reason.
      +/
+    pragma(inline, true)
     void quit(
         const string reason = string.init,
         const Message.Property properties = Message.Property.none,
@@ -772,6 +799,7 @@ private:
     /++
         Queries the server for WHOIS information about a user.
      +/
+    pragma(inline, true)
     void whois(
         const string nickname,
         const Message.Property properties = Message.Property.none,
@@ -791,6 +819,7 @@ private:
         This is used to send messages of types for which there exist no helper
         functions.
      +/
+    pragma(inline, true)
     void raw(
         const string line,
         const Message.Property properties = Message.Property.none,
@@ -808,6 +837,7 @@ private:
         Sends raw text to the server, verbatim, bypassing all queues and
         throttling delays.
      +/
+    pragma(inline, true)
     void immediate(
         const string line,
         const Message.Property properties = Message.Property.none,
@@ -848,6 +878,7 @@ private:
             `@system` and nothing else.
          +/
         mixin("
+pragma(inline, true)
 void askTo" ~ verb ~ "(const string line)
 {
     return kameloso.messaging.askTo" ~ verb ~ "(state, line);
@@ -914,15 +945,15 @@ unittest
 
         foreach (immutable funstring; __traits(derivedMembers, kameloso.messaging))
         {
-            import lu.string : beginsWith;
             import std.algorithm.comparison : among;
+            import std.algorithm.searching : startsWith;
 
             static if (funstring.among!(
                     "object",
                     "dialect",
                     "kameloso",
                     "Message") ||
-                funstring.beginsWith("askTo"))
+                funstring.startsWith("askTo"))
             {
                 //pragma(msg, "ignoring " ~ funstring);
             }
@@ -930,7 +961,7 @@ unittest
             {
                 import std.format : format;
 
-                enum pattern = "`MessageProxy` is missing a wrapper for `kameloso.messaging.%s`";
+                enum pattern = "`MessagingProxy` is missing a wrapper for `kameloso.messaging.%s`";
                 enum message = pattern.format(funstring);
                 static assert(0, message);
             }

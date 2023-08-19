@@ -272,7 +272,7 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 
     enum allCTCPTypes = ()
     {
-        import lu.string : beginsWith;
+        import std.algorithm.searching : startsWith;
         import std.array : Appender;
         import std.traits : getUDAs;
 
@@ -288,7 +288,7 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 
                 enum typestring = Enum!(IRCEvent.Type).toString(type);
 
-                static if (typestring.beginsWith("CTCP_"))
+                static if (typestring.startsWith("CTCP_"))
                 {
                     sink.put(' ');
                     sink.put(typestring[5..$]);
@@ -337,7 +337,7 @@ private:
             `true` if this service should react to events; `false` if not.
      +/
     version(TwitchSupport)
-    override public bool isEnabled() const @property pure nothrow @nogc
+    override public bool isEnabled() const pure nothrow @nogc
     {
         return (state.server.daemon != IRCServer.Daemon.twitch);
     }

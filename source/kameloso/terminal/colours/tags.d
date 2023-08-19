@@ -17,7 +17,6 @@ module kameloso.terminal.colours.tags;
 private:
 
 import kameloso.logger : LogLevel;
-import std.traits : isSomeString;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -73,23 +72,30 @@ public:
         The original string is passed back if there was nothing to replace.
  +/
 auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip) @safe
-if (isSomeString!T)
 {
     import kameloso.common : logger;
-    import lu.string : contains;
     import std.array : Appender;
     import std.range : ElementEncodingType;
-    import std.string : representation;
-    import std.traits : Unqual;
+    import std.string : indexOf, representation;
+    import std.traits : Unqual, isSomeString;
+
+    static if (!isSomeString!T)
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` only works on string types, not `%s`";
+        immutable message = pattern.format(__FUNCTION__, T.stringof);
+        static assert(0, message);
+    }
 
     static import kameloso.common;
 
     alias E = Unqual!(ElementEncodingType!T);
 
-    if (!line.length || !line.contains('<')) return line;
+    if (!line.length || (line.indexOf('<') == -1)) return line;
 
     // Without marking this as @trusted, we can't have @safe expandTags...
-    static auto indexOf(H, N)(const H haystack, const N rawNeedle) @trusted
+    static auto wrappedIndexOf(H, N)(const H haystack, const N rawNeedle) @trusted
     {
         import std.string : indexOf;
 
@@ -110,7 +116,7 @@ if (isSomeString!T)
     bool escaping;
 
     // Work around the immutability being lost with -dip1000
-    // The alternative is to use .idup, which is not really desireable here
+    // The alternative is to use .idup, which is not really desirable here
     immutable asBytes = () @trusted
     {
         return cast(immutable)line.representation;
@@ -153,7 +159,7 @@ if (isSomeString!T)
             }
             else
             {
-                immutable ptrdiff_t closingBracketPos = indexOf(asBytes[i..$], '>');
+                immutable ptrdiff_t closingBracketPos = wrappedIndexOf(asBytes[i..$], '>');
 
                 if ((closingBracketPos == -1) || (closingBracketPos > 6))
                 {
@@ -280,7 +286,7 @@ if (isSomeString!T)
 
                     case 'h':
                         i += 3;  // advance past "<h>".length
-                        immutable closingHashMarkPos = indexOf(asBytes[i..$], "</>");
+                        immutable closingHashMarkPos = wrappedIndexOf(asBytes[i..$], "</>");
 
                         if (closingHashMarkPos == -1)
                         {
@@ -555,9 +561,19 @@ unittest
         The original string is passed back if there was nothing to replace.
  +/
 auto expandTags(T)(const T line, const LogLevel baseLevel) @safe
-if (isSomeString!T)
 {
+    import std.traits : isSomeString;
     static import kameloso.common;
+
+    static if (!isSomeString!T)
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` only works on string types, not `%s`";
+        immutable message = pattern.format(__FUNCTION__, T.stringof);
+        static assert(0, message);
+    }
+
     immutable strip = cast(Flag!"strip")kameloso.common.settings.monochrome;
     return expandTags(line, baseLevel, strip);
 }
@@ -605,8 +621,18 @@ unittest
         The original string is passed back if there was nothing to remove.
  +/
 auto stripTags(T)(const T line) @safe
-if (isSomeString!T)
 {
+    import std.traits : isSomeString;
+
+    static if (!isSomeString!T)
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` only works on string types, not `%s`";
+        immutable message = pattern.format(__FUNCTION__, T.stringof);
+        static assert(0, message);
+    }
+
     return expandTags(line, LogLevel.off, Yes.strip);
 }
 

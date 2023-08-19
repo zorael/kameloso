@@ -27,8 +27,11 @@ module kameloso.irccolours;
 
 private:
 
-import kameloso.terminal.colours.defs : TerminalBackground, TerminalForeground,
-    TerminalFormat, TerminalReset;
+import kameloso.terminal.colours.defs :
+    TerminalBackground,
+    TerminalForeground,
+    TerminalFormat,
+    TerminalReset;
 import dialect.common : IRCControlCharacter;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
@@ -191,10 +194,19 @@ void ircColourInto(Sink)
     auto ref Sink sink,
     const int fg,
     const int bg = IRCColour.unset)
-if (isOutputRange!(Sink, char[]))
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
 {
     import lu.conv : toAlphaInto;
+    import std.range.primitives : isOutputRange;
+
+    static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
 
     sink.put(cast(char)IRCControlCharacter.colour);
     (cast(int)fg).toAlphaInto!(2, 2)(sink);  // So far the highest colour seems to be 99; two digits
@@ -585,9 +597,9 @@ version(Colours)
 auto mapEffects(
     const string origLine,
     const TerminalForeground fgBase = TerminalForeground.default_,
-    const TerminalBackground bgBase = TerminalBackground.default_) pure nothrow
+    const TerminalBackground bgBase = TerminalBackground.default_) pure
 {
-    import lu.string : contains;
+    import std.string : indexOf;
 
     alias I = IRCControlCharacter;
     alias TF = TerminalFormat;
@@ -596,25 +608,25 @@ auto mapEffects(
 
     string line = origLine;  // mutable
 
-    if (line.contains(I.colour))
+    if (line.indexOf(cast(char)I.colour) != -1)
     {
         // Colour is mIRC 3
         line = mapColours(line, fgBase, bgBase);
     }
 
-    if (line.contains(I.bold))
+    if (line.indexOf(cast(char)I.bold) != -1)
     {
         // Bold is terminal 1, mIRC 2
         line = mapEffectsImpl!(No.strip, I.bold, TF.bold)(line);
     }
 
-    if (line.contains(I.italics))
+    if (line.indexOf(cast(char)I.italics) != -1)
     {
         // Italics is terminal 3 (not really), mIRC 29
         line = mapEffectsImpl!(No.strip, I.italics, TF.italics)(line);
     }
 
-    if (line.contains(I.underlined))
+    if (line.indexOf(cast(char)I.underlined) != -1)
     {
         // Underlined is terminal 4, mIRC 31
         line = mapEffectsImpl!(No.strip, I.underlined, TF.underlined)(line);
@@ -753,7 +765,8 @@ private string mapColoursImpl(Flag!"strip" strip = No.strip)
     {
         static if (!strip)
         {
-            static assert(0, "Tried to `mapColoursImpl!(No.strip)` outside of version `Colours`");
+            enum message = "Tried to `mapColoursImpl!(No.strip)` outside of version `Colours`";
+            static assert(0, message);
         }
     }
 
@@ -768,7 +781,7 @@ private string mapColoursImpl(Flag!"strip" strip = No.strip)
 
     string slice = line;  // mutable
 
-    ptrdiff_t pos = slice.indexOf(IRCControlCharacter.colour);
+    ptrdiff_t pos = slice.indexOf(cast(char)IRCControlCharacter.colour);
 
     if (pos == -1) return line;  // Return line as is, don't allocate a new one
 
@@ -867,7 +880,7 @@ private string mapColoursImpl(Flag!"strip" strip = No.strip)
             segment.isReset = true;
         }
 
-        pos = slice.indexOf(IRCControlCharacter.colour);
+        pos = slice.indexOf(cast(char)IRCControlCharacter.colour);
     }
 
     immutable tail = slice;
@@ -1110,7 +1123,8 @@ private string mapEffectsImpl(Flag!"strip" strip, IRCControlCharacter mircToken,
     {
         static if (!strip)
         {
-            static assert(0, "Tried to call `mapEffectsImpl!(No.strip)` outside of version `Colours`");
+            enum message = "Tried to call `mapEffectsImpl!(No.strip)` outside of version `Colours`";
+            static assert(0, message);
         }
     }
 
@@ -1255,7 +1269,7 @@ T expandIRCTags(T)
 {
     import std.typecons : Flag, No, Yes;
 
-    // See unittests of other overloads for more No.strip tests
+    // See unit tests of other overloads for more No.strip tests
 
     {
         immutable line = "hello<b>hello<b>hello";
@@ -1333,12 +1347,12 @@ T expandIRCTags(T)(const T line) @system
     {
         if (kameloso.common.settings is null)
         {
-            import std.stdio : stdout, writefln;
+            import std.stdio : stdout, writeln;
 
             // We're likely threading and forgot to initialise global settings
             kameloso.common.settings = new typeof(*kameloso.common.settings);
 
-            writefln("-- Warning: attempted to expand IRC tags by relying on " ~
+            writeln("-- Warning: attempted to expand IRC tags by relying on " ~
                 "global `kameloso.common.settings`, and it was null");
             stdout.flush();
         }
@@ -1563,15 +1577,14 @@ private T expandIRCTagsImpl(T)
     const Flag!"strip" strip = No.strip) pure
 {
     import dialect.common : IRCControlCharacter;
-    import lu.string : contains;
     import std.array : Appender;
     import std.range : ElementEncodingType;
-    import std.string : representation;
+    import std.string : indexOf, representation;
     import std.traits : Unqual;
 
     alias E = Unqual!(ElementEncodingType!T);
 
-    if (!line.length || !line.contains('<')) return line;
+    if (!line.length || line.indexOf('<') == -1) return line;
 
     Appender!(E[]) sink;
     bool dirty;
@@ -1615,8 +1628,6 @@ private T expandIRCTagsImpl(T)
             }
             else
             {
-                import std.string : indexOf;
-
                 immutable ptrdiff_t closingBracketPos = (cast(T)asBytes[i..$]).indexOf('>');
 
                 if ((closingBracketPos == -1) || (closingBracketPos > 6))

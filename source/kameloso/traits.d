@@ -20,7 +20,6 @@ module kameloso.traits;
 
 private:
 
-import std.traits : isAggregateType;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -67,65 +66,84 @@ auto memberstringIsThisCtorOrDtor(const string memberstring) pure @safe nothrow 
             the visibility and deprecationness of.
  +/
 template memberIsVisibleAndNotDeprecated(Thing, string memberstring)
-if (isAggregateType!Thing && memberstring.length)
 {
-    static if (__VERSION__ >= 2096L)
+    import std.traits : isAggregateType;
+
+    static if (!isAggregateType!Thing)
     {
-        /+
-            __traits(getVisibility) over deprecated __traits(getProtection).
-            __traits(isDeprecated) before __traits(getVisibility) to gag
-            deprecation warnings.
-         +/
-        static if (
-            !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
-            (__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "private") &&
-            (__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "package"))
-        {
-            enum memberIsVisibleAndNotDeprecated = true;
-        }
-        else
-        {
-            enum memberIsVisibleAndNotDeprecated = false;
-        }
+        import std.format : format;
+
+        enum pattern = "`memberIsVisibleAndNotDeprecated` was passed a non-aggregate type `%s`";
+        enum message = pattern.format(Thing.stringof);
+        static assert(0, message);
     }
-    else static if (__VERSION__ >= 2089L)
+    else static if (!memberstring.length)
     {
-        /+
-            __traits(isDeprecated) before __traits(getProtection) to gag
-            deprecation warnings.
-         +/
-        static if (
-            !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
-            (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "private") &&
-            (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "package"))
-        {
-            enum memberIsVisibleAndNotDeprecated = true;
-        }
-        else
-        {
-            enum memberIsVisibleAndNotDeprecated = false;
-        }
+        import std.format : format;
+
+        enum message = "`memberIsVisibleAndNotDeprecated` was passed an empty member string";
+        static assert(0, message);
     }
     else
     {
-        /+
-            __traits(getProtection) before __traits(isDeprecated) to actually
-            compile if member not visible.
-
-            This order is not necessary for all versions, but the oldest require
-            it. Additionally we can't avoid the deprecation messages no matter
-            what we do, so just lump the rest here.
-         +/
-        static if (
-            (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "private") &&
-            (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "package") &&
-            !__traits(isDeprecated, __traits(getMember, Thing, memberstring)))
+        static if (__VERSION__ >= 2096L)
         {
-            enum memberIsVisibleAndNotDeprecated = true;
+            /+
+                __traits(getVisibility) over deprecated __traits(getProtection).
+                __traits(isDeprecated) before __traits(getVisibility) to gag
+                deprecation warnings.
+            +/
+            static if (
+                !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
+                (__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "private") &&
+                (__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "package"))
+            {
+                enum memberIsVisibleAndNotDeprecated = true;
+            }
+            else
+            {
+                enum memberIsVisibleAndNotDeprecated = false;
+            }
+        }
+        else static if (__VERSION__ >= 2089L)
+        {
+            /+
+                __traits(isDeprecated) before __traits(getProtection) to gag
+                deprecation warnings.
+            +/
+            static if (
+                !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
+                (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "private") &&
+                (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "package"))
+            {
+                enum memberIsVisibleAndNotDeprecated = true;
+            }
+            else
+            {
+                enum memberIsVisibleAndNotDeprecated = false;
+            }
         }
         else
         {
-            enum memberIsVisibleAndNotDeprecated = false;
+            /+
+                __traits(getProtection) before __traits(isDeprecated) to actually
+                compile if member not visible.
+
+                This order is not necessary for all versions, but the oldest require
+                it. Additionally we can't avoid the deprecation messages no matter
+                what we do, so just lump the rest here.
+            +/
+            static if (
+                (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "private") &&
+                (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "package") &&
+                !__traits(isDeprecated, __traits(getMember, Thing, memberstring)))
+            {
+                enum memberIsVisibleAndNotDeprecated = true;
+            }
+            else
+            {
+                enum memberIsVisibleAndNotDeprecated = false;
+            }
         }
     }
 }
@@ -172,13 +190,30 @@ unittest
             determine is a non-enum mutable.
  +/
 template memberIsMutable(Thing, string memberstring)
-if (isAggregateType!Thing && memberstring.length)
 {
-    import std.traits : isMutable;
+    import std.traits : isAggregateType, isMutable;
 
-    enum memberIsMutable =
-        isMutable!(typeof(__traits(getMember, Thing, memberstring))) &&
-        __traits(compiles, __traits(getMember, Thing, memberstring).offsetof);
+    static if (!isAggregateType!Thing)
+    {
+        import std.format : format;
+
+        enum pattern = "`memberIsMutable` was passed a non-aggregate type `%s`";
+        enum message = pattern.format(Thing.stringof);
+        static assert(0, message);
+    }
+    else static if (!memberstring.length)
+    {
+        import std.format : format;
+
+        enum message = "`memberIsMutable` was passed an empty member string";
+        static assert(0, message);
+    }
+    else
+    {
+        enum memberIsMutable =
+            isMutable!(typeof(__traits(getMember, Thing, memberstring))) &&
+            __traits(compiles, __traits(getMember, Thing, memberstring).offsetof);
+    }
 }
 
 ///
@@ -223,15 +258,32 @@ unittest
             determine is a non-type non-function non-template non-enum value.
  +/
 template memberIsValue(Thing, string memberstring)
-if (isAggregateType!Thing && memberstring.length)
 {
-    import std.traits : isSomeFunction, isType;
+    import std.traits : isAggregateType, isMutable, isSomeFunction, isType;
 
-    enum memberIsValue =
-        !isType!(__traits(getMember, Thing, memberstring)) &&
-        !isSomeFunction!(__traits(getMember, Thing, memberstring)) &&
-        !__traits(isTemplate, __traits(getMember, Thing, memberstring)) &&
-        !is(__traits(getMember, Thing, memberstring) == enum);
+    static if (!isAggregateType!Thing)
+    {
+        import std.format : format;
+
+        enum pattern = "`memberIsValue` was passed a non-aggregate type `%s`";
+        enum message = pattern.format(Thing.stringof);
+        static assert(0, message);
+    }
+    else static if (!memberstring.length)
+    {
+        import std.format : format;
+
+        enum message = "`memberIsValue` was passed an empty member string";
+        static assert(0, message);
+    }
+    else
+    {
+        enum memberIsValue =
+            !isType!(__traits(getMember, Thing, memberstring)) &&
+            !isSomeFunction!(__traits(getMember, Thing, memberstring)) &&
+            !__traits(isTemplate, __traits(getMember, Thing, memberstring)) &&
+            !is(__traits(getMember, Thing, memberstring) == enum);
+    }
 }
 
 ///
@@ -265,87 +317,6 @@ unittest
 }
 
 
-// UnderscoreOpDispatcher
-/++
-    Mixin template mixing in an `opDispatch` redirecting calls to members whose
-    names match the passed variable string but with an underscore prepended.
-
-    Example:
-    ---
-    struct Foo
-    {
-        int _i;
-        string _s;
-        bool _b;
-
-        mixin UnderscoreOpDispatcher;
-    }
-
-    Foo f;
-    f.i = 42;       // f.opDispatch!"i"(42);
-    f.s = "hello";  // f.opDispatch!"s"("hello");
-    f.b = true;     // f.opDispatch!"b"(true);
-
-    assert(f.i == 42);
-    assert(f.s == "hello");
-    assert(f.b);
-    ---
- +/
-mixin template UnderscoreOpDispatcher()
-{
-    ref auto opDispatch(string var, T)(T value)
-    {
-        import std.traits : isArray, isSomeString;
-
-        enum realVar = '_' ~ var;
-        alias V = typeof(mixin(realVar));
-
-        static if (isArray!V && !isSomeString!V)
-        {
-            mixin(realVar) ~= value;
-        }
-        else
-        {
-            mixin(realVar) = value;
-        }
-
-        return this;
-    }
-
-    auto opDispatch(string var)() const
-    {
-        enum realVar = '_' ~ var;
-        return mixin(realVar);
-    }
-}
-
-///
-unittest
-{
-    import dialect.defs;
-
-    struct Foo
-    {
-        IRCEvent.Type[] _acceptedEventTypes;
-        alias _onEvent = _acceptedEventTypes;
-        bool _verbose;
-        bool _chainable;
-
-        mixin UnderscoreOpDispatcher;
-    }
-
-    auto f = Foo()
-        .onEvent(IRCEvent.Type.CHAN)
-        .onEvent(IRCEvent.Type.EMOTE)
-        .onEvent(IRCEvent.Type.QUERY)
-        .chainable(true)
-        .verbose(false);
-
-    assert(f.acceptedEventTypes == [ IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE, IRCEvent.Type.QUERY ]);
-    assert(f.chainable);
-    assert(!f.verbose);
-}
-
 
 // longestMemberNames
 /++
@@ -359,7 +330,7 @@ unittest
     Params:
         Things = Types to introspect.
  +/
-alias longestMemberNames(Things...) = longestMemberNamesImpl!(No.unserialisable, Things);
+enum longestMemberNames(Things...) = longestMemberNamesImpl!(No.unserialisable, Things)();
 
 ///
 unittest
@@ -416,8 +387,8 @@ unittest
     Params:
         Things = Types to introspect.
  +/
-alias longestUnserialisableMemberNames(Things...) =
-    longestMemberNamesImpl!(Yes.unserialisable, Things);
+enum longestUnserialisableMemberNames(Things...) =
+    longestMemberNamesImpl!(Yes.unserialisable, Things)();
 
 ///
 unittest
@@ -477,78 +448,73 @@ unittest
             [lu.uda.Unserialisable|Unserialisable].
         Things = Types to introspect.
  +/
-private template longestMemberNamesImpl(Flag!"unserialisable" unserialisable, Things...)
-if (Things.length > 0)
+private auto longestMemberNamesImpl(Flag!"unserialisable" unserialisable, Things...)()
+if (Things.length > 0)  // may as well be a constraint
 {
-    enum longestMemberNamesImpl = ()
-    {
-        import lu.traits : isSerialisable;
-        import lu.uda : Hidden, Unserialisable;
-        import std.traits : hasUDA, isAggregateType;
+    import lu.traits : isSerialisable;
+    import lu.uda : Hidden, Unserialisable;
+    import std.traits : hasUDA, isAggregateType;
 
-        static struct Results
+    static struct Results
+    {
+        string member;
+        string type;
+    }
+
+    Results results;
+    if (!__ctfe) return results;
+
+    foreach (Thing; Things)
+    {
+        static if (!isAggregateType!Thing)
         {
-            string member;
-            string type;
+            import std.format : format;
+
+            enum pattern = "`longestNamesImpl` was passed a non-aggregate type `%s`";
+            enum message = pattern.format(Thing.stringof);
+            static assert(0, message);
         }
 
-        Results results;
-        if (!__ctfe) return results;
-
-        foreach (Thing; Things)
+        foreach (immutable memberstring; __traits(derivedMembers, Thing))
         {
-            static if (isAggregateType!Thing)
+            static if (
+                !memberstringIsThisCtorOrDtor(memberstring) &&
+                memberIsVisibleAndNotDeprecated!(Thing, memberstring) &&
+                memberIsValue!(Thing, memberstring) &&
+                isSerialisable!(__traits(getMember, Thing, memberstring)) &&
+                !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
+                (unserialisable || !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable)))
             {
-                foreach (immutable memberstring; __traits(derivedMembers, Thing))
+                import lu.traits : isTrulyString;
+                import std.traits : isArray, isAssociativeArray;
+
+                alias T = typeof(__traits(getMember, Thing, memberstring));
+
+                static if (!isTrulyString!T && (isArray!T || isAssociativeArray!T))
                 {
-                    static if (
-                        !memberstringIsThisCtorOrDtor(memberstring) &&
-                        memberIsVisibleAndNotDeprecated!(Thing, memberstring) &&
-                        memberIsValue!(Thing, memberstring) &&
-                        isSerialisable!(__traits(getMember, Thing, memberstring)) &&
-                        !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
-                        (unserialisable || !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable)))
-                    {
-                        import lu.traits : isTrulyString;
-                        import std.traits : isArray, isAssociativeArray;
+                    import lu.traits : UnqualArray;
+                    enum typestring = UnqualArray!T.stringof;
+                }
+                else
+                {
+                    import std.traits : Unqual;
+                    enum typestring = Unqual!T.stringof;
+                }
 
-                        alias T = typeof(__traits(getMember, Thing, memberstring));
+                if (typestring.length > results.type.length)
+                {
+                    results.type = typestring;
+                }
 
-                        static if (!isTrulyString!T && (isArray!T || isAssociativeArray!T))
-                        {
-                            import lu.traits : UnqualArray;
-                            enum typestring = UnqualArray!T.stringof;
-                        }
-                        else
-                        {
-                            import std.traits : Unqual;
-                            enum typestring = Unqual!T.stringof;
-                        }
-
-                        if (typestring.length > results.type.length)
-                        {
-                            results.type = typestring;
-                        }
-
-                        if (memberstring.length > results.member.length)
-                        {
-                            results.member = memberstring;
-                        }
-                    }
+                if (memberstring.length > results.member.length)
+                {
+                    results.member = memberstring;
                 }
             }
-            else
-            {
-                import std.format : format;
-
-                enum pattern = "Non-aggregate type `%s` passed to `longestNamesImpl`";
-                enum message = pattern.format(Thing.stringof);
-                static assert(0, message);
-            }
         }
+    }
 
-        return results;
-    }();
+    return results;
 }
 
 
@@ -587,3 +553,39 @@ enum udaIndexOf(alias symbol, T) = ()
 
     return index;
 }();
+
+
+// stringOfTypeOf
+/++
+    The string representation of a type. Non-alias parameter overload.
+
+    Params:
+        T = Type to get the string representation of.
+
+    Returns:
+        The string representation of the type.
+ +/
+enum stringOfTypeOf(T) = T.stringof;
+
+
+// stringOfTypeOf
+/++
+    The string representation of the type of something. Alias parameter overload.
+
+    Params:
+        T = Symbol whose type to get the string representation of.
+
+    Returns:
+        The string representation of the type.
+ +/
+enum stringOfTypeOf(alias T) = typeof(T).stringof;
+
+///
+unittest
+{
+    int foo;
+    alias baz = int;
+
+    static assert(stringOfTypeOf!foo == "int");
+    static assert(stringOfTypeOf!baz == "int");
+}

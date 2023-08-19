@@ -14,7 +14,10 @@ module kameloso.terminal;
 
 private:
 
+import kameloso.constants : KamelosoInfo;
 import std.typecons : Flag, No, Yes;
+
+enum defaultTerminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
 
 public:
 
@@ -66,9 +69,15 @@ version(Windows)
     void setConsoleModeAndCodepage() @system
     {
         import core.stdc.stdlib : atexit;
-        import core.sys.windows.winbase : GetStdHandle, INVALID_HANDLE_VALUE, STD_OUTPUT_HANDLE;
-        import core.sys.windows.wincon : ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-            GetConsoleCP, GetConsoleMode, GetConsoleOutputCP;
+        import core.sys.windows.winbase :
+            GetStdHandle,
+            INVALID_HANDLE_VALUE,
+            STD_OUTPUT_HANDLE;
+        import core.sys.windows.wincon :
+            ENABLE_VIRTUAL_TERMINAL_PROCESSING,
+            GetConsoleCP,
+            GetConsoleMode,
+            GetConsoleOutputCP;
         import core.sys.windows.winnls : CP_UTF8;
 
         originalCP = GetConsoleCP();
@@ -253,7 +262,7 @@ void ensureAppropriateBuffering() @system
 }
 
 
-// setTitle
+// setTerminalTitle
 /++
     Sets the terminal title to a given string. Supposedly.
 
@@ -263,15 +272,17 @@ void ensureAppropriateBuffering() @system
     ---
 
     Params:
-        title = String to set the title to.
+        title = Optional custom string to set the title to. If unset, the
+            title will be set to the program name and version.
  +/
-void setTitle(const string title) @system
+void setTerminalTitle(const string title = defaultTerminalTitle) @system
 {
     version(Posix)
     {
         import std.stdio : stdout, write;
 
         write("\033]0;", title, "\007");
+        write("\033]30;", title, "\007");  // Konsole tab name
         stdout.flush();
     }
     else version(Windows)
@@ -285,4 +296,14 @@ void setTitle(const string title) @system
     {
         static assert(0, "Unsupported platform, please file a bug.");
     }
+}
+
+
+// resetTerminalTitle
+/++
+    Resets the terminal title to an empty string.
+ +/
+void resetTerminalTitle() @system
+{
+    setTerminalTitle(string.init);
 }

@@ -50,7 +50,7 @@ import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
 import lu.container : CircularBuffer;
-import lu.string : beginsWith;
+import std.algorithm.searching : startsWith;
 import std.meta : AliasSeq;
 import std.typecons : Flag, No, Yes;
 
@@ -58,7 +58,7 @@ import std.typecons : Flag, No, Yes;
 /++
     Characters to support as delimiters in the replace expression.
 
-    More can be added but if any are removed unittests will need to be updated.
+    More can be added but if any are removed unit tests will need to be updated.
  +/
 alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
 
@@ -73,13 +73,6 @@ alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
         Toggles whether or not the plugin should react to events at all.
      +/
     @Enabler bool enabled = true;
-
-    /++
-        How many lines back a sed-replacement call may reach. If this is 5, then
-        the last 5 messages will be taken into account and examined for
-        applicability when replacing.
-     +/
-    int history = 5;
 
     /++
         Toggles whether or not replacement expressions have to properly end with
@@ -135,7 +128,7 @@ auto sedReplace(
     const Flag!"relaxSyntax" relaxSyntax)
 in (line.length, "Tried to `sedReplace` an empty line")
 in ((expr.length >= 5), "Tried to `sedReplace` with an invalid-length expression")
-in (expr.beginsWith('s'), "Tried to `sedReplace` with a non-expression expression")
+in (expr.startsWith('s'), "Tried to `sedReplace` with a non-expression expression")
 {
     immutable delimiter = expr[1];
 
@@ -278,7 +271,7 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
     }
 
     string slice = (char_ == ' ') ? expr : expr.strippedRight;  // mutable
-    slice = slice[2..$];  // nom 's' ~ char_
+    slice = slice[2..$];  // advance past 's' ~ char_
 
     bool global;
 
@@ -413,7 +406,8 @@ unittest
 )
 void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : beginsWith, stripped;
+    import lu.string : stripped;
+    import std.algorithm.searching : startsWith;
 
     immutable stripped_ = event.content.stripped;
     if (!stripped_.length) return;
@@ -436,13 +430,13 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
         {
             (*channelLines)[event.sender.nickname] = typeof((*channelLines)[string.init]).init;
             senderLines = event.sender.nickname in *channelLines;
-            senderLines.resize(plugin.sedReplaceSettings.history);
+            //senderLines.resize(plugin.sedReplaceSettings.history);
         }
 
         senderLines.put(line);
     }
 
-    if (stripped_.beginsWith('s') && (stripped_.length >= 5))
+    if (stripped_.startsWith('s') && (stripped_.length >= 5))
     {
         immutable delimiter = stripped_[1];
 
@@ -617,8 +611,9 @@ private:
 
     /++
         What kind of container to use for sent lines.
+        Now static and hardcoded to a history length of 8 messages.
      +/
-    alias BufferType = CircularBuffer!(Line, Yes.dynamic);
+    alias BufferType = CircularBuffer!(Line, No.dynamic, 8);
 
     /++
         An associative arary of [BufferType]s of the previous line(s) every user said,

@@ -94,6 +94,12 @@ mixin template MinimalAuthentication(
     private import dialect.defs : IRCEvent;
     private static import kameloso.plugins.common.awareness;
 
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.module_, "MinimalAuthentication");
+    }
+
     /++
         Flag denoting that
         [kameloso.plugins.common.awareness.MinimalAuthentication|MinimalAuthentication]
@@ -216,7 +222,7 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
         }
     }
 
-    plugin.state.pendingReplays.clear();
+    plugin.state.pendingReplays = null;
     plugin.state.hasPendingReplays = false;
 }
 
@@ -251,6 +257,12 @@ mixin template UserAwareness(
 {
     private import dialect.defs : IRCEvent;
     private static import kameloso.plugins.common.awareness;
+
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.module_, "UserAwareness");
+    }
 
     /++
         Flag denoting that
@@ -531,8 +543,9 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
     import kameloso.plugins.common.misc : catchUser;
     import kameloso.irccolours : stripColours;
     import dialect.common : IRCControlCharacter, stripModesign;
-    import lu.string : contains, nom;
+    import lu.string : advancePast;
     import std.algorithm.iteration : splitter;
+    import std.string : indexOf;
 
     version(TwitchSupport)
     {
@@ -550,7 +563,7 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
         string slice = userstring;  // mutable
         IRCUser user;  // ditto
 
-        if (!slice.contains('!'))
+        if (slice.indexOf('!') == -1)
         {
             // No need to check for slice.contains('@'))
             // Freenode-like, only nicknames with possible modesigns
@@ -561,13 +574,13 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
         else
         {
             // SpotChat-like, names are in full nick!ident@address form
-            immutable signed = slice.nom('!');
+            immutable signed = slice.advancePast('!');
             immutable nickname = signed.stripModesign(plugin.state.server);
             if (nickname == plugin.state.client.nickname) continue;
-            immutable ident = slice.nom('@');
+            immutable ident = slice.advancePast('@');
 
             // Do addresses ever contain bold, italics, underlined?
-            immutable address = slice.contains(IRCControlCharacter.colour) ?
+            immutable address = (slice.indexOf(cast(char)IRCControlCharacter.colour) != -1) ?
                 stripColours(slice) :
                 slice;
 
@@ -667,6 +680,12 @@ mixin template ChannelAwareness(
 {
     private import dialect.defs : IRCEvent;
     private static import kameloso.plugins.common.awareness;
+
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.module_, "ChannelAwareness");
+    }
 
     /++
         Flag denoting that [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness]
@@ -1189,9 +1208,8 @@ void onChannelAwarenessWhoReply(IRCPlugin plugin, const ref IRCEvent event)
 void onChannelAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
 {
     import dialect.common : stripModesign;
-    import lu.string : contains;
     import std.algorithm.iteration : splitter;
-    import std.string : representation;
+    import std.string : indexOf, representation;
 
     if (!event.content.length) return;
 
@@ -1205,11 +1223,11 @@ void onChannelAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
         string slice = userstring;  // mutable
         string nickname;  // ditto
 
-        if (userstring.contains('!'))// && userstring.contains('@'))  // No need to check both
+        if (userstring.indexOf('!') != -1)// && userstring.contains('@'))  // No need to check both
         {
-            import lu.string : nom;
+            import lu.string : advancePast;
             // SpotChat-like, names are in full nick!ident@address form
-            nickname = slice.nom('!');
+            nickname = slice.advancePast('!');
         }
         else
         {
@@ -1351,6 +1369,12 @@ mixin template TwitchAwareness(
 {
     private import dialect.defs : IRCEvent;
     private static import kameloso.plugins.common.awareness;
+
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.module_, "TwitchAwareness");
+    }
 
     /++
         Flag denoting that [kameloso.plugins.common.awareness.TwitchAwareness|TwitchAwareness]
@@ -1524,6 +1548,12 @@ mixin template TwitchAwareness(
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.module_, "TwitchAwareness (stub)");
+    }
+
     /++
         Flag denoting that [kameloso.plugins.common.awareness.TwitchAwareness|TwitchAwareness]
         has been mixed in.

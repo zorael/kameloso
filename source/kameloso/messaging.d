@@ -444,7 +444,7 @@ void emote(
     const string caller = __FUNCTION__)
 in (emoteTarget.length, "Tried to send an emote but no target was given")
 {
-    import lu.string : contains;
+    import std.string : indexOf;
 
     Message m;
 
@@ -453,7 +453,7 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (state.server.chantypes.contains(emoteTarget[0]))
+    if (state.server.chantypes.indexOf(emoteTarget[0]) != -1)
     {
         m.event.channel = emoteTarget;
     }
@@ -933,12 +933,20 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
     m.properties = properties;
     m.caller = caller;
 
-    version(TraceWhois)
+    version(unittest) {}
+    else version(TraceWhois)
     {
         import std.stdio : stdout, writefln;
-        writefln("[TraceWhois] messaging.whois caught request to WHOIS \"%s\" " ~
-            "from %s (priority:%s force:%s, quiet:%s, background:%s)",
-            nickname, caller, cast(bool)priority, force, quiet, background);
+        enum pattern = "[TraceWhois] messaging.whois caught request to WHOIS \"%s\" " ~
+            "from %s (priority:%s force:%s, quiet:%s, background:%s)";
+        writefln(
+            pattern,
+            nickname,
+            caller,
+            cast(bool)(properties & Message.Property.priority),
+            cast(bool)(properties & Message.Property.forced),
+            cast(bool)(properties & Message.Property.quiet),
+            cast(bool)(properties & Message.Property.background));
         if (state.settings.flush) stdout.flush();
     }
 

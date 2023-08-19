@@ -453,9 +453,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
     {
         import std.traits : EnumMembers;
 
-        static immutable allTypes = [ EnumMembers!(IRCEvent.Type) ];
-
-        foreach (immutable thisType; allTypes)
+        foreach (immutable thisType; EnumMembers!(IRCEvent.Type))
         {
             removeForType(thisType);
         }

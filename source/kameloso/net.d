@@ -14,15 +14,17 @@
     import std.concurrency : Generator;
 
     Connection conn;
-    bool abort;  // Set to true if something goes wrong
+    Flag!"abort" abort;  // Set to Yes.abort if something goes wrong
 
     conn.reset();
 
-    bool useIPv6 = false;
-    enum resolveAttempts = 10;
-
     auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(conn, "irc.libera.chat", 6667, useIPv6, resolveAttempts, abort));
+        resolveFiber(
+            conn,
+            "irc.libera.chat",
+            6667,
+            No.useIPv6,
+            abort));
 
     resolver.call();
 
@@ -38,7 +40,10 @@
     enum connectionRetries = 10;
 
     auto connector = new Generator!ConnectionAttempt(() =>
-        connectFiber(conn, false, connectionRetries, abort));
+        connectFiber(
+            conn,
+            connectionRetries,
+            abort));
 
     connector.call();
 
@@ -51,9 +56,13 @@
 
     // Connection established
 
-    enum timeoutSeconds = 600;
+    enum connectionLostSectons = 600;
 
-    auto listener = new Generator!ListenAttempt(() => listenFiber(conn, abort, timeoutSecond));
+    auto listener = new Generator!ListenAttempt(() =>
+        listenFiber(
+            conn,
+            abort,
+            connectionLostSeconds));
 
     listener.call();
 
@@ -76,6 +85,7 @@ module kameloso.net;
 private:
 
 import kameloso.constants : BufferSize, Timeout;
+import std.typecons : Flag, No, Yes;
 
 public:
 
@@ -120,7 +130,7 @@ private:
      +/
     SSL* sslInstance;
 
-    // setTimemout
+    // setTimeout
     /++
         Sets the [std.socket.SocketOption.RCVTIMEO|SocketOption.RCVTIMEO] of the
         *current* [std.socket.Socket|Socket] [socket] to the specified duration.
@@ -187,7 +197,7 @@ public:
             A copy of [_sendTimeout].
      +/
     pragma(inline, true)
-    auto sendTimeout() const @property pure @nogc nothrow
+    auto sendTimeout() const pure nothrow @nogc
     {
         return _sendTimeout;
     }
@@ -200,7 +210,7 @@ public:
             dur = The duration to assign as send timeout, in number of milliseconds.
      +/
     pragma(inline, true)
-    void sendTimeout(const uint dur) @property
+    void sendTimeout(const uint dur)
     {
         setTimeout(SocketOption.SNDTIMEO, dur);
         _sendTimeout = dur;
@@ -214,7 +224,7 @@ public:
             A copy of [_receiveTimeout].
      +/
     pragma(inline, true)
-    auto receiveTimeout() const @property pure @nogc nothrow
+    auto receiveTimeout() const pure nothrow @nogc
     {
         return _receiveTimeout;
     }
@@ -226,7 +236,7 @@ public:
         Params:
             dur = The duration to assign as receive timeout, in number of milliseconds.
      +/
-    void receiveTimeout(const uint dur) @property
+    void receiveTimeout(const uint dur)
     {
         setTimeout(SocketOption.RCVTIMEO, dur);
         _receiveTimeout = dur;
@@ -573,9 +583,12 @@ struct ListenAttempt
     ---
     //Connection conn;  // Address previously connected established with
 
-    enum timeoutSeconds = 600;
+    enum connectionLostSeconds = 600;
 
-    auto listener = new Generator!ListenAttempt(() => listenFiber(conn, abort, timeoutSeconds));
+    auto listener = new Generator!ListenAttempt(() =>
+        listenFiber(conn,
+        abort,
+        connectionLostSeconds));
 
     listener.call();
 
@@ -628,7 +641,7 @@ struct ListenAttempt
  +/
 void listenFiber(size_t bufferSize = BufferSize.socketReceive*2)
     (Connection conn,
-    ref bool abort,
+    ref Flag!"abort" abort,
     const int connectionLost = Timeout.connectionLost) @system
 in ((conn.connected), "Tried to set up a listening fiber on a dead connection")
 in ((connectionLost > 0), "Tried to set up a listening fiber with connection timeout of <= 0")
@@ -843,7 +856,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
         ptrdiff_t newline = (cast(char[])buffer[0..end]).indexOf('\n');
         size_t pos;
 
-        while (newline != -1)
+        while (newline > 0)  // != -1 but we'd get a RangeError if it starts with a '\n'
         {
             attempt.state = State.hasString;
             attempt.line = (cast(char[])buffer[pos..pos+newline-1]).idup;  // eat \r before \n
@@ -937,7 +950,10 @@ public:
     //Connection conn;  // Address previously resolved with `resolveFiber`
 
     auto connector = new Generator!ConnectionAttempt(() =>
-        connectFiber(conn, false, 10, abort));
+        connectFiber(
+            conn,
+            10,
+            abort));
 
     connector.call();
 
@@ -987,7 +1003,7 @@ public:
 void connectFiber(
     ref Connection conn,
     const uint connectionRetries,
-    ref bool abort) @system
+    ref Flag!"abort" abort) @system
 in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
 in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 {
@@ -1066,8 +1082,12 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                 {
                     version(Posix)
                     {
-                        import core.stdc.errno : EAFNOSUPPORT, ECONNREFUSED,
-                            EHOSTUNREACH, ENETUNREACH, errno;
+                        import core.stdc.errno :
+                            EAFNOSUPPORT,
+                            ECONNREFUSED,
+                            EHOSTUNREACH,
+                            ENETUNREACH,
+                            errno;
 
                         // https://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
 
@@ -1083,8 +1103,12 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                     }
                     else version(Windows)
                     {
-                        import core.sys.windows.winsock2 : WSAEAFNOSUPPORT, WSAECONNREFUSED,
-                            WSAEHOSTUNREACH, WSAENETUNREACH, WSAGetLastError;
+                        import core.sys.windows.winsock2 :
+                            WSAEAFNOSUPPORT,
+                            WSAECONNREFUSED,
+                            WSAEHOSTUNREACH,
+                            WSAENETUNREACH,
+                            WSAGetLastError;
 
                         enum Errno
                         {
@@ -1170,11 +1194,12 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                 }
                 catch (SSLFileException e)
                 {
+                    import kameloso.string : doublyBackslashed;
                     import std.format : format;
 
                     enum pattern = "%s: %s";
                     attempt.state = State.fatalSSLFailure;
-                    attempt.error = pattern.format(e.msg, e.filename);
+                    attempt.error = pattern.format(e.msg, e.filename.doublyBackslashed);
                     yield(attempt);
                     continue attemptloop;
                 }
@@ -1246,7 +1271,12 @@ struct ResolveAttempt
     conn.reset();
 
     auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(conn, "irc.libera.chat", 6667, false, 10, abort));
+        resolveFiber(
+            conn,
+            "irc.libera.chat",
+            6667,
+            false,
+            abort));
 
     resolver.call();
 
@@ -1297,8 +1327,8 @@ void resolveFiber(
     ref Connection conn,
     const string address,
     const ushort port,
-    const bool useIPv6,
-    ref bool abort) @system
+    const Flag!"useIPv6" useIPv6,
+    ref Flag!"abort" abort) @system
 in (!conn.connected, "Tried to set up a resolving fiber on an already live connection")
 in (address.length, "Tried to set up a resolving fiber on an empty address")
 {
@@ -1340,8 +1370,13 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 
             version(Posix)
             {
-                import core.sys.posix.netdb : EAI_AGAIN, EAI_FAIL, EAI_FAMILY,
-                    EAI_NONAME, EAI_SOCKTYPE, EAI_SYSTEM;
+                import core.sys.posix.netdb :
+                    EAI_AGAIN,
+                    EAI_FAIL,
+                    EAI_FAMILY,
+                    EAI_NONAME,
+                    EAI_SOCKTYPE,
+                    EAI_SYSTEM;
 
                 enum EAI_NODATA = -5;
 
@@ -1365,8 +1400,13 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
             }
             else version(Windows)
             {
-                import core.sys.windows.winsock2 : WSAEAFNOSUPPORT, WSAESOCKTNOSUPPORT,
-                    WSAHOST_NOT_FOUND, WSANO_DATA, WSANO_RECOVERY, WSATRY_AGAIN;
+                import core.sys.windows.winsock2 :
+                    WSAEAFNOSUPPORT,
+                    WSAESOCKTNOSUPPORT,
+                    WSAHOST_NOT_FOUND,
+                    WSANO_DATA,
+                    WSANO_RECOVERY,
+                    WSATRY_AGAIN;
 
                 // https://docs.microsoft.com/en-us/windows/win32/api/ws2tcpip/nf-ws2tcpip-getaddrinfo
 

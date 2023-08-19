@@ -21,7 +21,7 @@ public:
 
 import kameloso.plugins.twitch.base;
 import kameloso.plugins.twitch.api;
-//import kameloso.plugins.twitch.keygen;  // Only necessary from within TwitchPlugin.start()
+//import kameloso.plugins.twitch.keygen;  // Only necessary from within TwitchPlugin.setup()
 //import kameloso.plugins.twitch.google;
 //import kameloso.plugins.twitch.spotify;
 //import kameloso.plugins.twitch.common;

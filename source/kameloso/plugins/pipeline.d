@@ -28,13 +28,12 @@ version(WithPipelinePlugin):
 
 private:
 
-import kameloso.plugins;
 import kameloso.plugins.common.core;
+import kameloso.plugins;
 import kameloso.common : logger;
-import kameloso.messaging;
-import kameloso.thread : Sendable;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
+import core.time : Duration;
 
 
 /+
@@ -71,316 +70,124 @@ public:
     bool fifoInWorkingDir = false;
 
     /++
-        Whether or not to always use a unique filename for the FIFO; if one exists
-        with the wanted name, simply append a number to make a new, unique one.
-     +/
-    bool bumpFilenameIfItExists = true;
-
-    /++
-        Custom, full path to use as FIFO filename, specified with --set pipeline.path.
+        Custom path to use as FIFO filename, specified with `--set pipeline.path=[...]`.
      +/
     @Unserialisable string path;
 }
 
 
-// pipereader
-/++
-    Reads a FIFO (named pipe) and relays lines received there to the main
-    thread, to send to the server.
-
-    It is to be run in a separate thread.
-
-    Params:
-        newState = The [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]
-            of the original [PipelinePlugin], to provide the main thread's
-            [core.thread.Tid|Tid] for concurrency messages, made `shared` to
-            allow being sent between threads.
-        filename = String filename of the FIFO to read from.
- +/
-void pipereader(shared IRCPluginState newState, const string filename)
-in (filename.length, "Tried to set up a pipereader with an empty filename")
-{
-    import kameloso.thread : ThreadMessage, boxed, setThreadName;
-    import std.concurrency : send;
-    import std.exception : ErrnoException;
-    import std.format : format;
-    import std.stdio : File;
-    static import kameloso.common;
-
-    // The whole module is version Posix, no need to encase here
-    setThreadName("pipeline");
-
-    auto state = cast()newState;
-
-    // Set the global settings so messaging functions don't segfault us
-    kameloso.common.settings = &state.settings;
-
-    // Creating the File struct blocks, so do it after reporting.
-    enum pattern = "Pipe text to the <i>%s</> file to send raw commands to the server.";
-    state.askToLog(pattern.format(filename));
-
-    File fifo = File(filename, "r");
-
-    static void tryRemove(const string filename)
-    {
-        import std.file : exists, remove;
-
-        if (filename.exists)
-        {
-            try
-            {
-                remove(filename);
-            }
-            catch (Exception _)
-            {
-                // Race, ignore
-            }
-        }
-    }
-
-    scope(exit) tryRemove(filename);
-
-    while (true)
-    {
-        // foreach but always break after processing one line, to be responsive
-        // and retaining the ability to break out of it.
-        foreach (immutable line; fifo.byLineCopy)
-        {
-            import std.algorithm.searching : startsWith;
-            import std.uni : asLowerCase;
-
-            if (!line.length) break;
-
-            if (line[0] == ':')
-            {
-                import kameloso.thread : boxed;
-                import lu.string : contains, nom;
-
-                string slice = line[1..$];  // mutable
-
-                // Bus message
-                if (!slice.contains(' '))
-                {
-                    state.askToError("Bus message syntax: <l>:header [content...]");
-                    break;
-                }
-
-                immutable header = slice.nom(' ');
-                state.mainThread.send(ThreadMessage.busMessage(header, boxed(slice)));
-                break;
-            }
-            else if (line.asLowerCase.startsWith("quit"))
-            {
-                if ((line.length > 6) && (line[4..6] == " :"))
-                {
-                    return quit(state, line[6..$]);
-                }
-                else
-                {
-                    return quit(state);
-                }
-            }
-            else
-            {
-                immutable slice = (line[0] == ' ') ? line[1..$] : line;
-                raw(state, slice);
-            }
-            //break;
-        }
-
-        auto shouldHalt()
-        {
-            import std.concurrency : OwnerTerminated, receiveTimeout;
-            import std.variant : Variant;
-            import core.time : Duration;
-
-            bool halt;
-
-            cast(void)receiveTimeout(Duration.zero,
-                (ThreadMessage message) scope
-                {
-                    if (message.type == ThreadMessage.Type.teardown)
-                    {
-                        halt = true;
-                    }
-                },
-                (OwnerTerminated _) scope
-                {
-                    halt = true;
-                },
-                (Variant v) scope
-                {
-                    enum variantPattern = "Pipeline plugin received Variant: <l>%s";
-                    state.askToError(variantPattern.format(v.toString));
-                    state.mainThread.send(ThreadMessage.busMessage("pipeline", boxed("halted")));
-                    halt = true;
-                }
-            );
-
-            return halt;
-        }
-
-        if (shouldHalt()) return;
-
-        try
-        {
-            fifo.reopen(filename);
-        }
-        catch (ErrnoException e)
-        {
-            if (shouldHalt()) return;
-
-            enum fifoPattern = "Pipeline plugin failed to reopen FIFO: <l>%s";
-            state.askToError(fifoPattern.format(e.msg));
-            version(PrintStacktraces) state.askToTrace(e.info.toString);
-            state.mainThread.send(ThreadMessage.busMessage("pipeline", boxed("halted")));
-            return;
-        }
-        catch (Exception e)
-        {
-            if (shouldHalt()) return;
-
-            state.askToError("Pipeline plugin saw unexpected exception");
-            version(PrintStacktraces) state.askToTrace(e.toString);
-            return;
-        }
-    }
-}
-
-
-// createFIFO
-/++
-    Creates a FIFO (named pipe) in the filesystem.
-
-    It will be named a passed filename.
-
-    Params:
-        filename = String filename of FIFO to create.
-
-    Throws:
-        [lu.common.ReturnValueException|ReturnValueException] if the FIFO
-        could not be created.
-
-        [lu.common.FileExistsException|FileExistsException] if a FIFO with
-        the same filename already exists, suggesting concurrent conflicting
-        instances of the program (or merely a zombie FIFO after a crash).
-
-        [lu.common.FileTypeMismatchException|FileTypeMismatchException] if a file or directory
-        exists with the same name as the FIFO we want to create.
- +/
-void createFIFO(const string filename)
-in (filename.length, "Tried to create a FIFO with an empty filename")
-{
-    import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
-    import std.file : exists;
-
-    if (!filename.exists)
-    {
-        import std.process : execute;
-
-        immutable mkfifo = execute([ "mkfifo", filename ]);
-
-        if (mkfifo.status != 0)
-        {
-            enum message = "Could not create FIFO";
-            throw new ReturnValueException(
-                message,
-                "mkfifo",
-                mkfifo.status);
-        }
-    }
-    else
-    {
-        import std.file : getAttributes;
-        import core.sys.posix.sys.stat : S_ISFIFO;
-
-        immutable attrs = cast(ushort)getAttributes(filename);
-
-        if (S_ISFIFO(attrs))
-        {
-            enum message = "A FIFO with that name already exists";
-            throw new FileExistsException(
-                message,
-                filename,
-                __FILE__,
-                __LINE__);
-        }
-        else
-        {
-            enum message = "Wanted to create a FIFO but a file or directory " ~
-                "with the desired name already exists";
-            throw new FileTypeMismatchException(
-                message,
-                filename,
-                attrs,
-                __FILE__,
-                __LINE__);
-        }
-    }
-}
-
-
 // onWelcome
 /++
-    Initialises the fifo pipe and thus the purpose of the plugin, by leveraging [initPipe].
+    Does three things upon [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME];
+
+    1. Sets up the FIFO pipe, resolving the filename and creating it.
+    2. Prints the usage text.
+    3. Lastly, sets up a [core.thread.fiber.Fiber|Fiber] that checks once per
+       hour if the FIFO has disappeared and recreates it if so. This is to allow
+       for recovery from the FIFO being deleted.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
 void onWelcome(PipelinePlugin plugin)
 {
-    initPipe(plugin);
-}
+    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
+    import core.thread : Fiber;
+    import core.time : minutes;
 
+    static immutable discoveryPeriod = 1.minutes;
 
-// reload
-/++
-    Reloads the plugin, initialising the fifo pipe if it was not already initialised.
-
-    This lets us remedy the "A FIFO with that name already exists" error.
- +/
-void reload(PipelinePlugin plugin)
-{
-    if (!plugin.workerRunning)
+    void discoverFIFODg()
     {
-        initPipe(plugin);
+        while (true)
+        {
+            import std.file : exists;
+
+            if (!plugin.fifoFilename.exists || !plugin.fifoFilename.isFIFO)
+            {
+                closeFD(plugin.fd);
+                plugin.fifoFilename = initialiseFIFO(plugin);
+                plugin.fd = openFIFO(plugin.fifoFilename);
+                printUsageText(plugin, Yes.reinit);
+            }
+
+            delay(plugin, discoveryPeriod, Yes.yield);
+        }
     }
+
+    // Initialise the FIFO *here*, where we know our nickname
+    // (we don't in .initialise)
+    plugin.fifoFilename = initialiseFIFO(plugin);
+    plugin.fd = openFIFO(plugin.fifoFilename);
+    printUsageText(plugin, No.reinit);
+
+    Fiber discoverFIFOFiber = new Fiber(&discoverFIFODg, BufferSize.fiberStack);
+    delay(plugin, discoverFIFOFiber, discoveryPeriod);
 }
 
 
-// initPipe
+// printUsageText
 /++
-    Spawns the pipereader thread.
-
-    Snapshots the filename to use, as we base it on the bot's nickname, which
-    may change during the connection's lifetime.
+    Prints the usage text to screen.
 
     Params:
         plugin = The current [PipelinePlugin].
+        reinit = Whether or not the FIFO disappeared and was recreated.
  +/
-void initPipe(PipelinePlugin plugin)
-in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
+void printUsageText(PipelinePlugin plugin, const Flag!"reinit" reinit)
 {
-    import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
+    if (reinit)
+    {
+        enum message = "Pipeline FIFO disappeared, recreating.";
+        logger.warning(message);
+    }
+
+    enum pattern = "Pipe text to the <i>%s</> file to send raw commands to the server.";
+    logger.logf(pattern, plugin.fifoFilename);
+}
+
+
+// resolvePath
+/++
+    Resolves the filename of the FIFO to use.
+
+    Params:
+        plugin = The current [PipelinePlugin].
+
+    Returns:
+        A filename to use for the FIFO.
+
+    Throws:
+        [lu.common.FileExistsException|FileExistsException] if a FIFO with
+        the same filename already exists, suggesting concurrent conflicting
+        instances of the program (or merely a zombie FIFO after a crash),
+        and a new filename could not be invented.
+
+        [lu.common.FileTypeMismatchException|FileTypeMismatchException] if a file or directory
+        exists with the same name as the FIFO we want to create, and a new
+        filename could not be invented.
+ +/
+auto resolvePath(PipelinePlugin plugin)
+{
     import std.file : exists;
+
+    string filename;  // mutable
 
     if (plugin.pipelineSettings.path.length)
     {
-        // Custom filename specified with --set pipeline.path=xyz
-        plugin.fifoFilename = plugin.pipelineSettings.path;
+        filename = plugin.pipelineSettings.path;
     }
     else
     {
         import std.conv : text;
         import std.path : buildNormalizedPath;
 
-        // Save the filename *once* so it persists across nick changes.
-        // If !fifoInWorkingDir then in /tmp or $TMPDIR
-        plugin.fifoFilename = text(plugin.state.client.nickname, '@', plugin.state.server.address);
+        filename = text(plugin.state.client.nickname, '@', plugin.state.server.address);
 
         if (!plugin.pipelineSettings.fifoInWorkingDir)
         {
-            // See notes at the top of module.
+            // See notes at the top of the module.
             version(OSX)
             {
                 version(OSXTMPDIR)
@@ -407,117 +214,334 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
                 enum tempdir = "/tmp";
             }
 
-            plugin.fifoFilename = buildNormalizedPath(tempdir, plugin.fifoFilename);
+            filename = buildNormalizedPath(tempdir, filename);
         }
     }
 
-    if (plugin.pipelineSettings.bumpFilenameIfItExists && plugin.fifoFilename.exists)
+    if (filename.exists)
     {
         import std.string : succ;
 
-        plugin.fifoFilename ~= "-1";
+        filename ~= "-1";
 
-        while (plugin.fifoFilename.exists)
+        while (filename.exists)
         {
-            plugin.fifoFilename = plugin.fifoFilename.succ;
+            filename = filename.succ;
 
-            if (plugin.fifoFilename[$-2..$] == "-0")
+            if (filename[$-2..$] == "-0")
             {
-                plugin.fifoFilename = plugin.fifoFilename[0..$-2] ~ "10";
+                filename = filename[0..$-2] ~ "10";
             }
-            else if (plugin.fifoFilename[$-3..$] == "-99")
+            else if (filename[$-3..$] == "-00")  // beyond -99
             {
+                import lu.common : FileExistsException, FileTypeMismatchException;
+                import core.sys.posix.sys.stat : S_ISFIFO;
+
                 // Don't infinitely loop, should realistically never happen though
-                break;
+                enum message = "Failed to find a suitable FIFO filename";
+
+                if (filename.isFIFO)
+                {
+                    throw new FileExistsException(
+                        message,
+                        filename,
+                        __FILE__,
+                        __LINE__);
+                }
+                else
+                {
+                    import std.file : getAttributes;
+                    throw new FileTypeMismatchException(
+                        message,
+                        filename,
+                        cast(ushort)getAttributes(filename),
+                        __FILE__,
+                        __LINE__);
+                }
             }
         }
     }
 
-    try
-    {
-        import std.concurrency : spawn;
+    return filename;
+}
 
-        createFIFO(plugin.fifoFilename);
-        plugin.fifoThread = spawn(&pipereader, cast(shared)plugin.state, plugin.fifoFilename);
-        plugin.workerRunning = true;
-    }
-    catch (ReturnValueException e)
+
+// initialiseFIFO
+/++
+    Initialises the FIFO.
+
+    Params:
+        plugin = The current [PipelinePlugin].
+
+    Returns:
+        Filename of the newly-created FIFO pipe.
+ +/
+auto initialiseFIFO(PipelinePlugin plugin)
+{
+    immutable filename = resolvePath(plugin);
+    createFIFOFile(filename);
+    return filename;
+}
+
+
+// createFIFOFile
+/++
+    Creates a FIFO (named pipe) in the filesystem.
+
+    It will be named a passed filename.
+
+    Params:
+        filename = String filename of FIFO to create.
+
+    Throws:
+        [lu.common.ReturnValueException|ReturnValueException] if the FIFO
+        could not be created.
+ +/
+void createFIFOFile(const string filename)
+in (filename.length, "Tried to create a FIFO with an empty filename")
+{
+    import lu.common : ReturnValueException;
+    import std.process : execute;
+
+    immutable mkfifo = execute([ "mkfifo", filename ]);
+
+    if (mkfifo.status != 0)
     {
-        enum pattern = "Failed to initialise the Pipeline plugin: <l>%s</> (<l>%s</> returned <l>%d</>)";
-        logger.warningf(pattern, e.msg, e.command, e.retval);
-        //version(PrintStacktraces) logger.trace(e.info);
+        enum message = "Could not create FIFO";
+        throw new ReturnValueException(
+            message,
+            "mkfifo",
+            mkfifo.status);
     }
-    catch (FileExistsException e)
+}
+
+
+// openFIFO
+/++
+    Opens a FIFO for reading. The file descriptor is set to non-blocking.
+
+    Params:
+        filename = The filename of the FIFO to open.
+
+    Returns:
+        The file descriptor of the opened FIFO.
+ +/
+auto openFIFO(const string filename)
+in (filename.length, "Tried to open a FIFO with an empty filename")
+{
+    import std.string : toStringz;
+    import core.sys.posix.fcntl : O_NONBLOCK, O_RDONLY, open;
+
+    return open(filename.toStringz, (O_NONBLOCK | O_RDONLY));
+}
+
+
+// closeFD
+/++
+    Closes a file descriptor.
+
+    Params:
+        fd = The file descriptor to close. Taken by `ref` and set to -1 afterwards.
+
+    Returns:
+        The return value of the close() system call.
+ +/
+auto closeFD(ref int fd)
+in ((fd != -1), "Tried to close an invalid file descriptor")
+{
+    import core.sys.posix.unistd;
+
+    scope(exit) fd = -1;
+    return close(fd);
+}
+
+
+// isFIFO
+/++
+    Checks if a file is a FIFO.
+
+    Params:
+        filename = The filename to check.
+
+    Returns:
+        `true` if it is; `false` otherwise.
+ +/
+auto isFIFO(const string filename)
+{
+    import std.file : getAttributes;
+    import core.sys.posix.sys.stat : S_ISFIFO;
+
+    immutable attrs = cast(ushort)getAttributes(filename);
+    return S_ISFIFO(attrs);
+}
+
+
+// readFIFO
+/++
+    Reads from the FIFO and sends concurrency messages based upon what was read.
+    If something was indeed read, `true` is returned to signal to the caller that
+    it should check for new messages.
+
+    Params:
+        plugin = The current [PipelinePlugin].
+
+    Returns:
+        `true` if something was read and concurrency messages were sent; `false` if not.
+ +/
+auto readFIFO(PipelinePlugin plugin)
+{
+    import std.algorithm.iteration : splitter;
+    import core.sys.posix.unistd : read;
+
+    enum bufferSize = 1024;  // Should be enough? An IRC line is 512 bytes
+    static ubyte[bufferSize] buf;
+
+    immutable ptrdiff_t bytesRead = read(plugin.fd, buf.ptr, buf.length);
+    if (bytesRead <= 0) return false;   // 0 or -1
+
+    string slice = cast(string)buf[0..bytesRead].idup;  // mutable immutable
+    bool sentSomething;
+
+    foreach (/*immutable*/ line; slice.splitter("\n"))
     {
-        enum pattern = "Failed to initialise the Pipeline plugin: <l>%s</> [<l>%s</>]";
-        logger.warningf(pattern, e.msg, e.filename);
-        //version(PrintStacktraces) logger.trace(e.info);
-    }
-    catch (FileTypeMismatchException e)
-    {
-        enum pattern = "Failed to initialise the Pipeline plugin: <l>%s</> [<l>%s</>]";
-        logger.warningf(pattern, e.msg, e.filename);
-        //version(PrintStacktraces) logger.trace(e.info);
+        import kameloso.messaging : raw, quit;
+        import lu.string : splitInto, strippedLeft;
+        import std.algorithm.searching : startsWith;
+        import std.uni : asLowerCase;
+
+        line = line.strippedLeft;
+        if (!line.length) continue;  // skip empty lines
+
+        if (line[0] == ':')
+        {
+            import kameloso.thread : ThreadMessage, boxed;
+            import std.concurrency : send;
+
+            line = line[1..$];  // skip the colon
+            string header;  // mutable
+            line.splitInto(header);
+
+            if (!header.length) continue;
+            plugin.state.mainThread.send(ThreadMessage.busMessage(header, boxed(line)));
+        }
+        else if (line.asLowerCase.startsWith("quit"))
+        {
+            if ((line.length > 6) && (line[4..6] == " :"))
+            {
+                quit(plugin.state, line[6..$]);
+            }
+            else
+            {
+                quit(plugin.state);  // Default reason
+            }
+        }
+        else
+        {
+            raw(plugin.state, line.strippedLeft);
+        }
+
+        sentSomething = true;
     }
 
-    // Let other Exceptions pass
+    return sentSomething;
+}
+
+
+// tick
+/++
+    Plugin tick function. Reads from the pipe and either issues bus messages based
+    on what was read or sends the piped text to the server verbatim.
+
+    This is executed once per main loop iteration.
+
+    Params:
+        plugin = The current [PipelinePlugin].
+        elapsed = How much time has passed since the last tick.
+
+    Returns:
+        Whether or not the main loop should check concurrency messages, to catch
+        messages sent to it.
+ +/
+auto tick(PipelinePlugin plugin, const Duration elapsed)
+{
+    import core.time : msecs;
+
+    if (plugin.fd == -1) return false;  // ?
+
+    static immutable minimumTimeBetweenReads = 250.msecs;
+    static Duration timeSinceLast;
+
+    if (elapsed >= minimumTimeBetweenReads)
+    {
+        // Skip adding the two durations together if the elapsed time alone is
+        // already more than the required minimum time between reads
+    }
+    else
+    {
+        timeSinceLast += elapsed;
+        if (timeSinceLast < minimumTimeBetweenReads) return false;
+    }
+
+    timeSinceLast = Duration.zero;
+    return readFIFO(plugin);
 }
 
 
 // teardown
 /++
-    De-initialises the Pipeline plugin. Shuts down the pipereader thread.
+    Tears down the [PipelinePlugin] by closing the FIFO file descriptor and
+    removing the FIFO file.
  +/
 void teardown(PipelinePlugin plugin)
 {
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : prioritySend;
-    import std.file : exists, isDir;
-    import std.stdio : File;
+    import std.file : exists;
+    import std.file : remove;
 
-    if (!plugin.workerRunning) return;
+    if (plugin.fd == -1)  return;  // teardown before initialisation?
 
-    plugin.fifoThread.prioritySend(ThreadMessage.teardown);
+    closeFD(plugin.fd);
 
-    if (plugin.fifoFilename.exists && !plugin.fifoFilename.isDir)
+    if (plugin.fifoFilename.exists && plugin.fifoFilename.isFIFO)
     {
-        // Tell the reader of the pipe to break and check messages
-        auto fifo = File(plugin.fifoFilename, "w");
-        fifo.writeln();
+        try
+        {
+            remove(plugin.fifoFilename);
+        }
+        catch (Exception _)
+        {
+            // Gag errors
+        }
     }
 }
 
 
-// onBusMessage
+// reload
 /++
-    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`pipeline`" header,
-    and performs actions based on the payload message.
+    Reloads the [PipelinePlugin].
 
-    This is used to let the worker thread signal the main context that it halted.
-
-    Params:
-        plugin = The current [PipelinePlugin].
-        header = String header describing the passed content payload.
-        content = Message content.
+    If the FIFO seems to be in place, nothing is done, but if it has disappeared
+    or is not a FIFO, it is verbosely recreated.
  +/
-void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable content)
+void reload(PipelinePlugin plugin)
 {
-    import kameloso.thread : Boxed;
+    import std.file : exists;
 
-    if (!plugin.isEnabled) return;
-    if (header != "pipeline") return;
-
-    auto message = cast(Boxed!string)content;
-    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
-
-    if (message.payload == "halted")
+    if (plugin.fifoFilename.exists && plugin.fifoFilename.isFIFO)
     {
-        plugin.workerRunning = false;
+        // Should still be okay.
+        return;
     }
-    else
+
+    // File doesn't exist!
+    if (plugin.fd != -1)
     {
-        logger.error("[pipeline] Unimplemented bus message verb: <i>", message.payload);
+        // ...yet there's an old file descriptor
+        closeFD(plugin.fd);
     }
+
+    plugin.fifoFilename = initialiseFIFO(plugin);
+    plugin.fd = openFIFO(plugin.fifoFilename);
+    printUsageText(plugin, Yes.reinit);
 }
 
 
@@ -533,28 +557,23 @@ public:
  +/
 final class PipelinePlugin : IRCPlugin
 {
-private:
-    import std.concurrency : Tid;
-
+    // pipelineSettings
     /++
         All Pipeline settings gathered.
      +/
     PipelineSettings pipelineSettings;
 
-    /++
-        Thread ID of the thread reading the named pipe.
-     +/
-    Tid fifoThread;
-
+    // fifoFilename
     /++
         Filename of the created FIFO.
      +/
     string fifoFilename;
 
+    // fd
     /++
-        Whether or not the worker is running in the background.
+        File descriptor of the open FIFO.
      +/
-    bool workerRunning;
+    int fd = -1;
 
     mixin IRCPluginImpl;
 }

@@ -206,7 +206,7 @@ unittest
     }
     else version(Posix)
     {
-        import lu.string : beginsWith;
+        import std.algorithm.searching : startsWith;
         import std.process : environment;
 
         environment["XDG_DATA_HOME"] = "/tmp";
@@ -215,7 +215,7 @@ unittest
 
         environment.remove("XDG_DATA_HOME");
         rbd = resourceBaseDirectory;
-        assert(rbd.beginsWith("/home/") && rbd.endsWith("/.local/share"));
+        assert(rbd.startsWith("/home/") && rbd.endsWith("/.local/share"));
     }
     else version(Windows)
     {
@@ -338,7 +338,8 @@ Pid execvp(/*const*/ string[] args) @system
 
         for (size_t i=1; i<args.length; ++i)
         {
-            import lu.string : beginsWith, nom;
+            import lu.string : advancePast;
+            import std.algorithm.searching : startsWith;
             import std.typecons : Flag, No, Yes;
 
             if (args[i] == "--set")
@@ -347,14 +348,15 @@ Pid execvp(/*const*/ string[] args) @system
 
                 string slice = args[i+1];  // mutable
 
-                if (slice.beginsWith("twitch."))
+                if (slice.startsWith("twitch."))
                 {
-                    immutable setting = slice.nom!(Yes.inherit)('=');
+                    immutable setting = slice.advancePast('=', Yes.inherit);
 
                     if (setting.among!(
                         "twitch.keygen",
                         "twitch.superKeygen",
                         "twitch.googleKeygen",
+                        "twitch.youtubeKeygen",
                         "twitch.spotifyKeygen"))
                     {
                         toRemove ~= i;
@@ -366,7 +368,7 @@ Pid execvp(/*const*/ string[] args) @system
             else
             {
                 string slice = args[i];  // mutable
-                immutable setting = slice.nom!(Yes.inherit)('=');
+                immutable setting = slice.advancePast('=', Yes.inherit);
 
                 if (setting.among!(
                     //"--setup-twitch",  // this only does the keygen, then exits
@@ -397,7 +399,7 @@ Pid execvp(/*const*/ string[] args) @system
     }
     else version(Windows)
     {
-        import lu.string : beginsWith;
+        import std.algorithm.searching : startsWith;
         import std.array : Appender;
         import std.process : ProcessException, spawnProcess;
 
@@ -407,7 +409,7 @@ Pid execvp(/*const*/ string[] args) @system
         string arg0 = args[0];  // mutable
         args = args[1..$];  // pop it
 
-        if (arg0.beginsWith('.') || arg0.beginsWith('/'))
+        if (arg0.startsWith('.') || arg0.startsWith('/'))
         {
             // Seems to be a full path
         }

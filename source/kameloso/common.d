@@ -29,7 +29,7 @@ version(unittest)
 shared static this()
 {
     // This is technically before settings have been read.
-    // We need this for unittests.
+    // We need this for unit tests.
     logger = new KamelosoLogger(
         No.monochrome,
         No.brightTerminal,
@@ -101,6 +101,15 @@ out (; (logger !is null), "Failed to initialise logger")
 CoreSettings* settings;
 
 
+// globalHeadless
+/++
+    Headless flag.
+
+    If this is true the program should not output anything to the terminal.
+ +/
+__gshared bool* globalHeadless;
+
+
 // printVersionInfo
 /++
     Prints out the bot banner with the version number and GitHub URL, with the
@@ -126,11 +135,23 @@ void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
     version(TwitchSupport) enum twitchSupport = " (+twitch)";
     else enum twitchSupport = string.init;
 
-    immutable versionPattern = colours ?
-        "<l>kameloso IRC bot v%s%s, built with %s (%s) on %s</>".expandTags(LogLevel.off) :
-        "kameloso IRC bot v%s%s, built with %s (%s) on %s";
+    version(DigitalMars)
+    {
+        enum colouredVersionPattern = "<l>kameloso IRC bot v%s%s, built with %s (%s) on %s</>";
+        enum uncolouredVersionPattern = "kameloso IRC bot v%s%s, built with %s (%s) on %s";
+    }
+    else
+    {
+        // ldc or gdc
+        enum colouredVersionPattern = "<l>kameloso IRC bot v%s%s, built with %s (based on dmd %s) on %s</>";
+        enum uncolouredVersionPattern = "kameloso IRC bot v%s%s, built with %s (based on dmd %s) on %s";
+    }
 
-    writefln(versionPattern,
+    immutable finalVersionPattern = colours ?
+        colouredVersionPattern.expandTags(LogLevel.off) :
+        uncolouredVersionPattern;
+
+    writefln(finalVersionPattern,
         cast(string)KamelosoInfo.version_,
         twitchSupport,
         cast(string)KamelosoInfo.compiler,
@@ -217,7 +238,7 @@ struct OutgoingLine
  +/
 auto findURLs(const string line) @safe pure
 {
-    import lu.string : contains, nom, strippedRight;
+    import lu.string : advancePast, strippedRight;
     import std.string : indexOf;
     import std.typecons : Flag, No, Yes;
 
@@ -259,18 +280,19 @@ auto findURLs(const string line) @safe pure
             httpPos = slice.indexOf("http");
             continue;
         }
-        else if (!slice.contains(' ') &&
-            (slice[10..$].contains("http://") ||
-            slice[10..$].contains("https://")))
+        else if (
+            (slice.indexOf(' ') == -1) &&
+            ((slice[10..$].indexOf("http://") != -1) ||
+            (slice[10..$].indexOf("https://") != -1)))
         {
             // There is a second URL in the middle of this one
             break;
         }
 
-        // nom until the next space if there is one, otherwise just inherit slice
+        // advancePast until the next space if there is one, otherwise just inherit slice
         // Also strip away common punctuation
-        immutable hit = slice.nom!(Yes.inherit)(' ').strippedRight(wordBoundaryTokens);
-        if (hit.contains('.')) hits ~= hit;
+        immutable hit = slice.advancePast(' ', Yes.inherit).strippedRight(wordBoundaryTokens);
+        if (hit.indexOf('.') != -1) hits ~= hit;
         httpPos = slice.indexOf("http");
     }
 
@@ -762,7 +784,7 @@ public:
         Params:
             aa = Associative arary to inherit. Taken by reference for now.
      +/
-    this(V[K] aa)
+    this(V[K] aa) pure @safe nothrow @nogc
     {
         this.aa = aa;
     }
@@ -772,12 +794,6 @@ public:
         Delegate called when rehashing takes place.
      +/
     void delegate() onRehashDg;
-
-    /++
-        `alias this` with regards to [RehashingAA.aa|aa].
-     +/
-    version(none)
-    alias aa this;
 }
 
 ///
@@ -812,7 +828,7 @@ unittest
 
 
 version(GCStatsOnExit) version = BuildPrintGCStats;
-else version(IncludeHeavyStuff) version = BuildPrintGCStats;
+else debug version = BuildPrintGCStats;
 
 
 // printGCStats
@@ -837,4 +853,85 @@ void printGCStats()
     enum memoryUsedPattern = "Memory currently in use: <l>%,d</> bytes; " ~
         "<l>%,d</> additional bytes reserved";
     logger.infof(memoryUsedPattern, stats.usedSize, stats.freeSize);
+}
+
+
+// assertMultilineOpEquals
+/++
+    Asserts that two multiline strings are equal, with a more detailed error
+    message than the default `assert`.
+
+    Params:
+        actual = Actual string.
+        expected = Expected string.
+ +/
+version(unittest)
+void assertMultilineOpEquals(
+    const(char[]) actual,
+    const(char[]) expected,
+    const string file = __FILE__,
+    const uint line = __LINE__) pure @safe
+{
+    import std.algorithm.iteration : splitter;
+    import std.conv : text;
+    import std.format : format;
+    import std.range : StoppingPolicy, repeat, zip;
+    import std.utf : replacementDchar;
+
+    if (actual == expected) return;
+
+    auto expectedRange = expected.splitter("\n");
+    auto actualRange = actual.splitter("\n");
+    auto lineRange = zip(StoppingPolicy.longest, expectedRange, actualRange);
+    uint lineNumber;
+
+    foreach (const expectedLine, const actualLine; lineRange)
+    {
+        ++lineNumber;
+
+        auto charRange = zip(StoppingPolicy.longest, expectedLine, actualLine);
+        uint linePos;
+
+        foreach (const expectedChar, const actualChar; charRange)
+        {
+            ++linePos;
+
+            if (actualChar == expectedChar) continue;
+
+            enum EOL = 65_535;
+            immutable expectedCharString = (expectedChar != EOL) ?
+                text('\'', expectedChar, '\'') :
+                "EOL";
+            immutable expectedCharValueString = (expectedChar != EOL) ?
+                text('(', cast(uint)expectedChar, ')') :
+                string.init;
+            immutable actualCharString = (actualChar != EOL) ?
+                text('\'', actualChar, '\'') :
+                "EOL";
+            immutable actualCharValueString = (actualChar != EOL) ?
+                text('(', cast(uint)actualChar, ')') :
+                string.init;
+            immutable arrow = text(' '.repeat(linePos-1), '^');
+
+            enum pattern =
+`Line mismatch at %s:%d, block %d:%d; expected %s%s was %s%s
+expected:"%s"
+  actual:"%s"
+          %s`;
+            immutable message = pattern
+                .format(
+                    file,
+                    line,
+                    lineNumber,
+                    linePos,
+                    expectedCharString,
+                    expectedCharValueString,
+                    actualCharString,
+                    actualCharValueString,
+                    expectedLine,
+                    actualLine,
+                    arrow);
+            assert(0, message);
+        }
+    }
 }

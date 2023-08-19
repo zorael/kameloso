@@ -39,7 +39,9 @@ module kameloso.thread;
 
 private:
 
+import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
+import core.time : Duration;
 
 public:
 
@@ -350,19 +352,11 @@ final class Boxed(T) : Sendable
         Constructor that adds a passed payload to the internal stored [payload],
         creating a *shared* `Boxed`.
      +/
-    auto this(T payload) shared
+    this(T payload) shared pure @safe nothrow @nogc
     {
         this.payload = cast(shared)payload;
     }
 }
-
-
-// BusMessage
-/++
-    Deprecated alias to [Boxed].
- +/
-deprecated("Use `Boxed!T` instead")
-alias BusMessage = Boxed;
 
 
 // boxed
@@ -390,14 +384,6 @@ shared(Sendable) boxed(T)(T payload)
     import std.traits : Unqual;
     return new shared Boxed!(Unqual!T)(payload);
 }
-
-
-// sendable
-/++
-    Deprecated alias to [boxed].
- +/
-deprecated("Use `boxed` instead")
-alias sendable = boxed;
 
 ///
 unittest
@@ -463,7 +449,7 @@ final class CarryingFiber(T) : Fiber
         Constructor function merely taking a function/delegate pointer, to call
         when invoking this Fiber (via `.call()`).
      +/
-    this(Fn, Args...)(Fn fn, Args args)
+    this(Fn, Args...)(Fn fn, Args args)  // attributes inferred
     {
         // fn is a pointer
         super(fn, args);
@@ -474,7 +460,7 @@ final class CarryingFiber(T) : Fiber
         internal `this.payload`, as well as a function/delegate pointer to call
         when invoking this Fiber (via `.call()`).
      +/
-    this(Fn, Args...)(T payload, Fn fn, Args args)
+    this(Fn, Args...)(T payload, Fn fn, Args args)  // as above
     {
         this.payload = payload;
         // fn is a pointer
@@ -490,8 +476,6 @@ final class CarryingFiber(T) : Fiber
     }
 }
 
-
-private import core.time : Duration;
 
 // interruptibleSleep
 /++
@@ -512,7 +496,7 @@ private import core.time : Duration;
         abort = Reference to the bool flag which, if set, means we should
             interrupt and return early.
  +/
-void interruptibleSleep(const Duration dur, const ref bool abort) @system
+void interruptibleSleep(const Duration dur, const ref Flag!"abort" abort) @system
 {
     import core.thread : Thread, msecs;
 

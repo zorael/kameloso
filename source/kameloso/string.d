@@ -49,7 +49,7 @@ auto stripSeparatedPrefix(
     const Flag!"demandSeparatingChars" demandSep = Yes.demandSeparatingChars) pure
 in (prefix.length, "Tried to strip separated prefix but no prefix was given")
 {
-    import lu.string : nom, strippedLeft;
+    import lu.string : advancePast, strippedLeft;
     import std.algorithm.comparison : among;
     import std.meta : aliasSeqOf;
 
@@ -58,7 +58,7 @@ in (prefix.length, "Tried to strip separated prefix but no prefix was given")
     string slice = line.strippedLeft;  // mutable
 
     // the onus is on the caller that slice begins with prefix, else this will throw
-    slice.nom!(Yes.decode)(prefix);
+    slice.advancePast(prefix);
 
     if (demandSep)
     {
@@ -198,7 +198,7 @@ auto replaceTokens(const string line) @safe pure nothrow
         defaultUpperBound = Default upper bound when no range given.
 
     Returns:
-        A new string with occurences of `$random` and `$random(i..n)` replaced,
+        A new string with occurrences of `$random` and `$random(i..n)` replaced,
         or the original string if there were no changes made.
  +/
 auto replaceRandom(
@@ -206,85 +206,104 @@ auto replaceRandom(
     const long defaultLowerBound = 0,
     const long defaultUpperBound = 100) @safe
 {
-    import std.conv : text;
+    import std.array : Appender;
+    import std.conv : to;
     import std.random : uniform;
     import std.string : indexOf;
 
-    immutable randomPos = line.indexOf("$random");
+    enum token = "$random";
 
-    if (randomPos == -1)
+    Appender!(char[]) sink;
+    sink.reserve(line.length);  // overshoots but that's fine
+    ptrdiff_t randomPos = line.indexOf(token);
+    size_t prevEnd;
+
+    while (randomPos != -1)
     {
-        // No $random token
-        return line;
-    }
+        immutable trailingCharPos = randomPos + token.length;
+        size_t thisEnd;
 
-    if (line.length > randomPos)
-    {
-        immutable openParen = randomPos + "$random".length;
-
-        if (line.length == openParen)
+        if (line.length == trailingCharPos)
         {
+            // Line ends with token
             immutable randomNumber = uniform(defaultLowerBound, defaultUpperBound);
-            return text(line[0..randomPos], randomNumber);
+            sink.put(line[prevEnd..randomPos]);
+            sink.put(randomNumber.to!string);
+            break;
         }
-        else if (line[openParen] == '(')
+        else if (line[trailingCharPos] == '(')
         {
-            immutable dots = line.indexOf("..", openParen);
+            // "token("
+            immutable dotsPos = line.indexOf("..", trailingCharPos);
 
-            if (dots != -1)
+            if (dotsPos != -1)
             {
-                immutable endParen = line.indexOf(')', dots);
+                // "token(*.."
+                immutable endParenPos = line.indexOf(')', dotsPos);
 
-                if (endParen != -1)
+                if (endParenPos != -1)
                 {
+                    // "token(*..*)"
                     try
                     {
                         import std.conv : to;
 
-                        immutable lowerBound = line[openParen+1..dots].to!long;
-                        immutable upperBound = line[dots+2..endParen].to!long;
+                        immutable lowerBound = line[trailingCharPos+1..dotsPos].to!long;
+                        immutable upperBound = line[dotsPos+2..endParenPos].to!long;
                         immutable randomNumber = uniform(lowerBound, upperBound);
-                        return text(line[0..randomPos], randomNumber, line[endParen+1..$]);
+                        sink.put(line[prevEnd..randomPos]);
+                        sink.put(randomNumber.to!string);
+                        thisEnd = endParenPos+1;
                     }
                     catch (Exception _)
                     {
-                        return line;
+                        // syntax error, but proceed with the loop
+                        sink.put(line[prevEnd..trailingCharPos]);
+                        thisEnd = trailingCharPos;
                     }
                 }
             }
         }
-        else if (line[openParen] == ' ')
+        else
         {
+            // token followed by any other trailing character
             immutable randomNumber = uniform(defaultLowerBound, defaultUpperBound);
-            return text(line[0..randomPos], randomNumber, line[openParen..$]);
+            sink.put(line[prevEnd..randomPos]);
+            sink.put(randomNumber.to!string);
+            thisEnd = trailingCharPos;
         }
+
+        prevEnd = thisEnd;
+        randomPos = line.indexOf(token, prevEnd+1);
     }
 
-    return line;
+    // Add any trailing text iff the loop iterated at least once
+    if ((randomPos == -1) && (prevEnd != 0)) sink.put(line[prevEnd..$]);
+    return sink.data.length ? sink.data.idup : line;
 }
 
 ///
 unittest
 {
-    import lu.string : nom;
+    import lu.string : advancePast, splitInto;
     import std.conv : to;
 
     {
         enum line = "$random bottles of beer on the wall";
         string replaced = line.replaceRandom();  // mutable
-        immutable number = replaced.nom(' ').to!int;
+        immutable number = replaced.advancePast(' ').to!int;
         assert(((number >= 0) && (number < 100)), number.to!string);
     }
     {
         enum line = "$random(100..200) bottles of beer on the wall";
         string replaced = line.replaceRandom();  // mutable
-        immutable number = replaced.nom(' ').to!int;
+        immutable number = replaced.advancePast(' ').to!int;
         assert(((number >= 100) && (number < 200)), number.to!string);
     }
     {
         enum line = "$random(-20..-10) bottles of beer on the wall";
         string replaced = line.replaceRandom();  // mutable
-        immutable number = replaced.nom(' ').to!int;
+        immutable number = replaced.advancePast(' ').to!int;
         assert(((number >= -20) && (number < -10)), number.to!string);
     }
     /*{
@@ -293,7 +312,7 @@ unittest
             // Fails pre-2.090 with Error: signed integer overflow
             enum line = "$random(-9223372036854775808..9223372036854775807) bottles of beer on the wall";
             string replaced = line.replaceRandom();  // mutable
-            immutable number = replaced.nom(' ').to!long;
+            immutable number = replaced.advancePast(' ').to!long;
             //assert(((number >= cast(long)-9223372036854775808) && (number < 9223372036854775807)), number.to!string);
         }
     }*/
@@ -316,8 +335,14 @@ unittest
         assert((replaced == line), replaced);
     }
     {
-        // syntax error, no boudns given
+        // syntax error, no bounds given
         enum line = "$random(..) bottles of beer on the wall";
+        immutable replaced = line.replaceRandom();
+        assert((replaced == line), replaced);
+    }
+    {
+        // syntax error, invalid bounds
+        enum line = "$random(X.....Y) bottles of beer on the wall";
         immutable replaced = line.replaceRandom();
         assert((replaced == line), replaced);
     }
@@ -346,6 +371,21 @@ unittest
         assert((replaced == line), replaced);
     }
     {
+        // partly syntax error
+        enum line = "blerp $random(50..55) $random(2..1) $random blarp";
+        immutable replaced = line.replaceRandom();
+        string slice = replaced;  // mutable
+        string blerp, n1s, syntaxError, n2s, blarp;
+        slice.splitInto(blerp, n1s, syntaxError, n2s, blarp);
+        immutable n1 = n1s.to!int;
+        immutable n2 = n2s.to!int;
+        assert((blerp == "blerp"), blerp);
+        assert((n1 >= 50 && n1 < 55), n1.to!string);
+        assert((syntaxError == "$random(2..1)"), syntaxError);
+        assert((n2 >= 0 && n2 < 100), n2.to!string);
+        assert((blarp == "blarp"), blarp);
+    }
+    {
         // empty string
         enum line = string.init;
         string replaced = line.replaceRandom();
@@ -356,6 +396,57 @@ unittest
         enum line = "99 bottles of beer on the wall";
         immutable replaced = line.replaceRandom();
         assert((replaced == line), replaced);
+    }
+    {
+        // multiple tokens
+        enum line = "$random(1..100) $random(101..200) $random(201..300)";
+        immutable replaced = line.replaceRandom();
+        string slice = replaced;  // mutable
+        string n1s, n2s, n3s;
+        slice.splitInto(n1s, n2s, n3s);
+        immutable n1 = n1s.to!int;
+        immutable n2 = n2s.to!int;
+        immutable n3 = n3s.to!int;
+        assert((n1 >= 1 && n1 < 100), n1.to!string);
+        assert((n2 >= 101 && n2 < 200), n2.to!string);
+        assert((n3 >= 201 && n3 < 300), n3.to!string);
+    }
+    {
+        // multiple tokens with other text
+        enum line = "$random $randomz $random gau gau";
+        immutable replaced = line.replaceRandom();
+        string slice = replaced;  // mutable
+        string n1s, n2z, n3s;
+        slice.splitInto(n1s, n2z, n3s);
+        immutable n1 = n1s.to!int;
+        immutable n2 = n2z[0..$-1].to!int;
+        immutable n3 = n3s.to!int;
+        immutable z = n2z[$-1..$];
+        assert((n1 >= 0 && n1 < 100), n1.to!string);
+        assert((n2 >= 0 && n2 < 100), n1.to!string);
+        assert((n3 >= 0 && n3 < 100), n3.to!string);
+        assert((z == "z"), z);
+        assert((slice == "gau gau"), slice);
+    }
+    {
+        // multiple tokens with other text again
+        enum line = "$random, $random! $random?";
+        immutable replaced = line.replaceRandom();
+        string slice = replaced;  // mutable
+        string n1comma, n2excl, n3question;
+        slice.splitInto(n1comma, n2excl, n3question);
+        immutable n1 = n1comma[0..$-1].to!int;
+        immutable comma = n1comma[$-1..$];
+        immutable n2 = n2excl[0..$-1].to!int;
+        immutable excl = n2excl[$-1..$];
+        immutable n3 = n3question[0..$-1].to!int;
+        immutable question = n3question[$-1..$];
+        assert((n1 >= 0 && n1 < 100), n1.to!string);
+        assert((n2 >= 0 && n2 < 100), n1.to!string);
+        assert((n3 >= 0 && n3 < 100), n3.to!string);
+        assert((comma == ","), comma);
+        assert((excl == "!"), excl);
+        assert((question == "?"), question);
     }
 }
 

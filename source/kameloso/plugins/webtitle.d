@@ -1,12 +1,12 @@
 /++
-    The Webtitles plugin catches URLs pasted in a channel, follows them and
+    The Webtitle plugin catches URLs pasted in a channel, follows them and
     reports back the title of the web page that was linked to.
 
     It has no bot commands; everything is done by automatically scanning channel
     and private query messages for things that look like links.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#webtitles,
+        https://github.com/zorael/kameloso/wiki/Current-plugins#webtitle,
         [kameloso.plugins.common.core],
         [kameloso.plugins.common.misc]
 
@@ -16,9 +16,9 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-module kameloso.plugins.webtitles;
+module kameloso.plugins.webtitle;
 
-version(WithWebtitlesPlugin):
+version(WithWebtitlePlugin):
 
 private:
 
@@ -44,11 +44,11 @@ static immutable descriptionExemptions =
 ];
 
 
-// WebtitlesSettings
+// WebtitleSettings
 /++
     All Webtitles settings, gathered in a struct.
  +/
-@Settings struct WebtitlesSettings
+@Settings struct WebtitleSettings
 {
     /++
         Toggles whether or not the plugin should react to events at all.
@@ -147,16 +147,17 @@ struct TitleLookupRequest
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
 )
-void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
+void onMessage(WebtitlePlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : findURLs;
-    import lu.string : beginsWith, strippedLeft;
+    import lu.string : strippedLeft;
+    import std.algorithm.searching : startsWith;
 
     immutable content = event.content.strippedLeft;  // mutable
 
-    if (content.beginsWith(plugin.state.settings.prefix)) return;
+    if (content.startsWith(plugin.state.settings.prefix)) return;
 
-    if (content.beginsWith(plugin.state.client.nickname))
+    if (content.startsWith(plugin.state.client.nickname))
     {
         import kameloso.string : stripSeparatedPrefix;
 
@@ -168,7 +169,7 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
         if (nicknameStripped != content) return;
     }
 
-    auto urls = findURLs(event.content);  // mutable so nom works
+    auto urls = findURLs(event.content);  // mutable so advancePast works
     if (!urls.length) return;
     lookupURLs(plugin, event, urls);
 }
@@ -182,15 +183,15 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
     It accesses the cache of already looked up addresses to speed things up.
 
     Params:
-        plugin = The current [WebtitlesPlugin].
+        plugin = The current [WebtitlePlugin].
         event = The [dialect.defs.IRCEvent|IRCEvent] that instigated the lookup.
         urls = `string[]` of URLs to look up.
  +/
-void lookupURLs(WebtitlesPlugin plugin, const /*ref*/ IRCEvent event, string[] urls)
+void lookupURLs(WebtitlePlugin plugin, const /*ref*/ IRCEvent event, string[] urls)
 {
     import kameloso.common : logger;
     import kameloso.thread : ThreadMessage;
-    import lu.string : beginsWith, nom;
+    import lu.string : advancePast;
     import std.concurrency : prioritySend, spawn;
 
     bool[string] uniques;
@@ -200,7 +201,7 @@ void lookupURLs(WebtitlesPlugin plugin, const /*ref*/ IRCEvent event, string[] u
         // If the URL contains an octothorpe fragment identifier, like
         // https://www.google.com/index.html#this%20bit
         // then strip that.
-        url = url.nom!(Yes.inherit, Yes.decode)('#');
+        url = url.advancePast('#', Yes.inherit);
 
         while (url[$-1] == '/')
         {
@@ -249,7 +250,7 @@ void lookupURLs(WebtitlesPlugin plugin, const /*ref*/ IRCEvent event, string[] u
 
         cast(void)spawn(&worker, cast(shared)request, plugin.cache,
             (i * plugin.delayMsecs),
-            cast(Flag!"descriptions")plugin.webtitlesSettings.descriptions,
+            cast(Flag!"descriptions")plugin.webtitleSettings.descriptions,
             plugin.state.connSettings.caBundleFile);
     }
 
@@ -281,16 +282,18 @@ void worker(
     const Flag!"descriptions" descriptions,
     const string caBundleFile)
 {
-    import lu.string : beginsWith, contains, nom;
+    import lu.string : advancePast;
+    import std.algorithm.searching : startsWith;
     import std.datetime.systime : Clock;
     import std.format : format;
+    import std.string : indexOf;
     import std.typecons : No, Yes;
     static import kameloso.common;
 
     version(Posix)
     {
         import kameloso.thread : setThreadName;
-        setThreadName("webtitles");
+        setThreadName("webtitle");
     }
 
     // Set the global settings so messaging functions don't segfault us
@@ -306,26 +309,27 @@ void worker(
     TitleLookupRequest request = cast()sRequest;
     immutable now = Clock.currTime.toUnixTime;
 
-    if (request.url.contains("://i.imgur.com/"))
+    if (request.url.indexOf("://i.imgur.com/") != -1)
     {
         // imgur direct links naturally have no titles, but the normal pages do.
         // Rewrite and look those up instead.
         request.url = rewriteDirectImgurURL(request.url);
     }
-    else if (request.url.contains("youtube.com/watch?v=") ||
-        request.url.contains("youtu.be/"))
+    else if (
+        (request.url.indexOf("youtube.com/watch?v=") != -1) ||
+        (request.url.indexOf("youtu.be/") != -1))
     {
         // Do our own slicing instead of using regexes, because footprint.
         string slice = request.url;
 
-        slice.nom!(Yes.decode)("http");
+        slice.advancePast("http");
         if (slice[0] == 's') slice = slice[1..$];
         slice = slice[3..$];  // ://
 
-        if (slice.beginsWith("www.")) slice = slice[4..$];
+        if (slice.startsWith("www.")) slice = slice[4..$];
 
-        if (slice.beginsWith("youtube.com/watch?v=") ||
-            slice.beginsWith("youtu.be/"))
+        if (slice.startsWith("youtube.com/watch?v=") ||
+            slice.startsWith("youtu.be/"))
         {
             import std.json : JSONException;
 
@@ -525,10 +529,11 @@ auto lookupTitle(
     const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
-    import lu.string : beginsWith, nom;
+    import lu.string : advancePast;
     import arsd.dom : Document;
     import arsd.http2 : HttpClient, Uri;
     import std.algorithm.comparison : among;
+    import std.algorithm.searching : startsWith;
     import std.array : Appender;
     import std.uni : toLower;
     import core.time : seconds;
@@ -583,9 +588,9 @@ auto lookupTitle(
     }
 
     string slice = url;  // mutable
-    slice.nom("//");
-    string host = slice.nom!(Yes.inherit)('/').toLower;
-    if (host.beginsWith("www.")) host = host[4..$];
+    slice.advancePast("//");
+    string host = slice.advancePast('/', Yes.inherit).toLower;
+    if (host.startsWith("www.")) host = host[4..$];
 
     TitleLookupResults results;
     results.title = decodeEntities(doc.title);
@@ -687,17 +692,18 @@ void reportYouTubeTitle(TitleLookupRequest request)
  +/
 auto rewriteDirectImgurURL(const string url) @safe pure
 {
-    import lu.string : beginsWith, nom;
+    import lu.string : advancePast;
+    import std.algorithm.searching : startsWith;
     import std.typecons : No, Yes;
 
-    if (url.beginsWith("https://i.imgur.com/"))
+    if (url.startsWith("https://i.imgur.com/"))
     {
-        immutable path = url[20..$].nom!(Yes.decode)('.');
+        immutable path = url[20..$].advancePast('.');
         return "https://imgur.com/" ~ path;
     }
-    else if (url.beginsWith("http://i.imgur.com/"))
+    else if (url.startsWith("http://i.imgur.com/"))
     {
-        immutable path = url[19..$].nom!(Yes.decode)('.');
+        immutable path = url[19..$].advancePast('.');
         return "https://imgur.com/" ~ path;
     }
 
@@ -918,13 +924,13 @@ void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
     Versioned out until we need it, such as for selective Twitch link blocks.
 
     Params:
-        plugin = The current [WebtitlesPlugin].
+        plugin = The current [WebtitlePlugin].
         header = String header describing the passed content payload.
         content = The boxed content of the message.
  +/
 version(none)
 void onBusMessage(
-    WebtitlesPlugin plugin,
+    WebtitlePlugin plugin,
     const string header,
     shared Sendable content)
 {
@@ -932,7 +938,7 @@ void onBusMessage(
 
     // Don't return if disabled?
     // Do we want to be able to serve other plugins anyway?
-    if (header != "webtitles") return;
+    if (header != "webtitle") return;
 
     auto message = cast(Boxed!IRCEvent)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
@@ -941,13 +947,13 @@ void onBusMessage(
 }
 
 
-// initialise
+// setup
 /++
     Initialises the shared cache, else it won't retain changes.
 
     Just assign an entry and remove it.
  +/
-void initialise(WebtitlesPlugin plugin)
+void setup(WebtitlePlugin plugin)
 {
     // No need to synchronise this; no worker threads are running
     plugin.cache[string.init] = TitleLookupResults.init;
@@ -956,24 +962,24 @@ void initialise(WebtitlesPlugin plugin)
 
 
 mixin MinimalAuthentication;
-mixin PluginRegistration!WebtitlesPlugin;
+mixin PluginRegistration!WebtitlePlugin;
 
 public:
 
 
-// WebtitlesPlugin
+// WebtitlePlugin
 /++
-    The Webtitles plugin catches HTTP URL links in messages, connects to
+    The Webtitle plugin catches HTTP URL links in messages, connects to
     their servers and and streams the web page itself, looking for the web page's
     title. This is then reported to the originating channel or personal query.
  +/
-final class WebtitlesPlugin : IRCPlugin
+final class WebtitlePlugin : IRCPlugin
 {
 private:
     /++
         All Webtitles options gathered.
      +/
-    WebtitlesSettings webtitlesSettings;
+    WebtitleSettings webtitleSettings;
 
     /++
         Cache of recently looked-up web titles.

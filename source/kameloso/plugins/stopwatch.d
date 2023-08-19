@@ -67,7 +67,7 @@ import std.typecons : Flag, No, Yes;
 )
 void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom, stripped, strippedLeft;
+    import lu.string : advancePast, stripped, strippedLeft;
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
 
@@ -131,7 +131,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.nom!(Yes.inherit)(' ');
+    immutable verb = slice.advancePast(' ', Yes.inherit);
     slice = slice.strippedLeft;
 
     string getDiff(const string id)
@@ -228,6 +228,8 @@ void serialiseStopwatches(StopwatchPlugin plugin)
 {
     import std.json : JSONValue;
     import std.stdio : File, writeln;
+
+    if (!plugin.stopwatches.length) return;
 
     auto file = File(plugin.stopwatchTempFile, "w");
     file.writeln(JSONValue(plugin.stopwatches).toPrettyString);
