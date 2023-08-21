@@ -894,14 +894,9 @@ auto mainLoop(ref Kameloso instance)
         {
             immutable untilNext = sendLines(instance);
 
-            if ((untilNext > 0.0) && (untilNext < instance.connSettings.messageBurst))
+            if (untilNext > 0.0)
             {
-                immutable untilNextMsecs = cast(uint)(untilNext * 1000);
-
-                if (untilNextMsecs < instance.conn.receiveTimeout)
-                {
-                    timeoutFromMessages = untilNextMsecs;
-                }
+                timeoutFromMessages = cast(uint)(untilNext * 1000);
             }
         }
     }
@@ -1140,8 +1135,10 @@ auto mainLoop(ref Kameloso instance)
                 cast(uint)(nextGlobalScheduledTimestamp - nowInHnsecs)/10_000 :
                 uint.max;
 
-            immutable supposedNewTimeout =
-                min(defaultTimeout, timeoutFromMessages, untilNextGlobalScheduled);
+            immutable supposedNewTimeout = min(
+                defaultTimeout,
+                timeoutFromMessages,
+                untilNextGlobalScheduled);
 
             if (supposedNewTimeout != instance.conn.receiveTimeout)
             {
@@ -1149,6 +1146,10 @@ auto mainLoop(ref Kameloso instance)
                     supposedNewTimeout :
                     1;
             }
+        }
+        else if (instance.conn.receiveTimeout != instance.connSettings.receiveTimeout)
+        {
+            instance.conn.receiveTimeout = instance.connSettings.receiveTimeout;
         }
 
         if (socketBlockingDisabled)

@@ -370,9 +370,7 @@ public:
         alias t = throttle;
 
         immutable now = Clock.currTime;
-        if (t.t0 == SysTime.init) t.t0 = now;
-
-        double k = -connSettings.messageRate;
+        double k = connSettings.messageRate;
         double burst = connSettings.messageBurst;
 
         version(TwitchSupport)
@@ -383,12 +381,12 @@ public:
 
                 if (sendFaster)
                 {
-                    k = -ConnectionDefaultFloats.messageRateTwitchFast;
+                    k = ConnectionDefaultFloats.messageRateTwitchFast;
                     burst = ConnectionDefaultFloats.messageBurstTwitchFast;
                 }
                 else
                 {
-                    k = -ConnectionDefaultFloats.messageRateTwitchSlow;
+                    k = ConnectionDefaultFloats.messageRateTwitchSlow;
                     burst = ConnectionDefaultFloats.messageBurstTwitchSlow;
                 }
             }
@@ -398,26 +396,25 @@ public:
         {
             if (!immediate)
             {
-                double x = (now - t.t0).total!"msecs"/1000.0;
-                double y = k * x + t.m;
+                /// Position on x-axis; how many msecs have passed since last message was sent
+                immutable x = (now - t.t0).total!"msecs"/1000.0;
+                /// Value of point on line
+                immutable y = k*x + t.m;
 
-                if (y < 0.0)
+                if (y > burst)
                 {
                     t.t0 = now;
-                    x = 0.0;
-                    y = 0.0;
-                    t.m = 0.0;
+                    t.m = burst;
+                    // Drop down
                 }
-
-                if (y >= burst)
+                else if (y < 0.0)
                 {
-                    x = (now - t.t0).total!"msecs"/1000.0;
-                    y = k*x + t.m;
-                    return y;
+                    // Not yet time, delay
+                    return -y/k;
                 }
 
-                t.m = y + t.increment;
-                t.t0 = now;
+                // Record as sent and drop down to actually send
+                t.m -= t.increment;
             }
 
             if (dryRun) break;
