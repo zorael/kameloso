@@ -594,7 +594,7 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
         stripped.endsWith("ago: test"),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    send("set notes.playBackOnAnyActivity=false");
+    send("set note.playBackOnAnyActivity=false");
     expect("Setting changed.");
 
     send("note %s abc def ghi".format(plugin.state.client.nickname));
