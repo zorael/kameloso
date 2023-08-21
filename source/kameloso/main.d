@@ -2002,7 +2002,7 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
     // Walk through replays and call WHOIS on those that haven't been
     // WHOISed in the last Timeout.whoisRetry seconds
 
-    immutable now = Clock.currTime.toUnixTime;
+    immutable nowInUnix = Clock.currTime.toUnixTime;
 
     foreach (immutable nickname, replaysForNickname; plugin.state.pendingReplays)
     {
@@ -2023,7 +2023,7 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
 
         immutable lastWhois = instance.previousWhoisTimestamps.get(nickname, 0L);
 
-        if ((now - lastWhois) > Timeout.whoisRetry)
+        if ((nowInUnix - lastWhois) > Timeout.whoisRetry)
         {
             version(TraceWhois)
             {
@@ -2035,8 +2035,8 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
 
             /*instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
                 cast(Flag!"quiet")instance.settings.hideOutgoing));
-            instance.previousWhoisTimestamps[nickname] = now;
-            propagateWhoisTimestamp(instance, nickname, now);*/
+            instance.previousWhoisTimestamps[nickname] = nowInUnix;
+            propagateWhoisTimestamp(instance, nickname, nowInUnix);*/
 
             enum properties = (Message.Property.forced | Message.Property.quiet);
             whois(plugin.state, nickname, properties);
@@ -2048,7 +2048,7 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
                 if (!instance.settings.headless)
                 {
                     enum pattern = " ...but already issued %d seconds ago.";
-                    writefln(pattern, (now - lastWhois));
+                    writefln(pattern, (nowInUnix - lastWhois));
                 }
             }
         }
@@ -3733,16 +3733,16 @@ void echoQuitMessage(ref Kameloso instance, const string reason) @safe
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         nickname = Nickname whose WHOIS timestamp to propagate.
-        now = UNIX WHOIS timestamp.
+        nowInUnix = UNIX WHOIS timestamp.
  +/
 void propagateWhoisTimestamp(
     ref Kameloso instance,
     const string nickname,
-    const long now) pure @safe nothrow
+    const long nowInUnix) pure @safe nothrow
 {
     foreach (plugin; instance.plugins)
     {
-        plugin.state.previousWhoisTimestamps[nickname] = now;
+        plugin.state.previousWhoisTimestamps[nickname] = nowInUnix;
     }
 }
 
