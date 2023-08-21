@@ -753,22 +753,22 @@ mixin template IRCPluginImpl(
                 }
             }
 
+            immutable origContent = event.content;
+            auto origAux = event.aux;  // copy
+            bool auxDirty;
+
+            scope(exit)
+            {
+                // Restore aux if it has been altered
+                // Unconditionally restore content
+                event.content = origContent;
+                if (auxDirty) event.aux = origAux;  // copy back
+            }
+
             // Ignore all commands when in observer mode
             if ((uda.commands.length || hasRegexes) && !state.settings.observerMode)
             {
                 import lu.string : strippedLeft;
-
-                immutable origContent = event.content;
-                auto origAux = event.aux;  // copy
-                bool auxDirty;
-
-                scope(exit)
-                {
-                    // Restore aux if it has been altered
-                    // Unconditionally restore content
-                    event.content = origContent;
-                    if (auxDirty) event.aux = origAux;  // copy back
-                }
 
                 event.content = event.content.strippedLeft;
 
