@@ -2700,8 +2700,8 @@ auto initialise(TwitchPlugin plugin)
             logger.trace();
         }
 
-        // Not connecting to Twitch yet keygens requested, return false unless forcing
-        if (!plugin.state.settings.force) return false;
+        // Not connecting to Twitch yet keygens requested, return true unless forcing
+        if (!plugin.state.settings.force) return true;
     }
 
     if (someKeygenWanted || (!plugin.state.bot.pass.length && !plugin.state.settings.force))
