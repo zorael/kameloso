@@ -53,11 +53,11 @@ private:
          +/
         double m = 0.0;
 
-        // increment
+        // bump
         /++
-            Increment to y on sent message.
+            By how much to bump y on sent message.
          +/
-        enum increment = 1.0;
+        enum bump = 1.0;
 
         // this(this)
         /++
@@ -414,7 +414,7 @@ public:
                 }
 
                 // Record as sent and drop down to actually send
-                t.m -= t.increment;
+                t.m -= Throttle.bump;
             }
 
             if (dryRun) break;
