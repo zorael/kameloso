@@ -2421,6 +2421,7 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
     // Initialise the AA so we can get a pointer to it.
     plugin.customEmotesByChannel[channelName][dstring.init] = false;
     auto customEmotes = channelName in plugin.customEmotesByChannel;
+    *customEmotes = null;
 
     alias GetEmoteFun = void function(
         TwitchPlugin,
@@ -2443,8 +2444,6 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
         }
     }
 
-    //(*customEmotes).remove(dstring.init);
-    customEmotes = null;  // In case we're reimporting definitions
     getEmoteSet(&getBTTVEmotes, "BetterTTV");
     getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
     getEmoteSet(&get7tvEmotes, "7tv");
