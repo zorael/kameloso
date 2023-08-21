@@ -2137,7 +2137,7 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
 
     immutable url = "https://api.betterttv.net/3/cached/users/twitch/" ~ idString;
 
-    auto getBTTVEmotesDg()
+    void getBTTVEmotesDg()
     {
         try
         {
@@ -2336,7 +2336,7 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
 
     immutable url = "https://api.frankerfacez.com/v1/room/id/" ~ idString;
 
-    auto getFFZEmotesDg()
+    void getFFZEmotesDg()
     {
         try
         {
@@ -2508,7 +2508,7 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
 
     immutable url = text("https://api.7tv.app/v2/users/", idString, "/emotes");
 
-    auto get7tvEmotesDg()
+    void get7tvEmotesDg()
     {
         try
         {
