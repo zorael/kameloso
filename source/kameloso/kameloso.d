@@ -71,7 +71,7 @@ private:
          +/
         void reset()
         {
-            t0 = SysTime.init;
+            // No need to reset t0, it will just exceed burst on next throttleline
             m = 0.0;
         }
     }
