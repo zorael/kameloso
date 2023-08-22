@@ -614,8 +614,7 @@ void messageFiber(ref Kameloso instance)
                     }
 
                     line = "WHOIS " ~ m.event.target.nickname;
-                    instance.previousWhoisTimestamps[m.event.target.nickname] = now;
-                    propagateWhoisTimestamp(instance, m.event.target.nickname, now);
+                    propagateWhoisTimestamp(instance, m.event.target.nickname, nowInUnix);
                 }
                 else
                 {
@@ -2037,7 +2036,6 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
 
             /*instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
                 cast(Flag!"quiet")instance.settings.hideOutgoing));
-            instance.previousWhoisTimestamps[nickname] = nowInUnix;
             propagateWhoisTimestamp(instance, nickname, nowInUnix);*/
 
             enum properties = (Message.Property.forced | Message.Property.quiet);
@@ -3742,6 +3740,8 @@ void propagateWhoisTimestamp(
     const string nickname,
     const long nowInUnix) pure @safe nothrow
 {
+    instance.previousWhoisTimestamps[nickname] = nowInUnix;
+
     foreach (plugin; instance.plugins)
     {
         plugin.state.previousWhoisTimestamps[nickname] = nowInUnix;
