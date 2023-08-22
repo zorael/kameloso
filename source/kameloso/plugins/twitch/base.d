@@ -774,7 +774,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     void reportFollowAge(const Follow follow)
     {
         import kameloso.time : timeSince;
-        import std.datetime.systime : Clock, SysTime;
+        import std.datetime.systime : Clock;
         import std.format : format;
 
         static immutable string[12] months =
@@ -794,8 +794,8 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         ];
 
         enum datestampPattern = "%s %d";
-        immutable diff = Clock.currTime - follow.when;
-        immutable timeline = diff.timeSince!(7, 3);
+        immutable delta = (Clock.currTime - follow.when);
+        immutable timeline = delta.timeSince!(7, 3);
         immutable datestamp = datestampPattern.format(
             months[cast(int)follow.when.month-1],
             follow.when.year);
@@ -3028,7 +3028,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
             try
             {
                 room.follows = getFollows(plugin, room.id);
-                room.followsLastCached = now.toUnixTime;
+                room.followsLastCached = now.toUnixTime();
             }
             catch (Exception _)
             {
@@ -3083,7 +3083,7 @@ void startValidator(TwitchPlugin plugin)
                     immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                     plugin.botUserIDString = validationJSON["user_id"].str;
                     immutable expiresIn = validationJSON["expires_in"].integer;
-                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime() + expiresIn);
                     immutable now = Clock.currTime;
                     immutable delta = (expiresWhen - now);
 
@@ -3132,7 +3132,7 @@ void startValidator(TwitchPlugin plugin)
                 immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                 plugin.botUserIDString = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
-                immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+                immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime() + expiresIn);
                 generateExpiryReminders(plugin, expiresWhen);
             }
             catch (TwitchQueryException e)

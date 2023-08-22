@@ -217,7 +217,7 @@ void startChannelQueries(ChanQueryService service)
     // Stop here if we can't or are not interested in going further
     if (!service.serverSupportsWHOIS || !service.state.settings.eagerLookups) return;
 
-    immutable now = Clock.currTime.toUnixTime;
+    immutable nowInUnix = Clock.currTime.toUnixTime();
     bool[string] uniqueUsers;
 
     foreach (immutable channelName, const channel; service.state.channels)
@@ -229,7 +229,7 @@ void startChannelQueries(ChanQueryService service)
             if (nickname == service.state.client.nickname) continue;
 
             const user = nickname in service.state.users;
-            if (!user || !user.account.length || ((now - user.updated) > Timeout.whoisRetry))
+            if (!user || !user.account.length || ((nowInUnix - user.updated) > Timeout.whoisRetry))
             {
                 // No user, or no account and sufficient amount of time passed since last WHOIS
                 uniqueUsers[nickname] = true;
@@ -281,8 +281,9 @@ void startChannelQueries(ChanQueryService service)
 
         // Delay between runs after first since aMode probes don't delay at end
         delay(service, secondsBetween, Yes.yield);
+        immutable delta = (Clock.currTime.toUnixTime() - lastQueryResults);
 
-        while ((Clock.currTime.toUnixTime - lastQueryResults) < service.secondsBetween-1)
+        while (delta < service.secondsBetween-1)
         {
             static immutable oneSecond = 1.seconds;
             delay(service, oneSecond, Yes.yield);
@@ -312,7 +313,7 @@ void startChannelQueries(ChanQueryService service)
                 if (thisFiber.payload.target.nickname == nickname)
                 {
                     // Saw the expected response
-                    lastQueryResults = Clock.currTime.toUnixTime;
+                    lastQueryResults = Clock.currTime.toUnixTime();
                     continue whoisloop;
                 }
                 else
@@ -358,8 +359,9 @@ void startChannelQueries(ChanQueryService service)
 
             default:
                 import lu.conv : Enum;
-                assert(0, "Unexpected event type triggered query Fiber: " ~
-                    "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(thisFiber.payload.type) ~ '`');
+                immutable message = "Unexpected event type triggered query Fiber: " ~
+                    "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(thisFiber.payload.type) ~ '`';
+                assert(0, message);
             }
         }
 

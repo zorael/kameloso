@@ -396,8 +396,8 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
         import kameloso.constants : Timeout;
         import std.datetime.systime : Clock;
 
-        immutable now = Clock.currTime.toUnixTime;
-        immutable delta = (now - *previousWhoisTimestamp);
+        immutable nowInUnix = Clock.currTime.toUnixTime();
+        immutable delta = (nowInUnix - *previousWhoisTimestamp);
 
         if ((delta < Timeout.whoisRetry) && (delta > Timeout.whoisGracePeriod))
         {

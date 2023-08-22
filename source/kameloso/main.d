@@ -578,7 +578,7 @@ void messageFiber(ref Kameloso instance)
                 import kameloso.constants : Timeout;
                 import std.datetime.systime : Clock;
 
-                immutable now = Clock.currTime.toUnixTime;
+                immutable nowInUnix = Clock.currTime.toUnixTime();
                 immutable then = instance.previousWhoisTimestamps.get(m.event.target.nickname, 0);
                 immutable hysteresis = force ? 1 : Timeout.whoisRetry;
 
@@ -600,7 +600,9 @@ void messageFiber(ref Kameloso instance)
                     }
                 }
 
-                if ((now - then) > hysteresis)
+                immutable delta = (nowInUnix - then);
+
+                if (delta > hysteresis)
                 {
                     version(TraceWhois)
                     {
@@ -911,7 +913,7 @@ auto mainLoop(ref Kameloso instance)
     immutable historyEntryIndex = instance.connectionHistory.length;  // snapshot index, 0 at first
     instance.connectionHistory ~= Kameloso.ConnectionHistoryEntry.init;
     historyEntry = &instance.connectionHistory[historyEntryIndex];
-    historyEntry.startTime = Clock.currTime.toUnixTime;
+    historyEntry.startTime = Clock.currTime.toUnixTime();
     historyEntry.stopTime = historyEntry.startTime;  // In case we abort before the first read is recorded
 
     /// UNIX timestamp of when the Socket receive timeout was shortened.
@@ -944,7 +946,7 @@ auto mainLoop(ref Kameloso instance)
         }
 
         immutable now = Clock.currTime;
-        immutable nowInUnix = now.toUnixTime;
+        immutable nowInUnix = now.toUnixTime();
         immutable nowInHnsecs = now.stdTime;
         immutable elapsed = (now - previousLoop);
 
@@ -2002,7 +2004,7 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
     // Walk through replays and call WHOIS on those that haven't been
     // WHOISed in the last Timeout.whoisRetry seconds
 
-    immutable nowInUnix = Clock.currTime.toUnixTime;
+    immutable nowInUnix = Clock.currTime.toUnixTime();
 
     foreach (immutable nickname, replaysForNickname; plugin.state.pendingReplays)
     {

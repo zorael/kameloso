@@ -985,7 +985,7 @@ void onWelcome(TimerPlugin plugin)
             import std.datetime.systime : Clock;
 
             // Micro-optimise getting the current time
-            long nowInUnix; // = Clock.currTime.toUnixTime;
+            long nowInUnix; // = Clock.currTime.toUnixTime();
 
             // Walk through channels, trigger fibers
             foreach (immutable channelName, channel; plugin.channels)
@@ -1000,7 +1000,7 @@ void onWelcome(TimerPlugin plugin)
                     }
 
                     // Get time here and cache it
-                    if (nowInUnix == 0) nowInUnix = Clock.currTime.toUnixTime;
+                    if (nowInUnix == 0) nowInUnix = Clock.currTime.toUnixTime();
 
                     immutable timeConditionMet =
                         ((nowInUnix - timerPtr.lastTimestamp) >= timerPtr.timeThreshold);
@@ -1081,7 +1081,7 @@ void handleSelfjoin(
     {
         import std.datetime.systime : Clock;
 
-        immutable nowInUnix = Clock.currTime.toUnixTime;
+        immutable nowInUnix = Clock.currTime.toUnixTime();
 
         // Populate timers
         foreach (ref timer; *channelTimers)
@@ -1134,10 +1134,10 @@ auto createTimerFiber(
         // Stagger based on message count and time thresholds
         while (true)
         {
-            immutable timeStaggerMet =
-                ((Clock.currTime.toUnixTime - timer.lastTimestamp) >= timer.timeStagger);
-            immutable messageStaggerMet =
-                ((channel.messageCount - timer.lastMessageCount) >= timer.messageCountStagger);
+            immutable timeDelta = (Clock.currTime.toUnixTime() - timer.lastTimestamp);
+            immutable timeStaggerMet = (timeDelta >= timer.timeStagger);
+            immutable messageCountDelta = (channel.messageCount - timer.lastMessageCount);
+            immutable messageStaggerMet = (messageCountDelta >= timer.messageCountStagger);
 
             if (timer.condition == Timer.Condition.both)
             {
@@ -1155,7 +1155,7 @@ auto createTimerFiber(
         void updateTimer()
         {
             timer.lastMessageCount = channel.messageCount;
-            timer.lastTimestamp = Clock.currTime.toUnixTime;
+            timer.lastTimestamp = Clock.currTime.toUnixTime();
         }
 
         // Snapshot count and timestamp

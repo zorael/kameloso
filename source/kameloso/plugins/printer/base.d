@@ -738,7 +738,7 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
     {
     case "squelch":
         import std.datetime.systime : Clock;
-        plugin.squelches[target] = Clock.currTime.toUnixTime;
+        plugin.squelches[target] = Clock.currTime.toUnixTime();
         plugin.hasSquelches = true;
         break;
 

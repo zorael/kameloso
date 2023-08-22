@@ -307,7 +307,7 @@ void worker(
     }
 
     TitleLookupRequest request = cast()sRequest;
-    immutable now = Clock.currTime.toUnixTime;
+    immutable nowInUnix = Clock.currTime.toUnixTime();
 
     if (request.url.indexOf("://i.imgur.com/") != -1)
     {
@@ -341,7 +341,7 @@ void worker(
                 // Should we decode the author too?
                 request.results.youtubeTitle = decodeEntities(info["title"].str);
                 request.results.youtubeAuthor = info["author_name"].str;
-                request.results.when = now;
+                request.results.when = nowInUnix;
                 reportYouTubeTitle(request);
 
                 synchronized //()
@@ -421,7 +421,7 @@ void worker(
             try
             {
                 request.results = lookupTitle(request.url, descriptions, caBundleFile);
-                request.results.when = now;
+                request.results.when = nowInUnix;
                 reportTitle(request);
 
                 synchronized //()
@@ -907,11 +907,11 @@ void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
 
     if (!cache.length) return;
 
-    immutable now = Clock.currTime.toUnixTime;
+    immutable nowInUnix = Clock.currTime.toUnixTime();
 
     synchronized //()
     {
-        pruneAA!((entry) => (now - entry.when) > expireSeconds)(cache);
+        pruneAA!((entry) => (nowInUnix - entry.when) > expireSeconds)(cache);
     }
 }
 

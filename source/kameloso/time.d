@@ -864,7 +864,7 @@ unittest
     immutable christmasEve = SysTime(DateTime(2018, 12, 24, 12, 34, 56), utc);
     immutable nextDay = christmasEve.nextMidnight;
     immutable christmasDay = SysTime(DateTime(2018, 12, 25, 0, 0, 0), utc);
-    assert(nextDay.toUnixTime == christmasDay.toUnixTime);
+    assert(nextDay.toUnixTime() == christmasDay.toUnixTime());
 
     immutable someDay = SysTime(DateTime(2018, 6, 30, 12, 27, 56), utc);
     immutable afterSomeDay = someDay.nextMidnight;

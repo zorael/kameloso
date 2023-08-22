@@ -655,7 +655,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
     if (abort) return;
 
     ubyte[bufferSize] buffer;
-    long timeLastReceived = Clock.currTime.toUnixTime;
+    long timeLastReceived = Clock.currTime.toUnixTime();
     size_t start;
 
     alias State = ListenAttempt.State;
@@ -761,7 +761,9 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
         if (attempt.bytesReceived == Socket.ERROR)
         {
-            if ((Clock.currTime.toUnixTime - timeLastReceived) > connectionLost)
+            immutable delta = (Clock.currTime.toUnixTime() - timeLastReceived);
+
+            if (delta > connectionLost)
             {
                 attempt.state = State.timeout;
                 yield(attempt);
@@ -849,7 +851,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
             }
         }
 
-        timeLastReceived = Clock.currTime.toUnixTime;
+        timeLastReceived = Clock.currTime.toUnixTime();
         consecutiveWarnings = 0;
 
         immutable ptrdiff_t end = cast(ptrdiff_t)(start + attempt.bytesReceived);

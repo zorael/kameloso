@@ -1079,7 +1079,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
         uint misses;
     }
 
-    immutable startTime = Clock.currTime.toUnixTime;
+    immutable startTimeInUnix = Clock.currTime.toUnixTime();
     shared QueryResponse* response;
     double accumulatingTime = plugin.approximateQueryTime;
 
@@ -1089,9 +1089,9 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 
         if (!response || (*response == QueryResponse.init))
         {
-            immutable now = Clock.currTime.toUnixTime;
+            immutable nowInUnix = Clock.currTime.toUnixTime();
 
-            if ((now - startTime) >= Timeout.httpGET)
+            if ((nowInUnix - startTimeInUnix) >= Timeout.httpGET)
             {
                 response = new shared QueryResponse;
                 return *response;
@@ -1111,10 +1111,11 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
             version(BenchmarkHTTPRequests)
             {
                 enum pattern = "MISS %d! elapsed: %s | old: %d --> new: %d | wait: %d";
+                immutable delta = (nowInUnix - startTimeInUnix);
                 writefln(
                     pattern,
                     misses,
-                    (now-startTime),
+                    delta,
                     cast(long)oldAccumulatingTime,
                     cast(long)accumulatingTime,
                     cast(long)briefWait);
@@ -1127,8 +1128,9 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
         version(BenchmarkHTTPRequests)
         {
             enum pattern = "HIT! elapsed: %s | response: %s | misses: %d";
-            immutable now = Clock.currTime.toUnixTime;
-            writefln(pattern, (now-startTime), response.msecs, misses);
+            immutable nowInUnix = Clock.currTime.toUnixTime();
+            immutable delta = (nowInUnix - startTimeInUnix);
+            writefln(pattern, delta, response.msecs, misses);
         }
 
         // Make the new approximate query time a weighted average

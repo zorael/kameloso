@@ -1456,7 +1456,7 @@ void startPingMonitorFiber(ConnectService service)
                 import std.datetime.systime : Clock;
 
                 // Triggered by timer
-                immutable nowInUnix = Clock.currTime.toUnixTime;
+                immutable nowInUnix = Clock.currTime.toUnixTime();
 
                 if ((nowInUnix - lastPongTimestamp) >= service.connectSettings.maxPingPeriodAllowed)
                 {
