@@ -633,7 +633,7 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-auto validateGoogleToken(HttpClient client, ref Credentials creds)
+auto validateGoogleToken(HttpClient client, const Credentials creds)
 {
     import arsd.http2 : Uri;
     import std.json : JSONType, parseJSON;

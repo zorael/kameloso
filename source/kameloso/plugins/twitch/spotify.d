@@ -615,7 +615,7 @@ in (Fiber.getThis, "Tried to call `addTrackToSpotifyPlaylist` from outside a Fib
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-package auto getSpotifyTrackByID(Credentials creds, const string trackID)
+package auto getSpotifyTrackByID(const Credentials creds, const string trackID)
 {
     import arsd.http2 : Uri;
     import std.algorithm.searching : endsWith;
