@@ -225,8 +225,10 @@ You also need to supply the channel for which it all relates.
 `;
     writeln(message.expandTags(LogLevel.off));
 
-    immutable channel = readNamedString("<l>Enter your <i>#channel<l>:</> ",
-        0L, *plugin.state.abort);
+    immutable channel = readNamedString(
+        "<l>Enter your <i>#channel<l>:</> ",
+        0L,
+        plugin.state.abort);
     if (*plugin.state.abort) return;
 
     enum attemptToOpenMessage = `

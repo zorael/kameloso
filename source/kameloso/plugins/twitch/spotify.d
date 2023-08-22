@@ -85,7 +85,7 @@ A normal URL to any playlist you can modify will work fine.
     while (!channel.length)
     {
         enum readChannelMessage = "<l>Enter your <i>#channel<l>:</> ";
-        immutable rawChannel = readNamedString(readChannelMessage, 0L, *plugin.state.abort);
+        immutable rawChannel = readNamedString(readChannelMessage, 0L, plugin.state.abort);
         if (*plugin.state.abort) return;
 
         channel = rawChannel.stripped;
@@ -99,18 +99,18 @@ A normal URL to any playlist you can modify will work fine.
     }
 
     enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth client ID<l>:</> ";
-    creds.spotifyClientID = readNamedString(readOAuthIDMessage, 32L, *plugin.state.abort);
+    creds.spotifyClientID = readNamedString(readOAuthIDMessage, 32L, plugin.state.abort);
     if (*plugin.state.abort) return;
 
     enum readOAuthSecretMessage = "<l>Copy and paste your <i>OAuth client secret<l>:</> ";
-    creds.spotifyClientSecret = readNamedString(readOAuthSecretMessage, 32L, *plugin.state.abort);
+    creds.spotifyClientSecret = readNamedString(readOAuthSecretMessage, 32L, plugin.state.abort);
     if (*plugin.state.abort) return;
 
     while (!creds.spotifyPlaylistID.length)
     {
         enum playlistIDLength = 22;
         enum readPlaylistMessage = "<l>Copy and paste your <i>playlist URL<l>:</> ";
-        immutable playlistURL = readNamedString(readPlaylistMessage, 0L, *plugin.state.abort);
+        immutable playlistURL = readNamedString(readPlaylistMessage, 0L, plugin.state.abort);
         if (*plugin.state.abort) return;
 
         if (playlistURL.length == playlistIDLength)

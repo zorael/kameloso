@@ -92,7 +92,7 @@ A normal URL to any playlist you can modify will work fine.
     while (!channel.length)
     {
         enum readChannelMessage = "<l>Enter your <i>#channel<l>:</> ";
-        immutable rawChannel = readNamedString(readChannelMessage, 0L, *plugin.state.abort);
+        immutable rawChannel = readNamedString(readChannelMessage, 0L, plugin.state.abort);
         if (*plugin.state.abort) return;
 
         channel = rawChannel.stripped;
@@ -106,18 +106,18 @@ A normal URL to any playlist you can modify will work fine.
     }
 
     enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth client ID<l>:</> ";
-    creds.googleClientID = readNamedString(readOAuthIDMessage, 72L, *plugin.state.abort);
+    creds.googleClientID = readNamedString(readOAuthIDMessage, 72L, plugin.state.abort);
     if (*plugin.state.abort) return;
 
     enum readOAuthSecretMessage = "<l>Copy and paste your <i>OAuth client secret<l>:</> ";
-    creds.googleClientSecret = readNamedString(readOAuthSecretMessage, 35L, *plugin.state.abort);
+    creds.googleClientSecret = readNamedString(readOAuthSecretMessage, 35L, plugin.state.abort);
     if (*plugin.state.abort) return;
 
     while (!creds.youtubePlaylistID.length)
     {
         enum playlistIDLength = 34;
         enum readPlaylistMessage = "<l>Copy and paste your <i>YouTube playlist URL<l>:</> ";
-        immutable playlistURL = readNamedString(readPlaylistMessage, 0L, *plugin.state.abort);
+        immutable playlistURL = readNamedString(readPlaylistMessage, 0L, plugin.state.abort);
         if (*plugin.state.abort) return;
 
         if (playlistURL.length == playlistIDLength)

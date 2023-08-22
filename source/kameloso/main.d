@@ -831,7 +831,7 @@ auto mainLoop(ref Kameloso instance)
     auto listener = new Generator!ListenAttempt(() =>
         listenFiber(
             instance.conn,
-            *instance.abort,
+            instance.abort,
             Timeout.connectionLost));
 
     // Likewise a Generator to handle concurrency messages
@@ -1281,7 +1281,7 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 
         // Sleep briefly so it won't flood the screen on chains of errors
         static immutable readErrorGracePeriod = Timeout.readErrorGracePeriodMsecs.msecs;
-        interruptibleSleep(readErrorGracePeriod, *instance.abort);
+        interruptibleSleep(readErrorGracePeriod, instance.abort);
         return Next.retry;
 
     case timeout:
@@ -2416,7 +2416,7 @@ auto tryConnect(ref Kameloso instance)
         connectFiber(
             instance.conn,
             ConnectionDefaultIntegers.retries,
-            *instance.abort));
+            instance.abort));
 
     scope(exit)
     {
@@ -2482,7 +2482,7 @@ auto tryConnect(ref Kameloso instance)
         {
             enum pattern = "Retrying in <i>%d</> seconds...";
             logger.logf(pattern, incrementedRetryDelay);
-            interruptibleSleep(incrementedRetryDelay.seconds, *instance.abort);
+            interruptibleSleep(incrementedRetryDelay.seconds, instance.abort);
 
             import std.algorithm.comparison : min;
             incrementedRetryDelay = cast(uint)(incrementedRetryDelay *
@@ -2495,7 +2495,7 @@ auto tryConnect(ref Kameloso instance)
             enum pattern = "Failed to connect to IP. Trying next IP in <i>%d</> seconds.";
             logger.logf(pattern, Timeout.connectionRetry);
             incrementedRetryDelay = Timeout.connectionRetry;
-            interruptibleSleep(Timeout.connectionRetry.seconds, *instance.abort);
+            interruptibleSleep(Timeout.connectionRetry.seconds, instance.abort);
         }
 
         with (ConnectionAttempt.State)
@@ -2721,7 +2721,7 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
             instance.parser.server.address,
             instance.parser.server.port,
             cast(Flag!"useIPv6")instance.connSettings.ipv6,
-            *instance.abort));
+            instance.abort));
 
     scope(exit)
     {
@@ -2740,7 +2740,7 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 
         enum pattern = "Network down? Retrying in <i>%d</> seconds.";
         logger.logf(pattern, incrementedRetryDelay);
-        interruptibleSleep(incrementedRetryDelay.seconds, *instance.abort);
+        interruptibleSleep(incrementedRetryDelay.seconds, instance.abort);
         if (*instance.abort) return;
 
         enum delayCap = 10*60;  // seconds
@@ -3218,7 +3218,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                 logger.log("One moment...");
             }
 
-            interruptibleSleep(gracePeriodBeforeReconnect, *instance.abort);
+            interruptibleSleep(gracePeriodBeforeReconnect, instance.abort);
             if (*instance.abort) break outerloop;
 
             // Re-instantiate plugins here so it isn't done on the first connect attempt

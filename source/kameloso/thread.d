@@ -493,10 +493,10 @@ final class CarryingFiber(T) : Fiber
 
     Params:
         dur = Duration to sleep for.
-        abort = Reference to the bool flag which, if set, means we should
+        abort = Pointer to the "abort" flag which, if set, means we should
             interrupt and return early.
  +/
-void interruptibleSleep(const Duration dur, const ref Flag!"abort" abort) @system
+void interruptibleSleep(const Duration dur, const Flag!"abort"* abort) @system
 {
     import core.thread : Thread, msecs;
 
@@ -507,7 +507,7 @@ void interruptibleSleep(const Duration dur, const ref Flag!"abort" abort) @syste
 
     while (left > nothing)
     {
-        if (abort) return;
+        if (*abort) return;
 
         immutable nextStep = (left > step) ? step : left;
 

@@ -14,7 +14,7 @@
     import std.concurrency : Generator;
 
     Connection conn;
-    Flag!"abort" abort;  // Set to Yes.abort if something goes wrong
+    Flag!"abort"* abort;  // Set to Yes.abort if something goes wrong
 
     conn.reset();
 
@@ -630,7 +630,7 @@ struct ListenAttempt
         bufferSize = What size static array to use as buffer. Defaults to twice of
             [kameloso.constants.BufferSize.socketReceive|BufferSize.socketReceive] for now.
         conn = [Connection] whose [std.socket.Socket|Socket] it reads from the server with.
-        abort = Reference "abort" flag, which -- if set -- should make the
+        abort = Pointer to the "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.
         connectionLost = How many seconds may pass before we consider the connection lost.
             Optional, defaults to
@@ -641,7 +641,7 @@ struct ListenAttempt
  +/
 void listenFiber(size_t bufferSize = BufferSize.socketReceive*2)
     (Connection conn,
-    ref Flag!"abort" abort,
+    const Flag!"abort"* abort,
     const int connectionLost = Timeout.connectionLost) @system
 in ((conn.connected), "Tried to set up a listening fiber on a dead connection")
 in ((connectionLost > 0), "Tried to set up a listening fiber with connection timeout of <= 0")
@@ -652,7 +652,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
     import std.socket : Socket, lastSocketError;
     import std.string : indexOf;
 
-    if (abort) return;
+    if (*abort) return;
 
     ubyte[bufferSize] buffer;
     long timeLastReceived = Clock.currTime.toUnixTime();
@@ -674,7 +674,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
     /// Current consecutive warnings count.
     uint consecutiveWarnings;
 
-    while (!abort)
+    while (!*abort)
     {
         version(Posix)
         {
@@ -999,20 +999,20 @@ public:
         conn = Reference to the current, unconnected [Connection].
         connectionRetries = How many times to attempt to connect before signalling
             that we should move on to the next IP.
-        abort = Reference "abort" flag, which -- if set -- should make the
+        abort = Pointer to the "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.
  +/
 void connectFiber(
     ref Connection conn,
     const uint connectionRetries,
-    ref Flag!"abort" abort) @system
+    const Flag!"abort"* abort) @system
 in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
 in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 {
     import std.concurrency : yield;
     import std.socket : AddressFamily, SocketException;
 
-    if (abort) return;
+    if (*abort) return;
 
     alias State = ConnectionAttempt.State;
 
@@ -1037,7 +1037,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
             attemptloop:
             foreach (immutable retry; 0..connectionRetries)
             {
-                if (abort) return;
+                if (*abort) return;
 
                 conn.reset();
                 conn.socket = isIPv6 ? conn.socket6 : conn.socket4;
@@ -1215,7 +1215,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
             yield(attempt);
         }
     }
-    while (!abort);
+    while (!*abort);
 }
 
 
@@ -1322,7 +1322,7 @@ struct ResolveAttempt
         address = String address to look up.
         port = Remote port build into the [std.socket.Address|Address].
         useIPv6 = Whether to include resolved IPv6 addresses or not.
-        abort = Reference "abort" flag, which -- if set -- should make the
+        abort = Pointer to the "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.
  +/
 void resolveFiber(
@@ -1330,14 +1330,14 @@ void resolveFiber(
     const string address,
     const ushort port,
     const Flag!"useIPv6" useIPv6,
-    ref Flag!"abort" abort) @system
+    const Flag!"abort"* abort) @system
 in (!conn.connected, "Tried to set up a resolving fiber on an already live connection")
 in (address.length, "Tried to set up a resolving fiber on an empty address")
 {
     import std.concurrency : yield;
     import std.socket : AddressFamily, SocketOSException, getAddress;
 
-    if (abort) return;
+    if (*abort) return;
 
     alias State = ResolveAttempt.State;
 
@@ -1345,7 +1345,7 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 
     for (uint i; (i >= 0); ++i)
     {
-        if (abort) return;
+        if (*abort) return;
 
         ResolveAttempt attempt;
         attempt.retryNum = i;

@@ -71,7 +71,7 @@ auto getHTTPClient()
 auto readNamedString(
     const string wording,
     const size_t expectedLength,
-    ref Flag!"abort" abort)
+    const Flag!"abort"* abort)
 {
     import kameloso.common : logger;
     import kameloso.logger : LogLevel;
@@ -91,7 +91,7 @@ auto readNamedString(
         stdin.flush();
         string_ = readln().stripped;
 
-        if (abort)
+        if (*abort)
         {
             writeln();
             logger.warning("Aborting.");
