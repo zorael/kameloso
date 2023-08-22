@@ -214,8 +214,8 @@ void persistentQuerier(
     {
         version(BenchmarkHTTPRequests)
         {
-            import std.datetime.systime : Clock;
-            immutable pre = Clock.currTime;
+            import core.time : MonoTime;
+            immutable pre = MonoTime.currTime;
         }
 
         immutable response = sendHTTPRequestImpl(
@@ -234,7 +234,7 @@ void persistentQuerier(
         version(BenchmarkHTTPRequests)
         {
             import std.stdio : stdout, writefln;
-            immutable post = Clock.currTime;
+            immutable post = MonoTime.currTime;
             enum pattern = "%s (%s)";
             writefln(pattern, post-pre, url);
             stdout.flush();
@@ -351,8 +351,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend, send;
-    import std.datetime.systime : Clock, SysTime;
-    import core.time : msecs;
+    import core.time : MonoTime, msecs;
 
     if (plugin.state.settings.trace)
     {
@@ -363,7 +362,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
     plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
 
-    immutable pre = Clock.currTime;
+    immutable pre = MonoTime.currTime;
     if (id == -1) id = getUniqueNumericalID(plugin.bucket);
 
     plugin.persistentWorkerTid.send(
@@ -386,7 +385,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         }
     }
 
-    immutable post = Clock.currTime;
+    immutable post = MonoTime.currTime;
     immutable diff = (post - pre);
     immutable msecs_ = diff.total!"msecs";
     averageApproximateQueryTime(plugin, msecs_);
@@ -544,8 +543,7 @@ auto sendHTTPRequestImpl(
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, Uri;
     import std.algorithm.comparison : among;
-    import std.datetime.systime : Clock;
-    import core.time : seconds;
+    import core.time : MonoTime, seconds;
 
     static HttpClient client;
     static string[] headers;
@@ -567,7 +565,7 @@ auto sendHTTPRequestImpl(
     client.authorization = authHeader;
 
     QueryResponse response;
-    auto pre = Clock.currTime;
+    auto pre = MonoTime.currTime;
     auto req = client.request(Uri(url), verb, body_, contentType);
     // The Twitch Client-ID header leaks into Google and Spotify requests. Worth dealing with?
     req.requestParameters.headers = headers;
@@ -578,7 +576,7 @@ auto sendHTTPRequestImpl(
         // Moved
         foreach (immutable i; 0..5)
         {
-            pre = Clock.currTime;
+            pre = MonoTime.currTime;
             req = client.request(Uri(res.location), verb, body_, contentType);
             req.requestParameters.headers = headers;
             res = req.waitForCompletion();
@@ -590,7 +588,7 @@ auto sendHTTPRequestImpl(
     response.code = res.code;
     response.error = res.codeText;
     response.str = res.contentText;
-    immutable post = Clock.currTime;
+    immutable post = MonoTime.currTime;
     immutable delta = (post - pre);
     response.msecs = delta.total!"msecs";
     return response;

@@ -226,8 +226,7 @@ void messageFiber(ref Kameloso instance)
     import kameloso.string : replaceTokens;
     import kameloso.thread : OutputRequest, ThreadMessage;
     import std.concurrency : yield;
-    import std.datetime.systime : Clock;
-    import core.time : Duration, msecs;
+    import core.time : Duration, MonoTime, msecs;
 
     // The Generator we use this function with popFronts the first thing it does
     // after being instantiated. We're not ready for that yet, so catch the next
@@ -760,12 +759,13 @@ void messageFiber(ref Kameloso instance)
         /++
             Timestamp of when the loop started.
          +/
-        immutable loopStartTime = Clock.currTime;
+        immutable loopStartTime = MonoTime.currTime;
         static immutable maxReceiveTime = Timeout.messageReadMsecs.msecs;
 
-        while (!*instance.abort &&
+        while (
+            !*instance.abort &&
             (next == Next.continue_) &&
-            ((Clock.currTime - loopStartTime) <= maxReceiveTime))
+            ((MonoTime.currTime - loopStartTime) <= maxReceiveTime))
         {
             import std.concurrency : receiveTimeout;
             import std.variant : Variant;

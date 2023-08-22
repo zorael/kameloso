@@ -33,7 +33,7 @@ private:
     import dialect.parsing : IRCParser;
     import lu.container : Buffer;
     import std.algorithm.comparison : among;
-    import std.datetime.systime : SysTime;
+    import core.time : MonoTime;
 
     // Throttle
     /++
@@ -45,7 +45,7 @@ private:
         /++
             Origo of x-axis (last sent message).
          +/
-        SysTime t0;
+        MonoTime t0;
 
         // m
         /++
@@ -365,11 +365,11 @@ public:
         const Flag!"sendFaster" sendFaster = No.sendFaster,
         const Flag!"immediate" immediate = No.immediate)
     {
-        import std.datetime.systime : Clock;
+        import core.time : MonoTime;
 
         alias t = throttle;
 
-        immutable now = Clock.currTime;
+        immutable now = MonoTime.currTime;
         double k = connSettings.messageRate;
         double burst = connSettings.messageBurst;
 

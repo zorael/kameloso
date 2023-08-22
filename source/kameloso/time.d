@@ -29,9 +29,9 @@ public:
     ---
     Appender!(char[]) sink;
 
-    immutable then = Clock.currTime;
+    immutable then = MonoTime.currTime;
     Thread.sleep(1.seconds);
-    immutable now = Clock.currTime;
+    immutable now = MonoTime.currTime;
 
     immutable duration = (now - then);
     immutable inEnglish = duration.timeSinceInto(sink);
@@ -645,9 +645,9 @@ unittest
 
     Example:
     ---
-    immutable then = Clock.currTime;
+    immutable then = MonoTime.currTime;
     Thread.sleep(1.seconds);
-    immutable now = Clock.currTime;
+    immutable now = MonoTime.currTime;
 
     immutable duration = (now - then);
     immutable inEnglish = timeSince(duration);
