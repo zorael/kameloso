@@ -141,8 +141,7 @@ auto downloadWindowsSSL(
 
             foreach (immutable filename, fileEntryJSON; hashesJSON["files"].object)
             {
-                import lu.string : beginsWith;
-                import std.algorithm.searching : endsWith;
+                import std.algorithm.searching : endsWith, startsWith;
 
                 version(Win64)
                 {
@@ -153,7 +152,7 @@ auto downloadWindowsSSL(
                     enum head = "Win32OpenSSL_Light-1_";
                 }
 
-                if (filename.beginsWith(head) && filename.endsWith(".exe"))
+                if (filename.startsWith(head) && filename.endsWith(".exe"))
                 {
                     import std.process : execute;
 

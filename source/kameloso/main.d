@@ -624,7 +624,7 @@ void messageFiber(ref Kameloso instance)
                         else
                         {
                             enum alreadyIssuedPattern = " ...but already issued %d seconds ago.";
-                            writefln(alreadyIssuedPattern, (now - then));
+                            writefln(alreadyIssuedPattern, (nowInUnix - then));
                         }
                     }
                 }
