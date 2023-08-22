@@ -31,7 +31,7 @@ install:
           Invoke-WebRequest "https://dlang.org/install.sh" -OutFile "$env:USERPROFILE\dlang\install.sh";
           pushd;
           cd "$env:USERPROFILE\dlang";
-          if (Test-Path env:DVersion) {
+          if ($env:DVersion -ne $null) {
             & bash install.sh install $env:DC-$env:DVersion;
           }
           else {
@@ -40,7 +40,13 @@ install:
           $env:activator = & bash install.sh install $env:DC -a;
           popd;
         }
-  - ps: SetUpDCompiler
+  - ps: for ($i = 0; $i -lt 5; $i++)
+        {
+          SetUpDCompiler;
+          if (Test-Path "$env:USERPROFILE\dlang\$env:DC-*") {
+            break;
+          }
+        }
   - "%activator%"
 
 before_build:
@@ -63,15 +69,15 @@ before_build:
 
 build_script:
  - echo dummy build script - dont remove me
+ #- git clone https://github.com/zorael/lu.git
+ #- git clone https://github.com/zorael/dialect.git
+ #- dub add-local lu
+ #- dub add-local dialect
 
 test_script:
  - echo %DC% on %PLATFORM% (%Darch%)
  - '%DC% --version'
  - dub --version
- #- git clone https://github.com/zorael/lu.git
- #- git clone https://github.com/zorael/dialect.git
- #- dub add-local lu
- #- dub add-local dialect
  #- echo "Full tests may fail due to https://issues.dlang.org/show_bug.cgi?id=20048"
  - dub test           --compiler=%DC% --arch=%Darch%
  - dub build --nodeps --compiler=%DC% --arch=%Darch% -b debug -c dev
