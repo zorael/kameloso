@@ -25,8 +25,6 @@ import kameloso.plugins.twitch.common;
 
 import arsd.http2 : HttpVerb;
 import dialect.defs;
-import lu.common : Next;
-import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 

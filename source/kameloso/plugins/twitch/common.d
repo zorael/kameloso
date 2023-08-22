@@ -20,7 +20,6 @@ version(WithTwitchPlugin):
 
 private:
 
-import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 
 package:
@@ -144,6 +143,10 @@ void printManualURL(const string url)
  +/
 abstract class TwitchJSONException : Exception
 {
+private:
+    import std.json : JSONValue;
+
+public:
     /++
         Accessor to a [std.json.JSONValue|JSONValue] that this exception refers to.
      +/
@@ -173,6 +176,8 @@ abstract class TwitchJSONException : Exception
 final class UnexpectedJSONException : TwitchJSONException
 {
 private:
+    import std.json : JSONValue;
+
     /++
         [std.json.JSONValue|JSONValue] in question.
      +/
@@ -225,6 +230,8 @@ public:
 final class ErrorJSONException : TwitchJSONException
 {
 private:
+    import std.json : JSONValue;
+
     /++
         [std.json.JSONValue|JSONValue] in question.
      +/
@@ -277,6 +284,8 @@ public:
 final class EmptyDataJSONException : TwitchJSONException
 {
 private:
+    import std.json : JSONValue;
+
     /++
         The response body that was received.
      +/
@@ -426,7 +435,10 @@ final class MissingBroadcasterTokenException : Exception
  +/
 final class InvalidCredentialsException : Exception
 {
-@safe:
+private:
+    import std.json : JSONValue;
+
+public:
     /++
         The response body that was received.
      +/

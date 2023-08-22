@@ -21,7 +21,6 @@ private:
 import kameloso.plugins.twitch.base;
 import kameloso.plugins.twitch.common;
 import kameloso.common : logger;
-import kameloso.logger : LogLevel;
 import kameloso.terminal.colours.tags : expandTags;
 import std.typecons : Flag, No, Yes;
 
@@ -38,6 +37,7 @@ package:
  +/
 void requestTwitchKey(TwitchPlugin plugin)
 {
+    import kameloso.logger : LogLevel;
     import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
     import std.datetime.systime : Clock;
@@ -204,6 +204,7 @@ instructions and log in to authorise the use of this program with your <w>BOT</>
  +/
 void requestTwitchSuperKey(TwitchPlugin plugin)
 {
+    import kameloso.logger : LogLevel;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : stdout, writeln;
     import std.datetime.systime : Clock;
@@ -395,6 +396,7 @@ instructions and log in to authorise the use of this program with your <w>STREAM
  +/
 private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
 {
+    import kameloso.logger : LogLevel;
     import lu.string : advancePast, stripped;
     import std.stdio : readln, stdin, stdout, write, writeln;
     import std.string : indexOf;

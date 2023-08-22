@@ -193,7 +193,6 @@ import dialect.postprocessors.twitch;  // To trigger the module ctor
 import kameloso.plugins;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : RehashingAA, logger;
-import kameloso.constants : BufferSize;
 import kameloso.messaging;
 import dialect.defs;
 import std.datetime.systime : SysTime;
@@ -2811,6 +2810,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
 in (channelName.length, "Tried to start room monitor fibers with an empty channel name string")
 {
     import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
     import std.datetime.systime : Clock;
     import core.time : MonoTime, hours, seconds;
 
@@ -3062,6 +3062,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
  +/
 void startValidator(TwitchPlugin plugin)
 {
+    import kameloso.constants : BufferSize;
     import core.thread : Fiber;
 
     void validatorDg()
@@ -3206,6 +3207,7 @@ void startValidator(TwitchPlugin plugin)
 void startSaver(TwitchPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
     import core.thread : Fiber;
     import core.time : hours;
 
