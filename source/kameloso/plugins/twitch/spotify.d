@@ -59,24 +59,35 @@ package void requestSpotifyKeys(TwitchPlugin plugin)
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("== Spotify authorisation key generation mode ==");
-    enum message = "
+    logger.warning("== Spotify authorisation key generation mode ==");
+    enum message = `
 To access the Spotify API you need a <i>client ID</> and a <i>client secret</>.
 
 <l>Go here to create a project and generate said credentials:</>
 
     <i>https://developer.spotify.com/dashboard</>
 
-Make sure to go into <l>Edit Settings</> and add <i>http://localhost</> as a
-redirect URI. (You need to press the <i>Add</> button for it to save.)
-Additionally, add your user under <l>Users and Access</>.
+<i>*</> <l>Create app</>
+  <i>*</> <l>Name</> and <l>Description</>: (anything memorable)
+  <i>*</> <l>Redirect URI</>: "<i>http://localhost</>"
+  <i>*</> <l>Click</> <i>Save</>
+<i>*</> <l>Select</> <i>Settings</> to the top right
+<i>*</> <l>Go to</> <i>User Management</>
+  <i>*</> <l>Add</> your Spotify user's <i>email</> address
 
-You also need to supply a channel for which it all relates.
+It should now list a <i>Client ID</> and <i>Client secret</>.
+
+<w>Copy these somewhere; you'll need them soon.</>
+
+You also need to supply a Twitch channel for which it all relates.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
 
-Lastly you need a <i>playlist ID</> for song requests to work.
+Lastly you need a <i>Spotify playlist ID</> for song requests to work.
+New playlists can be created by clicking the <i>+</> next to <i>Your library</>
+in the panel to the left on the home screen.
+
 A normal URL to any playlist you can modify will work fine.
-";
+`;
     writeln(message.expandTags(LogLevel.off));
 
     Credentials creds;
@@ -98,18 +109,18 @@ A normal URL to any playlist you can modify will work fine.
         }
     }
 
-    enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth client ID<l>:</> ";
+    enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth Client ID<l>:</> ";
     creds.spotifyClientID = readNamedString(readOAuthIDMessage, 32L, plugin.state.abort);
     if (*plugin.state.abort) return;
 
-    enum readOAuthSecretMessage = "<l>Copy and paste your <i>OAuth client secret<l>:</> ";
+    enum readOAuthSecretMessage = "<l>Copy and paste your <i>OAuth Client secret<l>:</> ";
     creds.spotifyClientSecret = readNamedString(readOAuthSecretMessage, 32L, plugin.state.abort);
     if (*plugin.state.abort) return;
 
     while (!creds.spotifyPlaylistID.length)
     {
         enum playlistIDLength = 22;
-        enum readPlaylistMessage = "<l>Copy and paste your <i>playlist URL<l>:</> ";
+        enum readPlaylistMessage = "<l>Copy and paste your <i>Spotify playlist URL<l>:</> ";
         immutable playlistURL = readNamedString(readPlaylistMessage, 0L, plugin.state.abort);
         if (*plugin.state.abort) return;
 
@@ -140,11 +151,13 @@ A normal URL to any playlist you can modify will work fine.
 
 <l>Attempting to open the Spotify redirect page in your default web browser.</>
 
-<l>Paste the address of the empty page that was opened here.</>
+Click <i>Agree</> to authorise the use of this program with your account.
 
-* The redirected address should start with <i>http://localhost</>.
-* It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
-* If you are running local web server on port <i>80</>, you may have to temporarily
+<l>Then paste the address of the empty page that was opened here.</>
+
+<i>*</> The redirected address should start with <i>http://localhost</>.
+<i>*</> It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
+<i>*</> If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
 `;
     writeln(attemptToOpenMessage.expandTags(LogLevel.off));

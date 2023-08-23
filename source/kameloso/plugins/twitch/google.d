@@ -57,32 +57,50 @@ package void requestGoogleKeys(TwitchPlugin plugin)
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("== Google authorisation key generation mode ==");
+    logger.warning("== Google authorisation key generation mode ==");
     enum message = `
-To access the Google API you need a <i>client ID</> and a <i>client secret</>.
+To access the YouTube API you need to create a Google application and generate a
+<i>client ID</> and a <i>client secret</> for it.
 
 <l>Go here to create a project:</>
 
     <i>https://console.cloud.google.com/projectcreate</>
 
-<l>OAuth consent screen</> tab (choose <i>External</>), follow instructions.
-<i>*</> <l>Scopes:</> <i>https://www.googleapis.com/auth/youtube</>
-<i>*</> <l>Test users:</> (your Google account)
+<i>*</> <l>APIs and services</> to the left -> <i>OAuth consent screen</>
+<i>*</> <l>Choose User Type</>: <i>External</> and hit <i>Create</>
+<i>*</> <l>Follow instructions</>; add a <i>name</> and your <i>email</>
+<i>*</> <l>Add or Remove Scopes</> -> <i>Manually add scopes</>
+  <i>*</> <l>Enter</> "<i>https://www.googleapis.com/auth/youtube</>"
+  <i>*</> <l>Add to table</>, then <i>Update</>
+<i>*</> <l>Test users:</> (your Google account email)
+<i>*</> <l>Pick</> <i>Credentials</> to the left
+<i>*</> <l>Click</> <i>+ Create Credentials</> up at the top of the page
+<i>*</> <l>Choose</> <i>OAuth client ID</> in the dropdown menu
+  <i>*</> <l>Application type</>: <i>Desktop app</>
+  <i>*</> <l>Name</>: (any memorable name)
+  <i>*</> <l>Hit</> <i>Create</>
 
-Then pick <i>+ Create Credentials</> -> <i>OAuth client ID</>:
-<i>*</> <l>Application type:</> <i>Desktop app</>
+There should be an <i>OAuth client created</> popup and you should now have a
+newly-generated <i>Client ID</> and <i>Client secret</>.
 
-Now you should have a newly-generated client ID and client secret.
-Copy these somewhere; you'll need them soon.
+<w>Copy these somewhere; you'll need them soon.</>
 
-<l>Enabled APIs and Services</> tab -> <i>+ Enable APIs and Services</>
-<i>--></> enter "<i>YouTube Data API v3</>", hit <i>Enable</>
+<i>*</> <l>Select</> <i>Enabled APIs and Services</> to the left
+<i>*</> <l>Click</> <i>+ Enable APIs and Services</> up top
+  <i>*</> <l>Enter</> "<i>YouTube Data API v3</>" and hit enter
+  <i>*</> <l>Select</> the offered <i>YouTube Data API v3</>
+  <i>*</> <l>Hit</> <i>Enable</>
 
-You also need to supply a channel for which it all relates.
+You also need to supply a Twitch channel for which it all relates.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
 
 Lastly you need a <i>YouTube playlist ID</> for song requests to work.
-A normal URL to any playlist you can modify will work fine.
+Your current playlists can be found by clicking <i>Show More</> to the left
+in the normal YouTube home screen. New playlists can be created by opening any
+YouTube video page, clicking the <i>...</> button beneath the video, clicking
+<i>Save</> and then <i>+ Create a new playlist</>.
+
+A normal URL to any playlist you can modify will work fine. They do not have to be public.
 `;
     writeln(message.expandTags(LogLevel.off));
 
@@ -105,11 +123,11 @@ A normal URL to any playlist you can modify will work fine.
         }
     }
 
-    enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth client ID<l>:</> ";
+    enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth Client ID<l>:</> ";
     creds.googleClientID = readNamedString(readOAuthIDMessage, 72L, plugin.state.abort);
     if (*plugin.state.abort) return;
 
-    enum readOAuthSecretMessage = "<l>Copy and paste your <i>OAuth client secret<l>:</> ";
+    enum readOAuthSecretMessage = "<l>Copy and paste your <i>OAuth Client secret<l>:</> ";
     creds.googleClientSecret = readNamedString(readOAuthSecretMessage, 35L, plugin.state.abort);
     if (*plugin.state.abort) return;
 
@@ -148,14 +166,23 @@ A normal URL to any playlist you can modify will work fine.
 <l>Attempting to open a Google login page in your default web browser.</>
 
 Follow the instructions and log in to authorise the use of this program with your account.
-Be sure to <l>select a YouTube account</> if presented with several alternatives.
-(One that says <i>YouTube</> underneath it.)
+
+It may ask you for an account twice; once to select an account
+"<i>to proceed to [project name]</>", once to <i>choose your account or brand account</>.
+<l>If so, for the second account,</> <w>be sure to select a YouTube account</>
+<l>if</> presented with several alternatives. (One that says <i>YouTube</> underneath it.)
+
+<w>Additionally if you have two-factor authentication enabled you may have
+to authorise the addition with your phone.</>
+
+Select <i>Continue</> when you get to a "<i>Google hasn't verified this app</>" screen,
+then click <i>Allow</>.
 
 <l>Then paste the address of the empty page you are redirected to afterwards here.</>
 
-* The redirected address should start with <i>http://localhost</>.
-* It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
-* If you are running local web server on port <i>80</>, you may have to temporarily
+<i>*</> The redirected address should start with <i>http://localhost</>.
+<i>*</> It will probably say "<i>this site can't be reached</>" or "<i>unable to connect</>".
+<i>*</> If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
 `;
     writeln(attemptToOpenPattern.expandTags(LogLevel.off));

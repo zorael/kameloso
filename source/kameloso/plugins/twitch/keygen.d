@@ -47,7 +47,7 @@ void requestTwitchKey(TwitchPlugin plugin)
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("== Twitch authorisation key generation mode ==");
+    logger.warning("== Twitch authorisation key generation mode ==");
     enum attemptToOpenMessage = `
 Attempting to open a Twitch login page in your default web browser. Follow the
 instructions and log in to authorise the use of this program with your <w>BOT</> account.
@@ -212,7 +212,7 @@ void requestTwitchSuperKey(TwitchPlugin plugin)
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("== Twitch authorisation super key generation mode ==");
+    logger.warning("== Twitch authorisation super key generation mode ==");
     enum message = `
 To access certain Twitch functionality like changing channel settings
 (what game is currently being played, etc), the program needs an authorisation
