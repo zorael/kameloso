@@ -113,22 +113,19 @@ A normal URL to any playlist you can modify will work fine. They do not have to 
     writeln(message.expandTags(LogLevel.off));
 
     Credentials creds;
-
     string channel;
+    uint numEmptyLinesEntered;
+
     while (!channel.length)
     {
-        enum readChannelMessage = "<l>Enter your <i>#channel<l>:</> ";
-        immutable rawChannel = readNamedString(readChannelMessage, 0L, plugin.state.abort);
-        if (*plugin.state.abort) return;
+        Flag!"benignAbort" benignAbort;
 
-        channel = rawChannel.stripped;
+        channel = readChannelName(
+            numEmptyLinesEntered,
+            benignAbort,
+            plugin.state.abort);
 
-        if (!channel.length || channel[0] != '#')
-        {
-            enum channelMessage = "Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.";
-            logger.warning(channelMessage);
-            channel = string.init;
-        }
+        if (benignAbort) return;
     }
 
     enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth Client ID<l>:</> ";

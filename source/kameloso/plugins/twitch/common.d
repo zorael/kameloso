@@ -78,17 +78,16 @@ auto readNamedString(
     import lu.string : stripped;
     import std.stdio : readln, stdin, stdout, write, writeln;
 
-    string string_;  // mutable
+    string input;  // mutable
 
-    while (!string_.length)
+    while (!input.length)
     {
         scope(exit) stdout.flush();
 
         write(wording.expandTags(LogLevel.off));
         stdout.flush();
-
         stdin.flush();
-        string_ = readln().stripped;
+        input = readln().stripped;
 
         if (*abort)
         {
@@ -97,7 +96,13 @@ auto readNamedString(
             logger.trace();
             return string.init;
         }
-        else if ((expectedLength > 0) && (string_.length != expectedLength))
+        else if (!input.length)
+        {
+            return string.init;
+        }
+        else if (
+            (expectedLength > 0) &&
+            (input.length != expectedLength))
         {
             writeln();
             enum invalidMessage = "Invalid length. Try copying again or file a bug.";
@@ -107,7 +112,70 @@ auto readNamedString(
         }
     }
 
-    return string_;
+    return input;
+}
+
+
+// readChannelName
+/++
+    Prompts the user to enter a channel name.
+
+    Params:
+        numEmptyLinesEntered = Number of empty lines entered so far.
+        benignAbort = out-reference benign abort flag.
+        abort = Global abort pointer.
+
+    Returns:
+        A string read from standard in, stripped.
+ +/
+auto readChannelName(
+    ref uint numEmptyLinesEntered,
+    out Flag!"benignAbort" benignAbort,
+    const Flag!"abort"* abort)
+{
+    import kameloso.common : logger;
+    import lu.string : stripped;
+
+    enum readChannelMessage = "<l>Enter your <i>#channel<l>:</> ";
+    immutable input = readNamedString(readChannelMessage, 0L, abort).stripped;  // mutable
+    if (*abort) return string.init;
+
+    if (!input.length)
+    {
+        ++numEmptyLinesEntered;
+
+        if (numEmptyLinesEntered < 2)
+        {
+            /*enum emptyLinesMessage = "Empty line; try again.";
+            logger.warning(emptyLinesMessage);*/
+            benignAbort = No.benignAbort;
+        }
+        else if (numEmptyLinesEntered == 2)
+        {
+            enum onceMoreMessage = "Hit <l>Enter</> once more to cancel keygen.";
+            logger.warning(onceMoreMessage);
+            benignAbort = No.benignAbort;
+        }
+        else if (numEmptyLinesEntered > 2)
+        {
+            enum abortingKeygenMessage = "Cancelling keygen.";
+            logger.warning(abortingKeygenMessage);
+            logger.trace();
+            benignAbort = Yes.benignAbort;
+        }
+
+        return string.init;
+    }
+    else if (input[0] != '#')
+    {
+        enum invalidChannelNameMessage = "Channels are Twitch lowercase account names, " ~
+            "prepended with a '<l>#</>' sign.";
+        logger.warning(invalidChannelNameMessage);
+        numEmptyLinesEntered = 0;
+        return string.init;
+    }
+
+    return input;
 }
 
 
