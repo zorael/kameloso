@@ -66,35 +66,43 @@ To access the YouTube API you need to create a Google application and generate a
 
     <i>https://console.cloud.google.com/projectcreate</>
 
+Once created...
 <i>*</> <l>APIs and services</> to the left -> <i>OAuth consent screen</>
 <i>*</> <l>Choose User Type</>: <i>External</> and hit <i>Create</>
-<i>*</> <l>Follow instructions</>; add a <i>name</> and your <i>email</>
-<i>*</> <l>Add or Remove Scopes</> -> <i>Manually add scopes</>
-  <i>*</> <l>Enter</> "<i>https://www.googleapis.com/auth/youtube</>"
-  <i>*</> <l>Add to table</>, then <i>Update</>
-<i>*</> <l>Test users:</> (your Google account email)
-<i>*</> <l>Pick</> <i>Credentials</> to the left
+<i>*</> <l>Enter</>...
+  <i>*</> a memorable <i>app name</>
+  <i>*</> your email as <i>user support email</>
+  <i>*</> your email as <i>developer contact information</> (at the bottom of the page)
+  <i>*</> <l>Click</> <i>Save and Continue</>
+<i>*</> <l>Add or Remove Scopes</>
+  <i>*</> <l>Manually add scope</>: "<i>https://www.googleapis.com/auth/youtube</>"
+  <i>*</> <l>Click</> <i>Add to table</>, then <i>Update</>
+    <i>*</> <l>Confirm</> that the <i>Your sensitive scopes</> list now includes "<i>../auth/youtube</>"
+  <i>*</> <l>Click</> <i>Save and Continue</>
+<i>*</> <l>Click</> <i>+ Add Users</> and enter your Google account email
+<i>*</> <l>Click</> <i>Save and Continue</>, then <i>Back to Dashboard</>
+<i>*</> <l>Click</> <i>Credentials</> to the left
 <i>*</> <l>Click</> <i>+ Create Credentials</> up at the top of the page
 <i>*</> <l>Choose</> <i>OAuth client ID</> in the dropdown menu
   <i>*</> <l>Application type</>: <i>Desktop app</>
   <i>*</> <l>Name</>: (any memorable name)
-  <i>*</> <l>Hit</> <i>Create</>
+  <i>*</> <l>Click</> <i>Create</>
 
 There should be an <i>OAuth client created</> popup and you should now have a
 newly-generated <i>Client ID</> and <i>Client secret</>.
 
-<w>Copy these somewhere; you'll need them soon.</>
+    <w>Copy these somewhere; you'll need them soon.</>
 
-<i>*</> <l>Select</> <i>Enabled APIs and Services</> to the left
+<i>*</> <l>Click</> <i>Enabled APIs and Services</> to the left
 <i>*</> <l>Click</> <i>+ Enable APIs and Services</> up top
-  <i>*</> <l>Enter</> "<i>YouTube Data API v3</>" and hit enter
+  <i>*</> <l>Input</> "<i>YouTube Data API v3</>" and hit Enter
   <i>*</> <l>Select</> the offered <i>YouTube Data API v3</>
-  <i>*</> <l>Hit</> <i>Enable</>
+  <i>*</> <l>Click</> <i>Enable</>
 
 You also need to supply a Twitch channel for which it all relates.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
 
-Lastly you need a <i>YouTube playlist ID</> for song requests to work.
+Lastly you need a <i>YouTube playlist ID</> to save song requests to.
 Your current playlists can be found by clicking <i>Show More</> to the left
 in the normal YouTube home screen. New playlists can be created by opening any
 YouTube video page, clicking the <i>...</> button beneath the video, clicking

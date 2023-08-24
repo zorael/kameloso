@@ -61,23 +61,24 @@ package void requestSpotifyKeys(TwitchPlugin plugin)
     logger.trace();
     logger.warning("== Spotify authorisation key generation mode ==");
     enum message = `
-To access the Spotify API you need a <i>client ID</> and a <i>client secret</>.
+To access the Spotify API you need to create what Spotify calls an <i>app</>,
+and generate a <i>client ID</> and a <i>client secret</> for it.
 
-<l>Go here to create a project and generate said credentials:</>
+<l>Go here to create an app:</>
 
     <i>https://developer.spotify.com/dashboard</>
 
-<i>*</> <l>Create app</>
-  <i>*</> <l>Name</> and <l>Description</>: (anything memorable)
-  <i>*</> <l>Redirect URI</>: "<i>http://localhost</>"
+<i>*</> <l>Select</> <i>Create app</>
+  <i>*</> <l>Input something memorable</> as <i>Name</> and <i>Description</>
+  <i>*</> <l>Input</> as <i>Redirect URI</>: "<i>http://localhost</>"
   <i>*</> <l>Click</> <i>Save</>
-<i>*</> <l>Select</> <i>Settings</> to the top right
+<i>*</> <l>Click</> <i>Settings</> to the top right
 <i>*</> <l>Go to</> <i>User Management</>
   <i>*</> <l>Add</> your Spotify user's <i>email</> address
 
-It should now list a <i>Client ID</> and <i>Client secret</>.
+It should now display a <i>Client ID</> and <i>Client secret</>.
 
-<w>Copy these somewhere; you'll need them soon.</>
+    <w>Copy these somewhere; you'll need them soon.</>
 
 You also need to supply a Twitch channel for which it all relates.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
