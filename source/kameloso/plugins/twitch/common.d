@@ -62,6 +62,8 @@ auto getHTTPClient()
         wording = Wording to use in the prompt.
         expectedLength = Optional expected length of the input string.
             A value of `0` disables checks.
+        passThroughEmptyString = Whether or not an empty string should be returned
+            as-is, or if it should be re-read until it is non-empty.
         abort = Abort pointer.
 
     Returns:
