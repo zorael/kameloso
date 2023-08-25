@@ -92,7 +92,7 @@ A normal URL to any playlist you can modify will work fine.
     writeln(message.expandTags(LogLevel.off));
 
     Credentials creds;
-    string channel;
+    string channel;  // mutable
     uint numEmptyLinesEntered;
 
     while (!channel.length)
@@ -108,18 +108,30 @@ A normal URL to any playlist you can modify will work fine.
     }
 
     enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth Client ID<l>:</> ";
-    creds.spotifyClientID = readNamedString(readOAuthIDMessage, 32L, plugin.state.abort);
+    creds.spotifyClientID = readNamedString(
+        readOAuthIDMessage,
+        32L,
+        No.passThroughEmptyString,
+        plugin.state.abort);
     if (*plugin.state.abort) return;
 
     enum readOAuthSecretMessage = "<l>Copy and paste your <i>OAuth Client secret<l>:</> ";
-    creds.spotifyClientSecret = readNamedString(readOAuthSecretMessage, 32L, plugin.state.abort);
+    creds.spotifyClientSecret = readNamedString(
+        readOAuthSecretMessage,
+        32L,
+        No.passThroughEmptyString,
+        plugin.state.abort);
     if (*plugin.state.abort) return;
 
     while (!creds.spotifyPlaylistID.length)
     {
         enum playlistIDLength = 22;
         enum readPlaylistMessage = "<l>Copy and paste your <i>Spotify playlist URL<l>:</> ";
-        immutable playlistURL = readNamedString(readPlaylistMessage, 0L, plugin.state.abort);
+        immutable playlistURL = readNamedString(
+            readPlaylistMessage,
+            0L,
+            No.passThroughEmptyString,
+            plugin.state.abort);
         if (*plugin.state.abort) return;
 
         if (playlistURL.length == playlistIDLength)
@@ -196,21 +208,20 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
     }
 
     string code;  // mutable
+    uint numEmptyAddressLinesEntered;
+    enum numEmptyAddressLinesEnteredBreakpoint = 2;
 
     while (!code.length)
     {
         scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
-        enum pasteMessage = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
-
-> ";
+        enum pasteMessage = "<i>></> ";
         write(pasteMessage.expandTags(LogLevel.off));
         stdout.flush();
-
         stdin.flush();
-        immutable readCode = readln().stripped;
+        immutable input = readln().stripped;
 
-        if (*plugin.state.abort || !readCode.length)
+        if (*plugin.state.abort)
         {
             writeln();
             logger.warning("Aborting.");
@@ -218,14 +229,25 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
             *plugin.state.abort = Yes.abort;
             return;
         }
+        else if (!input.length)
+        {
+            if (++numEmptyAddressLinesEntered > numEmptyAddressLinesEnteredBreakpoint)
+            {
+                enum cancellingKeygenMessage = "Cancelling keygen.";
+                logger.warning(cancellingKeygenMessage);
+                logger.trace();
+                return;
+            }
+            continue;
+        }
 
-        if (readCode.indexOf("code=") == -1)
+        if (input.indexOf("code=") == -1)
         {
             import std.algorithm.searching : startsWith;
 
             writeln();
 
-            if (readCode.startsWith(authNode))
+            if (input.startsWith(authNode))
             {
                 enum wrongPageMessage = "Not that page; the empty page you're " ~
                     "lead to after clicking <l>Allow</>.";
@@ -240,7 +262,7 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
             continue;
         }
 
-        string slice = readCode;  // mutable
+        string slice = input;  // mutable
         slice.advancePast("?code=");
         code = slice;
 

@@ -227,11 +227,20 @@ You also need to supply the channel for which it all relates.
 `;
     writeln(message.expandTags(LogLevel.off));
 
-    immutable channel = readNamedString(
-        "<l>Enter your <i>#channel<l>:</> ",
-        0L,
-        plugin.state.abort);
-    if (*plugin.state.abort) return;
+    string channel;  // mutable
+    uint numEmptyLinesEntered;
+
+    while (!channel.length)
+    {
+        Flag!"benignAbort" benignAbort;
+
+        channel = readChannelName(
+            numEmptyLinesEntered,
+            benignAbort,
+            plugin.state.abort);
+
+        if (benignAbort) return;
+    }
 
     enum attemptToOpenMessage = `
 --------------------------------------------------------------------------------
@@ -413,7 +422,6 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
 > ";
         write(pasteMessage.expandTags(LogLevel.off));
         stdout.flush();
-
         stdin.flush();
         immutable readURL = readln().stripped;
 

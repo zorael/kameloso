@@ -70,6 +70,7 @@ auto getHTTPClient()
 auto readNamedString(
     const string wording,
     const size_t expectedLength,
+    const Flag!"passThroughEmptyString" passThroughEmptyString,
     const Flag!"abort"* abort)
 {
     import kameloso.common : logger;
@@ -96,12 +97,13 @@ auto readNamedString(
             logger.trace();
             return string.init;
         }
-        else if (!input.length)
+        else if (!input.length && passThroughEmptyString)
         {
             return string.init;
         }
         else if (
             (expectedLength > 0) &&
+            input.length &&
             (input.length != expectedLength))
         {
             writeln();
@@ -136,30 +138,35 @@ auto readChannelName(
     import kameloso.common : logger;
     import lu.string : stripped;
 
+    enum numEmptyLinesEnteredBreakpoint = 2;
+
     enum readChannelMessage = "<l>Enter your <i>#channel<l>:</> ";
-    immutable input = readNamedString(readChannelMessage, 0L, abort).stripped;  // mutable
+    immutable input = readNamedString(
+        readChannelMessage,
+        0L,
+        Yes.passThroughEmptyString,
+        abort).stripped;
     if (*abort) return string.init;
 
     if (!input.length)
     {
         ++numEmptyLinesEntered;
 
-        if (numEmptyLinesEntered < 2)
+        if (numEmptyLinesEntered < numEmptyLinesEnteredBreakpoint)
         {
-            /*enum emptyLinesMessage = "Empty line; try again.";
-            logger.warning(emptyLinesMessage);*/
-            benignAbort = No.benignAbort;
+            // benignAbort is the default No.benignAbort;
+            // Just drop down and return string.init
         }
-        else if (numEmptyLinesEntered == 2)
+        else if (numEmptyLinesEntered == numEmptyLinesEnteredBreakpoint)
         {
             enum onceMoreMessage = "Hit <l>Enter</> once more to cancel keygen.";
             logger.warning(onceMoreMessage);
-            benignAbort = No.benignAbort;
+            // as above
         }
-        else if (numEmptyLinesEntered > 2)
+        else if (numEmptyLinesEntered > numEmptyLinesEnteredBreakpoint)
         {
-            enum abortingKeygenMessage = "Cancelling keygen.";
-            logger.warning(abortingKeygenMessage);
+            enum cancellingKeygenMessage = "Cancelling keygen.";
+            logger.warning(cancellingKeygenMessage);
             logger.trace();
             benignAbort = Yes.benignAbort;
         }
