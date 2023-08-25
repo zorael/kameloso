@@ -6,7 +6,7 @@ environment:
       #DVersion: latest
       arch: x64
     - DC: dmd
-      DVersion: 2.087.0
+      DVersion: 2.086.0
       arch: x64
     - DC: ldc
       #DVersion: latest
