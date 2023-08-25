@@ -67,7 +67,7 @@ To access the YouTube API you need to create a Google application and generate a
     <i>https://console.cloud.google.com/projectcreate</>
 
 Once created...
-<i>*</> <l>APIs and services</> to the left -> <i>OAuth consent screen</>
+<i>*</> <l>APIs and services</> to the left, then <i>OAuth consent screen</>
 <i>*</> <l>Choose User Type</>: <i>External</> and hit <i>Create</>
 <i>*</> <l>Enter</>...
   <i>*</> a memorable <i>app name</>
@@ -77,7 +77,7 @@ Once created...
 <i>*</> <l>Add or Remove Scopes</>
   <i>*</> <l>Manually add scope</>: "<i>https://www.googleapis.com/auth/youtube</>"
   <i>*</> <l>Click</> <i>Add to table</>, then <i>Update</>
-    <i>*</> <l>Confirm</> that the <i>Your sensitive scopes</> list now includes "<i>../auth/youtube</>"
+    <i>*</> <l>Confirm</> that <i>Your sensitive scopes</> now includes "<i>../auth/youtube</>"
   <i>*</> <l>Click</> <i>Save and Continue</>
 <i>*</> <l>Click</> <i>+ Add Users</> and enter your Google account email
 <i>*</> <l>Click</> <i>Save and Continue</>, then <i>Back to Dashboard</>
@@ -99,7 +99,7 @@ newly-generated <i>Client ID</> and <i>Client secret</>.
   <i>*</> <l>Select</> the offered <i>YouTube Data API v3</>
   <i>*</> <l>Click</> <i>Enable</>
 
-You also need to supply a Twitch channel for which it all relates.
+You also need to supply a Twitch channel to which it all relates.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
 
 Lastly you need a <i>YouTube playlist ID</> to save song requests to.
@@ -174,24 +174,19 @@ Follow the instructions and log in to authorise the use of this program with you
 
 It may ask you for an account twice; once to select an account
 "<i>to proceed to [project name]</>", once to <i>choose your account or brand account</>.
-<l>If so, for the second account,</> <w>be sure to select a YouTube account</>
-<l>if</> presented with several alternatives. (One that says <i>YouTube</> underneath it.)
 
-<w>Additionally if you have two-factor authentication enabled you may have
-to authorise the addition with your phone.</>
+If so, for the second account, be sure to select a <i>YouTube-specific account</>
+if presented with several alternatives. (One that says <i>YouTube</> underneath it.)
+
+    <w>If you have two-factor authentication enabled you may have to authorise
+    the addition with your phone.</>
 
 Select <i>Continue</> when you get to a "<i>Google hasn't verified this app</>" screen,
-then click <i>Allow</>.
+then finally <i>Allow</>.`;
 
-<l>Then paste the address of the empty page you are redirected to afterwards here.</>
-
-<i>*</> The redirected address should start with <i>http://localhost</>.
-<i>*</> It will probably say "<i>this site can't be reached</>" or "<i>unable to connect</>".
-<i>*</> If you are running local web server on port <i>80</>, you may have to temporarily
-  disable it for this to work.
-`;
     writeln(attemptToOpenPattern.expandTags(LogLevel.off));
-    if (plugin.state.settings.flush) stdout.flush();
+    writeln(pasteAddressInstructions.expandTags(LogLevel.off));
+    stdout.flush();
 
     enum authNode = "https://accounts.google.com/o/oauth2/v2/auth";
     enum urlPattern = authNode ~

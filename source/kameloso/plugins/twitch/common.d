@@ -205,6 +205,21 @@ void printManualURL(const string url)
 }
 
 
+// pasteAddressInstructions
+/++
+    Instructions for pasting an address into the terminal.
+ +/
+enum pasteAddressInstructions =
+`
+<l>Then paste the address of the empty page you are redirected to afterwards here.</>
+
+<i>*</> The redirected address should begin with "<i>http://localhost</>".
+<i>*</> It will probably say "<i>this site can't be reached</>" or "<i>unable to connect</>".
+<i>*</> If you are running a local web server on port <i>80</>, you may have to
+  temporarily disable it for this to work.
+`;
+
+
 // TwitchJSONException
 /++
     Abstract class for Twitch JSON exceptions, to deduplicate catching.

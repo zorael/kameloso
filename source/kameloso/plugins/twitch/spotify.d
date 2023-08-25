@@ -72,7 +72,7 @@ and generate a <i>client ID</> and a <i>client secret</> for it.
   <i>*</> <l>Input something memorable</> as <i>Name</> and <i>Description</>
   <i>*</> <l>Input</> as <i>Redirect URI</>: "<i>http://localhost</>"
   <i>*</> <l>Click</> <i>Save</>
-<i>*</> <l>Click</> <i>Settings</> to the top right
+<i>*</> <l>Click</> <i>Settings</> in the top right
 <i>*</> <l>Go to</> <i>User Management</>
   <i>*</> <l>Add</> your Spotify user's <i>email</> address
 
@@ -80,7 +80,7 @@ It should now display a <i>Client ID</> and <i>Client secret</>.
 
     <w>Copy these somewhere; you'll need them soon.</>
 
-You also need to supply a Twitch channel for which it all relates.
+You also need to supply a Twitch channel to which it all relates.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
 
 Lastly you need a <i>Spotify playlist ID</> for song requests to work.
@@ -149,17 +149,11 @@ A normal URL to any playlist you can modify will work fine.
 
 <l>Attempting to open the Spotify redirect page in your default web browser.</>
 
-Click <i>Agree</> to authorise the use of this program with your account.
+Click <i>Agree</> to authorise the use of this program with your account.`;
 
-<l>Then paste the address of the empty page that was opened here.</>
-
-<i>*</> The redirected address should start with <i>http://localhost</>.
-<i>*</> It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
-<i>*</> If you are running local web server on port <i>80</>, you may have to temporarily
-  disable it for this to work.
-`;
     writeln(attemptToOpenMessage.expandTags(LogLevel.off));
-    if (plugin.state.settings.flush) stdout.flush();
+    writeln(pasteAddressInstructions.expandTags(LogLevel.off));
+    stdout.flush();
 
     enum authNode = "https://accounts.spotify.com/authorize";
     enum urlPattern = authNode ~

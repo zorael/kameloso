@@ -49,18 +49,19 @@ void requestTwitchKey(TwitchPlugin plugin)
     logger.trace();
     logger.warning("== Twitch authorisation key generation mode ==");
     enum attemptToOpenMessage = `
-Attempting to open a Twitch login page in your default web browser. Follow the
-instructions and log in to authorise the use of this program with your <w>BOT</> account.
+Attempting to open a <l>Twitch login page</> in your default web browser.
+Follow the instructions and log in to authorise the use of this program with
+your <w>BOT</> account.
 
 <l>Then paste the address of the page you are redirected to afterwards here.</>
 
-* The redirected address should start with <i>http://localhost</>.
-* It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
-* <l>The key generated will be one for the account you are currently logged in as in your browser.</>
+<i>*</> The redirected address should start with <i>http://localhost</>.
+<i>*</> It will probably say "<i>this site can't be reached</>" or "<i>unable to connect</>".
+<i>*</> <l>The key generated will be one for the account you are currently logged in as in your browser.</>
   If you are logged into your main Twitch account and you want the bot to use a
-  separate account, you will have to log out and log in as that first, before
+  separate account, you will have to <l>log out and log in as that</> first, before
   attempting this. Use an incognito/private window.
-* If you are running local web server on port <i>80</>, you may have to temporarily
+<i>*</> If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
 `;
     writeln(attemptToOpenMessage.expandTags(LogLevel.off));
@@ -439,7 +440,7 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
             if (readURL.startsWith(authNode))
             {
                 enum wrongPageMessage = "Not that page; the empty page you're " ~
-                    "lead to after clicking <l>Authorize</>.";
+                    "led to after clicking <l>Authorize</>.";
                 logger.error(wrongPageMessage);
             }
             else
