@@ -2090,7 +2090,7 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
     plugin.state.specialRequests = null;
 
     top:
-    foreach (request; specialRequestsSnapshot)
+    foreach (ref request; specialRequestsSnapshot)
     {
         scope(exit)
         {
@@ -2104,150 +2104,191 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
             request = null;
         }
 
-        alias PeekCommandsPayload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
-        alias GetSettingPayload = Tuple!(string, string, string);
-        alias SetSettingPayload = Tuple!(bool);
-
-        if (auto fiber = cast(CarryingFiber!(PeekCommandsPayload))(request.fiber))
+        version(WithAdminPlugin)
         {
-            immutable channelName = request.context;
-
-            IRCPlugin.CommandMetadata[string][string] commandAA;
-
-            foreach (thisPlugin; instance.plugins)
-            {
-                if (channelName.length)
-                {
-                    commandAA[thisPlugin.name] = thisPlugin.channelSpecificCommands(channelName);
-                }
-                else
-                {
-                    commandAA[thisPlugin.name] = thisPlugin.commands;
-                }
-            }
-
-            fiber.payload[0] = commandAA;
-            fiber.call();
-            continue;
-        }
-        else if (auto fiber = cast(CarryingFiber!(GetSettingPayload))(request.fiber))
-        {
-            import lu.string : advancePast;
-            import std.algorithm.iteration : splitter;
-            import std.algorithm.searching : startsWith;
-            import std.array : Appender;
-
-            immutable expression = request.context;
-            string slice = expression;  // mutable
-            immutable pluginName = slice.advancePast('.', Yes.inherit);
-            alias setting = slice;
-
-            Appender!(char[]) sink;
-            sink.reserve(256);  // guesstimate
-
-            void apply()
-            {
-                if (setting.length)
-                {
-                    import lu.string : strippedLeft;
-
-                    foreach (const line; sink.data.splitter('\n'))
-                    {
-                        string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
-                        if (lineslice.startsWith('#')) lineslice = lineslice[1..$];
-                        const thisSetting = lineslice.advancePast(' ', Yes.inherit);
-
-                        if (thisSetting != setting) continue;
-
-                        const value = lineslice.strippedLeft;
-                        fiber.payload[0] = pluginName;
-                        fiber.payload[1] = setting;
-                        fiber.payload[2] = value;
-                        fiber.call();
-                        return;
-                    }
-                }
-                else
-                {
-                    import std.conv : to;
-
-                    string[] allSettings;
-
-                    foreach (const line; sink.data.splitter('\n'))
-                    {
-                        string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
-                        if (!lineslice.startsWith('[')) allSettings ~= lineslice.advancePast(' ', Yes.inherit);
-                    }
-
-                    fiber.payload[0] = pluginName;
-                    //fiber.payload[1] = string.init;
-                    fiber.payload[2] = allSettings.to!string;
-                    fiber.call();
-                    allSettings = null;
-                    return;
-                }
-
-                // If we're here, no such setting was found
-                fiber.payload[0] = pluginName;
-                //fiber.payload[1] = string.init;
-                //fiber.payload[2] = string.init;
-                fiber.call();
-                return;
-            }
-
-            switch (pluginName)
-            {
-            case "core":
-                import lu.serialisation : serialise;
-                sink.serialise(instance.settings);
-                apply();
-                continue;
-
-            case "connection":
-                // May leak secrets? certFile, privateKey etc...
-                // Careful with how we make this functionality available
-                import lu.serialisation : serialise;
-                sink.serialise(instance.connSettings);
-                apply();
-                continue;
-
-            default:
-                foreach (thisPlugin; instance.plugins)
-                {
-                    if (thisPlugin.name != pluginName) continue;
-                    thisPlugin.serialiseConfigInto(sink);
-                    apply();
-                    continue top;
-                }
-
-                // If we're here, no plugin was found
-                //fiber.payload[0] = string.init;
-                //fiber.payload[1] = string.init;
-                //fiber.payload[2] = string.init;
-                fiber.call();
-                continue;
-            }
-        }
-        else if (auto fiber = cast(CarryingFiber!(SetSettingPayload))(request.fiber))
-        {
-            import kameloso.plugins.common.misc : applyCustomSettings;
-
-            immutable expression = request.context;
-
-            // Borrow settings from the first plugin. It's taken by value
-            immutable success = applyCustomSettings(
-                instance.plugins,
-                [ expression ],
-                instance.plugins[0].state.settings);
-
-            fiber.payload[0] = success;
-            fiber.call();
-            continue;
+            enum wantGetSettingHandler = true;
+            enum wantSetSettingHandler = true;
         }
         else
         {
-            logger.error("Unknown special request type: " ~ typeof(request).stringof);
+            enum wantGetSettingHandler = false;
+            enum wantSetSettingHandler = false;
         }
+
+        version(WithHelpPlugin)
+        {
+            enum wantPeekCommandsHandler = true;
+        }
+        else version(WithCounterPlugin)
+        {
+            enum wantPeekCommandsHandler = true;
+        }
+        else version(WithOnelinerPlugin)
+        {
+            enum wantPeekCommandsHandler = true;
+        }
+        else
+        {
+            enum wantPeekCommandsHandler = false;
+        }
+
+        static if (wantPeekCommandsHandler)
+        {
+            alias PeekCommandsPayload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
+
+            if (auto fiber = cast(CarryingFiber!(PeekCommandsPayload))(request.fiber))
+            {
+                immutable channelName = request.context;
+
+                IRCPlugin.CommandMetadata[string][string] commandAA;
+
+                foreach (thisPlugin; instance.plugins)
+                {
+                    if (channelName.length)
+                    {
+                        commandAA[thisPlugin.name] = thisPlugin.channelSpecificCommands(channelName);
+                    }
+                    else
+                    {
+                        commandAA[thisPlugin.name] = thisPlugin.commands;
+                    }
+                }
+
+                fiber.payload[0] = commandAA;
+                fiber.call();
+                continue;
+            }
+        }
+
+        static if (wantGetSettingHandler)
+        {
+            alias GetSettingPayload = Tuple!(string, string, string);
+
+            if (auto fiber = cast(CarryingFiber!(GetSettingPayload))(request.fiber))
+            {
+                import lu.string : advancePast;
+                import std.algorithm.iteration : splitter;
+                import std.algorithm.searching : startsWith;
+                import std.array : Appender;
+
+                immutable expression = request.context;
+                string slice = expression;  // mutable
+                immutable pluginName = slice.advancePast('.', Yes.inherit);
+                alias setting = slice;
+
+                Appender!(char[]) sink;
+                sink.reserve(256);  // guesstimate
+
+                void apply()
+                {
+                    if (setting.length)
+                    {
+                        import lu.string : strippedLeft;
+
+                        foreach (const line; sink.data.splitter('\n'))
+                        {
+                            string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
+                            if (lineslice.startsWith('#')) lineslice = lineslice[1..$];
+                            const thisSetting = lineslice.advancePast(' ', Yes.inherit);
+
+                            if (thisSetting != setting) continue;
+
+                            const value = lineslice.strippedLeft;
+                            fiber.payload[0] = pluginName;
+                            fiber.payload[1] = setting;
+                            fiber.payload[2] = value;
+                            fiber.call();
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        import std.conv : to;
+
+                        string[] allSettings;
+
+                        foreach (const line; sink.data.splitter('\n'))
+                        {
+                            string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
+                            if (!lineslice.startsWith('[')) allSettings ~= lineslice.advancePast(' ', Yes.inherit);
+                        }
+
+                        fiber.payload[0] = pluginName;
+                        //fiber.payload[1] = string.init;
+                        fiber.payload[2] = allSettings.to!string;
+                        fiber.call();
+                        allSettings = null;
+                        return;
+                    }
+
+                    // If we're here, no such setting was found
+                    fiber.payload[0] = pluginName;
+                    //fiber.payload[1] = string.init;
+                    //fiber.payload[2] = string.init;
+                    fiber.call();
+                    return;
+                }
+
+                switch (pluginName)
+                {
+                case "core":
+                    import lu.serialisation : serialise;
+                    sink.serialise(instance.settings);
+                    apply();
+                    break;
+
+                case "connection":
+                    // May leak secrets? certFile, privateKey etc...
+                    // Careful with how we make this functionality available
+                    import lu.serialisation : serialise;
+                    sink.serialise(instance.connSettings);
+                    apply();
+                    break;
+
+                default:
+                    foreach (thisPlugin; instance.plugins)
+                    {
+                        if (thisPlugin.name != pluginName) continue;
+                        thisPlugin.serialiseConfigInto(sink);
+                        apply();
+                        continue top;
+                    }
+
+                    // If we're here, no plugin was found
+                    //fiber.payload[0] = string.init;
+                    //fiber.payload[1] = string.init;
+                    //fiber.payload[2] = string.init;
+                    fiber.call();
+                    break;
+                }
+                continue;
+            }
+        }
+
+        static if (wantSetSettingHandler)
+        {
+            alias SetSettingPayload = Tuple!(bool);
+
+            if (auto fiber = cast(CarryingFiber!(SetSettingPayload))(request.fiber))
+            {
+                import kameloso.plugins.common.misc : applyCustomSettings;
+
+                immutable expression = request.context;
+
+                // Borrow settings from the first plugin. It's taken by value
+                immutable success = applyCustomSettings(
+                    instance.plugins,
+                    [ expression ],
+                    instance.plugins[0].state.settings);
+
+                fiber.payload[0] = success;
+                fiber.call();
+                continue;
+            }
+        }
+
+        // If we're here, nothing matched
+        logger.error("Unhandled special request type: <l>" ~ typeof(request).stringof);
     }
 
     if (plugin.state.specialRequests.length)
