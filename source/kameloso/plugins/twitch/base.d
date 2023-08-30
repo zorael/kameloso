@@ -1224,7 +1224,7 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : unquoted;
+    import lu.string : stripped, unquoted;
     import std.uni : toLower;
 
     if (!event.content.length)
