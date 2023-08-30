@@ -6,7 +6,7 @@
     ---
     auto logger = new KamelosoLogger(
         No.monochrome,
-        No.brigtTerminal,
+        No.brightTerminal,
         No.headless,
         No.flush);
 

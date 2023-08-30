@@ -1267,7 +1267,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 // onCommandSongRequest
 /++
     Implements `!songrequest`, allowing viewers to request songs (actually
-    YouTube videos) to be added to the streamer's playlist.
+    YouTube videos or Spotify tracks) to be added to the streamer's playlist.
 
     See_Also:
         [kameloso.plugins.twitch.google.addVideoToYouTubePlaylist]
@@ -1318,7 +1318,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         immutable channelMessage = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
             "Missing Google API credentials and/or YouTube playlist ID." :
-            "Missing Spotify API credentials and/or playlist ID.";
+            "Missing Spotify API credentials and/or Spotify playlist ID.";
         immutable terminalMessage = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
             channelMessage ~ " Run the program with <l>--set twitch.googleKeygen</> to set it up." :
             channelMessage ~ " Run the program with <l>--set twitch.spotifyKeygen</> to set it up.";
