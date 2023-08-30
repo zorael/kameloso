@@ -1336,8 +1336,11 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     void sendAtLastNSecondsMustPass()
     {
-        enum pattern = "At least %d seconds must pass between song requests.";
-        immutable message = pattern.format(minimumTimeBetweenSongRequests);
+        import kameloso.time : timeSince;
+
+        enum pattern = "At least %s must pass between song requests.";
+        immutable duration = timeSince(minimumTimeBetweenSongRequests.seconds);
+        immutable message = pattern.format(duration);
         chan(plugin.state, event.channel, message);
     }
 
