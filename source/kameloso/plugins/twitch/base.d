@@ -1225,7 +1225,6 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
 void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : unquoted;
-    import std.conv : text;
     import std.uni : toLower;
 
     if (!event.content.length)
@@ -1254,7 +1253,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
         if (storedEvent.content.asLowerCase.canFind(phraseToLower))
         {
             enum properties = Message.Property.priority;
-            immutable message = text(".delete ", storedEvent.id);
+            immutable message = ".delete " ~ storedEvent.id;
             chan(plugin.state, event.channel, message, properties);
         }
     }
