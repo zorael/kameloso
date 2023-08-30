@@ -1227,13 +1227,15 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
     import lu.string : stripped, unquoted;
     import std.uni : toLower;
 
-    if (!event.content.length)
+    void sendUsage()
     {
         import std.format : format;
         enum pattern = "Usage: %s%s [word or phrase]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        return chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel, message);
     }
+
+    if (!event.content.length) return sendUsage();
 
     auto room = event.channel in plugin.rooms;
     assert(room, "Tried to nuke a word in a nonexistent room");
@@ -1241,6 +1243,8 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
         .stripped
         .unquoted
         .toLower;
+
+    if (!phraseToLower.length) return sendUsage();
 
     foreach (immutable storedEvent; room.lastNMessages)
     {
