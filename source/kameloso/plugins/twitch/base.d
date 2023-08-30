@@ -1224,6 +1224,7 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 {
+    import lu.string : unquoted;
     import std.conv : text;
     import std.uni : toLower;
 
@@ -1237,7 +1238,10 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 
     auto room = event.channel in plugin.rooms;
     assert(room, "Tried to nuke a word in a nonexistent room");
-    immutable phraseToLower = event.content.toLower;
+    immutable phraseToLower = event.content
+        .stripped
+        .unquoted
+        .toLower;
 
     foreach (immutable storedEvent; room.lastNMessages)
     {
