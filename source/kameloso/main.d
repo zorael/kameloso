@@ -3344,7 +3344,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             if (e.malformedFilename.length)
             {
                 enum pattern = "The <l>%s</> plugin failed to load its resources; " ~
-                    "<l>%s</> is malformed. (at <l>%s</>:<l>%d</>)%s";
+                    "<t>%s</> is malformed. (at <l>%s</>:<l>%d</>)%s";
                 logger.errorf(
                     pattern,
                     e.pluginName,
@@ -3356,7 +3356,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             else
             {
                 enum pattern = "The <l>%s</> plugin failed to load its resources; " ~
-                    "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
+                    "<t>%s</> (at <l>%s</>:<l>%d</>)%s";
                 logger.errorf(
                     pattern,
                     e.pluginName,
@@ -3373,7 +3373,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         catch (Exception e)
         {
             enum pattern = "An unexpected error occurred while initialising " ~
-                "plugin resources: <t>%s</> (at <l>%s</>:<l>%d</>)%s";
+                "plugin resources: <t>%s</> (at <t>%s</>:<l>%d</>)%s";
             logger.errorf(
                 pattern,
                 e.msg,
@@ -3424,7 +3424,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         }
         catch (IRCPluginInitialisationException e)
         {
-            enum pattern = "The <l>%s</> plugin failed to setup; " ~
+            enum pattern = "The <l>%s</> plugin failed to set up; " ~
                 "<t>%s</> (at <l>%s</>:<l>%d</>)%s";
             logger.errorf(
                 pattern,
