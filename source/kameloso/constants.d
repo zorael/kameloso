@@ -563,6 +563,16 @@ enum ShellReturnValue
         Generic exception was thrown when a plugin tried to initialise.
      +/
     pluginInitialisationException = 38,
+
+    /++
+        Failure encountered during plugin init.
+     +/
+    pluginInstantiationFailure = 39,
+
+    /++
+        Generic exception was thrown when a plugin tried to initialise.
+     +/
+    pluginInstantiationException = 40,
 }
 
 

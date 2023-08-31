@@ -4036,6 +4036,19 @@ auto run(string[] args)
         version(PrintStacktraces) logger.trace(e.info);
         if (!instance.settings.force) return ShellReturnValue.customConfigFailure;
     }
+    catch (Exception e)
+    {
+        enum pattern = "An unexpected error occurred while instantiating plugins: " ~
+            "<t>%s</> (at <l>%s</>:<l>%d</>)";
+        logger.errorf(
+            pattern,
+            e.msg,
+            e.file.doublyBackslashed,
+            e.line);
+
+        version(PrintStacktraces) logger.trace(e);
+        if (!instance.settings.force) return ShellReturnValue.pluginInstantiationException;
+    }
 
     // Save the original nickname *once*, outside the connection loop.
     // It will change later and knowing this is useful when authenticating
