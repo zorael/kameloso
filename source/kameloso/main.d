@@ -419,7 +419,7 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             default:
-                enum pattern = "onThreadMessage received unexpected message type: <t>%s";
+                enum pattern = "onThreadMessage received unexpected message type: <l>%s";
                 logger.errorf(pattern, message.type);
                 if (instance.settings.flush) stdout.flush();
                 break;
@@ -553,7 +553,9 @@ void messageFiber(ref Kameloso instance)
                 {
                     // Reason given, assume only one channel
                     line = text(
-                        "PART ", m.event.channel, " :",
+                        "PART ",
+                        m.event.channel,
+                        " :",
                         m.event.content.replaceTokens(instance.parser.client));
                 }
                 else
@@ -600,6 +602,7 @@ void messageFiber(ref Kameloso instance)
                             m.caller,
                             cast(bool)quietFlag,
                             cast(bool)background);
+                        // flush stdout with writeln later below
                     }
                 }
 
@@ -653,7 +656,8 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             default:
-                logger.error("messageFiber.eventToServer missing case for outgoing event type <l>", m.event.type);
+                // No need to use Enum!(IRCEvent.Type) here, logger does it internally
+                logger.error("<l>messageFiber</>.<l>eventToServer</> missing case for outgoing event type <l>", m.event.type);
                 break;
             }
 
@@ -999,11 +1003,10 @@ auto mainLoop(ref Kameloso instance)
                     // These handle exceptions internally
                     processScheduledDelegates(plugin, nowInHnsecs);
                     processScheduledFibers(plugin, nowInHnsecs);
+                    if (*instance.abort) return Next.returnFailure;
                     plugin.state.updateSchedule();  // Something is always removed
                     instance.conn.socket.blocking = false;  // Instantly timeout read to check messages
                     socketBlockingDisabled = true;
-
-                    if (*instance.abort) return Next.returnFailure;
                 }
 
                 if (!nextGlobalScheduledTimestamp ||
@@ -1472,7 +1475,7 @@ void processLineFromServer(
 
                 if ((cast(ubyte[])event.content).endsWith(badTail[]))
                 {
-                    event.content = cast(string)(cast(ubyte[])event.content[0..$-badTail.length]);
+                    event.content = event.content[0..$-badTail.length];
                 }
             }
         }
@@ -4035,7 +4038,6 @@ auto run(string[] args)
             instance.settings.configFile.exists)
         {
             import kameloso.config : notifyAboutMissingSettings;
-
             notifyAboutMissingSettings(
                 instance.missingConfigurationEntries,
                 args[0],
@@ -4187,7 +4189,10 @@ auto run(string[] args)
         // If not already sent, send a proper QUIT, optionally verbosely
         string reason;  // mutable
 
-        if (!*instance.abort && !instance.settings.headless && !instance.settings.hideOutgoing)
+        if (
+            !*instance.abort &&
+            !instance.settings.headless &&
+            !instance.settings.hideOutgoing)
         {
             import kameloso.thread : exhaustMessages;
 
@@ -4198,10 +4203,10 @@ auto run(string[] args)
             reason = reason.replaceTokens(instance.parser.client);
             echoQuitMessage(instance, reason);
         }
-
-        if (!reason.length)
+        else
         {
-            reason = instance.bot.quitReason.replaceTokens(instance.parser.client);
+            reason = instance.bot.quitReason
+                .replaceTokens(instance.parser.client);
         }
 
         instance.conn.sendline("QUIT :" ~ reason);
@@ -4219,9 +4224,15 @@ auto run(string[] args)
         catch (Exception e)
         {
             import kameloso.string : doublyBackslashed;
+
             enum pattern = "Caught Exception when saving settings: " ~
                 "<t>%s</> (at <l>%s</>:<l>%d</>)";
-            logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
+            logger.warningf(
+                pattern,
+                e.msg,
+                e.file.doublyBackslashed,
+                e.line);
+
             version(PrintStacktraces) logger.trace(e);
         }
     }
