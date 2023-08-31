@@ -3832,6 +3832,7 @@ auto run(string[] args)
     {
         import kameloso.terminal : isTerminal, resetTerminalTitle;
         if (isTerminal) resetTerminalTitle();
+        resetSignals();
     }
 
     // Set pointers.
@@ -3863,7 +3864,6 @@ auto run(string[] args)
         }
 
         *instance.abort = Yes.abort;
-        resetSignals();
     }
 
     immutable actionAfterGetopt = tryGetopt(instance);
