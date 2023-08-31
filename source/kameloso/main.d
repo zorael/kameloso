@@ -2110,7 +2110,12 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
             request = null;
         }
 
-        version(WithAdminPlugin)
+        version(WantGetSetSettingHandlers)
+        {
+            enum wantGetSettingHandler = true;
+            enum wantSetSettingHandler = true;
+        }
+        else version(WithAdminPlugin)
         {
             enum wantGetSettingHandler = true;
             enum wantSetSettingHandler = true;
@@ -2121,7 +2126,11 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
             enum wantSetSettingHandler = false;
         }
 
-        version(WithHelpPlugin)
+        version(WantPeekCommandsHandler)
+        {
+            enum wantPeekCommandsHandler = true;
+        }
+        else version(WithHelpPlugin)
         {
             enum wantPeekCommandsHandler = true;
         }
