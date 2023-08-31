@@ -3424,30 +3424,15 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         }
         catch (IRCPluginInitialisationException e)
         {
-            if (e.malformedFilename.length)
-            {
-                enum pattern = "The <l>%s</> plugin failed to setup; " ~
-                    "<l>%s</> is malformed. (at <l>%s</>:<l>%d</>)%s";
-                logger.errorf(
-                    pattern,
-                    e.pluginName,
-                    e.malformedFilename.doublyBackslashed,
-                    e.file.pluginFileBaseName.doublyBackslashed,
-                    e.line,
-                    bell);
-            }
-            else
-            {
-                enum pattern = "The <l>%s</> plugin failed to setup; " ~
-                    "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
-                logger.errorf(
-                    pattern,
-                    e.pluginName,
-                    e.msg,
-                    e.file.pluginFileBaseName.doublyBackslashed,
-                    e.line,
-                    bell);
-            }
+            enum pattern = "The <l>%s</> plugin failed to setup; " ~
+                "<t>%s</> (at <l>%s</>:<l>%d</>)%s";
+            logger.errorf(
+                pattern,
+                e.pluginName,
+                e.msg,
+                e.file.pluginFileBaseName.doublyBackslashed,
+                e.line,
+                bell);
 
             version(PrintStacktraces) logger.trace(e.info);
             attempt.retval = ShellReturnValue.pluginSetupFailure;
