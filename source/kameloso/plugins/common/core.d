@@ -381,7 +381,7 @@ public:
         See_Also:
             [kameloso.plugins.common.core.IRCPluginImpl.initialise]
      +/
-    bool initialise() @system;
+    void initialise() @system;
 }
 
 
@@ -1678,19 +1678,17 @@ mixin template IRCPluginImpl(
 
     // setup, reload, teardown
     /+
-        Generates functions `setup`, `reload` and `teardown`. These
-        merely pass on calls to module-level `.setup`, `.reload` and
-        `.teardown`, where such is available.
+        Generates some functions that merely pass on calls to module-level
+        functions, where such is available. If they aren't, this is a no-op.
 
-        `setup` runs early post-connect routines, immediately after connection
-        has been established.
-
-        `reload` Reloads the plugin, where such makes sense. What this means is
-        implementation-defined.
-
-        `teardown` de-initialises the plugin.
+        * `initialise` runs early pre-connect routines, before connection has been
+          established.
+        * `setup` runs post-connect routines.
+        * `reload` reloads the plugin, where such makes sense. What this means is
+          implementation-defined.
+        * `teardown` de-initialises the plugin.
      +/
-    static foreach (immutable funName; AliasSeq!("setup", "reload", "teardown"))
+    static foreach (immutable funName; AliasSeq!("initialise", "setup", "reload", "teardown"))
     {
         mixin(`
         /++
@@ -1763,39 +1761,6 @@ mixin template IRCPluginImpl(
         else
         {
             return false;
-        }
-    }
-
-    // initialise
-    /++
-        Initialises the plugin.
-     +/
-    override public bool initialise() @system
-    {
-        static if (__traits(compiles, { alias _ = .initialise; }))
-        {
-            import lu.traits : TakesParams;
-
-            static if (
-                is(typeof(.initialise)) &&
-                is(typeof(.initialise) == function) &&
-                TakesParams!(.initialise, typeof(this)))
-            {
-                return .initialise(this);
-            }
-            else
-            {
-                import kameloso.traits : stringOfTypeOf;
-                import std.format : format;
-
-                enum pattern = "`%s.initialise` has an unsupported function signature: `%s`";
-                enum message = pattern.format(module_, stringOfTypeOf!(.initialise));
-                static assert(0, message);
-            }
-        }
-        else
-        {
-            return true;
         }
     }
 

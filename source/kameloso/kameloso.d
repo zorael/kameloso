@@ -705,13 +705,12 @@ public:
         {
             try
             {
-                immutable success = plugin.initialise();
+                plugin.initialise();
                 if (*this.abort) return false;
-                if (!success) failedPlugins ~= plugin.name;
             }
             catch (IRCPluginInitialisationException e)
             {
-                enum pattern = "Exception when initialising <l>%s</>: <l>%s";
+                enum pattern = "Exception when initialising <l>%s</>: <t>%s";
                 logger.warningf(pattern, plugin.name, e.msg);
                 version(PrintStacktraces) logger.trace(e.info);
                 if (!this.settings.force) return false;
@@ -719,16 +718,17 @@ public:
             }
             catch (Exception e)
             {
-                enum pattern = "General exception when initialising <l>%s</>: <l>%s";
+                enum pattern = "Unexpected exception when initialising <l>%s</>: <t>%s";
                 logger.warningf(pattern, plugin.name, e.msg);
                 version(PrintStacktraces) logger.trace(e.info);
                 if (!this.settings.force) throw e;
+                failedPlugins ~= plugin.name;
             }
         }
 
         if (failedPlugins.length)
         {
-            enum pattern = "Failed to initialise plugin(s): <l>%-(%s, %)";
+            enum pattern = "Failed to initialise plugin(s): %-(<l>%s</>, %)</>";
             logger.errorf(pattern, failedPlugins);
             return false;
         }
