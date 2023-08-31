@@ -3815,10 +3815,10 @@ public:
  +/
 auto run(string[] args)
 {
-    import kameloso.plugins.common.misc : IRCPluginSettingsException;
+    import kameloso.plugins.common.misc : IRCPluginInitialisationException, IRCPluginSettingsException;
     import kameloso.constants : ShellReturnValue;
     import kameloso.logger : KamelosoLogger;
-    import kameloso.string : replaceTokens;
+    import kameloso.string : doublyBackslashed, replaceTokens;
     import std.algorithm.comparison : among;
     import std.conv : ConvException;
     import std.exception : ErrnoException;
@@ -4048,30 +4048,29 @@ auto run(string[] args)
     }
     catch (IRCPluginInitialisationException e)
     {
+        import kameloso.plugins.common.misc : pluginFileBaseName;
+
         enum pattern = "The <l>%s</> plugin failed to initialise: " ~
-            "<t>%s</> (at <l>%s</>:<l>%d</>)%s";
+            "<t>%s</> (at <l>%s</>:<l>%d</>)";
         logger.errorf(
             pattern,
             e.pluginName,
             e.msg,
             e.file.pluginFileBaseName.doublyBackslashed,
-            e.line,
-            bell);
+            e.line);
 
         version(PrintStacktraces) logger.trace(e.info);
         return ShellReturnValue.pluginInitialisationFailure;
     }
     catch (Exception e)
     {
-        enum pattern = "An unexpected error occurred while initialising the <l<%s</> plugin: " ~
-            "<t>%s</> (at <l>%s</>:<l>%d</>)%s";
+        enum pattern = "An unexpected error occurred while initialising plugins: " ~
+            "<t>%s</> (at <l>%s</>:<l>%d</>)";
         logger.errorf(
             pattern,
-            e.pluginName,
             e.msg,
-            e.file.pluginFileBaseName.doublyBackslashed,
-            e.line,
-            bell);
+            e.file.doublyBackslashed,
+            e.line);
 
         version(PrintStacktraces) logger.trace(e);
         return ShellReturnValue.pluginInitialisationException;
