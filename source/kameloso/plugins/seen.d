@@ -1053,11 +1053,15 @@ void saveSeen(SeenPlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File;
 
-    if (!plugin.seenUsers.length) return;
+    version(Callgrind) {}
+    else
+    {
+        if (!plugin.seenUsers.length) return;
 
-    auto file = File(plugin.seenFile, "w");
-    file.writeln(JSONValue(plugin.seenUsers.aaOf).toPrettyString);
-    //file.flush();
+        auto file = File(plugin.seenFile, "w");
+        file.writeln(JSONValue(plugin.seenUsers.aaOf).toPrettyString);
+        //file.flush();
+    }
 }
 
 
