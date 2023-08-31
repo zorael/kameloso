@@ -344,15 +344,18 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case reload:
+                pluginForeach:
                 foreach (plugin; instance.plugins)
                 {
                     if (!plugin.isEnabled) continue;
 
                     try
                     {
-                        if (!message.content.length || (plugin.name == message.content))
+                        if (!message.content.length) plugin.reload();
+                        else if (message.content == plugin.name)
                         {
                             plugin.reload();
+                            break pluginForeach;
                         }
                     }
                     catch (Exception e)
