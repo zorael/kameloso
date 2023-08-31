@@ -1777,5 +1777,9 @@ private T expandIRCTagsImpl(T)
         }
     }
 
-    return dirty ? sink.data.idup : line;
+    return () @trusted
+    {
+        import std.exception : assumeUnique;
+        return dirty ? sink.data.assumeUnique() : line;
+    }();
 }

@@ -63,6 +63,7 @@ auto buildCompilerVersionString()
 {
     import lu.conv : toAlphaInto;
     import std.array : Appender;
+    import std.exception : assumeUnique;
 
     enum major = cast(uint)(__VERSION__ / 1000);
     enum minor = cast(uint)(__VERSION__ % 1000);
@@ -74,7 +75,7 @@ auto buildCompilerVersionString()
     sink.put('.');
     minor.toAlphaInto!(3, 3)(sink);
 
-    return sink.data.idup;
+    return sink.data.assumeUnique();
 }
 
 
@@ -102,6 +103,7 @@ auto buildVersionString()
 {
     import lu.conv : toAlphaInto;
     import std.array : Appender;
+    import std.exception : assumeUnique;
 
     Appender!(char[]) sink;
     sink.reserve(16);  // 10.10.10-alpha.1
@@ -121,7 +123,7 @@ auto buildVersionString()
         }
     }
 
-    return sink.data.idup;
+    return sink.data.assumeUnique();
 }
 
 

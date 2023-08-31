@@ -1217,6 +1217,8 @@ mixin template IRCPluginImpl(
          +/
         auto funIndexByTiming(const Timing timing) scope
         {
+            import std.exception : assumeUnique;
+
             assert(__ctfe, "funIndexByTiming called outside CTFE");
 
             size_t[] indexes;
@@ -1228,7 +1230,7 @@ mixin template IRCPluginImpl(
                 if (this.Introspection.allEventHandlerUDAsInModule[i]._when == timing) indexes[n++] = i;
             }
 
-            return indexes[0..n].idup;
+            return indexes[0..n].assumeUnique();
         }
 
         /+

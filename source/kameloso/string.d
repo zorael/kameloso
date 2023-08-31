@@ -279,7 +279,12 @@ auto replaceRandom(
 
     // Add any trailing text iff the loop iterated at least once
     if ((randomPos == -1) && (prevEnd != 0)) sink.put(line[prevEnd..$]);
-    return sink.data.length ? sink.data.idup : line;
+
+    return () @trusted
+    {
+        import std.exception : assumeUnique;
+        return sink.data.length ? sink.data.assumeUnique() : line;
+    }();
 }
 
 ///

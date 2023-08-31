@@ -32,8 +32,6 @@ version(Colours) import kameloso.terminal.colours.defs : TerminalForeground;
 
 package:
 
-@safe:
-
 version(Colours)
 {
     alias TF = TerminalForeground;
@@ -1253,6 +1251,7 @@ auto highlightEmotes(
     import kameloso.constants : DefaultColours;
     import kameloso.terminal.colours : applyANSI;
     import std.array : Appender;
+    import std.exception : assumeUnique;
     import std.string : indexOf;
 
     alias Bright = EventPrintingBright;
@@ -1318,7 +1317,7 @@ auto highlightEmotes(
         break;
     }
 
-    return sink.data.idup;
+    return sink.data.assumeUnique();
 }
 
 
@@ -1593,7 +1592,7 @@ unittest
         True if `haystack` contains `needle` in such a way that it is guaranteed
         to not be a different nickname.
  +/
-auto containsNickname(const string haystack, const string needle) pure nothrow @nogc
+auto containsNickname(const string haystack, const string needle) pure @safe nothrow @nogc
 in (needle.length, "Tried to determine whether an empty nickname was in a string")
 {
     import kameloso.terminal : TerminalToken;

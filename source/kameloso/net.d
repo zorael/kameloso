@@ -279,13 +279,14 @@ public:
     auto getSSLErrorMessage(const int code) @system
     in (ssl, "Tried to get SSL error message on a non-SSL `Connection`")
     {
+        import std.exception : assumeUnique;
         import std.string : fromStringz;
 
         immutable errorCode = openssl.SSL_get_error(sslInstance, code);
 
         return openssl.ERR_reason_error_string(errorCode)
             .fromStringz
-            .idup;
+            .assumeUnique();
     }
 
     // setDefaultOptions

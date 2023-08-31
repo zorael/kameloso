@@ -116,10 +116,12 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
     bool escaping;
 
     // Work around the immutability being lost with -dip1000
-    // The alternative is to use .idup, which is not really desirable here
+    // The @safe alternative is to use .idup, which is not really desirable here
+    // so cheat a bit.
     immutable asBytes = () @trusted
     {
-        return cast(immutable)line.representation;
+        import std.exception : assumeUnique;
+        return line.assumeUnique();
     }();
 
     immutable toReserve = (asBytes.length + 16);
@@ -382,7 +384,11 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
         }
     }
 
-    return dirty ? sink.data.idup : line;
+    return () @trusted
+    {
+        import std.exception : assumeUnique;
+        return dirty ? sink.data.assumeUnique() : line;
+    }();
 }
 
 ///

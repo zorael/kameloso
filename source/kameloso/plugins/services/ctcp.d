@@ -255,6 +255,7 @@ unittest
 void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 {
     import dialect.common : I = IRCControlCharacter;
+    import std.exception : assumeUnique;
     import std.format : format;
 
     /*  This metadata query returns a list of the CTCP messages that this
@@ -297,7 +298,7 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
         }
 
         return sink.data;
-    }().idup;
+    }().assumeUnique();
 
     static assert((allCTCPTypes.length > responseSkeleton.length),
         "Concatenated CTCP type list is empty");

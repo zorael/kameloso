@@ -1083,6 +1083,7 @@ void writeConfigurationFile(
     import lu.string : encode64;
     import std.algorithm.searching : startsWith;
     import std.array : Appender;
+    import std.exception : assumeUnique;
     import std.file : exists;
     import std.path : buildNormalizedPath, expandTilde;
 
@@ -1178,7 +1179,7 @@ void writeConfigurationFile(
         }
     }
 
-    immutable justified = sink.data.idup.justifiedEntryValueText;
+    immutable justified = sink.data.assumeUnique().justifiedEntryValueText;
     writeToDisk(filename, justified, Yes.addBanner);
 
     // Restore resource dir in case we aren't exiting

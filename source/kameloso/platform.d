@@ -401,6 +401,7 @@ Pid execvp(/*const*/ string[] args) @system
     {
         import std.algorithm.searching : startsWith;
         import std.array : Appender;
+        import std.exception : assumeUnique;
         import std.process : ProcessException, spawnProcess;
 
         Appender!(char[]) sink;
@@ -455,7 +456,7 @@ Pid execvp(/*const*/ string[] args) @system
             "/min",
             "powershell",
             "-c"
-        ] ~ arg0 ~ sink.data.idup;
+        ] ~ arg0 ~ sink.data.assumeUnique();
         return spawnProcess(commandLine[]);
     }
     else

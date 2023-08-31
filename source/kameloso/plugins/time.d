@@ -76,8 +76,9 @@ shared static this()
     version(Posix)
     {
         import std.datetime.timezone : PosixTimeZone;
+        import std.exception : assumeUnique;
 
-        installedTimezones = PosixTimeZone.getInstalledTZNames().idup;
+        installedTimezones = PosixTimeZone.getInstalledTZNames().assumeUnique();
 
         zonestringAliases =
         [
@@ -93,7 +94,7 @@ shared static this()
     {
         import std.datetime.timezone : WindowsTimeZone;
 
-        installedTimezones = WindowsTimeZone.getInstalledTZNames().idup;
+        installedTimezones = WindowsTimeZone.getInstalledTZNames().assumeUnique();
 
         /+
         Some excerpts:
