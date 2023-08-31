@@ -685,55 +685,20 @@ public:
         [kameloso.plugins.common.core.IRCPlugin.initialise|IRCPlugin.initialise]
         on each plugin.
 
-        If any plugin fails to initialise, this function returns false and
-        the bot will not start.
+        If any plugin fails to initialise, it will have thrown and something up
+        the call stack will catch it.
 
         Don't use an in-contract to enforce `plugins.length`, as not having any
         plugins is technically a valid use-case (even if it's a fairly pointless one).
-
-        Returns:
-            `true` if all plugins initialised successfully, `false` otherwise.
      +/
-    auto initialisePlugins() @system
+    void initialisePlugins() @system
     //in (this.plugins.length, "Tried to initialise plugins but there were no plugins instantiated")
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-
-        string[] failedPlugins;
-
         foreach (plugin; this.plugins)
         {
-            try
-            {
-                plugin.initialise();
-                if (*this.abort) return false;
-            }
-            catch (IRCPluginInitialisationException e)
-            {
-                enum pattern = "Exception when initialising <l>%s</>: <t>%s";
-                logger.warningf(pattern, plugin.name, e.msg);
-                version(PrintStacktraces) logger.trace(e.info);
-                if (!this.settings.force) return false;
-                failedPlugins ~= plugin.name;
-            }
-            catch (Exception e)
-            {
-                enum pattern = "Unexpected exception when initialising <l>%s</>: <t>%s";
-                logger.warningf(pattern, plugin.name, e.msg);
-                version(PrintStacktraces) logger.trace(e.info);
-                if (!this.settings.force) throw e;
-                failedPlugins ~= plugin.name;
-            }
+            plugin.initialise();
+            if (*this.abort) return;
         }
-
-        if (failedPlugins.length)
-        {
-            enum pattern = "Failed to initialise plugin(s): %-(<l>%s</>, %)</>";
-            logger.errorf(pattern, failedPlugins);
-            return false;
-        }
-
-        return true;
     }
 
     // checkPluginForUpdates

@@ -4057,10 +4057,42 @@ auto run(string[] args)
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
     // Plugins were instantiated but not initialised, so do that here
-    // initialisePlugins internally handles exceptions so let any unhandled ones fall through
-    immutable success = instance.initialisePlugins();
+    try
+    {
+        instance.initialisePlugins();
+    }
+    catch (IRCPluginInitialisationException e)
+    {
+        enum pattern = "The <l>%s</> plugin failed to initialise: " ~
+            "<t>%s</> (at <l>%s</>:<l>%d</>)%s";
+        logger.errorf(
+            pattern,
+            e.pluginName,
+            e.msg,
+            e.file.pluginFileBaseName.doublyBackslashed,
+            e.line,
+            bell);
+
+        version(PrintStacktraces) logger.trace(e.info);
+        return ShellReturnValue.pluginInitialisationFailure;
+    }
+    catch (Exception e)
+    {
+        enum pattern = "An unexpected error occurred while initialising the <l<%s</> plugin: " ~
+            "<t>%s</> (at <l>%s</>:<l>%d</>)%s";
+        logger.errorf(
+            pattern,
+            e.pluginName,
+            e.msg,
+            e.file.pluginFileBaseName.doublyBackslashed,
+            e.line,
+            bell);
+
+        version(PrintStacktraces) logger.trace(e);
+        return ShellReturnValue.pluginInitialisationException;
+    }
+
     if (*instance.abort) return ShellReturnValue.failure;
-    if (!success) return ShellReturnValue.pluginInitialisationFailure;
 
     // Check for concurrency messages in case any were sent during plugin initialisation
     while (true)
