@@ -3589,9 +3589,10 @@ void initResources(TwitchPlugin plugin)
     import lu.json : JSONStorage;
     import std.file : exists, mkdir;
     import std.json : JSONException, JSONType;
-    import std.path : baseName, dirName;
+    import std.path : dirName;
 
     void loadFile(
+        const string fileDescription,
         ref JSONStorage json,
         const string file,
         const size_t line = __LINE__)
@@ -3604,7 +3605,7 @@ void initResources(TwitchPlugin plugin)
         {
             version(PrintStacktraces) logger.error("JSONException: ", e.msg);
             throw new IRCPluginInitialisationException(
-                file.baseName ~ " is malformed",
+                fileDescription ~ " file is malformed",
                 plugin.name,
                 file,
                 __FILE__,
@@ -3623,10 +3624,10 @@ void initResources(TwitchPlugin plugin)
     immutable subdir = plugin.ecountFile.dirName;
     if (!subdir.exists) mkdir(subdir);
 
-    loadFile(ecountJSON, plugin.ecountFile);
-    loadFile(viewersJSON, plugin.viewersFile);
-    loadFile(secretsJSON, plugin.secretsFile);
-    loadFile(historyJSON, plugin.streamHistoryFile);
+    loadFile("ecount", ecountJSON, plugin.ecountFile);
+    loadFile("Viewers", viewersJSON, plugin.viewersFile);
+    loadFile("Secrets", secretsJSON, plugin.secretsFile);
+    loadFile("Stream history", historyJSON, plugin.streamHistoryFile);
 
     if (historyJSON.type != JSONType.array) historyJSON.array = null;  // coerce to array if needed
 
