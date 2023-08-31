@@ -3262,8 +3262,25 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             interruptibleSleep(gracePeriodBeforeReconnect, instance.abort);
             if (*instance.abort) break outerloop;
 
-            // Re-instantiate plugins here so it isn't done on the first connect attempt
-            instance.instantiatePlugins();
+            try
+            {
+                // Re-instantiate plugins here so it isn't done on the first connect attempt
+                instance.instantiatePlugins();
+            }
+            catch (Exception e)
+            {
+                enum pattern = "An unexpected error occurred while instantiating plugins: " ~
+                    "<t>%s</> (at <l>%s</>:<l>%d</>)";
+                logger.errorf(
+                    pattern,
+                    e.msg,
+                    e.file.doublyBackslashed,
+                    e.line);
+
+                version(PrintStacktraces) logger.trace(e.info);
+                attempt.retval = ShellReturnValue.pluginInitialisationException;
+                break outerloop;
+            }
 
             // Reset throttling, in case there were queued messages.
             instance.throttle.reset();
