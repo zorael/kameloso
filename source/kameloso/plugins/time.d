@@ -73,10 +73,11 @@ immutable string[] installedTimezones;
  +/
 shared static this()
 {
+    import std.exception : assumeUnique;
+
     version(Posix)
     {
         import std.datetime.timezone : PosixTimeZone;
-        import std.exception : assumeUnique;
 
         installedTimezones = PosixTimeZone.getInstalledTZNames().assumeUnique();
 
