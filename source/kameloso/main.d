@@ -978,8 +978,6 @@ auto mainLoop(ref Kameloso instance)
 
             if (plugin.state.specialRequests.length)
             {
-                scope(exit) instance.checkPluginForUpdates(plugin);
-
                 try
                 {
                     processSpecialRequests(instance, plugin);
@@ -994,6 +992,7 @@ auto mainLoop(ref Kameloso instance)
                 }
 
                 if (*instance.abort) return Next.returnFailure;
+                instance.checkPluginForUpdates(plugin);
             }
 
             if (plugin.state.scheduledFibers.length ||
