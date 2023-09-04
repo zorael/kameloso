@@ -1002,6 +1002,7 @@ auto mainLoop(ref Kameloso instance)
                 {
                     // These handle exceptions internally
                     processScheduledDelegates(plugin, nowInHnsecs);
+                    if (*instance.abort) return Next.returnFailure;
                     processScheduledFibers(plugin, nowInHnsecs);
                     if (*instance.abort) return Next.returnFailure;
                     plugin.state.updateSchedule();  // Something is always removed
