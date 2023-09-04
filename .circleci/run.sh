@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -uexo pipefail
+set -x
 
 #DMD_VERSION="2.098.0"
 #LDC_VERSION="1.28.0"
