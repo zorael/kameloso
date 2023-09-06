@@ -698,6 +698,7 @@ public:
         {
             plugin.initialise();
             if (*this.abort) return;
+            checkPluginForUpdates(plugin);
         }
     }
 
