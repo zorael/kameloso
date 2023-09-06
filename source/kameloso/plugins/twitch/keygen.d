@@ -448,7 +448,7 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
             if (readURL.startsWith(authNode))
             {
                 enum wrongPageMessage = "Not that page; the empty page you're " ~
-                    "led to after clicking <l>Authorize</>.";
+                    "redirected to after clicking <l>Authorize</>.";
                 logger.error(wrongPageMessage);
             }
             else
