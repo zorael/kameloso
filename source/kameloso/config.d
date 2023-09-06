@@ -28,7 +28,6 @@ import kameloso.pods : IRCBot;
 import dialect.defs : IRCClient, IRCServer;
 import lu.common : Next;
 import std.getopt : GetoptResult;
-import std.stdio : stdout;
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -124,7 +123,7 @@ void verboselyWriteConfig(
 
     if (!instance.settings.headless)
     {
-        import std.stdio : writeln;
+        import std.stdio : stdout, writeln;
         printVersionInfo();
         writeln();
         if (instance.settings.flush) stdout.flush();
@@ -175,7 +174,7 @@ void printSettings(ref Kameloso instance) @system
 {
     import kameloso.common : printVersionInfo;
     import kameloso.printing : printObjects;
-    import std.stdio : writeln;
+    import std.stdio : stdout, writeln;
 
     printVersionInfo();
     writeln();
@@ -982,6 +981,7 @@ auto handleGetopt(ref Kameloso instance) @system
 
         if (!instance.settings.headless)
         {
+            import std.stdio : stdout;
             printVersionInfo();
             printHelp(callGetopt(instance.args, No.quiet));
             if (instance.settings.flush) stdout.flush();

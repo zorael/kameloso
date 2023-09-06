@@ -25,7 +25,6 @@ import kameloso.plugins.common.core : IRCPlugin;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
 import lu.common : Next;
-import std.stdio : stdout;
 import std.typecons : Flag, No, Yes;
 
 
@@ -419,6 +418,8 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             default:
+                import std.stdio : stdout;
+
                 enum pattern = "onThreadMessage received unexpected message type: <l>%s";
                 logger.errorf(pattern, message.type);
                 if (instance.settings.flush) stdout.flush();
@@ -637,6 +638,7 @@ void messageFiber(ref Kameloso instance)
 
                 version(TraceWhois)
                 {
+                    import std.stdio : stdout;
                     if (instance.settings.flush) stdout.flush();
                 }
                 break;
@@ -728,7 +730,7 @@ void messageFiber(ref Kameloso instance)
             case writeln:
                 import kameloso.logger : LogLevel;
                 import kameloso.terminal.colours.tags : expandTags;
-                import std.stdio : writeln;
+                import std.stdio : stdout, writeln;
 
                 writeln(request.line.expandTags(LogLevel.off));
                 if (instance.settings.flush) stdout.flush();
@@ -1408,6 +1410,7 @@ void processLineFromServer(
         if (!instance.settings.headless)
         {
             import std.algorithm.searching : canFind;
+            import std.stdio : stdout;
 
             // Something asserted
             logger.error("scopeguard tripped.");
@@ -2061,6 +2064,7 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
 
         version(TraceWhois)
         {
+            import std.stdio : stdout;
             if (instance.settings.flush) stdout.flush();
         }
     }
@@ -3948,6 +3952,7 @@ auto run(string[] args)
         }
         finally
         {
+            import std.stdio : stdout;
             if (instance.settings.flush) stdout.flush();
         }
     }
@@ -3977,7 +3982,7 @@ auto run(string[] args)
     {
         import kameloso.common : printVersionInfo;
         import kameloso.printing : printObjects;
-        import std.stdio : writeln;
+        import std.stdio : stdout, writeln;
 
         printVersionInfo();
         writeln();
@@ -4165,6 +4170,8 @@ auto run(string[] args)
                 break;
 
             default:
+                import std.stdio : stdout;
+
                 enum pattern = "onThreadMessage received unexpected message type: <t>%s";
                 logger.errorf(pattern, message.type);
                 if (instance.settings.flush) stdout.flush();

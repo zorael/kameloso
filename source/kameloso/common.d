@@ -20,7 +20,6 @@ import kameloso.pods : CoreSettings;
 import kameloso.logger : KamelosoLogger;
 import dialect.defs : IRCClient;
 import std.range.primitives : isOutputRange;
-import std.stdio : stdout;
 import std.typecons : Flag, No, Yes;
 
 public:
