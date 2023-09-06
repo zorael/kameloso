@@ -138,6 +138,8 @@ your <w>BOT</> account.
         "chat:read",
         "whispers:edit",
         "whispers:read",
+        "moderator:read:followers",
+        "user:read:follows",
     ];
 
     Pid browser;
