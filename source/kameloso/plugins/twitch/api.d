@@ -887,9 +887,9 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 }
 
 
-// getFollows
+// getFollowers
 /++
-    Fetches a list of all follows of the passed channel and caches them in
+    Fetches a list of all followers of the passed channel and caches them in
     the channel's entry in [kameloso.plugins.twitch.base.TwitchPlugin.rooms|TwitchPlugin.rooms].
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
@@ -900,29 +900,38 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
     Returns:
         An associative array of [std.json.JSONValue|JSONValue]s keyed by nickname string,
-        containing follows.
+        containing followers.
  +/
-auto getFollows(TwitchPlugin plugin, const string id)
-in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
-in (id.length, "Tried to get follows with an empty ID string")
+auto getFollowers(TwitchPlugin plugin, const string id)
+in (Fiber.getThis, "Tried to call `getFollowers` from outside a Fiber")
+in (id.length, "Tried to get followers with an empty ID string")
 {
-    immutable url = "https://api.twitch.tv/helix/users/follows?first=100&to_id=" ~ id;
+    immutable url = "https://api.twitch.tv/helix/channels/followers?first=100&broadcaster_id=" ~ id;
 
-    auto getFollowsDg()
+    auto getFollowersDg()
     {
         const entitiesArrayJSON = getMultipleTwitchData(plugin, url);
-        Follow[string] allFollows;
+        Follower[string] allFollowers;
+
+        /+
+        {
+            "user_id": "11111",
+            "user_name": "UserDisplayName",
+            "user_login": "userloginname",
+            "followed_at": "2022-05-24T22:22:08Z",
+        },
+         +/
 
         foreach (entityJSON; entitiesArrayJSON)
         {
-            immutable key = entityJSON["from_id"].str;
-            allFollows[key] = Follow.fromJSON(entityJSON);
+            immutable key = entityJSON["user_name"].str;
+            allFollowers[key] = Follower.fromJSON(entityJSON);
         }
 
-        return allFollows;
+        return allFollowers;
     }
 
-    return retryDelegate(plugin, &getFollowsDg);
+    return retryDelegate(plugin, &getFollowersDg);
 }
 
 

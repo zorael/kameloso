@@ -322,14 +322,14 @@ package struct Credentials
 }
 
 
-// Follow
+// Follower
 /++
     Embodiment of the notion of someone following someone else on Twitch.
 
-    This cannot be a Voldemort type inside [kameloso.plugins.twitch.api.getFollows|getFollows]
+    This cannot be a Voldemort type inside [kameloso.plugins.twitch.api.getFollowers|getFollowers]
     since we need an array of them inside [TwitchPlugin.Room].
  +/
-package struct Follow
+package struct Follower
 {
 private:
     import std.datetime.systime : SysTime;
@@ -341,44 +341,47 @@ public:
     string displayName;
 
     /++
+        Account name of follower.
+     +/
+    string login;
+
+    /++
         Time when the follow action took place.
      +/
     SysTime when;
 
     /++
-        Twitch ID of follower.
+        Twitch ID of follower as a string.
      +/
-    uint followerID;
+    string idString;
 
     // fromJSON
     /++
-        Constructs a [Follow] from a JSON representation.
+        Constructs a [Follower] from a JSON representation.
 
         Params:
-            json = JSON representation of a follow.
+            json = JSON representation of a follower.
 
         Returns:
-            A new [Follow] with values derived from the passed JSON.
+            A new [Follower] with values derived from the passed JSON.
      +/
     static auto fromJSON(const JSONValue json)
     {
-        import std.conv : to;
+        /+
+        {
+            "user_id": "11111",
+            "user_name": "UserDisplayName",
+            "user_login": "userloginname",
+            "followed_at": "2022-05-24T22:22:08Z",
+        },
+         +/
 
-        /*{
-            "followed_at": "2019-09-13T13:07:43Z",
-            "from_id": "20739840",
-            "from_name": "mike_bison",
-            "to_id": "22216721",
-            "to_name": "Zorael"
-        }*/
-
-        Follow follow;
-
-        follow.displayName = json["from_name"].str;
-        follow.when = SysTime.fromISOExtString(json["followed_at"].str);
-        follow.followerID = json["from_id"].str.to!uint;
-
-        return follow;
+        Follower follower;
+        follower.idString = json["user_id"].str;
+        follower.displayName = json["user_name"].str;
+        follower.login = json["user_login"].str;
+        follower.when = SysTime.fromISOExtString(json["followed_at"].str);
+        return follower;
     }
 }
 
@@ -719,7 +722,7 @@ void reportStreamTime(
     Lookups are done asynchronously in subthreads.
 
     See_Also:
-        [kameloso.plugins.twitch.api.getFollows]
+        [kameloso.plugins.twitch.api.getFollowers]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -739,38 +742,25 @@ void reportStreamTime(
 void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : advancePast, stripped;
+    import std.algorithm.comparison : among;
     import std.algorithm.searching : startsWith;
-    import std.conv : to;
 
-    void sendNoSuchUser(const string givenName)
+    auto room = event.channel in plugin.rooms;
+    assert(room, "Tried to look up follow age in a nonexistent room");
+
+    string slice = event.content.stripped;  // mutable
+    if ((slice.length) && (slice[0] == '@')) slice = slice[1..$];
+
+    immutable otherNameSpecified = slice.length &&
+        !slice.among(event.sender.nickname, event.sender.displayName);
+
+    void sendNoSuchUser(const string name)
     {
-        immutable message = "No such user: " ~ givenName;
+        immutable message = "No such user: " ~ name;
         chan(plugin.state, event.channel, message);
     }
 
-    string slice = event.content.stripped;  // mutable
-    string idString;
-    string displayName;
-    immutable nameSpecified = (slice.length > 0);
-
-    if (!nameSpecified)
-    {
-        // Assume the user is asking about itself
-        idString = event.sender.id.to!string;
-        displayName = event.sender.displayName;
-    }
-    else
-    {
-        string givenName = slice.advancePast(' ', Yes.inherit);  // mutable
-        if (givenName.startsWith('@')) givenName = givenName[1..$];
-        immutable user = getTwitchUser(plugin, givenName, string.init, Yes.searchByDisplayName);
-        if (!user.nickname.length) return sendNoSuchUser(givenName);
-
-        idString = user.idString;
-        displayName = user.displayName;
-    }
-
-    void reportFollowAge(const Follow follow)
+    void reportFollowAge(const Follower follower)
     {
         import kameloso.time : timeSince;
         import std.datetime.systime : Clock;
@@ -793,16 +783,16 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         ];
 
         enum datestampPattern = "%s %d";
-        immutable delta = (Clock.currTime - follow.when);
+        immutable delta = (Clock.currTime - follower.when);
         immutable timeline = delta.timeSince!(7, 3);
         immutable datestamp = datestampPattern.format(
-            months[cast(int)follow.when.month-1],
-            follow.when.year);
+            months[cast(int)follower.when.month-1],
+            follower.when.year);
 
-        if (nameSpecified)
+        if (otherNameSpecified)
         {
             enum pattern = "%s has been a follower for %s, since %s.";
-            immutable message = pattern.format(follow.displayName, timeline, datestamp);
+            immutable message = pattern.format(follower.displayName, timeline, datestamp);
             chan(plugin.state, event.channel, message);
         }
         else
@@ -813,55 +803,80 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    // Identity ascertained; look up in cached list
-
-    auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to look up follow age in a nonexistent room");
-
-    if (!room.follows.length)
+    void reportNotAFollower(const string name)
     {
-        // Follows have not yet been cached!
+        if (otherNameSpecified)
+        {
+            import std.format : format;
+
+            immutable user = getTwitchUser(plugin, name, string.init, Yes.searchByDisplayName);
+            if (!user.nickname.length) return sendNoSuchUser(name);
+
+            enum pattern = "%s is currently not a follower.";
+            immutable message = pattern.format(user.displayName);
+            chan(plugin.state, event.channel, message);
+        }
+        else
+        {
+            // Assume the user is asking about itself
+            enum message = "You are currently not a follower.";
+            chan(plugin.state, event.channel, message);
+        }
+    }
+
+    auto reportFromCache(const string name)
+    {
+        if (const follower = name in room.followers)
+        {
+            reportFollowAge(*follower);
+            return true;
+        }
+
+        foreach (const follower; room.followers.byValue)
+        {
+            // No need to check key or login property
+
+            if (follower.displayName == name)
+            {
+                reportFollowAge(follower);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    if (!room.followers.length)
+    {
+        // Followers have not yet been cached!
         // This can technically happen, though practically the caching is
         // done immediately after joining so there should be no time for
         // !followage queries to sneak in.
         // Luckily we're inside a Fiber so we can cache it ourselves.
-        room.follows = getFollows(plugin, room.id);
-        room.followsLastCached = event.time;
+        room.followers = getFollowers(plugin, room.id);
+        room.followersLastCached = event.time;
     }
 
-    enum minimumTimeBetweenRecaches = 10;
+    immutable name = slice.length ?
+        slice :
+        event.sender.nickname;
 
-    if (const thisFollow = idString in room.follows)
+    bool found = reportFromCache(name);  // mutable for reuse
+    if (found) return;
+
+    enum minimumSecondsBetweenRecaches = 10;
+
+    if (event.time > (room.followersLastCached + minimumSecondsBetweenRecaches))
     {
-        return reportFollowAge(*thisFollow);
-    }
-    else if (event.time > (room.followsLastCached + minimumTimeBetweenRecaches))
-    {
-        // No match, but minimumTimeBetweenRecaches passed since last recache
-        room.follows = getFollows(plugin, room.id);
-        room.followsLastCached = event.time;
-
-        if (const thisFollow = idString in room.follows)
-        {
-            return reportFollowAge(*thisFollow);
-        }
+        // No match, but minimumSecondsBetweenRecaches passed since last recache
+        room.followers = getFollowers(plugin, room.id);
+        room.followersLastCached = event.time;
+        found = reportFromCache(name);
+        if (found) return;
     }
 
-    // If we're here there were no matches.
-
-    if (nameSpecified)
-    {
-        import std.format : format;
-
-        enum pattern = "%s is currently not a follower.";
-        immutable message = pattern.format(displayName);
-        chan(plugin.state, event.channel, message);
-    }
-    else
-    {
-        enum message = "You are currently not a follower.";
-        chan(plugin.state, event.channel, message);
-    }
+    // No matches and/or not enough time has passed since last recache
+    return reportNotAFollower(name);
 }
 
 
@@ -3014,7 +3029,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
         }
     }
 
-    // Clear and re-cache follows once every midnight
+    // Clear and re-cache followers once every midnight
     void cacheFollowersDg()
     {
         auto room = channelName in plugin.rooms;
@@ -3033,8 +3048,8 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
 
             try
             {
-                room.follows = getFollows(plugin, room.id);
-                room.followsLastCached = now.toUnixTime();
+                room.followers = getFollowers(plugin, room.id);
+                room.followersLastCached = now.toUnixTime();
             }
             catch (Exception _)
             {
@@ -4048,14 +4063,14 @@ package:
         string id;
 
         /++
-            A JSON list of the followers of the channel.
+            Associative array of the [Follower]s of this channel, keyed by nickname.
          +/
-        Follow[string] follows;
+        Follower[string] followers;
 
         /++
-            UNIX timestamp of when [follows] was last cached.
+            UNIX timestamp of when [followers] was last cached.
          +/
-        long followsLastCached;
+        long followersLastCached;
 
         /++
             How many messages to keep in memory, to allow for nuking.
