@@ -31,7 +31,7 @@ enum KamelosoSemVer
     /++
         SemVer patch version of the program.
      +/
-    patch = 0,
+    patch = 1,
 
     /++
         SemVer version of the program. Deprecated; use `KamelosoSemVer.major` instead.
