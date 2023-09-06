@@ -25,7 +25,6 @@ import kameloso.plugins.common.core : IRCPlugin;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
 import lu.common : Next;
-import std.exception : assumeUnique;
 import std.stdio : stdout;
 import std.typecons : Flag, No, Yes;
 
@@ -46,6 +45,7 @@ import std.typecons : Flag, No, Yes;
 enum gcOptions = ()
 {
     import std.array : Appender;
+    import std.exception : assumeUnique;
 
     Appender!(char[]) sink;
     sink.reserve(128);
@@ -78,9 +78,8 @@ enum gcOptions = ()
 
     // Tweak these numbers as we see fit
     sink.put("initReserve:8 minPoolSize:8"); // incPoolSize:16
-
-    return sink.data;
-}().assumeUnique();
+    return sink.data.assumeUnique();
+}();
 
 
 // rt_options
