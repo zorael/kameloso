@@ -147,7 +147,7 @@ unittest
             Also those annotated [lu.uda.Hidden|Hidden].
         things = Variadic list of aggregate objects to enumerate.
  +/
-void printObjects(Flag!"all" all = No.all, Things...)(auto ref Things things) @trusted // for stdout.flush()
+void printObjects(Flag!"all" all = No.all, Things...)(auto ref Things things)
 {
     import kameloso.constants : BufferSize;
     import std.array : Appender;
@@ -173,11 +173,17 @@ void printObjects(Flag!"all" all = No.all, Things...)(auto ref Things things) @t
         static assert(0, message);
     }
 
-    if (kameloso.common.globalHeadless && *kameloso.common.globalHeadless)
+    /+
+        This is regrettable, but we need to be able to check the global headless
+        flag to avoid printing anything if we shouldn't.
+        I trust a simple bool* dereference.
+     +/
+    immutable returnBecauseHeadless = () @trusted
     {
-        // Don't print anything if we're headless
-        return;
-    }
+        return (kameloso.common.globalHeadless && *kameloso.common.globalHeadless);
+    }();
+
+    if (returnBecauseHeadless) return;
 
     alias widths = Widths!(all, Things);
 
@@ -229,7 +235,15 @@ void printObjects(Flag!"all" all = No.all, Things...)(auto ref Things things) @t
     }
 
     writeln(outbuffer.data);
-    if (kameloso.common.settings.flush) stdout.flush();
+
+    /+
+        writeln trusts stdout.flush, so we will too.
+     +/
+    () @trusted
+    {
+        // Flush stdout to make sure we don't lose any output
+        if (kameloso.common.settings.flush) stdout.flush();
+    }();
 }
 
 

@@ -382,7 +382,7 @@ public:
     /++
         Outputs the tail of a logger message.
      +/
-    private void finishLogMsg() @trusted  // writeln trusts stdout.flush, so we should be able to too
+    private void finishLogMsg() @safe
     {
         import std.stdio : stdout, writeln;
 
@@ -397,7 +397,12 @@ public:
         }
 
         writeln(linebuffer.data);
-        if (flush) stdout.flush();
+
+        () @trusted
+        {
+            // writeln trusts stdout.flush, so we should be able to too
+            if (flush) stdout.flush();
+        }();
     }
 
 
