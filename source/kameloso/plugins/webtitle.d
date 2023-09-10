@@ -377,7 +377,8 @@ void worker(
                     else
                     {
                         enum pattern = "Error fetching YouTube title: <l>%s";
-                        request.state.askToError(pattern.format(e.msg));
+                        immutable message = pattern.format(e.msg);
+                        request.state.askToError(message);
                     }
                     return;
                 }
@@ -385,7 +386,8 @@ void worker(
                 {
                     // Simply failed to fetch
                     enum pattern = "Webtitle YouTube worker saw HTTP <l>%d</>: <t>%s";
-                    request.state.askToError(pattern.format(e.code, e.msg));
+                    immutable message = pattern.format(e.code, e.msg);
+                    request.state.askToError(message);
                 }
                 else
                 {
@@ -450,7 +452,8 @@ void worker(
                 else
                 {
                     enum pattern = "Error fetching webpage title: <l>%s";
-                    request.state.askToError(pattern.format(e.msg));
+                    immutable message = pattern.format(e.msg);
+                    request.state.askToError(message);
                 }
                 return;
             }
@@ -458,13 +461,15 @@ void worker(
             {
                 // Simply failed to fetch
                 enum pattern = "Webtitle worker saw HTTP <l>%d</>: <l>%s";
-                request.state.askToWarn(pattern.format(e.code, e.msg));
+                immutable message = pattern.format(e.code, e.msg);
+                request.state.askToWarn(message);
             }
             else
             {
                 // No title tag found
                 enum pattern = "No title tag found: <l>%s";
-                request.state.askToWarn(pattern.format(e.msg));
+                immutable message = pattern.format(e.msg);
+                request.state.askToWarn(message);
             }
 
             if (firstTime)
@@ -486,7 +491,8 @@ void worker(
         {
             enum pattern = "Webtitle worker Unicode exception: <l>%s</> " ~
                 "(link is probably to an image or similar)";
-            request.state.askToError(pattern.format(e.msg));
+            immutable message = pattern.format(e.msg);
+            request.state.askToError(message);
             //version(PrintStacktraces) request.state.askToTrace(e.info);
         }
         catch (Exception e)

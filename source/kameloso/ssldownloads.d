@@ -60,7 +60,8 @@ auto downloadWindowsSSL(
         logger.infof(pattern, what, url);
 
         enum executePattern = `powershell -c "Invoke-WebRequest '%s' -OutFile '%s'"`;
-        immutable result = executeShell(executePattern.format(url, saveAs));
+        immutable command = executePattern.format(url, saveAs);
+        immutable result = executeShell(command);
 
         if (result.status != 0)
         {
