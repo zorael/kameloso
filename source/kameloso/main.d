@@ -105,19 +105,6 @@ public __gshared const string[] rt_options =
 ];
 
 
-// globalAbort
-/++
-    Abort flag.
-
-    This is set when the program is interrupted (such as via Ctrl+C). Other
-    parts of the program will be monitoring it, to take the cue and abort when
-    it is set.
-
-    Must be `__gshared` or it doesn't seem to work on Windows.
- +/
-public __gshared Flag!"abort" globalAbort;
-
-
 version(Posix)
 {
     // signalRaised
@@ -133,8 +120,8 @@ version(Posix)
 /++
     Called when a signal is raised, usually `SIGINT`.
 
-    Sets the [globalAbort] variable to true so other parts of the program knows to
-    gracefully shut down.
+    Sets the [kameloso.common.globalAbort|globalAbort] global to `Yes.abort`
+    so other parts of the program knows to gracefully shut down.
 
     Params:
         sig = Integer value of the signal raised.
@@ -142,8 +129,8 @@ version(Posix)
 extern (C)
 void signalHandler(int sig) nothrow @nogc @system
 {
-    import kameloso.common : globalHeadless;
     import core.stdc.stdio : printf;
+    static import kameloso.common;
 
     // $ kill -l
     // https://man7.org/linux/man-pages/man7/signal.7.html
@@ -183,9 +170,9 @@ void signalHandler(int sig) nothrow @nogc @system
         31 : "SYS",   /// Bad system call. (SVr4)
     ];
 
-    if (globalHeadless && !*globalHeadless && (sig < signalNames.length))
+    if (kameloso.common.globalHeadless && (sig < signalNames.length))
     {
-        if (!globalAbort)
+        if (!kameloso.common.globalAbort)
         {
             printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
         }
@@ -196,8 +183,8 @@ void signalHandler(int sig) nothrow @nogc @system
         }
     }
 
-    if (globalAbort) resetSignals();
-    else globalAbort = Yes.abort;
+    if (kameloso.common.globalAbort) resetSignals();
+    else kameloso.common.globalAbort = Yes.abort;
 
     version(Posix)
     {
@@ -3558,9 +3545,9 @@ void printEventDebugDetails(
     const string raw,
     const Flag!"eventWasInitialised" eventWasInitialised = Yes.eventWasInitialised)
 {
-    import kameloso.common : globalHeadless;
+    static import kameloso.common;
 
-    if (*globalHeadless || !raw.length) return;
+    if (kameloso.common.globalHeadless || !raw.length) return;
 
     version(IncludeHeavyStuff)
     {
@@ -3874,7 +3861,7 @@ auto run(string[] args)
 
     // Set pointers.
     kameloso.common.settings = &instance.settings;
-    instance.abort = &globalAbort;
+    instance.abort = &kameloso.common.globalAbort;
 
     // Declare AttemptState instance.
     AttemptState attempt;
@@ -3904,7 +3891,7 @@ auto run(string[] args)
     }
 
     immutable actionAfterGetopt = tryGetopt(instance);
-    kameloso.common.globalHeadless = &instance.settings.headless;
+    kameloso.common.globalHeadless = cast(Flag!"headless")instance.settings.headless;
 
     with (Next)
     final switch (actionAfterGetopt)

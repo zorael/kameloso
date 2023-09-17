@@ -100,13 +100,26 @@ out (; (logger !is null), "Failed to initialise logger")
 CoreSettings* settings;
 
 
+// globalAbort
+/++
+    Abort flag.
+
+    This is set when the program is interrupted (such as via Ctrl+C). Other
+    parts of the program will be monitoring it, to take the cue and abort when
+    it is set.
+
+    Must be `__gshared` or it doesn't seem to work on Windows.
+ +/
+__gshared Flag!"abort" globalAbort;
+
+
 // globalHeadless
 /++
     Headless flag.
 
     If this is true the program should not output anything to the terminal.
  +/
-__gshared bool* globalHeadless;
+__gshared Flag!"headless" globalHeadless;
 
 
 // printVersionInfo

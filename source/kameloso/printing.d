@@ -176,11 +176,11 @@ void printObjects(Flag!"all" all = No.all, Things...)(auto ref Things things)
     /+
         This is regrettable, but we need to be able to check the global headless
         flag to avoid printing anything if we shouldn't.
-        I trust a simple bool* dereference.
+        I trust a simple __gshared return.
      +/
     immutable returnBecauseHeadless = () @trusted
     {
-        return (kameloso.common.globalHeadless && *kameloso.common.globalHeadless);
+        return kameloso.common.globalHeadless;
     }();
 
     if (returnBecauseHeadless) return;
