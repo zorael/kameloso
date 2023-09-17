@@ -1088,7 +1088,7 @@ void writeConfigurationFile(
     import std.path : buildNormalizedPath, expandTilde;
 
     Appender!(char[]) sink;
-    sink.reserve(4096);  // ~2234
+    sink.reserve(4096);  // ~3325
 
     // Only make some changes if we're creating a new file
     if (!filename.exists)

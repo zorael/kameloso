@@ -659,7 +659,8 @@ void messageFiber(ref Kameloso instance)
 
             default:
                 // No need to use Enum!(IRCEvent.Type) here, logger does it internally
-                logger.error("<l>messageFiber</>.<l>eventToServer</> missing case for outgoing event type <l>", m.event.type);
+                logger.error("<l>messageFiber</>.<l>eventToServer</> missing case " ~
+                    "for outgoing event type <l>", m.event.type);
                 break;
             }
 
