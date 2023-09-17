@@ -19,6 +19,7 @@ module kameloso.main;
 private:
 
 import kameloso.common : logger;
+import kameloso.constants : ShellReturnValue;
 import kameloso.kameloso : Kameloso;
 import kameloso.net : ListenAttempt;
 import kameloso.plugins.common.core : IRCPlugin;
@@ -3821,6 +3822,135 @@ void propagateWhoisTimestamps(ref Kameloso instance) pure @safe
 }
 
 
+// prettyPrintStartScreen
+/++
+    Prints a pretty start screen.
+
+    Params:
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        args = Command-line arguments passed to the program.
+ +/
+void prettyPrintStartScreen(const ref Kameloso instance, const string[] args)
+{
+    import kameloso.common : printVersionInfo;
+    import kameloso.printing : printObjects;
+    import kameloso.string : replaceTokens;
+    import std.stdio : stdout, writeln;
+
+    printVersionInfo();
+    writeln();
+    if (instance.settings.flush) stdout.flush();
+
+    // Print the current settings to show what's going on.
+    IRCClient prettyClient = instance.parser.client;
+    prettyClient.realName = replaceTokens(prettyClient.realName);
+    printObjects(prettyClient, instance.bot, instance.parser.server);
+
+    if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
+    {
+        import kameloso.config : giveBrightTerminalHint, notifyAboutIncompleteConfiguration;
+
+        giveBrightTerminalHint();
+        logger.trace();
+        notifyAboutIncompleteConfiguration(instance.settings.configFile, args[0]);
+    }
+}
+
+
+
+// checkInitialisationMessages
+/++
+    Checks for any initialisation messages that may have been sent by plugins
+    during their initialisation.
+
+    Params:
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        retval = out-reference to the [kameloso.constants.ShellReturnValue|ShellReturnValue]
+            to return from [run].
+
+    Returns:
+        `true` if nothing fatal happened and the calling function should proceed,
+        `false` otherwise.
+ +/
+auto checkInitialisationMessages(
+    ref Kameloso instance,
+    out ShellReturnValue retval)
+{
+    while (true)
+    {
+        import kameloso.thread : ThreadMessage;
+        import std.concurrency : receiveTimeout;
+        import std.variant : Variant;
+        import core.time : Duration;
+
+        bool halt;
+
+        void onThreadMessage(ThreadMessage message) scope
+        {
+            with (ThreadMessage.Type)
+            switch (message.type)
+            {
+            case popCustomSetting:
+                size_t[] toRemove;
+
+                foreach (immutable i, immutable line; instance.customSettings)
+                {
+                    import lu.string : advancePast;
+
+                    string slice = line;  // mutable
+                    immutable setting = slice.advancePast('=', Yes.inherit);
+                    if (setting == message.content) toRemove ~= i;
+                }
+
+                foreach_reverse (immutable i; toRemove)
+                {
+                    import std.algorithm.mutation : SwapStrategy, remove;
+                    instance.customSettings = instance.customSettings
+                        .remove!(SwapStrategy.unstable)(i);
+                }
+
+                toRemove = null;
+                break;
+
+            case save:
+                import kameloso.config : writeConfigurationFile;
+                writeConfigurationFile(instance, instance.settings.configFile);
+                break;
+
+            default:
+                import std.stdio : stdout;
+
+                enum pattern = "onThreadMessage received unexpected message type: <t>%s";
+                logger.errorf(pattern, message.type);
+                if (instance.settings.flush) stdout.flush();
+                halt = true;
+                break;
+            }
+        }
+
+        if (halt)
+        {
+            retval = ShellReturnValue.pluginInitialisationFailure;
+            return true;
+        }
+
+        immutable receivedSomething = receiveTimeout(Duration.zero,
+            &onThreadMessage,
+            (Variant v) scope
+            {
+                // Caught an unhandled message
+                enum pattern = "run received unknown Variant: <l>%s";
+                logger.warningf(pattern, v.type);
+            }
+        );
+
+        if (!receivedSomething) break;
+    }
+
+    return false;
+}
+
+
 public:
 
 
@@ -3966,30 +4096,7 @@ auto run(string[] args)
     // Copy ssl setting to the Connection after the above
     instance.conn.ssl = instance.connSettings.ssl;
 
-    if (!instance.settings.headless)
-    {
-        import kameloso.common : printVersionInfo;
-        import kameloso.printing : printObjects;
-        import std.stdio : stdout, writeln;
-
-        printVersionInfo();
-        writeln();
-        if (instance.settings.flush) stdout.flush();
-
-        // Print the current settings to show what's going on.
-        IRCClient prettyClient = instance.parser.client;
-        prettyClient.realName = replaceTokens(prettyClient.realName);
-        printObjects(prettyClient, instance.bot, instance.parser.server);
-
-        if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
-        {
-            import kameloso.config : giveBrightTerminalHint, notifyAboutIncompleteConfiguration;
-
-            giveBrightTerminalHint();
-            logger.trace();
-            notifyAboutIncompleteConfiguration(instance.settings.configFile, args[0]);
-        }
-    }
+    if (!instance.settings.headless) prettyPrintStartScreen(instance, args);
 
     // Verify that settings are as they should be (nickname exists and not too long, etc)
     immutable actionAfterVerification = verifySettings(instance);
@@ -4116,72 +4223,9 @@ auto run(string[] args)
     if (*instance.abort) return ShellReturnValue.failure;
 
     // Check for concurrency messages in case any were sent during plugin initialisation
-    while (true)
-    {
-        import kameloso.thread : ThreadMessage;
-        import std.concurrency : receiveTimeout;
-        import std.variant : Variant;
-        import core.time : Duration;
-
-        bool halt;
-
-        void onThreadMessage(ThreadMessage message) scope
-        {
-            with (ThreadMessage.Type)
-            switch (message.type)
-            {
-            case popCustomSetting:
-                size_t[] toRemove;
-
-                foreach (immutable i, immutable line; instance.customSettings)
-                {
-                    import lu.string : advancePast;
-
-                    string slice = line;  // mutable
-                    immutable setting = slice.advancePast('=', Yes.inherit);
-                    if (setting == message.content) toRemove ~= i;
-                }
-
-                foreach_reverse (immutable i; toRemove)
-                {
-                    import std.algorithm.mutation : SwapStrategy, remove;
-                    instance.customSettings = instance.customSettings
-                        .remove!(SwapStrategy.unstable)(i);
-                }
-
-                toRemove = null;
-                break;
-
-            case save:
-                import kameloso.config : writeConfigurationFile;
-                writeConfigurationFile(instance, instance.settings.configFile);
-                break;
-
-            default:
-                import std.stdio : stdout;
-
-                enum pattern = "onThreadMessage received unexpected message type: <t>%s";
-                logger.errorf(pattern, message.type);
-                if (instance.settings.flush) stdout.flush();
-                halt = true;
-                break;
-            }
-        }
-
-        if (halt) return ShellReturnValue.pluginInitialisationFailure;
-
-        immutable receivedSomething = receiveTimeout(Duration.zero,
-            &onThreadMessage,
-            (Variant v) scope
-            {
-                // Caught an unhandled message
-                enum pattern = "run received unknown Variant: <l>%s";
-                logger.warningf(pattern, v.type);
-            }
-        );
-
-        if (!receivedSomething) break;
-    }
+    ShellReturnValue initRetval;
+    immutable proceed = checkInitialisationMessages(instance, initRetval);
+    if (!proceed) return initRetval;
 
     // Go!
     startBot(instance, attempt);
