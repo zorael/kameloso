@@ -356,7 +356,7 @@ It can technically be any string and not just one character. It may include spac
 
 Before allowing *anyone* to trigger any restricted functionality, the bot will try to identify the accessing user by querying the server for what **services account** that user is logged onto, if not already known. For full and global administrative privileges you will need to be logged into services with an account listed in the `admins` field in the configuration file, while other users may be defined with other per-channel permissions in your [`users.json`](#other-files) file. If a user is not logged onto services it is considered as not being uniquely identifiable and cannot be resolved to an account.
 
-In the case of [**hostmasks mode**](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)), the above still applies but "accounts" are derived from user hostmasks. See the **Admin** plugin `!hostmask` command (and the [`hostmasks.json`](#other-files) file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification, but not all servers offer services..
+In the case of [**hostmasks mode**](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)), the above still applies but "accounts" are derived from user hostmasks. See the **Admin** plugin `!hostmask` command (and the [`hostmasks.json`](#other-files) file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification, but not all servers offer services.
 
 ### **Twitch**
 
@@ -395,9 +395,9 @@ The program can then be run normally.
 
 It should now connect to Twitch and start the guide to requesting a new *authorisation token* in your terminal, upon detecting it's missing one. See the ["long story"](#long-story) section below for details.
 
-**Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different **bot user** instead, open up a private/incognito window, log into Twitch normally *with the bot account* there, copy [**this link**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true), then follow it in that browser window instead. (Then follow the terminal instructions again.)
+**Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different **bot user** instead, open up a private/incognito window, log into Twitch normally *with the bot account* there, copy [**this link**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true), then follow it in that browser window instead. After that, refer to the terminal instructions again.
 
-After obtaining a token it will save it to your configuration file and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in your channel's chat in your browser, and it should show in your terminal. If there were errors or snags, [please report them](https://github.com/zorael/kameloso/issues/new).
+After obtaining a token it will save it to your configuration file and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in your chat in your browser, and it should show in your terminal. If there were errors or snags, [please report them](https://github.com/zorael/kameloso/issues/new).
 
 > If you don't like the terminal colouring, `--monochrome` disables it.
 
@@ -432,7 +432,7 @@ promoteModerators           true
 promoteVIPs                 true
 ```
 
-The secure port is **6697** (alternatively **443**). For non-encrypted traffic, use the default port **6667**.
+The secure port is **6697** (alternatively **443**). For non-encrypted traffic, while heavily discouraged, use the default port **6667**.
 
 #### **Long story**
 
@@ -446,7 +446,7 @@ It will open a browser window in which you are asked to log onto Twitch *on Twit
 
 After entering your login and password and clicking **Authorize**, you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. **Copy the URL address of it** and **paste** it into the terminal, when prompted to. It will parse the address, extract your authorisation token, save it to your configuration file, and then finally connect to the server.
 
-If you prefer to generate the token manually, [**here is the URL you need to follow**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true). The only thing the generation process does is open it for you, as well as automating saving the resulting token to your configuration file (as `pass` under `[IRCBot]`).
+If you prefer to generate the token manually, [**here is the URL you need to follow**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+moderator:read:followers+user:read:follows&force_verify=true). The only thing the generation process does is open it for you, as well as automating saving the resulting token to your configuration file (as `pass` under `[IRCBot]`).
 
 > Mind that the authorisation token should be kept secret. It's not possible to derive your Twitch account password from it, but anyone with access to the token can chat as if they were you.
 
