@@ -171,7 +171,7 @@ void signalHandler(int sig) nothrow @nogc @system
         31 : "SYS",   /// Bad system call. (SVr4)
     ];
 
-    if (kameloso.common.globalHeadless && (sig < signalNames.length))
+    if (sig < signalNames.length)
     {
         if (!kameloso.common.globalAbort)
         {
@@ -179,9 +179,15 @@ void signalHandler(int sig) nothrow @nogc @system
         }
         else if (sig == 2)
         {
-            printf("...caught another signal SIG%s! " ~
-                "(press Enter if nothing happens, or Ctrl+C again)\n", signalNames[sig].ptr);
+            enum pattern = "...caught another signal SIG%s! " ~
+                "(press Enter if nothing happens, or Ctrl+C again)\n";
+            printf(pattern, signalNames[sig].ptr);
         }
+    }
+    else
+    {
+        // Can signals even be > 31?
+        printf("...caught signal %d!\n", sig);
     }
 
     if (kameloso.common.globalAbort) resetSignals();
