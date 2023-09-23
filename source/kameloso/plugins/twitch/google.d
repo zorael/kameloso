@@ -180,7 +180,7 @@ A normal URL to any playlist you can modify will work fine. They do not have to 
     enum attemptToOpenPattern = `
 --------------------------------------------------------------------------------
 
-<l>Attempting to open a Google login page in your default web browser.</>
+<l>Attempting to open a <i>Google login page<l> in your default web browser.</>
 
 Follow the instructions and log in to authorise the use of this program with your account.
 

@@ -48,7 +48,7 @@ void requestTwitchKey(TwitchPlugin plugin)
     logger.trace();
     logger.warning("== Twitch authorisation key generation wizard ==");
     enum attemptToOpenMessage = `
-Attempting to open a <l>Twitch login page</> in your default web browser.
+<l>Attempting to open a <i>Twitch login page</> in your default web browser.</>
 Follow the instructions and log in to authorise the use of this program with
 your <w>BOT</> account.
 
@@ -215,12 +215,12 @@ void requestTwitchSuperKey(TwitchPlugin plugin)
     logger.trace();
     logger.warning("== Twitch authorisation super-key generation wizard ==");
     enum message = `
-To access certain Twitch functionality like changing channel settings
+To access certain Twitch functionality, like changing channel settings
 (what game is currently being played, etc), the program needs an authorisation
 key that corresponds to the owner of that channel.
 
 In the instructions that follow, it is essential that you are logged into the
-<w>STREAMER</> account in your browser.
+main <w>STREAMER</> account in your browser.
 
 You also need to supply the channel for which it all relates.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
@@ -245,16 +245,17 @@ You also need to supply the channel for which it all relates.
     enum attemptToOpenMessage = `
 --------------------------------------------------------------------------------
 
-Attempting to open a Twitch login page in your default web browser. Follow the
-instructions and log in to authorise the use of this program with your <w>STREAMER</> account.
+<l>Attempting to open a <i>Twitch login page</> in your default web browser.</>
+Follow the instructions and log in to authorise the use of this program with
+your main <w>STREAMER</> account.
 
 <l>Then paste the address of the page you are redirected to afterwards here.</>
 
-* The redirected address should start with <i>http://localhost</>.
-* It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
-* <l>The key generated will be one for the account you are currently logged in as in your browser.</>
+<i>*</> The redirected address should start with <i>http://localhost</>.
+<i>*</> It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
+<i>*</> <l>The key generated will be one for the account you are currently logged in as in your browser.</>
   You should be logged into your main Twitch account for this key.
-* If you are running local web server on port <i>80</>, you may have to temporarily
+<i>*</> If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
 `;
     writeln(attemptToOpenMessage.expandTags(LogLevel.off));

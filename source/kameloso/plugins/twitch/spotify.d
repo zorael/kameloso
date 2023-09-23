@@ -159,7 +159,7 @@ A normal URL to any playlist you can modify will work fine.
     enum attemptToOpenMessage = `
 --------------------------------------------------------------------------------
 
-<l>Attempting to open the Spotify redirect page in your default web browser.</>
+<l>Attempting to open the <i>Spotify redirect page<l> in your default web browser.</>
 
 Click <i>Agree</> to authorise the use of this program with your account.`;
 
