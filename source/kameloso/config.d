@@ -827,16 +827,16 @@ auto handleGetopt(ref Kameloso instance) @system
                         .expandTags(LogLevel.trace)
                         .format(instance.settings.brightTerminal),
                 &instance.settings.brightTerminal,
-            "colour",
+            "color",
                 quiet ? string.init :
                     "Use colours in terminal output (<i>auto</>|<i>always</>|<i>never</>)"
                         .expandTags(LogLevel.trace),
                     &nothing,
-            "color",
+            /*"colour",
                 quiet ? string.init :
-                    "(Alias to <i>--colour</>)"
+                    "(Alias to <i>--color</>)"
                         .expandTags(LogLevel.trace),
-                    &nothing,
+                    &nothing,*/
             "set",
                 quiet ? string.init :
                     text("Manually change a setting (syntax: ", setSyntax, ')'),
