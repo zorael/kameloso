@@ -474,7 +474,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         version(Colours)
         {
-            if (!plugin.state.settings.monochrome)
+            if (plugin.state.settings.colours)
             {
                 formatMessageColoured(
                     plugin,

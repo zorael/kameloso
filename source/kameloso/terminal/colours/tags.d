@@ -580,7 +580,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel) @safe
         static assert(0, message);
     }
 
-    immutable strip = cast(Flag!"strip")kameloso.common.settings.monochrome;
+    immutable strip = cast(Flag!"strip")!kameloso.common.settings.colours;
     return expandTags(line, baseLevel, strip);
 }
 

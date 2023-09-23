@@ -425,7 +425,7 @@ public:
 
                 version(Colours)
                 {
-                    if (!settings.monochrome)
+                    if (settings.colours)
                     {
                         import kameloso.irccolours : mapEffects;
                         logger.trace("--> ", buffer.front.line.mapEffects);

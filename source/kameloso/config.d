@@ -133,7 +133,7 @@ void verboselyWriteConfig(
     instance.instantiatePlugins();
 
     immutable shouldGiveBrightTerminalHint =
-        !instance.settings.monochrome &&
+        instance.settings.colours &&
         !instance.settings.brightTerminal &&
         !instance.settings.configFile.exists;
 
@@ -479,6 +479,54 @@ unittest
 }
 
 
+// resolveFlagString
+/++
+    Resolves a string to a boolean value.
+
+    Params:
+        input = String to resolve.
+        colours = Reference to a boolean to set. Must not be an out-reference.
+ +/
+void resolveFlagString(const string input, ref bool output) @system
+{
+    switch (input)
+    {
+        case "auto":
+        case "tty":
+        case "if-tty":
+            import kameloso.terminal : isTerminal;
+            output = isTerminal;
+            break;
+
+        case "always":
+        case "yes":
+        case "force":
+        case "true":  // Not a valid value, but we'll accept it anyway
+            output = true;
+            break;
+
+        case "never":
+        case "no":
+        case "none":
+        case "false":  // as above
+            output = false;
+            break;
+
+        case string.init:
+            break;
+
+        default:
+            import std.format : format;
+            import std.getopt : GetOptException;
+
+            enum pattern = `Invalid getopt flag value; "<l>%s<t>" is not one ` ~
+                "of <e>auto<t>, <e>always<t> or <e>never";
+            immutable message = pattern.format(input);
+            throw new GetOptException(message);
+    }
+}
+
+
 public:
 
 
@@ -514,7 +562,7 @@ auto handleGetopt(ref Kameloso instance) @system
     import kameloso.common : printVersionInfo;
     import kameloso.configreader : readConfigInto;
     import kameloso.logger : KamelosoLogger;
-    import kameloso.terminal : applyMonochromeAndFlushOverrides;
+    import kameloso.terminal : applyTerminalOverrides;
     import lu.objmanip : replaceMembers;
     import std.getopt : arraySep, config, getopt;
     static import kameloso.common;
@@ -538,7 +586,8 @@ auto handleGetopt(ref Kameloso instance) @system
     string[] inputHomeChannels;
     string[] inputAdmins;
 
-    arraySep = ",";
+    string colourString;
+    string nothing;
 
     /+
         Call getopt on args once and look for any specified configuration files
@@ -574,20 +623,18 @@ auto handleGetopt(ref Kameloso instance) @system
         instance.settings);
 
     applyDefaults(instance);
+    applyTerminalOverrides(instance.settings.flush, instance.settings.colours);
 
-    // Non-TTYs (eg. pagers) can't show colours.
-    // Apply overrides here after having read config file
-    applyMonochromeAndFlushOverrides(instance.settings.monochrome, instance.settings.flush);
-
-    // Get `--monochrome` again; let it overwrite what applyMonochromeAndFlushOverrides
-    // and readConfigInto set it to
     cast(void)getopt(argsSlice,
         config.caseSensitive,
         config.bundling,
         config.passThrough,
-        "monochrome", &instance.settings.monochrome,
+        "colour", &colourString,
+        "color", &colourString,
         "setup-twitch", &shouldSetupTwitch,
     );
+
+    resolveFlagString(colourString, instance.settings.colours);
 
     /++
         Call getopt in a nested function so we can call it both to merely
@@ -687,6 +734,8 @@ auto handleGetopt(ref Kameloso instance) @system
                 "(or the application defined in the <i>$EDITOR</> environment variable)";
         }
 
+        arraySep = ",";
+
         return getopt(theseArgs,
             config.caseSensitive,
             config.bundling,
@@ -778,13 +827,16 @@ auto handleGetopt(ref Kameloso instance) @system
                         .expandTags(LogLevel.trace)
                         .format(instance.settings.brightTerminal),
                 &instance.settings.brightTerminal,
-            "monochrome",
+            "colour",
                 quiet ? string.init :
-                    "Use monochrome output [<i>%s</>]"
-                        .expandTags(LogLevel.trace)
-                        .format(instance.settings.monochrome),
-                //&settings.monochrome,  // already handled
-                &noop,
+                    "Use colours in terminal output (<i>auto</>|<i>always</>|<i>never</>)"
+                        .expandTags(LogLevel.trace),
+                    &nothing,
+            "color",
+                quiet ? string.init :
+                    "(Alias to <i>--colour</>)"
+                        .expandTags(LogLevel.trace),
+                    &nothing,
             "set",
                 quiet ? string.init :
                     text("Manually change a setting (syntax: ", setSyntax, ')'),
@@ -1274,7 +1326,7 @@ void giveBrightTerminalHint(
     const Flag!"alsoAboutConfigSetting" alsoConfigSetting = No.alsoAboutConfigSetting)
 {
     enum brightPattern = "If text is difficult to read (eg. white on white), " ~
-        "try running the program with <i>--bright</> or <i>--monochrome</>.";
+        "try running the program with <i>--bright</> or <i>--color=never</>.";
     logger.trace(brightPattern);
 
     if (alsoConfigSetting)

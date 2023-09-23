@@ -95,7 +95,12 @@ auto applyCustomSettings(
                 }
                 else
                 {
-                    if (setting.among!("monochrome", "brightTerminal", "headless", "flush"))
+                    if (setting.among!(
+                        "colour",
+                        "color",
+                        "brightTerminal",
+                        "headless",
+                        "flush"))
                     {
                         logger = new KamelosoLogger(copyOfSettings);
                     }

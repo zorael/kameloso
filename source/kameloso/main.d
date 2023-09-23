@@ -3766,7 +3766,7 @@ void echoQuitMessage(ref Kameloso instance, const string reason) @safe
 
     version(Colours)
     {
-        if (!instance.settings.monochrome)
+        if (instance.settings.colours)
         {
             import kameloso.irccolours : mapEffects;
             logger.trace("--> QUIT :", reason.mapEffects);
@@ -4006,7 +4006,7 @@ auto run(string[] args)
     setDefaultDirectories(instance.settings);
 
     // Initialise the logger immediately so it's always available.
-    // handleGetopt re-inits later when we know the settings for monochrome and headless
+    // handleGetopt re-inits later when we know the settings for colours and headless
     kameloso.common.logger = new KamelosoLogger(instance.settings);
 
     // Set up signal handling so that we can gracefully catch Ctrl+C.

@@ -204,7 +204,7 @@ void printObjects(Flag!"all" all = No.all, Things...)(auto ref Things things)
                 kameloso.common.settings = new typeof(*kameloso.common.settings);
             }
 
-            if (!kameloso.common.settings.monochrome)
+            if (kameloso.common.settings.colours)
             {
                 formatObjectImpl!(all, Yes.coloured)
                     (outbuffer,

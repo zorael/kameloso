@@ -30,7 +30,7 @@ shared static this()
     // This is technically before settings have been read.
     // We need this for unit tests.
     logger = new KamelosoLogger(
-        No.monochrome,
+        Yes.colours,
         No.brightTerminal,
         No.headless,
         Yes.flush);
@@ -67,24 +67,24 @@ KamelosoLogger logger;
 
     Example:
     ---
-    initLogger(No.monochrome, Yes.brightTerminal);
+    initLogger(Yes.colours, Yes.brightTerminal);
     ---
 
     Params:
-        monochrome = Whether the terminal is set to monochrome or not.
+        colours = Whether to use coloured terminal output.
         bright = Whether the terminal has a bright background or not.
         headless = Whether the terminal is headless or not.
         flush = Whether the terminal needs to manually flush standard out after writing to it.
  +/
 void initLogger(
-    const Flag!"monochrome" monochrome,
+    const Flag!"colours" colours,
     const Flag!"brightTerminal" bright,
     const Flag!"headless" headless,
     const Flag!"flush" flush) @safe
 out (; (logger !is null), "Failed to initialise logger")
 {
     import kameloso.logger : KamelosoLogger;
-    logger = new KamelosoLogger(monochrome, bright, headless, flush);
+    logger = new KamelosoLogger(colours, bright, headless, flush);
 }
 
 
@@ -94,7 +94,7 @@ out (; (logger !is null), "Failed to initialise logger")
     certain runtime settings.
 
     This will be accessed from other parts of the program, via
-    [kameloso.common.settings], so they know to use monochrome output or not.
+    [kameloso.common.settings], so they know to use coloured output or not.
     It is a problem that needs solving.
  +/
 CoreSettings* settings;
@@ -133,8 +133,7 @@ __gshared Flag!"headless" globalHeadless;
     ---
 
     Params:
-        colours = Whether or not to tint output, default yes. A global monochrome
-            setting overrides this.
+        colours = Whether or not to tint output, default yes.
  +/
 void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
 {
