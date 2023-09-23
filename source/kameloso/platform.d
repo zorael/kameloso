@@ -310,7 +310,7 @@ auto openInBrowser(const string url)
 /++
     Re-executes the program.
 
-    Filters out any captive `--set twitch.*` keygen settings from the
+    Filters out any `--set twitch.*` keygen terminal wizard flags from the
     arguments originally passed to the program, then calls
     [std.process.execvp|execvp].
 

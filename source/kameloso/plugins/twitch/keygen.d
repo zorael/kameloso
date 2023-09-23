@@ -29,8 +29,7 @@ package:
 
 // requestTwitchKey
 /++
-    Start the captive key generation routine at the earliest possible moment.
-    Invoked by [kameloso.plugins.twitch.base.start|start] during early connect.
+    Starts the key generation terminal wizard.
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
@@ -47,7 +46,7 @@ void requestTwitchKey(TwitchPlugin plugin)
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.warning("== Twitch authorisation key generation mode ==");
+    logger.warning("== Twitch authorisation key generation wizard ==");
     enum attemptToOpenMessage = `
 Attempting to open a <l>Twitch login page</> in your default web browser.
 Follow the instructions and log in to authorise the use of this program with
@@ -199,8 +198,7 @@ your <w>BOT</> account.
 
 // requestTwitchSuperKey
 /++
-    Start the captive key generation routine at the earliest possible moment,
-    which is at plugin [kameloso.plugins.twitch.base.start|start].
+    Starts the super-key generation terminal wizard.
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
@@ -215,7 +213,7 @@ void requestTwitchSuperKey(TwitchPlugin plugin)
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.warning("== Twitch authorisation super key generation mode ==");
+    logger.warning("== Twitch authorisation super-key generation wizard ==");
     enum message = `
 To access certain Twitch functionality like changing channel settings
 (what game is currently being played, etc), the program needs an authorisation

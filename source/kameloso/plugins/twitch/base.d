@@ -119,19 +119,19 @@ public:
         bool bellOnImportant = false;
 
         /++
-            Whether or not to start a captive session for requesting a Twitch
+            Whether or not to start a terminal wizard requesting a Twitch
             access token with normal chat privileges.
          +/
         bool keygen = false;
 
         /++
-            Whether or not to start a captive session for requesting a Twitch
+            Whether or not to start a terminal wizard requesting a Twitch
             access token with broadcaster privileges.
          +/
         bool superKeygen = false;
 
         /++
-            Whether or not to start a captive session for requesting Google
+            Whether or not to start a terminal wizard requesting Google
             access tokens.
          +/
         bool googleKeygen = false;
@@ -142,7 +142,7 @@ public:
         bool youtubeKeygen = false;
 
         /++
-            Whether or not to start a captive session for requesting Spotify
+            Whether or not to start a terminal wizard requesting Spotify
             access tokens.
          +/
         bool spotifyKeygen = false;
@@ -2692,7 +2692,7 @@ unittest
 
 // initialise
 /++
-    Start the captive key generation routine(s) before connecting to the server.
+    Start any key generation terminal wizard(s) before connecting to the server.
  +/
 void initialise(TwitchPlugin plugin)
 {
@@ -2733,7 +2733,7 @@ void initialise(TwitchPlugin plugin)
 
         if (plugin.state.settings.headless)
         {
-            // Headless mode is enabled, so a captive keygen session doesn't make sense
+            // Headless mode is enabled, so a terminal wizard doesn't make sense
             return;
         }
 
