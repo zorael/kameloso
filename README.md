@@ -1,17 +1,17 @@
 # [![kameloso](kD.png)](https://github.com/zorael/kameloso/wiki) [![Linux/macOS/Windows](https://img.shields.io/github/actions/workflow/status/zorael/kameloso/d.yml?branch=master)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.12.1.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.12.1...master)
 
-**kameloso** is an IRC bot with [Twitch support](#twitch). It is text-based and runs in your terminal or console.
+**kameloso** is an IRC bot. It is text-based and runs in your terminal or console.
 
 ### So what does it do
 
 * real-time chat monitoring
-* channel polls, user quotes, `!seen`, counters, oneliners, timed announcements, ...
+* channel polls, user quotes, `!seen`, counters, oneliners, recurring timed announcements, ...
 * saving notes to offline users that get played back when they come online
 * reporting titles of pasted URLs, YouTube video information
 * `sed`-like replacement of messages (`s/this/that/` substitution)
 * logs
 * bugs
-* some common [Twitch bot features](#twitch-bot)
+* [Twitch support](#twitch) with some [common bot features](#twitch-bot)
 * more [random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
 All of the above [are plugins](source/kameloso/plugins) and can be disabled at runtime or omitted from compilation entirely. It is modular and easy to extend. A skeletal Hello World plugin is [less than 30 lines of code](source/kameloso/plugins/hello.d).
@@ -93,7 +93,7 @@ Grab a prebuilt Windows or Linux binary from under [**Releases**](https://github
 
 ### Prerequisites
 
-**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html), with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases) and with the GCC-based [**gdc**](https://gdcproject.org/downloads). **dmd** compiles very fast, while **ldc** and **gdc** are slower at compiling but produce faster code. Additionally, the latter two support more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
+The program can be built using the [**D**](https://dlang.org) reference compiler [**dmd**](https://dlang.org/download.html), with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases) and with the GCC-based [**gdc**](https://gdcproject.org/downloads). **dmd** compiles very fast, while **ldc** and **gdc** are slower at compiling but produce faster code. Additionally, the latter two support more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
 You will need a compiler based on D version **2.086** or later (May 2019). For **ldc** this is version **1.16**, while for **gdc** you broadly need release series **12**.
 
