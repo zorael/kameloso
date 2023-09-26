@@ -402,9 +402,9 @@ void writeToDisk(
  +/
 void giveConfigurationMinimalInstructions()
 {
-    enum adminPattern = "...one or more <i>admins</> who get administrative control over the bot.";
+    enum adminPattern = "<i>*</> one or more <i>admins</> who get administrative control over the bot.";
     logger.trace(adminPattern);
-    enum homePattern = "...one or more <i>homeChannels</> in which to operate.";
+    enum homePattern = "<i>*</> one or more <i>homeChannels</> in which to operate.";
     logger.trace(homePattern);
 }
 
@@ -1325,14 +1325,16 @@ void notifyAboutIncompleteConfiguration(
 void giveBrightTerminalHint(
     const Flag!"alsoAboutConfigSetting" alsoConfigSetting = No.alsoAboutConfigSetting)
 {
-    enum brightPattern = "If text is difficult to read (eg. white on white), " ~
-        "try running the program with <i>--bright</> or <i>--color=never</>.";
+    // Don't highlight the getopt flags as they might be difficult to read
+    enum brightPattern = "If text is difficult to read (e.g. white on white), " ~
+        "try running the program with --bright or --color=never.";
     logger.trace(brightPattern);
 
     if (alsoConfigSetting)
     {
+        // As above
         enum configPattern = "The setting will be made persistent if you pass it " ~
-            "at the same time as <i>--save</>.";
+            "at the same time as --save.";
         logger.trace(configPattern);
     }
 }
