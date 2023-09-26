@@ -3926,18 +3926,12 @@ auto checkInitialisationMessages(
             default:
                 import std.stdio : stdout;
 
-                enum pattern = "onThreadMessage received unexpected message type: <t>%s";
+                enum pattern = "checkInitialisationMessages.onThreadMessage " ~
+                    "received unexpected message type: <t>%s";
                 logger.errorf(pattern, message.type);
-                if (instance.settings.flush) stdout.flush();
                 halt = true;
                 break;
             }
-        }
-
-        if (halt)
-        {
-            retval = ShellReturnValue.pluginInitialisationFailure;
-            return true;
         }
 
         immutable receivedSomething = receiveTimeout(Duration.zero,
@@ -3945,15 +3939,24 @@ auto checkInitialisationMessages(
             (Variant v) scope
             {
                 // Caught an unhandled message
-                enum pattern = "run received unknown Variant: <l>%s";
-                logger.warningf(pattern, v.type);
+                enum pattern = "checkInitialisationMessages received unknown Variant: <l>%s";
+                logger.errorf(pattern, v.type);
+                halt = true;
             }
         );
 
-        if (!receivedSomething) break;
+        if (!receivedSomething)
+        {
+            return true;
+        }
+        else if (halt)
+        {
+            retval = ShellReturnValue.pluginInitialisationFailure;
+            return false;
+        }
     }
 
-    return false;
+    assert(0, "Unreachable");
 }
 
 
