@@ -3276,26 +3276,6 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             interruptibleSleep(gracePeriodBeforeReconnect, instance.abort);
             if (*instance.abort) break outerloop;
 
-            try
-            {
-                // Re-instantiate plugins here so it isn't done on the first connect attempt
-                instance.instantiatePlugins();
-            }
-            catch (Exception e)
-            {
-                enum pattern = "An unexpected error occurred while instantiating plugins: " ~
-                    "<t>%s</> (at <l>%s</>:<l>%d</>)";
-                logger.errorf(
-                    pattern,
-                    e.msg,
-                    e.file.doublyBackslashed,
-                    e.line);
-
-                version(PrintStacktraces) logger.trace(e.info);
-                attempt.retval = ShellReturnValue.pluginInitialisationException;
-                break outerloop;
-            }
-
             // Reset throttling, in case there were queued messages.
             instance.throttle.reset();
 
@@ -3311,6 +3291,89 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
 
             // Reset transient state flags
             instance.flags = typeof(instance.flags).init;
+
+            scope(exit)
+            {
+                if (*instance.abort || (attempt.retval != ShellReturnValue.success))
+                {
+                    // Something seems to have failed, so teardown plugins
+                    instance.teardownPlugins();
+                }
+            }
+
+            /+
+                Reinstantiate plugins.
+             +/
+            try
+            {
+                assert(!instance.plugins.length, "Tried to reinstantiate with existing plugins");
+                instance.instantiatePlugins();
+            }
+            catch (Exception e)
+            {
+                enum pattern = "An unexpected error occurred while instantiating plugins: " ~
+                    "<t>%s</> (at <l>%s</>:<l>%d</>)";
+                logger.errorf(
+                    pattern,
+                    e.msg,
+                    e.file.doublyBackslashed,
+                    e.line);
+
+                version(PrintStacktraces) logger.trace(e.info);
+                attempt.retval = ShellReturnValue.pluginInstantiationException;
+                break outerloop;
+            }
+
+            /+
+                Reinitialise them.
+             +/
+            try
+            {
+                instance.initialisePlugins();
+            }
+            catch (IRCPluginInitialisationException e)
+            {
+                import kameloso.plugins.common.misc : pluginFileBaseName;
+
+                enum pattern = "The <l>%s</> plugin failed to initialise: " ~
+                    "<t>%s</> (at <l>%s</>:<l>%d</>)";
+                logger.errorf(
+                    pattern,
+                    e.pluginName,
+                    e.msg,
+                    e.file.pluginFileBaseName.doublyBackslashed,
+                    e.line);
+
+                version(PrintStacktraces) logger.trace(e.info);
+                attempt.retval = ShellReturnValue.pluginInitialisationFailure;
+                break outerloop;
+            }
+            catch (Exception e)
+            {
+                enum pattern = "An unexpected error occurred while initialising plugins: " ~
+                    "<t>%s</> (at <l>%s</>:<l>%d</>)";
+                logger.errorf(
+                    pattern,
+                    e.msg,
+                    e.file.doublyBackslashed,
+                    e.line);
+
+                version(PrintStacktraces) logger.trace(e.info);
+                attempt.retval = ShellReturnValue.pluginInitialisationException;
+                break outerloop;
+            }
+
+            if (*instance.abort) break outerloop;
+
+            // Check for concurrency messages in case any were sent during plugin initialisation
+            ShellReturnValue initRetval;
+            immutable proceed = checkInitialisationMessages(instance, initRetval);
+
+            if (!proceed)
+            {
+                attempt.retval = initRetval;
+                break outerloop;
+            }
         }
 
         scope(exit)
