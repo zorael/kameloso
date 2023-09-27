@@ -3262,9 +3262,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                         to RPL_WELCOME, or we're reconnecting.
                         Quickly attempt again.
                      +/
-                    static immutable twitchRegistrationFailConnectionRetry =
-                        Timeout.twitchRegistrationFailConnectionRetryMsecs.msecs;
-                    gracePeriodBeforeReconnect = twitchRegistrationFailConnectionRetry;
+                    gracePeriodBeforeReconnect = Timeout.twitchRegistrationFailConnectionRetryMsecs.msecs;
                 }
             }
 
