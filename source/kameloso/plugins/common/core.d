@@ -3081,7 +3081,7 @@ enum Timing
 struct IRCEventHandler
 {
 private:
-    import kameloso.typecons : UnderscoreOpDispatcher;
+    import lu.typecons : UnderscoreOpDispatcher;
 
 public:
     // acceptedEventTypes
