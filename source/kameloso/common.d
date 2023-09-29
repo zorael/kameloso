@@ -54,38 +54,6 @@ shared static this()
 KamelosoLogger logger;
 
 
-// initLogger
-/++
-    Initialises the [kameloso.logger.KamelosoLogger|KamelosoLogger] logger for
-    use in this thread.
-
-    It needs to be separately instantiated per thread, and even so there may be
-    race conditions. Plugins are encouraged to use
-    [kameloso.thread.ThreadMessage|ThreadMessage]s to log to screen from other threads.
-
-    Example:
-    ---
-    initLogger(Yes.colours, Yes.brightTerminal);
-    ---
-
-    Params:
-        colours = Whether to use coloured terminal output.
-        bright = Whether the terminal has a bright background or not.
-        headless = Whether the terminal is headless or not.
-        flush = Whether the terminal needs to manually flush standard out after writing to it.
- +/
-void initLogger(
-    const Flag!"colours" colours,
-    const Flag!"brightTerminal" bright,
-    const Flag!"headless" headless,
-    const Flag!"flush" flush) @safe
-out (; (logger !is null), "Failed to initialise logger")
-{
-    import kameloso.logger : KamelosoLogger;
-    logger = new KamelosoLogger(colours, bright, headless, flush);
-}
-
-
 // settings
 /++
     A [kameloso.pods.CoreSettings|CoreSettings] struct global, housing
