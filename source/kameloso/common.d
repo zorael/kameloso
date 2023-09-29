@@ -29,14 +29,12 @@ shared static this()
 {
     // This is technically before settings have been read.
     // We need this for unit tests.
-    logger = new KamelosoLogger(
-        Yes.colours,
-        No.brightTerminal,
-        No.headless,
-        Yes.flush);
-
-    // settings need instantiating too, for tag expansion and kameloso.printing.
-    settings = new CoreSettings;
+    .settings = new CoreSettings;
+    .settings.colours = true;
+    .settings.brightTerminal = false;
+    .settings.headless = false;
+    .settings.flush = true;
+    logger = new KamelosoLogger(*.settings);
 }
 
 
