@@ -411,20 +411,19 @@ void giveConfigurationMinimalInstructions()
 
 // flatten
 /++
-    Flattens a dynamic array by splitting elements containing more than one
-    value (as separated by a separator string) into separate elements.
+    Flattens a dynamic array of strings by splitting elements containing more
+    than one value (as separated by a separator string) into separate elements.
 
     Params:
+        arr = A dynamic `string[]` array.
         separator = Separator, defaults to a space string (" ").
-        arr = A dynamic array.
 
     Returns:
         A new array, with any elements previously containing more than one
         `separator`-separated entries now in separate elements.
  +/
-auto flatten(string separator = " ", T)(const T[] arr)
+auto flatten(const string[] arr, const string separator = " ")
 {
-    import lu.semver : LuSemVer;
     import lu.string : stripped;
     import std.algorithm.iteration : filter, joiner, map, splitter;
     import std.array : array;
@@ -436,19 +435,7 @@ auto flatten(string separator = " ", T)(const T[] arr)
         .filter!(elem => elem.length)
         .array;
 
-    static if (
-        (LuSemVer.majorVersion >= 1) &&
-        (LuSemVer.minorVersion >= 2) &&
-        (LuSemVer.patchVersion >= 2))
-    {
-        return toReturn;
-    }
-    else
-    {
-        // FIXME: lu.string.stripped makes the type const
-        // Remove this when we update lu
-        return toReturn.dup;
-    }
+    return toReturn;
 }
 
 ///
@@ -463,12 +450,12 @@ unittest
     }
     {
         auto arr = [ "a", "b", "c,d,e,,,", "f" ];
-        arr = flatten!","(arr);
+        arr = flatten(arr, ",");
         assert((arr == [ "a", "b", "c", "d", "e", "f" ]), arr.to!string);
     }
     {
         auto arr = [ "a", "b", "c dhonk  e ", "f" ];
-        arr = flatten!"honk"(arr);
+        arr = flatten(arr, "honk");
         assert((arr == [ "a", "b", "c d", "e", "f" ]), arr.to!string);
     }
     {
