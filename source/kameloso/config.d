@@ -261,8 +261,8 @@ void manageConfigFile(
         enum pattern = "Attempting to open <i>%s</> with <i>%s</>...";
         logger.logf(pattern, instance.settings.configFile.doublyBackslashed, editor.doublyBackslashed);
 
-        immutable command = [ editor, instance.settings.configFile ];
-        spawnProcess(command).wait;
+        immutable string[2] command = [ editor, instance.settings.configFile ];
+        spawnProcess(command[]).wait;
     }
 
     /++
@@ -411,8 +411,8 @@ void writeToDisk(
 void giveConfigurationMinimalInstructions()
 {
     enum adminPattern = "<i>*</> one or more <i>admins</> who get administrative control over the bot.";
-    logger.trace(adminPattern);
     enum homePattern = "<i>*</> one or more <i>homeChannels</> in which to operate.";
+    logger.trace(adminPattern);
     logger.trace(homePattern);
 }
 
@@ -670,7 +670,7 @@ auto handleGetopt(ref Kameloso instance) @system
                 " [<i>%s</>]".expandTags(LogLevel.trace).format(editorCommand) :
                 string.init;
 
-        string formatNum(const size_t num)
+        auto formatNum(const size_t num)
         {
             return (quiet || (num == 0)) ? string.init :
                 " (<i>%d</>)".expandTags(LogLevel.trace).format(num);
