@@ -559,8 +559,8 @@ auto handleGetopt(ref Kameloso instance) @system
     import kameloso.logger : KamelosoLogger;
     import kameloso.terminal : applyTerminalOverrides;
     import lu.objmanip : replaceMembers;
-    import std.getopt : arraySep, config, getopt;
     static import kameloso.common;
+    static import std.getopt;
 
     bool shouldWriteConfig;
     bool shouldOpenTerminalEditor;
@@ -594,10 +594,10 @@ auto handleGetopt(ref Kameloso instance) @system
 
     // Results can be const
     auto argsSlice = instance.args[];
-    const configFileResults = getopt(argsSlice,
-        config.caseSensitive,
-        config.bundling,
-        config.passThrough,
+    const configFileResults = std.getopt.getopt(argsSlice,
+        std.getopt.config.caseSensitive,
+        std.getopt.config.bundling,
+        std.getopt.config.passThrough,
         "c|config", &instance.settings.configFile,
         "version", &shouldShowVersion,
     );
@@ -620,10 +620,10 @@ auto handleGetopt(ref Kameloso instance) @system
     applyDefaults(instance);
     applyTerminalOverrides(instance.settings.flush, instance.settings.colours);
 
-    cast(void)getopt(argsSlice,
-        config.caseSensitive,
-        config.bundling,
-        config.passThrough,
+    cast(void)std.getopt.getopt(argsSlice,
+        std.getopt.config.caseSensitive,
+        std.getopt.config.bundling,
+        std.getopt.config.passThrough,
         "colour", &colourString,
         "color", &colourString,
         "setup-twitch", &shouldSetupTwitch,
@@ -729,11 +729,11 @@ auto handleGetopt(ref Kameloso instance) @system
                 "(or the application defined in the <i>$EDITOR</> environment variable)";
         }
 
-        arraySep = ",";
+        std.getopt.arraySep = ",";
 
-        return getopt(theseArgs,
-            config.caseSensitive,
-            config.bundling,
+        return std.getopt.getopt(theseArgs,
+            std.getopt.config.caseSensitive,
+            std.getopt.config.bundling,
             "n|nickname",
                 quiet ? string.init :
                     "Nickname [<i>%s</>]"
