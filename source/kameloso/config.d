@@ -332,7 +332,7 @@ void manageConfigFile(
             cast(Flag!"giveInstructions")(!configFileExists));
     }
 
-    if (shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
+    if (!instance.settings.headless && (shouldOpenTerminalEditor || shouldOpenGraphicalEditor))
     {
         // If instructions were given, add an extra linebreak to make it prettier
         if (!configFileExists) logger.trace();
