@@ -100,6 +100,8 @@ void printHelp(GetoptResult results)
 /++
     Writes configuration to file, verbosely.
 
+    This is called if `--save` was passed.
+
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         client = Reference to the current [dialect.defs.IRCClient|IRCClient].
@@ -115,15 +117,13 @@ void verboselyWriteConfig(
     ref IRCBot bot,
     const Flag!"giveInstructions" giveInstructions = Yes.giveInstructions) @system
 {
-    import kameloso.common : logger, printVersionInfo;
-    import kameloso.printing : printObjects;
-    import std.file : exists;
-
-    // --save was passed; write configuration to file and quit
+    import kameloso.common : logger;
 
     if (!instance.settings.headless)
     {
+        import kameloso.common : printVersionInfo;
         import std.stdio : stdout, writeln;
+
         printVersionInfo();
         writeln();
         if (instance.settings.flush) stdout.flush();
@@ -131,17 +131,13 @@ void verboselyWriteConfig(
 
     // If we don't instantiate the plugins there'll be no plugins array
     instance.instantiatePlugins();
-
-    immutable shouldGiveBrightTerminalHint =
-        instance.settings.colours &&
-        !instance.settings.brightTerminal &&
-        !instance.settings.configFile.exists;
-
     writeConfigurationFile(instance, instance.settings.configFile);
 
     if (!instance.settings.headless)
     {
+        import kameloso.printing : printObjects;
         import kameloso.string : doublyBackslashed;
+        import std.file : exists;
 
         printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
         enum pattern = "Configuration written to <i>%s";
@@ -153,6 +149,11 @@ void verboselyWriteConfig(
             logger.log("Edit it and make sure it contains at least one of the following:");
             giveConfigurationMinimalInstructions();
         }
+
+        immutable shouldGiveBrightTerminalHint =
+            instance.settings.colours &&
+            !instance.settings.brightTerminal &&
+            !instance.settings.configFile.exists;
 
         if (shouldGiveBrightTerminalHint)
         {
