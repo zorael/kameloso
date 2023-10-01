@@ -1066,13 +1066,6 @@ auto handleGetopt(ref Kameloso instance) @system
     if (shouldWriteConfig || shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
     {
         // --save and/or --edit was passed; defer to manageConfigFile
-
-        if (instance.settings.headless)
-        {
-            // Silently abort if we're in headless mode
-            return Next.returnFailure;
-        }
-
         // Also pass Yes.shouldWriteConfig if something was changed via getopt
         shouldWriteConfig =
             shouldWriteConfig ||
