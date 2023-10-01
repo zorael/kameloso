@@ -117,6 +117,10 @@ auto applyCustomSettings(
                 }
                 continue top;
             }
+            else if (!plugins.length)
+            {
+                continue top;
+            }
             else
             {
                 foreach (plugin; plugins)

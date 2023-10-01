@@ -174,8 +174,15 @@ void verboselyWriteConfig(
 void printSettings(ref Kameloso instance) @system
 {
     import kameloso.common : printVersionInfo;
+    import kameloso.plugins.common.misc : applyCustomSettings;
     import kameloso.printing : printObjects;
     import std.stdio : stdout, writeln;
+
+    if (instance.customSettings.length)
+    {
+        // Apply custom settings to the settings struct. Disregard returned value
+        cast(void)applyCustomSettings(null, instance.customSettings, instance.settings);
+    }
 
     printVersionInfo();
     writeln();
