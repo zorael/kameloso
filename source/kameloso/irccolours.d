@@ -792,7 +792,7 @@ private string mapColoursImpl(Flag!"strip" strip = No.strip)
     {
         immutable segmentIndex = segments.length;  // snapshot
         segments ~= Segment.init;
-        Segment* segment = &segments[segmentIndex];
+        auto segment = &segments[segmentIndex];
 
         segment.pre = slice[0..pos];
         if (slice.length == pos) break;
@@ -1060,8 +1060,9 @@ unittest
  +/
 auto stripColours(const string line) pure nothrow
 {
-    if (!line.length) return line;
-    return mapColoursImpl!(Yes.strip)(line, TerminalForeground.default_, TerminalBackground.default_);
+    return line.length ?
+        mapColoursImpl!(Yes.strip)(line, TerminalForeground.default_, TerminalBackground.default_) :
+        string.init;
 }
 
 ///
@@ -1241,7 +1242,7 @@ unittest
     Returns:
         The passed `line` but with tags expanded to formatting and colouring.
  +/
-T expandIRCTags(T)
+auto expandIRCTags(T)
     (const T line,
     const Flag!"extendedOutgoingColours" extendedOutgoingColours,
     const Flag!"strip" strip) @system

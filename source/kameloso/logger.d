@@ -475,7 +475,8 @@ public:
                         messagebuffer.put(arg.to!string);
                     }
                 }
-                else static if (is(typeof(T.toString)) &&
+                else static if (
+                    is(typeof(T.toString)) &&
                     is(UnqualArray!(typeof(T.toString)) : char[]))
                 {
                     // toString string/char[] literal

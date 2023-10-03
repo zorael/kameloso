@@ -477,12 +477,12 @@ unittest
  +/
 auto doublyBackslashed(const string path)
 {
-    if (!path.length) return path;
-
     version(Windows)
     {
         import std.array : replace;
         import std.string : indexOf;
+
+        if (!path.length) return path;
 
         string slice = path.replace('\\', r"\\");
 
@@ -490,10 +490,9 @@ auto doublyBackslashed(const string path)
         {
             slice = slice.replace(r"\\\\", r"\\");
         }
-
         return slice;
     }
-    else
+    else /*version(Posix)*/
     {
         return path;
     }

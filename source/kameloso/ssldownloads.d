@@ -51,7 +51,10 @@ auto downloadWindowsSSL(
     import kameloso.common : logger;
     import std.path : buildNormalizedPath;
 
-    static int downloadFile(const string url, const string what, const string saveAs)
+    static int downloadFile(
+        const string url,
+        const string what,
+        const string saveAs)
     {
         import std.format : format;
         import std.process : executeShell;

@@ -188,7 +188,7 @@ void formatMessageMonochrome(Sink)
     }
 
     immutable typestring = Enum!(IRCEvent.Type).toString(event.type).withoutTypePrefix;
-    string content = stripEffects(event.content);  // mutable
+    immutable content = stripEffects(event.content);
     bool shouldBell;
 
     static if (!__traits(hasMember, Sink, "data"))
@@ -669,11 +669,6 @@ void formatMessageColoured(Sink)
 
     immutable bright = cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal;
 
-    version(TwitchSupport)
-    {
-        immutable normalise = cast(Flag!"normalise")plugin.printerSettings.normaliseTruecolour;
-    }
-
     /++
         Outputs a terminal ANSI colour token based on the hash of the passed
         nickname.
@@ -716,7 +711,12 @@ void formatMessageColoured(Sink)
                 import lu.conv : rgbFromHex;
 
                 auto rgb = rgbFromHex(user.colour);
-                sink.applyTruecolour(rgb.r, rgb.g, rgb.b, bright, normalise);
+                sink.applyTruecolour(
+                    rgb.r,
+                    rgb.g,
+                    rgb.b,
+                    bright,
+                    cast(Flag!"normalise")plugin.printerSettings.normaliseTruecolour);
                 coloured = true;
             }
         }
