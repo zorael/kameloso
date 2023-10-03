@@ -389,13 +389,14 @@ Pid execvp(/*const*/ string[] args) @system
 
     version(Posix)
     {
+        import lu.common : ReturnValueException;
         import std.process : execvp;
 
         immutable retval = execvp(args[0], args);
 
         // If we're here, the call failed
         enum message = "execvp failed";
-        throw new ExecException(message, retval);
+        throw new ReturnValueException(message, args[0], retval);
     }
     else version(Windows)
     {
@@ -462,44 +463,5 @@ Pid execvp(/*const*/ string[] args) @system
     else
     {
         static assert(0, "Unsupported platform, please file a bug.");
-    }
-}
-
-
-// ExecException
-/++
-    Exception thrown when an [std.process.execvp|execvp] action failed.
- +/
-final class ExecException : Exception
-{
-    /++
-        [std.process.execvp|execvp] return value.
-     +/
-    int retval;
-
-    /++
-        Constructor attaching a return value.
-     +/
-    this(
-        const string msg,
-        const int retval,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        this.retval = retval;
-        super(msg, file, line, nextInChain);
-    }
-
-    /++
-        Passthrough constructor.
-     +/
-    this(
-        const string msg,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        super(msg, file, line, nextInChain);
     }
 }
