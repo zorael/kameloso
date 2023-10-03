@@ -55,7 +55,7 @@ auto applyCustomSettings(
     import std.conv : ConvException;
     import std.string : indexOf;
 
-    bool noErrors = true;
+    bool allSuccess = true;
 
     top:
     foreach (immutable line; customSettings)
@@ -64,7 +64,7 @@ auto applyCustomSettings(
         {
             enum pattern = `Bad <l>plugin</>.<l>setting</>=<l>value</> format. (<l>%s</>)`;
             logger.warningf(pattern, line);
-            noErrors = false;
+            allSuccess = false;
             continue;
         }
 
@@ -91,7 +91,7 @@ auto applyCustomSettings(
                 {
                     enum pattern = "No such <l>core</> setting: <l>%s";
                     logger.warningf(pattern, setting);
-                    noErrors = false;
+                    allSuccess = false;
                 }
                 else
                 {
@@ -135,7 +135,7 @@ auto applyCustomSettings(
                     {
                         enum pattern = "No such <l>%s</> plugin setting: <l>%s";
                         logger.warningf(pattern, pluginstring, setting);
-                        noErrors = false;
+                        allSuccess = false;
                     }
                     continue top;
                 }
@@ -144,7 +144,7 @@ auto applyCustomSettings(
             // If we're here, the loop was never continued --> unknown plugin
             enum pattern = "Invalid plugin: <l>%s";
             logger.warningf(pattern, pluginstring);
-            noErrors = false;
+            allSuccess = false;
             // Drop down, try next
         }
         catch (SetMemberException e)
@@ -153,20 +153,20 @@ auto applyCustomSettings(
                 "it requires a value and none was supplied.";
             logger.warningf(pattern, pluginstring, setting);
             version(PrintStacktraces) logger.trace(e.info);
-            noErrors = false;
+            allSuccess = false;
             // Drop down, try next
         }
         catch (ConvException e)
         {
             enum pattern = `Invalid value for <l>%s</>.<l>%s</>: "<l>%s</>" <t>(%s)`;
             logger.warningf(pattern, pluginstring, setting, value, e.msg);
-            noErrors = false;
+            allSuccess = false;
             // Drop down, try next
         }
         continue top;
     }
 
-    return noErrors;
+    return allSuccess;
 }
 
 ///
