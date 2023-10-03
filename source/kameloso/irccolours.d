@@ -260,7 +260,7 @@ in (line.length, "Tried to apply IRC colours to a string but no string was given
 {
     import std.array : Appender;
 
-    if (!line.length) return string.init;
+    if (!line.length) return line;
 
     Appender!(char[]) sink;
 
@@ -384,7 +384,7 @@ in (word.length, "Tried to apply IRC colours by hash to a string but no string w
     import lu.conv : toAlphaInto;
     import std.array : Appender;
 
-    if (!word.length) return string.init;
+    if (!word.length) return word;
 
     Appender!(char[]) sink;
     sink.reserve(word.length + 4);  // colour, index, word, colour
@@ -604,7 +604,7 @@ auto mapEffects(
     alias I = IRCControlCharacter;
     alias TF = TerminalFormat;
 
-    if (!origLine.length) return string.init;
+    if (!origLine.length) return origLine;
 
     string line = origLine;  // mutable
 

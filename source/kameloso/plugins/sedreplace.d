@@ -291,7 +291,7 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
     string replaceThis = slice[0..delimPos];  // mutable
 
     slice = slice[delimPos+1..$];
-    if (!slice.length) return string.init;
+    if (!slice.length) return slice;
 
     // ...to here.
     replaceThis = replaceThis.replace(escapedCharAsString, charAsString);
