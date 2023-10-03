@@ -165,24 +165,24 @@ auto downloadWindowsSSL(
                     if (*instance.abort) return No.settingsTouched;
                     if (downloadResult != 0) break;
 
-                    logger.info("Launching installer.");
+                    logger.info("Launching <l>OpenSSL</> installer.");
                     cast(void)execute([ exeFile ]);
 
                     return retval;
                 }
             }
 
-            logger.error("Could not find OpenSSL .exe to download");
+            logger.error("Could not find <l>OpenSSL</> .exe to download");
             // Drop down and return
         }
         catch (JSONException e)
         {
-            enum pattern = "Error parsing file containing OpenSSL download links: <l>%s";
+            enum pattern = "Error parsing file containing <l>OpenSSL</> download links: <l>%s";
             logger.errorf(pattern, e.msg);
         }
         catch (ProcessException e)
         {
-            enum pattern = "Error starting installer: <l>%s";
+            enum pattern = "Error starting <l>OpenSSL</> installer: <l>%s";
             logger.errorf(pattern, e.msg);
         }
     }
