@@ -56,15 +56,18 @@ auto downloadWindowsSSL(
         const string what,
         const string saveAs)
     {
-        import std.format : format;
-        import std.process : executeShell;
+        import std.process : execute;
 
         enum pattern = "Downloading %s from <l>%s</>...";
         logger.infof(pattern, what, url);
 
-        enum executePattern = `powershell -c "Invoke-WebRequest '%s' -OutFile '%s'"`;
-        immutable command = executePattern.format(url, saveAs);
-        immutable result = executeShell(command);
+        immutable string[3] command =
+        [
+            "powershell.exe",
+            "-c",
+            "Invoke-WebRequest '" ~ url ~ "' -OutFile '" ~ saveAs ~ "'",
+        ];
+        immutable result = executeShell(command[]);
 
         if (result.status != 0)
         {
