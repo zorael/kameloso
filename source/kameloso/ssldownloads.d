@@ -151,9 +151,18 @@ auto downloadWindowsSSL(
                 {
                     enum head = "Win64OpenSSL_Light-1_";
                 }
-                else /*version(Win32)*/
+                else version(Win32)
                 {
                     enum head = "Win32OpenSSL_Light-1_";
+                }
+                /*else version(AArch64)
+                {
+                    // Only OpenSSL v3.0 available for ARM, and we haven't tested it yet
+                    enum head = "Win64ARMOpenSSL_Light-3_";
+                }*/
+                else
+                {
+                    static assert(0, "Unsupported platform, please file a bug.");
                 }
 
                 if (filename.startsWith(head) && filename.endsWith(".exe"))

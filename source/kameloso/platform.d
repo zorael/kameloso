@@ -82,7 +82,7 @@ auto currentEnvironment()
     On non-macOS Posix it defaults to `$XDG_CONFIG_HOME` and falls back to
     `~/.config` if no `$XDG_CONFIG_HOME` environment variable present.
 
-    On macOS it defaults to `$HOME/Library/Application Support`.
+    On macOS it defaults to `$HOME/Library/Preferences`.
 
     On Windows it defaults to `%APPDATA%`.
 
@@ -265,7 +265,7 @@ auto openInBrowser(const string url)
         }
 
         immutable browserExecutable = environment.get("BROWSER", open);
-        string[2] browserCommand = [ browserExecutable, url ];  // mutable
+        immutable string[2] browserCommand = [ browserExecutable, url ];  // mutable
         auto devNull = File("/dev/null", "r+");
 
         try
@@ -324,7 +324,7 @@ auto openInBrowser(const string url)
         On Posix, it either exits the program or it throws.
 
     Throws:
-        On Posix, [ExecException] on failure.
+        On Posix, [lu.common.ReturnValueException|ReturnValueException] on failure.
         On Windows, [std.process.ProcessException|ProcessException] on failure.
  +/
 Pid execvp(/*const*/ string[] args) @system
