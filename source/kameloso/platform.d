@@ -265,7 +265,7 @@ auto openInBrowser(const string url)
         }
 
         immutable browserExecutable = environment.get("BROWSER", open);
-        immutable string[2] browserCommand = [ browserExecutable, url ];  // mutable
+        string[2] browserCommand = [ browserExecutable, url ];  // mutable
         auto devNull = File("/dev/null", "r+");
 
         try
