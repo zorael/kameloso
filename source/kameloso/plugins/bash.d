@@ -132,7 +132,7 @@ void worker(
     }
 
     // Set the global settings so messaging functions don't segfault us
-    kameloso.common.settings = &state.settings;
+    kameloso.common.settings = state.settings;
 
     immutable quoteID = event.content.startsWith('#') ?
         event.content[1..$] :

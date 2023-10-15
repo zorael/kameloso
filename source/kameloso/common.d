@@ -25,16 +25,15 @@ import std.typecons : Flag, No, Yes;
 public:
 
 version(unittest)
-shared static this()
+static this()
 {
     // This is technically before settings have been read.
-    // We need this for unit tests.
-    .settings = new CoreSettings;
+    // Set some defaults for unit tests.
     .settings.colours = true;
     .settings.brightTerminal = false;
     .settings.headless = false;
     .settings.flush = true;
-    logger = new KamelosoLogger(*.settings);
+    .logger = new KamelosoLogger(.settings);
 }
 
 
@@ -63,7 +62,7 @@ KamelosoLogger logger;
     [kameloso.common.settings], so they know to use coloured output or not.
     It is a problem that needs solving.
  +/
-CoreSettings* settings;
+CoreSettings settings;
 
 
 // globalAbort

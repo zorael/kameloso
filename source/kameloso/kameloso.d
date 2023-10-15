@@ -503,7 +503,7 @@ public:
             }
         }
 
-        immutable allCustomSuccess = applyCustomSettings(plugins, this.customSettings, this.settings);
+        immutable allCustomSuccess = applyCustomSettings(plugins, this.customSettings);
 
         if (!allCustomSuccess)
         {

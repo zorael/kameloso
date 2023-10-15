@@ -2292,8 +2292,7 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
                 // Borrow settings from the first plugin. It's taken by value
                 immutable success = applyCustomSettings(
                     instance.plugins,
-                    [ expression ],
-                    instance.plugins[0].state.settings);
+                    [ expression ]);
 
                 fiber.payload[0] = success;
                 fiber.call();
@@ -2882,19 +2881,14 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
     console codepages.
 
     This is called very early during execution.
-
-    Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void postInstanceSetup(ref Kameloso instance)
+void postInstanceSetup()
 {
-    import kameloso.constants : KamelosoInfo;
     import kameloso.terminal : isTerminal, setTerminalTitle;
 
     version(Windows)
     {
         import kameloso.terminal : setConsoleModeAndCodepage;
-
         // Set up the console to display text and colours properly.
         setConsoleModeAndCodepage();
     }
@@ -4051,7 +4045,7 @@ auto run(string[] args)
 
     // Set up the Kameloso instance.
     auto instance = Kameloso(args);
-    postInstanceSetup(instance);
+    postInstanceSetup();
 
     scope(exit)
     {
@@ -4061,7 +4055,6 @@ auto run(string[] args)
     }
 
     // Set pointers.
-    kameloso.common.settings = &instance.settings;
     instance.abort = &kameloso.common.globalAbort;
 
     // Declare AttemptState instance.
@@ -4069,6 +4062,9 @@ auto run(string[] args)
 
     // Set up default directories in the settings.
     setDefaultDirectories(instance.settings);
+
+    // Sync settings.
+    kameloso.common.settings = instance.settings;
 
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for colours and headless

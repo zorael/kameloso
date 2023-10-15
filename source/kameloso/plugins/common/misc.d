@@ -37,7 +37,6 @@ public:
         plugins = Array of all [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]s.
         customSettings = Array of custom settings to apply to plugins' own
             setting, in the string forms of "`plugin.setting=value`".
-        copyOfSettings = A copy of the program-wide [kameloso.pods.CoreSettings|CoreSettings].
 
     Returns:
         `true` if no setting name mismatches occurred, `false` if it did.
@@ -47,8 +46,7 @@ public:
  +/
 auto applyCustomSettings(
     IRCPlugin[] plugins,
-    const string[] customSettings,
-    CoreSettings copyOfSettings)
+    const string[] customSettings)
 {
     import lu.objmanip : SetMemberException;
     import lu.string : advancePast;
@@ -84,8 +82,8 @@ auto applyCustomSettings(
                 static import kameloso.common;
 
                 immutable success = slice.length ?
-                    copyOfSettings.setMemberByName(setting, value) :
-                    copyOfSettings.setMemberByName(setting, true);
+                    kameloso.common.settings.setMemberByName(setting, value) :
+                    kameloso.common.settings.setMemberByName(setting, true);
 
                 if (!success)
                 {
@@ -102,14 +100,12 @@ auto applyCustomSettings(
                         "headless",
                         "flush"))
                     {
-                        logger = new KamelosoLogger(copyOfSettings);
+                        logger = new KamelosoLogger(kameloso.common.settings);
                     }
-
-                    *kameloso.common.settings = copyOfSettings;
 
                     foreach (plugin; plugins)
                     {
-                        plugin.state.settings = copyOfSettings;
+                        plugin.state.settings = kameloso.common.settings;
 
                         // No need to flag as updated when we update here manually
                         //plugin.state.updates |= typeof(plugin.state.updates).settings;
@@ -207,7 +203,7 @@ unittest
         "myplugin.d=99.99",
     ];
 
-    cast(void)applyCustomSettings([ plugin ], newSettings, state.settings);
+    cast(void)applyCustomSettings([ plugin ], newSettings);
 
     const ps = (cast(MyPlugin)plugin).myPluginSettings;
 

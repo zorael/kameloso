@@ -306,7 +306,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
                                 {
                                     import kameloso.terminal.colours : colourByHash;
 
-                                    sink.put(colourByHash(word, *kameloso.common.settings));
+                                    sink.put(colourByHash(word, kameloso.common.settings));
 
                                     with (LogLevel)
                                     final switch (baseLevel)

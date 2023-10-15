@@ -181,7 +181,7 @@ void printSettings(ref Kameloso instance) @system
     if (instance.customSettings.length)
     {
         // Apply custom settings to the settings struct. Disregard returned value
-        cast(void)applyCustomSettings(null, instance.customSettings, instance.settings);
+        cast(void)applyCustomSettings(null, instance.customSettings);
     }
 
     printVersionInfo();

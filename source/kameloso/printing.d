@@ -197,13 +197,6 @@ void printObjects(Flag!"all" all = No.all, Things...)(auto ref Things things)
 
         version(Colours)
         {
-            if (!kameloso.common.settings)
-            {
-                // Threading and/or otherwise forgot to assign pointer `kameloso.common.settings`
-                // It will be wrong but initialise it here so we at least don't crash
-                kameloso.common.settings = new typeof(*kameloso.common.settings);
-            }
-
             if (kameloso.common.settings.colours)
             {
                 formatObjectImpl!(all, Yes.coloured)
