@@ -25,7 +25,6 @@ import kameloso.net : ListenAttempt;
 import kameloso.plugins.common.core : IRCPlugin;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
-import lu.common : Next;
 import std.typecons : Flag, No, Yes;
 
 
@@ -213,18 +212,13 @@ void signalHandler(int sig) nothrow @nogc @system
  +/
 void messageFiber(ref Kameloso instance)
 {
-    import kameloso.common : OutgoingLine;
+    import kameloso.common : Next, OutgoingLine;
     import kameloso.constants : Timeout;
     import kameloso.messaging : Message;
     import kameloso.string : replaceTokens;
     import kameloso.thread : OutputRequest, ThreadMessage;
     import std.concurrency : yield;
     import core.time : Duration, MonoTime, msecs;
-
-    // The Generator we use this function with popFronts the first thing it does
-    // after being instantiated. We're not ready for that yet, so catch the next
-    // yield (which is upon messenger.call()).
-    yield(Next.init);
 
     // Loop forever; we'll just terminate the Generator when we want to quit.
     while (true)
@@ -820,6 +814,7 @@ void messageFiber(ref Kameloso instance)
  +/
 auto mainLoop(ref Kameloso instance)
 {
+    import kameloso.common : Next;
     import kameloso.constants : Timeout;
     import kameloso.net : ListenAttempt, SocketSendException, listenFiber;
     import std.concurrency : Generator;
@@ -1052,14 +1047,13 @@ auto mainLoop(ref Kameloso instance)
             propagateWhoisTimestamps(instance);
         }
 
-        // Call the generator, query it for event lines
-        listener.call();
-
+        // Walk it and process the yielded lines
         listenerloop:
-        foreach (const attempt; listener)
+        while (true)
         {
+            listener.call();
             if (*instance.abort) return Next.returnFailure;
-
+            immutable attempt = listener.front;
             immutable actionAfterListen = listenAttemptToNext(instance, attempt);
 
             with (Next)
@@ -1082,8 +1076,13 @@ auto mainLoop(ref Kameloso instance)
             case returnFailure:
                 return Next.retry;
 
+            case noop:
+                // Do nothing and retry
+                continue listenerloop;
+
             case returnSuccess:  // should never happen
-            case crash:  // ditto
+            case unset:  // ditto
+            case crash:  // ...
                 import lu.conv : Enum;
                 import std.conv : text;
 
@@ -1242,16 +1241,12 @@ auto sendLines(ref Kameloso instance)
  +/
 auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 {
+    import kameloso.common : Next;
+
     // Handle the attempt; switch on its state
     with (ListenAttempt.State)
     final switch (attempt.state)
     {
-    case unset:  // should never happen
-    case prelisten:  // ditto
-        import lu.conv : Enum;
-        import std.conv : text;
-        assert(0, text("listener yielded `", Enum!(ListenAttempt.State).toString(attempt.state), "` state"));
-
     case isEmpty:
         // Empty line yielded means nothing received; break foreach and try again
         return Next.retry;
@@ -1259,6 +1254,10 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
     case hasString:
         // hasString means we should drop down and continue processing
         return Next.continue_;
+
+    case noop:
+        // Do nothing
+        return Next.noop;
 
     case warning:
         // Benign socket error; break foreach and try again
@@ -1320,6 +1319,12 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 
         instance.conn.connected = false;
         return Next.returnFailure;
+
+    case unset:  // should never happen
+    case prelisten:  // ditto
+        import lu.conv : Enum;
+        import std.conv : text;
+        assert(0, text("listener yielded `", Enum!(ListenAttempt.State).toString(attempt.state), "` state"));
     }
 }
 
@@ -2372,6 +2377,7 @@ void resetSignals() nothrow @nogc
 auto tryGetopt(ref Kameloso instance)
 {
     import kameloso.plugins.common.misc : IRCPluginSettingsException;
+    import kameloso.common : Next;
     import kameloso.config : handleGetopt;
     import kameloso.configreader : ConfigurationFileReadFailureException;
     import kameloso.string : doublyBackslashed;
@@ -2457,6 +2463,7 @@ auto tryGetopt(ref Kameloso instance)
  +/
 auto tryConnect(ref Kameloso instance)
 {
+    import kameloso.common : Next;
     import kameloso.constants :
         ConnectionDefaultFloats,
         ConnectionDefaultIntegers,
@@ -2478,51 +2485,18 @@ auto tryConnect(ref Kameloso instance)
         connector = null;
     }
 
-    try
-    {
-        connector.call();
-    }
-    catch (Exception e)
-    {
-        /+
-            We can only detect SSL context creation failure based on the string
-            in the generic Exception thrown, sadly.
-         +/
-        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
-        {
-            enum message = "Connection error: <l>" ~
-                MagicErrorStrings.sslLibraryNotFoundRewritten ~
-                " <t>(is OpenSSL installed?)";
-            enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
-            logger.error(message);
-            logger.error(wikiMessage);
-
-            version(Windows)
-            {
-                enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                logger.error(getoptMessage);
-            }
-        }
-        else
-        {
-            enum pattern = "Connection error: <l>%s";
-            logger.errorf(pattern, e.msg);
-        }
-
-        return Next.returnFailure;
-    }
-
     uint incrementedRetryDelay = Timeout.connectionRetry;
     enum transientSSLFailureTolerance = 10;
     uint numTransientSSLFailures;
 
-    foreach (const attempt; connector)
+    while (true)
     {
         import std.algorithm.searching : startsWith;
         import core.time : seconds;
 
+        connector.call();
         if (*instance.abort) return Next.returnFailure;
-
+        const attempt = connector.front;
         immutable lastRetry = (attempt.retryNum+1 == ConnectionDefaultIntegers.retries);
 
         enum unableToConnectString = "Unable to connect socket: ";
@@ -2557,6 +2531,10 @@ auto tryConnect(ref Kameloso instance)
         {
         case unset:  // should never happen
             assert(0, "connector yielded `unset` state");
+
+        case noop:
+            // Do nothing and retry
+            continue;
 
         case preconnect:
             import lu.common : sharedDomains;
@@ -2647,14 +2625,11 @@ auto tryConnect(ref Kameloso instance)
                 }
             }
 
-            if (*instance.abort) return Next.returnFailure;
             if (!lastRetry) verboselyDelay();
             numTransientSSLFailures = 0;
             continue;
 
         case delayThenNextIP:
-            // Check abort before delaying and then again after
-            if (*instance.abort) return Next.returnFailure;
             verboselyDelayToNextIP();
             if (*instance.abort) return Next.returnFailure;
             numTransientSSLFailures = 0;
@@ -2681,7 +2656,6 @@ auto tryConnect(ref Kameloso instance)
                 static assert(0, "Unsupported platform, please file a bug.");
             }
 
-            if (*instance.abort) return Next.returnFailure;
             if (!lastRetry) goto case delayThenNextIP;
             numTransientSSLFailures = 0;
             continue;
@@ -2691,7 +2665,6 @@ auto tryConnect(ref Kameloso instance)
 
             // "Failed to establish SSL connection after successful connect (system lib)"
             // "Failed to establish SSL connection after successful connect" --> attempted SSL on non-SSL server
-
             enum pattern = "Failed to connect: <l>%s";
             logger.errorf(pattern, attempt.error);
             if (*instance.abort) return Next.returnFailure;
@@ -2713,18 +2686,46 @@ auto tryConnect(ref Kameloso instance)
             logger.errorf(pattern, attempt.error);
             return Next.returnFailure;
 
+        case exception:
+            /+
+                We can only detect SSL context creation failure based on the string
+                in the generic Exception thrown, sadly.
+             +/
+            if (attempt.error == MagicErrorStrings.sslContextCreationFailure)
+            {
+                enum message = "Connection error: <l>" ~
+                    MagicErrorStrings.sslLibraryNotFoundRewritten ~
+                    " <t>(is OpenSSL installed?)";
+                enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
+                logger.error(message);
+                logger.error(wikiMessage);
+
+                version(Windows)
+                {
+                    enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                    logger.error(getoptMessage);
+                }
+                return Next.returnFailure;
+            }
+            else
+            {
+                enum pattern = "Connection error: <l>%s";
+                logger.errorf(pattern, attempt.error);
+                continue;
+            }
+
         case invalidConnectionError:
         case error:
             version(Posix)
             {
                 import kameloso.common : errnoStrings;
-                enum pattern = "Failed to connect: <l>%s</> (<t>%s</>)";
-                logger.errorf(pattern, errorString, errnoStrings[attempt.errno]);
+                enum pattern = "Connection failed with <l>%s</>: <t>%s";
+                logger.warningf(pattern, errnoStrings[attempt.errno], errorString);
             }
             else version(Windows)
             {
-                enum pattern = "Failed to connect: <l>%s</> (<t>%d</>)";
-                logger.errorf(pattern, errorString, attempt.errno);
+                enum pattern = "Connection failed with error <l>%d</>: <t>%s";
+                logger.warningf(pattern, attempt.errno, errorString);
             }
             else
             {
@@ -2765,6 +2766,7 @@ auto tryConnect(ref Kameloso instance)
  +/
 auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 {
+    import kameloso.common : Next;
     import kameloso.constants : Timeout;
     import kameloso.net : ResolveAttempt, resolveFiber;
     import std.concurrency : Generator;
@@ -2802,10 +2804,12 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
         incrementedRetryDelay = min(incrementedRetryDelay, delayCap);
     }
 
-    foreach (const attempt; resolver)
+    while (true)
     {
         import std.algorithm.searching : startsWith;
 
+        resolver.call();
+        immutable attempt = resolver.front;
         if (*instance.abort) return Next.returnFailure;
 
         enum getaddrinfoErrorString = "getaddrinfo error: ";
@@ -2822,8 +2826,8 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
             // Should never happen
             assert(0, "resolver yielded `unset` state");
 
-        case preresolve:
-            // No message for this
+        case noop:
+            // Do nothing and retry
             continue;
 
         case success:
@@ -2868,8 +2872,6 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
             return Next.returnFailure;
         }
     }
-
-    return Next.returnFailure;
 }
 
 
@@ -2943,6 +2945,8 @@ void setDefaultDirectories(ref CoreSettings settings) @safe
  +/
 auto verifySettings(ref Kameloso instance)
 {
+    import kameloso.common : Next;
+
     if (!instance.settings.force)
     {
         import dialect.common : isValidNickname;
@@ -3106,14 +3110,15 @@ void resolvePaths(ref Kameloso instance) @safe
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
-        attempt = out-reference [AttemptState] aggregate of state variables used when connecting.
+        attempt = out-reference [RunState] aggregate of state variables used when connecting.
  +/
-void startBot(ref Kameloso instance, out AttemptState attempt)
+void startBot(ref Kameloso instance, out RunState attempt)
 {
     import kameloso.plugins.common.misc :
         IRCPluginInitialisationException,
         pluginNameOfFilename,
         pluginFileBaseName;
+    import kameloso.common : Next;
     import kameloso.constants : ShellReturnValue;
     import kameloso.string : doublyBackslashed;
     import kameloso.terminal : TerminalToken, isTerminal;
@@ -3408,8 +3413,10 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             attempt.retval = ShellReturnValue.success;
             break outerloop;
 
-        case retry:  // should never happen
-        case crash:  // ditto
+        case unset:  // should never happen
+        case noop:   // ditto
+        case retry:  // ...
+        case crash:  // ...
             import lu.conv : Enum;
             import std.conv : text;
             assert(0, text("`tryResolve` returned `", Enum!Next.toString(actionAfterResolve), "`"));
@@ -3491,8 +3498,10 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             break outerloop;
 
         case returnSuccess:  // should never happen
-        case retry:  // ditto
-        case crash:  // ditto
+        case unset:  // ditto
+        case noop:   // ...
+        case retry:  // ...
+        case crash:  // ...
             import lu.conv : Enum;
             import std.conv : text;
             assert(0, text("`tryConnect` returned `", Enum!Next.toString(actionAfterConnect), "`"));
@@ -3584,7 +3593,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
 
         // Start the main loop
         instance.flags.askedToReconnect = false;
-        attempt.next = instance.mainLoop();
+        attempt.next = mainLoop(instance);
         attempt.firstConnect = false;
     }
     while (
@@ -3737,12 +3746,16 @@ void printSummary(const ref Kameloso instance) @safe
 }
 
 
-// AttemptState
+// RunState
 /++
     Aggregate of state values used in an execution of the program.
  +/
-struct AttemptState
+struct RunState
 {
+private:
+    import kameloso.common : Next;
+
+public:
     /++
         Enum denoting what we should do next loop in an execution attempt.
      +/
@@ -4035,6 +4048,7 @@ public:
 auto run(string[] args)
 {
     import kameloso.plugins.common.misc : IRCPluginInitialisationException, IRCPluginSettingsException;
+    import kameloso.common : Next;
     import kameloso.constants : ShellReturnValue;
     import kameloso.logger : KamelosoLogger;
     import kameloso.string : doublyBackslashed, replaceTokens;
@@ -4057,8 +4071,8 @@ auto run(string[] args)
     // Set pointers.
     instance.abort = &kameloso.common.globalAbort;
 
-    // Declare AttemptState instance.
-    AttemptState attempt;
+    // Declare RunState instance.
+    RunState attempt;
 
     // Set up default directories in the settings.
     setDefaultDirectories(instance.settings);
@@ -4102,8 +4116,10 @@ auto run(string[] args)
     case returnFailure:
         return ShellReturnValue.getoptFailure;
 
-    case retry:  // should never happen
-    case crash:  // ditto
+    case unset:  // should never happen
+    case noop:   // ditto
+    case retry:  // ...
+    case crash:  // ...
         import lu.conv : Enum;
         import std.conv : text;
         assert(0, text("`tryGetopt` returned `", Enum!Next.toString(actionAfterGetopt), "`"));
@@ -4177,9 +4193,11 @@ auto run(string[] args)
     case returnFailure:
         return ShellReturnValue.settingsVerificationFailure;
 
-    case retry:  // should never happen
-    case returnSuccess:  // ditto
-    case crash:  // ditto
+    case returnSuccess:  // should never happen
+    case unset:  // ditto
+    case noop:   // ...
+    case retry:  // ...
+    case crash:  // ...
         import lu.conv : Enum;
         import std.conv : text;
         assert(0, text("`verifySettings` returned `", Enum!Next.toString(actionAfterVerification), "`"));

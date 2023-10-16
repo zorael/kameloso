@@ -26,7 +26,6 @@ import kameloso.kameloso : Kameloso;
 import kameloso.common : logger;
 import kameloso.pods : IRCBot;
 import dialect.defs : IRCClient, IRCServer;
-import lu.common : Next;
 import std.getopt : GetoptResult;
 import std.typecons : Flag, No, Yes;
 
@@ -554,7 +553,7 @@ public:
  +/
 auto handleGetopt(ref Kameloso instance) @system
 {
-    import kameloso.common : printVersionInfo;
+    import kameloso.common : Next, printVersionInfo;
     import kameloso.configreader : readConfigInto;
     import kameloso.logger : KamelosoLogger;
     import kameloso.terminal : applyTerminalOverrides;

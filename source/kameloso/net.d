@@ -26,13 +26,12 @@
             No.useIPv6,
             abort));
 
-    resolver.call();
-
     resolveloop:
     foreach (const attempt; resolver)
     {
         // attempt is a yielded `ResolveAttempt`
         // switch on `attempt.state`, deal with it accordingly
+        // it may be `typeof(attepmt.state).noop` on the first iteration
     }
 
     // Resolution done
@@ -45,13 +44,11 @@
             connectionRetries,
             abort));
 
-    connector.call();
-
     connectorloop:
     foreach (const attempt; connector)
     {
         // attempt is a yielded `ConnectionAttempt`
-        // switch on `attempt.state`, deal with it accordingly
+        // as above
     }
 
     // Connection established
@@ -69,6 +66,7 @@
     foreach (const attempt; listener)
     {
         // attempt is a yielded `ListenAttempt`
+        // as above
         doThingsWithLineFromServer(attempt.line);
         // program logic goes here
     }
@@ -283,7 +281,6 @@ public:
         import std.string : fromStringz;
 
         immutable errorCode = openssl.SSL_get_error(sslInstance, code);
-
         return openssl.ERR_reason_error_string(errorCode)
             .fromStringz
             .assumeUnique();
@@ -533,6 +530,7 @@ struct ListenAttempt
     enum State
     {
         unset,      /// Init value.
+        noop,       /// Nothing.
         prelisten,  /// About to listen.
         isEmpty,    /// Empty result; nothing read or similar.
         hasString,  /// String read, ready for processing.
@@ -590,8 +588,6 @@ struct ListenAttempt
         listenFiber(conn,
         abort,
         connectionLostSeconds));
-
-    listener.call();
 
     foreach (const attempt; listener)
     {
@@ -660,14 +656,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
     size_t start;
 
     alias State = ListenAttempt.State;
-
-    /+
-        The Generator we use this function with popFronts the first thing it does
-        after being instantiated. To work around our main loop popping too we
-        yield an initial empty value; else the first thing to happen will be a
-        double pop, and the first line is missed.
-     +/
-    yield(ListenAttempt.init);
+    yield(ListenAttempt(State.noop));
 
     /// How many consecutive warnings to allow before yielding an error.
     enum maxConsecutiveWarningsUntilError = 20;
@@ -903,6 +892,7 @@ public:
     enum State
     {
         unset,                   /// Init value.
+        noop,                    /// Nothing.
         preconnect,              /// About to connect.
         connected,               /// Successfully connected.
         delayThenReconnect,      /// Failed to connect; should delay and retry.
@@ -913,6 +903,7 @@ public:
         fatalSSLFailure,         /// Fatal failure establishing an SSL connection, should abort.
         invalidConnectionError,  /// The current IP cannot be connected to.
         error,                   /// Error connecting; should abort.
+        exception,               /// Some other Exception was thrown.
     }
 
     /++
@@ -957,8 +948,6 @@ public:
             conn,
             10,
             abort));
-
-    connector.call();
 
     connectorloop:
     foreach (const attempt; connector)
@@ -1016,8 +1005,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
     if (*abort) return;
 
     alias State = ConnectionAttempt.State;
-
-    yield(ConnectionAttempt.init);
+    yield(ConnectionAttempt(State.noop));
 
     scope(exit)
     {
@@ -1056,7 +1044,22 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                     attempt.errno = 0;  // reset
                     yield(attempt);
 
-                    conn.socket.connect(ip);
+                    try
+                    {
+                        conn.socket.connect(ip);
+                    }
+                    catch (Exception e)
+                    {
+                        static import core.stdc.errno;
+                        attempt.state = State.exception;
+                        attempt.error = e.msg;
+                        attempt.errno = core.stdc.errno.errno;
+                        yield(attempt);
+
+                        // If it is an exception due to missing OpenSSL,
+                        // we can't continue, but let the caller decide
+                        continue attemptloop;
+                    }
 
                     if (conn.ssl)
                     {
@@ -1066,20 +1069,23 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 
                         if (code != 1)
                         {
-                            enum message = "Failed to establish SSL connection " ~
+                            attempt.state = State.fatalSSLFailure;
+                            attempt.error = "Failed to establish SSL connection " ~
                                 "after successful connect";
-                            throw new SSLException(message, code);
+                            attempt.errno = code;
+                            yield(attempt);
+                            // Should never get here
+                            assert(0, "Finished `connectFiber` resumed after yield (SSL error)");
                         }
                     }
 
                     // If we're here no exception was thrown and we didn't yield
                     // out of SSL errors, so we're connected
-
                     attempt.state = State.connected;
                     conn.connected = true;
                     yield(attempt);
                     // Should never get here
-                    assert(0, "Finished `connectFiber` resumed after yield");
+                    assert(0, "Finished `connectFiber` resumed after yield (connected)");
                 }
                 catch (SocketException e)
                 {
@@ -1232,7 +1238,7 @@ struct ResolveAttempt
     enum State
     {
         unset,          /// Init value.
-        preresolve,     /// About to resolve.
+        noop,           /// Do nothing.
         success,        /// Successfully resolved.
         exception,      /// Failure, recoverable exception thrown.
         failure,        /// Resolution failure; should abort.
@@ -1280,8 +1286,6 @@ struct ResolveAttempt
             6667,
             false,
             abort));
-
-    resolver.call();
 
     resolveloop:
     foreach (const attempt; resolver)
@@ -1341,8 +1345,7 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
     if (*abort) return;
 
     alias State = ResolveAttempt.State;
-
-    yield(ResolveAttempt(State.preresolve));
+    yield(ResolveAttempt(State.noop));
 
     for (uint i; (i >= 0); ++i)
     {
