@@ -67,7 +67,7 @@ auto downloadWindowsSSL(
             "-c",
             "Invoke-WebRequest '" ~ url ~ "' -OutFile '" ~ saveAs ~ "'",
         ];
-        immutable result = executeShell(command[]);
+        immutable result = execute(command[]);
 
         if (result.status != 0)
         {
