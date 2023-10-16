@@ -911,3 +911,48 @@ expected:"%s"
         }
     }
 }
+
+
+// Next
+/++
+    Enum of flags carrying the meaning of "what to do next".
+
+    [lu.common.Next] extended.
+ +/
+enum Next
+{
+    /++
+        Unset, invalid value.
+     +/
+    unset,
+
+    /++
+        Do nothing.
+     +/
+    noop,
+
+    /++
+        Keep doing whatever is being done, alternatively continue on to the next step.
+     +/
+    continue_,
+
+    /++
+        Halt what's being done and give it another attempt.
+     +/
+    retry,
+
+    /++
+        Exit or return with a positive return value.
+     +/
+    returnSuccess,
+
+    /++
+        Exit or abort with a negative return value.
+     +/
+    returnFailure,
+
+    /++
+        Fatally abort.
+     +/
+    crash,
+}
