@@ -3110,9 +3110,11 @@ void resolvePaths(ref Kameloso instance) @safe
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
-        attempt = out-reference [RunState] aggregate of state variables used when connecting.
+
+    Returns:
+        A [RunState] aggregate of state variables derived from a program run.
  +/
-void startBot(ref Kameloso instance, out RunState attempt)
+auto startBot(ref Kameloso instance)
 {
     import kameloso.plugins.common.misc :
         IRCPluginInitialisationException,
@@ -3128,14 +3130,14 @@ void startBot(ref Kameloso instance, out RunState attempt)
     // Save a backup snapshot of the client, for restoring upon reconnections
     IRCClient backupClient = instance.parser.client;
 
+    // Persistent state variables
+    RunState attempt;
+
     enum bellString = "" ~ cast(char)(TerminalToken.bell);
     immutable bell = isTerminal ? bellString : string.init;
 
-    outerloop:
-    do
+    while (true)
     {
-        // *instance.abort is guaranteed to be false here.
-
         instance.generateNewConnectionID();
         attempt.silentExit = true;
 
@@ -3272,7 +3274,7 @@ void startBot(ref Kameloso instance, out RunState attempt)
             }
 
             interruptibleSleep(gracePeriodBeforeReconnect, instance.abort);
-            if (*instance.abort) break outerloop;
+            if (*instance.abort) return attempt;
 
             // Reset throttling, in case there were queued messages.
             instance.throttle.reset();
@@ -3319,7 +3321,7 @@ void startBot(ref Kameloso instance, out RunState attempt)
 
                 version(PrintStacktraces) logger.trace(e.info);
                 attempt.retval = ShellReturnValue.pluginInstantiationException;
-                break outerloop;
+                return attempt;
             }
 
             /+
@@ -3344,7 +3346,7 @@ void startBot(ref Kameloso instance, out RunState attempt)
 
                 version(PrintStacktraces) logger.trace(e.info);
                 attempt.retval = ShellReturnValue.pluginInitialisationFailure;
-                break outerloop;
+                return attempt;
             }
             catch (Exception e)
             {
@@ -3358,10 +3360,10 @@ void startBot(ref Kameloso instance, out RunState attempt)
 
                 version(PrintStacktraces) logger.trace(e.info);
                 attempt.retval = ShellReturnValue.pluginInitialisationException;
-                break outerloop;
+                return attempt;
             }
 
-            if (*instance.abort) break outerloop;
+            if (*instance.abort) return attempt;
 
             // Check for concurrency messages in case any were sent during plugin initialisation
             ShellReturnValue initRetval;
@@ -3370,7 +3372,7 @@ void startBot(ref Kameloso instance, out RunState attempt)
             if (!proceed)
             {
                 attempt.retval = initRetval;
-                break outerloop;
+                return attempt;
             }
         }
 
@@ -3381,7 +3383,7 @@ void startBot(ref Kameloso instance, out RunState attempt)
         }
 
         // May as well check once here, in case something in instantiatePlugins aborted or so.
-        if (*instance.abort) break outerloop;
+        if (*instance.abort) return attempt;
 
         instance.conn.reset();
 
@@ -3395,7 +3397,7 @@ void startBot(ref Kameloso instance, out RunState attempt)
         immutable actionAfterResolve = tryResolve(
             instance,
             cast(Flag!"firstConnect")(attempt.firstConnect));
-        if (*instance.abort) break outerloop;  // tryResolve interruptibleSleep can abort
+        if (*instance.abort) return attempt;  // tryResolve interruptibleSleep can abort
 
         with (Next)
         final switch (actionAfterResolve)
@@ -3406,12 +3408,12 @@ void startBot(ref Kameloso instance, out RunState attempt)
         case returnFailure:
             // No need to teardown; the scopeguard does it for us.
             attempt.retval = ShellReturnValue.resolutionFailure;
-            break outerloop;
+            return attempt;
 
         case returnSuccess:
             // Ditto
             attempt.retval = ShellReturnValue.success;
-            break outerloop;
+            return attempt;
 
         case unset:  // should never happen
         case noop:   // ditto
@@ -3431,7 +3433,7 @@ void startBot(ref Kameloso instance, out RunState attempt)
         try
         {
             instance.initPluginResources();
-            if (*instance.abort) break outerloop;
+            if (*instance.abort) return attempt;
         }
         catch (IRCPluginInitialisationException e)
         {
@@ -3462,7 +3464,7 @@ void startBot(ref Kameloso instance, out RunState attempt)
 
             version(PrintStacktraces) logger.trace(e.info);
             attempt.retval = ShellReturnValue.pluginResourceLoadFailure;
-            break outerloop;
+            return attempt;
         }
         catch (Exception e)
         {
@@ -3477,14 +3479,14 @@ void startBot(ref Kameloso instance, out RunState attempt)
 
             version(PrintStacktraces) logger.trace(e);
             attempt.retval = ShellReturnValue.pluginResourceLoadException;
-            break outerloop;
+            return attempt;
         }
 
         /+
             Connect.
          +/
         immutable actionAfterConnect = tryConnect(instance);
-        if (*instance.abort) break outerloop;  // tryConnect interruptibleSleep can abort
+        if (*instance.abort) return attempt;  // tryConnect interruptibleSleep can abort
 
         with (Next)
         final switch (actionAfterConnect)
@@ -3495,7 +3497,7 @@ void startBot(ref Kameloso instance, out RunState attempt)
         case returnFailure:
             // No need to saveOnExit, the scopeguard takes care of that
             attempt.retval = ShellReturnValue.connectionFailure;
-            break outerloop;
+            return attempt;
 
         case returnSuccess:  // should never happen
         case unset:  // ditto
@@ -3516,7 +3518,7 @@ void startBot(ref Kameloso instance, out RunState attempt)
         try
         {
             instance.setupPlugins();
-            if (*instance.abort) break outerloop;
+            if (*instance.abort) return attempt;
         }
         catch (IRCPluginInitialisationException e)
         {
@@ -3532,7 +3534,7 @@ void startBot(ref Kameloso instance, out RunState attempt)
 
             version(PrintStacktraces) logger.trace(e.info);
             attempt.retval = ShellReturnValue.pluginSetupFailure;
-            break outerloop;
+            return attempt;
         }
         catch (Exception e)
         {
@@ -3548,7 +3550,7 @@ void startBot(ref Kameloso instance, out RunState attempt)
 
             version(PrintStacktraces) logger.trace(e);
             attempt.retval = ShellReturnValue.pluginSetupException;
-            break outerloop;
+            return attempt;
         }
 
         // Do verbose exits if mainLoop causes a return
@@ -3595,10 +3597,15 @@ void startBot(ref Kameloso instance, out RunState attempt)
         instance.flags.askedToReconnect = false;
         attempt.next = mainLoop(instance);
         attempt.firstConnect = false;
+
+        if (*instance.abort || !attempt.next.among!(Next.continue_, Next.retry))
+        {
+            // Break and return
+            return attempt;
+        }
     }
-    while (
-        !*instance.abort &&
-        attempt.next.among!(Next.continue_, Next.retry));
+
+    assert(0, "Unreachable");
 }
 
 
@@ -4071,9 +4078,6 @@ auto run(string[] args)
     // Set pointers.
     instance.abort = &kameloso.common.globalAbort;
 
-    // Declare RunState instance.
-    RunState attempt;
-
     // Set up default directories in the settings.
     setDefaultDirectories(instance.settings);
 
@@ -4313,7 +4317,7 @@ auto run(string[] args)
     if (!proceed) return initRetval;
 
     // Go!
-    startBot(instance, attempt);
+    auto attempt = startBot(instance);  // mustn't be const
 
     // If we're here, we should exit. The only question is in what way.
 
