@@ -178,7 +178,7 @@ public:
         Returns:
             The amount of bytes received.
      +/
-    auto receive(scope ubyte[] buffer)
+    auto receive(ubyte[] buffer)
     {
         return socket.receive(buffer);
     }
