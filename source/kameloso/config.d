@@ -592,7 +592,7 @@ auto handleGetopt(Kameloso instance) @system
      +/
 
     // Results can be const
-    auto argsSlice = instance.args[];
+    auto argsSlice = instance.args.dup;
     const configFileResults = std.getopt.getopt(argsSlice,
         std.getopt.config.caseSensitive,
         std.getopt.config.bundling,
@@ -945,7 +945,7 @@ auto handleGetopt(Kameloso instance) @system
     }
 
     // No need to catch the return value, only used for --help
-    cast(void)callGetopt(instance.args, Yes.quiet);
+    cast(void)callGetopt(argsSlice, Yes.quiet);
 
     // Save the user from themselves. (A receive timeout of 0 breaks all sorts of things.)
     if (instance.connSettings.receiveTimeout == 0)
@@ -1029,7 +1029,7 @@ auto handleGetopt(Kameloso instance) @system
         {
             import std.stdio : stdout;
             printVersionInfo();
-            printHelp(callGetopt(instance.args, No.quiet));
+            printHelp(callGetopt(argsSlice, No.quiet));
             if (instance.settings.flush) stdout.flush();
         }
 

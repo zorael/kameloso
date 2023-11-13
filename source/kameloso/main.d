@@ -3203,7 +3203,7 @@ auto startBot(Kameloso instance)
                     // Clear the terminal title if we're in a terminal
                     if (isTerminal) resetTerminalTitle();
 
-                    auto pid = execvp(instance.args);
+                    auto pid = exec(instance.args.dup);
                     // On Windows, if we're here, the call succeeded
                     // Posix should never be here; it will either exec or throw
 
