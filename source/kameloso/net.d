@@ -167,10 +167,21 @@ public:
     Address[] ips;
 
     /++
-        Implicitly proxies calls to the current [std.socket.Socket|Socket].
-        This successfully proxies to [std.socket.Socket.receive|Socket.receive].
+        Proxies calls to [std.socket.Socket.receive|socket.receive].
+
+        This replaces `alias socket this`, which is deprecated for classes in
+        some compiler versions.
+
+        Params:
+            buffer = Buffer to receive data into.
+
+        Returns:
+            The amount of bytes received.
      +/
-    alias socket this;
+    auto receive(scope ubyte[] buffer)
+    {
+        return socket.receive(buffer);
+    }
 
     /++
         Whether we are connected or not.
