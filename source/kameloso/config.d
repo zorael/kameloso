@@ -955,6 +955,7 @@ auto handleGetopt(Kameloso instance) @system
     }
 
     // Reinitialise the logger with new settings
+    destroy(kameloso.common.logger);
     kameloso.common.logger = new KamelosoLogger(instance.settings);
 
     // Support channels and admins being separated by spaces (mirror config file behaviour)
