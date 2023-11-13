@@ -4075,7 +4075,7 @@ auto run(string[] args)
         resetSignals();
     }
 
-    // Set pointers.
+    // Set the abort pointer.
     instance.abort = &kameloso.common.globalAbort;
 
     // Set up default directories in the settings.
@@ -4097,7 +4097,7 @@ auto run(string[] args)
 
         if (!instance.settings.headless)
         {
-            enum bellString = "" ~ cast(char)(TerminalToken.bell);
+            enum bellString = TerminalToken.bell ~ "";
             immutable bell = isTerminal ? bellString : string.init;
             logger.error("We just crashed!", bell);
         }
@@ -4105,6 +4105,7 @@ auto run(string[] args)
         *instance.abort = Yes.abort;
     }
 
+    // Handle command-line arguments.
     immutable actionAfterGetopt = tryGetopt(instance);
     kameloso.common.globalHeadless = cast(Flag!"headless")instance.settings.headless;
 
@@ -4209,6 +4210,8 @@ auto run(string[] args)
 
     // Resolve resource and private key/certificate paths.
     resolvePaths(instance);
+
+    // Sync settings and connSettings.
     instance.conn.certFile = instance.connSettings.certFile;
     instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
 

@@ -32,7 +32,6 @@ private:
     import dialect.parsing : IRCParser;
     import lu.container : Buffer;
     import std.algorithm.comparison : among;
-    import core.time : MonoTime;
 
     // Throttle
     /++
@@ -40,6 +39,8 @@ private:
      +/
     static struct Throttle
     {
+        private import core.time : MonoTime;
+
         // t0
         /++
             Origo of x-axis (last sent message).
