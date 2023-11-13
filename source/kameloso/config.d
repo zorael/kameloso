@@ -102,7 +102,7 @@ void printHelp(GetoptResult results)
     This is called if `--save` was passed.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         client = Reference to the current [dialect.defs.IRCClient|IRCClient].
         server = Reference to the current [dialect.defs.IRCServer|IRCServer].
         bot = Reference to the current [kameloso.pods.IRCBot|IRCBot].
@@ -110,7 +110,7 @@ void printHelp(GetoptResult results)
             generated file and supply admins and/or home channels.
  +/
 void verboselyWriteConfig(
-    ref Kameloso instance,
+    Kameloso instance,
     ref IRCClient client,
     ref IRCServer server,
     ref IRCBot bot,
@@ -168,9 +168,9 @@ void verboselyWriteConfig(
     Prints the core settings and all plugins' settings to screen.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void printSettings(ref Kameloso instance) @system
+void printSettings(Kameloso instance) @system
 {
     import kameloso.common : printVersionInfo;
     import kameloso.plugins.common.misc : applyCustomSettings;
@@ -218,7 +218,7 @@ void printSettings(ref Kameloso instance) @system
             otherwise uses `notepad.exe`.
  +/
 void manageConfigFile(
-    ref Kameloso instance,
+    Kameloso instance,
     const Flag!"shouldWriteConfig" shouldWriteConfig,
     const Flag!"shouldOpenTerminalEditor" shouldOpenTerminalEditor,
     const Flag!"shouldOpenGraphicalEditor" shouldOpenGraphicalEditor,
@@ -541,7 +541,7 @@ public:
     ---
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
         [lu.common.Next.continue_|Next.continue_] or
@@ -551,7 +551,7 @@ public:
     Throws:
         [std.getopt.GetOptException|GetOptException] if an unknown flag is passed.
  +/
-auto handleGetopt(ref Kameloso instance) @system
+auto handleGetopt(Kameloso instance) @system
 {
     import kameloso.common : Next, printVersionInfo;
     import kameloso.configreader : readConfigInto;
@@ -1114,7 +1114,7 @@ auto handleGetopt(ref Kameloso instance) @system
         filename = String filename of the file to write to.
  +/
 void writeConfigurationFile(
-    ref Kameloso instance,
+    Kameloso instance,
     const string filename) @system
 {
     import kameloso.platform : rbd = resourceBaseDirectory;
@@ -1338,9 +1338,9 @@ void giveBrightTerminalHint(
     (and [kameloso.constants.KamelosoDefaultIntegers|KamelosoDefaultIntegers]).
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void applyDefaults(ref Kameloso instance)
+void applyDefaults(Kameloso instance)
 out (; (instance.parser.client.nickname.length), "Empty client nickname")
 out (; (instance.parser.client.user.length), "Empty client username")
 out (; (instance.parser.client.realName.length), "Empty client GECOS/real name")
@@ -1409,7 +1409,7 @@ unittest
     import kameloso.constants : KamelosoDefaults, KamelosoDefaultIntegers;
     import std.conv : to;
 
-    Kameloso instance;
+    auto instance = new Kameloso;
 
     with (instance.parser)
     {

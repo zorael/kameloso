@@ -18,10 +18,9 @@ public:
 
 // Kameloso
 /++
-    State needed for the kameloso bot, aggregated in a struct for easier passing
-    by reference.
+    Main class.
  +/
-struct Kameloso
+final class Kameloso
 {
 private:
     import kameloso.common : OutgoingLine, logger;
@@ -132,14 +131,51 @@ private:
      +/
     uint _connectionID;
 
+    // _args
+    /++
+        Command-line arguments passed to the program.
+     +/
+    string[] _args;
+
 public:
     // ctor
     /++
-        Constructor taking an [args] string array.
+        Constructor taking an `args` string array.
      +/
-    this(string[] args) pure @safe nothrow @nogc
+    this(const string[] args) @safe
     {
-        this.args = args;
+        this._args = args.dup;
+        conn = new Connection;
+    }
+
+    // ctor
+    /++
+        No-param constructor used in unit tests.
+     +/
+    version(unittest)
+    this() @safe {}
+
+    // teardown
+    /++
+        Teardown plugins and connection.
+     +/
+    void teardown()
+    {
+        teardownPlugins();
+        conn.teardown();
+        destroy(conn);
+    }
+
+    // args
+    /++
+        Returns a const slice of the command-line arguments passed to the program.
+
+        Returns:
+            A 'string[]' of the program arguments.
+     +/
+    auto args() const
+    {
+        return _args;
     }
 
     // flags
@@ -147,12 +183,6 @@ public:
         Transient state flags of this [Kameloso] instance.
      +/
     StateFlags flags;
-
-    // args
-    /++
-        Command-line arguments passed to the program.
-     +/
-    string[] args;
 
     // conn
     /++
@@ -292,12 +322,6 @@ public:
          +/
         bool callgrindRunning = true;
     }
-
-    // this(this)
-    /++
-        Never copy this.
-     +/
-    @disable this(this);
 
     // connectionID
     /++

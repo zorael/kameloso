@@ -97,7 +97,7 @@ public:
     This is simply to decrease the amount of globals and to create some
     convenience functions.
  +/
-struct Connection
+final class Connection
 {
 private:
     import requests.ssl_adapter : SSL, SSL_CTX, openssl;
@@ -250,7 +250,6 @@ public:
     {
         teardown();
         setup();
-        connected = false;
     }
 
     // resetSSL
@@ -408,6 +407,9 @@ public:
             thisSocket.shutdown(SocketShutdown.BOTH);
             thisSocket.close();
         }
+
+        if (ssl) teardownSSL();
+        connected = false;
     }
 
     // setup
@@ -986,14 +988,14 @@ public:
     ---
 
     Params:
-        conn = Reference to the current, unconnected [Connection].
+        conn = The current, unconnected [Connection].
         connectionRetries = How many times to attempt to connect before signalling
             that we should move on to the next IP.
         abort = Pointer to the "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.
  +/
 void connectFiber(
-    ref Connection conn,
+    Connection conn,
     const uint connectionRetries,
     const Flag!"abort"* abort) @system
 in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
@@ -1007,11 +1009,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
     alias State = ConnectionAttempt.State;
     yield(ConnectionAttempt(State.noop));
 
-    scope(exit)
-    {
-        conn.teardown();
-        if (conn.ssl) conn.teardownSSL();
-    }
+    scope(exit) conn.teardown();
 
     do
     {
@@ -1323,7 +1321,7 @@ struct ResolveAttempt
     ---
 
     Params:
-        conn = Reference to the current [Connection].
+        conn = The current [Connection].
         address = String address to look up.
         port = Remote port build into the [std.socket.Address|Address].
         useIPv6 = Whether to include resolved IPv6 addresses or not.
@@ -1331,7 +1329,7 @@ struct ResolveAttempt
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.
  +/
 void resolveFiber(
-    ref Connection conn,
+    Connection conn,
     const string address,
     const ushort port,
     const Flag!"useIPv6" useIPv6,

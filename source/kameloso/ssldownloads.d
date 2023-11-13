@@ -35,7 +35,7 @@ public:
     (`--save` will have to be separately passed.)
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         shouldDownloadCacert = Whether or not `cacert.pem` should be downloaded.
         shouldDownloadOpenSSL = Whether or not OpenSSL for Windows should be downloaded.
 
@@ -44,7 +44,7 @@ public:
         were touched and the configuration file should be updated; `No.settingsTouched` if not.
  +/
 auto downloadWindowsSSL(
-    ref Kameloso instance,
+    Kameloso instance,
     const Flag!"shouldDownloadCacert" shouldDownloadCacert,
     const Flag!"shouldDownloadOpenSSL" shouldDownloadOpenSSL)
 {

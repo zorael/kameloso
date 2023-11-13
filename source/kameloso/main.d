@@ -208,9 +208,9 @@ void signalHandler(int sig) nothrow @nogc @system
     means the bot should exit or not.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void messageFiber(ref Kameloso instance)
+void messageFiber(Kameloso instance)
 {
     import kameloso.common : Next, OutgoingLine;
     import kameloso.constants : Timeout;
@@ -802,7 +802,7 @@ void messageFiber(ref Kameloso instance)
     to all plugins.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
         [lu.common.Next.returnFailure|Next.returnFailure] if circumstances mean
@@ -812,7 +812,7 @@ void messageFiber(ref Kameloso instance)
         [lu.common.Next.retry|Next.retry] if the bot should reconnect to the server.
         [lu.common.Next.continue_|Next.continue_] is never returned.
  +/
-auto mainLoop(ref Kameloso instance)
+auto mainLoop(Kameloso instance)
 {
     import kameloso.common : Next;
     import kameloso.constants : Timeout;
@@ -1176,12 +1176,12 @@ auto mainLoop(ref Kameloso instance)
     Broken out of [mainLoop] to make it more legible.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
         How many milliseconds until the next message in the buffers should be sent.
  +/
-auto sendLines(ref Kameloso instance)
+auto sendLines(Kameloso instance)
 {
     if (!instance.immediateBuffer.empty)
     {
@@ -1233,13 +1233,13 @@ auto sendLines(ref Kameloso instance)
     while also providing warnings and error messages.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         attempt = The [kameloso.net.ListenAttempt|ListenAttempt] to map the `.state` value of.
 
     Returns:
         A [lu.common.Next|Next] describing what action [mainLoop] should take next.
  +/
-auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
+auto listenAttemptToNext(Kameloso instance, const ListenAttempt attempt)
 {
     import kameloso.common : Next;
 
@@ -1384,12 +1384,12 @@ void logPluginActionException(
     [dialect.defs.IRCEvent|IRCEvent] and dispatches it to all plugins.
 
     Params:
-        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance instance.
         raw = A raw line as read from the server.
         nowInUnix = Current timestamp in UNIX time.
  +/
 void processLineFromServer(
-    ref Kameloso instance,
+    Kameloso instance,
     const string raw,
     const long nowInUnix)
 {
@@ -1934,10 +1934,10 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
     current (main loop) context, outside of any plugin.
 
     Params:
-        instance = Reference to the current bot instance.
+        instance = The current bot instance.
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
  +/
-void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
+void processReadyReplays(Kameloso instance, IRCPlugin plugin)
 {
     import core.thread : Fiber;
 
@@ -2000,10 +2000,10 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
     recently (within [kameloso.constants.Timeout.whoisRetry|Timeout.whoisRetry] seconds).
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         plugin = The relevant [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
  +/
-void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
+void processPendingReplays(Kameloso instance, IRCPlugin plugin)
 {
     import kameloso.constants : Timeout;
     import kameloso.messaging : Message, whois;
@@ -2087,10 +2087,10 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
     first re-queue themselves.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         plugin = The relevant [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
  +/
-void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
+void processSpecialRequests(Kameloso instance, IRCPlugin plugin)
 {
     import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
@@ -2369,12 +2369,12 @@ void resetSignals() nothrow @nogc
     Attempt handling `getopt`, wrapped in try-catch blocks.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
         [lu.common.Next|Next].* depending on what action the calling site should take.
  +/
-auto tryGetopt(ref Kameloso instance)
+auto tryGetopt(Kameloso instance)
 {
     import kameloso.plugins.common.misc : IRCPluginSettingsException;
     import kameloso.common : Next;
@@ -2454,14 +2454,14 @@ auto tryGetopt(ref Kameloso instance)
     to the user.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
         [lu.common.Next.continue_|Next.continue_] if connection succeeded,
         [lu.common.Next.returnFailure|Next.returnFailure] if connection failed
         and the program should exit.
  +/
-auto tryConnect(ref Kameloso instance)
+auto tryConnect(Kameloso instance)
 {
     import kameloso.common : Next;
     import kameloso.constants :
@@ -2756,7 +2756,7 @@ auto tryConnect(ref Kameloso instance)
     to the user.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         firstConnect = Whether or not this is the first time we're attempting a connection.
 
     Returns:
@@ -2764,7 +2764,7 @@ auto tryConnect(ref Kameloso instance)
         [lu.common.Next.returnFailure|Next.returnFailure] if it failed and the
         program should exit.
  +/
-auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
+auto tryResolve(Kameloso instance, const Flag!"firstConnect" firstConnect)
 {
     import kameloso.common : Next;
     import kameloso.constants : Timeout;
@@ -2937,13 +2937,13 @@ void setDefaultDirectories(ref CoreSettings settings) @safe
     This is called after command-line arguments have been parsed.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
         [lu.common.Next.returnFailure|Next.returnFailure] if the program should exit,
         [lu.common.Next.continue_|Next.continue_] otherwise.
  +/
-auto verifySettings(ref Kameloso instance)
+auto verifySettings(Kameloso instance)
 {
     import kameloso.common : Next;
 
@@ -3021,9 +3021,9 @@ auto verifySettings(ref Kameloso instance)
     This is called after settings have been verified, before plugins are initialised.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void resolvePaths(ref Kameloso instance) @safe
+void resolvePaths(Kameloso instance) @safe
 {
     import kameloso.platform : rbd = resourceBaseDirectory;
     import std.file : exists;
@@ -3109,12 +3109,12 @@ void resolvePaths(ref Kameloso instance) @safe
     It resolves and connects to servers, then hands off execution to [mainLoop].
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
         A [RunState] aggregate of state variables derived from a program run.
  +/
-auto startBot(ref Kameloso instance)
+auto startBot(Kameloso instance)
 {
     import kameloso.plugins.common.misc :
         IRCPluginInitialisationException,
@@ -3681,9 +3681,9 @@ void printEventDebugDetails(
     Prints a summary of the connection(s) made and events parsed this execution.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void printSummary(const ref Kameloso instance) @safe
+void printSummary(const Kameloso instance) @safe
 {
     import kameloso.time : timeSince;
     import core.time : Duration;
@@ -3797,9 +3797,9 @@ public:
     Used when saving to configuration file, to ensure the current state is saved.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void syncGuestChannels(ref Kameloso instance) pure @safe nothrow
+void syncGuestChannels(Kameloso instance) pure @safe nothrow
 {
     foreach (plugin; instance.plugins)
     {
@@ -3833,10 +3833,10 @@ void syncGuestChannels(ref Kameloso instance) pure @safe nothrow
     otherwise do the echoing.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         reason = Quit reason.
  +/
-void echoQuitMessage(ref Kameloso instance, const string reason) @safe
+void echoQuitMessage(Kameloso instance, const string reason) @safe
 {
     bool printed;
 
@@ -3864,12 +3864,12 @@ void echoQuitMessage(ref Kameloso instance, const string reason) @safe
     associative array to all plugins.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         nickname = Nickname whose WHOIS timestamp to propagate.
         nowInUnix = UNIX WHOIS timestamp.
  +/
 void propagateWhoisTimestamp(
-    ref Kameloso instance,
+    Kameloso instance,
     const string nickname,
     const long nowInUnix) pure @safe nothrow
 {
@@ -3891,9 +3891,9 @@ void propagateWhoisTimestamp(
     modify the original.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void propagateWhoisTimestamps(ref Kameloso instance) pure @safe
+void propagateWhoisTimestamps(Kameloso instance) pure @safe
 {
     auto copy = instance.previousWhoisTimestamps.dup;  // mutable
 
@@ -3909,10 +3909,10 @@ void propagateWhoisTimestamps(ref Kameloso instance) pure @safe
     Prints a pretty start screen.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         args = Command-line arguments passed to the program.
  +/
-void prettyPrintStartScreen(const ref Kameloso instance, const string[] args)
+void prettyPrintStartScreen(const Kameloso instance, const string[] args)
 {
     import kameloso.common : printVersionInfo;
     import kameloso.printing : printObjects;
@@ -3946,7 +3946,7 @@ void prettyPrintStartScreen(const ref Kameloso instance, const string[] args)
     during their initialisation.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         retval = out-reference to the [kameloso.constants.ShellReturnValue|ShellReturnValue]
             to return from [run].
 
@@ -3955,7 +3955,7 @@ void prettyPrintStartScreen(const ref Kameloso instance, const string[] args)
         `false` otherwise.
  +/
 auto checkInitialisationMessages(
-    ref Kameloso instance,
+    Kameloso instance,
     out ShellReturnValue retval)
 {
     while (true)
@@ -4065,7 +4065,7 @@ auto run(string[] args)
     static import kameloso.common;
 
     // Set up the Kameloso instance.
-    auto instance = Kameloso(args);
+    auto instance = new Kameloso(args);
     postInstanceSetup();
 
     scope(exit)
@@ -4221,7 +4221,9 @@ auto run(string[] args)
     {
         // Tear down plugins outside the loop too, to cover errors during initialisation
         // It does nothing if the plugins array is empty
-        instance.teardownPlugins();
+        //instance.teardownPlugins();
+        instance.teardown();
+        destroy(instance);
     }
 
     // Initialise plugins outside the loop once, for the error messages
