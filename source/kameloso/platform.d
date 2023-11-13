@@ -306,7 +306,7 @@ auto openInBrowser(const string url)
 }
 
 
-// execvp
+// exec
 /++
     Re-executes the program.
 
@@ -327,7 +327,7 @@ auto openInBrowser(const string url)
         On Posix, [lu.common.ReturnValueException|ReturnValueException] on failure.
         On Windows, [std.process.ProcessException|ProcessException] on failure.
  +/
-Pid execvp(/*const*/ string[] args) @system
+Pid exec(/*const*/ string[] args) @system
 {
     import kameloso.common : logger;
     import std.algorithm.comparison : among;
@@ -395,7 +395,7 @@ Pid execvp(/*const*/ string[] args) @system
         immutable retval = execvp(args[0], args);
 
         // If we're here, the call failed
-        enum message = "execvp failed";
+        enum message = "exec failed";
         throw new ReturnValueException(message, args[0], retval);
     }
     else version(Windows)

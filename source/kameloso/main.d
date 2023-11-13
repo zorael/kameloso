@@ -3161,7 +3161,7 @@ auto startBot(Kameloso instance)
 
             if ((!lastConnectAttemptFizzled && instance.settings.reexecToReconnect) || instance.flags.askedToReexec)
             {
-                import kameloso.platform : execvp;
+                import kameloso.platform : exec;
                 import kameloso.terminal : isTerminal, resetTerminalTitle, setTerminalTitle;
                 import lu.common : ReturnValueException;
                 import std.process : ProcessException;
@@ -3219,7 +3219,7 @@ auto startBot(Kameloso instance)
                 }
                 catch (ReturnValueException e)
                 {
-                    enum pattern = "Failed to <l>execvp</> with an error value of <l>%d</>.";
+                    enum pattern = "Failed to <l>exec</> with an error value of <l>%d</>.";
                     logger.errorf(pattern, e.retval);
                 }
                 catch (Exception e)
@@ -3229,7 +3229,7 @@ auto startBot(Kameloso instance)
                     version(PrintStacktraces) logger.trace(e);
                 }
 
-                // Reset the terminal title after a failed execvp/fork
+                // Reset the terminal title after a failed exec/fork
                 if (isTerminal) setTerminalTitle();
             }
 
