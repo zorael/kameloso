@@ -624,7 +624,7 @@ public:
             {
                 plugin.teardown();
 
-                foreach (scheduledFiber; plugin.state.scheduledFibers)
+                foreach (ref scheduledFiber; plugin.state.scheduledFibers)
                 {
                     // All Fibers should be at HOLD state but be conservative
                     if (scheduledFiber.fiber.state != Fiber.State.EXEC)
@@ -636,7 +636,7 @@ public:
 
                 plugin.state.scheduledFibers = null;
 
-                foreach (scheduledDelegate; plugin.state.scheduledDelegates)
+                foreach (ref scheduledDelegate; plugin.state.scheduledDelegates)
                 {
                     destroy(scheduledDelegate.dg);
                     scheduledDelegate.dg = null;
@@ -646,7 +646,7 @@ public:
 
                 foreach (immutable type, ref fibersForType; plugin.state.awaitingFibers)
                 {
-                    foreach (fiber; fibersForType)
+                    foreach (ref fiber; fibersForType)
                     {
                         // As above
                         if (fiber.state != Fiber.State.EXEC)
