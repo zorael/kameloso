@@ -494,18 +494,18 @@ public:
         teardownPlugins();
 
         auto state = IRCPluginState(this.connectionID);
-        state.client = parser.client;
-        state.server = parser.server;
+        state.client = this.parser.client;
+        state.server = this.parser.server;
         state.bot = this.bot;
         state.mainThread = thisTid;
-        state.settings = settings;
-        state.connSettings = connSettings;
-        state.abort = abort;
+        state.settings = this.settings;
+        state.connSettings = this.connSettings;
+        state.abort = this.abort;
 
         // Leverage kameloso.plugins.instantiatePlugins to construct all plugins.
         this.plugins = kameloso.plugins.instantiatePlugins(state);
 
-        foreach (plugin; plugins)
+        foreach (plugin; this.plugins)
         {
             import lu.meld : meldInto;
 
@@ -528,7 +528,7 @@ public:
             }
         }
 
-        immutable allCustomSuccess = applyCustomSettings(plugins, this.customSettings);
+        immutable allCustomSuccess = applyCustomSettings(this.plugins, this.customSettings);
 
         if (!allCustomSuccess)
         {
@@ -611,9 +611,9 @@ public:
      +/
     void teardownPlugins() @system
     {
-        if (!plugins.length) return;
+        if (!this.plugins.length) return;
 
-        foreach (ref plugin; plugins)
+        foreach (ref plugin; this.plugins)
         {
             import std.exception : ErrnoException;
             import core.thread : Fiber;
@@ -699,7 +699,7 @@ public:
         }
 
         // Zero out old plugins array
-        plugins = null;
+        this.plugins = null;
     }
 
     // initialisePlugins
