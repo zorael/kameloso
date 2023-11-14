@@ -2510,10 +2510,9 @@ void get7tvEmotes(
 in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
 in (idString.length, "Tried to get 7tv emotes with an empty ID string")
 {
-    import std.conv : text, to;
     import std.json : JSONType, parseJSON;
 
-    immutable url = text("https://api.7tv.app/v2/users/", idString, "/emotes");
+    immutable url = "https://7tv.io/v3/users/twitch/" ~ idString;
 
     void get7tvEmotesDg()
     {
@@ -2523,49 +2522,126 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
             immutable responseJSON = parseJSON(response.str);
 
             /+
-            [
-                {
-                    "animated": false,
-                    "code": ":tf:",
-                    "id": "54fa8f1401e468494b85b537",
-                    "imageType": "png",
-                    "userId": "5561169bd6b9d206222a8c19"
-                },
-                {
-                    "animated": false,
-                    "code": "CiGrip",
-                    "id": "54fa8fce01e468494b85b53c",
-                    "imageType": "png",
-                    "userId": "5561169bd6b9d206222a8c19"
-                }
-            ]
+            {
+                "display_name": "LobosJr",
+                "emote_capacity": 1000,
+                "emote_set": {
+                    "capacity": 1000,
+                    "emote_count": 872,
+                    "emotes": [
+                        {
+                            "actor_id": null,
+                            "data": {
+                                "animated": true,
+                                "flags": 0,
+                                "host": {
+                                    "files": [],
+                                    "url": "\/\/cdn.7tv.app\/emote\/60ae2e3db2ecb01505c6f69d"
+                                },
+                                "id": "60ae2e3db2ecb01505c6f69d",
+                                "lifecycle": 3,
+                                "listed": true,
+                                "name": "ViolinTime",
+                                "owner": {
+                                    "avatar_url": "\/\/static-cdn.jtvnw.net\/jtv_user_pictures\/583dd5ac-2fe8-4ead-a20d-e10770118c5f-profile_image-70x70.png",
+                                    "display_name": "heCrzy",
+                                    "id": "60635b50452cea4685f26b34",
+                                    "roles": [
+                                        "62b48deb791a15a25c2a0354"
+                                    ],
+                                    "style": {},
+                                    "username": "hecrzy"
+                                },
+                                "state": [
+                                    "LISTED",
+                                    "PERSONAL"
+                                ]
+                            },
+                            "flags": 0,
+                            "id": "60ae2e3db2ecb01505c6f69d",
+                            "name": "ViolinTime",
+                            "timestamp": 1657657741507
+                        },
+                        {
+                            "actor_id": null,
+                            "data": {
+                                "animated": false,
+                                "flags": 0,
+                                "host": {
+                                    "files": [],
+                                "url": "\/\/cdn.7tv.app\/emote\/60ae3e54259ac5a73e56a426"
+                                },
+                                "id": "60ae3e54259ac5a73e56a426",
+                                "lifecycle": 3,
+                                "listed": true,
+                                "name": "Hmm",
+                                "owner": {
+                                    "avatar_url": "\/\/static-cdn.jtvnw.net\/jtv_user_pictures\/4207f38c-73f0-4487-a7b2-07ccb27667d1-profile_image-70x70.png",
+                                    "display_name": "LNSc",
+                                    "id": "60772a85a807bed00612d1ee",
+                                    "roles": [
+                                        "62b48deb791a15a25c2a0354"
+                                    ],
+                                    "style": {},
+                                    "username": "lnsc"
+                                },
+                                "state": [
+                                    "LISTED",
+                                    "PERSONAL"
+                                ]
+                            },
+                            "flags": 0,
+                            "id": "60ae3e54259ac5a73e56a426",
+                            "name": "Hmm",
+                            "timestamp": 1657657741507
+                        },
+                [...]
              +/
 
-            if (responseJSON.type == JSONType.array)
-            {
-                foreach (immutable emoteJSON; responseJSON.array)
-                {
-                    immutable emote = emoteJSON["name"].str.to!dstring;
-                    emoteMap[emote] = true;
-                }
+            const emoteSetJSON = "emote_set" in responseJSON;
 
-                // All done
-                return;
+            if (!emoteSetJSON)
+            {
+                enum message = "No emote set in 7tv response (user)";
+                throw new UnexpectedJSONException(message, responseJSON);
             }
 
-            // Invalid response in some way
-            enum message = "`get7tvEmotes` response has unexpected JSON " ~
-                "(response is not object nor array)";
-            throw new UnexpectedJSONException(message, responseJSON);
+            if (emoteSetJSON.type != JSONType.object) return;  // No emotes
+
+            const emotesJSON = "emotes" in *emoteSetJSON;
+
+            if (!emotesJSON)
+            {
+                enum message = "No emotes in 7tv emote set";
+                throw new UnexpectedJSONException(message, *emoteSetJSON);
+            }
+
+            foreach (const emoteJSON; emotesJSON.array)
+            {
+                import std.conv : to;
+                immutable emoteName = emoteJSON["name"].str.to!dstring;
+                emoteMap[emoteName] = true;
+            }
+
+            // All done
+            return;
         }
         catch (ErrorJSONException e)
         {
+            /+
+            {
+                "error": "Unknown User",
+                "error_code": 70442,
+                "status": "Not Found",
+                "status_code": 404
+            }
+             +/
+
             if (const errorJSON = "error" in e.json)
             {
-                if ((errorJSON.str == "No Items Found") ||
-                    (errorJSON.str == "Unknown Emote Set"))
+                if (errorJSON.str == "Unknown User")
                 {
-                    // Benign
+                    // This should never happen but stop attempt if it does
                     return;
                 }
             }
@@ -2600,39 +2676,71 @@ void get7tvGlobalEmotes(
     const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
 {
-    import std.conv : to;
     import std.json : parseJSON;
+
+    enum globalEmoteSetID = "62cdd34e72a832540de95857";
+    enum url = "https://7tv.io/v3/emote-sets/" ~ globalEmoteSetID;
 
     void get7tvGlobalEmotesDg()
     {
-        enum url = "https://api.7tv.app/v2/emotes/global";
-
         immutable response = sendHTTPRequest(plugin, url, caller);
         immutable responseJSON = parseJSON(response.str);
 
         /+
-        [
-            {
-                "height": [],
-                "id": "60421fe677137b000de9e683",
-                "mime": "image\/webp",
-                "name": "reckH",
-                "owner": {},
-                "status": 3,
-                "tags": [],
-                "urls": [],
-                "visibility": 2,
-                "visibility_simple": [],
-                "width": []
-            },
-            [...]
-        ]
+        {
+            "capacity": 50,
+            "emote_count": 40,
+            "emotes": [
+                {
+                    "actor_id": null,
+                    "data": {
+                        "animated": true,
+                        "flags": 256,
+                        "host": {
+                            "files": [],
+                        "url": "\/\/cdn.7tv.app\/emote\/61159e9903dae26bc706eaa6"
+                        },
+                        "id": "61159e9903dae26bc706eaa6",
+                        "lifecycle": 3,
+                        "listed": true,
+                        "name": "RainTime",
+                        "owner": {
+                            "avatar_url": "\/\/cdn.7tv.app\/pp\/60f06993e48dc1dc2fc7e4a3\/80feeab5d56d41e38b030857beaacd43",
+                            "display_name": "eternal_pestilence",
+                            "id": "60f06993e48dc1dc2fc7e4a3",
+                            "roles": [
+                                "62b48deb791a15a25c2a0354"
+                            ],
+                            "style": {},
+                            "username": "eternal_pestilence"
+                        },
+                        "state": [
+                            "LISTED",
+                            "PERSONAL"
+                        ]
+                    },
+                    "flags": 1,
+                    "id": "61159e9903dae26bc706eaa6",
+                    "name": "RainTime",
+                    "timestamp": 1657657127639
+                },
+            }
+        }
          +/
 
-        foreach (const emoteJSON; responseJSON.array)
+        const emotesJSON = "emotes" in responseJSON;
+
+        if (!emotesJSON)
         {
-            immutable emote = emoteJSON["name"].str.to!dstring;
-            emoteMap[emote] = true;
+            enum message = "No emotes in 7tv response (global)";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        foreach (const emoteJSON; emotesJSON.array)
+        {
+            import std.conv : to;
+            immutable emoteName = emoteJSON["name"].str.to!dstring;
+            emoteMap[emoteName] = true;
         }
 
         // All done
