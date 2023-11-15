@@ -623,6 +623,11 @@ auto handleGetopt(Kameloso instance) @system
     applyDefaults(instance);
     applyTerminalOverrides(instance.settings.flush, instance.settings.colours);
 
+    /+
+        Call getopt once more just to get values for colour and the Twitch
+        --setup-twitch. Catching --setup-twitch here means we can override
+        its defaults with the main getopt call.
+     +/
     cast(void)std.getopt.getopt(args,
         std.getopt.config.caseSensitive,
         std.getopt.config.bundling,
