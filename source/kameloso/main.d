@@ -76,7 +76,8 @@ enum gcOptions = ()
     }
 
     // Tweak these numbers as we see fit
-    sink.put("initReserve:8 minPoolSize:8"); // incPoolSize:16
+    // https://forum.dlang.org/post/uqqabgqnoqdqbwbglthg@forum.dlang.org
+    sink.put("initReserve:8 minPoolSize:8 heapSizeFactor:1.002"); // incPoolSize:16
     return sink.data.assumeUnique();
 }();
 
