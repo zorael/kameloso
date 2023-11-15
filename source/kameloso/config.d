@@ -588,16 +588,16 @@ auto handleGetopt(Kameloso instance) @system
     string nothing;
 
     /+
-        Call getopt on args once and look for any specified configuration files
+        Call getopt on (a copy of) args once and look for any specified configuration files
         so we know what to read. As such it has to be done before the
-        [kameloso.configreader.readConfigInto] call. Then call getopt on the rest.
+        [kameloso.configreader.readConfigInto] call. Then call getopt on the rest later.
         Include "c|config" in the normal getopt to have it automatically
         included in the --help text.
      +/
 
     // Results can be const
-    auto argsSlice = instance.args.dup;
-    const configFileResults = std.getopt.getopt(argsSlice,
+    auto args = instance.args.dup;
+    const configFileResults = std.getopt.getopt(args,
         std.getopt.config.caseSensitive,
         std.getopt.config.bundling,
         std.getopt.config.passThrough,
@@ -623,7 +623,7 @@ auto handleGetopt(Kameloso instance) @system
     applyDefaults(instance);
     applyTerminalOverrides(instance.settings.flush, instance.settings.colours);
 
-    cast(void)std.getopt.getopt(argsSlice,
+    cast(void)std.getopt.getopt(args,
         std.getopt.config.caseSensitive,
         std.getopt.config.bundling,
         std.getopt.config.passThrough,
@@ -949,7 +949,7 @@ auto handleGetopt(Kameloso instance) @system
     }
 
     // No need to catch the return value, only used for --help
-    cast(void)callGetopt(argsSlice, Yes.quiet);
+    cast(void)callGetopt(args, Yes.quiet);
 
     // Save the user from themselves. (A receive timeout of 0 breaks all sorts of things.)
     if (instance.connSettings.receiveTimeout == 0)
@@ -1034,7 +1034,7 @@ auto handleGetopt(Kameloso instance) @system
         {
             import std.stdio : stdout;
             printVersionInfo();
-            printHelp(callGetopt(argsSlice, No.quiet));
+            printHelp(callGetopt(args, No.quiet));
             if (instance.settings.flush) stdout.flush();
         }
 
