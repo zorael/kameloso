@@ -117,6 +117,7 @@ void verboselyWriteConfig(
     const Flag!"giveInstructions" giveInstructions = Yes.giveInstructions) @system
 {
     import kameloso.common : logger;
+    static import kameloso.common;
 
     if (!instance.settings.headless)
     {
@@ -137,6 +138,9 @@ void verboselyWriteConfig(
         import kameloso.printing : printObjects;
         import kameloso.string : doublyBackslashed;
         import std.file : exists;
+
+        // Sync settings
+        kameloso.common.settings = instance.settings;
 
         printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
         enum pattern = "Configuration written to <i>%s";
@@ -553,7 +557,7 @@ public:
  +/
 auto handleGetopt(Kameloso instance) @system
 {
-    import kameloso.common : Next, printVersionInfo;
+    import kameloso.common : Next, printVersionInfo, settings;
     import kameloso.configreader : readConfigInto;
     import kameloso.logger : KamelosoLogger;
     import kameloso.terminal : applyTerminalOverrides;
@@ -628,7 +632,7 @@ auto handleGetopt(Kameloso instance) @system
         "setup-twitch", &shouldSetupTwitch,
     );
 
-    resolveFlagString(colourString, instance.settings.colours);
+    if (colourString.length) resolveFlagString(colourString, instance.settings.colours);
 
     /++
         Call getopt in a nested function so we can call it both to merely
@@ -1086,6 +1090,8 @@ auto handleGetopt(Kameloso instance) @system
     if (shouldShowSettings)
     {
         // --settings was passed, show all options and quit
+        // Sync settings first
+        kameloso.common.settings = instance.settings;
         if (!instance.settings.headless) printSettings(instance);
         return Next.returnSuccess;
     }

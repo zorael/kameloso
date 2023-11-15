@@ -4109,6 +4109,9 @@ auto run(string[] args)
     immutable actionAfterGetopt = tryGetopt(instance);
     kameloso.common.globalHeadless = cast(Flag!"headless")instance.settings.headless;
 
+    // Resync settings.
+    kameloso.common.settings = instance.settings;
+
     with (Next)
     final switch (actionAfterGetopt)
     {
