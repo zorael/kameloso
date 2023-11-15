@@ -180,12 +180,16 @@ void printSettings(Kameloso instance) @system
     import kameloso.plugins.common.misc : applyCustomSettings;
     import kameloso.printing : printObjects;
     import std.stdio : stdout, writeln;
+    static import kameloso.common;
 
     if (instance.customSettings.length)
     {
         // Apply custom settings to the settings struct. Disregard returned value
         cast(void)applyCustomSettings(null, instance.customSettings);
     }
+
+    // Sync settings
+    kameloso.common.settings = instance.settings;
 
     printVersionInfo();
     writeln();
@@ -1095,8 +1099,6 @@ auto handleGetopt(Kameloso instance) @system
     if (shouldShowSettings)
     {
         // --settings was passed, show all options and quit
-        // Sync settings first
-        kameloso.common.settings = instance.settings;
         if (!instance.settings.headless) printSettings(instance);
         return Next.returnSuccess;
     }
