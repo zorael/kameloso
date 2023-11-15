@@ -398,8 +398,32 @@ public:
     void teardownSSL()
     in (ssl, "Tried to teardown SSL on a non-SSL `Connection`")
     {
-        if (sslInstance) openssl.SSL_free(sslInstance);
-        if (sslContext) openssl.SSL_CTX_free(sslContext);
+        if (!this.sslInstance && !this.sslContext) return;
+
+        version(ThreadedSSLFree)
+        {
+            import std.concurrency : spawn;
+
+            static void freeSSL(shared SSL* sslInstance, shared SSL_CTX* sslContext)
+            {
+                if (sslInstance) openssl.SSL_free(cast(SSL*)sslInstance);
+                if (sslContext) openssl.SSL_CTX_free(cast(SSL_CTX*)sslContext);
+            }
+
+            // Casting to and from shared is not @safe. Hopefully history will forgive me for this.
+            () @trusted
+            {
+                cast(void)spawn(&freeSSL, cast(shared)this.sslInstance, cast(shared)this.sslContext);
+            }();
+        }
+        else
+        {
+            if (this.sslInstance) openssl.SSL_free(this.sslInstance);
+            if (this.sslContext) openssl.SSL_CTX_free(this.sslContext);
+        }
+
+        this.sslInstance = null;
+        this.sslContext = null;
     }
 
     // teardown
