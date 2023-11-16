@@ -139,10 +139,7 @@ void verboselyWriteConfig(
         import kameloso.string : doublyBackslashed;
         import std.file : exists;
 
-        // Sync settings
-        kameloso.common.settings = instance.settings;
-
-        printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
+        printObjects(client, instance.bot, server, instance.connSettings, *instance.settings);
         enum pattern = "Configuration written to <i>%s";
         logger.logf(pattern, instance.settings.configFile.doublyBackslashed);
 
@@ -188,9 +185,6 @@ void printSettings(Kameloso instance) @system
         cast(void)applyCustomSettings(null, instance.customSettings);
     }
 
-    // Sync settings
-    kameloso.common.settings = instance.settings;
-
     printVersionInfo();
     writeln();
 
@@ -199,7 +193,7 @@ void printSettings(Kameloso instance) @system
         instance.bot,
         instance.parser.server,
         instance.connSettings,
-        instance.settings);
+        *instance.settings);
 
     instance.instantiatePlugins();
 
@@ -622,7 +616,7 @@ auto handleGetopt(Kameloso instance) @system
         instance.bot,
         instance.parser.server,
         instance.connSettings,
-        instance.settings);
+        *instance.settings);
 
     applyDefaults(instance);
     applyTerminalOverrides(instance.settings.flush, instance.settings.colours);
@@ -969,7 +963,7 @@ auto handleGetopt(Kameloso instance) @system
 
     // Reinitialise the logger with new settings
     destroy(kameloso.common.logger);
-    kameloso.common.logger = new KamelosoLogger(instance.settings);
+    kameloso.common.logger = new KamelosoLogger(*instance.settings);
 
     // Support channels and admins being separated by spaces (mirror config file behaviour)
     if (inputHomeChannels.length) inputHomeChannels = flatten(inputHomeChannels);
@@ -1219,7 +1213,7 @@ void writeConfigurationFile(
         instance.bot,
         instance.parser.server,
         instance.connSettings,
-        instance.settings);
+        *instance.settings);
     sink.put('\n');
 
     foreach (immutable i, plugin; instance.plugins)

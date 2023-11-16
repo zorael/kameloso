@@ -2253,7 +2253,7 @@ void processSpecialRequests(Kameloso instance, IRCPlugin plugin)
                 {
                 case "core":
                     import lu.serialisation : serialise;
-                    sink.serialise(instance.settings);
+                    sink.serialise(*instance.settings);
                     apply();
                     break;
 
@@ -4080,14 +4080,11 @@ auto run(string[] args)
     instance.abort = &kameloso.common.globalAbort;
 
     // Set up default directories in the settings.
-    setDefaultDirectories(instance.settings);
-
-    // Sync settings.
-    kameloso.common.settings = instance.settings;
+    setDefaultDirectories(*instance.settings);
 
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for colours and headless
-    kameloso.common.logger = new KamelosoLogger(instance.settings);
+    kameloso.common.logger = new KamelosoLogger(*instance.settings);
 
     // Set up signal handling so that we can gracefully catch Ctrl+C.
     setupSignals();
@@ -4109,9 +4106,6 @@ auto run(string[] args)
     // Handle command-line arguments.
     immutable actionAfterGetopt = tryGetopt(instance);
     kameloso.common.globalHeadless = cast(Flag!"headless")instance.settings.headless;
-
-    // Resync settings.
-    kameloso.common.settings = instance.settings;
 
     with (Next)
     final switch (actionAfterGetopt)

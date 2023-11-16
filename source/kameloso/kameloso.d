@@ -145,16 +145,27 @@ public:
      +/
     this(const string[] args) @safe
     {
+        static import kameloso.common;
+
         this._args = args.dup;
         conn = new Connection;
+        settings = &kameloso.common.settings;
     }
 
     // ctor
     /++
         No-param constructor used in unit tests.
+
+        Take the address of the global settings struct at the very least.
+        Unsure if we really need it but just in case, save ourselves an
+        unexpected null pointer dereference.
      +/
     version(unittest)
-    this() @safe {}
+    this() @safe
+    {
+        static import kameloso.common;
+        settings = &kameloso.common.settings;
+    }
 
     // teardown
     /++
@@ -202,9 +213,9 @@ public:
 
     // settings
     /++
-        The root copy of the program-wide settings.
+        Pointer to the program-wide settings global.
      +/
-    CoreSettings settings;
+    CoreSettings* settings;
 
     // connSettings
     /++
@@ -498,7 +509,7 @@ public:
         state.server = this.parser.server;
         state.bot = this.bot;
         state.mainThread = thisTid;
-        state.settings = this.settings;
+        state.settings = *this.settings;
         state.connSettings = this.connSettings;
         state.abort = this.abort;
 
@@ -771,7 +782,7 @@ public:
             // Something changed the settings; propagate
             plugin.state.updates &= ~Update.settings;
             propagate(plugin.state.settings);
-            this.settings = plugin.state.settings;
+            *this.settings = plugin.state.settings;
 
             // This shouldn't be necessary since kameloso.common.settings points to this.settings
             //*kameloso.common.settings = plugin.state.settings;
