@@ -566,6 +566,7 @@ void commitAllLogs(PrinterPlugin plugin)
 void onISUPPORT(PrinterPlugin plugin)
 {
     import kameloso.common : logger;
+    import lu.conv : Enum;
 
     static uint idWhenPrintedISUPPORT;
 
@@ -582,7 +583,7 @@ void onISUPPORT(PrinterPlugin plugin)
     logger.logf(
         pattern,
         plugin.state.server.network,
-        plugin.state.server.daemon,
+        Enum!(IRCServer.Daemon).toString(plugin.state.server.daemon),
         plugin.state.server.daemonstring);
 }
 

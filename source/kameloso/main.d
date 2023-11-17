@@ -407,10 +407,11 @@ void messageFiber(Kameloso instance)
                 break;
 
             default:
+                import lu.conv : Enum;
                 import std.stdio : stdout;
 
                 enum pattern = "onThreadMessage received unexpected message type: <l>%s";
-                logger.errorf(pattern, message.type);
+                logger.errorf(pattern, Enum!(ThreadMessage.Type).toString(message.type));
                 if (instance.settings.flush) stdout.flush();
                 break;
             }
@@ -2522,7 +2523,7 @@ auto tryConnect(Kameloso instance)
         void verboselyDelayToNextIP()
         {
             enum pattern = "Failed to connect to IP. Trying next IP in <i>%d</> seconds.";
-            logger.logf(pattern, Timeout.connectionRetry);
+            logger.logf(pattern, cast(uint)Timeout.connectionRetry);
             incrementedRetryDelay = Timeout.connectionRetry;
             interruptibleSleep(Timeout.connectionRetry.seconds, instance.abort);
         }
@@ -4001,11 +4002,14 @@ auto checkInitialisationMessages(
                 break;
 
             default:
+                import lu.conv : Enum;
                 import std.stdio : stdout;
 
                 enum pattern = "checkInitialisationMessages.onThreadMessage " ~
                     "received unexpected message type: <t>%s";
-                logger.errorf(pattern, message.type);
+                logger.errorf(
+                    pattern,
+                    Enum!(ThreadMessage.Type).toString(message.type));
                 halt = true;
                 break;
             }

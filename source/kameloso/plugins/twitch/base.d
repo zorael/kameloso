@@ -3295,7 +3295,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         // More than a week away, just .info
         enum pattern = "Your Twitch authorisation token will expire " ~
             "in <l>%d days</> on <l>%4d-%02d-%02d";
-        logger.infof(pattern, numDays, expiresWhen.year, expiresWhen.month, expiresWhen.day);
+        logger.infof(pattern, numDays, expiresWhen.year, cast(uint)expiresWhen.month, expiresWhen.day);
     }
 
     void warnOnDaysDg()
@@ -3313,7 +3313,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
             logger.warningf(pattern,
                 numDays, numDays.plurality("day", "days"),
                 numHours, numHours.plurality("hour", "hours"),
-                expiresWhen.year, expiresWhen.month, expiresWhen.day,
+                expiresWhen.year, cast(uint)expiresWhen.month, expiresWhen.day,
                 expiresWhen.hour, expiresWhen.minute);
         }
         else
@@ -3322,7 +3322,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
                 "in <l>%d %s</> at <l>%4d-%02d-%02d %02d:%02d";
             logger.warningf(pattern,
                 numDays, numDays.plurality("day", "days"),
-                expiresWhen.year, expiresWhen.month, expiresWhen.day,
+                expiresWhen.year, cast(uint)expiresWhen.month, expiresWhen.day,
                 expiresWhen.hour, expiresWhen.minute);
         }
     }
