@@ -127,7 +127,8 @@ void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
         colouredVersionPattern.expandTags(LogLevel.off) :
         uncolouredVersionPattern;
 
-    writefln(finalVersionPattern,
+    writefln(
+        finalVersionPattern,
         cast(string)KamelosoInfo.version_,
         twitchSupport,
         cast(string)KamelosoInfo.compiler,

@@ -622,9 +622,10 @@ struct ListenAttempt
     enum connectionLostSeconds = 600;
 
     auto listener = new Generator!ListenAttempt(() =>
-        listenFiber(conn,
-        abort,
-        connectionLostSeconds));
+        listenFiber(
+            conn,
+            abort,
+            connectionLostSeconds));
 
     foreach (const attempt; listener)
     {
