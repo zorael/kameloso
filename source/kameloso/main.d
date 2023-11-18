@@ -4222,7 +4222,7 @@ auto run(string[] args)
     // when authenticating.
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
-    scope(exit)
+    scope(success)
     {
         // Tear down plugins outside the loop too, to cover errors during initialisation
         // It does nothing if the plugins array is empty
