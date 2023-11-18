@@ -2667,8 +2667,8 @@ auto tryConnect(Kameloso instance)
 
             // "Failed to establish SSL connection after successful connect (system lib)"
             // "Failed to establish SSL connection after successful connect" --> attempted SSL on non-SSL server
-            enum pattern = "Failed to connect: <l>%s";
-            logger.errorf(pattern, attempt.error);
+            enum pattern = "Failed to connect: <l>%s</> <t>(%d)";
+            logger.errorf(pattern, attempt.error, attempt.errno);
             if (*instance.abort) return Next.returnFailure;
 
             if ((numTransientSSLFailures++ < transientSSLFailureTolerance) &&
@@ -2684,8 +2684,8 @@ auto tryConnect(Kameloso instance)
             continue;
 
         case fatalSSLFailure:
-            enum pattern = "Failed to connect: <l>%s";
-            logger.errorf(pattern, attempt.error);
+            enum pattern = "Failed to connect (fatal): <l>%s</> <t>(%d)";
+            logger.errorf(pattern, attempt.error, attempt.errno);
             return Next.returnFailure;
 
         case exception:
