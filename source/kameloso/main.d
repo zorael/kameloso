@@ -3711,7 +3711,7 @@ void printSummary(const Kameloso instance) @safe
         auto start = SysTime.fromUnixTime(entry.startTime);
         immutable startString = fullDatePattern.format(
             start.year,
-            start.month,
+            cast(uint)start.month,
             start.day,
             start.hour,
             start.minute,
@@ -3725,7 +3725,7 @@ void printSummary(const Kameloso instance) @safe
                 stop.second) :
             fullDatePattern.format(
                 stop.year,
-                stop.month,
+                cast(uint)stop.month,
                 stop.day,
                 stop.hour,
                 stop.minute,

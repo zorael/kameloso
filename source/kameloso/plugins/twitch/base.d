@@ -692,7 +692,7 @@ void reportStreamTime(
             room.broadcasterDisplayName,
             gameName,
             previousStream.stopTime.year,
-            cast(int)previousStream.stopTime.month,
+            cast(uint)previousStream.stopTime.month,
             previousStream.stopTime.day,
             timestring,
             previousStream.numViewersMax);
@@ -706,7 +706,7 @@ void reportStreamTime(
             room.broadcasterDisplayName,
             gameName,
             previousStream.stopTime.year,
-            cast(int)previousStream.stopTime.month,
+            cast(uint)previousStream.stopTime.month,
             previousStream.stopTime.day,
             timestring);
         return chan(plugin.state, room.channelName, message);
@@ -786,7 +786,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         immutable delta = (Clock.currTime - follower.when);
         immutable timeline = delta.timeSince!(7, 3);
         immutable datestamp = datestampPattern.format(
-            months[cast(int)follower.when.month-1],
+            months[cast(uint)follower.when.month-1],
             follower.when.year);
 
         if (otherNameSpecified)

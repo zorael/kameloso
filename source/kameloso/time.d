@@ -841,7 +841,8 @@ auto nextMidnight(const SysTime now)
         gets the exact same SysTime.
      +/
 
-    auto next = SysTime(DateTime(now.year, now.month, now.day, 0, 0, 0), now.timezone)
+    const dateTime = DateTime(now.year, cast(uint)now.month, now.day, 0, 0, 0);
+    auto next = SysTime(dateTime, now.timezone)
         .roll!"days"(1);
 
     if (next.day == 1)
