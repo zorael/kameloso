@@ -3476,7 +3476,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
     import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
 
-    if ((plugin.twitchSettings.fakeChannelFromQueries) && (event.type == IRCEvent.Type.QUERY))
+    if (plugin.twitchSettings.fakeChannelFromQueries && (event.type == IRCEvent.Type.QUERY))
     {
         alias pred = (homeChannelEntry, senderNickname) => (homeChannelEntry[1..$] == senderNickname);
 
@@ -3496,40 +3496,33 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
     version(TwitchCustomEmotesEverywhere)
     {
-        if (eventCanContainEmotes)
-        {
-            // No checks needed
-            if (const customEmotes = event.channel in plugin.customEmotesByChannel)
-            {
-                embedCustomEmotes(event, *customEmotes, plugin.customGlobalEmotes);
-            }
-        }
+        // Always embed regardless of channel
+        alias shouldEmbedEmotes = eventCanContainEmotes;
     }
     else
     {
         // Only embed if the event is in a home channel
         immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
+        immutable shouldEmbedEmotes = eventCanContainEmotes && isHomeChannel;
+    }
 
-        if (isHomeChannel && eventCanContainEmotes)
+    if (shouldEmbedEmotes)
+    {
+        if (const customEmotes = event.channel in plugin.customEmotesByChannel)
         {
-            if (const customEmotes = event.channel in plugin.customEmotesByChannel)
-            {
-                embedCustomEmotes(event, *customEmotes, plugin.customGlobalEmotes);
-            }
+            embedCustomEmotes(event, *customEmotes, plugin.customGlobalEmotes);
         }
     }
 
     version(TwitchPromoteEverywhere)
     {
-        // No checks needed
+        // No checks needed, always pass through and promote
     }
     else
     {
         version(TwitchCustomEmotesEverywhere)
         {
-            import std.algorithm.searching : canFind;
-
-            // isHomeChannel only defined if version not TwitchCustomEmotesEverywhere
+            // isHomeChannel was not declared above
             immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
         }
 
