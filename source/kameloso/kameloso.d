@@ -1,5 +1,5 @@
 /++
-    Module for the main [Kameloso] instance struct.
+    Module for the main [Kameloso] class.
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -35,7 +35,7 @@ private:
 
     // Throttle
     /++
-        Aggregate of values and state needed to throttle outgoing messages.
+        Aggregate of values and state needed to rate-limit outgoing messages.
      +/
     static struct Throttle
     {
@@ -784,7 +784,7 @@ public:
             propagate(plugin.state.settings);
             *this.settings = plugin.state.settings;
 
-            // This shouldn't be necessary since kameloso.common.settings points to this.settings
+            // not necessary now that this.settings is a pointer to kameloso.common.settings
             //*kameloso.common.settings = plugin.state.settings;
         }
 

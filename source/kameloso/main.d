@@ -4224,9 +4224,7 @@ auto run(string[] args)
 
     scope(success)
     {
-        // Tear down plugins outside the loop too, to cover errors during initialisation
-        // It does nothing if the plugins array is empty
-        //instance.teardownPlugins();
+        // Tearing down tears down plugins too
         instance.teardown();
         destroy(instance);
     }
