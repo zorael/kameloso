@@ -9,10 +9,6 @@
  +/
 module kameloso.kameloso;
 
-private:
-
-import std.typecons : Flag, No, Yes;
-
 public:
 
 
@@ -32,6 +28,7 @@ private:
     import dialect.parsing : IRCParser;
     import lu.container : Buffer;
     import std.algorithm.comparison : among;
+    import std.typecons : Flag, No, Yes;
 
     // Throttle
     /++
