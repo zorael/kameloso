@@ -27,6 +27,7 @@ import kameloso.plugins.common.awareness : UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
+import std.datetime.systime : SysTime;
 
 mixin UserAwareness;
 mixin PluginRegistration!QuotePlugin;
@@ -39,9 +40,28 @@ mixin PluginRegistration!QuotePlugin;
 @Settings struct QuoteSettings
 {
     /++
+        How many units to use when reporting time in quotes.
+     +/
+    enum TimePrecision
+    {
+        year,
+        month,
+        day,
+        //hour,
+        minute,
+        second,
+        none,
+    }
+
+    /++
         Whether or not the Quote plugin should react to events at all.
      +/
     @Enabler bool enabled = true;
+
+    /++
+        How many units to use when reporting time in quotes.
+     +/
+    TimePrecision timePrecision = TimePrecision.day;
 
     /++
         Whether or not a random result should be picked in case some quote search
@@ -654,27 +674,141 @@ void sendQuoteToChannel(
     import std.datetime.systime : SysTime;
     import std.format : format;
 
-    string possibleDisplayName = nickname;  // mutable
+    string name = nickname;  // mutable
 
     version(TwitchSupport)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
             import kameloso.plugins.common.misc : nameOf;
-            possibleDisplayName = nameOf(plugin, nickname);
+            name = nameOf(plugin, nickname);
         }
     }
 
     const when = SysTime.fromUnixTime(quote.timestamp);
-    enum pattern = "%s (<h>%s<h> #%d %d-%02d-%02d)";
+    immutable timeString = getTimeStringFromTimestamp(when, plugin.quoteSettings.timePrecision);
+    immutable maybeSpace = timeString.length ? " " : "";
+
+    enum pattern = "%s (<h>%s<h> #%d%s%s)";
     immutable message = pattern.format(
         quote.line,
-        possibleDisplayName,
+        name,
         index,
-        when.year,
-        when.month,
-        when.day);
+        maybeSpace,
+        timeString);
     chan(plugin.state, channelName, message);
+}
+
+
+// getTimeStringFromTimestamp
+/++
+    Produces a time string from a UNIX timestamp with the provided time precision.
+
+    Params:
+        when = The [std.datetime.systime.SysTime|SysTime] to base the string on.
+        precision = The [QuoteSettings.TimePrecision|TimePrecision] to use
+            (how many units to express the time in).
+
+    Returns:
+        A string representing the time in the passed precision. If a precision
+        of [QuoteSettings.TimePrecision.none|none] is passed, the string will
+        be empty.
+ +/
+auto getTimeStringFromTimestamp(
+    const SysTime when,
+    const QuoteSettings.TimePrecision precision)
+{
+    import std.format : format;
+
+    with (QuoteSettings.TimePrecision)
+    final switch (precision)
+    {
+    case year:
+        import std.conv : to;
+        return when.year.to!string;
+
+    case month:
+        import std.conv : text, to;
+        import std.string : capitalize;
+        return text(when.month.to!string.capitalize, ' ', when.year);
+
+    case day:
+        enum pattern = "%d-%02d-%02d";
+        return pattern.format(
+            when.year,
+            cast(uint)when.month,
+            when.day);
+
+    /*case hour:
+        // Invalid
+        return string.init;*/
+
+    case minute:
+        enum pattern = "%d-%02d-%02d %02d:%02d";
+        return pattern.format(
+            when.year,
+            cast(uint)when.month,
+            when.day,
+            when.hour,
+            when.minute);
+
+    case second:
+        enum pattern = "%d-%02d-%02d %02d:%02d:%02d";
+        return pattern.format(
+            when.year,
+            cast(uint)when.month,
+            when.day,
+            when.hour,
+            when.minute,
+            when.second);
+
+    case none:
+        // Pass empty string
+        return string.init;
+    }
+}
+
+///
+unittest
+{
+    import std.datetime : DateTime;
+    import std.datetime.timezone : UTC;
+
+    alias Precision = QuoteSettings.TimePrecision;
+    const dateTime = DateTime(2023, 11, 12, 13, 14, 15);
+    const when = SysTime(dateTime, UTC());
+
+    {
+        immutable actual = getTimeStringFromTimestamp(when, Precision.year);
+        immutable expected = "2023";
+        assert((actual == expected), actual);
+    }
+    version(nonne)
+    {
+        // We have to disable this test as the month string is locale-dependent
+        immutable actual = getTimeStringFromTimestamp(when, Precision.month);
+        immutable expected = "Nov 2023";
+        assert((actual == expected), actual);
+    }
+    {
+        immutable actual = getTimeStringFromTimestamp(when, Precision.day);
+        immutable expected = "2023-11-12";
+        assert((actual == expected), actual);
+    }
+    {
+        immutable actual = getTimeStringFromTimestamp(when, Precision.minute);
+        immutable expected = "2023-11-12 13:14";
+        assert((actual == expected), actual);
+    }
+    {
+        immutable actual = getTimeStringFromTimestamp(when, Precision.second);
+        immutable expected = "2023-11-12 13:14:15";
+        assert((actual == expected), actual);
+    }
+    {
+        immutable actual = getTimeStringFromTimestamp(when, Precision.none);
+        assert(!actual.length, actual);
+    }
 }
 
 
