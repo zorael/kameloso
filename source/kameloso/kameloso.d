@@ -547,31 +547,45 @@ public:
 
     // issuePluginCallImpl
     /++
-        Issues a call to all plugins, where such a call is one of "setup",
+        Issues a call to all plugins, where such a call is one of "initialise", "setup",
         "start", "initResources" or "reload". This invokes their module-level
         functions of the same name, where available.
 
-        In the case of "initResources", the call does not care whether the
+        In the case of "initialise" and "initResources", the call does not care whether the
         plugins are enabled, but in all other cases they are skipped if so.
 
         Params:
             call = String name of call to issue to all plugins.
      +/
     private void issuePluginCallImpl(string call)()
-    if (call.among!("setup", "reload", "initResources"))
+    if (call.among!("initialise", "setup", "reload", "initResources"))
     {
         foreach (plugin; this.plugins)
         {
-            static if (call != "initResources")
+            // Skip disabled plugins for all calls except "initialise" and "initResources"
+            static if (!call.among!("initialise", "initResources"))
             {
-                // Always init resources, even if the plugin is disabled
                 if (!plugin.isEnabled) continue;
             }
 
             mixin("plugin." ~ call ~ "();");
+            if (*this.abort) return;
             checkPluginForUpdates(plugin);
         }
     }
+
+    // initialisePlugins
+    /++
+        Initialises all plugins, calling any module-level `.initialise` functions.
+
+        This merely calls
+        [kameloso.plugins.common.core.IRCPlugin.initialise|IRCPlugin.initialise]
+        on each plugin.
+
+        If any plugin fails to initialise, it will have thrown and something up
+        the call stack will catch it.
+     +/
+    alias initialisePlugins = issuePluginCallImpl!"initialise";
 
     // setupPlugins
     /++
@@ -708,31 +722,6 @@ public:
 
         // Zero out old plugins array
         this.plugins = null;
-    }
-
-    // initialisePlugins
-    /++
-        Initialises all plugins, calling any module-level `.initialise` functions.
-
-        This merely calls
-        [kameloso.plugins.common.core.IRCPlugin.initialise|IRCPlugin.initialise]
-        on each plugin.
-
-        If any plugin fails to initialise, it will have thrown and something up
-        the call stack will catch it.
-
-        Don't use an in-contract to enforce `plugins.length`, as not having any
-        plugins is technically a valid use-case (even if it's a fairly pointless one).
-     +/
-    void initialisePlugins() @system
-    //in (this.plugins.length, "Tried to initialise plugins but there were no plugins instantiated")
-    {
-        foreach (plugin; this.plugins)
-        {
-            plugin.initialise();
-            if (*this.abort) return;
-            checkPluginForUpdates(plugin);
-        }
     }
 
     // checkPluginForUpdates
