@@ -2110,6 +2110,7 @@ void processSpecialRequests(Kameloso instance, IRCPlugin plugin)
             {
                 // Clean up
                 destroy(request.fiber);
+                //request.fiber = null;  // fiber is an accessor, cannot null it here
             }
 
             destroy(request);
@@ -4227,6 +4228,7 @@ auto run(string[] args)
         // Tearing down tears down plugins too
         instance.teardown();
         destroy(instance);
+        instance = null;
     }
 
     // Initialise plugins outside the loop once, for the error messages

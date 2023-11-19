@@ -173,6 +173,7 @@ public:
         teardownPlugins();
         conn.teardown();
         destroy(conn);
+        conn = null;
     }
 
     // args
