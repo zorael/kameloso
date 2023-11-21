@@ -202,3 +202,161 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
 
     return retryDelegate!(Yes.endlessly)(plugin, &getFFZEmotesDg);
 }
+
+
+// getFFZGlobalEmotes
+/++
+    Fetches global FrankerFaceZ emotes.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        emoteMap = Reference to the `bool[dstring]` associative array to store
+            the fetched emotes in.
+        caller = Name of the calling function.
+
+    See_Also:
+        https://www.frankerfacez.com
+ +/
+void getFFZGlobalEmotes(
+    TwitchPlugin plugin,
+    ref bool[dstring] emoteMap,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
+{
+    import kameloso.plugins.twitch.api : retryDelegate;
+    import std.typecons : Flag, No, Yes;
+
+    void getFFZGlobalEmotesDg()
+    {
+        import kameloso.plugins.twitch.api : sendHTTPRequest;
+        import kameloso.plugins.twitch.common : UnexpectedJSONException;
+        import std.json : JSONType, parseJSON;
+
+        try
+        {
+            immutable url = "https://api.frankerfacez.com/v1/set/global";
+            immutable response = sendHTTPRequest(plugin, url, caller);
+            immutable responseJSON = parseJSON(response.str);
+
+            /+
+            {
+                "default_sets": [
+                    3,
+                    1539687
+                ],
+                "sets": {
+                    "1532818": {
+                        "_type": 1,
+                        "css": null,
+                        "emoticons": [
+                            {
+                                "artist": null,
+                                "created_at": "2023-03-04T20:17:47.814Z",
+                                "css": null,
+                                "height": 32,
+                                "hidden": false,
+                                "id": 720507,
+                                "last_updated": null,
+                                "margins": null,
+                                "modifier": true,
+                                "modifier_flags": 12289,
+                                "name": "ffzHyper",
+                                "offset": null,
+                                "owner": {
+                                    "_id": 1,
+                                    "display_name": "SirStendec",
+                                    "name": "sirstendec"
+                                },
+                                "public": false,
+                                "status": 1,
+                                "urls": {
+                                    [...]
+                                },
+                                "usage_count": 1,
+                                "width": 32
+                            },
+                            {
+                                "artist": null,
+                                "created_at": "2023-03-04T20:17:47.861Z",
+                                "css": null,
+                                "height": 32,
+                                "hidden": false,
+                                "id": 720510,
+                                "last_updated": null,
+                                "margins": null,
+                                "modifier": true,
+                                "modifier_flags": 2049,
+                                "name": "ffzRainbow",
+                                "offset": null,
+                                "owner": {
+                                    "_id": 1,
+                                    "display_name": "SirStendec",
+                                    "name": "sirstendec"
+                                },
+                                "public": false,
+                                "status": 1,
+                                "urls": {
+                                    [...]
+                                },
+                                "usage_count": 1,
+                                "width": 32
+                            },
+                            [...],
+                        ],
+                        "icon": null,
+                        "id": 3,
+                        "title": "Global Emotes"
+                    }
+                }
+                "users": {
+                    "1532818": [...]
+                }
+            }
+             +/
+
+            if (responseJSON.type != JSONType.object)
+            {
+                enum message = "`getFFZGlobalEmotes` response has unexpected JSON";
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
+
+            const setsJSON = "sets" in responseJSON;
+
+            if (!setsJSON)
+            {
+                enum message = "No emote set in FFZ response (global)";
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
+
+            foreach (immutable setJSON; (*setsJSON).object)
+            {
+                if (immutable emoticonsArrayJSON = "emoticons" in setJSON)
+                {
+                    foreach (immutable emoteJSON; emoticonsArrayJSON.array)
+                    {
+                        import std.conv : to;
+                        immutable emote = emoteJSON["name"].str.to!dstring;
+                        emoteMap[emote] = true;
+                    }
+
+                    // Probably all done as there only seems to be one set,
+                    // but keep iterating in case we're wrong
+                    //return;
+                }
+            }
+
+            // All done
+        }
+        /*catch (ErrorJSONException e)
+        {
+            // No idea what this looks like
+            throw e;
+        }*/
+        catch (Exception e)
+        {
+            throw e;
+        }
+    }
+
+    return retryDelegate!(Yes.endlessly)(plugin, &getFFZGlobalEmotesDg);
+}

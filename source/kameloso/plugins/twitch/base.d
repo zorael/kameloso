@@ -2501,6 +2501,7 @@ void importCustomGlobalEmotes(TwitchPlugin plugin)
 in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fiber")
 {
     import kameloso.plugins.twitch.emotes.bttv : getBTTVGlobalEmotes;
+    import kameloso.plugins.twitch.emotes.ffz : getFFZGlobalEmotes;
     import kameloso.plugins.twitch.emotes.seventv : get7tvGlobalEmotes;
     import core.memory : GC;
 
@@ -2529,6 +2530,7 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
 
     plugin.customGlobalEmotes = null;  // In case we're reimporting definitions
     getGlobalEmoteSet(&getBTTVGlobalEmotes, "BetterTTV");
+    getGlobalEmoteSet(&getFFZGlobalEmotes, "FrankerFaceZ");
     getGlobalEmoteSet(&get7tvGlobalEmotes, "7tv");
     plugin.customGlobalEmotes.rehash();
 }
