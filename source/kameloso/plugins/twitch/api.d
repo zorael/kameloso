@@ -2287,7 +2287,7 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
         }
     }
 
-    return retryDelegate(plugin, &getBTTVEmotesDg);
+    return retryDelegate!(Yes.endlessly)(plugin, &getBTTVEmotesDg);
 }
 
 
@@ -2348,7 +2348,7 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
         // All done
     }
 
-    return retryDelegate(plugin, &getBTTVGlobalEmotesDg);
+    return retryDelegate!(Yes.endlessly)(plugin, &getBTTVGlobalEmotesDg);
 }
 
 
@@ -2520,7 +2520,7 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
         }
     }
 
-    return retryDelegate(plugin, &getFFZEmotesDg);
+    return retryDelegate!(Yes.endlessly)(plugin, &getFFZEmotesDg);
 }
 
 
@@ -2689,7 +2689,7 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
         }
     }
 
-    return retryDelegate(plugin, &get7tvEmotesDg);
+    return retryDelegate!(Yes.endlessly)(plugin, &get7tvEmotesDg);
 }
 
 
@@ -2782,7 +2782,7 @@ in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
         // All done
     }
 
-    return retryDelegate(plugin, &get7tvGlobalEmotesDg);
+    return retryDelegate!(Yes.endlessly)(plugin, &get7tvGlobalEmotesDg);
 }
 
 
