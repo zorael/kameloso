@@ -12,6 +12,9 @@
  +/
 module kameloso.plugins.twitch.emotes.ffz;
 
+version(TwitchSupport):
+version(WithTwitchPlugin):
+
 private:
 
 import kameloso.plugins.twitch.base : TwitchPlugin;

@@ -12,6 +12,9 @@
  +/
 module kameloso.plugins.twitch.emotes.bttv;
 
+version(TwitchSupport):
+version(WithTwitchPlugin):
+
 private:
 
 import kameloso.plugins.twitch.base : TwitchPlugin;
