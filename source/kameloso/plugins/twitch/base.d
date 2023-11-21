@@ -146,6 +146,11 @@ public:
             access tokens.
          +/
         bool spotifyKeygen = false;
+
+        /++
+            Whether or not to import custom emotes.
+         +/
+        bool customEmotes = true;
     }
 }
 
