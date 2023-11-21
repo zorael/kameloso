@@ -948,7 +948,12 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     if (shouldStartRoomMonitor)
     {
         startRoomMonitorFibers(plugin, event.channel);
-        importCustomEmotes(plugin, event.channel, room.id);  // also only do this once
+
+        if (plugin.twitchSettings.customEmotes)
+        {
+            // also only do this once
+            importCustomEmotes(plugin, event.channel, room.id);
+        }
     }
 }
 
@@ -966,6 +971,8 @@ version(TwitchCustomEmotesEverywhere)
 )
 void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    if (!plugin.twitchSettings.customEmotes) return;
+
     if (event.channel in plugin.customEmotesByChannel)
     {
         // Already done
@@ -3496,7 +3503,9 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         return;
     }
 
-    immutable eventCanContainEmotes = event.content.length &&
+    immutable eventCanContainEmotes =
+        plugin.twitchSettings.customEmotes &&
+        event.content.length &&
         event.type.among!(IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE);
 
     version(TwitchCustomEmotesEverywhere)
@@ -3763,6 +3772,8 @@ void reload(TwitchPlugin plugin)
 
     void importDg()
     {
+        if (!plugin.twitchSettings.customEmotes) return;
+
         plugin.customGlobalEmotes = null;
         importCustomGlobalEmotes(plugin);
 
