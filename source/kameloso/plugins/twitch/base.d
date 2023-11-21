@@ -2449,6 +2449,9 @@ in (Fiber.getThis, "Tried to call `importCustomEmotes` from outside a Fiber")
 in (channelName.length, "Tried to import custom emotes with an empty channel name string")
 in (idString.length, "Tried to import custom emotes with an empty ID string")
 {
+    import kameloso.plugins.twitch.emotes.bttv : getBTTVEmotes;
+    import kameloso.plugins.twitch.emotes.ffz : getFFZEmotes;
+    import kameloso.plugins.twitch.emotes.seventv : get7tvEmotes;
     import core.memory : GC;
 
     GC.disable();
@@ -2497,6 +2500,8 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
 void importCustomGlobalEmotes(TwitchPlugin plugin)
 in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fiber")
 {
+    import kameloso.plugins.twitch.emotes.bttv : getBTTVGlobalEmotes;
+    import kameloso.plugins.twitch.emotes.seventv : get7tvGlobalEmotes;
     import core.memory : GC;
 
     GC.disable();
