@@ -669,27 +669,27 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
             enum message = "`getTwitchData` query response JSON is not JSONType.object";
             throw new UnexpectedJSONException(message, responseJSON);
         }
-        else if (immutable dataJSON = "data" in responseJSON)
-        {
-            if (dataJSON.array.length == 1)
-            {
-                return dataJSON.array[0];
-            }
-            else if (!dataJSON.array.length)
-            {
-                enum message = "`getTwitchData` query response JSON has empty \"data\"";
-                throw new EmptyDataJSONException(message, responseJSON);
-            }
-            else
-            {
-                enum message = "`getTwitchData` query response JSON \"data\" value is not a 1-length array";
-                throw new UnexpectedJSONException(message, *dataJSON);
-            }
-        }
-        else
+
+        immutable dataJSON = "data" in responseJSON;
+        if (!dataJSON)
         {
             enum message = "`getTwitchData` query response JSON does not contain a \"data\" element";
             throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        if (dataJSON.array.length == 1)
+        {
+            return dataJSON.array[0];
+        }
+        else if (!dataJSON.array.length)
+        {
+            enum message = "`getTwitchData` query response JSON has empty \"data\"";
+            throw new EmptyDataJSONException(message, responseJSON);
+        }
+        else
+        {
+            enum message = "`getTwitchData` query response JSON \"data\" value is not a 1-length array";
+            throw new UnexpectedJSONException(message, *dataJSON);
         }
     }
     catch (JSONException e)
