@@ -2712,13 +2712,11 @@ void get7tvGlobalEmotes(
     const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
 {
-    import std.json : parseJSON;
-
-    enum globalEmoteSetID = "62cdd34e72a832540de95857";
-    enum url = "https://7tv.io/v3/emote-sets/" ~ globalEmoteSetID;
-
     void get7tvGlobalEmotesDg()
     {
+        import std.json : parseJSON;
+
+        enum url = "https://7tv.io/v3/emote-sets/global";
         immutable response = sendHTTPRequest(plugin, url, caller);
         immutable responseJSON = parseJSON(response.str);
 
