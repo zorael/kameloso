@@ -397,7 +397,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
 
     immutable pre = MonoTime.currTime;
-    if (id == -1) id = getUniqueNumericalID(plugin.bucket);
+    if (id == -1) id = reserveUniqueBucketID(plugin.bucket);
 
     plugin.persistentWorkerTid.send(
         id,
@@ -1092,7 +1092,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 
     Example:
     ---
-    immutable id = getUniqueNumericalID(plugin.bucket);
+    immutable id = reserveUniqueBucketID(plugin.bucket);
     immutable url = "https://api.twitch.tv/helix/users?login=zorael";
     plugin.persistentWorkerTid.send(id, url, plugin.authorizationBearer);
 
@@ -1321,9 +1321,10 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
 }
 
 
-// getUniqueNumericalID
+// reserveUniqueBucketID
 /++
     Generates a unique numerical ID for use as key in the passed associative array bucket.
+    Reservates the ID in the bucket by assigning it to an empty [QueryResponse].
 
     Params:
         bucket = Shared associative array of responses from async HTTP queries.
@@ -1331,7 +1332,7 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
     Returns:
         A unique integer for use as bucket key.
  +/
-auto getUniqueNumericalID(shared QueryResponse[int] bucket)
+auto reserveUniqueBucketID(shared QueryResponse[int] bucket)
 {
     import std.random : uniform;
 

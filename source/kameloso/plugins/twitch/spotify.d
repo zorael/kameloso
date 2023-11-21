@@ -517,7 +517,7 @@ package JSONValue addTrackToSpotifyPlaylist(
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis, "Tried to call `addTrackToSpotifyPlaylist` from outside a Fiber")
 {
-    import kameloso.plugins.twitch.api : getUniqueNumericalID, waitForQueryResponse;
+    import kameloso.plugins.twitch.api : reserveUniqueBucketID, waitForQueryResponse;
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
     import arsd.http2 : HttpVerb;
@@ -547,7 +547,7 @@ in (Fiber.getThis, "Tried to call `addTrackToSpotifyPlaylist` from outside a Fib
     }
 
     immutable ubyte[] data;
-    /*immutable*/ int id = getUniqueNumericalID(plugin.bucket);  // Making immutable bumps compilation memory +44mb
+    /*immutable*/ int id = reserveUniqueBucketID(plugin.bucket);  // Making immutable bumps compilation memory +44mb
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
