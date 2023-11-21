@@ -68,18 +68,28 @@ struct QueryResponse
     Retries a passed delegate until it no longer throws or until the hardcoded
     number of retries
     ([kameloso.plugins.twitch.base.TwitchPlugin.delegateRetries|TwitchPlugin.delegateRetries])
-    is reached.
+    is reached, or forever if `endlessly` is passed.
 
     Params:
+        endlessly = Whether or not to endlessly retry.
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         dg = Delegate to call.
 
     Returns:
         Whatever the passed delegate returns.
  +/
-auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
+auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, Dg)(TwitchPlugin plugin, Dg dg)
 {
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    static if (endlessly)
+    {
+        enum retries = size_t.max;
+    }
+    else
+    {
+        alias retries = TwitchPlugin.delegateRetries;
+    }
+
+    foreach (immutable i; 0..retries)
     {
         try
         {
@@ -100,17 +110,37 @@ auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
         }
         catch (Exception e)
         {
-            // Retry until we reach the retry limit, then print if we should, before rethrowing
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
+            static if (endlessly)
             {
-                if (!plugin.state.settings.headless)
+                // Unconditionally continue, but print the exception once if it's erroring
+                version(PrintStacktraces)
                 {
-                    printRetryDelegateException(e);
+                    if (!plugin.state.settings.headless)
+                    {
+                        alias printExceptionAfterNFailures = TwitchPlugin.delegateRetries;
+
+                        if (i == printExceptionAfterNFailures)
+                        {
+                            printRetryDelegateException(e);
+                        }
+                    }
                 }
+                continue;
             }
-            throw e;
+            else
+            {
+                // Retry until we reach the retry limit, then print if we should, before rethrowing
+                if (i < TwitchPlugin.delegateRetries-1) continue;
+
+                version(PrintStacktraces)
+                {
+                    if (!plugin.state.settings.headless)
+                    {
+                        printRetryDelegateException(e);
+                    }
+                }
+                throw e;
+            }
         }
     }
 
