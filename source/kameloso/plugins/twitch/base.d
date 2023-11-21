@@ -3124,8 +3124,8 @@ void startValidator(TwitchPlugin plugin)
                     immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                     plugin.botUserIDString = validationJSON["user_id"].str;
                     immutable expiresIn = validationJSON["expires_in"].integer;
-                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime() + expiresIn);
                     immutable now = Clock.currTime;
+                    immutable expiresWhen = SysTime.fromUnixTime(now.toUnixTime() + expiresIn);
                     immutable delta = (expiresWhen - now);
 
                     // Schedule quitting on expiry
