@@ -145,7 +145,7 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
-            const emoteSetJSON = "emote_set" in responseJSON;
+            immutable emoteSetJSON = "emote_set" in responseJSON;
 
             if (!emoteSetJSON)
             {
@@ -155,7 +155,7 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
 
             if (emoteSetJSON.type != JSONType.object) return;  // No emotes
 
-            const emotesJSON = "emotes" in *emoteSetJSON;
+            immutable emotesJSON = "emotes" in *emoteSetJSON;
 
             if (!emotesJSON)
             {
@@ -163,7 +163,7 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
                 throw new UnexpectedJSONException(message, *emoteSetJSON);
             }
 
-            foreach (const emoteJSON; emotesJSON.array)
+            foreach (immutable emoteJSON; emotesJSON.array)
             {
                 import std.conv : to;
                 immutable emoteName = emoteJSON["name"].str.to!dstring;
@@ -285,7 +285,7 @@ in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        const emotesJSON = "emotes" in responseJSON;
+        immutable emotesJSON = "emotes" in responseJSON;
 
         if (!emotesJSON)
         {

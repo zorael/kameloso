@@ -671,6 +671,7 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
         }
 
         immutable dataJSON = "data" in responseJSON;
+
         if (!dataJSON)
         {
             enum message = "`getTwitchData` query response JSON does not contain a \"data\" element";
@@ -773,6 +774,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
         }
 
         immutable chattersJSON = "chatters" in responseJSON;
+
         if (!chattersJSON)
         {
             // For some reason we received an object that didn't contain chatters

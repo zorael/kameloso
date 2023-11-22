@@ -158,7 +158,7 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
-            const setsJSON = "sets" in responseJSON;
+            immutable setsJSON = "sets" in responseJSON;
 
             if (!setsJSON)
             {
@@ -323,7 +323,7 @@ in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
-            const setsJSON = "sets" in responseJSON;
+            immutable setsJSON = "sets" in responseJSON;
 
             if (!setsJSON)
             {

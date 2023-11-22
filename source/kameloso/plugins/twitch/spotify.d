@@ -291,7 +291,7 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
         writeln(validationJSON.toPrettyString);
     }
 
-    if (const errorJSON = "error" in validationJSON)
+    if (immutable errorJSON = "error" in validationJSON)
     {
         throw new ErrorJSONException((*errorJSON)["message"].str, *errorJSON);
     }
@@ -369,14 +369,14 @@ void getSpotifyTokens(HttpClient client, ref Credentials creds, const string cod
             }
             */
 
-            const json = parseJSON(res.contentText);
+            immutable json = parseJSON(res.contentText);
 
             if (json.type != JSONType.object)
             {
                 throw new UnexpectedJSONException("Wrong JSON type in token request response", json);
             }
 
-            if (auto errorJSON = "error" in json)
+            if (immutable errorJSON = "error" in json)
             {
                 throw new ErrorJSONException(errorJSON.str, *errorJSON);
             }
@@ -441,14 +441,14 @@ void refreshSpotifyToken(HttpClient client, ref Credentials creds)
             }
             */
 
-            const json = parseJSON(res.contentText);
+            immutable json = parseJSON(res.contentText);
 
             if (json.type != JSONType.object)
             {
                 throw new UnexpectedJSONException("Wrong JSON type in token refresh response", json);
             }
 
-            if (auto errorJSON = "error" in json)
+            if (immutable errorJSON = "error" in json)
             {
                 throw new ErrorJSONException(errorJSON.str, *errorJSON);
             }
@@ -580,17 +580,17 @@ in (Fiber.getThis, "Tried to call `addTrackToSpotifyPlaylist` from outside a Fib
             }
             */
 
-            const json = parseJSON(response.str);
+            immutable json = parseJSON(response.str);
 
             if (json.type != JSONType.object)
             {
                 throw new UnexpectedJSONException("Wrong JSON type in playlist append response", json);
             }
 
-            const errorJSON = "error" in json;
+            immutable errorJSON = "error" in json;
             if (!errorJSON) return json;  // Success
 
-            if (const messageJSON = "message" in *errorJSON)
+            if (immutable messageJSON = "message" in *errorJSON)
             {
                 if (messageJSON.str == "The access token expired")
                 {
@@ -671,7 +671,7 @@ package auto getSpotifyTrackByID(const Credentials creds, const string trackID)
                 throw new UnexpectedJSONException("Wrong JSON type in track request response", json);
             }
 
-            if (auto errorJSON = "error" in json)
+            if (const errorJSON = "error" in json)
             {
                 throw new ErrorJSONException(errorJSON.str, *errorJSON);
             }
@@ -723,7 +723,7 @@ auto validateSpotifyToken(HttpClient client, ref Credentials creds)
         {
             auto req = client.request(Uri(url));
             auto res = req.waitForCompletion();
-            const json = parseJSON(res.contentText);
+            immutable json = parseJSON(res.contentText);
 
             /*
             {
@@ -756,7 +756,7 @@ auto validateSpotifyToken(HttpClient client, ref Credentials creds)
                 throw new UnexpectedJSONException("Wrong JSON type in token validation response", json);
             }
 
-            if (auto errorJSON = "error" in json)
+            if (immutable errorJSON = "error" in json)
             {
                 throw new ErrorJSONException(errorJSON.str, *errorJSON);
             }

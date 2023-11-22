@@ -323,7 +323,7 @@ then finally <i>Allow</>.`;
         writeln(validationJSON.toPrettyString);
     }
 
-    if (const errorJSON = "error" in validationJSON)
+    if (immutable errorJSON = "error" in validationJSON)
     {
         throw new ErrorJSONException(validationJSON["error_description"].str, *errorJSON);
     }
@@ -485,7 +485,7 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
             }
             */
 
-            const json = parseJSON(response.str);
+            immutable json = parseJSON(response.str);
 
             if (json.type != JSONType.object)
             {
@@ -493,16 +493,16 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
                 throw new UnexpectedJSONException(message, json);
             }
 
-            const errorJSON = "error" in json;
+            immutable errorJSON = "error" in json;
             if (!errorJSON) return json;  // Success
 
-            if (const statusJSON = "status" in *errorJSON)
+            if (immutable statusJSON = "status" in *errorJSON)
             {
                 if (statusJSON.str == "UNAUTHENTICATED")
                 {
                     if (recursing)
                     {
-                        const errorAAJSON = "errors" in *errorJSON;
+                        immutable errorAAJSON = "errors" in *errorJSON;
 
                         if (errorAAJSON &&
                             (errorAAJSON.type == JSONType.array) &&
@@ -591,14 +591,14 @@ void getGoogleTokens(HttpClient client, ref Credentials creds, const string code
     }
     */
 
-    const json = parseJSON(res.contentText);
+    immutable json = parseJSON(res.contentText);
 
     if (json.type != JSONType.object)
     {
         throw new UnexpectedJSONException("Wrong JSON type in token request response", json);
     }
 
-    if (auto errorJSON = "error" in json)
+    if (immutable errorJSON = "error" in json)
     {
         throw new ErrorJSONException(errorJSON.str, *errorJSON);
     }
@@ -639,14 +639,14 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
     enum data = cast(ubyte[])"{}";
     auto req = client.request(Uri(url), HttpVerb.POST, data);
     auto res = req.waitForCompletion();
-    const json = parseJSON(res.contentText);
+    immutable json = parseJSON(res.contentText);
 
     if (json.type != JSONType.object)
     {
         throw new UnexpectedJSONException("Wrong JSON type in token refresh response", json);
     }
 
-    if (auto errorJSON = "error" in json)
+    if (immutable errorJSON = "error" in json)
     {
         if (errorJSON.str == "invalid_grant")
         {
@@ -691,7 +691,7 @@ auto validateGoogleToken(HttpClient client, const Credentials creds)
     immutable url = urlHead ~ creds.googleAccessToken;
     auto req = client.request(Uri(url));
     auto res = req.waitForCompletion();
-    const json = parseJSON(res.contentText);
+    immutable json = parseJSON(res.contentText);
 
     /*
     {
@@ -715,7 +715,7 @@ auto validateGoogleToken(HttpClient client, const Credentials creds)
         throw new UnexpectedJSONException("Wrong JSON type in token validation response", json);
     }
 
-    if (auto errorJSON = "error" in json)
+    if (immutable errorJSON = "error" in json)
     {
         throw new ErrorJSONException(errorJSON.str, *errorJSON);
     }
