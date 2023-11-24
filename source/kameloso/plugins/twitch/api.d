@@ -921,7 +921,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         return validationJSON;
     }
 
-    return retryDelegate(plugin, &getValidationDg);
+    return retryDelegate!(Yes.endlessly)(plugin, &getValidationDg);
 }
 
 
