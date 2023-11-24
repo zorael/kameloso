@@ -77,6 +77,10 @@ struct QueryResponse
 
     Returns:
         Whatever the passed delegate returns.
+
+    Throws:
+        [MissingBroadcasterTokenException] if the delegate throws it.
+        [Exception] if the delegate throws it and `endlessly` is not passed.
  +/
 auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, Dg)(TwitchPlugin plugin, Dg dg)
 {

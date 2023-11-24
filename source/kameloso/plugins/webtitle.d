@@ -748,7 +748,7 @@ unittest
 
     Example:
     ---
-    auto infoJSON = getYouTubeInfo("https://www.youtube.com/watch?v=s-mOy8VUEBk");
+    auto infoJSON = getYouTubeInfoJSON("https://www.youtube.com/watch?v=s-mOy8VUEBk");
     writeln(infoJSON["title"].str);
     writeln(infoJSON["author"].str);
     ---
