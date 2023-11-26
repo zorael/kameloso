@@ -141,7 +141,7 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
             if (responseJSON.type != JSONType.object)
             {
                 enum message = "`get7tvEmotes` response has unexpected JSON " ~
-                    "(response is wrong type";
+                    "(wrong JSON type)";
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
@@ -149,19 +149,14 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
 
             if (!emoteSetJSON)
             {
-                enum message = "No emote set in 7tv response (user)";
+                enum message = "`get7tvEmotes` response has unexpected JSON " ~
+                    `(no "emote_set" key)`;
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
             if (emoteSetJSON.type != JSONType.object) return;  // No emotes
 
             immutable emotesJSON = "emotes" in *emoteSetJSON;
-
-            if (!emotesJSON)
-            {
-                enum message = "No emotes in 7tv emote set";
-                throw new UnexpectedJSONException(message, *emoteSetJSON);
-            }
 
             foreach (immutable emoteJSON; emotesJSON.array)
             {
@@ -281,7 +276,7 @@ in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
         if (responseJSON.type != JSONType.object)
         {
             enum message = "`get7tvGlobalEmotes` response has unexpected JSON " ~
-                "(response is wrong type";
+                "(wrong JSON type)";
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
@@ -289,7 +284,8 @@ in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
 
         if (!emotesJSON)
         {
-            enum message = "No emotes in 7tv response (global)";
+            enum message = "`get7tvGlobalEmotes` response has unexpected JSON " ~
+                `(no "emotes" key)`;
             throw new UnexpectedJSONException(message, responseJSON);
         }
 

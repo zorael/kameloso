@@ -53,7 +53,7 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
     void getBTTVEmotesDg()
     {
         import kameloso.plugins.twitch.api : sendHTTPRequest;
-        import kameloso.plugins.twitch.common : ErrorJSONException;
+        import kameloso.plugins.twitch.common : ErrorJSONException, UnexpectedJSONException;
         import std.conv : to;
         import std.json : JSONType, parseJSON;
 
@@ -119,13 +119,20 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
 
             if (responseJSON.type != JSONType.object)
             {
-                import kameloso.plugins.twitch.common : UnexpectedJSONException;
                 enum message = "`getBTTVEmotes` response has unexpected JSON " ~
-                    "(response is wrong type)";
+                    "(wrong JSON type)";
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
             immutable channelEmotesJSON = "channelEmotes" in responseJSON;
+
+            if (!channelEmotesJSON)
+            {
+                enum message = "`getBTTVEmotes` response has unexpected JSON " ~
+                    `(no "channelEmotes" key)`;
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
+
             immutable sharedEmotesJSON = "sharedEmotes" in responseJSON;
 
             foreach (const emoteJSON; channelEmotesJSON.array)
@@ -222,7 +229,7 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
         {
             import kameloso.plugins.twitch.common : UnexpectedJSONException;
             enum message = "`getBTTVGlobalEmotes` response has unexpected JSON " ~
-                "(response is wrong type)";
+                "(wrong JSON type)";
             throw new UnexpectedJSONException(message, responseJSON);
         }
 

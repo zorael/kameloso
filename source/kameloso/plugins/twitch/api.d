@@ -670,7 +670,8 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
 
         if (responseJSON.type != JSONType.object)
         {
-            enum message = "`getTwitchData` query response JSON is not JSONType.object";
+            enum message = "`getTwitchData` response has unexpected JSON " ~
+                "(wrong JSON type)";
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
@@ -678,7 +679,8 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
 
         if (!dataJSON)
         {
-            enum message = "`getTwitchData` query response JSON does not contain a \"data\" element";
+            enum message = "`getTwitchData` response has unexpected JSON " ~
+                `(no "data" key)`;
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
@@ -688,12 +690,14 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
         }
         else if (!dataJSON.array.length)
         {
-            enum message = "`getTwitchData` query response JSON has empty \"data\"";
+            enum message = "`getTwitchData` response has unexpected JSON " ~
+                `(empty "data" array)`;
             throw new EmptyDataJSONException(message, responseJSON);
         }
         else
         {
-            enum message = "`getTwitchData` query response JSON \"data\" value is not a 1-length array";
+            enum message = "`getTwitchData` response has unexpected JSON " ~
+                `("data" value is not a 1-length array)`;
             throw new UnexpectedJSONException(message, *dataJSON);
         }
     }
@@ -773,7 +777,8 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
         if (responseJSON.type != JSONType.object)
         {
-            enum message = "`getChatters` response JSON is not JSONType.object";
+            enum message = "`getChatters` response has unexpected JSON " ~
+                "(wrong JSON type)";
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
@@ -782,8 +787,9 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
         if (!chattersJSON)
         {
             // For some reason we received an object that didn't contain chatters
-            enum message = "`getChatters` \"chatters\" JSON is not JSONType.object";
-            throw new UnexpectedJSONException(message, *chattersJSON);
+            enum message = "`getChatters` response has unexpected JSON " ~
+                `(no "chatters" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
         }
 
         // Don't return `chattersJSON`, as we would lose "chatter_count".
@@ -916,9 +922,17 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
         immutable validationJSON = parseJSON(response.str);
 
-        if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
+        if (validationJSON.type != JSONType.object)
         {
-            enum message = "Failed to validate Twitch authorisation token; unknown JSON";
+            enum message = "`getValidation` response has unexpected JSON " ~
+                "(wrong JSON type)";
+            throw new UnexpectedJSONException(message, validationJSON);
+        }
+
+        if ("client_id" !in validationJSON)
+        {
+            enum message = "`getValidation` response has unexpected JSON " ~
+                `(no "client_id" key)`;
             throw new UnexpectedJSONException(message, validationJSON);
         }
 
@@ -1018,8 +1032,9 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
 
         if (!dataJSON)
         {
-            enum message = "No data in JSON response";
-            throw new UnexpectedJSONException(message, *dataJSON);
+            enum message = "`getMultipleTwitchData` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
         }
 
         foreach (thisResponseJSON; dataJSON.array)
@@ -1658,11 +1673,20 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 "application/json");
             immutable responseJSON = parseJSON(response.str);
 
-            if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+            if (responseJSON.type != JSONType.object)
             {
-                // Invalid response in some way
-                if (++retry < TwitchPlugin.delegateRetries) continue inner;
-                enum message = "`getPolls` response has unexpected JSON";
+                enum message = "`getPolls` response has unexpected JSON " ~
+                    "(wrong JSON type)";
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
+
+            immutable dataJSON = "data" in responseJSON;
+
+            if (!dataJSON)
+            {
+                // For some reason we received an object that didn't contain data
+                enum message = "`getPolls` response has unexpected JSON " ~
+                    `(no "data" key)`;
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
@@ -1706,7 +1730,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
             }
             */
 
-            foreach (const pollJSON; responseJSON["data"].array)
+            foreach (const pollJSON; dataJSON.array)
             {
                 if (pollJSON["status"].str != "ACTIVE") continue;
                 allPollsJSON.array ~= pollJSON;
@@ -1837,14 +1861,25 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
         }
         */
 
-        if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+        if (responseJSON.type != JSONType.object)
         {
             // Invalid response in some way
-            enum message = "`createPoll` response has unexpected JSON";
+            enum message = "`createPoll` response has unexpected JSON " ~
+                "(wrong JSON type)";
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        return responseJSON["data"].array;
+        immutable dataJSON = "data" in responseJSON;
+
+        if (!dataJSON)
+        {
+            // For some reason we received an object that didn't contain data
+            enum message = "`createPoll` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        return dataJSON.array;
     }
 
     return retryDelegate(plugin, &createPollDg);
@@ -1948,14 +1983,32 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
         }
         */
 
-        if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+        if (responseJSON.type != JSONType.object)
         {
             // Invalid response in some way
-            enum message = "`endPoll` response has unexpected JSON";
+            enum message = "`endPoll` response has unexpected JSON " ~
+                "(wrong JSON type)";
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        return responseJSON["data"].array[0];
+        immutable dataJSON = "data" in responseJSON;
+
+        if (!dataJSON)
+        {
+            // For some reason we received an object that didn't contain data
+            enum message = "`endPoll` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        if (!dataJSON.array.length)
+        {
+            enum message = "`endPoll` response has unexpected JSON " ~
+                `(empty "data" array)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        return dataJSON.array[0];
     }
 
     return retryDelegate(plugin, &endPollDg);
@@ -2022,17 +2075,27 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
         }
         */
 
-        if ((responseJSON.type != JSONType.object) || ("bots" !in responseJSON))
+        if (responseJSON.type != JSONType.object)
         {
             // Invalid response in some way, retry until we reach the limit
             enum message = "`getBotList` response has unexpected JSON";
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
+        immutable botsJSON = "bots" in responseJSON;
+
+        if (!botsJSON)
+        {
+            // For some reason we received an object that didn't contain bots
+            enum message = "`getBotList` response has unexpected JSON " ~
+                `(no "bots" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
         Appender!(string[]) sink;
         sink.reserve(responseJSON["_total"].integer);
 
-        foreach (const botEntryJSON; responseJSON["bots"].array)
+        foreach (const botEntryJSON; botsJSON.array)
         {
             /*
             [
@@ -2140,7 +2203,8 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             stream.title = streamJSON["title"].str;
             stream.startTime = SysTime.fromISOExtString(streamJSON["started_at"].str);
             stream.numViewers = streamJSON["viewer_count"].integer;
-            stream.tags = streamJSON["tags"].array
+            stream.tags = streamJSON["tags"]
+                .array
                 .map!(tag => tag.str)
                 .array;
             return stream;
@@ -2215,7 +2279,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
     "first": "100"
 }`;
 
-    enum subsequentPattern = `
+        enum subsequentPattern = `
 {
     "broadcaster_id": "%s",
     "after": "%s",
@@ -2267,11 +2331,22 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             }
             */
 
-            if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+            if (responseJSON.type != JSONType.object)
             {
-                // Invalid response in some way
+                // Invalid response in some way, retry until we reach the limit
                 if (++retry < TwitchPlugin.delegateRetries) continue inner;
                 enum message = "`getSubscribers` response has unexpected JSON";
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
+
+            immutable dataJSON = "data" in responseJSON;
+
+            if (!dataJSON)
+            {
+                // As above
+                if (++retry < TwitchPlugin.delegateRetries) continue inner;
+                enum message = "`getSubscribers` response has unexpected JSON " ~
+                    `(no "data" key)`;
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
@@ -2282,7 +2357,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 subs.reserve(responseJSON["total"].integer);
             }
 
-            foreach (immutable subJSON; responseJSON["data"].array)
+            foreach (immutable subJSON; dataJSON.array)
             {
                 Subscription sub;
                 sub.user.id = subJSON["user_id"].str;

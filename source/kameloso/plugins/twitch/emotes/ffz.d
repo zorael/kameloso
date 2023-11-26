@@ -154,7 +154,8 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
 
             if (responseJSON.type != JSONType.object)
             {
-                enum message = "`getFFZEmotes` response has unexpected JSON";
+                enum message = "`getFFZEmotes` response has unexpected JSON " ~
+                    "(wrong JSON type)";
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
@@ -162,7 +163,8 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
 
             if (!setsJSON)
             {
-                enum message = "No emote set in FFZ response (user)";
+                enum message = "`getFFZEmotes` response has unexpected JSON " ~
+                    `(no "sets" key)`;
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
@@ -319,7 +321,8 @@ in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
 
             if (responseJSON.type != JSONType.object)
             {
-                enum message = "`getFFZGlobalEmotes` response has unexpected JSON";
+                enum message = "`getFFZGlobalEmotes` response has unexpected JSON " ~
+                    "(wrong JSON type)";
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
@@ -327,7 +330,8 @@ in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
 
             if (!setsJSON)
             {
-                enum message = "No emote set in FFZ response (global)";
+                enum message = "`getFFZGlobalEmotes` response has unexpected JSON " ~
+                    `(no "sets" key)`;
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
