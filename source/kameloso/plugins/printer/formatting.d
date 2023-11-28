@@ -232,7 +232,7 @@ void formatMessageMonochrome(Sink)
 
         version(PrintClassNamesToo)
         {
-            .put(sink, ':', event.sender.class_);
+            .put(sink, '/', event.sender.class_);
         }
 
         version(PrintAccountNamesToo)
@@ -316,7 +316,7 @@ void formatMessageMonochrome(Sink)
 
         version(PrintClassNamesToo)
         {
-            .put(sink, ':', event.target.class_);
+            .put(sink, '/', event.target.class_);
         }
 
         version(PrintAccountNamesToo)
@@ -510,7 +510,7 @@ void formatMessageMonochrome(Sink)
         immutable joinLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= ":whitelist";
+        version(PrintClassNamesToo) nickstring ~= "/whitelist";
         immutable expected = "[join] [#channel] " ~ nickstring;
         assert((joinLine == expected), joinLine);
         sink.clear();
@@ -524,7 +524,7 @@ void formatMessageMonochrome(Sink)
         immutable chanLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= ":whitelist";
+        version(PrintClassNamesToo) nickstring ~= "/whitelist";
         immutable expected = "[chan] [#channel] " ~ nickstring ~ `: "Harbl snarbl"`;
         assert((chanLine == expected), chanLine);
         sink.clear();
@@ -540,7 +540,7 @@ void formatMessageMonochrome(Sink)
         immutable twitchLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= ":staff";
+        version(PrintClassNamesToo) nickstring ~= "/staff";
         immutable expected = "[chan] [#channel] " ~ nickstring ~
             ` [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`;
         assert((twitchLine == expected), twitchLine);
@@ -561,8 +561,8 @@ void formatMessageMonochrome(Sink)
         immutable accountLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= ":anyone";
-        version(PrintAccountNamesToo) nickstring ~= "(n1ckn4m3)";
+        version(PrintClassNamesToo) nickstring ~= "/anyone";
+        version(PrintAccountNamesToo) nickstring ~= " (n1ckn4m3)";
         immutable expected = "[account] " ~ nickstring ~ " (n1ckn4m3)";
         assert((accountLine == expected), accountLine);
         sink.clear();
@@ -584,8 +584,8 @@ void formatMessageMonochrome(Sink)
         immutable errorLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= ":anyone";
-        version(PrintAccountNamesToo) nickstring ~= "(n1ckn4m3)";
+        version(PrintClassNamesToo) nickstring ~= "/anyone";
+        version(PrintAccountNamesToo) nickstring ~= " (n1ckn4m3)";
         immutable expected = "[error] " ~ nickstring ~ `: "Blah balah" (aux1) (aux5) ` ~
             "{-42} {123} {420} [#666] ! DANGER WILL ROBINSON !";
         assert((errorLine == expected), errorLine);
@@ -604,8 +604,8 @@ void formatMessageMonochrome(Sink)
         immutable queryLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= ":anyone";
-        version(PrintAccountNamesToo) nickstring ~= "(n1ckn4m3)";
+        version(PrintClassNamesToo) nickstring ~= "/anyone";
+        version(PrintAccountNamesToo) nickstring ~= " (n1ckn4m3)";
         immutable expected = "[chan] [#nickname] " ~ nickstring ~ `: "Blah balah"`;
         assert((queryLine == expected), queryLine);
         //sink.clear();
@@ -787,7 +787,7 @@ void formatMessageColoured(Sink)
         version(PrintClassNamesToo)
         {
             sink.applyANSI(TerminalReset.all);
-            .put(sink, ':', event.sender.class_);
+            .put(sink, '/', event.sender.class_);
         }
 
         version(PrintAccountNamesToo)
@@ -890,7 +890,7 @@ void formatMessageColoured(Sink)
         version(PrintClassNamesToo)
         {
             sink.applyANSI(TerminalReset.all);
-            .put(sink, ':', event.target.class_);
+            .put(sink, '/', event.target.class_);
         }
 
         version(PrintAccountNamesToo)
