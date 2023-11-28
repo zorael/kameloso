@@ -216,6 +216,11 @@ void formatMessageMonochrome(Sink)
                 sink.put(event.sender.displayName);
                 putDisplayName = true;
 
+                version(PrintClassNamesToo)
+                {
+                    .put(sink, '/', event.sender.class_);
+                }
+
                 if ((event.sender.displayName != event.sender.nickname) &&
                     !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
                 {
@@ -228,11 +233,11 @@ void formatMessageMonochrome(Sink)
         {
             // Can be no-nick special: [PING] *2716423853
             sink.put(event.sender.nickname);
-        }
 
-        version(PrintClassNamesToo)
-        {
-            .put(sink, '/', event.sender.class_);
+            version(PrintClassNamesToo)
+            {
+                .put(sink, '/', event.sender.class_);
+            }
         }
 
         version(PrintAccountNamesToo)
@@ -241,7 +246,7 @@ void formatMessageMonochrome(Sink)
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.sender.account.length)
             {
-                .put(sink, '(', event.sender.account, ')');
+                .put(sink, " (", event.sender.account, ')');
             }
         }
 
@@ -296,6 +301,11 @@ void formatMessageMonochrome(Sink)
                 sink.put(event.target.displayName);
                 putDisplayName = true;
 
+                version(PrintClassNamesToo)
+                {
+                    .put(sink, '/', event.target.class_);
+                }
+
                 if ((event.target.displayName != event.target.nickname) &&
                     !event.target.displayName.asLowerCase.equal(event.target.nickname))
                 {
@@ -312,11 +322,11 @@ void formatMessageMonochrome(Sink)
         if (!putDisplayName)
         {
             sink.put(event.target.nickname);
-        }
 
-        version(PrintClassNamesToo)
-        {
-            .put(sink, '/', event.target.class_);
+            version(PrintClassNamesToo)
+            {
+                .put(sink, '/', event.target.class_);
+            }
         }
 
         version(PrintAccountNamesToo)
@@ -325,7 +335,7 @@ void formatMessageMonochrome(Sink)
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.target.account.length)
             {
-                .put(sink, '(', event.target.account, ')');
+                .put(sink, " (", event.target.account, ')');
             }
         }
 
@@ -759,11 +769,17 @@ void formatMessageColoured(Sink)
         {
             if (event.sender.displayName.length)
             {
+                import std.algorithm.comparison : equal;
+                import std.uni : asLowerCase;
+
                 sink.put(event.sender.displayName);
                 putDisplayName = true;
 
-                import std.algorithm.comparison : equal;
-                import std.uni : asLowerCase;
+                version(PrintClassNamesToo)
+                {
+                    sink.applyANSI(TerminalReset.all);
+                    .put(sink, '/', event.sender.class_);
+                }
 
                 if ((event.sender.displayName != event.sender.nickname) &&
                     !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
@@ -782,12 +798,12 @@ void formatMessageColoured(Sink)
         {
             // Can be no-nick special: [PING] *2716423853
             sink.put(event.sender.nickname);
-        }
 
-        version(PrintClassNamesToo)
-        {
-            sink.applyANSI(TerminalReset.all);
-            .put(sink, '/', event.sender.class_);
+            version(PrintClassNamesToo)
+            {
+                sink.applyANSI(TerminalReset.all);
+                .put(sink, '/', event.sender.class_);
+            }
         }
 
         version(PrintAccountNamesToo)
@@ -797,7 +813,7 @@ void formatMessageColoured(Sink)
                 event.sender.account.length)
             {
                 sink.applyANSI(TerminalReset.all);
-                .put(sink, '(', event.sender.account, ')');
+                .put(sink, " (", event.sender.account, ')');
             }
         }
 
@@ -856,11 +872,17 @@ void formatMessageColoured(Sink)
 
             if (event.target.displayName.length)
             {
+                import std.algorithm.comparison : equal;
+                import std.uni : asLowerCase;
+
                 sink.put(event.target.displayName);
                 putDisplayName = true;
 
-                import std.algorithm.comparison : equal;
-                import std.uni : asLowerCase;
+                version(PrintClassNamesToo)
+                {
+                    sink.applyANSI(TerminalReset.all);
+                    .put(sink, '/', event.target.class_);
+                }
 
                 if ((event.target.displayName != event.target.nickname) &&
                     !event.target.displayName.asLowerCase.equal(event.target.nickname))
@@ -885,12 +907,12 @@ void formatMessageColoured(Sink)
         if (!putDisplayName)
         {
             sink.put(event.target.nickname);
-        }
 
-        version(PrintClassNamesToo)
-        {
-            sink.applyANSI(TerminalReset.all);
-            .put(sink, '/', event.target.class_);
+            version(PrintClassNamesToo)
+            {
+                sink.applyANSI(TerminalReset.all);
+                .put(sink, '/', event.target.class_);
+            }
         }
 
         version(PrintAccountNamesToo)
@@ -900,7 +922,7 @@ void formatMessageColoured(Sink)
                 event.target.account.length)
             {
                 sink.applyANSI(TerminalReset.all);
-                .put(sink, '(', event.target.account, ')');
+                .put(sink, " (", event.target.account, ')');
             }
         }
 
