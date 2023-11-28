@@ -3454,6 +3454,163 @@ void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream s
 }
 
 
+// promoteUserFromBadges
+/++
+    Infers a user's class based on their badge(s).
+
+    Params:
+        class_ = Reference to the user's [dialect.defs.IRCUser.Class|class].
+        badges = String of comma-separated badges.
+        promoteModerators = Whether to promote moderators to
+            [dialect.defs.IRCUser.Class.operator|operator].
+        promoteVIPs = Whether to promote VIPs to
+            [dialect.defs.IRCUser.Class.elevated|elevated].
+ +/
+void promoteUserFromBadges(
+    ref IRCUser.Class class_,
+    const string badges,
+    const bool promoteModerators,
+    const bool promoteVIPs) pure @safe
+{
+    import std.string : indexOf;
+    import std.algorithm.iteration : splitter;
+
+    if (class_ >= IRCUser.Class.operator) return;  // already as high as we go
+
+    foreach (immutable badge; badges.splitter(','))
+    {
+        immutable slashPos = badge.indexOf('/');
+        if (!slashPos) break;  // something's wrong
+
+        immutable badgePart = badge[0..slashPos];
+
+        switch (badgePart)
+        {
+        case "subscriber":
+            if (class_ < IRCUser.Class.registered)
+            {
+                class_ = IRCUser.Class.registered;
+            }
+            break;  // Check next badge
+
+        case "vip":
+            if (promoteVIPs && (class_ < IRCUser.Class.elevated))
+            {
+                class_ = IRCUser.Class.elevated;
+            }
+            break;  // as above
+
+        case "moderator":
+            if (promoteModerators && (class_ < IRCUser.Class.operator))
+            {
+                class_ = IRCUser.Class.operator;
+                return;  // We don't go any higher than moderator here
+            }
+            break;  // as above
+
+        /+case "broadcaster":
+            // This is already done by comparing the user's name to the channel
+            // name in the calling function.
+
+            if (class_ < IRCUser.Class.staff)
+            {
+                class_ = IRCUser.Class.staff;
+            }
+            return;  // No need to check more badges
+         +/
+
+        default:
+            // Non-applicable badge
+            break;
+        }
+    }
+}
+
+///
+unittest
+{
+    import lu.conv : Enum;
+
+    {
+        enum badges = "subscriber/12,sub-gift-leader/1";
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, false, false);
+        enum expected = IRCUser.Class.registered;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "premium/1";
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, false, false);
+        enum expected = IRCUser.Class.anyone;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "subscriber/12,vip/1";
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, false, false);
+        enum expected = IRCUser.Class.registered;  // because promoteVIPs false
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "subscriber/12,vip/1";
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, true, true);
+        enum expected = IRCUser.Class.elevated;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "moderator/1,subscriber/3012";
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, true, true);
+        enum expected = IRCUser.Class.operator;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "moderator/1,subscriber/3012";
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, false, true);
+        enum expected = IRCUser.Class.registered;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "broadcaster/1,subscriber/12,partner/1";
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, false, true);
+        enum expected = IRCUser.Class.registered;  // not staff because broadcasters are identified elsewhere
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "moderator/1";  // no comma splitter test
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, true, true);
+        enum expected = IRCUser.Class.operator;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "subscriber/1";
+        auto class_ = IRCUser.Class.operator;
+        promoteUserFromBadges(class_, badges, true, true);
+        enum expected = IRCUser.Class.operator;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = string.init;
+        auto class_ = IRCUser.Class.staff;
+        promoteUserFromBadges(class_, badges, true, true);
+        enum expected = IRCUser.Class.staff;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = string.init;
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, false, false);
+        enum expected = IRCUser.Class.anyone;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+}
+
+
 // teardown
 /++
     De-initialises the plugin. Shuts down any persistent worker threads.
@@ -3552,17 +3709,26 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
     static void postprocessImpl(
         const TwitchPlugin plugin,
-        const ref IRCEvent event,
+        const string channelName,
         ref IRCUser user)
     {
-        import std.string : indexOf;
+        if (user.class_ >= IRCUser.Class.staff)
+        {
+            // User is already staff or higher, no need to promote
+            return;
+        }
 
-        if (user.class_ == IRCUser.Class.blacklist) return;
+        if (user.class_ == IRCUser.Class.blacklist)
+        {
+            // Ignore blacklist for obvious reasons
+            return;
+        }
 
         if (plugin.twitchSettings.promoteBroadcasters)
         {
+            // Already ensured channel has length in parent function
             if ((user.class_ < IRCUser.Class.staff) &&
-                (user.nickname == event.channel[1..$]))
+                (user.nickname == channelName[1..$]))
             {
                 // User is broadcaster but is not registered as staff
                 user.class_ = IRCUser.Class.staff;
@@ -3570,41 +3736,19 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
             }
         }
 
-        // Stop here if there are no badges to promote
-        if (!user.badges.length) return;
-
-        if (plugin.twitchSettings.promoteModerators)
+        if (user.badges.length)
         {
-            if ((user.class_ < IRCUser.Class.operator) &&
-                (user.badges.indexOf("moderator/") != -1))
-            {
-                // User is moderator but is not registered as at least operator
-                user.class_ = IRCUser.Class.operator;
-                return;
-            }
-        }
-
-        if (plugin.twitchSettings.promoteVIPs)
-        {
-            if ((user.class_ < IRCUser.Class.elevated) &&
-                (user.badges.indexOf("vip/") != -1))
-            {
-                // User is VIP but is not registered as at least elevated
-                user.class_ = IRCUser.Class.elevated;
-                return;
-            }
-        }
-
-        // There is no "registered" list; just map subscribers to registered 1:1
-        if ((user.class_ < IRCUser.Class.registered) &&
-            (user.badges.indexOf("subscriber/") != -1))
-        {
-            user.class_ = IRCUser.Class.registered;
+            // Infer class from the user's badge(s)
+            promoteUserFromBadges(
+                user.class_,
+                user.badges,
+                plugin.twitchSettings.promoteModerators,
+                plugin.twitchSettings.promoteVIPs);
         }
     }
 
-    /*if (event.sender.nickname.length)*/ postprocessImpl(plugin, event, event.sender);
-    if (event.target.nickname.length) postprocessImpl(plugin, event, event.target);
+    /*if (event.sender.nickname.length)*/ postprocessImpl(plugin, event.channel, event.sender);
+    if (event.target.nickname.length) postprocessImpl(plugin, event.channel, event.target);
 }
 
 
