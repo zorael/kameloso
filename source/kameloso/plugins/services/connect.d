@@ -1862,7 +1862,7 @@ private:
     /++
         After how much time we should check whether or not we managed to join all channels.
      +/
-    static immutable channelCheckDelay = 15.seconds;
+    static immutable channelCheckDelay = 60.seconds;
 
     /++
         At what step we're currently at with regards to authentication.
