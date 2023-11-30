@@ -753,7 +753,9 @@ void formatMessageColoured(Sink)
 
     void putSender()
     {
-        scope(exit) sink.applyANSI(TerminalReset.all);
+        scope(exit) sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+
+        bool putDisplayName;
 
         colourUserTruecolour(event.sender);
 
@@ -762,8 +764,6 @@ void formatMessageColoured(Sink)
             sink.put(event.sender.address);
             return;
         }
-
-        bool putDisplayName;
 
         version(TwitchSupport)
         {
@@ -777,18 +777,19 @@ void formatMessageColoured(Sink)
 
                 version(PrintClassNamesToo)
                 {
-                    sink.applyANSI(TerminalReset.all);
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     .put(sink, '/', event.sender.class_);
                 }
 
                 if ((event.sender.displayName != event.sender.nickname) &&
                     !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
                 {
-                    sink.applyANSI(TerminalReset.all);
+                    version(PrintClassNamesToo) {}
+                    else sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.put(" (");
                     colourUserTruecolour(event.sender);
                     sink.put(event.sender.nickname);
-                    sink.applyANSI(TerminalReset.all);
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.put(')');
                 }
             }
@@ -801,7 +802,7 @@ void formatMessageColoured(Sink)
 
             version(PrintClassNamesToo)
             {
-                sink.applyANSI(TerminalReset.all);
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 .put(sink, '/', event.sender.class_);
             }
         }
@@ -812,7 +813,7 @@ void formatMessageColoured(Sink)
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.sender.account.length)
             {
-                sink.applyANSI(TerminalReset.all);
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 .put(sink, " (", event.sender.account, ')');
             }
         }
@@ -834,7 +835,7 @@ void formatMessageColoured(Sink)
 
                 default:
                     immutable code = bright ? Bright.badge : Dark.badge;
-                    sink.applyANSI(TerminalReset.all);
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.applyANSI(code, ANSICodeType.foreground);
                     .put(sink, " [", event.sender.badges, ']');
                     break;
@@ -857,12 +858,12 @@ void formatMessageColoured(Sink)
             {
             case TWITCH_GIFTCHAIN:
                 // Add more as they become apparent
-                sink.applyANSI(TerminalReset.all);
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.put(" <- ");
                 break;
 
             default:
-                sink.applyANSI(TerminalReset.all);
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.put(" -> ");
                 break;
             }
@@ -880,17 +881,19 @@ void formatMessageColoured(Sink)
 
                 version(PrintClassNamesToo)
                 {
-                    sink.applyANSI(TerminalReset.all);
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     .put(sink, '/', event.target.class_);
                 }
 
                 if ((event.target.displayName != event.target.nickname) &&
                     !event.target.displayName.asLowerCase.equal(event.target.nickname))
                 {
+                    version(PrintClassNamesToo) {}
+                    else sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.put(" (");
                     colourUserTruecolour(event.target);
                     sink.put(event.target.nickname);
-                    sink.applyANSI(TerminalReset.all);
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.put(')');
                 }
             }
@@ -899,7 +902,7 @@ void formatMessageColoured(Sink)
         if (!putArrow)
         {
             // No need to check isServer; target is never server
-            sink.applyANSI(TerminalReset.all);
+            sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
             sink.put(" -> ");
             colourUserTruecolour(event.target);
         }
@@ -910,7 +913,7 @@ void formatMessageColoured(Sink)
 
             version(PrintClassNamesToo)
             {
-                sink.applyANSI(TerminalReset.all);
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 .put(sink, '/', event.target.class_);
             }
         }
@@ -921,7 +924,7 @@ void formatMessageColoured(Sink)
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.target.account.length)
             {
-                sink.applyANSI(TerminalReset.all);
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 .put(sink, " (", event.target.account, ')');
             }
         }
@@ -933,7 +936,7 @@ void formatMessageColoured(Sink)
                 event.target.badges.length)
             {
                 immutable code = bright ? Bright.badge : Dark.badge;
-                sink.applyANSI(TerminalReset.all);
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.applyANSI(code, ANSICodeType.foreground);
                 .put(sink, " [", event.target.badges, ']');
             }
@@ -945,7 +948,7 @@ void formatMessageColoured(Sink)
         import kameloso.terminal.colours.defs : ANSICodeType, TerminalBackground, TerminalForeground;
         import kameloso.terminal.colours : applyANSI;
 
-        scope(exit) sink.applyANSI(TerminalReset.all);
+        scope(exit) sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
 
         immutable TerminalForeground contentFgBase = bright ? Bright.content : Dark.content;
         immutable TerminalForeground emoteFgBase = bright ? Bright.emote : Dark.emote;
@@ -1163,7 +1166,7 @@ void formatMessageColoured(Sink)
         .put(sink, " ! ", event.errors, " !");
     }
 
-    sink.applyANSI(TerminalReset.all);
+    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
 
     shouldBell = shouldBell ||
         ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
