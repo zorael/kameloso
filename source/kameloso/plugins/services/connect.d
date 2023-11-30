@@ -223,7 +223,7 @@ void joinChannels(ConnectService service)
             }
         }
 
-        delay(service, &delayedChannelCheckDg, service.channelCheckDelay);
+        delay(service, &delayedChannelCheckDg, service.timing.channelCheckDelay);
     }
 }
 
@@ -325,7 +325,7 @@ void tryAuth(ConnectService service)
     case "EFNet":
     case "WNet1":
         // No registration available
-        service.authentication = Progress.finished;
+        service.progress.authentication = Progress.finished;
         return;
 
     case "QuakeNet":
@@ -337,7 +337,7 @@ void tryAuth(ConnectService service)
         break;
     }
 
-    service.authentication = Progress.inProgress;
+    service.progress.authentication = Progress.inProgress;
 
     with (IRCServer.Daemon)
     switch (service.state.server.daemon)
@@ -358,7 +358,7 @@ void tryAuth(ConnectService service)
                 service.state.client.nickname,
                 service.state.client.origNickname);
 
-            service.authentication = Progress.finished;
+            service.progress.authentication = Progress.finished;
             return;
         }
 
@@ -424,7 +424,7 @@ void tryAuth(ConnectService service)
     {
         case twitch:
             // No registration available
-            service.authentication = Progress.finished;
+            service.progress.authentication = Progress.finished;
             return;
     }
 
@@ -448,10 +448,10 @@ void tryAuth(ConnectService service)
     {
         // If we're still authenticating after n seconds, abort and join channels.
 
-        if (service.authentication == Progress.inProgress)
+        if (service.progress.authentication == Progress.inProgress)
         {
             logger.warning("Authentication timed out.");
-            service.authentication = Progress.finished;
+            service.progress.authentication = Progress.finished;
         }
 
         if (!service.joinedChannels)
@@ -460,7 +460,7 @@ void tryAuth(ConnectService service)
         }
     }
 
-    delay(service, &delayedJoinDg, service.authenticationGracePeriod);
+    delay(service, &delayedJoinDg, service.timing.authenticationGracePeriod);
 }
 
 
@@ -477,9 +477,9 @@ void tryAuth(ConnectService service)
 )
 void onAuthEnd(ConnectService service, const ref IRCEvent event)
 {
-    service.authentication = Progress.finished;
+    service.progress.authentication = Progress.finished;
 
-    if (service.registration == Progress.finished)
+    if (service.progress.registration == Progress.finished)
     {
         if (!service.joinedChannels)
         {
@@ -586,7 +586,7 @@ void onNickInUse(ConnectService service)
     import std.conv : to;
     import std.random : uniform;
 
-    if (service.registration == Progress.inProgress)
+    if (service.progress.registration == Progress.inProgress)
     {
         if (!service.renameDuringRegistration.length)
         {
@@ -612,7 +612,7 @@ void onNickInUse(ConnectService service)
 )
 void onBadNick(ConnectService service)
 {
-    if (service.registration == Progress.inProgress)
+    if (service.progress.registration == Progress.inProgress)
     {
         // Mid-registration and invalid nickname; abort
 
@@ -660,7 +660,7 @@ void onBanned(ConnectService service)
 )
 void onPassMismatch(ConnectService service)
 {
-    if (service.registration != Progress.inProgress)
+    if (service.progress.registration != Progress.inProgress)
     {
         // Unsure if this ever happens, but don't quit if we're actually registered
         return;
@@ -709,14 +709,14 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
     // http://ircv3.net/irc
     // https://blog.irccloud.com/ircv3
 
-    if (service.registration == Progress.finished)
+    if (service.progress.registration == Progress.finished)
     {
         // It's possible to call CAP LS after registration, and that would start
         // this whole process anew. So stop if we have registered.
         return;
     }
 
-    service.capabilityNegotiation = Progress.inProgress;
+    service.progress.capabilityNegotiation = Progress.inProgress;
 
     switch (event.content)
     {
@@ -891,9 +891,9 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
     }
 
     if (!service.requestedCapabilitiesRemaining &&
-        (service.capabilityNegotiation == Progress.inProgress))
+        (service.progress.capabilityNegotiation == Progress.inProgress))
     {
-        service.capabilityNegotiation = Progress.finished;
+        service.progress.capabilityNegotiation = Progress.finished;
         enum properties = Message.Property.quiet;
         enum message = "CAP END";
         immediate(service.state, message, properties);
@@ -916,15 +916,15 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 )
 void onSASLAuthenticate(ConnectService service)
 {
-    service.authentication = Progress.inProgress;
+    service.progress.authentication = Progress.inProgress;
 
     immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
         service.state.connSettings.certFile.length);
 
     if (service.state.connSettings.ssl && hasKey &&
-        (service.saslExternal == Progress.notStarted))
+        (service.progress.saslExternal == Progress.notStarted))
     {
-        service.saslExternal = Progress.inProgress;
+        service.progress.saslExternal = Progress.inProgress;
         enum message = "AUTHENTICATE +";
         return immediate(service.state, message);
     }
@@ -1009,7 +1009,7 @@ auto trySASLPlain(ConnectService service)
 )
 void onSASLSuccess(ConnectService service)
 {
-    service.authentication = Progress.finished;
+    service.progress.authentication = Progress.finished;
 
     /++
         The END subcommand signals to the server that capability negotiation
@@ -1026,14 +1026,14 @@ void onSASLSuccess(ConnectService service)
      +/
 
     if (!--service.requestedCapabilitiesRemaining &&
-        (service.capabilityNegotiation == Progress.inProgress))
+        (service.progress.capabilityNegotiation == Progress.inProgress))
     {
-        service.capabilityNegotiation = Progress.finished;
+        service.progress.capabilityNegotiation = Progress.finished;
         enum properties = Message.Property.quiet;
         enum message = "CAP END";
         immediate(service.state, message, properties);
 
-        if ((service.registration == Progress.inProgress) && !service.issuedNICK)
+        if ((service.progress.registration == Progress.inProgress) && !service.issuedNICK)
         {
             negotiateNick(service);
         }
@@ -1054,10 +1054,10 @@ void onSASLSuccess(ConnectService service)
 )
 void onSASLFailure(ConnectService service)
 {
-    if ((service.saslExternal == Progress.inProgress) && service.state.bot.password.length)
+    if ((service.progress.saslExternal == Progress.inProgress) && service.state.bot.password.length)
     {
         // Fall back to PLAIN
-        service.saslExternal = Progress.finished;
+        service.progress.saslExternal = Progress.finished;
         enum properties = Message.Property.quiet;
         enum message = "AUTHENTICATE PLAIN";
         return immediate(service.state, message, properties);
@@ -1071,17 +1071,17 @@ void onSASLFailure(ConnectService service)
 
     // Auth failed and will fail even if we try NickServ, so flag as
     // finished auth and invoke `CAP END`
-    service.authentication = Progress.finished;
+    service.progress.authentication = Progress.finished;
 
     if (!--service.requestedCapabilitiesRemaining &&
-        (service.capabilityNegotiation == Progress.inProgress))
+        (service.progress.capabilityNegotiation == Progress.inProgress))
     {
-        service.capabilityNegotiation = Progress.finished;
+        service.progress.capabilityNegotiation = Progress.finished;
         enum properties = Message.Property.quiet;
         enum message = "CAP END";
         immediate(service.state, message, properties);
 
-        if ((service.registration == Progress.inProgress) && !service.issuedNICK)
+        if ((service.progress.registration == Progress.inProgress) && !service.issuedNICK)
         {
             negotiateNick(service);
         }
@@ -1105,7 +1105,7 @@ void onWelcome(ConnectService service)
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : endsWith;
 
-    service.registration = Progress.finished;
+    service.progress.registration = Progress.finished;
     service.renameDuringRegistration = string.init;
 
     version(WithPingMonitor) startPingMonitorFiber(service);
@@ -1221,12 +1221,12 @@ void onWelcome(ConnectService service)
                     enum properties = (Message.Property.quiet | Message.Property.background);
                     immutable message = "NICK " ~ service.state.client.origNickname;
                     raw(service.state, message, properties);
-                    delay(service, service.nickRegainPeriodicity, Yes.yield);
+                    delay(service, service.timing.nickRegainPeriodicity, Yes.yield);
                 }
             }
 
             auto regainFiber = new Fiber(&regainDg, BufferSize.fiberStack);
-            delay(service, regainFiber, service.nickRegainPeriodicity);
+            delay(service, regainFiber, service.timing.nickRegainPeriodicity);
         }
     }
 }
@@ -1307,18 +1307,18 @@ void onEndOfMotd(ConnectService service)
 
     if (service.state.server.network.length &&
         service.state.bot.password.length &&
-        (service.authentication == Progress.notStarted) &&
+        (service.progress.authentication == Progress.notStarted) &&
         (service.state.server.daemon != IRCServer.Daemon.twitch))
     {
         tryAuth(service);
     }
-    else if (((service.authentication == Progress.finished) ||
+    else if (((service.progress.authentication == Progress.finished) ||
         !service.state.bot.password.length ||
         (service.state.server.daemon == IRCServer.Daemon.twitch)) &&
         !service.joinedChannels)
     {
         // tryAuth finished early with an unsuccessful login, else
-        // `service.authentication` would be set much later.
+        // `service.progress.authentication` would be set much later.
         // Twitch servers can't auth so join immediately
         // but don't do anything if we already joined channels.
         joinChannels(service);
@@ -1546,7 +1546,7 @@ void register(ConnectService service)
     import std.algorithm.searching : canFind, endsWith, startsWith;
     import std.uni : toLower;
 
-    service.registration = Progress.inProgress;
+    service.progress.registration = Progress.inProgress;
 
     // Server networks we know to support capabilities
     static immutable capabilityServerWhitelistPrefix =
@@ -1701,14 +1701,14 @@ void register(ConnectService service)
         // Unsure, so monitor CAP progress
         void capMonitorDg()
         {
-            if (service.capabilityNegotiation == Progress.notStarted)
+            if (service.progress.capabilityNegotiation == Progress.notStarted)
             {
                 logger.warning("CAP timeout. Does the server not support capabilities?");
                 negotiateNick(service);
             }
         }
 
-        delay(service, &capMonitorDg, service.capLSTimeout);
+        delay(service, &capMonitorDg, service.timing.capLSTimeout);
     }
 }
 
@@ -1833,7 +1833,63 @@ public:
 final class ConnectService : IRCPlugin
 {
 private:
-    import core.time : seconds;
+    /++
+        All [Progress]es gathered.
+     +/
+    static struct Progresses
+    {
+        /++
+            At what step we're currently at with regards to authentication.
+         +/
+        Progress authentication;
+
+        /++
+            At what step we're currently at with regards to SASL EXTERNAL authentication.
+         +/
+        Progress saslExternal;
+
+        /++
+            At what step we're currently at with regards to registration.
+         +/
+        Progress registration;
+
+        /++
+            At what step we're currently at with regards to capabilities.
+         +/
+        Progress capabilityNegotiation;
+    }
+
+    /++
+        All timings gathered.
+     +/
+    static struct Timings
+    {
+        private import core.time : seconds;
+
+        /++
+            How many seconds we should wait before we tire of waiting for authentication
+            responses and just start joining channels.
+         +/
+        static immutable authenticationGracePeriod = 15.seconds;
+
+        /++
+            How many seconds to wait for a response to the request for the list of
+            capabilities the server has. After these many seconds, it will just
+            normally negotiate nickname and log in.
+         +/
+        static immutable capLSTimeout = 15.seconds;
+
+        /++
+            How often to attempt to regain nickname, in seconds, if there was a collision
+            and we had to rename ourselves during registration.
+         +/
+        static immutable nickRegainPeriodicity = 600.seconds;
+
+        /++
+            After how much time we should check whether or not we managed to join all channels.
+         +/
+        static immutable channelCheckDelay = 60.seconds;
+    }
 
     /++
         All Connect service settings gathered.
@@ -1841,48 +1897,14 @@ private:
     ConnectSettings connectSettings;
 
     /++
-        How many seconds we should wait before we tire of waiting for authentication
-        responses and just start joining channels.
+        All [Progress]es gathered.
      +/
-    static immutable authenticationGracePeriod = 15.seconds;
+    Progresses progress;
 
     /++
-        How many seconds to wait for a response to the request for the list of
-        capabilities the server has. After these many seconds, it will just
-        normally negotiate nickname and log in.
+        All timings gathered.
      +/
-    static immutable capLSTimeout = 15.seconds;
-
-    /++
-        How often to attempt to regain nickname, in seconds, if there was a collision
-        and we had to rename ourselves during registration.
-     +/
-    static immutable nickRegainPeriodicity = 600.seconds;
-
-    /++
-        After how much time we should check whether or not we managed to join all channels.
-     +/
-    static immutable channelCheckDelay = 60.seconds;
-
-    /++
-        At what step we're currently at with regards to authentication.
-     +/
-    Progress authentication;
-
-    /++
-        At what step we're currently at with regards to SASL EXTERNAL authentication.
-     +/
-    Progress saslExternal;
-
-    /++
-        At what step we're currently at with regards to registration.
-     +/
-    Progress registration;
-
-    /++
-        At what step we're currently at with regards to capabilities.
-     +/
-    Progress capabilityNegotiation;
+    Timings timing;
 
     /++
         Whether or not we have issued a NICK command during registration.
