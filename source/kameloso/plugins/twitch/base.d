@@ -2486,7 +2486,16 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
     getEmoteSet(&getBTTVEmotes, "BetterTTV");
     getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
     getEmoteSet(&get7tvEmotes, "7tv");
-    customEmotes.rehash();
+
+    if (customEmotes.length)
+    {
+        customEmotes.rehash();
+    }
+    else
+    {
+        // Nothing imported, may as well remove the AA
+        plugin.customEmotesByChannel.remove(channelName);
+    }
 }
 
 
