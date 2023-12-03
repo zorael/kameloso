@@ -107,7 +107,7 @@ void onWelcome(PipelinePlugin plugin)
 
             if (!plugin.fifoFilename.exists || !plugin.fifoFilename.isFIFO)
             {
-                closeFD(plugin.fd);
+                if (plugin.fd != -1) closeFD(plugin.fd);
 
                 try
                 {
