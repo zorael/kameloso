@@ -93,6 +93,7 @@ void onWelcome(PipelinePlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
+    import lu.common : ReturnValueException;
     import core.thread : Fiber;
     import core.time : minutes;
 
@@ -107,21 +108,38 @@ void onWelcome(PipelinePlugin plugin)
             if (!plugin.fifoFilename.exists || !plugin.fifoFilename.isFIFO)
             {
                 closeFD(plugin.fd);
-                plugin.fifoFilename = initialiseFIFO(plugin);
-                plugin.fd = openFIFO(plugin.fifoFilename);
-                printUsageText(plugin, Yes.reinit);
+
+                try
+                {
+                    plugin.fifoFilename = initialiseFIFO(plugin);
+                    plugin.fd = openFIFO(plugin.fifoFilename);
+                    printUsageText(plugin, Yes.reinit);
+                }
+                catch (Exception _)
+                {
+                    // Gag errors
+                }
             }
 
             delay(plugin, discoveryPeriod, Yes.yield);
         }
     }
 
-    // Initialise the FIFO *here*, where we know our nickname
-    // (we don't in .initialise)
-    plugin.fifoFilename = initialiseFIFO(plugin);
-    plugin.fd = openFIFO(plugin.fifoFilename);
-    printUsageText(plugin, No.reinit);
+    try
+    {
+        // Initialise the FIFO *here*, where we know our nickname
+        // (we don't in .initialise)
+        plugin.fifoFilename = initialiseFIFO(plugin);
+        plugin.fd = openFIFO(plugin.fifoFilename);
+        printUsageText(plugin, No.reinit);
+    }
+    catch (ReturnValueException e)
+    {
+        enum pattern = "The <l>Pipeline</> plugin failed to start up: <l>%s";
+        logger.errorf(pattern, e.msg);
+    }
 
+    // Queue fiber to check if the FIFO has disappeared even if initialising threw
     Fiber discoverFIFOFiber = new Fiber(&discoverFIFODg, BufferSize.fiberStack);
     delay(plugin, discoverFIFOFiber, discoveryPeriod);
 }
@@ -303,15 +321,23 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
     import lu.common : ReturnValueException;
     import std.process : execute;
 
-    immutable mkfifo = execute([ "mkfifo", filename ]);
+    // Try more than once in case there are competing instances of the program
+    enum numRetries = 5;
 
-    if (mkfifo.status != 0)
+    foreach (immutable i; 0..numRetries)
     {
-        enum message = "Could not create FIFO";
-        throw new ReturnValueException(
-            message,
-            "mkfifo",
-            mkfifo.status);
+        immutable mkfifo = execute([ "mkfifo", filename ]);
+        if (mkfifo.status == 0) return;
+
+        if (i == (numRetries-1))
+        {
+            // Last try, give up
+            enum message = "Could not create FIFO";
+            throw new ReturnValueException(
+                message,
+                "mkfifo",
+                mkfifo.status);
+        }
     }
 }
 
@@ -524,6 +550,7 @@ void teardown(PipelinePlugin plugin)
  +/
 void reload(PipelinePlugin plugin)
 {
+    import lu.common : ReturnValueException;
     import std.file : exists;
 
     if (plugin.fifoFilename.exists && plugin.fifoFilename.isFIFO)
@@ -539,6 +566,7 @@ void reload(PipelinePlugin plugin)
         closeFD(plugin.fd);
     }
 
+    // Let exceptions fall through
     plugin.fifoFilename = initialiseFIFO(plugin);
     plugin.fd = openFIFO(plugin.fifoFilename);
     printUsageText(plugin, Yes.reinit);
