@@ -2547,19 +2547,21 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
 
 // embedCustomEmotes
 /++
-    Embeds custom emotes into the [dialect.defs.IRCEvent|IRCEvent] passed by reference,
+    Embeds custom emotes into the `emotes` string passed by reference,
     so that the [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin] can
-    highlight them with colours.
+    highlight `content` with colours.
 
     This is called in [postprocess].
 
     Params:
-        event = [dialect.defs.IRCEvent|IRCEvent] in flight.
+        content = Content string.
+        emotes = Reference string into which to save the emote list.
         customEmotes = `bool[dstring]` associative array of channel-specific custom emotes.
         customGlobalEmotes = `bool[dstring]` associative array of global custom emotes.
  +/
 void embedCustomEmotes(
-    ref IRCEvent event,
+    const string content,
+    ref string emotes,
     const bool[dstring] customEmotes,
     const bool[dstring] customGlobalEmotes)
 {
@@ -2575,14 +2577,14 @@ void embedCustomEmotes(
     {
         if (sink.data.length)
         {
-            event.emotes ~= sink.data;
+            emotes ~= sink.data;
             sink.clear();
         }
     }
 
     if (sink.capacity == 0) sink.reserve(64);  // guesstimate
 
-    immutable dline = event.content.strippedRight.to!dstring;
+    immutable dline = content.strippedRight.to!dstring;
     ptrdiff_t pos = dline.indexOf(' ');
     dstring previousEmote;  // mutable
     size_t prev;
@@ -2603,7 +2605,7 @@ void embedCustomEmotes(
         import std.format : formattedWrite;
 
         enum pattern = "/%s:%d-%d";
-        immutable slicedPattern = (event.emotes.length || sink.data.length) ?
+        immutable slicedPattern = (emotes.length || sink.data.length) ?
             pattern :
             pattern[1..$];
         immutable dwordEscaped = dword.replace(dchar(':'), dchar(';'));
@@ -2690,30 +2692,27 @@ unittest
         "gg"d : true,
     ];
 
-    IRCEvent event;
-    event.type = IRCEvent.Type.CHAN;
-
     {
-        event.content = "come on its easy, now rest then talk talk more left, left, " ~
+        enum content = "come on its easy, now rest then talk talk more left, left, " ~
             "right re st, up, down talk some rest a bit talk poop  :tf:";
-        //event.emotes = string.init;
-        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        string emotes;
+        embedCustomEmotes(content, emotes, customEmotes, customGlobalEmotes);
         enum expectedEmotes = ";tf;:113-116";
-        assert((event.emotes == expectedEmotes), event.emotes);
+        assert((emotes == expectedEmotes), emotes);
     }
     {
-        event.content = "NOTED  FrankerZ  NOTED NOTED    gg";
-        event.emotes = string.init;
-        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        enum content = "NOTED  FrankerZ  NOTED NOTED    gg";
+        string emotes;
+        embedCustomEmotes(content, emotes, customEmotes, customGlobalEmotes);
         enum expectedEmotes = "NOTED:0-4/FrankerZ:7-14/NOTED:17-21,23-27/gg:32-33";
-        assert((event.emotes == expectedEmotes), event.emotes);
+        assert((emotes == expectedEmotes), emotes);
     }
     {
-        event.content = "No emotes here KAPPA";
-        event.emotes = string.init;
-        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        enum content = "No emotes here KAPPA";
+        string emotes;
+        embedCustomEmotes(content, emotes, customEmotes, customGlobalEmotes);
         enum expectedEmotes = string.init;
-        assert((event.emotes == expectedEmotes), event.emotes);
+        assert((emotes == expectedEmotes), emotes);
     }
 }
 
@@ -3697,7 +3696,36 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
     {
         if (const customEmotes = event.channel in plugin.customEmotesByChannel)
         {
-            embedCustomEmotes(event, *customEmotes, plugin.customGlobalEmotes);
+            import std.algorithm.comparison : among;
+            import std.conv : text;
+
+            embedCustomEmotes(
+                event.content,
+                event.emotes,
+                *customEmotes,
+                plugin.customGlobalEmotes);
+
+            immutable isEmotePossibleEventType = event.type.among!
+                (IRCEvent.Type.CHAN,
+                IRCEvent.Type.EMOTE,
+                IRCEvent.Type.SELFCHAN,
+                IRCEvent.Type.SELFEMOTE);
+
+            if (isEmotePossibleEventType &&
+                event.target.nickname.length &&
+                event.aux[0].length)
+            {
+                enum emoteDelimiter = '\0';
+                string emotes;  // passed by ref
+
+                embedCustomEmotes(
+                    event.aux[0],
+                    emotes,
+                    *customEmotes,
+                    plugin.customGlobalEmotes);
+
+                event.aux[0] = text(emotes, emoteDelimiter, event.aux[0]);
+            }
         }
     }
 

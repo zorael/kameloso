@@ -422,15 +422,27 @@ void formatMessageMonochrome(Sink)
 
     version(TwitchSupport)
     {
-        if (((event.type == IRCEvent.Type.CHAN) ||
-             (event.type == IRCEvent.Type.SELFCHAN) ||
-             (event.type == IRCEvent.Type.EMOTE)) &&
+        import std.algorithm.comparison : among;
+
+        immutable isEmotePossibleEventType = event.type.among!
+            (IRCEvent.Type.CHAN,
+            IRCEvent.Type.EMOTE,
+            IRCEvent.Type.SELFCHAN,
+            IRCEvent.Type.SELFEMOTE);
+
+        if (isEmotePossibleEventType &&
             event.target.nickname.length &&
-            event.aux[0].length)
+            (event.aux[0].length > 1))  // need space to fit the delimiter plus teext
         {
+            import std.string : indexOf;
+
+            enum emoteDelimiter = '\0';
+            immutable delimiterPos = event.aux[0].indexOf(emoteDelimiter);
+            assert((delimiterPos != -1), "No emote delimiter in aux[0]");
+
             /*if (content.length)*/ putContent();
             putTarget();
-            .put(sink, `: "`, event.aux[0], '"');
+            .put(sink, `: "`, event.aux[0][delimiterPos+1..$], '"');
 
             putQuotedTwitchMessage = true;
             auxRange.popFront();
@@ -1099,18 +1111,51 @@ void formatMessageColoured(Sink)
 
     version(TwitchSupport)
     {
-        if (((event.type == IRCEvent.Type.CHAN) ||
-             (event.type == IRCEvent.Type.SELFCHAN) ||
-             (event.type == IRCEvent.Type.EMOTE)) &&
+        import std.algorithm.comparison : among;
+
+        immutable isEmotePossibleEventType = event.type.among!
+            (IRCEvent.Type.CHAN,
+            IRCEvent.Type.EMOTE,
+            IRCEvent.Type.SELFCHAN,
+            IRCEvent.Type.SELFEMOTE);
+
+        if (isEmotePossibleEventType &&
             event.target.nickname.length &&
-            event.aux[0].length)
+            (event.aux[0].length > 1))  // need space to fit the delimiter plus teext
         {
+            import std.array : Appender;
+            import std.string : indexOf;
+
+            static Appender!(char[]) customEmoteSink;
+
             /*if (content.length)*/ putContent();
             putTarget();
             immutable code = bright ? Bright.content : Dark.content;
             sink.applyANSI(code, ANSICodeType.foreground);
-            .put(sink, `: "`, event.aux[0], '"');
 
+            enum emoteDelimiter = '\0';
+            immutable TerminalForeground highlight = plugin.state.settings.brightTerminal ?
+                Bright.highlight :
+                Dark.highlight;
+            immutable TerminalForeground emoteFgBase = plugin.state.settings.brightTerminal ?
+                Bright.emote :
+                Dark.emote;
+
+            immutable delimiterPos = event.aux[0].indexOf(emoteDelimiter);
+            assert((delimiterPos != -1), "No emote delimiter in aux[0]");
+            immutable emotes = event.aux[0][0..delimiterPos];
+
+            scope(exit) customEmoteSink.clear();
+
+            customEmoteSink.highlightEmotesImpl(
+                event.aux[0][delimiterPos+1..$],
+                emotes,
+                highlight,
+                emoteFgBase,
+                cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
+                plugin.state.settings);
+
+            .put(sink, `: "`, customEmoteSink.data, '"');
             putQuotedTwitchMessage = true;
             auxRange.popFront();
         }
