@@ -2983,6 +2983,15 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
             room.stream = TwitchPlugin.Room.Stream.init;
         }
 
+        void reportCurrentGame(const TwitchPlugin.Room.Stream stream)
+        {
+            if (stream.gameIDString != "0")
+            {
+                enum pattern = "Current game: <l>%s";
+                logger.logf(pattern, stream.gameName);
+            }
+        }
+
         auto room = channelName in plugin.rooms;
         assert(room, "Tried to start chatter monitor delegate on non-existing room");
 
@@ -3005,6 +3014,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                         // Was up but just ended
                         closeStream(room);
                         rotateStream(room);
+                        logger.info("Stream ended.");
 
                         if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
                         {
@@ -3020,6 +3030,8 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                     {
                         // New stream!
                         room.stream = streamFromServer;
+                        logger.info("Stream started.");
+                        reportCurrentGame(streamFromServer);
 
                         /*if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
                         {
@@ -3038,6 +3050,8 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                         closeStream(room);
                         rotateStream(room);
                         room.stream = streamFromServer;
+                        logger.info("Stream change detected.");
+                        reportCurrentGame(streamFromServer);
 
                         if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
                         {
