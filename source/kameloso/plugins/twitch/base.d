@@ -3675,10 +3675,16 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         return;
     }
 
+    immutable isEmotePossibleEventType = event.type.among!
+        (IRCEvent.Type.CHAN,
+        IRCEvent.Type.EMOTE,
+        IRCEvent.Type.SELFCHAN,
+        IRCEvent.Type.SELFEMOTE);
+
     immutable eventCanContainEmotes =
         plugin.twitchSettings.customEmotes &&
         event.content.length &&
-        event.type.among!(IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE);
+        isEmotePossibleEventType;
 
     version(TwitchCustomEmotesEverywhere)
     {
@@ -3696,7 +3702,6 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
     {
         if (const customEmotes = event.channel in plugin.customEmotesByChannel)
         {
-            import std.algorithm.comparison : among;
             import std.conv : text;
 
             embedCustomEmotes(
@@ -3705,15 +3710,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 *customEmotes,
                 plugin.customGlobalEmotes);
 
-            immutable isEmotePossibleEventType = event.type.among!
-                (IRCEvent.Type.CHAN,
-                IRCEvent.Type.EMOTE,
-                IRCEvent.Type.SELFCHAN,
-                IRCEvent.Type.SELFEMOTE);
-
-            if (isEmotePossibleEventType &&
-                event.target.nickname.length &&
-                event.aux[0].length)
+            if (event.target.nickname.length && event.aux[0].length)
             {
                 enum emoteDelimiter = '\0';
                 string emotes;  // passed by ref
@@ -3764,6 +3761,8 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         if (plugin.twitchSettings.promoteBroadcasters)
         {
             // Already ensured channel has length in parent function
+            assert(channelName.length, "Empty channelName in postprocess.postprocessImpl");
+
             if ((user.class_ < IRCUser.Class.staff) &&
                 (user.nickname == channelName[1..$]))
             {
