@@ -431,8 +431,11 @@ auto readFIFO(PipelinePlugin plugin)
     foreach (/*immutable*/ line; slice.splitter("\n"))
     {
         import kameloso.messaging : raw, quit;
+        import kameloso.thread : ThreadMessage, boxed;
         import lu.string : splitInto, strippedLeft;
+        import std.algorithm.comparison : equal;
         import std.algorithm.searching : startsWith;
+        import std.concurrency : send;
         import std.uni : asLowerCase;
 
         line = line.strippedLeft;
@@ -440,9 +443,6 @@ auto readFIFO(PipelinePlugin plugin)
 
         if (line[0] == ':')
         {
-            import kameloso.thread : ThreadMessage, boxed;
-            import std.concurrency : send;
-
             line = line[1..$];  // skip the colon
             string header;  // mutable
             line.splitInto(header);
@@ -460,6 +460,12 @@ auto readFIFO(PipelinePlugin plugin)
             {
                 quit(plugin.state);  // Default reason
             }
+            return true;
+        }
+        else if (line.asLowerCase.equal("reconnect"))
+        {
+            plugin.state.mainThread.send(ThreadMessage.reconnect);
+            return true;
         }
         else
         {
