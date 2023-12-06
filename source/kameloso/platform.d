@@ -318,6 +318,7 @@ auto openInBrowser(const string url)
 
     Params:
         args = Arguments passed to the program.
+        numReexecs = How many reexecutions have been done so far.
 
     Returns:
         On Windows, a [std.process.Pid|Pid] of the spawned process.
@@ -327,10 +328,13 @@ auto openInBrowser(const string url)
         On Posix, [lu.common.ReturnValueException|ReturnValueException] on failure.
         On Windows, [std.process.ProcessException|ProcessException] on failure.
  +/
-Pid exec(/*const*/ string[] args) @system
+Pid exec(
+    /*const*/ string[] args,
+    const uint numReexecs) @system
 {
     import kameloso.common : logger;
     import std.algorithm.comparison : among;
+    import std.conv : text;
 
     if (args.length > 1)
     {
@@ -373,7 +377,8 @@ Pid exec(/*const*/ string[] args) @system
                 if (setting.among!(
                     //"--setup-twitch",  // this only does the keygen, then exits
                     "--get-cacert",
-                    "--get-openssl"))
+                    "--get-openssl",
+                    "--num-reexecs"))
                 {
                     toRemove ~= i;
                 }
@@ -386,6 +391,9 @@ Pid exec(/*const*/ string[] args) @system
             args = args.remove!(SwapStrategy.stable)(i);
         }
     }
+
+    // Add the reexec count argument
+    args ~= text("--num-reexecs=", numReexecs+1);
 
     version(Posix)
     {

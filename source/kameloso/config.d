@@ -601,6 +601,7 @@ auto handleGetopt(Kameloso instance) @system
         std.getopt.config.passThrough,
         "c|config", &instance.settings.configFile,
         "version", &shouldShowVersion,
+        "num-reexecs", &instance.flags.numReexecs,
     );
 
     if (shouldShowVersion)

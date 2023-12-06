@@ -3206,14 +3206,21 @@ auto startBot(Kameloso instance)
                     // Clear the terminal title if we're in a terminal
                     if (isTerminal) resetTerminalTitle();
 
-                    auto pid = exec(instance.args.dup);
+                    const pid = exec(instance.args.dup, instance.flags.numReexecs);
                     // On Windows, if we're here, the call succeeded
                     // Posix should never be here; it will either exec or throw
 
-                    enum pattern = "Forked into PID <l>%d</>.";
-                    logger.infof(pattern, pid.processID);
-                    //resetConsoleModeAndCodepage(); // Don't, it will be called via atexit
-                    exit(0);
+                    version(Posix)
+                    {
+                        assert(0, "resumed after exec");
+                    }
+                    else
+                    {
+                        enum pattern = "Forked into PID <l>%d</>.";
+                        logger.infof(pattern, pid.processID);
+                        //resetConsoleModeAndCodepage(); // Don't, it will be called via atexit
+                        exit(0);
+                    }
                 }
                 catch (ProcessException e)
                 {
@@ -4187,7 +4194,10 @@ auto run(string[] args)
     // Copy ssl setting to the Connection after the above
     instance.conn.ssl = instance.connSettings.ssl;
 
-    if (!instance.settings.headless) prettyPrintStartScreen(instance, args);
+    if (!instance.settings.headless && !instance.flags.numReexecs)
+    {
+        prettyPrintStartScreen(instance, args);
+    }
 
     // Verify that settings are as they should be (nickname exists and not too long, etc)
     immutable actionAfterVerification = verifySettings(instance);
@@ -4239,6 +4249,7 @@ auto run(string[] args)
         instance.instantiatePlugins();
 
         if (!instance.settings.headless &&
+            !instance.flags.numReexecs &&
             instance.missingConfigurationEntries.length &&
             instance.settings.configFile.exists)
         {

@@ -111,6 +111,12 @@ private:
          +/
         bool askedToReexec;
 
+        // numReexecs
+        /++
+            How many times the program has reexecuted itself.
+         +/
+        uint numReexecs;
+
         version(TwitchSupport)
         {
             // sawWelcome
