@@ -54,6 +54,7 @@ version(Colours)
         emote     = TF.cyan,
         highlight = TF.white,
         query     = TF.lightgreen,
+        account   = TF.darkgrey,
     }
 
     /++
@@ -74,6 +75,7 @@ version(Colours)
         emote     = TF.lightcyan,
         highlight = TF.black,
         query     = TF.green,
+        account   = TF.default_,
     }
 }
 
@@ -831,10 +833,9 @@ void formatMessageColoured(Sink)
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.sender.account.length)
             {
-                if (!plugin.printerSettings.classNames)
-                {
-                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
-                }
+                immutable code = bright ? Bright.account : Dark.account;
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                sink.applyANSI(code, ANSICodeType.foreground);
                 .put(sink, " (", event.sender.account, ')');
             }
         }
@@ -855,12 +856,8 @@ void formatMessageColoured(Sink)
                     break;
 
                 default:
-                    if (!plugin.printerSettings.classNames && !plugin.printerSettings.accountNames)
-                    {
-                        sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
-                    }
-
                     immutable code = bright ? Bright.badge : Dark.badge;
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.applyANSI(code, ANSICodeType.foreground);
                     .put(sink, " [", event.sender.badges, ']');
                     break;
@@ -952,10 +949,9 @@ void formatMessageColoured(Sink)
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.target.account.length)
             {
-                if (!plugin.printerSettings.classNames)
-                {
-                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
-                }
+                immutable code = bright ? Bright.account : Dark.account;
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                sink.applyANSI(code, ANSICodeType.foreground);
                 .put(sink, " (", event.target.account, ')');
             }
         }
@@ -966,12 +962,8 @@ void formatMessageColoured(Sink)
                 plugin.printerSettings.twitchBadges &&
                 event.target.badges.length)
             {
-                if (!plugin.printerSettings.classNames && !plugin.printerSettings.accountNames)
-                {
-                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
-                }
-
                 immutable code = bright ? Bright.badge : Dark.badge;
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.applyANSI(code, ANSICodeType.foreground);
                 .put(sink, " [", event.target.badges, ']');
             }
@@ -992,6 +984,7 @@ void formatMessageColoured(Sink)
             (event.type == IRCEvent.Type.SELFEMOTE);
         immutable fgBase = isEmote ? emoteFgBase : contentFgBase;
 
+        //sink.applyANSI(TerminalReset.all, ANSICodeType.reset);  // do we need this?
         sink.applyANSI(fgBase, ANSICodeType.foreground);  // Always grey colon and SASL +, prepare for emote
 
         if (!event.sender.isServer && !event.sender.nickname.length)
