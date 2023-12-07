@@ -87,8 +87,6 @@ versions \
     "OSXTMPDIR" \
     "TraceWhois" \
     "IncludeHeavyStuff" \
-    "PrintAccountNamesToo" \
-    "PrintClassNamesToo" \
     "BenchmarkHTTPRequests" \
     "ThreadedSSLFree" \
     "Callgrind"
@@ -144,8 +142,6 @@ configuration "dev" {
         //"OmniscientQueries" \
         //"OSXTMPDIR" \
         //"TraceWhois" \
-        //"PrintAccountNamesToo" \
-        //"PrintClassNamesToo" \
         //"BenchmarkHTTPRequests" \
 }
 
@@ -169,8 +165,6 @@ configuration "dev-lowmem" {
         //"OmniscientQueries" \
         //"OSXTMPDIR" \
         //"TraceWhois" \
-        //"PrintAccountNamesToo" \
-        //"PrintClassNamesToo" \
         //"BenchmarkHTTPRequests" \
 }
 
@@ -188,8 +182,6 @@ configuration "unittest" {
         "TraceWhois" \
         "TwitchPromoteEverywhere" \
         "TwitchCustomEmotesEverywhere" \
-        "PrintAccountNamesToo" \
-        "PrintClassNamesToo" \
         "BenchmarkHTTPRequests" \
         "OSXTMPDIR"
 }
@@ -209,8 +201,6 @@ configuration "unittest-lowmem" {
         "TraceWhois" \
         "TwitchPromoteEverywhere" \
         "TwitchCustomEmotesEverywhere" \
-        "PrintAccountNamesToo" \
-        "PrintClassNamesToo" \
         "BenchmarkHTTPRequests" \
         "OSXTMPDIR"
 }

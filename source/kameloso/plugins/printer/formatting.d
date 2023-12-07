@@ -216,7 +216,7 @@ void formatMessageMonochrome(Sink)
                 sink.put(event.sender.displayName);
                 putDisplayName = true;
 
-                version(PrintClassNamesToo)
+                if (plugin.printerSettings.classNames)
                 {
                     .put(sink, '/', event.sender.class_);
                 }
@@ -234,13 +234,13 @@ void formatMessageMonochrome(Sink)
             // Can be no-nick special: [PING] *2716423853
             sink.put(event.sender.nickname);
 
-            version(PrintClassNamesToo)
+            if (plugin.printerSettings.classNames)
             {
                 .put(sink, '/', event.sender.class_);
             }
         }
 
-        version(PrintAccountNamesToo)
+        if (plugin.printerSettings.accountNames)
         {
             // No need to check for nickname.length, I think
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
@@ -301,7 +301,7 @@ void formatMessageMonochrome(Sink)
                 sink.put(event.target.displayName);
                 putDisplayName = true;
 
-                version(PrintClassNamesToo)
+                if (plugin.printerSettings.classNames)
                 {
                     .put(sink, '/', event.target.class_);
                 }
@@ -323,13 +323,13 @@ void formatMessageMonochrome(Sink)
         {
             sink.put(event.target.nickname);
 
-            version(PrintClassNamesToo)
+            if (plugin.printerSettings.classNames)
             {
                 .put(sink, '/', event.target.class_);
             }
         }
 
-        version(PrintAccountNamesToo)
+        if (plugin.printerSettings.accountNames)
         {
             // No need to check for nickname.length, I think
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
@@ -532,7 +532,7 @@ void formatMessageMonochrome(Sink)
         immutable joinLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= "/whitelist";
+        //nickstring ~= "/whitelist";
         immutable expected = "[join] [#channel] " ~ nickstring;
         assert((joinLine == expected), joinLine);
         sink.clear();
@@ -546,12 +546,13 @@ void formatMessageMonochrome(Sink)
         immutable chanLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= "/whitelist";
+        //nickstring ~= "/whitelist";
         immutable expected = "[chan] [#channel] " ~ nickstring ~ `: "Harbl snarbl"`;
         assert((chanLine == expected), chanLine);
         sink.clear();
     }
 
+    plugin.printerSettings.classNames = true;
     event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
     event.sender.class_ = IRCUser.Class.staff;
     //colour = "#3c507d";
@@ -562,7 +563,7 @@ void formatMessageMonochrome(Sink)
         immutable twitchLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= "/staff";
+        nickstring ~= "/staff";
         immutable expected = "[chan] [#channel] " ~ nickstring ~
             ` [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`;
         assert((twitchLine == expected), twitchLine);
@@ -570,6 +571,7 @@ void formatMessageMonochrome(Sink)
         event.sender.badges = string.init;
     }}
 
+    plugin.printerSettings.accountNames = true;
     plugin.state.server.daemon = IRCServer.Daemon.inspircd;
     event.sender.class_ = IRCUser.Class.anyone;
     event.type = IRCEvent.Type.ACCOUNT;
@@ -583,8 +585,8 @@ void formatMessageMonochrome(Sink)
         immutable accountLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= "/anyone";
-        version(PrintAccountNamesToo) nickstring ~= " (n1ckn4m3)";
+        nickstring ~= "/anyone";
+        nickstring ~= " (n1ckn4m3)";
         immutable expected = "[account] " ~ nickstring ~ " (n1ckn4m3)";
         assert((accountLine == expected), accountLine);
         sink.clear();
@@ -606,14 +608,15 @@ void formatMessageMonochrome(Sink)
         immutable errorLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= "/anyone";
-        version(PrintAccountNamesToo) nickstring ~= " (n1ckn4m3)";
+        nickstring ~= "/anyone";
+        nickstring ~= " (n1ckn4m3)";
         immutable expected = "[error] " ~ nickstring ~ `: "Blah balah" (aux1) (aux5) ` ~
             "{-42} {123} {420} [#666] ! DANGER WILL ROBINSON !";
         assert((errorLine == expected), errorLine);
         sink.clear();
     }
 
+    plugin.printerSettings.classNames = false;
     event.type = IRCEvent.Type.CHAN;
     event.channel = "#nickname";
     event.num = 0;
@@ -626,8 +629,8 @@ void formatMessageMonochrome(Sink)
         immutable queryLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= "/anyone";
-        version(PrintAccountNamesToo) nickstring ~= " (n1ckn4m3)";
+        //nickstring ~= "/anyone";
+        nickstring ~= " (n1ckn4m3)";
         immutable expected = "[chan] [#nickname] " ~ nickstring ~ `: "Blah balah"`;
         assert((queryLine == expected), queryLine);
         //sink.clear();
@@ -787,7 +790,7 @@ void formatMessageColoured(Sink)
                 sink.put(event.sender.displayName);
                 putDisplayName = true;
 
-                version(PrintClassNamesToo)
+                if (plugin.printerSettings.classNames)
                 {
                     sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     .put(sink, '/', event.sender.class_);
@@ -812,14 +815,14 @@ void formatMessageColoured(Sink)
             // Can be no-nick special: [PING] *2716423853
             sink.put(event.sender.nickname);
 
-            version(PrintClassNamesToo)
+            if (plugin.printerSettings.classNames)
             {
                 sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 .put(sink, '/', event.sender.class_);
             }
         }
 
-        version(PrintAccountNamesToo)
+        if (plugin.printerSettings.accountNames)
         {
             // No need to check for nickname.length, I think
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
@@ -891,7 +894,7 @@ void formatMessageColoured(Sink)
                 sink.put(event.target.displayName);
                 putDisplayName = true;
 
-                version(PrintClassNamesToo)
+                if (plugin.printerSettings.classNames)
                 {
                     sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     .put(sink, '/', event.target.class_);
@@ -923,14 +926,14 @@ void formatMessageColoured(Sink)
         {
             sink.put(event.target.nickname);
 
-            version(PrintClassNamesToo)
+            if (plugin.printerSettings.classNames)
             {
                 sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 .put(sink, '/', event.target.class_);
             }
         }
 
-        version(PrintAccountNamesToo)
+        if (plugin.printerSettings.accountNames)
         {
             // No need to check for nickname.length, I think
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&

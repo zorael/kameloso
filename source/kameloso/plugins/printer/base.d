@@ -184,6 +184,16 @@ public:
             Whether or not to buffer writes.
          +/
         bool bufferedWrites = true;
+
+        /++
+            Whether or not to print class names of users.
+         +/
+        bool classNames = false;
+
+        /++
+            Whether or not to print account names of users.
+         +/
+        bool accountNames = false;
     }
 }
 
