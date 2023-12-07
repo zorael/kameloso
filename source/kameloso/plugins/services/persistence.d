@@ -194,9 +194,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
         // Save cache lookups so we don't do them more than once.
         string* cachedChannel;
-
         auto stored = user.nickname in service.users;
-        immutable persistentCacheMiss = stored is null;
 
         if (service.state.settings.preferHostmasks)
         {
@@ -220,7 +218,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                     break;
 
                 case ACCOUNT:
-                    if (stored.account.length && (user.account == "*"))
+                    if (stored && stored.account.length && (user.account == "*"))
                     {
                         event.aux[0] = stored.account;
                         goto case RPL_WHOISACCOUNT;
@@ -229,7 +227,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
                 default:
                     if ((user.account.length && (user.account != "*")) ||
-                        (!persistentCacheMiss && !stored.account.length))
+                        (stored && !stored.account.length))
                     {
                         // Unexpected event bearing new account
                         // These can be whatever if the "account-tag" capability is set
@@ -240,7 +238,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             }
         }
 
-        if (persistentCacheMiss)
+        if (!stored)
         {
             service.users[user.nickname] = user;
             stored = user.nickname in service.users;
