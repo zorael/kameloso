@@ -799,8 +799,11 @@ void formatMessageColoured(Sink)
                 if ((event.sender.displayName != event.sender.nickname) &&
                     !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
                 {
-                    version(PrintClassNamesToo) {}
-                    else sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                    if (!plugin.printerSettings.classNames)
+                    {
+                        sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                    }
+
                     sink.put(" (");
                     colourUserTruecolour(event.sender);
                     sink.put(event.sender.nickname);
@@ -828,7 +831,10 @@ void formatMessageColoured(Sink)
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.sender.account.length)
             {
-                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                if (!plugin.printerSettings.classNames)
+                {
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                }
                 .put(sink, " (", event.sender.account, ')');
             }
         }
@@ -849,8 +855,12 @@ void formatMessageColoured(Sink)
                     break;
 
                 default:
+                    if (!plugin.printerSettings.classNames && !plugin.printerSettings.accountNames)
+                    {
+                        sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                    }
+
                     immutable code = bright ? Bright.badge : Dark.badge;
-                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.applyANSI(code, ANSICodeType.foreground);
                     .put(sink, " [", event.sender.badges, ']');
                     break;
@@ -903,8 +913,11 @@ void formatMessageColoured(Sink)
                 if ((event.target.displayName != event.target.nickname) &&
                     !event.target.displayName.asLowerCase.equal(event.target.nickname))
                 {
-                    version(PrintClassNamesToo) {}
-                    else sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                    if (!plugin.printerSettings.classNames)
+                    {
+                        sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                    }
+
                     sink.put(" (");
                     colourUserTruecolour(event.target);
                     sink.put(event.target.nickname);
@@ -939,7 +952,10 @@ void formatMessageColoured(Sink)
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.target.account.length)
             {
-                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                if (!plugin.printerSettings.classNames)
+                {
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                }
                 .put(sink, " (", event.target.account, ')');
             }
         }
@@ -950,8 +966,12 @@ void formatMessageColoured(Sink)
                 plugin.printerSettings.twitchBadges &&
                 event.target.badges.length)
             {
+                if (!plugin.printerSettings.classNames && !plugin.printerSettings.accountNames)
+                {
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                }
+
                 immutable code = bright ? Bright.badge : Dark.badge;
-                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.applyANSI(code, ANSICodeType.foreground);
                 .put(sink, " [", event.target.badges, ']');
             }
