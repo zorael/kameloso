@@ -194,6 +194,18 @@ public:
             Whether or not to print account names of users.
          +/
         bool accountNames = false;
+
+        /++
+            [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to explicitly exclude
+            from printing, even when it otherwise would have been printed.
+         +/
+        string exclude;
+
+        /++
+            [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to explicitly include
+            when printing, even if it otherwise would not have been printed.
+         +/
+        string include;
     }
 }
 
@@ -214,9 +226,15 @@ public:
 )
 void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 {
+    import std.algorithm.searching : canFind;
+
     if (!plugin.printerSettings.monitor || plugin.state.settings.headless) return;
 
     if (plugin.printerSettings.hideBlacklistedUsers && (event.sender.class_ == IRCUser.Class.blacklist)) return;
+
+    // Exclude types explicitly declared as to be excluded
+    immutable exclude = plugin.exclude.length && plugin.exclude.canFind(event.type);
+    if (exclude) return;
 
     // For many types there's no need to display the target nickname when it's the bot's
     // Clear event.target.nickname for those types.
@@ -267,6 +285,64 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             return false;
         }
     }
+
+    /++
+        Prints the event to screen.
+     +/
+    static void printEvent(
+        PrinterPlugin plugin,
+        /*const*/ ref IRCEvent event)
+    {
+        import kameloso.terminal : TerminalToken;
+        import lu.string : strippedRight;
+        import std.array : replace;
+        import std.stdio : stdout, writeln;
+
+        // Strip bells so we don't get phantom noise
+        // Strip right to get rid of trailing whitespace
+        // Do it in this order in case bells hide whitespace.
+        event.content = event.content
+            .replace(cast(ubyte)TerminalToken.bell, string.init)
+            .strippedRight;
+
+        bool put;
+
+        alias BellOnMention = Flag!"bellOnMention";
+        alias BellOnError = Flag!"bellOnError";
+
+        scope(exit) plugin.linebuffer.clear();
+
+        version(Colours)
+        {
+            if (plugin.state.settings.colours)
+            {
+                formatMessageColoured(
+                    plugin,
+                    plugin.linebuffer,
+                    event,
+                    cast(BellOnMention)plugin.printerSettings.bellOnMention,
+                    cast(BellOnError)plugin.printerSettings.bellOnError);
+                put = true;
+            }
+        }
+
+        if (!put)
+        {
+            formatMessageMonochrome(
+                plugin,
+                plugin.linebuffer,
+                event,
+                cast(BellOnMention)plugin.printerSettings.bellOnMention,
+                cast(BellOnError)plugin.printerSettings.bellOnError);
+        }
+
+        writeln(plugin.linebuffer.data);
+        if (plugin.state.settings.flush) stdout.flush();
+    }
+
+    // Immediately print events of types declared to be included
+    immutable include = plugin.include.length && plugin.include.canFind(event.type);
+    if (include) return printEvent(plugin, event);
 
     with (IRCEvent.Type)
     switch (event.type)
@@ -463,52 +539,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         break;
 
     default:
-        import kameloso.terminal : TerminalToken;
-        import lu.string : strippedRight;
-        import std.array : replace;
-        import std.stdio : stdout, writeln;
-
-        // Strip bells so we don't get phantom noise
-        // Strip right to get rid of trailing whitespace
-        // Do it in this order in case bells hide whitespace.
-        event.content = event.content
-            .replace(cast(ubyte)TerminalToken.bell, string.init)
-            .strippedRight;
-
-        bool put;
-
-        alias BellOnMention = Flag!"bellOnMention";
-        alias BellOnError = Flag!"bellOnError";
-
-        scope(exit) plugin.linebuffer.clear();
-
-        version(Colours)
-        {
-            if (plugin.state.settings.colours)
-            {
-                formatMessageColoured(
-                    plugin,
-                    plugin.linebuffer,
-                    event,
-                    cast(BellOnMention)plugin.printerSettings.bellOnMention,
-                    cast(BellOnError)plugin.printerSettings.bellOnError);
-                put = true;
-            }
-        }
-
-        if (!put)
-        {
-            formatMessageMonochrome(
-                plugin,
-                plugin.linebuffer,
-                event,
-                cast(BellOnMention)plugin.printerSettings.bellOnMention,
-                cast(BellOnError)plugin.printerSettings.bellOnError);
-        }
-
-        writeln(plugin.linebuffer.data);
-        if (plugin.state.settings.flush) stdout.flush();
-        break;
+        return printEvent(plugin, event);
     }
 }
 
@@ -618,6 +649,50 @@ package auto datestamp()
     immutable now = Clock.currTime;
     enum pattern = "-- [%d-%02d-%02d]";
     return pattern.format(now.year, cast(uint)now.month, now.day);
+}
+
+
+// initialise
+/++
+    Populates the arrays of types to exclude and include from printing.
+
+    Do this here instead of in [setup], so it gets done before resolving.
+    Gate it behind `debug` to be neat.
+ +/
+debug
+void initialise(PrinterPlugin plugin)
+{
+    import kameloso.common : logger;
+    import lu.conv : Enum;
+    import lu.string : stripped;
+    import std.algorithm.iteration : map, splitter;
+    import std.array : array;
+    import std.conv : ConvException;
+    import std.uni : toUpper;
+
+    auto parseTypes(const string definitions, const string listName)
+    {
+        if (!definitions.length) return null;
+
+        try
+        {
+            return definitions
+                .toUpper()
+                .splitter(",")
+                .map!(s => Enum!(IRCEvent.Type).fromString(s.stripped))
+                .array;
+        }
+        catch (ConvException e)
+        {
+            enum pattern = `Invalid <l>%s</>.<l>%s</> setting: "<l>%s</>" <t>(%s)`;
+            logger.errorf(pattern, plugin.name, listName, definitions, e.msg);
+            *plugin.state.abort = Yes.abort;
+            return null;
+        }
+    }
+
+    plugin.exclude = parseTypes(plugin.printerSettings.exclude, "exclude");
+    plugin.include = parseTypes(plugin.printerSettings.include, "include");
 }
 
 
@@ -937,6 +1012,16 @@ package:
         Effective bell after [kameloso.terminal.isTerminal] checks.
      +/
     static string bell = "" ~ cast(char)(TerminalToken.bell);
+
+    /++
+        [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to exclude from printing.
+     +/
+    IRCEvent.Type[] exclude;
+
+    /++
+        [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to include in printing.
+     +/
+    IRCEvent.Type[] include;
 
     mixin IRCPluginImpl;
 }
