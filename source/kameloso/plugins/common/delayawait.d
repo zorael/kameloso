@@ -46,7 +46,7 @@ public:
         duration = Amount of time to delay the `fiber`.
 
     See_Also:
-        [removeDelayedFiber]
+        [undelay]
  +/
 void delay(
     IRCPlugin plugin,
@@ -76,7 +76,7 @@ in ((fiber !is null), "Tried to delay a null Fiber")
         yield = Whether or not to immediately yield the Fiber.
 
     See_Also:
-        [removeDelayedFiber]
+        [undelay]
  +/
 void delay(
     IRCPlugin plugin,
@@ -106,7 +106,7 @@ in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
         duration = Amount of time to delay the `fiber`.
 
     See_Also:
-        [removeDelayedDelegate]
+        [undelay]
  +/
 void delay(
     IRCPlugin plugin,
@@ -123,7 +123,7 @@ in ((dg !is null), "Tried to delay a null delegate")
 }
 
 
-// removeDelayedFiber
+// undelay
 /++
     Removes a [core.thread.fiber.Fiber|Fiber] from being called at any point later.
 
@@ -141,7 +141,7 @@ in ((dg !is null), "Tried to delay a null delegate")
     See_Also:
         [delay]
  +/
-void removeDelayedFiber(IRCPlugin plugin, Fiber fiber)
+void undelay(IRCPlugin plugin, Fiber fiber)
 in ((fiber !is null), "Tried to remove a delayed null Fiber")
 {
     import std.algorithm.mutation : SwapStrategy, remove;
@@ -168,7 +168,7 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
 }
 
 
-// removeDelayedFiber
+// undelay
 /++
     Removes a [core.thread.fiber.Fiber|Fiber] from being called at any point later.
     Overload that implicitly removes [core.thread.fiber.Fiber.getThis|Fiber.getThis].
@@ -179,14 +179,14 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
     See_Also:
         [delay]
  +/
-void removeDelayedFiber(IRCPlugin plugin)
-in (Fiber.getThis, "Tried to call `removeDelayedFiber` from outside a Fiber")
+void undelay(IRCPlugin plugin)
+in (Fiber.getThis, "Tried to call `undelay` from outside a Fiber")
 {
-    return removeDelayedFiber(plugin, Fiber.getThis);
+    return undelay(plugin, Fiber.getThis);
 }
 
 
-// removeDelayedDelegate
+// undelay
 /++
     Removes a `void delegate()` delegate from being called at any point later.
 
@@ -200,7 +200,7 @@ in (Fiber.getThis, "Tried to call `removeDelayedFiber` from outside a Fiber")
     See_Also:
         [delay]
  +/
-void removeDelayedDelegate(IRCPlugin plugin, void delegate() dg)
+void undelay(IRCPlugin plugin, void delegate() dg)
 in ((dg !is null), "Tried to remove a delayed null delegate")
 {
     import std.algorithm.mutation : SwapStrategy, remove;
@@ -225,6 +225,20 @@ in ((dg !is null), "Tried to remove a delayed null delegate")
 
     plugin.state.updateSchedule();
 }
+
+
+// removeDelayedFiber
+/++
+    Deprecated alias for [undelay].
+
+    Will be removed in a future release.
+ +/
+deprecated("Use `undelay` instead")
+alias removeDelayedFiber = undelay;
+
+/// ditto
+deprecated("Use `undelay` instead")
+alias removeDelayedDelegate = undelay;
 
 
 // await
