@@ -55,22 +55,44 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
     case NICK:
     case SELFNICK:
+        import dialect.semver : DialectSemVer;
+
         // Clone the stored sender into a new stored target.
-        // Don't delete the old user yet.
+        static if (
+            (DialectSemVer.major <= 2) &&
+            (DialectSemVer.minor == 0) &&
+            (DialectSemVer.patch <= 4))
+        {
+            // dialect does this itself in newer versions,
+            // but do it manually for older ones
+            immutable savedTargetNick = event.target.nickname;
+            event.target = event.sender;
+            event.target.nickname = savedTargetNick;
+        }
+
+        static void dropUserPrivileges(ref IRCUser user)
+        {
+            // Drop all privileges
+            user.class_ = IRCUser.Class.anyone;
+            user.account = string.init;
+            user.updated = 1L;  // must not be 0L
+        }
+
+        if (service.state.settings.preferHostmasks)
+        {
+            dropUserPrivileges(event.target);
+        }
 
         if (const stored = event.sender.nickname in service.users)
         {
+            // Don't delete the old user yet.
             service.users[event.target.nickname] = *stored;
-
             auto newUser = event.target.nickname in service.users;
             newUser.nickname = event.target.nickname;
 
             if (service.state.settings.preferHostmasks)
             {
-                // Drop all privileges
-                newUser.class_ = IRCUser.Class.anyone;
-                newUser.account = string.init;
-                newUser.updated = 1L;  // must not be 0L
+                dropUserPrivileges(*newUser);
             }
         }
 
@@ -81,7 +103,6 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 service.userClassChannelCache[event.target.nickname] = *channelName;
             }
         }
-
         goto default;
 
     default:
