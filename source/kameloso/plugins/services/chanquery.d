@@ -105,7 +105,6 @@ void startChannelQueries(ChanQueryService service)
     if (!querylist.length && !service.state.settings.eagerLookups) return;
 
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-
     service.querying = true;  // "Lock"
 
     scope(exit)
@@ -113,8 +112,6 @@ void startChannelQueries(ChanQueryService service)
         service.queriedAtLeastOnce = true;
         service.querying = false;  // "Unlock"
     }
-
-    static immutable secondsBetween = ChanQueryService.secondsBetween.seconds;
 
     chanloop:
     foreach (immutable i, immutable channelName; querylist)
@@ -124,7 +121,7 @@ void startChannelQueries(ChanQueryService service)
         if (i > 0)
         {
             // Delay between runs after first since aMode probes don't delay at end
-            delay(service, secondsBetween, Yes.yield);
+            delay(service, ChanQueryService.timeBetweenQueries, Yes.yield);
         }
 
         version(WithPrinterPlugin)
@@ -155,7 +152,7 @@ void startChannelQueries(ChanQueryService service)
             do Fiber.yield();  // Awaiting specified types
             while (thisFiber.payload.channel != channelName);
 
-            delay(service, secondsBetween, Yes.yield);
+            delay(service, ChanQueryService.timeBetweenQueries, Yes.yield);
         }
 
         /++
@@ -183,7 +180,7 @@ void startChannelQueries(ChanQueryService service)
             if (n > 0)
             {
                 // Cannot await by event type; there are too many types.
-                delay(service, secondsBetween, Yes.yield);
+                delay(service, ChanQueryService.timeBetweenQueries, Yes.yield);
                 if (channelName !in service.channelStates) continue chanloop;
             }
 
@@ -264,6 +261,7 @@ void startChannelQueries(ChanQueryService service)
     }
 
     long lastQueryResults;
+    immutable numSecondsBetween = ChanQueryService.timeBetweenQueries.total!"seconds";
 
     whoisloop:
     foreach (immutable nickname; uniqueUsers.byKey)
@@ -280,13 +278,15 @@ void startChannelQueries(ChanQueryService service)
         }
 
         // Delay between runs after first since aMode probes don't delay at end
-        delay(service, secondsBetween, Yes.yield);
-        immutable delta = (Clock.currTime.toUnixTime() - lastQueryResults);
+        delay(service, ChanQueryService.timeBetweenQueries, Yes.yield);
+        auto elapsed = (Clock.currTime.toUnixTime() - lastQueryResults);
+        auto remaining = (numSecondsBetween - elapsed);
 
-        while (delta < service.secondsBetween-1)
+        while (remaining > 0)
         {
-            static immutable oneSecond = 1.seconds;
-            delay(service, oneSecond, Yes.yield);
+            delay(service, remaining.seconds, Yes.yield);
+            elapsed = (Clock.currTime.toUnixTime() - lastQueryResults);
+            remaining = (numSecondsBetween - elapsed);
         }
 
         version(WithPrinterPlugin)
@@ -495,10 +495,10 @@ private:
     import core.time : seconds;
 
     /++
-        Extra seconds delay between channel mode/user queries. Not delaying may
+        Extra delay between channel mode/user queries. Not delaying may
         cause kicks and disconnects if results are returned quickly.
      +/
-    enum secondsBetween = 3;
+    static immutable timeBetweenQueries = 4.seconds;
 
     /++
         Duration after welcome event before the first round of channel-querying will start.
