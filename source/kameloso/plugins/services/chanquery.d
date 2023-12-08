@@ -297,6 +297,7 @@ void startChannelQueries(ChanQueryService service)
 
         enum properties = (Message.Property.quiet | Message.Property.background);
         whois(service.state, nickname, properties);
+        undelay(service);  // Remove any delays
         Fiber.yield();  // Await whois types registered above
 
         enum maxConsecutiveUnknownCommands = 3;
