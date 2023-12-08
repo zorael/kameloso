@@ -1420,7 +1420,7 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
  +/
 void startPingMonitorFiber(ConnectService service)
 {
-    import kameloso.plugins.common.delayawait : await, delay, removeDelayedFiber;
+    import kameloso.plugins.common.delayawait : await, delay, undelay;
     import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
@@ -1498,7 +1498,7 @@ void startPingMonitorFiber(ConnectService service)
                 {
                     // Early trigger, either interleaved with a PONG or due to preemptive PING
                     // Remove current delay and re-delay at when the next PING check should be
-                    removeDelayedFiber(service);
+                    undelay(service);
                     immutable elapsed = (nowInUnix - lastPongTimestamp);
                     immutable remaining = (service.connectSettings.maxPingPeriodAllowed - elapsed);
                     delay(service, remaining.seconds, Yes.yield);
@@ -1511,7 +1511,7 @@ void startPingMonitorFiber(ConnectService service)
                 // Update and remove delay, so we can drop down and re-delay it
                 lastPongTimestamp = thisEvent.time;
                 strikes = 0;
-                removeDelayedFiber(service);
+                undelay(service);
                 break;
 
             default:
