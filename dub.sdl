@@ -169,6 +169,7 @@ configuration "dev-lowmem" {
 }
 
 configuration "unittest" {
+    targetName "kameloso-test"
     subConfiguration "dialect" "dev"
 
     versions \
@@ -187,6 +188,7 @@ configuration "unittest" {
 }
 
 configuration "unittest-lowmem" {
+    targetName "kameloso-test"
     subConfiguration "dialect" "dev"
     dflags "-lowmem"
 
