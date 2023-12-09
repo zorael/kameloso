@@ -30,7 +30,6 @@ importPaths "source"
 versions \
     "WithAdminPlugin" \
     "WithAutomodePlugin" \
-    "WithBashPlugin" \
     "WithChatbotPlugin" \
     "WithCounterPlugin" \
     "WithHelpPlugin" \
@@ -46,6 +45,7 @@ versions \
     "WithTimePlugin" \
     "WithTimerPlugin" \
     "WithWebtitlePlugin"
+    //"WithBashPlugin"
     //"WithSamePlugin"
 
 /**
