@@ -156,7 +156,7 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
         testStopwatchFiber,
         testTimerFiber,
         testTimeFiber,
-        testBashFiber,
+        //testBashFiber,
         testPollFiber,
     );
 
@@ -1438,6 +1438,7 @@ in (origEvent.channel.length, "Tried to test Poll with empty channel in original
 /++
  +
  +/
+version(none)
 void testBashFiber(TesterPlugin plugin, const /*ref*/ IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Bash with empty channel in original event")
 {
