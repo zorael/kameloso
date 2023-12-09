@@ -1136,6 +1136,7 @@ void formatMessageColoured(Sink)
             IRCEvent.Type.SELFEMOTE);
 
         if (isEmotePossibleEventType &&
+            event.content.length &&
             event.target.nickname.length &&
             (event.aux[0].length > 1))  // need space to fit the delimiter plus teext
         {
@@ -1150,28 +1151,35 @@ void formatMessageColoured(Sink)
             sink.applyANSI(code, ANSICodeType.foreground);
 
             enum emoteDelimiter = '\0';
-            immutable TerminalForeground highlight = plugin.state.settings.brightTerminal ?
-                Bright.highlight :
-                Dark.highlight;
-            immutable TerminalForeground emoteFgBase = plugin.state.settings.brightTerminal ?
-                Bright.emote :
-                Dark.emote;
-
             immutable delimiterPos = event.aux[0].indexOf(emoteDelimiter);
-            assert((delimiterPos != -1), "No emote delimiter in aux[0]");
-            immutable emotes = event.aux[0][0..delimiterPos];
 
-            scope(exit) customEmoteSink.clear();
+            if (delimiterPos != -1)
+            {
+                scope(exit) customEmoteSink.clear();
 
-            customEmoteSink.highlightEmotesImpl(
-                event.aux[0][delimiterPos+1..$],
-                emotes,
-                highlight,
-                emoteFgBase,
-                cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
-                plugin.state.settings);
+                immutable TerminalForeground highlight = plugin.state.settings.brightTerminal ?
+                    Bright.highlight :
+                    Dark.highlight;
+                immutable TerminalForeground emoteFgBase = plugin.state.settings.brightTerminal ?
+                    Bright.emote :
+                    Dark.emote;
+                immutable emotes = event.aux[0][0..delimiterPos];
 
-            .put(sink, `: "`, customEmoteSink.data, '"');
+                customEmoteSink.highlightEmotesImpl(
+                    event.aux[0][delimiterPos+1..$],
+                    emotes,
+                    highlight,
+                    emoteFgBase,
+                    cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
+                    plugin.state.settings);
+                .put(sink, `: "`, customEmoteSink.data, '"');
+            }
+            else
+            {
+                // No emotes embedded, probably not a home or no custom emotes for channel
+                .put(sink, `: "`, event.aux[0], '"');
+            }
+
             putQuotedTwitchMessage = true;
             auxRange.popFront();
         }
