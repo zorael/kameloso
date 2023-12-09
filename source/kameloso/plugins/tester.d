@@ -14,10 +14,10 @@ import kameloso.irccolours : stripEffects;
 import kameloso.messaging;
 import kameloso.thread : CarryingFiber;
 import dialect.defs;
-import lu.string : beginsWith, contains;
-import std.algorithm.searching : endsWith;
+import std.algorithm.searching : endsWith, startsWith;
 import std.exception : enforce;
 import std.format : format;
+import std.string : indexOf;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 import core.time;
@@ -345,7 +345,7 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
         send("hostmask list");
         // `Current hostmasks: ["kameloso^!*@*":"kameloso"]`);
         awaitReply();
-        enforce(thisFiber.payload.content.contains(`"kameloso^!*@*":"kameloso"`),
+        enforce((thisFiber.payload.content.indexOf(`"kameloso^!*@*":"kameloso"`) != -1),
             thisFiber.payload.content, __FILE__, __LINE__);
 
         send("hostmask del kameloso^!*@*");
@@ -431,7 +431,7 @@ in (origEvent.channel.length, "Tried to test Automode with empty channel in orig
 
     send("automode list");
     awaitReply();
-    enforce(thisFiber.payload.content.contains(`"kameloso":"v"`),
+    enforce((thisFiber.payload.content.indexOf(`"kameloso":"v"`) != -1),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("automode del $¡$¡");
@@ -589,7 +589,7 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
 
     awaitReply();
     immutable stripped = thisFiber.payload.content.stripEffects();
-    enforce(stripped.beginsWith("%s! %1$s left note"
+    enforce(stripped.startsWith("%s! %1$s left note"
         .format(plugin.state.client.nickname)) &&
         stripped.endsWith("ago: test"),
         thisFiber.payload.content, __FILE__, __LINE__);
@@ -792,12 +792,12 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
 
     send("quote flerrp");
     awaitReply();
-    enforce(thisFiber.payload.content.stripEffects().beginsWith("flirrp flarrp"),
+    enforce(thisFiber.payload.content.stripEffects().startsWith("flirrp flarrp"),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("quote flerrp #1");
     awaitReply();
-    enforce(thisFiber.payload.content.stripEffects().beginsWith("flirrp flarrp FLARBLE ("),
+    enforce(thisFiber.payload.content.stripEffects().startsWith("flirrp flarrp FLARBLE ("),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("quote flerrp #99");
@@ -808,7 +808,7 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
 
     send("quote flerrp flarble");
     awaitReply();
-    enforce(thisFiber.payload.content.stripEffects().beginsWith("flirrp flarrp FLARBLE ("),
+    enforce(thisFiber.payload.content.stripEffects().startsWith("flirrp flarrp FLARBLE ("),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("quote flerrp honkedonk");
@@ -823,7 +823,7 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
 
     send("quote flerrp #0");
     awaitReply();
-    enforce(thisFiber.payload.content.stripEffects().beginsWith("KAAS FLAAS ("),
+    enforce(thisFiber.payload.content.stripEffects().startsWith("KAAS FLAAS ("),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("mergequotes flerrp flirrp");
@@ -831,7 +831,7 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
 
     send("quote flirrp #0");
     awaitReply();
-    enforce(thisFiber.payload.content.stripEffects().beginsWith("KAAS FLAAS ("),
+    enforce(thisFiber.payload.content.stripEffects().startsWith("KAAS FLAAS ("),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("quote flerrp");
@@ -994,7 +994,7 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     send("counter list");
     awaitReply();
     enforce(((thisFiber.payload.content == "No counters currently active in this channel.") ||
-        thisFiber.payload.content.beginsWith("Current counters: ")), thisFiber.payload.content);
+        thisFiber.payload.content.startsWith("Current counters: ")), thisFiber.payload.content);
 
     send("counter last");
     expect("Usage: !counter [add|del|format|list] [counter word]");
@@ -1024,9 +1024,9 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     send("counter list");
     awaitReply();
     immutable stripped = thisFiber.payload.content.stripEffects();
-    enforce(stripped.beginsWith("Current counters: ") &&
-        (stripped.contains("!blah") &&
-        stripped.contains("!bluh")), thisFiber.payload.content);
+    enforce(stripped.startsWith("Current counters: ") &&
+        ((stripped.indexOf("!blah") != -1) &&
+        (stripped.indexOf("!bluh") != -1)), thisFiber.payload.content);
 
     // ------------ ![word]
 
@@ -1110,7 +1110,7 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     send("counter list");
     awaitReply();
     enforce(((thisFiber.payload.content == "No counters currently active in this channel.") ||
-        thisFiber.payload.content.beginsWith("Current counters: ")), thisFiber.payload.content);
+        thisFiber.payload.content.startsWith("Current counters: ")), thisFiber.payload.content);
 }
 
 
@@ -1162,12 +1162,12 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
 
     send("stopwatch");
     awaitReply();
-    enforce(thisFiber.payload.content.stripEffects().beginsWith("Elapsed time: "),
+    enforce(thisFiber.payload.content.stripEffects().startsWith("Elapsed time: "),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("stopwatch status");
     awaitReply();
-    enforce(thisFiber.payload.content.stripEffects().beginsWith("Elapsed time: "),
+    enforce(thisFiber.payload.content.stripEffects().startsWith("Elapsed time: "),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("stopwatch start");
@@ -1175,7 +1175,7 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
 
     send("stopwatch stop");
     awaitReply();
-    enforce(thisFiber.payload.content.stripEffects().beginsWith("Stopwatch stopped after "),
+    enforce(thisFiber.payload.content.stripEffects().startsWith("Stopwatch stopped after "),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("stopwatch start");
@@ -1324,7 +1324,7 @@ in (origEvent.channel.length, "Tried to test Time with empty channel in original
     send("time");
     awaitReply();
     response = thisFiber.payload.content.stripEffects();
-    enforce(response.beginsWith("The time is currently "),
+    enforce(response.startsWith("The time is currently "),
         thisFiber.payload.content, __FILE__, __LINE__);
     enforce(response.endsWith(" locally."),
         thisFiber.payload.content, __FILE__, __LINE__);
@@ -1332,7 +1332,7 @@ in (origEvent.channel.length, "Tried to test Time with empty channel in original
     send("time CET");
     awaitReply();
     response = thisFiber.payload.content.stripEffects();
-    enforce(response.beginsWith("The time is currently "),
+    enforce(response.startsWith("The time is currently "),
         thisFiber.payload.content, __FILE__, __LINE__);
     enforce(response.endsWith(" in CET."),
         thisFiber.payload.content, __FILE__, __LINE__);
@@ -1340,7 +1340,7 @@ in (origEvent.channel.length, "Tried to test Time with empty channel in original
     send("time Europe/Stockholm");
     awaitReply();
     response = thisFiber.payload.content.stripEffects();
-    enforce(response.beginsWith("The time is currently "),
+    enforce(response.startsWith("The time is currently "),
         thisFiber.payload.content, __FILE__, __LINE__);
     enforce(response.endsWith(" in Europe/Stockholm."),
         thisFiber.payload.content, __FILE__, __LINE__);
@@ -1348,7 +1348,7 @@ in (origEvent.channel.length, "Tried to test Time with empty channel in original
     send("time Dubai");
     awaitReply();
     response = thisFiber.payload.content.stripEffects();
-    enforce(response.beginsWith("The time is currently "),
+    enforce(response.startsWith("The time is currently "),
         thisFiber.payload.content, __FILE__, __LINE__);
     enforce(response.endsWith(" in Dubai."),
         thisFiber.payload.content, __FILE__, __LINE__);
