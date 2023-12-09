@@ -334,10 +334,11 @@ void startChannelQueries(ChanQueryService service)
                     if (++consecutiveUnknownCommands >= maxConsecutiveUnknownCommands)
                     {
                         // Cannot WHOIS on this server (assume)
-                        logger.error("Error: This server does not seem " ~
-                            "to support user accounts?");
-                        enum message = "Consider enabling <l>Core</>.<l>preferHostmasks</>.";
-                        logger.error(message);
+                        enum message1 = "Error: This server does not seem " ~
+                            "to support user accounts?";
+                        enum message2 = "Consider enabling <l>core</>.<l>preferHostmasks</>.";
+                        logger.error(message1);
+                        logger.error(message2);
                         service.serverSupportsWHOIS = false;
                         return;
                     }
