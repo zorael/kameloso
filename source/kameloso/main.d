@@ -3186,17 +3186,6 @@ auto startBot(Kameloso instance)
                         "Re-executing as requested." :
                         "Re-executing to reconnect as per settings.";
                     logger.info(message);
-
-                    version(Windows)
-                    {
-                        // Don't writeln on Windows, leave room for "Forked into PID" message
-                    }
-                    else
-                    {
-                        import std.stdio : stdout, writeln;
-                        writeln();
-                        stdout.flush();
-                    }
                 }
 
                 try
