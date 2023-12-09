@@ -35,7 +35,7 @@ public:
     (`--save` will have to be separately passed.)
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         shouldDownloadCacert = Whether or not `cacert.pem` should be downloaded.
         shouldDownloadOpenSSL = Whether or not OpenSSL for Windows should be downloaded.
 
@@ -44,23 +44,30 @@ public:
         were touched and the configuration file should be updated; `No.settingsTouched` if not.
  +/
 auto downloadWindowsSSL(
-    ref Kameloso instance,
+    Kameloso instance,
     const Flag!"shouldDownloadCacert" shouldDownloadCacert,
     const Flag!"shouldDownloadOpenSSL" shouldDownloadOpenSSL)
 {
     import kameloso.common : logger;
     import std.path : buildNormalizedPath;
 
-    static int downloadFile(const string url, const string what, const string saveAs)
+    static int downloadFile(
+        const string url,
+        const string what,
+        const string saveAs)
     {
-        import std.format : format;
-        import std.process : executeShell;
+        import std.process : execute;
 
         enum pattern = "Downloading %s from <l>%s</>...";
         logger.infof(pattern, what, url);
 
-        enum executePattern = `powershell -c "Invoke-WebRequest '%s' -OutFile '%s'"`;
-        immutable result = executeShell(executePattern.format(url, saveAs));
+        immutable string[3] command =
+        [
+            "powershell.exe",
+            "-c",
+            "Invoke-WebRequest '" ~ url ~ "' -OutFile '" ~ saveAs ~ "'",
+        ];
+        immutable result = execute(command[]);
 
         if (result.status != 0)
         {
@@ -141,19 +148,27 @@ auto downloadWindowsSSL(
 
             foreach (immutable filename, fileEntryJSON; hashesJSON["files"].object)
             {
-                import lu.string : beginsWith;
-                import std.algorithm.searching : endsWith;
+                import std.algorithm.searching : endsWith, startsWith;
 
                 version(Win64)
                 {
                     enum head = "Win64OpenSSL_Light-1_";
                 }
-                else /*version(Win32)*/
+                else version(Win32)
                 {
                     enum head = "Win32OpenSSL_Light-1_";
                 }
+                /*else version(AArch64)
+                {
+                    // Only OpenSSL v3.0 available for ARM, and we haven't tested it yet
+                    enum head = "Win64ARMOpenSSL_Light-3_";
+                }*/
+                else
+                {
+                    static assert(0, "Unsupported platform, please file a bug.");
+                }
 
-                if (filename.beginsWith(head) && filename.endsWith(".exe"))
+                if (filename.startsWith(head) && filename.endsWith(".exe"))
                 {
                     import std.process : execute;
 
@@ -162,24 +177,24 @@ auto downloadWindowsSSL(
                     if (*instance.abort) return No.settingsTouched;
                     if (downloadResult != 0) break;
 
-                    logger.info("Launching installer.");
+                    logger.info("Launching <l>OpenSSL</> installer.");
                     cast(void)execute([ exeFile ]);
 
                     return retval;
                 }
             }
 
-            logger.error("Could not find OpenSSL .exe to download");
+            logger.error("Could not find <l>OpenSSL</> .exe to download");
             // Drop down and return
         }
         catch (JSONException e)
         {
-            enum pattern = "Error parsing file containing OpenSSL download links: <l>%s";
+            enum pattern = "Error parsing file containing <l>OpenSSL</> download links: <l>%s";
             logger.errorf(pattern, e.msg);
         }
         catch (ProcessException e)
         {
-            enum pattern = "Error starting installer: <l>%s";
+            enum pattern = "Error starting <l>OpenSSL</> installer: <l>%s";
             logger.errorf(pattern, e.msg);
         }
     }

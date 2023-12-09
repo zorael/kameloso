@@ -37,7 +37,6 @@ public:
         plugins = Array of all [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]s.
         customSettings = Array of custom settings to apply to plugins' own
             setting, in the string forms of "`plugin.setting=value`".
-        copyOfSettings = A copy of the program-wide [kameloso.pods.CoreSettings|CoreSettings].
 
     Returns:
         `true` if no setting name mismatches occurred, `false` if it did.
@@ -47,15 +46,14 @@ public:
  +/
 auto applyCustomSettings(
     IRCPlugin[] plugins,
-    const string[] customSettings,
-    CoreSettings copyOfSettings)
+    const string[] customSettings)
 {
     import lu.objmanip : SetMemberException;
     import lu.string : advancePast;
     import std.conv : ConvException;
     import std.string : indexOf;
 
-    bool noErrors = true;
+    bool allSuccess = true;
 
     top:
     foreach (immutable line; customSettings)
@@ -64,14 +62,14 @@ auto applyCustomSettings(
         {
             enum pattern = `Bad <l>plugin</>.<l>setting</>=<l>value</> format. (<l>%s</>)`;
             logger.warningf(pattern, line);
-            noErrors = false;
+            allSuccess = false;
             continue;
         }
 
         string slice = line;  // mutable
         immutable pluginstring = slice.advancePast(".");
         immutable setting = slice.advancePast('=', Yes.inherit);
-        immutable value = slice;
+        alias value = slice;
 
         try
         {
@@ -83,33 +81,40 @@ auto applyCustomSettings(
                 import std.algorithm.comparison : among;
                 static import kameloso.common;
 
-                immutable success = slice.length ?
-                    copyOfSettings.setMemberByName(setting, value) :
-                    copyOfSettings.setMemberByName(setting, true);
+                immutable success = value.length ?
+                    kameloso.common.settings.setMemberByName(setting, value) :
+                    kameloso.common.settings.setMemberByName(setting, true);
 
                 if (!success)
                 {
-                    enum pattern = "No such <l>core</> setting: <l>%s";
+                    enum pattern = `No such <l>core</> setting: "<l>%s</>"`;
                     logger.warningf(pattern, setting);
-                    noErrors = false;
+                    allSuccess = false;
                 }
                 else
                 {
-                    if (setting.among!("monochrome", "brightTerminal", "headless", "flush"))
+                    if (setting.among!(
+                        "colour",
+                        "color",
+                        "brightTerminal",
+                        "headless",
+                        "flush"))
                     {
-                        logger = new KamelosoLogger(copyOfSettings);
+                        logger = new KamelosoLogger(kameloso.common.settings);
                     }
-
-                    *kameloso.common.settings = copyOfSettings;
 
                     foreach (plugin; plugins)
                     {
-                        plugin.state.settings = copyOfSettings;
+                        plugin.state.settings = kameloso.common.settings;
 
                         // No need to flag as updated when we update here manually
                         //plugin.state.updates |= typeof(plugin.state.updates).settings;
                     }
                 }
+                continue top;
+            }
+            else if (!plugins.length)
+            {
                 continue top;
             }
             else
@@ -124,18 +129,18 @@ auto applyCustomSettings(
 
                     if (!success)
                     {
-                        enum pattern = "No such <l>%s</> plugin setting: <l>%s";
+                        enum pattern = `No such <l>%s</> plugin setting: "<l>%s</>"`;
                         logger.warningf(pattern, pluginstring, setting);
-                        noErrors = false;
+                        allSuccess = false;
                     }
                     continue top;
                 }
             }
 
             // If we're here, the loop was never continued --> unknown plugin
-            enum pattern = "Invalid plugin: <l>%s";
+            enum pattern = `Invalid plugin: "<l>%s</>"`;
             logger.warningf(pattern, pluginstring);
-            noErrors = false;
+            allSuccess = false;
             // Drop down, try next
         }
         catch (SetMemberException e)
@@ -144,20 +149,20 @@ auto applyCustomSettings(
                 "it requires a value and none was supplied.";
             logger.warningf(pattern, pluginstring, setting);
             version(PrintStacktraces) logger.trace(e.info);
-            noErrors = false;
+            allSuccess = false;
             // Drop down, try next
         }
         catch (ConvException e)
         {
             enum pattern = `Invalid value for <l>%s</>.<l>%s</>: "<l>%s</>" <t>(%s)`;
             logger.warningf(pattern, pluginstring, setting, value, e.msg);
-            noErrors = false;
+            allSuccess = false;
             // Drop down, try next
         }
         continue top;
     }
 
-    return noErrors;
+    return allSuccess;
 }
 
 ///
@@ -198,7 +203,7 @@ unittest
         "myplugin.d=99.99",
     ];
 
-    cast(void)applyCustomSettings([ plugin ], newSettings, state.settings);
+    cast(void)applyCustomSettings([ plugin ], newSettings);
 
     const ps = (cast(MyPlugin)plugin).myPluginSettings;
 
@@ -347,6 +352,7 @@ void enqueue(Plugin, Fun)
     const bool inFiber,
     Fun fun,
     const string caller = __FUNCTION__)
+if (is(Plugin : IRCPlugin))
 in ((event != IRCEvent.init), "Tried to `enqueue` with an init IRCEvent")
 in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 {
@@ -396,15 +402,15 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
         import kameloso.constants : Timeout;
         import std.datetime.systime : Clock;
 
-        immutable now = Clock.currTime.toUnixTime;
-        immutable delta = (now - *previousWhoisTimestamp);
+        immutable nowInUnix = Clock.currTime.toUnixTime();
+        immutable delta = (nowInUnix - *previousWhoisTimestamp);
 
         if ((delta < Timeout.whoisRetry) && (delta > Timeout.whoisGracePeriod))
         {
             version(ExplainReplay)
             {
                 enum pattern = "<i>%s</> plugin <w>NOT</> queueing an event to be replayed " ~
-                    "on behalf of <i>%s</>; delta time <i>%d</> is too recent";
+                    "on behalf of <i>%s</>; delta time <i>%d</> is too small";
                 logger.logf(pattern, plugin.name, callerSlice, delta);
             }
             return;
@@ -418,7 +424,13 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
     }
 
     plugin.state.pendingReplays[user.nickname] ~=
-        replay(plugin, event, fun, permissionsRequired, inFiber, caller);
+        replay(
+            plugin,
+            event,
+            fun,
+            permissionsRequired,
+            inFiber,
+            caller);
     plugin.state.hasPendingReplays = true;
 }
 
@@ -467,7 +479,8 @@ auto replay(Plugin, Fun)
 
             enum pattern = "<i>%s</> replaying <i>%s</>-level event (invoking <i>%s</>) " ~
                 "based on WHOIS results; user <i>%s</> is <i>%s</> class";
-            logger.logf(pattern,
+            logger.logf(
+                pattern,
                 plugin.name,
                 Enum!Permissions.toString(replay.permissionsRequired),
                 caller,
@@ -485,7 +498,8 @@ auto replay(Plugin, Fun)
             enum pattern = "<i>%s</> plugin <w>NOT</> replaying <i>%s</>-level event " ~
                 "(which would have invoked <i>%s</>) " ~
                 "based on WHOIS results: user <i>%s</> is <i>%s</> class";
-            logger.logf(pattern,
+            logger.logf(
+                pattern,
                 plugin.name,
                 Enum!Permissions.toString(replay.permissionsRequired),
                 caller,
@@ -581,7 +595,7 @@ auto replay(Plugin, Fun)
                 {
                     // onEventImpl.call should already have statically asserted all
                     // event handlers are of the types above
-                    enum message = "Failed to cover all event handler function signature cases";
+                    enum message = "Failed to cover event handler function signature " ~ Fun.stringof;
                     static assert(0, message);
                 }
             }
@@ -1035,6 +1049,7 @@ in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`
         {
             return getPluginName ? slice[0..pos] : slice;
         }
+
         slice = slice[pos+1..$];
         pos = slice.indexOf(dirSeparator);
     }

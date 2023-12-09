@@ -20,24 +20,20 @@ import kameloso.pods : CoreSettings;
 import kameloso.logger : KamelosoLogger;
 import dialect.defs : IRCClient;
 import std.range.primitives : isOutputRange;
-import std.stdio : stdout;
 import std.typecons : Flag, No, Yes;
 
 public:
 
 version(unittest)
-shared static this()
+static this()
 {
     // This is technically before settings have been read.
-    // We need this for unit tests.
-    logger = new KamelosoLogger(
-        No.monochrome,
-        No.brightTerminal,
-        No.headless,
-        Yes.flush);
-
-    // settings need instantiating too, for tag expansion and kameloso.printing.
-    settings = new CoreSettings;
+    // Set some defaults for unit tests.
+    .settings.colours = true;
+    .settings.brightTerminal = false;
+    .settings.headless = false;
+    .settings.flush = true;
+    .logger = new KamelosoLogger(.settings);
 }
 
 
@@ -57,48 +53,29 @@ shared static this()
 KamelosoLogger logger;
 
 
-// initLogger
-/++
-    Initialises the [kameloso.logger.KamelosoLogger|KamelosoLogger] logger for
-    use in this thread.
-
-    It needs to be separately instantiated per thread, and even so there may be
-    race conditions. Plugins are encouraged to use
-    [kameloso.thread.ThreadMessage|ThreadMessage]s to log to screen from other threads.
-
-    Example:
-    ---
-    initLogger(No.monochrome, Yes.brightTerminal);
-    ---
-
-    Params:
-        monochrome = Whether the terminal is set to monochrome or not.
-        bright = Whether the terminal has a bright background or not.
-        headless = Whether the terminal is headless or not.
-        flush = Whether the terminal needs to manually flush standard out after writing to it.
- +/
-void initLogger(
-    const Flag!"monochrome" monochrome,
-    const Flag!"brightTerminal" bright,
-    const Flag!"headless" headless,
-    const Flag!"flush" flush) @safe
-out (; (logger !is null), "Failed to initialise logger")
-{
-    import kameloso.logger : KamelosoLogger;
-    logger = new KamelosoLogger(monochrome, bright, headless, flush);
-}
-
-
 // settings
 /++
     A [kameloso.pods.CoreSettings|CoreSettings] struct global, housing
     certain runtime settings.
 
     This will be accessed from other parts of the program, via
-    [kameloso.common.settings], so they know to use monochrome output or not.
+    [kameloso.common.settings], so they know to use coloured output or not.
     It is a problem that needs solving.
  +/
-CoreSettings* settings;
+CoreSettings settings;
+
+
+// globalAbort
+/++
+    Abort flag.
+
+    This is set when the program is interrupted (such as via Ctrl+C). Other
+    parts of the program will be monitoring it, to take the cue and abort when
+    it is set.
+
+    Must be `__gshared` or it doesn't seem to work on Windows.
+ +/
+__gshared Flag!"abort" globalAbort;
 
 
 // globalHeadless
@@ -107,7 +84,7 @@ CoreSettings* settings;
 
     If this is true the program should not output anything to the terminal.
  +/
-__gshared bool* globalHeadless;
+__gshared Flag!"headless" globalHeadless;
 
 
 // printVersionInfo
@@ -121,8 +98,7 @@ __gshared bool* globalHeadless;
     ---
 
     Params:
-        colours = Whether or not to tint output, default yes. A global monochrome
-            setting overrides this.
+        colours = Whether or not to tint output, default yes.
  +/
 void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
 {
@@ -151,7 +127,8 @@ void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
         colouredVersionPattern.expandTags(LogLevel.off) :
         uncolouredVersionPattern;
 
-    writefln(finalVersionPattern,
+    writefln(
+        finalVersionPattern,
         cast(string)KamelosoInfo.version_,
         twitchSupport,
         cast(string)KamelosoInfo.compiler,
@@ -934,4 +911,49 @@ expected:"%s"
             assert(0, message);
         }
     }
+}
+
+
+// Next
+/++
+    Enum of flags carrying the meaning of "what to do next".
+
+    [lu.common.Next] extended.
+ +/
+enum Next
+{
+    /++
+        Unset, invalid value.
+     +/
+    unset,
+
+    /++
+        Do nothing.
+     +/
+    noop,
+
+    /++
+        Keep doing whatever is being done, alternatively continue on to the next step.
+     +/
+    continue_,
+
+    /++
+        Halt what's being done and give it another attempt.
+     +/
+    retry,
+
+    /++
+        Exit or return with a positive return value.
+     +/
+    returnSuccess,
+
+    /++
+        Exit or abort with a negative return value.
+     +/
+    returnFailure,
+
+    /++
+        Fatally abort.
+     +/
+    crash,
 }

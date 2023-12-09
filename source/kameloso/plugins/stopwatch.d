@@ -68,7 +68,7 @@ import std.typecons : Flag, No, Yes;
 void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : advancePast, stripped, strippedLeft;
-    import std.datetime.systime : Clock, SysTime;
+    import std.datetime.systime : Clock;
     import std.format : format;
 
     void sendUsage()
@@ -137,6 +137,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
     string getDiff(const string id)
     {
         import kameloso.time : timeSince;
+        import std.datetime.systime : SysTime;
         import core.time : msecs;
 
         auto channelWatches = event.channel in plugin.stopwatches;
@@ -156,7 +157,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
     case "start":
         auto channelWatches = event.channel in plugin.stopwatches;
         immutable stopwatchAlreadyExists = (channelWatches && (event.sender.nickname in *channelWatches));
-        plugin.stopwatches[event.channel][event.sender.nickname] = Clock.currTime.toUnixTime;
+        plugin.stopwatches[event.channel][event.sender.nickname] = Clock.currTime.toUnixTime();
         return sendStartedOrRestarted(stopwatchAlreadyExists);
 
     case "stop":

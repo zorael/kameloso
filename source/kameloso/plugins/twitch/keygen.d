@@ -21,7 +21,6 @@ private:
 import kameloso.plugins.twitch.base;
 import kameloso.plugins.twitch.common;
 import kameloso.common : logger;
-import kameloso.logger : LogLevel;
 import kameloso.terminal.colours.tags : expandTags;
 import std.typecons : Flag, No, Yes;
 
@@ -30,14 +29,14 @@ package:
 
 // requestTwitchKey
 /++
-    Start the captive key generation routine at the earliest possible moment.
-    Invoked by [kameloso.plugins.twitch.base.start|start] during early connect.
+    Starts the key generation terminal wizard.
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
  +/
 void requestTwitchKey(TwitchPlugin plugin)
 {
+    import kameloso.logger : LogLevel;
     import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
     import std.datetime.systime : Clock;
@@ -47,20 +46,21 @@ void requestTwitchKey(TwitchPlugin plugin)
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("== Twitch authorisation key generation mode ==");
+    logger.warning("== Twitch authorisation key generation wizard ==");
     enum attemptToOpenMessage = `
-Attempting to open a Twitch login page in your default web browser. Follow the
-instructions and log in to authorise the use of this program with your <w>BOT</> account.
+<l>Attempting to open a <i>Twitch login page</> in your default web browser.</>
+Follow the instructions and log in to authorise the use of this program with
+your <w>BOT</> account.
 
 <l>Then paste the address of the page you are redirected to afterwards here.</>
 
-* The redirected address should start with <i>http://localhost</>.
-* It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
-* <l>The key generated will be one for the account you are currently logged in as in your browser.</>
+<i>*</> The redirected address should start with <i>http://localhost</>.
+<i>*</> It will probably say "<i>this site can't be reached</>" or "<i>unable to connect</>".
+<i>*</> <l>The key generated will be one for the account you are currently logged in as in your browser.</>
   If you are logged into your main Twitch account and you want the bot to use a
-  separate account, you will have to log out and log in as that first, before
+  separate account, you will have to <l>log out and log in as that</> first, before
   attempting this. Use an incognito/private window.
-* If you are running local web server on port <i>80</>, you may have to temporarily
+<i>*</> If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
 `;
     writeln(attemptToOpenMessage.expandTags(LogLevel.off));
@@ -137,6 +137,8 @@ instructions and log in to authorise the use of this program with your <w>BOT</>
         "chat:read",
         "whispers:edit",
         "whispers:read",
+        "moderator:read:followers",
+        "user:read:follows",
     ];
 
     Pid browser;
@@ -196,14 +198,14 @@ instructions and log in to authorise the use of this program with your <w>BOT</>
 
 // requestTwitchSuperKey
 /++
-    Start the captive key generation routine at the earliest possible moment,
-    which is at plugin [kameloso.plugins.twitch.base.start|start].
+    Starts the super-key generation terminal wizard.
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
  +/
 void requestTwitchSuperKey(TwitchPlugin plugin)
 {
+    import kameloso.logger : LogLevel;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : stdout, writeln;
     import std.datetime.systime : Clock;
@@ -211,37 +213,49 @@ void requestTwitchSuperKey(TwitchPlugin plugin)
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("== Twitch authorisation super key generation mode ==");
+    logger.warning("== Twitch authorisation super-key generation wizard ==");
     enum message = `
-To access certain Twitch functionality like changing channel settings
+To access certain Twitch functionality, like changing channel settings
 (what game is currently being played, etc), the program needs an authorisation
 key that corresponds to the owner of that channel.
 
 In the instructions that follow, it is essential that you are logged into the
-<w>STREAMER</> account in your browser.
+main <w>STREAMER</> account in your browser.
 
 You also need to supply the channel for which it all relates.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
 `;
     writeln(message.expandTags(LogLevel.off));
 
-    immutable channel = readNamedString("<l>Enter your <i>#channel<l>:</> ",
-        0L, *plugin.state.abort);
-    if (*plugin.state.abort) return;
+    string channel;  // mutable
+    uint numEmptyLinesEntered;
+
+    while (!channel.length)
+    {
+        Flag!"benignAbort" benignAbort;
+
+        channel = readChannelName(
+            numEmptyLinesEntered,
+            benignAbort,
+            plugin.state.abort);
+
+        if (benignAbort) return;
+    }
 
     enum attemptToOpenMessage = `
 --------------------------------------------------------------------------------
 
-Attempting to open a Twitch login page in your default web browser. Follow the
-instructions and log in to authorise the use of this program with your <w>STREAMER</> account.
+<l>Attempting to open a <i>Twitch login page</> in your default web browser.</>
+Follow the instructions and log in to authorise the use of this program with
+your main <w>STREAMER</> account.
 
 <l>Then paste the address of the page you are redirected to afterwards here.</>
 
-* The redirected address should start with <i>http://localhost</>.
-* It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
-* <l>The key generated will be one for the account you are currently logged in as in your browser.</>
+<i>*</> The redirected address should start with <i>http://localhost</>.
+<i>*</> It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
+<i>*</> <l>The key generated will be one for the account you are currently logged in as in your browser.</>
   You should be logged into your main Twitch account for this key.
-* If you are running local web server on port <i>80</>, you may have to temporarily
+<i>*</> If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
 `;
     writeln(attemptToOpenMessage.expandTags(LogLevel.off));
@@ -393,6 +407,7 @@ instructions and log in to authorise the use of this program with your <w>STREAM
  +/
 private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
 {
+    import kameloso.logger : LogLevel;
     import lu.string : advancePast, stripped;
     import std.stdio : readln, stdin, stdout, write, writeln;
     import std.string : indexOf;
@@ -408,7 +423,6 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
 > ";
         write(pasteMessage.expandTags(LogLevel.off));
         stdout.flush();
-
         stdin.flush();
         immutable readURL = readln().stripped;
 
@@ -435,7 +449,7 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
             if (readURL.startsWith(authNode))
             {
                 enum wrongPageMessage = "Not that page; the empty page you're " ~
-                    "lead to after clicking <l>Authorize</>.";
+                    "redirected to after clicking <l>Authorize</>.";
                 logger.error(wrongPageMessage);
             }
             else
@@ -516,7 +530,7 @@ auto getTokenExpiry(TwitchPlugin plugin, const string authToken)
             plugin.state.client.nickname = validationJSON["login"].str;
             plugin.state.updates |= typeof(plugin.state.updates).client;
             immutable expiresIn = validationJSON["expires_in"].integer;
-            immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+            immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime() + expiresIn);
             return expiresWhen;
         }
         catch (Exception e)

@@ -20,7 +20,6 @@ version(WithTwitchPlugin):
 
 private:
 
-import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 
 package:
@@ -63,6 +62,8 @@ auto getHTTPClient()
         wording = Wording to use in the prompt.
         expectedLength = Optional expected length of the input string.
             A value of `0` disables checks.
+        passThroughEmptyString = Whether or not an empty string should be returned
+            as-is, or if it should be re-read until it is non-empty.
         abort = Abort pointer.
 
     Returns:
@@ -71,7 +72,8 @@ auto getHTTPClient()
 auto readNamedString(
     const string wording,
     const size_t expectedLength,
-    ref Flag!"abort" abort)
+    const Flag!"passThroughEmptyString" passThroughEmptyString,
+    const Flag!"abort"* abort)
 {
     import kameloso.common : logger;
     import kameloso.logger : LogLevel;
@@ -79,26 +81,32 @@ auto readNamedString(
     import lu.string : stripped;
     import std.stdio : readln, stdin, stdout, write, writeln;
 
-    string string_;  // mutable
+    string input;  // mutable
 
-    while (!string_.length)
+    while (!input.length)
     {
         scope(exit) stdout.flush();
 
         write(wording.expandTags(LogLevel.off));
         stdout.flush();
-
         stdin.flush();
-        string_ = readln().stripped;
+        input = readln().stripped;
 
-        if (abort)
+        if (*abort)
         {
             writeln();
             logger.warning("Aborting.");
             logger.trace();
             return string.init;
         }
-        else if ((expectedLength > 0) && (string_.length != expectedLength))
+        else if (!input.length && passThroughEmptyString)
+        {
+            return string.init;
+        }
+        else if (
+            (expectedLength > 0) &&
+            input.length &&
+            (input.length != expectedLength))
         {
             writeln();
             enum invalidMessage = "Invalid length. Try copying again or file a bug.";
@@ -108,7 +116,75 @@ auto readNamedString(
         }
     }
 
-    return string_;
+    return input;
+}
+
+
+// readChannelName
+/++
+    Prompts the user to enter a channel name.
+
+    Params:
+        numEmptyLinesEntered = Number of empty lines entered so far.
+        benignAbort = out-reference benign abort flag.
+        abort = Global abort pointer.
+
+    Returns:
+        A string read from standard in, stripped.
+ +/
+auto readChannelName(
+    ref uint numEmptyLinesEntered,
+    out Flag!"benignAbort" benignAbort,
+    const Flag!"abort"* abort)
+{
+    import kameloso.common : logger;
+    import lu.string : stripped;
+
+    enum numEmptyLinesEnteredBreakpoint = 2;
+
+    enum readChannelMessage = "<l>Enter your <i>#channel<l>:</> ";
+    immutable input = readNamedString(
+        readChannelMessage,
+        0L,
+        Yes.passThroughEmptyString,
+        abort).stripped;
+    if (*abort) return string.init;
+
+    if (!input.length)
+    {
+        ++numEmptyLinesEntered;
+
+        if (numEmptyLinesEntered < numEmptyLinesEnteredBreakpoint)
+        {
+            // benignAbort is the default No.benignAbort;
+            // Just drop down and return string.init
+        }
+        else if (numEmptyLinesEntered == numEmptyLinesEnteredBreakpoint)
+        {
+            enum onceMoreMessage = "Hit <l>Enter</> once more to cancel keygen.";
+            logger.warning(onceMoreMessage);
+            // as above
+        }
+        else if (numEmptyLinesEntered > numEmptyLinesEnteredBreakpoint)
+        {
+            enum cancellingKeygenMessage = "Cancelling keygen.";
+            logger.warning(cancellingKeygenMessage);
+            logger.trace();
+            benignAbort = Yes.benignAbort;
+        }
+
+        return string.init;
+    }
+    else if (input[0] != '#')
+    {
+        enum invalidChannelNameMessage = "Channels are Twitch lowercase account names, " ~
+            "prepended with a '<l>#</>' sign.";
+        logger.warning(invalidChannelNameMessage);
+        numEmptyLinesEntered = 0;
+        return string.init;
+    }
+
+    return input;
 }
 
 
@@ -138,12 +214,31 @@ void printManualURL(const string url)
 }
 
 
+// pasteAddressInstructions
+/++
+    Instructions for pasting an address into the terminal.
+ +/
+enum pasteAddressInstructions =
+`
+<l>Then paste the address of the empty page you are redirected to afterwards here.</>
+
+<i>*</> The redirected address should begin with "<i>http://localhost</>".
+<i>*</> It will probably say "<i>this site can't be reached</>" or "<i>unable to connect</>".
+<i>*</> If you are running a local web server on port <i>80</>, you may have to
+  temporarily disable it for this to work.
+`;
+
+
 // TwitchJSONException
 /++
     Abstract class for Twitch JSON exceptions, to deduplicate catching.
  +/
 abstract class TwitchJSONException : Exception
 {
+private:
+    import std.json : JSONValue;
+
+public:
     /++
         Accessor to a [std.json.JSONValue|JSONValue] that this exception refers to.
      +/
@@ -173,6 +268,8 @@ abstract class TwitchJSONException : Exception
 final class UnexpectedJSONException : TwitchJSONException
 {
 private:
+    import std.json : JSONValue;
+
     /++
         [std.json.JSONValue|JSONValue] in question.
      +/
@@ -225,6 +322,8 @@ public:
 final class ErrorJSONException : TwitchJSONException
 {
 private:
+    import std.json : JSONValue;
+
     /++
         [std.json.JSONValue|JSONValue] in question.
      +/
@@ -277,6 +376,8 @@ public:
 final class EmptyDataJSONException : TwitchJSONException
 {
 private:
+    import std.json : JSONValue;
+
     /++
         The response body that was received.
      +/
@@ -426,7 +527,10 @@ final class MissingBroadcasterTokenException : Exception
  +/
 final class InvalidCredentialsException : Exception
 {
-@safe:
+private:
+    import std.json : JSONValue;
+
+public:
     /++
         The response body that was received.
      +/

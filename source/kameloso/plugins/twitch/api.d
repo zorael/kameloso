@@ -25,8 +25,6 @@ import kameloso.plugins.twitch.common;
 
 import arsd.http2 : HttpVerb;
 import dialect.defs;
-import lu.common : Next;
-import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
@@ -70,18 +68,32 @@ struct QueryResponse
     Retries a passed delegate until it no longer throws or until the hardcoded
     number of retries
     ([kameloso.plugins.twitch.base.TwitchPlugin.delegateRetries|TwitchPlugin.delegateRetries])
-    is reached.
+    is reached, or forever if `endlessly` is passed.
 
     Params:
+        endlessly = Whether or not to endlessly retry.
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         dg = Delegate to call.
 
     Returns:
         Whatever the passed delegate returns.
+
+    Throws:
+        [MissingBroadcasterTokenException] if the delegate throws it.
+        [Exception] if the delegate throws it and `endlessly` is not passed.
  +/
-auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
+auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, Dg)(TwitchPlugin plugin, Dg dg)
 {
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    static if (endlessly)
+    {
+        enum retries = size_t.max;
+    }
+    else
+    {
+        alias retries = TwitchPlugin.delegateRetries;
+    }
+
+    foreach (immutable i; 0..retries)
     {
         try
         {
@@ -90,7 +102,7 @@ auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
                 import kameloso.plugins.common.delayawait : delay;
                 import core.time : seconds;
 
-                static immutable retryDelay = 1.seconds;
+                static immutable retryDelay = 10.seconds;
                 delay(plugin, retryDelay, Yes.yield);
             }
             return dg();
@@ -102,17 +114,37 @@ auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
         }
         catch (Exception e)
         {
-            // Retry until we reach the retry limit, then print if we should, before rethrowing
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
+            static if (endlessly)
             {
-                if (!plugin.state.settings.headless)
+                // Unconditionally continue, but print the exception once if it's erroring
+                version(PrintStacktraces)
                 {
-                    printRetryDelegateException(e);
+                    if (!plugin.state.settings.headless)
+                    {
+                        alias printExceptionAfterNFailures = TwitchPlugin.delegateRetries;
+
+                        if (i == printExceptionAfterNFailures)
+                        {
+                            printRetryDelegateException(e);
+                        }
+                    }
                 }
+                continue;
             }
-            throw e;
+            else
+            {
+                // Retry until we reach the retry limit, then print if we should, before rethrowing
+                if (i < TwitchPlugin.delegateRetries-1) continue;
+
+                version(PrintStacktraces)
+                {
+                    if (!plugin.state.settings.headless)
+                    {
+                        printRetryDelegateException(e);
+                    }
+                }
+                throw e;
+            }
         }
     }
 
@@ -214,8 +246,8 @@ void persistentQuerier(
     {
         version(BenchmarkHTTPRequests)
         {
-            import std.datetime.systime : Clock;
-            immutable pre = Clock.currTime;
+            import core.time : MonoTime;
+            immutable pre = MonoTime.currTime;
         }
 
         immutable response = sendHTTPRequestImpl(
@@ -234,7 +266,7 @@ void persistentQuerier(
         version(BenchmarkHTTPRequests)
         {
             import std.stdio : stdout, writefln;
-            immutable post = Clock.currTime;
+            immutable post = MonoTime.currTime;
             enum pattern = "%s (%s)";
             writefln(pattern, post-pre, url);
             stdout.flush();
@@ -351,20 +383,25 @@ in (url.length, "Tried to send an HTTP request without a URL")
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend, send;
-    import std.datetime.systime : Clock, SysTime;
-    import core.time : msecs;
+    import core.time : MonoTime, msecs;
 
     if (plugin.state.settings.trace)
     {
         import kameloso.common : logger;
+        import lu.conv : Enum;
+
         enum pattern = "%s: <i>%s<t> (%s)";
-        logger.tracef(pattern, verb, url, caller);
+        logger.tracef(
+            pattern,
+            Enum!HttpVerb.toString(verb),
+            url,
+            caller);
     }
 
     plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
 
-    immutable pre = Clock.currTime;
-    if (id == -1) id = getUniqueNumericalID(plugin.bucket);
+    immutable pre = MonoTime.currTime;
+    if (id == -1) id = reserveUniqueBucketID(plugin.bucket);
 
     plugin.persistentWorkerTid.send(
         id,
@@ -386,7 +423,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         }
     }
 
-    immutable post = Clock.currTime;
+    immutable post = MonoTime.currTime;
     immutable diff = (post - pre);
     immutable msecs_ = diff.total!"msecs";
     averageApproximateQueryTime(plugin, msecs_);
@@ -544,8 +581,7 @@ auto sendHTTPRequestImpl(
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, Uri;
     import std.algorithm.comparison : among;
-    import std.datetime.systime : Clock;
-    import core.time : seconds;
+    import core.time : MonoTime, seconds;
 
     static HttpClient client;
     static string[] headers;
@@ -567,7 +603,7 @@ auto sendHTTPRequestImpl(
     client.authorization = authHeader;
 
     QueryResponse response;
-    auto pre = Clock.currTime;
+    auto pre = MonoTime.currTime;
     auto req = client.request(Uri(url), verb, body_, contentType);
     // The Twitch Client-ID header leaks into Google and Spotify requests. Worth dealing with?
     req.requestParameters.headers = headers;
@@ -578,7 +614,7 @@ auto sendHTTPRequestImpl(
         // Moved
         foreach (immutable i; 0..5)
         {
-            pre = Clock.currTime;
+            pre = MonoTime.currTime;
             req = client.request(Uri(res.location), verb, body_, contentType);
             req.requestParameters.headers = headers;
             res = req.waitForCompletion();
@@ -590,7 +626,7 @@ auto sendHTTPRequestImpl(
     response.code = res.code;
     response.error = res.codeText;
     response.str = res.contentText;
-    immutable post = Clock.currTime;
+    immutable post = MonoTime.currTime;
     immutable delta = (post - pre);
     response.msecs = delta.total!"msecs";
     return response;
@@ -634,30 +670,35 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
 
         if (responseJSON.type != JSONType.object)
         {
-            enum message = "`getTwitchData` query response JSON is not JSONType.object";
+            enum message = "`getTwitchData` response has unexpected JSON " ~
+                "(wrong JSON type)";
             throw new UnexpectedJSONException(message, responseJSON);
         }
-        else if (immutable dataJSON = "data" in responseJSON)
+
+        immutable dataJSON = "data" in responseJSON;
+
+        if (!dataJSON)
         {
-            if (dataJSON.array.length == 1)
-            {
-                return dataJSON.array[0];
-            }
-            else if (!dataJSON.array.length)
-            {
-                enum message = "`getTwitchData` query response JSON has empty \"data\"";
-                throw new EmptyDataJSONException(message, responseJSON);
-            }
-            else
-            {
-                enum message = "`getTwitchData` query response JSON \"data\" value is not a 1-length array";
-                throw new UnexpectedJSONException(message, *dataJSON);
-            }
+            enum message = "`getTwitchData` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        if (dataJSON.array.length == 1)
+        {
+            return dataJSON.array[0];
+        }
+        else if (!dataJSON.array.length)
+        {
+            enum message = "`getTwitchData` response has unexpected JSON " ~
+                `(empty "data" array)`;
+            throw new EmptyDataJSONException(message, responseJSON);
         }
         else
         {
-            enum message = "`getTwitchData` query response JSON does not contain a \"data\" element";
-            throw new UnexpectedJSONException(message, responseJSON);
+            enum message = "`getTwitchData` response has unexpected JSON " ~
+                `("data" value is not a 1-length array)`;
+            throw new UnexpectedJSONException(message, *dataJSON);
         }
     }
     catch (JSONException e)
@@ -736,16 +777,19 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
         if (responseJSON.type != JSONType.object)
         {
-            enum message = "`getChatters` response JSON is not JSONType.object";
+            enum message = "`getChatters` response has unexpected JSON " ~
+                "(wrong JSON type)";
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
         immutable chattersJSON = "chatters" in responseJSON;
+
         if (!chattersJSON)
         {
             // For some reason we received an object that didn't contain chatters
-            enum message = "`getChatters` \"chatters\" JSON is not JSONType.object";
-            throw new UnexpectedJSONException(message, *chattersJSON);
+            enum message = "`getChatters` response has unexpected JSON " ~
+                `(no "chatters" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
         }
 
         // Don't return `chattersJSON`, as we would lose "chatter_count".
@@ -878,22 +922,30 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
         immutable validationJSON = parseJSON(response.str);
 
-        if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
+        if (validationJSON.type != JSONType.object)
         {
-            enum message = "Failed to validate Twitch authorisation token; unknown JSON";
+            enum message = "`getValidation` response has unexpected JSON " ~
+                "(wrong JSON type)";
+            throw new UnexpectedJSONException(message, validationJSON);
+        }
+
+        if ("client_id" !in validationJSON)
+        {
+            enum message = "`getValidation` response has unexpected JSON " ~
+                `(no "client_id" key)`;
             throw new UnexpectedJSONException(message, validationJSON);
         }
 
         return validationJSON;
     }
 
-    return retryDelegate(plugin, &getValidationDg);
+    return retryDelegate!(Yes.endlessly)(plugin, &getValidationDg);
 }
 
 
-// getFollows
+// getFollowers
 /++
-    Fetches a list of all follows of the passed channel and caches them in
+    Fetches a list of all followers of the passed channel and caches them in
     the channel's entry in [kameloso.plugins.twitch.base.TwitchPlugin.rooms|TwitchPlugin.rooms].
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
@@ -904,29 +956,38 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
     Returns:
         An associative array of [std.json.JSONValue|JSONValue]s keyed by nickname string,
-        containing follows.
+        containing followers.
  +/
-auto getFollows(TwitchPlugin plugin, const string id)
-in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
-in (id.length, "Tried to get follows with an empty ID string")
+auto getFollowers(TwitchPlugin plugin, const string id)
+in (Fiber.getThis, "Tried to call `getFollowers` from outside a Fiber")
+in (id.length, "Tried to get followers with an empty ID string")
 {
-    immutable url = "https://api.twitch.tv/helix/users/follows?first=100&to_id=" ~ id;
+    immutable url = "https://api.twitch.tv/helix/channels/followers?first=100&broadcaster_id=" ~ id;
 
-    auto getFollowsDg()
+    auto getFollowersDg()
     {
         const entitiesArrayJSON = getMultipleTwitchData(plugin, url);
-        Follow[string] allFollows;
+        Follower[string] allFollowers;
+
+        /+
+        {
+            "user_id": "11111",
+            "user_name": "UserDisplayName",
+            "user_login": "userloginname",
+            "followed_at": "2022-05-24T22:22:08Z",
+        },
+         +/
 
         foreach (entityJSON; entitiesArrayJSON)
         {
-            immutable key = entityJSON["from_id"].str;
-            allFollows[key] = Follow.fromJSON(entityJSON);
+            immutable key = entityJSON["user_name"].str;
+            allFollowers[key] = Follower.fromJSON(entityJSON);
         }
 
-        return allFollows;
+        return allFollowers;
     }
 
-    return retryDelegate(plugin, &getFollowsDg);
+    return retryDelegate(plugin, &getFollowersDg);
 }
 
 
@@ -971,8 +1032,9 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
 
         if (!dataJSON)
         {
-            enum message = "No data in JSON response";
-            throw new UnexpectedJSONException(message, *dataJSON);
+            enum message = "`getMultipleTwitchData` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
         }
 
         foreach (thisResponseJSON; dataJSON.array)
@@ -1051,7 +1113,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 
     Example:
     ---
-    immutable id = getUniqueNumericalID(plugin.bucket);
+    immutable id = reserveUniqueBucketID(plugin.bucket);
     immutable url = "https://api.twitch.tv/helix/users?login=zorael";
     plugin.persistentWorkerTid.send(id, url, plugin.authorizationBearer);
 
@@ -1081,7 +1143,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
         uint misses;
     }
 
-    immutable startTime = Clock.currTime.toUnixTime;
+    immutable startTimeInUnix = Clock.currTime.toUnixTime();
     shared QueryResponse* response;
     double accumulatingTime = plugin.approximateQueryTime;
 
@@ -1091,9 +1153,9 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 
         if (!response || (*response == QueryResponse.init))
         {
-            immutable now = Clock.currTime.toUnixTime;
+            immutable nowInUnix = Clock.currTime.toUnixTime();
 
-            if ((now - startTime) >= Timeout.httpGET)
+            if ((nowInUnix - startTimeInUnix) >= Timeout.httpGET)
             {
                 response = new shared QueryResponse;
                 return *response;
@@ -1113,10 +1175,11 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
             version(BenchmarkHTTPRequests)
             {
                 enum pattern = "MISS %d! elapsed: %s | old: %d --> new: %d | wait: %d";
+                immutable delta = (nowInUnix - startTimeInUnix);
                 writefln(
                     pattern,
                     misses,
-                    (now-startTime),
+                    delta,
                     cast(long)oldAccumulatingTime,
                     cast(long)accumulatingTime,
                     cast(long)briefWait);
@@ -1129,8 +1192,9 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
         version(BenchmarkHTTPRequests)
         {
             enum pattern = "HIT! elapsed: %s | response: %s | misses: %d";
-            immutable now = Clock.currTime.toUnixTime;
-            writefln(pattern, (now-startTime), response.msecs, misses);
+            immutable nowInUnix = Clock.currTime.toUnixTime();
+            immutable delta = (nowInUnix - startTimeInUnix);
+            writefln(pattern, delta, response.msecs, misses);
         }
 
         // Make the new approximate query time a weighted average
@@ -1278,9 +1342,10 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
 }
 
 
-// getUniqueNumericalID
+// reserveUniqueBucketID
 /++
     Generates a unique numerical ID for use as key in the passed associative array bucket.
+    Reservates the ID in the bucket by assigning it to an empty [QueryResponse].
 
     Params:
         bucket = Shared associative array of responses from async HTTP queries.
@@ -1288,7 +1353,7 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
     Returns:
         A unique integer for use as bucket key.
  +/
-auto getUniqueNumericalID(shared QueryResponse[int] bucket)
+auto reserveUniqueBucketID(shared QueryResponse[int] bucket)
 {
     import std.random : uniform;
 
@@ -1608,11 +1673,20 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 "application/json");
             immutable responseJSON = parseJSON(response.str);
 
-            if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+            if (responseJSON.type != JSONType.object)
             {
-                // Invalid response in some way
-                if (++retry < TwitchPlugin.delegateRetries) continue inner;
-                enum message = "`getPolls` response has unexpected JSON";
+                enum message = "`getPolls` response has unexpected JSON " ~
+                    "(wrong JSON type)";
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
+
+            immutable dataJSON = "data" in responseJSON;
+
+            if (!dataJSON)
+            {
+                // For some reason we received an object that didn't contain data
+                enum message = "`getPolls` response has unexpected JSON " ~
+                    `(no "data" key)`;
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
@@ -1656,7 +1730,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
             }
             */
 
-            foreach (const pollJSON; responseJSON["data"].array)
+            foreach (const pollJSON; dataJSON.array)
             {
                 if (pollJSON["status"].str != "ACTIVE") continue;
                 allPollsJSON.array ~= pollJSON;
@@ -1787,14 +1861,25 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
         }
         */
 
-        if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+        if (responseJSON.type != JSONType.object)
         {
             // Invalid response in some way
-            enum message = "`createPoll` response has unexpected JSON";
+            enum message = "`createPoll` response has unexpected JSON " ~
+                "(wrong JSON type)";
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        return responseJSON["data"].array;
+        immutable dataJSON = "data" in responseJSON;
+
+        if (!dataJSON)
+        {
+            // For some reason we received an object that didn't contain data
+            enum message = "`createPoll` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        return dataJSON.array;
     }
 
     return retryDelegate(plugin, &createPollDg);
@@ -1898,14 +1983,32 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
         }
         */
 
-        if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+        if (responseJSON.type != JSONType.object)
         {
             // Invalid response in some way
-            enum message = "`endPoll` response has unexpected JSON";
+            enum message = "`endPoll` response has unexpected JSON " ~
+                "(wrong JSON type)";
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        return responseJSON["data"].array[0];
+        immutable dataJSON = "data" in responseJSON;
+
+        if (!dataJSON)
+        {
+            // For some reason we received an object that didn't contain data
+            enum message = "`endPoll` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        if (!dataJSON.array.length)
+        {
+            enum message = "`endPoll` response has unexpected JSON " ~
+                `(empty "data" array)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        return dataJSON.array[0];
     }
 
     return retryDelegate(plugin, &endPollDg);
@@ -1972,17 +2075,27 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
         }
         */
 
-        if ((responseJSON.type != JSONType.object) || ("bots" !in responseJSON))
+        if (responseJSON.type != JSONType.object)
         {
             // Invalid response in some way, retry until we reach the limit
             enum message = "`getBotList` response has unexpected JSON";
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
+        immutable botsJSON = "bots" in responseJSON;
+
+        if (!botsJSON)
+        {
+            // For some reason we received an object that didn't contain bots
+            enum message = "`getBotList` response has unexpected JSON " ~
+                `(no "bots" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
         Appender!(string[]) sink;
         sink.reserve(responseJSON["_total"].integer);
 
-        foreach (const botEntryJSON; responseJSON["bots"].array)
+        foreach (const botEntryJSON; botsJSON.array)
         {
             /*
             [
@@ -2090,7 +2203,8 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             stream.title = streamJSON["title"].str;
             stream.startTime = SysTime.fromISOExtString(streamJSON["started_at"].str);
             stream.numViewers = streamJSON["viewer_count"].integer;
-            stream.tags = streamJSON["tags"].array
+            stream.tags = streamJSON["tags"]
+                .array
                 .map!(tag => tag.str)
                 .array;
             return stream;
@@ -2107,531 +2221,6 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
     }
 
     return retryDelegate(plugin, &getStreamDg);
-}
-
-
-// getBTTVEmotes
-/++
-    Fetches BetterTTV emotes for a given channel.
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        emoteMap = Reference to the `bool[dstring]` associative array to store
-            the fetched emotes in.
-        idString = Twitch user/channel ID in string form.
-        caller = Name of the calling function.
-
-    See_Also:
-        https://betterttv.com
- +/
-void getBTTVEmotes(
-    TwitchPlugin plugin,
-    ref bool[dstring] emoteMap,
-    const string idString,
-    const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
-in (idString.length, "Tried to get BTTV emotes with an empty ID string")
-{
-    import std.conv : to;
-    import std.json : JSONType, parseJSON;
-
-    immutable url = "https://api.betterttv.net/3/cached/users/twitch/" ~ idString;
-
-    auto getBTTVEmotesDg()
-    {
-        try
-        {
-            immutable response = sendHTTPRequest(plugin, url, caller);
-            immutable responseJSON = parseJSON(response.str);
-
-            /+
-            {
-                "avatar": "https:\/\/static-cdn.jtvnw.net\/jtv_user_pictures\/lobosjr-profile_image-b5e3a6c3556aed54-300x300.png",
-                "bots": [
-                    "lobotjr",
-                    "dumj01"
-                ],
-                "channelEmotes": [
-                    {
-                        "animated": false,
-                        "code": "FeelsDennyMan",
-                        "id": "58a9cde206e70d0465b2b47e",
-                        "imageType": "png",
-                        "userId": "5575430f9cd396156bd1430c"
-                    },
-                    {
-                        "animated": true,
-                        "code": "lobosSHAKE",
-                        "id": "5b007dc718b2f46a14d40242",
-                        "imageType": "gif",
-                        "userId": "5575430f9cd396156bd1430c"
-                    }
-                ],
-                "id": "5575430f9cd396156bd1430c",
-                "sharedEmotes": [
-                    {
-                        "animated": true,
-                        "code": "(ditto)",
-                        "id": "554da1a289d53f2d12781907",
-                        "imageType": "gif",
-                        "user": {
-                            "displayName": "NightDev",
-                            "id": "5561169bd6b9d206222a8c19",
-                            "name": "nightdev",
-                            "providerId": "29045896"
-                        }
-                    },
-                    {
-                        "animated": true,
-                        "code": "WolfPls",
-                        "height": 28,
-                        "id": "55fdff6e7a4f04b172c506c0",
-                        "imageType": "gif",
-                        "user": {
-                            "displayName": "bearzly",
-                            "id": "5573551240fa91166bb18c67",
-                            "name": "bearzly",
-                            "providerId": "23239904"
-                        },
-                        "width": 21
-                    }
-                ]
-            }
-             +/
-
-            if (responseJSON.type != JSONType.object)
-            {
-                enum message = "`getBTTVEmotes` response has unexpected JSON " ~
-                    "(response is wrong type)";
-                throw new UnexpectedJSONException(message, responseJSON);
-            }
-
-            immutable channelEmotesJSON = "channelEmotes" in responseJSON;
-            immutable sharedEmotesJSON = "sharedEmotes" in responseJSON;
-
-            foreach (const emoteJSON; channelEmotesJSON.array)
-            {
-                immutable emote = emoteJSON["code"].str.to!dstring;
-                emoteMap[emote] = true;
-            }
-
-            foreach (const emoteJSON; sharedEmotesJSON.array)
-            {
-                immutable emote = emoteJSON["code"].str.to!dstring;
-                emoteMap[emote] = true;
-            }
-
-            // All done
-        }
-        catch (ErrorJSONException e)
-        {
-            if (e.json.type == JSONType.object)
-            {
-                const messageJSON = "message" in e.json;
-
-                if (messageJSON && (messageJSON.str == "user not found"))
-                {
-                    // Benign
-                    return;
-                }
-                // Drop down
-            }
-            throw e;
-        }
-        catch (Exception e)
-        {
-            throw e;
-        }
-    }
-
-    return retryDelegate(plugin, &getBTTVEmotesDg);
-}
-
-
-// getBTTVGlobalEmotes
-/++
-    Fetches globalBetterTTV emotes.
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        emoteMap = Reference to the `bool[dstring]` associative array to store
-            the fetched emotes in.
-        caller = Name of the calling function.
-
-    See_Also:
-        https://betterttv.com/emotes/global
- +/
-void getBTTVGlobalEmotes(
-    TwitchPlugin plugin,
-    ref bool[dstring] emoteMap,
-    const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
-{
-    import std.conv : to;
-    import std.json : parseJSON;
-
-    void getBTTVGlobalEmotesDg()
-    {
-        enum url = "https://api.betterttv.net/3/cached/emotes/global";
-
-        immutable response = sendHTTPRequest(plugin, url, caller);
-        immutable responseJSON = parseJSON(response.str);
-
-        /+
-        [
-            {
-                "animated": false,
-                "code": ":tf:",
-                "id": "54fa8f1401e468494b85b537",
-                "imageType": "png",
-                "userId": "5561169bd6b9d206222a8c19"
-            },
-            {
-                "animated": false,
-                "code": "CiGrip",
-                "id": "54fa8fce01e468494b85b53c",
-                "imageType": "png",
-                "userId": "5561169bd6b9d206222a8c19"
-            }
-        ]
-         +/
-
-        foreach (immutable emoteJSON; responseJSON.array)
-        {
-            immutable emote = emoteJSON["code"].str.to!dstring;
-            emoteMap[emote] = true;
-        }
-
-        // All done
-    }
-
-    return retryDelegate(plugin, &getBTTVGlobalEmotesDg);
-}
-
-
-// getFFZEmotes
-/++
-    Fetches FrankerFaceZ emotes for a given channel.
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        emoteMap = Reference to the `bool[dstring]` associative array to store
-            the fetched emotes in.
-        idString = Twitch user/channel ID in string form.
-        caller = Name of the calling function.
-
-    See_Also:
-        https://www.frankerfacez.com
- +/
-void getFFZEmotes(
-    TwitchPlugin plugin,
-    ref bool[dstring] emoteMap,
-    const string idString,
-    const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
-in (idString.length, "Tried to get FFZ emotes with an empty ID string")
-{
-    import std.conv : to;
-    import std.json : JSONType, parseJSON;
-
-    immutable url = "https://api.frankerfacez.com/v1/room/id/" ~ idString;
-
-    auto getFFZEmotesDg()
-    {
-        try
-        {
-            immutable response = sendHTTPRequest(plugin, url, caller);
-            immutable responseJSON = parseJSON(response.str);
-
-            /+
-            {
-                "room": {
-                    "_id": 366358,
-                    "css": null,
-                    "display_name": "GinoMachino",
-                    "id": "ginomachino",
-                    "is_group": false,
-                    "mod_urls": null,
-                    "moderator_badge": null,
-                    "set": 366370,
-                    "twitch_id": 148651829,
-                    "user_badge_ids": {
-                        "2": [
-                            188355608
-                        ]
-                    },
-                    "user_badges": {
-                        "2": [
-                            "machinobot"
-                        ]
-                    },
-                    "vip_badge": null,
-                    "youtube_id": null
-                },
-                "sets": {
-                    "366370": {
-                        "_type": 1,
-                        "css": null,
-                        "emoticons": [
-                            {
-                                "created_at": "2016-11-02T14:52:50.395Z",
-                                "css": null,
-                                "height": 32,
-                                "hidden": false,
-                                "id": 139407,
-                                "last_updated": "2016-11-08T21:26:39.377Z",
-                                "margins": null,
-                                "modifier": false,
-                                "name": "LULW",
-                                "offset": null,
-                                "owner": {
-                                    "_id": 53544,
-                                    "display_name": "Ian678",
-                                    "name": "ian678"
-                                },
-                                "public": true,
-                                "status": 1,
-                                "urls": {
-                                    "1": "\/\/cdn.frankerfacez.com\/emote\/139407\/1",
-                                    "2": "\/\/cdn.frankerfacez.com\/emote\/139407\/2",
-                                    "4": "\/\/cdn.frankerfacez.com\/emote\/139407\/4"
-                                },
-                                "usage_count": 148783,
-                                "width": 28
-                            },
-                            {
-                                "created_at": "2018-11-12T16:03:21.331Z",
-                                "css": null,
-                                "height": 23,
-                                "hidden": false,
-                                "id": 295554,
-                                "last_updated": "2018-11-15T08:31:33.401Z",
-                                "margins": null,
-                                "modifier": false,
-                                "name": "WhiteKnight",
-                                "offset": null,
-                                "owner": {
-                                    "_id": 333730,
-                                    "display_name": "cccclone",
-                                    "name": "cccclone"
-                                },
-                                "public": true,
-                                "status": 1,
-                                "urls": {
-                                    "1": "\/\/cdn.frankerfacez.com\/emote\/295554\/1",
-                                    "2": "\/\/cdn.frankerfacez.com\/emote\/295554\/2",
-                                    "4": "\/\/cdn.frankerfacez.com\/emote\/295554\/4"
-                                },
-                                "usage_count": 35,
-                                "width": 20
-                            }
-                        ],
-                        "icon": null,
-                        "id": 366370,
-                        "title": "Channel: GinoMachino"
-                    }
-                }
-            }
-             +/
-
-            if (responseJSON.type == JSONType.object)
-            {
-                if (immutable setsJSON = "sets" in responseJSON)
-                {
-                    foreach (immutable setJSON; (*setsJSON).object)
-                    {
-                        if (immutable emoticonsArrayJSON = "emoticons" in setJSON)
-                        {
-                            foreach (immutable emoteJSON; emoticonsArrayJSON.array)
-                            {
-                                immutable emote = emoteJSON["name"].str.to!dstring;
-                                emoteMap[emote] = true;
-                            }
-
-                            // All done
-                            return;
-                        }
-                    }
-                }
-            }
-
-            // Invalid response in some way
-            enum message = "`getFFZEmotes` response has unexpected JSON";
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-        catch (ErrorJSONException e)
-        {
-            // Likely 404
-            const messageJSON = "message" in e.json;
-
-            if (messageJSON && (messageJSON.str == "No such room"))
-            {
-                // Benign
-                return;
-            }
-            throw e;
-        }
-        catch (Exception e)
-        {
-            throw e;
-        }
-    }
-
-    return retryDelegate(plugin, &getFFZEmotesDg);
-}
-
-
-// get7tvEmotes
-/++
-    Fetches 7tv emotes for a given channel.
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        emoteMap = Reference to the `bool[dstring]` associative array to store
-            the fetched emotes in.
-        idString = Twitch user/channel ID in string form.
-        caller = Name of the calling function.
-
-    See_Also:
-        https://7tv.app
- +/
-void get7tvEmotes(
-    TwitchPlugin plugin,
-    ref bool[dstring] emoteMap,
-    const string idString,
-    const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
-in (idString.length, "Tried to get 7tv emotes with an empty ID string")
-{
-    import std.conv : text, to;
-    import std.json : JSONType, parseJSON;
-
-    immutable url = text("https://api.7tv.app/v2/users/", idString, "/emotes");
-
-    auto get7tvEmotesDg()
-    {
-        try
-        {
-            immutable response = sendHTTPRequest(plugin, url, caller);
-            immutable responseJSON = parseJSON(response.str);
-
-            /+
-            [
-                {
-                    "animated": false,
-                    "code": ":tf:",
-                    "id": "54fa8f1401e468494b85b537",
-                    "imageType": "png",
-                    "userId": "5561169bd6b9d206222a8c19"
-                },
-                {
-                    "animated": false,
-                    "code": "CiGrip",
-                    "id": "54fa8fce01e468494b85b53c",
-                    "imageType": "png",
-                    "userId": "5561169bd6b9d206222a8c19"
-                }
-            ]
-             +/
-
-            if (responseJSON.type == JSONType.array)
-            {
-                foreach (immutable emoteJSON; responseJSON.array)
-                {
-                    immutable emote = emoteJSON["name"].str.to!dstring;
-                    emoteMap[emote] = true;
-                }
-
-                // All done
-                return;
-            }
-
-            // Invalid response in some way
-            enum message = "`get7tvEmotes` response has unexpected JSON " ~
-                "(response is not object nor array)";
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-        catch (ErrorJSONException e)
-        {
-            if (const errorJSON = "error" in e.json)
-            {
-                if ((errorJSON.str == "No Items Found") ||
-                    (errorJSON.str == "Unknown Emote Set"))
-                {
-                    // Benign
-                    return;
-                }
-            }
-            throw e;
-        }
-        catch (Exception e)
-        {
-            throw e;
-        }
-    }
-
-    return retryDelegate(plugin, &get7tvEmotesDg);
-}
-
-
-// get7tvGlobalEmotes
-/++
-    Fetches 7tv emotes.
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        emoteMap = Reference to the `bool[dstring]` associative array to store
-            the fetched emotes in.
-        caller = Name of the calling function.
-
-    See_Also:
-        https://7tv.app
- +/
-void get7tvGlobalEmotes(
-    TwitchPlugin plugin,
-    ref bool[dstring] emoteMap,
-    const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
-{
-    import std.conv : to;
-    import std.json : parseJSON;
-
-    void get7tvGlobalEmotesDg()
-    {
-        enum url = "https://api.7tv.app/v2/emotes/global";
-
-        immutable response = sendHTTPRequest(plugin, url, caller);
-        immutable responseJSON = parseJSON(response.str);
-
-        /+
-        [
-            {
-                "height": [],
-                "id": "60421fe677137b000de9e683",
-                "mime": "image\/webp",
-                "name": "reckH",
-                "owner": {},
-                "status": 3,
-                "tags": [],
-                "urls": [],
-                "visibility": 2,
-                "visibility_simple": [],
-                "width": []
-            },
-            [...]
-        ]
-         +/
-
-        foreach (const emoteJSON; responseJSON.array)
-        {
-            immutable emote = emoteJSON["name"].str.to!dstring;
-            emoteMap[emote] = true;
-        }
-
-        // All done
-    }
-
-    return retryDelegate(plugin, &get7tvGlobalEmotesDg);
 }
 
 
@@ -2690,7 +2279,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
     "first": "100"
 }`;
 
-    enum subsequentPattern = `
+        enum subsequentPattern = `
 {
     "broadcaster_id": "%s",
     "after": "%s",
@@ -2742,11 +2331,22 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             }
             */
 
-            if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+            if (responseJSON.type != JSONType.object)
             {
-                // Invalid response in some way
+                // Invalid response in some way, retry until we reach the limit
                 if (++retry < TwitchPlugin.delegateRetries) continue inner;
                 enum message = "`getSubscribers` response has unexpected JSON";
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
+
+            immutable dataJSON = "data" in responseJSON;
+
+            if (!dataJSON)
+            {
+                // As above
+                if (++retry < TwitchPlugin.delegateRetries) continue inner;
+                enum message = "`getSubscribers` response has unexpected JSON " ~
+                    `(no "data" key)`;
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
@@ -2757,7 +2357,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 subs.reserve(responseJSON["total"].integer);
             }
 
-            foreach (immutable subJSON; responseJSON["data"].array)
+            foreach (immutable subJSON; dataJSON.array)
             {
                 Subscription sub;
                 sub.user.id = subJSON["user_id"].str;

@@ -57,67 +57,102 @@ package void requestGoogleKeys(TwitchPlugin plugin)
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("== Google authorisation key generation mode ==");
+    logger.warning("== Google authorisation key generation wizard ==");
     enum message = `
-To access the Google API you need a <i>client ID</> and a <i>client secret</>.
+To access the YouTube API you need to create a Google application and generate a
+<i>client ID</> and a <i>client secret</> for it.
 
 <l>Go here to create a project:</>
 
     <i>https://console.cloud.google.com/projectcreate</>
 
-<l>OAuth consent screen</> tab (choose <i>External</>), follow instructions.
-<i>*</> <l>Scopes:</> <i>https://www.googleapis.com/auth/youtube</>
-<i>*</> <l>Test users:</> (your Google account)
+Once created...
+<i>*</> <l>APIs and services</> to the left, then <i>OAuth consent screen</>
+<i>*</> <l>Choose User Type</>: <i>External</> and hit <i>Create</>
+<i>*</> <l>Enter</>...
+  <i>*</> a memorable <i>app name</>
+  <i>*</> your email as <i>user support email</>
+  <i>*</> your email as <i>developer contact information</> (at the bottom of the page)
+  <i>*</> <l>Click</> <i>Save and Continue</>
+<i>*</> <l>Add or Remove Scopes</>
+  <i>*</> <l>Manually add scope</>: "<i>https://www.googleapis.com/auth/youtube</>"
+  <i>*</> <l>Click</> <i>Add to table</>, then <i>Update</>
+    <i>*</> <l>Confirm</> that <i>Your sensitive scopes</> now includes "<i>../auth/youtube</>"
+  <i>*</> <l>Click</> <i>Save and Continue</>
+<i>*</> <l>Click</> <i>+ Add Users</> and enter your Google account email
+<i>*</> <l>Click</> <i>Save and Continue</>, then <i>Back to Dashboard</>
+<i>*</> <l>Click</> <i>Credentials</> to the left
+<i>*</> <l>Click</> <i>+ Create Credentials</> up at the top of the page
+<i>*</> <l>Choose</> <i>OAuth client ID</> in the dropdown menu
+  <i>*</> <l>Application type</>: <i>Desktop app</>
+  <i>*</> <l>Name</>: (any memorable name)
+  <i>*</> <l>Click</> <i>Create</>
 
-Then pick <i>+ Create Credentials</> -> <i>OAuth client ID</>:
-<i>*</> <l>Application type:</> <i>Desktop app</>
+There should be an <i>OAuth client created</> popup and you should now have a
+newly-generated <i>Client ID</> and <i>Client secret</>.
 
-Now you should have a newly-generated client ID and client secret.
-Copy these somewhere; you'll need them soon.
+    <w>Copy these somewhere; you'll need them soon.</>
 
-<l>Enabled APIs and Services</> tab -> <i>+ Enable APIs and Services</>
-<i>--></> enter "<i>YouTube Data API v3</>", hit <i>Enable</>
+<i>*</> <l>Click</> <i>Enabled APIs and Services</> to the left
+<i>*</> <l>Click</> <i>+ Enable APIs and Services</> up top
+  <i>*</> <l>Input</> "<i>YouTube Data API v3</>" and hit Enter
+  <i>*</> <l>Select</> the offered <i>YouTube Data API v3</>
+  <i>*</> <l>Click</> <i>Enable</>
 
-You also need to supply a channel for which it all relates.
+You also need to supply a Twitch channel to which it all relates.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
 
-Lastly you need a <i>YouTube playlist ID</> for song requests to work.
-A normal URL to any playlist you can modify will work fine.
+Lastly you need a <i>YouTube playlist ID</> to save song requests to.
+Your current playlists can be found by clicking <i>Show More</> to the left
+in the normal YouTube home screen. New playlists can be created by opening any
+YouTube video page, clicking the <i>...</> button beneath the video, clicking
+<i>Save</> and then <i>+ Create a new playlist</>.
+
+A normal URL to any playlist you can modify will work fine. They do not have to be public.
 `;
     writeln(message.expandTags(LogLevel.off));
 
     Credentials creds;
+    string channel;  // mutable
+    uint numEmptyLinesEntered;
 
-    string channel;
     while (!channel.length)
     {
-        enum readChannelMessage = "<l>Enter your <i>#channel<l>:</> ";
-        immutable rawChannel = readNamedString(readChannelMessage, 0L, *plugin.state.abort);
-        if (*plugin.state.abort) return;
+        Flag!"benignAbort" benignAbort;
 
-        channel = rawChannel.stripped;
+        channel = readChannelName(
+            numEmptyLinesEntered,
+            benignAbort,
+            plugin.state.abort);
 
-        if (!channel.length || channel[0] != '#')
-        {
-            enum channelMessage = "Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.";
-            logger.warning(channelMessage);
-            channel = string.init;
-        }
+        if (benignAbort) return;
     }
 
-    enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth client ID<l>:</> ";
-    creds.googleClientID = readNamedString(readOAuthIDMessage, 72L, *plugin.state.abort);
+    enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth Client ID<l>:</> ";
+    creds.googleClientID = readNamedString(
+        readOAuthIDMessage,
+        72L,
+        No.passThroughEmptyString,
+        plugin.state.abort);
     if (*plugin.state.abort) return;
 
-    enum readOAuthSecretMessage = "<l>Copy and paste your <i>OAuth client secret<l>:</> ";
-    creds.googleClientSecret = readNamedString(readOAuthSecretMessage, 35L, *plugin.state.abort);
+    enum readOAuthSecretMessage = "<l>Copy and paste your <i>OAuth Client secret<l>:</> ";
+    creds.googleClientSecret = readNamedString(
+        readOAuthSecretMessage,
+        35L,
+        No.passThroughEmptyString,
+        plugin.state.abort);
     if (*plugin.state.abort) return;
 
     while (!creds.youtubePlaylistID.length)
     {
         enum playlistIDLength = 34;
         enum readPlaylistMessage = "<l>Copy and paste your <i>YouTube playlist URL<l>:</> ";
-        immutable playlistURL = readNamedString(readPlaylistMessage, 0L, *plugin.state.abort);
+        immutable playlistURL = readNamedString(
+            readPlaylistMessage,
+            0L,
+            No.passThroughEmptyString,
+            plugin.state.abort);
         if (*plugin.state.abort) return;
 
         if (playlistURL.length == playlistIDLength)
@@ -145,21 +180,25 @@ A normal URL to any playlist you can modify will work fine.
     enum attemptToOpenPattern = `
 --------------------------------------------------------------------------------
 
-<l>Attempting to open a Google login page in your default web browser.</>
+<l>Attempting to open a <i>Google login page<l> in your default web browser.</>
 
 Follow the instructions and log in to authorise the use of this program with your account.
-Be sure to <l>select a YouTube account</> if presented with several alternatives.
-(One that says <i>YouTube</> underneath it.)
 
-<l>Then paste the address of the empty page you are redirected to afterwards here.</>
+It may ask you for an account twice; once to select an account
+"<i>to proceed to [project name]</>", once to <i>choose your account or brand account</>.
 
-* The redirected address should start with <i>http://localhost</>.
-* It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
-* If you are running local web server on port <i>80</>, you may have to temporarily
-  disable it for this to work.
-`;
+If so, for the second account, be sure to select a <i>YouTube-specific account</>
+if presented with several alternatives. (One that says <i>YouTube</> underneath it.)
+
+    <w>If you have two-factor authentication enabled you may have to authorise
+    the addition with your phone.</>
+
+Select <i>Continue</> when you get to a "<i>Google hasn't verified this app</>" screen,
+then finally <i>Allow</>.`;
+
     writeln(attemptToOpenPattern.expandTags(LogLevel.off));
-    if (plugin.state.settings.flush) stdout.flush();
+    writeln(pasteAddressInstructions.expandTags(LogLevel.off));
+    stdout.flush();
 
     enum authNode = "https://accounts.google.com/o/oauth2/v2/auth";
     enum urlPattern = authNode ~
@@ -200,22 +239,21 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
         }
     }
 
-    string code;
+    string code;  // mutable
+    uint numEmptyAddressLinesEntered;
+    enum numEmptyAddressLinesEnteredBreakpoint = 2;
 
     while (!code.length)
     {
         scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
-        enum pasteMessage = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
-
-> ";
+        enum pasteMessage = "<i>></> ";
         write(pasteMessage.expandTags(LogLevel.off));
         stdout.flush();
-
         stdin.flush();
-        immutable readCode = readln().stripped;
+        immutable input = readln().stripped;
 
-        if (*plugin.state.abort || !readCode.length)
+        if (*plugin.state.abort)
         {
             writeln();
             logger.warning("Aborting.");
@@ -223,14 +261,25 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
             *plugin.state.abort = Yes.abort;
             return;
         }
+        else if (!input.length)
+        {
+            if (++numEmptyAddressLinesEntered > numEmptyAddressLinesEnteredBreakpoint)
+            {
+                enum cancellingKeygenMessage = "Cancelling keygen.";
+                logger.warning(cancellingKeygenMessage);
+                logger.trace();
+                return;
+            }
+            continue;
+        }
 
-        if (readCode.indexOf("code=") == -1)
+        if (input.indexOf("code=") == -1)
         {
             import std.algorithm.searching : startsWith;
 
             writeln();
 
-            if (readCode.startsWith(authNode))
+            if (input.startsWith(authNode))
             {
                 enum wrongPageMessage = "Not that page; the empty page you're " ~
                     "lead to after clicking <l>Allow</>.";
@@ -245,7 +294,7 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
             continue;
         }
 
-        string slice = readCode;  // mutable
+        string slice = input;  // mutable
         slice.advancePast("?code=");
         code = slice.advancePast('&', Yes.inherit);
 
@@ -274,7 +323,7 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
         writeln(validationJSON.toPrettyString);
     }
 
-    if (const errorJSON = "error" in validationJSON)
+    if (immutable errorJSON = "error" in validationJSON)
     {
         throw new ErrorJSONException(validationJSON["error_description"].str, *errorJSON);
     }
@@ -329,7 +378,7 @@ package JSONValue addVideoToYouTubePlaylist(
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fiber")
 {
-    import kameloso.plugins.twitch.api : getUniqueNumericalID, waitForQueryResponse;
+    import kameloso.plugins.twitch.api : reserveUniqueBucketID, waitForQueryResponse;
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
     import arsd.http2 : HttpVerb;
@@ -368,7 +417,7 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
 }`;
 
     immutable data = pattern.format(creds.youtubePlaylistID, videoID).representation;
-    /*immutable*/ int id = getUniqueNumericalID(plugin.bucket);  // Making immutable bumps compilation memory +44mb
+    /*immutable*/ int id = reserveUniqueBucketID(plugin.bucket);  // Making immutable bumps compilation memory +44mb
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
@@ -436,7 +485,7 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
             }
             */
 
-            const json = parseJSON(response.str);
+            immutable json = parseJSON(response.str);
 
             if (json.type != JSONType.object)
             {
@@ -444,16 +493,16 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
                 throw new UnexpectedJSONException(message, json);
             }
 
-            const errorJSON = "error" in json;
+            immutable errorJSON = "error" in json;
             if (!errorJSON) return json;  // Success
 
-            if (const statusJSON = "status" in *errorJSON)
+            if (immutable statusJSON = "status" in *errorJSON)
             {
                 if (statusJSON.str == "UNAUTHENTICATED")
                 {
                     if (recursing)
                     {
-                        const errorAAJSON = "errors" in *errorJSON;
+                        immutable errorAAJSON = "errors" in *errorJSON;
 
                         if (errorAAJSON &&
                             (errorAAJSON.type == JSONType.array) &&
@@ -542,14 +591,14 @@ void getGoogleTokens(HttpClient client, ref Credentials creds, const string code
     }
     */
 
-    const json = parseJSON(res.contentText);
+    immutable json = parseJSON(res.contentText);
 
     if (json.type != JSONType.object)
     {
         throw new UnexpectedJSONException("Wrong JSON type in token request response", json);
     }
 
-    if (auto errorJSON = "error" in json)
+    if (immutable errorJSON = "error" in json)
     {
         throw new ErrorJSONException(errorJSON.str, *errorJSON);
     }
@@ -590,14 +639,14 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
     enum data = cast(ubyte[])"{}";
     auto req = client.request(Uri(url), HttpVerb.POST, data);
     auto res = req.waitForCompletion();
-    const json = parseJSON(res.contentText);
+    immutable json = parseJSON(res.contentText);
 
     if (json.type != JSONType.object)
     {
         throw new UnexpectedJSONException("Wrong JSON type in token refresh response", json);
     }
 
-    if (auto errorJSON = "error" in json)
+    if (immutable errorJSON = "error" in json)
     {
         if (errorJSON.str == "invalid_grant")
         {
@@ -633,7 +682,7 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-auto validateGoogleToken(HttpClient client, ref Credentials creds)
+auto validateGoogleToken(HttpClient client, const Credentials creds)
 {
     import arsd.http2 : Uri;
     import std.json : JSONType, parseJSON;
@@ -642,7 +691,7 @@ auto validateGoogleToken(HttpClient client, ref Credentials creds)
     immutable url = urlHead ~ creds.googleAccessToken;
     auto req = client.request(Uri(url));
     auto res = req.waitForCompletion();
-    const json = parseJSON(res.contentText);
+    immutable json = parseJSON(res.contentText);
 
     /*
     {
@@ -666,7 +715,7 @@ auto validateGoogleToken(HttpClient client, ref Credentials creds)
         throw new UnexpectedJSONException("Wrong JSON type in token validation response", json);
     }
 
-    if (auto errorJSON = "error" in json)
+    if (immutable errorJSON = "error" in json)
     {
         throw new ErrorJSONException(errorJSON.str, *errorJSON);
     }

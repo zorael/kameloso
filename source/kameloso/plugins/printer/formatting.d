@@ -32,8 +32,6 @@ version(Colours) import kameloso.terminal.colours.defs : TerminalForeground;
 
 package:
 
-@safe:
-
 version(Colours)
 {
     alias TF = TerminalForeground;
@@ -56,6 +54,7 @@ version(Colours)
         emote     = TF.cyan,
         highlight = TF.white,
         query     = TF.lightgreen,
+        account   = TF.darkgrey,
     }
 
     /++
@@ -76,6 +75,7 @@ version(Colours)
         emote     = TF.lightcyan,
         highlight = TF.black,
         query     = TF.green,
+        account   = TF.default_,
     }
 }
 
@@ -190,7 +190,7 @@ void formatMessageMonochrome(Sink)
     }
 
     immutable typestring = Enum!(IRCEvent.Type).toString(event.type).withoutTypePrefix;
-    string content = stripEffects(event.content);  // mutable
+    immutable content = stripEffects(event.content);
     bool shouldBell;
 
     static if (!__traits(hasMember, Sink, "data"))
@@ -218,6 +218,11 @@ void formatMessageMonochrome(Sink)
                 sink.put(event.sender.displayName);
                 putDisplayName = true;
 
+                if (plugin.printerSettings.classNames)
+                {
+                    .put(sink, '/', event.sender.class_);
+                }
+
                 if ((event.sender.displayName != event.sender.nickname) &&
                     !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
                 {
@@ -230,20 +235,20 @@ void formatMessageMonochrome(Sink)
         {
             // Can be no-nick special: [PING] *2716423853
             sink.put(event.sender.nickname);
+
+            if (plugin.printerSettings.classNames)
+            {
+                .put(sink, '/', event.sender.class_);
+            }
         }
 
-        version(PrintClassNamesToo)
-        {
-            .put(sink, ':', event.sender.class_);
-        }
-
-        version(PrintAccountNamesToo)
+        if (plugin.printerSettings.accountNames)
         {
             // No need to check for nickname.length, I think
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.sender.account.length)
             {
-                .put(sink, '(', event.sender.account, ')');
+                .put(sink, " (", event.sender.account, ')');
             }
         }
 
@@ -298,6 +303,11 @@ void formatMessageMonochrome(Sink)
                 sink.put(event.target.displayName);
                 putDisplayName = true;
 
+                if (plugin.printerSettings.classNames)
+                {
+                    .put(sink, '/', event.target.class_);
+                }
+
                 if ((event.target.displayName != event.target.nickname) &&
                     !event.target.displayName.asLowerCase.equal(event.target.nickname))
                 {
@@ -314,20 +324,20 @@ void formatMessageMonochrome(Sink)
         if (!putDisplayName)
         {
             sink.put(event.target.nickname);
+
+            if (plugin.printerSettings.classNames)
+            {
+                .put(sink, '/', event.target.class_);
+            }
         }
 
-        version(PrintClassNamesToo)
-        {
-            .put(sink, ':', event.target.class_);
-        }
-
-        version(PrintAccountNamesToo)
+        if (plugin.printerSettings.accountNames)
         {
             // No need to check for nickname.length, I think
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.target.account.length)
             {
-                .put(sink, '(', event.target.account, ')');
+                .put(sink, " (", event.target.account, ')');
             }
         }
 
@@ -414,15 +424,27 @@ void formatMessageMonochrome(Sink)
 
     version(TwitchSupport)
     {
-        if (((event.type == IRCEvent.Type.CHAN) ||
-             (event.type == IRCEvent.Type.SELFCHAN) ||
-             (event.type == IRCEvent.Type.EMOTE)) &&
+        import std.algorithm.comparison : among;
+
+        immutable isEmotePossibleEventType = event.type.among!
+            (IRCEvent.Type.CHAN,
+            IRCEvent.Type.EMOTE,
+            IRCEvent.Type.SELFCHAN,
+            IRCEvent.Type.SELFEMOTE);
+
+        if (isEmotePossibleEventType &&
             event.target.nickname.length &&
-            event.aux[0].length)
+            (event.aux[0].length > 1))  // need space to fit the delimiter plus teext
         {
+            import std.string : indexOf;
+
+            enum emoteDelimiter = '\0';
+            immutable delimiterPos = event.aux[0].indexOf(emoteDelimiter);
+            assert((delimiterPos != -1), "No emote delimiter in aux[0]");
+
             /*if (content.length)*/ putContent();
             putTarget();
-            .put(sink, `: "`, event.aux[0], '"');
+            .put(sink, `: "`, event.aux[0][delimiterPos+1..$], '"');
 
             putQuotedTwitchMessage = true;
             auxRange.popFront();
@@ -512,7 +534,7 @@ void formatMessageMonochrome(Sink)
         immutable joinLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= ":whitelist";
+        //nickstring ~= "/whitelist";
         immutable expected = "[join] [#channel] " ~ nickstring;
         assert((joinLine == expected), joinLine);
         sink.clear();
@@ -526,12 +548,13 @@ void formatMessageMonochrome(Sink)
         immutable chanLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= ":whitelist";
+        //nickstring ~= "/whitelist";
         immutable expected = "[chan] [#channel] " ~ nickstring ~ `: "Harbl snarbl"`;
         assert((chanLine == expected), chanLine);
         sink.clear();
     }
 
+    plugin.printerSettings.classNames = true;
     event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
     event.sender.class_ = IRCUser.Class.staff;
     //colour = "#3c507d";
@@ -542,7 +565,7 @@ void formatMessageMonochrome(Sink)
         immutable twitchLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= ":staff";
+        nickstring ~= "/staff";
         immutable expected = "[chan] [#channel] " ~ nickstring ~
             ` [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`;
         assert((twitchLine == expected), twitchLine);
@@ -550,6 +573,7 @@ void formatMessageMonochrome(Sink)
         event.sender.badges = string.init;
     }}
 
+    plugin.printerSettings.accountNames = true;
     plugin.state.server.daemon = IRCServer.Daemon.inspircd;
     event.sender.class_ = IRCUser.Class.anyone;
     event.type = IRCEvent.Type.ACCOUNT;
@@ -563,8 +587,8 @@ void formatMessageMonochrome(Sink)
         immutable accountLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= ":anyone";
-        version(PrintAccountNamesToo) nickstring ~= "(n1ckn4m3)";
+        nickstring ~= "/anyone";
+        nickstring ~= " (n1ckn4m3)";
         immutable expected = "[account] " ~ nickstring ~ " (n1ckn4m3)";
         assert((accountLine == expected), accountLine);
         sink.clear();
@@ -586,14 +610,15 @@ void formatMessageMonochrome(Sink)
         immutable errorLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= ":anyone";
-        version(PrintAccountNamesToo) nickstring ~= "(n1ckn4m3)";
+        nickstring ~= "/anyone";
+        nickstring ~= " (n1ckn4m3)";
         immutable expected = "[error] " ~ nickstring ~ `: "Blah balah" (aux1) (aux5) ` ~
             "{-42} {123} {420} [#666] ! DANGER WILL ROBINSON !";
         assert((errorLine == expected), errorLine);
         sink.clear();
     }
 
+    plugin.printerSettings.classNames = false;
     event.type = IRCEvent.Type.CHAN;
     event.channel = "#nickname";
     event.num = 0;
@@ -606,8 +631,8 @@ void formatMessageMonochrome(Sink)
         immutable queryLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
-        version(PrintClassNamesToo) nickstring ~= ":anyone";
-        version(PrintAccountNamesToo) nickstring ~= "(n1ckn4m3)";
+        //nickstring ~= "/anyone";
+        nickstring ~= " (n1ckn4m3)";
         immutable expected = "[chan] [#nickname] " ~ nickstring ~ `: "Blah balah"`;
         assert((queryLine == expected), queryLine);
         //sink.clear();
@@ -671,11 +696,6 @@ void formatMessageColoured(Sink)
 
     immutable bright = cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal;
 
-    version(TwitchSupport)
-    {
-        immutable normalise = cast(Flag!"normalise")plugin.printerSettings.normaliseTruecolour;
-    }
-
     /++
         Outputs a terminal ANSI colour token based on the hash of the passed
         nickname.
@@ -718,7 +738,12 @@ void formatMessageColoured(Sink)
                 import lu.conv : rgbFromHex;
 
                 auto rgb = rgbFromHex(user.colour);
-                sink.applyTruecolour(rgb.r, rgb.g, rgb.b, bright, normalise);
+                sink.applyTruecolour(
+                    rgb.r,
+                    rgb.g,
+                    rgb.b,
+                    bright,
+                    cast(Flag!"normalise")plugin.printerSettings.normaliseTruecolour);
                 coloured = true;
             }
         }
@@ -745,7 +770,9 @@ void formatMessageColoured(Sink)
 
     void putSender()
     {
-        scope(exit) sink.applyANSI(TerminalReset.all);
+        scope(exit) sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+
+        bool putDisplayName;
 
         colourUserTruecolour(event.sender);
 
@@ -755,26 +782,34 @@ void formatMessageColoured(Sink)
             return;
         }
 
-        bool putDisplayName;
-
         version(TwitchSupport)
         {
             if (event.sender.displayName.length)
             {
+                import std.algorithm.comparison : equal;
+                import std.uni : asLowerCase;
+
                 sink.put(event.sender.displayName);
                 putDisplayName = true;
 
-                import std.algorithm.comparison : equal;
-                import std.uni : asLowerCase;
+                if (plugin.printerSettings.classNames)
+                {
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                    .put(sink, '/', event.sender.class_);
+                }
 
                 if ((event.sender.displayName != event.sender.nickname) &&
                     !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
                 {
-                    sink.applyANSI(TerminalReset.all);
+                    if (!plugin.printerSettings.classNames)
+                    {
+                        sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                    }
+
                     sink.put(" (");
                     colourUserTruecolour(event.sender);
                     sink.put(event.sender.nickname);
-                    sink.applyANSI(TerminalReset.all);
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.put(')');
                 }
             }
@@ -784,22 +819,24 @@ void formatMessageColoured(Sink)
         {
             // Can be no-nick special: [PING] *2716423853
             sink.put(event.sender.nickname);
+
+            if (plugin.printerSettings.classNames)
+            {
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                .put(sink, '/', event.sender.class_);
+            }
         }
 
-        version(PrintClassNamesToo)
-        {
-            sink.applyANSI(TerminalReset.all);
-            .put(sink, ':', event.sender.class_);
-        }
-
-        version(PrintAccountNamesToo)
+        if (plugin.printerSettings.accountNames)
         {
             // No need to check for nickname.length, I think
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.sender.account.length)
             {
-                sink.applyANSI(TerminalReset.all);
-                .put(sink, '(', event.sender.account, ')');
+                immutable code = bright ? Bright.account : Dark.account;
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                sink.applyANSI(code, ANSICodeType.foreground);
+                .put(sink, " (", event.sender.account, ')');
             }
         }
 
@@ -820,7 +857,7 @@ void formatMessageColoured(Sink)
 
                 default:
                     immutable code = bright ? Bright.badge : Dark.badge;
-                    sink.applyANSI(TerminalReset.all);
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.applyANSI(code, ANSICodeType.foreground);
                     .put(sink, " [", event.sender.badges, ']');
                     break;
@@ -843,12 +880,12 @@ void formatMessageColoured(Sink)
             {
             case TWITCH_GIFTCHAIN:
                 // Add more as they become apparent
-                sink.applyANSI(TerminalReset.all);
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.put(" <- ");
                 break;
 
             default:
-                sink.applyANSI(TerminalReset.all);
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.put(" -> ");
                 break;
             }
@@ -858,19 +895,30 @@ void formatMessageColoured(Sink)
 
             if (event.target.displayName.length)
             {
+                import std.algorithm.comparison : equal;
+                import std.uni : asLowerCase;
+
                 sink.put(event.target.displayName);
                 putDisplayName = true;
 
-                import std.algorithm.comparison : equal;
-                import std.uni : asLowerCase;
+                if (plugin.printerSettings.classNames)
+                {
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                    .put(sink, '/', event.target.class_);
+                }
 
                 if ((event.target.displayName != event.target.nickname) &&
                     !event.target.displayName.asLowerCase.equal(event.target.nickname))
                 {
+                    if (!plugin.printerSettings.classNames)
+                    {
+                        sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                    }
+
                     sink.put(" (");
                     colourUserTruecolour(event.target);
                     sink.put(event.target.nickname);
-                    sink.applyANSI(TerminalReset.all);
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.put(')');
                 }
             }
@@ -879,7 +927,7 @@ void formatMessageColoured(Sink)
         if (!putArrow)
         {
             // No need to check isServer; target is never server
-            sink.applyANSI(TerminalReset.all);
+            sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
             sink.put(" -> ");
             colourUserTruecolour(event.target);
         }
@@ -887,22 +935,24 @@ void formatMessageColoured(Sink)
         if (!putDisplayName)
         {
             sink.put(event.target.nickname);
+
+            if (plugin.printerSettings.classNames)
+            {
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                .put(sink, '/', event.target.class_);
+            }
         }
 
-        version(PrintClassNamesToo)
-        {
-            sink.applyANSI(TerminalReset.all);
-            .put(sink, ':', event.target.class_);
-        }
-
-        version(PrintAccountNamesToo)
+        if (plugin.printerSettings.accountNames)
         {
             // No need to check for nickname.length, I think
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.target.account.length)
             {
-                sink.applyANSI(TerminalReset.all);
-                .put(sink, '(', event.target.account, ')');
+                immutable code = bright ? Bright.account : Dark.account;
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                sink.applyANSI(code, ANSICodeType.foreground);
+                .put(sink, " (", event.target.account, ')');
             }
         }
 
@@ -913,7 +963,7 @@ void formatMessageColoured(Sink)
                 event.target.badges.length)
             {
                 immutable code = bright ? Bright.badge : Dark.badge;
-                sink.applyANSI(TerminalReset.all);
+                sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.applyANSI(code, ANSICodeType.foreground);
                 .put(sink, " [", event.target.badges, ']');
             }
@@ -925,7 +975,7 @@ void formatMessageColoured(Sink)
         import kameloso.terminal.colours.defs : ANSICodeType, TerminalBackground, TerminalForeground;
         import kameloso.terminal.colours : applyANSI;
 
-        scope(exit) sink.applyANSI(TerminalReset.all);
+        scope(exit) sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
 
         immutable TerminalForeground contentFgBase = bright ? Bright.content : Dark.content;
         immutable TerminalForeground emoteFgBase = bright ? Bright.emote : Dark.emote;
@@ -934,6 +984,7 @@ void formatMessageColoured(Sink)
             (event.type == IRCEvent.Type.SELFEMOTE);
         immutable fgBase = isEmote ? emoteFgBase : contentFgBase;
 
+        //sink.applyANSI(TerminalReset.all, ANSICodeType.reset);  // do we need this?
         sink.applyANSI(fgBase, ANSICodeType.foreground);  // Always grey colon and SASL +, prepare for emote
 
         if (!event.sender.isServer && !event.sender.nickname.length)
@@ -1076,18 +1127,51 @@ void formatMessageColoured(Sink)
 
     version(TwitchSupport)
     {
-        if (((event.type == IRCEvent.Type.CHAN) ||
-             (event.type == IRCEvent.Type.SELFCHAN) ||
-             (event.type == IRCEvent.Type.EMOTE)) &&
+        import std.algorithm.comparison : among;
+
+        immutable isEmotePossibleEventType = event.type.among!
+            (IRCEvent.Type.CHAN,
+            IRCEvent.Type.EMOTE,
+            IRCEvent.Type.SELFCHAN,
+            IRCEvent.Type.SELFEMOTE);
+
+        if (isEmotePossibleEventType &&
             event.target.nickname.length &&
-            event.aux[0].length)
+            (event.aux[0].length > 1))  // need space to fit the delimiter plus teext
         {
+            import std.array : Appender;
+            import std.string : indexOf;
+
+            static Appender!(char[]) customEmoteSink;
+
             /*if (content.length)*/ putContent();
             putTarget();
             immutable code = bright ? Bright.content : Dark.content;
             sink.applyANSI(code, ANSICodeType.foreground);
-            .put(sink, `: "`, event.aux[0], '"');
 
+            enum emoteDelimiter = '\0';
+            immutable TerminalForeground highlight = plugin.state.settings.brightTerminal ?
+                Bright.highlight :
+                Dark.highlight;
+            immutable TerminalForeground emoteFgBase = plugin.state.settings.brightTerminal ?
+                Bright.emote :
+                Dark.emote;
+
+            immutable delimiterPos = event.aux[0].indexOf(emoteDelimiter);
+            assert((delimiterPos != -1), "No emote delimiter in aux[0]");
+            immutable emotes = event.aux[0][0..delimiterPos];
+
+            scope(exit) customEmoteSink.clear();
+
+            customEmoteSink.highlightEmotesImpl(
+                event.aux[0][delimiterPos+1..$],
+                emotes,
+                highlight,
+                emoteFgBase,
+                cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
+                plugin.state.settings);
+
+            .put(sink, `: "`, customEmoteSink.data, '"');
             putQuotedTwitchMessage = true;
             auxRange.popFront();
         }
@@ -1143,7 +1227,7 @@ void formatMessageColoured(Sink)
         .put(sink, " ! ", event.errors, " !");
     }
 
-    sink.applyANSI(TerminalReset.all);
+    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
 
     shouldBell = shouldBell ||
         ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
@@ -1253,6 +1337,7 @@ auto highlightEmotes(
     import kameloso.constants : DefaultColours;
     import kameloso.terminal.colours : applyANSI;
     import std.array : Appender;
+    import std.exception : assumeUnique;
     import std.string : indexOf;
 
     alias Bright = EventPrintingBright;
@@ -1318,7 +1403,7 @@ auto highlightEmotes(
         break;
     }
 
-    return sink.data.idup;
+    return sink.data.assumeUnique();
 }
 
 
@@ -1593,7 +1678,7 @@ unittest
         True if `haystack` contains `needle` in such a way that it is guaranteed
         to not be a different nickname.
  +/
-auto containsNickname(const string haystack, const string needle) pure nothrow @nogc
+auto containsNickname(const string haystack, const string needle) pure @safe nothrow @nogc
 in (needle.length, "Tried to determine whether an empty nickname was in a string")
 {
     import kameloso.terminal : TerminalToken;

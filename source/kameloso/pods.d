@@ -32,19 +32,19 @@ private:
 public:
     version(Colours)
     {
-        // monochrome colours
+        // version Colours colours
         /++
-            Logger monochrome setting.
+            Terminal output colour setting.
          +/
-        bool monochrome = false;
+        bool colours = true;
     }
     else
     {
-        // monochrome non-colours
+        // non-version Colours colours
         /++
-            Non-colours version defaults to true.
+            Non-version Colours version defaults to false.
          +/
-        bool monochrome = true;
+        bool colours = false;
     }
 
     // brightTerminal

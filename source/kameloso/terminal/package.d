@@ -185,21 +185,18 @@ bool isTerminal() @system
 }
 
 
-// applyMonochromeAndFlushOverrides
+// applyTerminalOverrides
 /++
-    Override [kameloso.pods.CoreSettings.monochrome|CoreSettings.monochrome] and
-    potentially [kameloso.pods.CoreSettings.flush|CoreSettings.flush] if the
+    Potentially sets [kameloso.pods.CoreSettings.flush|CoreSettings.flush] and/or
+    [kameloso.pods.CoreSettings.colours|CoreSettings.colours] if the
     terminal seems to not truly be a terminal (such as a pager, or a non-whitelisted
     IDE terminal emulator).
 
-    The idea is to generally override monochrome to true if it's a pager, but
-    keep monochrome and override flush to true if it's a whitelisted environment.
-
     Params:
-        monochrome = Reference to monochrome setting bool.
         flush = Reference to flush setting bool.
+        colours = Refreence to colours settings bool.
  +/
-void applyMonochromeAndFlushOverrides(ref bool monochrome, ref bool flush) @system
+void applyTerminalOverrides(ref bool flush, ref bool colours) @system
 {
     import kameloso.platform : currentEnvironment;
 
@@ -209,7 +206,6 @@ void applyMonochromeAndFlushOverrides(ref bool monochrome, ref bool flush) @syst
         {
         case "Msys":
             // Requires manual flushing despite setvbuf
-            // No need to set monochrome though
             flush = true;
             break;
 
@@ -219,8 +215,8 @@ void applyMonochromeAndFlushOverrides(ref bool monochrome, ref bool flush) @syst
             break;
 
         default:
-            // Non-whitelisted non-TTY; set monochrome
-            monochrome = true;
+            // Unknown TTY environment, assume it's a pager
+            colours = false;
             break;
         }
     }

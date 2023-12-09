@@ -112,7 +112,8 @@ void worker(
     void sendCouldNotFetchQuote(const string url, const string error)
     {
         enum pattern = "Bash plugin could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
-        askToWarn(state, pattern.format(url, error));
+        immutable terminalMessage = pattern.format(url, error);
+        askToWarn(state, terminalMessage);
 
         enum channelPattern = "Could not fetch <b>bash.org<b> quote: %s";
         immutable channelMessage = channelPattern.format(error);
@@ -131,7 +132,7 @@ void worker(
     }
 
     // Set the global settings so messaging functions don't segfault us
-    kameloso.common.settings = &state.settings;
+    kameloso.common.settings = state.settings;
 
     immutable quoteID = event.content.startsWith('#') ?
         event.content[1..$] :

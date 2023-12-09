@@ -105,7 +105,6 @@ void startChannelQueries(ChanQueryService service)
     if (!querylist.length && !service.state.settings.eagerLookups) return;
 
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-
     service.querying = true;  // "Lock"
 
     scope(exit)
@@ -113,8 +112,6 @@ void startChannelQueries(ChanQueryService service)
         service.queriedAtLeastOnce = true;
         service.querying = false;  // "Unlock"
     }
-
-    static immutable secondsBetween = ChanQueryService.secondsBetween.seconds;
 
     chanloop:
     foreach (immutable i, immutable channelName; querylist)
@@ -124,7 +121,7 @@ void startChannelQueries(ChanQueryService service)
         if (i > 0)
         {
             // Delay between runs after first since aMode probes don't delay at end
-            delay(service, secondsBetween, Yes.yield);
+            delay(service, ChanQueryService.timeBetweenQueries, Yes.yield);
         }
 
         version(WithPrinterPlugin)
@@ -155,7 +152,7 @@ void startChannelQueries(ChanQueryService service)
             do Fiber.yield();  // Awaiting specified types
             while (thisFiber.payload.channel != channelName);
 
-            delay(service, secondsBetween, Yes.yield);
+            delay(service, ChanQueryService.timeBetweenQueries, Yes.yield);
         }
 
         /++
@@ -183,7 +180,7 @@ void startChannelQueries(ChanQueryService service)
             if (n > 0)
             {
                 // Cannot await by event type; there are too many types.
-                delay(service, secondsBetween, Yes.yield);
+                delay(service, ChanQueryService.timeBetweenQueries, Yes.yield);
                 if (channelName !in service.channelStates) continue chanloop;
             }
 
@@ -217,7 +214,7 @@ void startChannelQueries(ChanQueryService service)
     // Stop here if we can't or are not interested in going further
     if (!service.serverSupportsWHOIS || !service.state.settings.eagerLookups) return;
 
-    immutable now = Clock.currTime.toUnixTime;
+    immutable nowInUnix = Clock.currTime.toUnixTime();
     bool[string] uniqueUsers;
 
     foreach (immutable channelName, const channel; service.state.channels)
@@ -229,7 +226,7 @@ void startChannelQueries(ChanQueryService service)
             if (nickname == service.state.client.nickname) continue;
 
             const user = nickname in service.state.users;
-            if (!user || !user.account.length || ((now - user.updated) > Timeout.whoisRetry))
+            if (!user || !user.account.length || ((nowInUnix - user.updated) > Timeout.whoisRetry))
             {
                 // No user, or no account and sufficient amount of time passed since last WHOIS
                 uniqueUsers[nickname] = true;
@@ -264,6 +261,7 @@ void startChannelQueries(ChanQueryService service)
     }
 
     long lastQueryResults;
+    immutable numSecondsBetween = ChanQueryService.timeBetweenQueries.total!"seconds";
 
     whoisloop:
     foreach (immutable nickname; uniqueUsers.byKey)
@@ -280,12 +278,15 @@ void startChannelQueries(ChanQueryService service)
         }
 
         // Delay between runs after first since aMode probes don't delay at end
-        delay(service, secondsBetween, Yes.yield);
+        delay(service, ChanQueryService.timeBetweenQueries, Yes.yield);
+        auto elapsed = (Clock.currTime.toUnixTime() - lastQueryResults);
+        auto remaining = (numSecondsBetween - elapsed);
 
-        while ((Clock.currTime.toUnixTime - lastQueryResults) < service.secondsBetween-1)
+        while (remaining > 0)
         {
-            static immutable oneSecond = 1.seconds;
-            delay(service, oneSecond, Yes.yield);
+            delay(service, remaining.seconds, Yes.yield);
+            elapsed = (Clock.currTime.toUnixTime() - lastQueryResults);
+            remaining = (numSecondsBetween - elapsed);
         }
 
         version(WithPrinterPlugin)
@@ -296,6 +297,7 @@ void startChannelQueries(ChanQueryService service)
 
         enum properties = (Message.Property.quiet | Message.Property.background);
         whois(service.state, nickname, properties);
+        undelay(service);  // Remove any delays
         Fiber.yield();  // Await whois types registered above
 
         enum maxConsecutiveUnknownCommands = 3;
@@ -312,7 +314,7 @@ void startChannelQueries(ChanQueryService service)
                 if (thisFiber.payload.target.nickname == nickname)
                 {
                     // Saw the expected response
-                    lastQueryResults = Clock.currTime.toUnixTime;
+                    lastQueryResults = Clock.currTime.toUnixTime();
                     continue whoisloop;
                 }
                 else
@@ -332,10 +334,11 @@ void startChannelQueries(ChanQueryService service)
                     if (++consecutiveUnknownCommands >= maxConsecutiveUnknownCommands)
                     {
                         // Cannot WHOIS on this server (assume)
-                        logger.error("Error: This server does not seem " ~
-                            "to support user accounts?");
-                        enum message = "Consider enabling <l>Core</>.<l>preferHostmasks</>.";
-                        logger.error(message);
+                        enum message1 = "Error: This server does not seem " ~
+                            "to support user accounts?";
+                        enum message2 = "Consider enabling <l>core</>.<l>preferHostmasks</>.";
+                        logger.error(message1);
+                        logger.error(message2);
                         service.serverSupportsWHOIS = false;
                         return;
                     }
@@ -358,8 +361,9 @@ void startChannelQueries(ChanQueryService service)
 
             default:
                 import lu.conv : Enum;
-                assert(0, "Unexpected event type triggered query Fiber: " ~
-                    "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(thisFiber.payload.type) ~ '`');
+                immutable message = "Unexpected event type triggered query Fiber: " ~
+                    "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(thisFiber.payload.type) ~ '`';
+                assert(0, message);
             }
         }
 
@@ -493,10 +497,10 @@ private:
     import core.time : seconds;
 
     /++
-        Extra seconds delay between channel mode/user queries. Not delaying may
+        Extra delay between channel mode/user queries. Not delaying may
         cause kicks and disconnects if results are returned quickly.
      +/
-    enum secondsBetween = 3;
+    static immutable timeBetweenQueries = 4.seconds;
 
     /++
         Duration after welcome event before the first round of channel-querying will start.

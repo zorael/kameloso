@@ -26,7 +26,6 @@ import kameloso.plugins.admin.base : AdminPlugin;
 
 import kameloso.messaging;
 import dialect.defs;
-import std.stdio : stdout;
 import std.typecons : Flag, No, Yes;
 
 package:
@@ -45,7 +44,7 @@ package:
  +/
 void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
-    import std.stdio : write, writefln, writeln;
+    import std.stdio : stdout, write, writefln, writeln;
 
     if (plugin.state.settings.headless) return;
 
@@ -117,7 +116,7 @@ void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
 void onCommandShowUsersImpl(AdminPlugin plugin)
 {
     import kameloso.printing : printObject;
-    import std.stdio : writeln;
+    import std.stdio : stdout, writeln;
 
     if (plugin.state.settings.headless) return;
 
@@ -199,7 +198,7 @@ void onCommandStatusImpl(AdminPlugin plugin)
 {
     import kameloso.common : logger;
     import kameloso.printing : printObjects;
-    import std.stdio : writeln;
+    import std.stdio : stdout, writeln;
 
     if (plugin.state.settings.headless) return;
 
@@ -239,7 +238,7 @@ void onCommandBusImpl(
     import kameloso.common : logger;
     import kameloso.thread : ThreadMessage, boxed;
     import std.concurrency : send;
-    import std.stdio : writeln;
+    import std.stdio : stdout, writeln;
 
     if (!plugin.state.settings.headless)
     {

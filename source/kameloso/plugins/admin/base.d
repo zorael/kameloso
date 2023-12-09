@@ -1450,18 +1450,18 @@ void onBusMessage(
                 return printObject(plugin.state);
 
             case "gc.collect":
-                import std.datetime.systime : Clock;
+                import core.time : MonoTime;
 
                 // Only adds some 10 mb to compilation memory usage but it's
                 // very rarely needed, so keep it behind IncludeHeavyStuff
                 immutable statsPre = GC.stats();
-                immutable timestampPre = Clock.currTime;
+                immutable timestampPre = MonoTime.currTime;
                 immutable memoryUsedPre = statsPre.usedSize;
 
                 GC.collect();
 
                 immutable statsPost = GC.stats();
-                immutable timestampPost = Clock.currTime;
+                immutable timestampPost = MonoTime.currTime;
                 immutable memoryUsedPost = statsPost.usedSize;
                 immutable memoryCollected = (memoryUsedPre - memoryUsedPost);
                 immutable duration = (timestampPost - timestampPre);

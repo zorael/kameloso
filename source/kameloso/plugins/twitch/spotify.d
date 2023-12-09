@@ -59,58 +59,79 @@ package void requestSpotifyKeys(TwitchPlugin plugin)
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("== Spotify authorisation key generation mode ==");
-    enum message = "
-To access the Spotify API you need a <i>client ID</> and a <i>client secret</>.
+    logger.warning("== Spotify authorisation key generation wizard ==");
+    enum message = `
+To access the Spotify API you need to create what Spotify calls an <i>app</>,
+and generate a <i>client ID</> and a <i>client secret</> for it.
 
-<l>Go here to create a project and generate said credentials:</>
+<l>Go here to create an app:</>
 
     <i>https://developer.spotify.com/dashboard</>
 
-Make sure to go into <l>Edit Settings</> and add <i>http://localhost</> as a
-redirect URI. (You need to press the <i>Add</> button for it to save.)
-Additionally, add your user under <l>Users and Access</>.
+<i>*</> <l>Select</> <i>Create app</>
+  <i>*</> <l>Input something memorable</> as <i>Name</> and <i>Description</>
+  <i>*</> <l>Input</> as <i>Redirect URI</>: "<i>http://localhost</>"
+  <i>*</> <l>Click</> <i>Save</>
+<i>*</> <l>Click</> <i>Settings</> in the top right
+<i>*</> <l>Go to</> <i>User Management</>
+  <i>*</> <l>Add</> your Spotify user's <i>email</> address
 
-You also need to supply a channel for which it all relates.
+It should now display a <i>Client ID</> and <i>Client secret</>.
+
+    <w>Copy these somewhere; you'll need them soon.</>
+
+You also need to supply a Twitch channel to which it all relates.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
 
-Lastly you need a <i>playlist ID</> for song requests to work.
+Lastly you need a <i>Spotify playlist ID</> for song requests to work.
+New playlists can be created by clicking the <i>+</> next to <i>Your library</>
+in the panel to the left on the home screen.
+
 A normal URL to any playlist you can modify will work fine.
-";
+`;
     writeln(message.expandTags(LogLevel.off));
 
     Credentials creds;
+    string channel;  // mutable
+    uint numEmptyLinesEntered;
 
-    string channel;
     while (!channel.length)
     {
-        enum readChannelMessage = "<l>Enter your <i>#channel<l>:</> ";
-        immutable rawChannel = readNamedString(readChannelMessage, 0L, *plugin.state.abort);
-        if (*plugin.state.abort) return;
+        Flag!"benignAbort" benignAbort;
 
-        channel = rawChannel.stripped;
+        channel = readChannelName(
+            numEmptyLinesEntered,
+            benignAbort,
+            plugin.state.abort);
 
-        if (!channel.length || channel[0] != '#')
-        {
-            enum channelMessage = "Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.";
-            logger.warning(channelMessage);
-            channel = string.init;
-        }
+        if (*plugin.state.abort || benignAbort) return;
     }
 
-    enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth client ID<l>:</> ";
-    creds.spotifyClientID = readNamedString(readOAuthIDMessage, 32L, *plugin.state.abort);
+    enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth Client ID<l>:</> ";
+    creds.spotifyClientID = readNamedString(
+        readOAuthIDMessage,
+        32L,
+        No.passThroughEmptyString,
+        plugin.state.abort);
     if (*plugin.state.abort) return;
 
-    enum readOAuthSecretMessage = "<l>Copy and paste your <i>OAuth client secret<l>:</> ";
-    creds.spotifyClientSecret = readNamedString(readOAuthSecretMessage, 32L, *plugin.state.abort);
+    enum readOAuthSecretMessage = "<l>Copy and paste your <i>OAuth Client secret<l>:</> ";
+    creds.spotifyClientSecret = readNamedString(
+        readOAuthSecretMessage,
+        32L,
+        No.passThroughEmptyString,
+        plugin.state.abort);
     if (*plugin.state.abort) return;
 
     while (!creds.spotifyPlaylistID.length)
     {
         enum playlistIDLength = 22;
-        enum readPlaylistMessage = "<l>Copy and paste your <i>playlist URL<l>:</> ";
-        immutable playlistURL = readNamedString(readPlaylistMessage, 0L, *plugin.state.abort);
+        enum readPlaylistMessage = "<l>Copy and paste your <i>Spotify playlist URL<l>:</> ";
+        immutable playlistURL = readNamedString(
+            readPlaylistMessage,
+            0L,
+            No.passThroughEmptyString,
+            plugin.state.abort);
         if (*plugin.state.abort) return;
 
         if (playlistURL.length == playlistIDLength)
@@ -138,17 +159,13 @@ A normal URL to any playlist you can modify will work fine.
     enum attemptToOpenMessage = `
 --------------------------------------------------------------------------------
 
-<l>Attempting to open the Spotify redirect page in your default web browser.</>
+<l>Attempting to open the <i>Spotify redirect page<l> in your default web browser.</>
 
-<l>Paste the address of the empty page that was opened here.</>
+Click <i>Agree</> to authorise the use of this program with your account.`;
 
-* The redirected address should start with <i>http://localhost</>.
-* It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
-* If you are running local web server on port <i>80</>, you may have to temporarily
-  disable it for this to work.
-`;
     writeln(attemptToOpenMessage.expandTags(LogLevel.off));
-    if (plugin.state.settings.flush) stdout.flush();
+    writeln(pasteAddressInstructions.expandTags(LogLevel.off));
+    stdout.flush();
 
     enum authNode = "https://accounts.spotify.com/authorize";
     enum urlPattern = authNode ~
@@ -191,21 +208,20 @@ A normal URL to any playlist you can modify will work fine.
     }
 
     string code;  // mutable
+    uint numEmptyAddressLinesEntered;
+    enum numEmptyAddressLinesEnteredBreakpoint = 2;
 
     while (!code.length)
     {
         scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
-        enum pasteMessage = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
-
-> ";
+        enum pasteMessage = "<i>></> ";
         write(pasteMessage.expandTags(LogLevel.off));
         stdout.flush();
-
         stdin.flush();
-        immutable readCode = readln().stripped;
+        immutable input = readln().stripped;
 
-        if (*plugin.state.abort || !readCode.length)
+        if (*plugin.state.abort)
         {
             writeln();
             logger.warning("Aborting.");
@@ -213,14 +229,25 @@ A normal URL to any playlist you can modify will work fine.
             *plugin.state.abort = Yes.abort;
             return;
         }
+        else if (!input.length)
+        {
+            if (++numEmptyAddressLinesEntered > numEmptyAddressLinesEnteredBreakpoint)
+            {
+                enum cancellingKeygenMessage = "Cancelling keygen.";
+                logger.warning(cancellingKeygenMessage);
+                logger.trace();
+                return;
+            }
+            continue;
+        }
 
-        if (readCode.indexOf("code=") == -1)
+        if (input.indexOf("code=") == -1)
         {
             import std.algorithm.searching : startsWith;
 
             writeln();
 
-            if (readCode.startsWith(authNode))
+            if (input.startsWith(authNode))
             {
                 enum wrongPageMessage = "Not that page; the empty page you're " ~
                     "lead to after clicking <l>Allow</>.";
@@ -235,7 +262,7 @@ A normal URL to any playlist you can modify will work fine.
             continue;
         }
 
-        string slice = readCode;  // mutable
+        string slice = input;  // mutable
         slice.advancePast("?code=");
         code = slice;
 
@@ -264,7 +291,7 @@ A normal URL to any playlist you can modify will work fine.
         writeln(validationJSON.toPrettyString);
     }
 
-    if (const errorJSON = "error" in validationJSON)
+    if (immutable errorJSON = "error" in validationJSON)
     {
         throw new ErrorJSONException((*errorJSON)["message"].str, *errorJSON);
     }
@@ -342,14 +369,14 @@ void getSpotifyTokens(HttpClient client, ref Credentials creds, const string cod
             }
             */
 
-            const json = parseJSON(res.contentText);
+            immutable json = parseJSON(res.contentText);
 
             if (json.type != JSONType.object)
             {
                 throw new UnexpectedJSONException("Wrong JSON type in token request response", json);
             }
 
-            if (auto errorJSON = "error" in json)
+            if (immutable errorJSON = "error" in json)
             {
                 throw new ErrorJSONException(errorJSON.str, *errorJSON);
             }
@@ -414,14 +441,14 @@ void refreshSpotifyToken(HttpClient client, ref Credentials creds)
             }
             */
 
-            const json = parseJSON(res.contentText);
+            immutable json = parseJSON(res.contentText);
 
             if (json.type != JSONType.object)
             {
                 throw new UnexpectedJSONException("Wrong JSON type in token refresh response", json);
             }
 
-            if (auto errorJSON = "error" in json)
+            if (immutable errorJSON = "error" in json)
             {
                 throw new ErrorJSONException(errorJSON.str, *errorJSON);
             }
@@ -490,7 +517,7 @@ package JSONValue addTrackToSpotifyPlaylist(
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis, "Tried to call `addTrackToSpotifyPlaylist` from outside a Fiber")
 {
-    import kameloso.plugins.twitch.api : getUniqueNumericalID, waitForQueryResponse;
+    import kameloso.plugins.twitch.api : reserveUniqueBucketID, waitForQueryResponse;
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
     import arsd.http2 : HttpVerb;
@@ -520,7 +547,7 @@ in (Fiber.getThis, "Tried to call `addTrackToSpotifyPlaylist` from outside a Fib
     }
 
     immutable ubyte[] data;
-    /*immutable*/ int id = getUniqueNumericalID(plugin.bucket);  // Making immutable bumps compilation memory +44mb
+    /*immutable*/ int id = reserveUniqueBucketID(plugin.bucket);  // Making immutable bumps compilation memory +44mb
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
@@ -553,17 +580,17 @@ in (Fiber.getThis, "Tried to call `addTrackToSpotifyPlaylist` from outside a Fib
             }
             */
 
-            const json = parseJSON(response.str);
+            immutable json = parseJSON(response.str);
 
             if (json.type != JSONType.object)
             {
                 throw new UnexpectedJSONException("Wrong JSON type in playlist append response", json);
             }
 
-            const errorJSON = "error" in json;
+            immutable errorJSON = "error" in json;
             if (!errorJSON) return json;  // Success
 
-            if (const messageJSON = "message" in *errorJSON)
+            if (immutable messageJSON = "message" in *errorJSON)
             {
                 if (messageJSON.str == "The access token expired")
                 {
@@ -615,7 +642,7 @@ in (Fiber.getThis, "Tried to call `addTrackToSpotifyPlaylist` from outside a Fib
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-package auto getSpotifyTrackByID(Credentials creds, const string trackID)
+package auto getSpotifyTrackByID(const Credentials creds, const string trackID)
 {
     import arsd.http2 : Uri;
     import std.algorithm.searching : endsWith;
@@ -644,7 +671,7 @@ package auto getSpotifyTrackByID(Credentials creds, const string trackID)
                 throw new UnexpectedJSONException("Wrong JSON type in track request response", json);
             }
 
-            if (auto errorJSON = "error" in json)
+            if (const errorJSON = "error" in json)
             {
                 throw new ErrorJSONException(errorJSON.str, *errorJSON);
             }
@@ -696,7 +723,7 @@ auto validateSpotifyToken(HttpClient client, ref Credentials creds)
         {
             auto req = client.request(Uri(url));
             auto res = req.waitForCompletion();
-            const json = parseJSON(res.contentText);
+            immutable json = parseJSON(res.contentText);
 
             /*
             {
@@ -729,7 +756,7 @@ auto validateSpotifyToken(HttpClient client, ref Credentials creds)
                 throw new UnexpectedJSONException("Wrong JSON type in token validation response", json);
             }
 
-            if (auto errorJSON = "error" in json)
+            if (immutable errorJSON = "error" in json)
             {
                 throw new ErrorJSONException(errorJSON.str, *errorJSON);
             }

@@ -19,13 +19,12 @@ module kameloso.main;
 private:
 
 import kameloso.common : logger;
+import kameloso.constants : ShellReturnValue;
 import kameloso.kameloso : Kameloso;
 import kameloso.net : ListenAttempt;
 import kameloso.plugins.common.core : IRCPlugin;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
-import lu.common : Next;
-import std.stdio : stdout;
 import std.typecons : Flag, No, Yes;
 
 
@@ -45,6 +44,7 @@ import std.typecons : Flag, No, Yes;
 enum gcOptions = ()
 {
     import std.array : Appender;
+    import std.exception : assumeUnique;
 
     Appender!(char[]) sink;
     sink.reserve(128);
@@ -76,10 +76,10 @@ enum gcOptions = ()
     }
 
     // Tweak these numbers as we see fit
-    sink.put("initReserve:8 minPoolSize:8"); // incPoolSize:16
-
-    return sink.data;
-}().idup;
+    // https://forum.dlang.org/post/uqqabgqnoqdqbwbglthg@forum.dlang.org
+    sink.put("initReserve:8 minPoolSize:8 heapSizeFactor:1.002"); // incPoolSize:16
+    return sink.data.assumeUnique();
+}();
 
 
 // rt_options
@@ -106,19 +106,6 @@ public __gshared const string[] rt_options =
 ];
 
 
-// globalAbort
-/++
-    Abort flag.
-
-    This is set when the program is interrupted (such as via Ctrl+C). Other
-    parts of the program will be monitoring it, to take the cue and abort when
-    it is set.
-
-    Must be `__gshared` or it doesn't seem to work on Windows.
- +/
-public __gshared Flag!"abort" globalAbort;
-
-
 version(Posix)
 {
     // signalRaised
@@ -134,8 +121,8 @@ version(Posix)
 /++
     Called when a signal is raised, usually `SIGINT`.
 
-    Sets the [globalAbort] variable to true so other parts of the program knows to
-    gracefully shut down.
+    Sets the [kameloso.common.globalAbort|globalAbort] global to `Yes.abort`
+    so other parts of the program knows to gracefully shut down.
 
     Params:
         sig = Integer value of the signal raised.
@@ -143,8 +130,8 @@ version(Posix)
 extern (C)
 void signalHandler(int sig) nothrow @nogc @system
 {
-    import kameloso.common : globalHeadless;
     import core.stdc.stdio : printf;
+    static import kameloso.common;
 
     // $ kill -l
     // https://man7.org/linux/man-pages/man7/signal.7.html
@@ -184,21 +171,27 @@ void signalHandler(int sig) nothrow @nogc @system
         31 : "SYS",   /// Bad system call. (SVr4)
     ];
 
-    if (globalHeadless && !*globalHeadless && (sig < signalNames.length))
+    if (sig < signalNames.length)
     {
-        if (!globalAbort)
+        if (!kameloso.common.globalAbort)
         {
             printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
         }
         else if (sig == 2)
         {
-            printf("...caught another signal SIG%s! " ~
-                "(press Enter if nothing happens, or Ctrl+C again)\n", signalNames[sig].ptr);
+            enum pattern = "...caught another signal SIG%s! " ~
+                "(press Enter if nothing happens, or Ctrl+C again)\n";
+            printf(pattern, signalNames[sig].ptr);
         }
     }
+    else
+    {
+        // Can signals even be > 31?
+        printf("...caught signal %d!\n", sig);
+    }
 
-    if (globalAbort) resetSignals();
-    else globalAbort = Yes.abort;
+    if (kameloso.common.globalAbort) resetSignals();
+    else kameloso.common.globalAbort = Yes.abort;
 
     version(Posix)
     {
@@ -216,23 +209,17 @@ void signalHandler(int sig) nothrow @nogc @system
     means the bot should exit or not.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void messageFiber(ref Kameloso instance)
+void messageFiber(Kameloso instance)
 {
-    import kameloso.common : OutgoingLine;
+    import kameloso.common : Next, OutgoingLine;
     import kameloso.constants : Timeout;
     import kameloso.messaging : Message;
     import kameloso.string : replaceTokens;
     import kameloso.thread : OutputRequest, ThreadMessage;
     import std.concurrency : yield;
-    import std.datetime.systime : Clock;
-    import core.time : Duration, msecs;
-
-    // The Generator we use this function with popFronts the first thing it does
-    // after being instantiated. We're not ready for that yet, so catch the next
-    // yield (which is upon messenger.call()).
-    yield(Next.init);
+    import core.time : Duration, MonoTime, msecs;
 
     // Loop forever; we'll just terminate the Generator when we want to quit.
     while (true)
@@ -345,15 +332,18 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case reload:
+                pluginForeach:
                 foreach (plugin; instance.plugins)
                 {
                     if (!plugin.isEnabled) continue;
 
                     try
                     {
-                        if (!message.content.length || (plugin.name == message.content))
+                        if (!message.content.length) plugin.reload();
+                        else if (message.content == plugin.name)
                         {
                             plugin.reload();
+                            break pluginForeach;
                         }
                     }
                     catch (Exception e)
@@ -417,8 +407,11 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             default:
-                enum pattern = "onThreadMessage received unexpected message type: <t>%s";
-                logger.errorf(pattern, message.type);
+                import lu.conv : Enum;
+                import std.stdio : stdout;
+
+                enum pattern = "onThreadMessage received unexpected message type: <l>%s";
+                logger.errorf(pattern, Enum!(ThreadMessage.Type).toString(message.type));
                 if (instance.settings.flush) stdout.flush();
                 break;
             }
@@ -551,7 +544,9 @@ void messageFiber(ref Kameloso instance)
                 {
                     // Reason given, assume only one channel
                     line = text(
-                        "PART ", m.event.channel, " :",
+                        "PART ",
+                        m.event.channel,
+                        " :",
                         m.event.content.replaceTokens(instance.parser.client));
                 }
                 else
@@ -579,7 +574,7 @@ void messageFiber(ref Kameloso instance)
                 import kameloso.constants : Timeout;
                 import std.datetime.systime : Clock;
 
-                immutable now = Clock.currTime.toUnixTime;
+                immutable nowInUnix = Clock.currTime.toUnixTime();
                 immutable then = instance.previousWhoisTimestamps.get(m.event.target.nickname, 0);
                 immutable hysteresis = force ? 1 : Timeout.whoisRetry;
 
@@ -598,10 +593,13 @@ void messageFiber(ref Kameloso instance)
                             m.caller,
                             cast(bool)quietFlag,
                             cast(bool)background);
+                        // flush stdout with writeln later below
                     }
                 }
 
-                if ((now - then) > hysteresis)
+                immutable delta = (nowInUnix - then);
+
+                if (delta > hysteresis)
                 {
                     version(TraceWhois)
                     {
@@ -613,8 +611,7 @@ void messageFiber(ref Kameloso instance)
                     }
 
                     line = "WHOIS " ~ m.event.target.nickname;
-                    instance.previousWhoisTimestamps[m.event.target.nickname] = now;
-                    propagateWhoisTimestamp(instance, m.event.target.nickname, now);
+                    propagateWhoisTimestamp(instance, m.event.target.nickname, nowInUnix);
                 }
                 else
                 {
@@ -624,13 +621,14 @@ void messageFiber(ref Kameloso instance)
                         else
                         {
                             enum alreadyIssuedPattern = " ...but already issued %d seconds ago.";
-                            writefln(alreadyIssuedPattern, (now - then));
+                            writefln(alreadyIssuedPattern, (nowInUnix - then));
                         }
                     }
                 }
 
                 version(TraceWhois)
                 {
+                    import std.stdio : stdout;
                     if (instance.settings.flush) stdout.flush();
                 }
                 break;
@@ -650,7 +648,9 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             default:
-                logger.error("messageFiber.eventToServer missing case for outgoing event type <l>", m.event.type);
+                // No need to use Enum!(IRCEvent.Type) here, logger does it internally
+                logger.error("<l>messageFiber</>.<l>eventToServer</> missing case " ~
+                    "for outgoing event type <l>", m.event.type);
                 break;
             }
 
@@ -721,7 +721,7 @@ void messageFiber(ref Kameloso instance)
             case writeln:
                 import kameloso.logger : LogLevel;
                 import kameloso.terminal.colours.tags : expandTags;
-                import std.stdio : writeln;
+                import std.stdio : stdout, writeln;
 
                 writeln(request.line.expandTags(LogLevel.off));
                 if (instance.settings.flush) stdout.flush();
@@ -760,12 +760,13 @@ void messageFiber(ref Kameloso instance)
         /++
             Timestamp of when the loop started.
          +/
-        immutable loopStartTime = Clock.currTime;
+        immutable loopStartTime = MonoTime.currTime;
         static immutable maxReceiveTime = Timeout.messageReadMsecs.msecs;
 
-        while (!*instance.abort &&
+        while (
+            !*instance.abort &&
             (next == Next.continue_) &&
-            ((Clock.currTime - loopStartTime) <= maxReceiveTime))
+            ((MonoTime.currTime - loopStartTime) <= maxReceiveTime))
         {
             import std.concurrency : receiveTimeout;
             import std.variant : Variant;
@@ -803,7 +804,7 @@ void messageFiber(ref Kameloso instance)
     to all plugins.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
         [lu.common.Next.returnFailure|Next.returnFailure] if circumstances mean
@@ -813,8 +814,9 @@ void messageFiber(ref Kameloso instance)
         [lu.common.Next.retry|Next.retry] if the bot should reconnect to the server.
         [lu.common.Next.continue_|Next.continue_] is never returned.
  +/
-auto mainLoop(ref Kameloso instance)
+auto mainLoop(Kameloso instance)
 {
+    import kameloso.common : Next;
     import kameloso.constants : Timeout;
     import kameloso.net : ListenAttempt, SocketSendException, listenFiber;
     import std.concurrency : Generator;
@@ -830,7 +832,7 @@ auto mainLoop(ref Kameloso instance)
     auto listener = new Generator!ListenAttempt(() =>
         listenFiber(
             instance.conn,
-            *instance.abort,
+            instance.abort,
             Timeout.connectionLost));
 
     // Likewise a Generator to handle concurrency messages
@@ -911,7 +913,7 @@ auto mainLoop(ref Kameloso instance)
     immutable historyEntryIndex = instance.connectionHistory.length;  // snapshot index, 0 at first
     instance.connectionHistory ~= Kameloso.ConnectionHistoryEntry.init;
     historyEntry = &instance.connectionHistory[historyEntryIndex];
-    historyEntry.startTime = Clock.currTime.toUnixTime;
+    historyEntry.startTime = Clock.currTime.toUnixTime();
     historyEntry.stopTime = historyEntry.startTime;  // In case we abort before the first read is recorded
 
     /// UNIX timestamp of when the Socket receive timeout was shortened.
@@ -944,7 +946,7 @@ auto mainLoop(ref Kameloso instance)
         }
 
         immutable now = Clock.currTime;
-        immutable nowInUnix = now.toUnixTime;
+        immutable nowInUnix = now.toUnixTime();
         immutable nowInHnsecs = now.stdTime;
         immutable elapsed = (now - previousLoop);
 
@@ -969,8 +971,6 @@ auto mainLoop(ref Kameloso instance)
 
             if (plugin.state.specialRequests.length)
             {
-                scope(exit) instance.checkPluginForUpdates(plugin);
-
                 try
                 {
                     processSpecialRequests(instance, plugin);
@@ -985,6 +985,7 @@ auto mainLoop(ref Kameloso instance)
                 }
 
                 if (*instance.abort) return Next.returnFailure;
+                instance.checkPluginForUpdates(plugin);
             }
 
             if (plugin.state.scheduledFibers.length ||
@@ -994,12 +995,12 @@ auto mainLoop(ref Kameloso instance)
                 {
                     // These handle exceptions internally
                     processScheduledDelegates(plugin, nowInHnsecs);
+                    if (*instance.abort) return Next.returnFailure;
                     processScheduledFibers(plugin, nowInHnsecs);
+                    if (*instance.abort) return Next.returnFailure;
                     plugin.state.updateSchedule();  // Something is always removed
                     instance.conn.socket.blocking = false;  // Instantly timeout read to check messages
                     socketBlockingDisabled = true;
-
-                    if (*instance.abort) return Next.returnFailure;
                 }
 
                 if (!nextGlobalScheduledTimestamp ||
@@ -1048,14 +1049,13 @@ auto mainLoop(ref Kameloso instance)
             propagateWhoisTimestamps(instance);
         }
 
-        // Call the generator, query it for event lines
-        listener.call();
-
+        // Walk it and process the yielded lines
         listenerloop:
-        foreach (const attempt; listener)
+        while (true)
         {
+            listener.call();
             if (*instance.abort) return Next.returnFailure;
-
+            immutable attempt = listener.front;
             immutable actionAfterListen = listenAttemptToNext(instance, attempt);
 
             with (Next)
@@ -1078,8 +1078,13 @@ auto mainLoop(ref Kameloso instance)
             case returnFailure:
                 return Next.retry;
 
+            case noop:
+                // Do nothing and retry
+                continue listenerloop;
+
             case returnSuccess:  // should never happen
-            case crash:  // ditto
+            case unset:  // ditto
+            case crash:  // ...
                 import lu.conv : Enum;
                 import std.conv : text;
 
@@ -1173,12 +1178,12 @@ auto mainLoop(ref Kameloso instance)
     Broken out of [mainLoop] to make it more legible.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
         How many milliseconds until the next message in the buffers should be sent.
  +/
-auto sendLines(ref Kameloso instance)
+auto sendLines(Kameloso instance)
 {
     if (!instance.immediateBuffer.empty)
     {
@@ -1230,24 +1235,20 @@ auto sendLines(ref Kameloso instance)
     while also providing warnings and error messages.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         attempt = The [kameloso.net.ListenAttempt|ListenAttempt] to map the `.state` value of.
 
     Returns:
         A [lu.common.Next|Next] describing what action [mainLoop] should take next.
  +/
-auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
+auto listenAttemptToNext(Kameloso instance, const ListenAttempt attempt)
 {
+    import kameloso.common : Next;
+
     // Handle the attempt; switch on its state
     with (ListenAttempt.State)
     final switch (attempt.state)
     {
-    case unset:  // should never happen
-    case prelisten:  // ditto
-        import lu.conv : Enum;
-        import std.conv : text;
-        assert(0, text("listener yielded `", Enum!(ListenAttempt.State).toString(attempt.state), "` state"));
-
     case isEmpty:
         // Empty line yielded means nothing received; break foreach and try again
         return Next.retry;
@@ -1255,6 +1256,10 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
     case hasString:
         // hasString means we should drop down and continue processing
         return Next.continue_;
+
+    case noop:
+        // Do nothing
+        return Next.noop;
 
     case warning:
         // Benign socket error; break foreach and try again
@@ -1280,7 +1285,7 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 
         // Sleep briefly so it won't flood the screen on chains of errors
         static immutable readErrorGracePeriod = Timeout.readErrorGracePeriodMsecs.msecs;
-        interruptibleSleep(readErrorGracePeriod, *instance.abort);
+        interruptibleSleep(readErrorGracePeriod, instance.abort);
         return Next.retry;
 
     case timeout:
@@ -1316,6 +1321,12 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 
         instance.conn.connected = false;
         return Next.returnFailure;
+
+    case unset:  // should never happen
+    case prelisten:  // ditto
+        import lu.conv : Enum;
+        import std.conv : text;
+        assert(0, text("listener yielded `", Enum!(ListenAttempt.State).toString(attempt.state), "` state"));
     }
 }
 
@@ -1375,12 +1386,12 @@ void logPluginActionException(
     [dialect.defs.IRCEvent|IRCEvent] and dispatches it to all plugins.
 
     Params:
-        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance instance.
         raw = A raw line as read from the server.
         nowInUnix = Current timestamp in UNIX time.
  +/
 void processLineFromServer(
-    ref Kameloso instance,
+    Kameloso instance,
     const string raw,
     const long nowInUnix)
 {
@@ -1401,6 +1412,7 @@ void processLineFromServer(
         if (!instance.settings.headless)
         {
             import std.algorithm.searching : canFind;
+            import std.stdio : stdout;
 
             // Something asserted
             logger.error("scopeguard tripped.");
@@ -1468,7 +1480,7 @@ void processLineFromServer(
 
                 if ((cast(ubyte[])event.content).endsWith(badTail[]))
                 {
-                    event.content = cast(string)(cast(ubyte[])event.content[0..$-badTail.length]);
+                    event.content = event.content[0..$-badTail.length];
                 }
             }
         }
@@ -1924,10 +1936,10 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
     current (main loop) context, outside of any plugin.
 
     Params:
-        instance = Reference to the current bot instance.
+        instance = The current bot instance.
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
  +/
-void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
+void processReadyReplays(Kameloso instance, IRCPlugin plugin)
 {
     import core.thread : Fiber;
 
@@ -1990,10 +2002,10 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
     recently (within [kameloso.constants.Timeout.whoisRetry|Timeout.whoisRetry] seconds).
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         plugin = The relevant [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
  +/
-void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
+void processPendingReplays(Kameloso instance, IRCPlugin plugin)
 {
     import kameloso.constants : Timeout;
     import kameloso.messaging : Message, whois;
@@ -2002,7 +2014,7 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
     // Walk through replays and call WHOIS on those that haven't been
     // WHOISed in the last Timeout.whoisRetry seconds
 
-    immutable nowInUnix = Clock.currTime.toUnixTime;
+    immutable nowInUnix = Clock.currTime.toUnixTime();
 
     foreach (immutable nickname, replaysForNickname; plugin.state.pendingReplays)
     {
@@ -2035,7 +2047,6 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
 
             /*instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
                 cast(Flag!"quiet")instance.settings.hideOutgoing));
-            instance.previousWhoisTimestamps[nickname] = nowInUnix;
             propagateWhoisTimestamp(instance, nickname, nowInUnix);*/
 
             enum properties = (Message.Property.forced | Message.Property.quiet);
@@ -2055,6 +2066,7 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
 
         version(TraceWhois)
         {
+            import std.stdio : stdout;
             if (instance.settings.flush) stdout.flush();
         }
     }
@@ -2077,10 +2089,10 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
     first re-queue themselves.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         plugin = The relevant [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
  +/
-void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
+void processSpecialRequests(Kameloso instance, IRCPlugin plugin)
 {
     import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
@@ -2090,7 +2102,7 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
     plugin.state.specialRequests = null;
 
     top:
-    foreach (request; specialRequestsSnapshot)
+    foreach (ref request; specialRequestsSnapshot)
     {
         scope(exit)
         {
@@ -2098,156 +2110,206 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
             {
                 // Clean up
                 destroy(request.fiber);
+                //request.fiber = null;  // fiber is an accessor, cannot null it here
             }
 
             destroy(request);
             request = null;
         }
 
-        alias PeekCommandsPayload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
-        alias GetSettingPayload = Tuple!(string, string, string);
-        alias SetSettingPayload = Tuple!(bool);
-
-        if (auto fiber = cast(CarryingFiber!(PeekCommandsPayload))(request.fiber))
+        version(WantGetSetSettingHandlers)
         {
-            immutable channelName = request.context;
-
-            IRCPlugin.CommandMetadata[string][string] commandAA;
-
-            foreach (thisPlugin; instance.plugins)
-            {
-                if (channelName.length)
-                {
-                    commandAA[thisPlugin.name] = thisPlugin.channelSpecificCommands(channelName);
-                }
-                else
-                {
-                    commandAA[thisPlugin.name] = thisPlugin.commands;
-                }
-            }
-
-            fiber.payload[0] = commandAA;
-            fiber.call();
-            continue;
+            enum wantGetSettingHandler = true;
+            enum wantSetSettingHandler = true;
         }
-        else if (auto fiber = cast(CarryingFiber!(GetSettingPayload))(request.fiber))
+        else version(WithAdminPlugin)
         {
-            import lu.string : advancePast;
-            import std.algorithm.iteration : splitter;
-            import std.algorithm.searching : startsWith;
-            import std.array : Appender;
-
-            immutable expression = request.context;
-            string slice = expression;  // mutable
-            immutable pluginName = slice.advancePast('.', Yes.inherit);
-            alias setting = slice;
-
-            Appender!(char[]) sink;
-            sink.reserve(256);  // guesstimate
-
-            void apply()
-            {
-                if (setting.length)
-                {
-                    import lu.string : strippedLeft;
-
-                    foreach (const line; sink.data.splitter('\n'))
-                    {
-                        string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
-                        if (lineslice.startsWith('#')) lineslice = lineslice[1..$];
-                        const thisSetting = lineslice.advancePast(' ', Yes.inherit);
-
-                        if (thisSetting != setting) continue;
-
-                        const value = lineslice.strippedLeft;
-                        fiber.payload[0] = pluginName;
-                        fiber.payload[1] = setting;
-                        fiber.payload[2] = value;
-                        fiber.call();
-                        return;
-                    }
-                }
-                else
-                {
-                    import std.conv : to;
-
-                    string[] allSettings;
-
-                    foreach (const line; sink.data.splitter('\n'))
-                    {
-                        string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
-                        if (!lineslice.startsWith('[')) allSettings ~= lineslice.advancePast(' ', Yes.inherit);
-                    }
-
-                    fiber.payload[0] = pluginName;
-                    //fiber.payload[1] = string.init;
-                    fiber.payload[2] = allSettings.to!string;
-                    fiber.call();
-                    allSettings = null;
-                    return;
-                }
-
-                // If we're here, no such setting was found
-                fiber.payload[0] = pluginName;
-                //fiber.payload[1] = string.init;
-                //fiber.payload[2] = string.init;
-                fiber.call();
-                return;
-            }
-
-            switch (pluginName)
-            {
-            case "core":
-                import lu.serialisation : serialise;
-                sink.serialise(instance.settings);
-                apply();
-                continue;
-
-            case "connection":
-                // May leak secrets? certFile, privateKey etc...
-                // Careful with how we make this functionality available
-                import lu.serialisation : serialise;
-                sink.serialise(instance.connSettings);
-                apply();
-                continue;
-
-            default:
-                foreach (thisPlugin; instance.plugins)
-                {
-                    if (thisPlugin.name != pluginName) continue;
-                    thisPlugin.serialiseConfigInto(sink);
-                    apply();
-                    continue top;
-                }
-
-                // If we're here, no plugin was found
-                //fiber.payload[0] = string.init;
-                //fiber.payload[1] = string.init;
-                //fiber.payload[2] = string.init;
-                fiber.call();
-                continue;
-            }
-        }
-        else if (auto fiber = cast(CarryingFiber!(SetSettingPayload))(request.fiber))
-        {
-            import kameloso.plugins.common.misc : applyCustomSettings;
-
-            immutable expression = request.context;
-
-            // Borrow settings from the first plugin. It's taken by value
-            immutable success = applyCustomSettings(
-                instance.plugins,
-                [ expression ],
-                instance.plugins[0].state.settings);
-
-            fiber.payload[0] = success;
-            fiber.call();
-            continue;
+            enum wantGetSettingHandler = true;
+            enum wantSetSettingHandler = true;
         }
         else
         {
-            logger.error("Unknown special request type: " ~ typeof(request).stringof);
+            enum wantGetSettingHandler = false;
+            enum wantSetSettingHandler = false;
         }
+
+        version(WantPeekCommandsHandler)
+        {
+            enum wantPeekCommandsHandler = true;
+        }
+        else version(WithHelpPlugin)
+        {
+            enum wantPeekCommandsHandler = true;
+        }
+        else version(WithCounterPlugin)
+        {
+            enum wantPeekCommandsHandler = true;
+        }
+        else version(WithOnelinerPlugin)
+        {
+            enum wantPeekCommandsHandler = true;
+        }
+        else
+        {
+            enum wantPeekCommandsHandler = false;
+        }
+
+        static if (wantPeekCommandsHandler)
+        {
+            alias PeekCommandsPayload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
+
+            if (auto fiber = cast(CarryingFiber!(PeekCommandsPayload))(request.fiber))
+            {
+                immutable channelName = request.context;
+
+                IRCPlugin.CommandMetadata[string][string] commandAA;
+
+                foreach (thisPlugin; instance.plugins)
+                {
+                    if (channelName.length)
+                    {
+                        commandAA[thisPlugin.name] = thisPlugin.channelSpecificCommands(channelName);
+                    }
+                    else
+                    {
+                        commandAA[thisPlugin.name] = thisPlugin.commands;
+                    }
+                }
+
+                fiber.payload[0] = commandAA;
+                fiber.call();
+                continue;
+            }
+        }
+
+        static if (wantGetSettingHandler)
+        {
+            alias GetSettingPayload = Tuple!(string, string, string);
+
+            if (auto fiber = cast(CarryingFiber!(GetSettingPayload))(request.fiber))
+            {
+                import lu.string : advancePast;
+                import std.algorithm.iteration : splitter;
+                import std.algorithm.searching : startsWith;
+                import std.array : Appender;
+
+                immutable expression = request.context;
+                string slice = expression;  // mutable
+                immutable pluginName = slice.advancePast('.', Yes.inherit);
+                alias setting = slice;
+
+                Appender!(char[]) sink;
+                sink.reserve(256);  // guesstimate
+
+                void apply()
+                {
+                    if (setting.length)
+                    {
+                        import lu.string : strippedLeft;
+
+                        foreach (const line; sink.data.splitter('\n'))
+                        {
+                            string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
+                            if (lineslice.startsWith('#')) lineslice = lineslice[1..$];
+                            const thisSetting = lineslice.advancePast(' ', Yes.inherit);
+
+                            if (thisSetting != setting) continue;
+
+                            const value = lineslice.strippedLeft;
+                            fiber.payload[0] = pluginName;
+                            fiber.payload[1] = setting;
+                            fiber.payload[2] = value;
+                            fiber.call();
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        import std.conv : to;
+
+                        string[] allSettings;
+
+                        foreach (const line; sink.data.splitter('\n'))
+                        {
+                            string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
+                            if (!lineslice.startsWith('[')) allSettings ~= lineslice.advancePast(' ', Yes.inherit);
+                        }
+
+                        fiber.payload[0] = pluginName;
+                        //fiber.payload[1] = string.init;
+                        fiber.payload[2] = allSettings.to!string;
+                        fiber.call();
+                        allSettings = null;
+                        return;
+                    }
+
+                    // If we're here, no such setting was found
+                    fiber.payload[0] = pluginName;
+                    //fiber.payload[1] = string.init;
+                    //fiber.payload[2] = string.init;
+                    fiber.call();
+                    return;
+                }
+
+                switch (pluginName)
+                {
+                case "core":
+                    import lu.serialisation : serialise;
+                    sink.serialise(*instance.settings);
+                    apply();
+                    break;
+
+                case "connection":
+                    // May leak secrets? certFile, privateKey etc...
+                    // Careful with how we make this functionality available
+                    import lu.serialisation : serialise;
+                    sink.serialise(instance.connSettings);
+                    apply();
+                    break;
+
+                default:
+                    foreach (thisPlugin; instance.plugins)
+                    {
+                        if (thisPlugin.name != pluginName) continue;
+                        thisPlugin.serialiseConfigInto(sink);
+                        apply();
+                        continue top;
+                    }
+
+                    // If we're here, no plugin was found
+                    //fiber.payload[0] = string.init;
+                    //fiber.payload[1] = string.init;
+                    //fiber.payload[2] = string.init;
+                    fiber.call();
+                    break;
+                }
+                continue;
+            }
+        }
+
+        static if (wantSetSettingHandler)
+        {
+            alias SetSettingPayload = Tuple!(bool);
+
+            if (auto fiber = cast(CarryingFiber!(SetSettingPayload))(request.fiber))
+            {
+                import kameloso.plugins.common.misc : applyCustomSettings;
+
+                immutable expression = request.context;
+
+                // Borrow settings from the first plugin. It's taken by value
+                immutable success = applyCustomSettings(
+                    instance.plugins,
+                    [ expression ]);
+
+                fiber.payload[0] = success;
+                fiber.call();
+                continue;
+            }
+        }
+
+        // If we're here, nothing matched
+        logger.error("Unhandled special request type: <l>" ~ typeof(request).stringof);
     }
 
     if (plugin.state.specialRequests.length)
@@ -2310,14 +2372,15 @@ void resetSignals() nothrow @nogc
     Attempt handling `getopt`, wrapped in try-catch blocks.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
         [lu.common.Next|Next].* depending on what action the calling site should take.
  +/
-auto tryGetopt(ref Kameloso instance)
+auto tryGetopt(Kameloso instance)
 {
     import kameloso.plugins.common.misc : IRCPluginSettingsException;
+    import kameloso.common : Next;
     import kameloso.config : handleGetopt;
     import kameloso.configreader : ConfigurationFileReadFailureException;
     import kameloso.string : doublyBackslashed;
@@ -2394,15 +2457,16 @@ auto tryGetopt(ref Kameloso instance)
     to the user.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
         [lu.common.Next.continue_|Next.continue_] if connection succeeded,
         [lu.common.Next.returnFailure|Next.returnFailure] if connection failed
         and the program should exit.
  +/
-auto tryConnect(ref Kameloso instance)
+auto tryConnect(Kameloso instance)
 {
+    import kameloso.common : Next;
     import kameloso.constants :
         ConnectionDefaultFloats,
         ConnectionDefaultIntegers,
@@ -2416,7 +2480,7 @@ auto tryConnect(ref Kameloso instance)
         connectFiber(
             instance.conn,
             ConnectionDefaultIntegers.retries,
-            *instance.abort));
+            instance.abort));
 
     scope(exit)
     {
@@ -2424,51 +2488,18 @@ auto tryConnect(ref Kameloso instance)
         connector = null;
     }
 
-    try
-    {
-        connector.call();
-    }
-    catch (Exception e)
-    {
-        /+
-            We can only detect SSL context creation failure based on the string
-            in the generic Exception thrown, sadly.
-         +/
-        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
-        {
-            enum message = "Connection error: <l>" ~
-                MagicErrorStrings.sslLibraryNotFoundRewritten ~
-                " <t>(is OpenSSL installed?)";
-            enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
-            logger.error(message);
-            logger.error(wikiMessage);
-
-            version(Windows)
-            {
-                enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                logger.error(getoptMessage);
-            }
-        }
-        else
-        {
-            enum pattern = "Connection error: <l>%s";
-            logger.errorf(pattern, e.msg);
-        }
-
-        return Next.returnFailure;
-    }
-
     uint incrementedRetryDelay = Timeout.connectionRetry;
     enum transientSSLFailureTolerance = 10;
     uint numTransientSSLFailures;
 
-    foreach (const attempt; connector)
+    while (true)
     {
         import std.algorithm.searching : startsWith;
         import core.time : seconds;
 
+        connector.call();
         if (*instance.abort) return Next.returnFailure;
-
+        const attempt = connector.front;
         immutable lastRetry = (attempt.retryNum+1 == ConnectionDefaultIntegers.retries);
 
         enum unableToConnectString = "Unable to connect socket: ";
@@ -2482,7 +2513,7 @@ auto tryConnect(ref Kameloso instance)
         {
             enum pattern = "Retrying in <i>%d</> seconds...";
             logger.logf(pattern, incrementedRetryDelay);
-            interruptibleSleep(incrementedRetryDelay.seconds, *instance.abort);
+            interruptibleSleep(incrementedRetryDelay.seconds, instance.abort);
 
             import std.algorithm.comparison : min;
             incrementedRetryDelay = cast(uint)(incrementedRetryDelay *
@@ -2493,9 +2524,9 @@ auto tryConnect(ref Kameloso instance)
         void verboselyDelayToNextIP()
         {
             enum pattern = "Failed to connect to IP. Trying next IP in <i>%d</> seconds.";
-            logger.logf(pattern, Timeout.connectionRetry);
+            logger.logf(pattern, cast(uint)Timeout.connectionRetry);
             incrementedRetryDelay = Timeout.connectionRetry;
-            interruptibleSleep(Timeout.connectionRetry.seconds, *instance.abort);
+            interruptibleSleep(Timeout.connectionRetry.seconds, instance.abort);
         }
 
         with (ConnectionAttempt.State)
@@ -2503,6 +2534,10 @@ auto tryConnect(ref Kameloso instance)
         {
         case unset:  // should never happen
             assert(0, "connector yielded `unset` state");
+
+        case noop:
+            // Do nothing and retry
+            continue;
 
         case preconnect:
             import lu.common : sharedDomains;
@@ -2593,14 +2628,11 @@ auto tryConnect(ref Kameloso instance)
                 }
             }
 
-            if (*instance.abort) return Next.returnFailure;
             if (!lastRetry) verboselyDelay();
             numTransientSSLFailures = 0;
             continue;
 
         case delayThenNextIP:
-            // Check abort before delaying and then again after
-            if (*instance.abort) return Next.returnFailure;
             verboselyDelayToNextIP();
             if (*instance.abort) return Next.returnFailure;
             numTransientSSLFailures = 0;
@@ -2627,7 +2659,6 @@ auto tryConnect(ref Kameloso instance)
                 static assert(0, "Unsupported platform, please file a bug.");
             }
 
-            if (*instance.abort) return Next.returnFailure;
             if (!lastRetry) goto case delayThenNextIP;
             numTransientSSLFailures = 0;
             continue;
@@ -2637,9 +2668,8 @@ auto tryConnect(ref Kameloso instance)
 
             // "Failed to establish SSL connection after successful connect (system lib)"
             // "Failed to establish SSL connection after successful connect" --> attempted SSL on non-SSL server
-
-            enum pattern = "Failed to connect: <l>%s";
-            logger.errorf(pattern, attempt.error);
+            enum pattern = "Failed to connect: <l>%s</> <t>(%d)";
+            logger.errorf(pattern, attempt.error, attempt.errno);
             if (*instance.abort) return Next.returnFailure;
 
             if ((numTransientSSLFailures++ < transientSSLFailureTolerance) &&
@@ -2655,22 +2685,50 @@ auto tryConnect(ref Kameloso instance)
             continue;
 
         case fatalSSLFailure:
-            enum pattern = "Failed to connect: <l>%s";
-            logger.errorf(pattern, attempt.error);
+            enum pattern = "Failed to connect (fatal): <l>%s</> <t>(%d)";
+            logger.errorf(pattern, attempt.error, attempt.errno);
             return Next.returnFailure;
+
+        case exception:
+            /+
+                We can only detect SSL context creation failure based on the string
+                in the generic Exception thrown, sadly.
+             +/
+            if (attempt.error == MagicErrorStrings.sslContextCreationFailure)
+            {
+                enum message = "Connection error: <l>" ~
+                    MagicErrorStrings.sslLibraryNotFoundRewritten ~
+                    " <t>(is OpenSSL installed?)";
+                enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
+                logger.error(message);
+                logger.error(wikiMessage);
+
+                version(Windows)
+                {
+                    enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                    logger.error(getoptMessage);
+                }
+                return Next.returnFailure;
+            }
+            else
+            {
+                enum pattern = "Connection error: <l>%s";
+                logger.errorf(pattern, attempt.error);
+                continue;
+            }
 
         case invalidConnectionError:
         case error:
             version(Posix)
             {
                 import kameloso.common : errnoStrings;
-                enum pattern = "Failed to connect: <l>%s</> (<t>%s</>)";
-                logger.errorf(pattern, errorString, errnoStrings[attempt.errno]);
+                enum pattern = "Connection failed with <l>%s</>: <t>%s";
+                logger.warningf(pattern, errnoStrings[attempt.errno], errorString);
             }
             else version(Windows)
             {
-                enum pattern = "Failed to connect: <l>%s</> (<t>%d</>)";
-                logger.errorf(pattern, errorString, attempt.errno);
+                enum pattern = "Connection failed with error <l>%d</>: <t>%s";
+                logger.warningf(pattern, attempt.errno, errorString);
             }
             else
             {
@@ -2701,7 +2759,7 @@ auto tryConnect(ref Kameloso instance)
     to the user.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         firstConnect = Whether or not this is the first time we're attempting a connection.
 
     Returns:
@@ -2709,8 +2767,9 @@ auto tryConnect(ref Kameloso instance)
         [lu.common.Next.returnFailure|Next.returnFailure] if it failed and the
         program should exit.
  +/
-auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
+auto tryResolve(Kameloso instance, const Flag!"firstConnect" firstConnect)
 {
+    import kameloso.common : Next;
     import kameloso.constants : Timeout;
     import kameloso.net : ResolveAttempt, resolveFiber;
     import std.concurrency : Generator;
@@ -2721,7 +2780,7 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
             instance.parser.server.address,
             instance.parser.server.port,
             cast(Flag!"useIPv6")instance.connSettings.ipv6,
-            *instance.abort));
+            instance.abort));
 
     scope(exit)
     {
@@ -2740,7 +2799,7 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 
         enum pattern = "Network down? Retrying in <i>%d</> seconds.";
         logger.logf(pattern, incrementedRetryDelay);
-        interruptibleSleep(incrementedRetryDelay.seconds, *instance.abort);
+        interruptibleSleep(incrementedRetryDelay.seconds, instance.abort);
         if (*instance.abort) return;
 
         enum delayCap = 10*60;  // seconds
@@ -2748,10 +2807,12 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
         incrementedRetryDelay = min(incrementedRetryDelay, delayCap);
     }
 
-    foreach (const attempt; resolver)
+    while (true)
     {
         import std.algorithm.searching : startsWith;
 
+        resolver.call();
+        immutable attempt = resolver.front;
         if (*instance.abort) return Next.returnFailure;
 
         enum getaddrinfoErrorString = "getaddrinfo error: ";
@@ -2768,8 +2829,8 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
             // Should never happen
             assert(0, "resolver yielded `unset` state");
 
-        case preresolve:
-            // No message for this
+        case noop:
+            // Do nothing and retry
             continue;
 
         case success:
@@ -2814,8 +2875,6 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
             return Next.returnFailure;
         }
     }
-
-    return Next.returnFailure;
 }
 
 
@@ -2827,19 +2886,14 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
     console codepages.
 
     This is called very early during execution.
-
-    Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void postInstanceSetup(ref Kameloso instance)
+void postInstanceSetup()
 {
-    import kameloso.constants : KamelosoInfo;
     import kameloso.terminal : isTerminal, setTerminalTitle;
 
     version(Windows)
     {
         import kameloso.terminal : setConsoleModeAndCodepage;
-
         // Set up the console to display text and colours properly.
         setConsoleModeAndCodepage();
     }
@@ -2886,14 +2940,16 @@ void setDefaultDirectories(ref CoreSettings settings) @safe
     This is called after command-line arguments have been parsed.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
         [lu.common.Next.returnFailure|Next.returnFailure] if the program should exit,
         [lu.common.Next.continue_|Next.continue_] otherwise.
  +/
-auto verifySettings(ref Kameloso instance)
+auto verifySettings(Kameloso instance)
 {
+    import kameloso.common : Next;
+
     if (!instance.settings.force)
     {
         import dialect.common : isValidNickname;
@@ -2968,9 +3024,9 @@ auto verifySettings(ref Kameloso instance)
     This is called after settings have been verified, before plugins are initialised.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void resolvePaths(ref Kameloso instance) @safe
+void resolvePaths(Kameloso instance) @safe
 {
     import kameloso.platform : rbd = resourceBaseDirectory;
     import std.file : exists;
@@ -3056,15 +3112,18 @@ void resolvePaths(ref Kameloso instance) @safe
     It resolves and connects to servers, then hands off execution to [mainLoop].
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
-        attempt = out-reference [AttemptState] aggregate of state variables used when connecting.
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
+
+    Returns:
+        A [RunState] aggregate of state variables derived from a program run.
  +/
-void startBot(ref Kameloso instance, out AttemptState attempt)
+auto startBot(Kameloso instance)
 {
     import kameloso.plugins.common.misc :
         IRCPluginInitialisationException,
         pluginNameOfFilename,
         pluginFileBaseName;
+    import kameloso.common : Next;
     import kameloso.constants : ShellReturnValue;
     import kameloso.string : doublyBackslashed;
     import kameloso.terminal : TerminalToken, isTerminal;
@@ -3074,14 +3133,14 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
     // Save a backup snapshot of the client, for restoring upon reconnections
     IRCClient backupClient = instance.parser.client;
 
+    // Persistent state variables
+    RunState attempt;
+
     enum bellString = "" ~ cast(char)(TerminalToken.bell);
     immutable bell = isTerminal ? bellString : string.init;
 
-    outerloop:
-    do
+    while (true)
     {
-        // *instance.abort is guaranteed to be false here.
-
         instance.generateNewConnectionID();
         attempt.silentExit = true;
 
@@ -3105,8 +3164,9 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
 
             if ((!lastConnectAttemptFizzled && instance.settings.reexecToReconnect) || instance.flags.askedToReexec)
             {
-                import kameloso.platform : ExecException, execvp;
+                import kameloso.platform : exec;
                 import kameloso.terminal : isTerminal, resetTerminalTitle, setTerminalTitle;
+                import lu.common : ReturnValueException;
                 import std.process : ProcessException;
 
                 if (!instance.settings.headless)
@@ -3146,23 +3206,30 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                     // Clear the terminal title if we're in a terminal
                     if (isTerminal) resetTerminalTitle();
 
-                    auto pid = execvp(instance.args);
+                    const pid = exec(instance.args.dup, instance.flags.numReexecs);
                     // On Windows, if we're here, the call succeeded
                     // Posix should never be here; it will either exec or throw
 
-                    enum pattern = "Forked into PID <l>%d</>.";
-                    logger.infof(pattern, pid.processID);
-                    //resetConsoleModeAndCodepage(); // Don't, it will be called via atexit
-                    exit(0);
+                    version(Posix)
+                    {
+                        assert(0, "resumed after exec");
+                    }
+                    else
+                    {
+                        enum pattern = "Forked into PID <l>%d</>.";
+                        logger.infof(pattern, pid.processID);
+                        //resetConsoleModeAndCodepage(); // Don't, it will be called via atexit
+                        exit(0);
+                    }
                 }
                 catch (ProcessException e)
                 {
                     enum pattern = "Failed to spawn a new process: <t>%s</>.";
                     logger.errorf(pattern, e.msg);
                 }
-                catch (ExecException e)
+                catch (ReturnValueException e)
                 {
-                    enum pattern = "Failed to <l>execvp</> with an error value of <l>%d</>.";
+                    enum pattern = "Failed to <l>exec</> with an error value of <l>%d</>.";
                     logger.errorf(pattern, e.retval);
                 }
                 catch (Exception e)
@@ -3172,7 +3239,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                     version(PrintStacktraces) logger.trace(e);
                 }
 
-                // Reset the terminal title after a failed execvp/fork
+                // Reset the terminal title after a failed exec/fork
                 if (isTerminal) setTerminalTitle();
             }
 
@@ -3207,9 +3274,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                         to RPL_WELCOME, or we're reconnecting.
                         Quickly attempt again.
                      +/
-                    static immutable twitchRegistrationFailConnectionRetry =
-                        Timeout.twitchRegistrationFailConnectionRetryMsecs.msecs;
-                    gracePeriodBeforeReconnect = twitchRegistrationFailConnectionRetry;
+                    gracePeriodBeforeReconnect = Timeout.twitchRegistrationFailConnectionRetryMsecs.msecs;
                 }
             }
 
@@ -3218,11 +3283,8 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                 logger.log("One moment...");
             }
 
-            interruptibleSleep(gracePeriodBeforeReconnect, *instance.abort);
-            if (*instance.abort) break outerloop;
-
-            // Re-instantiate plugins here so it isn't done on the first connect attempt
-            instance.instantiatePlugins();
+            interruptibleSleep(gracePeriodBeforeReconnect, instance.abort);
+            if (*instance.abort) return attempt;
 
             // Reset throttling, in case there were queued messages.
             instance.throttle.reset();
@@ -3239,6 +3301,89 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
 
             // Reset transient state flags
             instance.flags = typeof(instance.flags).init;
+
+            scope(exit)
+            {
+                if (*instance.abort || (attempt.retval != ShellReturnValue.success))
+                {
+                    // Something seems to have failed, so teardown plugins
+                    instance.teardownPlugins();
+                }
+            }
+
+            /+
+                Reinstantiate plugins.
+             +/
+            try
+            {
+                assert(!instance.plugins.length, "Tried to reinstantiate with existing plugins");
+                instance.instantiatePlugins();
+            }
+            catch (Exception e)
+            {
+                enum pattern = "An unexpected error occurred while instantiating plugins: " ~
+                    "<t>%s</> (at <l>%s</>:<l>%d</>)";
+                logger.errorf(
+                    pattern,
+                    e.msg,
+                    e.file.doublyBackslashed,
+                    e.line);
+
+                version(PrintStacktraces) logger.trace(e.info);
+                attempt.retval = ShellReturnValue.pluginInstantiationException;
+                return attempt;
+            }
+
+            /+
+                Reinitialise them.
+             +/
+            try
+            {
+                instance.initialisePlugins();
+            }
+            catch (IRCPluginInitialisationException e)
+            {
+                import kameloso.plugins.common.misc : pluginFileBaseName;
+
+                enum pattern = "The <l>%s</> plugin failed to initialise: " ~
+                    "<t>%s</> (at <l>%s</>:<l>%d</>)";
+                logger.errorf(
+                    pattern,
+                    e.pluginName,
+                    e.msg,
+                    e.file.pluginFileBaseName.doublyBackslashed,
+                    e.line);
+
+                version(PrintStacktraces) logger.trace(e.info);
+                attempt.retval = ShellReturnValue.pluginInitialisationFailure;
+                return attempt;
+            }
+            catch (Exception e)
+            {
+                enum pattern = "An unexpected error occurred while initialising plugins: " ~
+                    "<t>%s</> (at <l>%s</>:<l>%d</>)";
+                logger.errorf(
+                    pattern,
+                    e.msg,
+                    e.file.doublyBackslashed,
+                    e.line);
+
+                version(PrintStacktraces) logger.trace(e.info);
+                attempt.retval = ShellReturnValue.pluginInitialisationException;
+                return attempt;
+            }
+
+            if (*instance.abort) return attempt;
+
+            // Check for concurrency messages in case any were sent during plugin initialisation
+            ShellReturnValue initRetval;
+            immutable proceed = checkInitialisationMessages(instance, initRetval);
+
+            if (!proceed)
+            {
+                attempt.retval = initRetval;
+                return attempt;
+            }
         }
 
         scope(exit)
@@ -3248,7 +3393,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         }
 
         // May as well check once here, in case something in instantiatePlugins aborted or so.
-        if (*instance.abort) break outerloop;
+        if (*instance.abort) return attempt;
 
         instance.conn.reset();
 
@@ -3262,7 +3407,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         immutable actionAfterResolve = tryResolve(
             instance,
             cast(Flag!"firstConnect")(attempt.firstConnect));
-        if (*instance.abort) break outerloop;  // tryResolve interruptibleSleep can abort
+        if (*instance.abort) return attempt;  // tryResolve interruptibleSleep can abort
 
         with (Next)
         final switch (actionAfterResolve)
@@ -3273,15 +3418,17 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         case returnFailure:
             // No need to teardown; the scopeguard does it for us.
             attempt.retval = ShellReturnValue.resolutionFailure;
-            break outerloop;
+            return attempt;
 
         case returnSuccess:
             // Ditto
             attempt.retval = ShellReturnValue.success;
-            break outerloop;
+            return attempt;
 
-        case retry:  // should never happen
-        case crash:  // ditto
+        case unset:  // should never happen
+        case noop:   // ditto
+        case retry:  // ...
+        case crash:  // ...
             import lu.conv : Enum;
             import std.conv : text;
             assert(0, text("`tryResolve` returned `", Enum!Next.toString(actionAfterResolve), "`"));
@@ -3296,14 +3443,14 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         try
         {
             instance.initPluginResources();
-            if (*instance.abort) break outerloop;
+            if (*instance.abort) return attempt;
         }
         catch (IRCPluginInitialisationException e)
         {
             if (e.malformedFilename.length)
             {
                 enum pattern = "The <l>%s</> plugin failed to load its resources; " ~
-                    "<l>%s</> is malformed. (at <l>%s</>:<l>%d</>)%s";
+                    "<t>%s</> is malformed. (at <l>%s</>:<l>%d</>)%s";
                 logger.errorf(
                     pattern,
                     e.pluginName,
@@ -3315,7 +3462,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             else
             {
                 enum pattern = "The <l>%s</> plugin failed to load its resources; " ~
-                    "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
+                    "<t>%s</> (at <l>%s</>:<l>%d</>)%s";
                 logger.errorf(
                     pattern,
                     e.pluginName,
@@ -3327,12 +3474,12 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
 
             version(PrintStacktraces) logger.trace(e.info);
             attempt.retval = ShellReturnValue.pluginResourceLoadFailure;
-            break outerloop;
+            return attempt;
         }
         catch (Exception e)
         {
             enum pattern = "An unexpected error occurred while initialising " ~
-                "plugin resources: <t>%s</> (at <l>%s</>:<l>%d</>)%s";
+                "plugin resources: <t>%s</> (at <t>%s</>:<l>%d</>)%s";
             logger.errorf(
                 pattern,
                 e.msg,
@@ -3342,14 +3489,14 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
 
             version(PrintStacktraces) logger.trace(e);
             attempt.retval = ShellReturnValue.pluginResourceLoadException;
-            break outerloop;
+            return attempt;
         }
 
         /+
             Connect.
          +/
         immutable actionAfterConnect = tryConnect(instance);
-        if (*instance.abort) break outerloop;  // tryConnect interruptibleSleep can abort
+        if (*instance.abort) return attempt;  // tryConnect interruptibleSleep can abort
 
         with (Next)
         final switch (actionAfterConnect)
@@ -3360,11 +3507,13 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         case returnFailure:
             // No need to saveOnExit, the scopeguard takes care of that
             attempt.retval = ShellReturnValue.connectionFailure;
-            break outerloop;
+            return attempt;
 
         case returnSuccess:  // should never happen
-        case retry:  // ditto
-        case crash:  // ditto
+        case unset:  // ditto
+        case noop:   // ...
+        case retry:  // ...
+        case crash:  // ...
             import lu.conv : Enum;
             import std.conv : text;
             assert(0, text("`tryConnect` returned `", Enum!Next.toString(actionAfterConnect), "`"));
@@ -3379,38 +3528,23 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         try
         {
             instance.setupPlugins();
-            if (*instance.abort) break outerloop;
+            if (*instance.abort) return attempt;
         }
         catch (IRCPluginInitialisationException e)
         {
-            if (e.malformedFilename.length)
-            {
-                enum pattern = "The <l>%s</> plugin failed to setup; " ~
-                    "<l>%s</> is malformed. (at <l>%s</>:<l>%d</>)%s";
-                logger.errorf(
-                    pattern,
-                    e.pluginName,
-                    e.malformedFilename.doublyBackslashed,
-                    e.file.pluginFileBaseName.doublyBackslashed,
-                    e.line,
-                    bell);
-            }
-            else
-            {
-                enum pattern = "The <l>%s</> plugin failed to setup; " ~
-                    "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
-                logger.errorf(
-                    pattern,
-                    e.pluginName,
-                    e.msg,
-                    e.file.pluginFileBaseName.doublyBackslashed,
-                    e.line,
-                    bell);
-            }
+            enum pattern = "The <l>%s</> plugin failed to set up; " ~
+                "<t>%s</> (at <l>%s</>:<l>%d</>)%s";
+            logger.errorf(
+                pattern,
+                e.pluginName,
+                e.msg,
+                e.file.pluginFileBaseName.doublyBackslashed,
+                e.line,
+                bell);
 
             version(PrintStacktraces) logger.trace(e.info);
             attempt.retval = ShellReturnValue.pluginSetupFailure;
-            break outerloop;
+            return attempt;
         }
         catch (Exception e)
         {
@@ -3426,7 +3560,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
 
             version(PrintStacktraces) logger.trace(e);
             attempt.retval = ShellReturnValue.pluginSetupException;
-            break outerloop;
+            return attempt;
         }
 
         // Do verbose exits if mainLoop causes a return
@@ -3471,12 +3605,17 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
 
         // Start the main loop
         instance.flags.askedToReconnect = false;
-        attempt.next = instance.mainLoop();
+        attempt.next = mainLoop(instance);
         attempt.firstConnect = false;
+
+        if (*instance.abort || !attempt.next.among!(Next.continue_, Next.retry))
+        {
+            // Break and return
+            return attempt;
+        }
     }
-    while (
-        !*instance.abort &&
-        attempt.next.among!(Next.continue_, Next.retry));
+
+    assert(0, "Unreachable");
 }
 
 
@@ -3495,9 +3634,9 @@ void printEventDebugDetails(
     const string raw,
     const Flag!"eventWasInitialised" eventWasInitialised = Yes.eventWasInitialised)
 {
-    import kameloso.common : globalHeadless;
+    static import kameloso.common;
 
-    if (*globalHeadless || !raw.length) return;
+    if (kameloso.common.globalHeadless || !raw.length) return;
 
     version(IncludeHeavyStuff)
     {
@@ -3552,9 +3691,9 @@ void printEventDebugDetails(
     Prints a summary of the connection(s) made and events parsed this execution.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void printSummary(const ref Kameloso instance) @safe
+void printSummary(const Kameloso instance) @safe
 {
     import kameloso.time : timeSince;
     import core.time : Duration;
@@ -3580,7 +3719,7 @@ void printSummary(const ref Kameloso instance) @safe
         auto start = SysTime.fromUnixTime(entry.startTime);
         immutable startString = fullDatePattern.format(
             start.year,
-            start.month,
+            cast(uint)start.month,
             start.day,
             start.hour,
             start.minute,
@@ -3594,7 +3733,7 @@ void printSummary(const ref Kameloso instance) @safe
                 stop.second) :
             fullDatePattern.format(
                 stop.year,
-                stop.month,
+                cast(uint)stop.month,
                 stop.day,
                 stop.hour,
                 stop.minute,
@@ -3624,12 +3763,16 @@ void printSummary(const ref Kameloso instance) @safe
 }
 
 
-// AttemptState
+// RunState
 /++
     Aggregate of state values used in an execution of the program.
  +/
-struct AttemptState
+struct RunState
 {
+private:
+    import kameloso.common : Next;
+
+public:
     /++
         Enum denoting what we should do next loop in an execution attempt.
      +/
@@ -3664,9 +3807,9 @@ struct AttemptState
     Used when saving to configuration file, to ensure the current state is saved.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void syncGuestChannels(ref Kameloso instance) pure @safe nothrow
+void syncGuestChannels(Kameloso instance) pure @safe nothrow
 {
     foreach (plugin; instance.plugins)
     {
@@ -3700,16 +3843,16 @@ void syncGuestChannels(ref Kameloso instance) pure @safe nothrow
     otherwise do the echoing.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         reason = Quit reason.
  +/
-void echoQuitMessage(ref Kameloso instance, const string reason) @safe
+void echoQuitMessage(Kameloso instance, const string reason) @safe
 {
     bool printed;
 
     version(Colours)
     {
-        if (!instance.settings.monochrome)
+        if (instance.settings.colours)
         {
             import kameloso.irccolours : mapEffects;
             logger.trace("--> QUIT :", reason.mapEffects);
@@ -3731,15 +3874,17 @@ void echoQuitMessage(ref Kameloso instance, const string reason) @safe
     associative array to all plugins.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         nickname = Nickname whose WHOIS timestamp to propagate.
         nowInUnix = UNIX WHOIS timestamp.
  +/
 void propagateWhoisTimestamp(
-    ref Kameloso instance,
+    Kameloso instance,
     const string nickname,
     const long nowInUnix) pure @safe nothrow
 {
+    instance.previousWhoisTimestamps[nickname] = nowInUnix;
+
     foreach (plugin; instance.plugins)
     {
         plugin.state.previousWhoisTimestamps[nickname] = nowInUnix;
@@ -3756,9 +3901,9 @@ void propagateWhoisTimestamp(
     modify the original.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void propagateWhoisTimestamps(ref Kameloso instance) pure @safe
+void propagateWhoisTimestamps(Kameloso instance) pure @safe
 {
     auto copy = instance.previousWhoisTimestamps.dup;  // mutable
 
@@ -3769,257 +3914,60 @@ void propagateWhoisTimestamps(ref Kameloso instance) pure @safe
 }
 
 
-public:
-
-
-// run
+// prettyPrintStartScreen
 /++
-    Entry point of the program.
-
-    This function is very long, but mostly because it's tricky to split up into
-    free functions and have them convey "parent function should exit".
+    Prints a pretty start screen.
 
     Params:
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         args = Command-line arguments passed to the program.
+ +/
+void prettyPrintStartScreen(const Kameloso instance, const string[] args)
+{
+    import kameloso.common : printVersionInfo;
+    import kameloso.printing : printObjects;
+    import kameloso.string : replaceTokens;
+    import std.stdio : stdout, writeln;
+
+    printVersionInfo();
+    writeln();
+    if (instance.settings.flush) stdout.flush();
+
+    // Print the current settings to show what's going on.
+    IRCClient prettyClient = instance.parser.client;
+    prettyClient.realName = replaceTokens(prettyClient.realName);
+    printObjects(prettyClient, instance.bot, instance.parser.server);
+
+    if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
+    {
+        import kameloso.config : giveBrightTerminalHint, notifyAboutIncompleteConfiguration;
+
+        giveBrightTerminalHint();
+        logger.trace();
+        notifyAboutIncompleteConfiguration(instance.settings.configFile, args[0]);
+    }
+}
+
+
+
+// checkInitialisationMessages
+/++
+    Checks for any initialisation messages that may have been sent by plugins
+    during their initialisation.
+
+    Params:
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
+        retval = out-reference to the [kameloso.constants.ShellReturnValue|ShellReturnValue]
+            to return from [run].
 
     Returns:
-        `0` on success, non-`0` on failure.
+        `true` if nothing fatal happened and the calling function should proceed,
+        `false` otherwise.
  +/
-auto run(string[] args)
+auto checkInitialisationMessages(
+    Kameloso instance,
+    out ShellReturnValue retval)
 {
-    import kameloso.plugins.common.misc : IRCPluginSettingsException;
-    import kameloso.constants : ShellReturnValue;
-    import kameloso.logger : KamelosoLogger;
-    import kameloso.string : replaceTokens;
-    import std.algorithm.comparison : among;
-    import std.conv : ConvException;
-    import std.exception : ErrnoException;
-    static import kameloso.common;
-
-    // Set up the Kameloso instance.
-    auto instance = Kameloso(args);
-    postInstanceSetup(instance);
-
-    scope(exit)
-    {
-        import kameloso.terminal : isTerminal, resetTerminalTitle;
-        if (isTerminal) resetTerminalTitle();
-    }
-
-    // Set pointers.
-    kameloso.common.settings = &instance.settings;
-    instance.abort = &globalAbort;
-
-    // Declare AttemptState instance.
-    AttemptState attempt;
-
-    // Set up default directories in the settings.
-    setDefaultDirectories(instance.settings);
-
-    // Initialise the logger immediately so it's always available.
-    // handleGetopt re-inits later when we know the settings for monochrome and headless
-    kameloso.common.logger = new KamelosoLogger(instance.settings);
-
-    // Set up signal handling so that we can gracefully catch Ctrl+C.
-    setupSignals();
-
-    scope(failure)
-    {
-        import kameloso.terminal : TerminalToken, isTerminal;
-
-        if (!instance.settings.headless)
-        {
-            enum bellString = "" ~ cast(char)(TerminalToken.bell);
-            immutable bell = isTerminal ? bellString : string.init;
-            logger.error("We just crashed!", bell);
-        }
-
-        *instance.abort = Yes.abort;
-        resetSignals();
-    }
-
-    immutable actionAfterGetopt = tryGetopt(instance);
-    kameloso.common.globalHeadless = &instance.settings.headless;
-
-    with (Next)
-    final switch (actionAfterGetopt)
-    {
-    case continue_:
-        break;
-
-    case returnSuccess:
-        return ShellReturnValue.success;
-
-    case returnFailure:
-        return ShellReturnValue.getoptFailure;
-
-    case retry:  // should never happen
-    case crash:  // ditto
-        import lu.conv : Enum;
-        import std.conv : text;
-        assert(0, text("`tryGetopt` returned `", Enum!Next.toString(actionAfterGetopt), "`"));
-    }
-
-    if (!instance.settings.headless || instance.settings.force)
-    {
-        try
-        {
-            import kameloso.terminal : ensureAppropriateBuffering;
-
-            // Ensure stdout is buffered by line if we think it isn't being
-            ensureAppropriateBuffering();
-        }
-        catch (ErrnoException e)
-        {
-            import std.stdio : writeln;
-            if (!instance.settings.headless) writeln("Failed to set stdout buffer mode/size! errno:", e.errno);
-            if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
-        }
-        catch (Exception e)
-        {
-            if (!instance.settings.headless)
-            {
-                import std.stdio : writeln;
-                writeln("Failed to set stdout buffer mode/size!");
-                writeln(e);
-            }
-
-            if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
-        }
-        finally
-        {
-            if (instance.settings.flush) stdout.flush();
-        }
-    }
-
-    // Apply some defaults to empty members, as stored in `kameloso.constants`.
-    // It's done before in tryGetopt but do it again to ensure we don't have an empty nick etc
-    // Skip if --force was passed.
-    if (!instance.settings.force)
-    {
-        import kameloso.config : applyDefaults;
-        applyDefaults(instance);
-    }
-
-    // Additionally if the port is an SSL-like port, assume SSL,
-    // but only if the user isn't forcing settings
-    if (!instance.connSettings.ssl &&
-        !instance.settings.force &&
-        instance.parser.server.port.among!(6697, 7000, 7001, 7029, 7070, 9999, 443))
-    {
-        instance.connSettings.ssl = true;
-    }
-
-    // Copy ssl setting to the Connection after the above
-    instance.conn.ssl = instance.connSettings.ssl;
-
-    if (!instance.settings.headless)
-    {
-        import kameloso.common : printVersionInfo;
-        import kameloso.printing : printObjects;
-        import std.stdio : writeln;
-
-        printVersionInfo();
-        writeln();
-        if (instance.settings.flush) stdout.flush();
-
-        // Print the current settings to show what's going on.
-        IRCClient prettyClient = instance.parser.client;
-        prettyClient.realName = replaceTokens(prettyClient.realName);
-        printObjects(prettyClient, instance.bot, instance.parser.server);
-
-        if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
-        {
-            import kameloso.config : giveBrightTerminalHint, notifyAboutIncompleteConfiguration;
-
-            giveBrightTerminalHint();
-            logger.trace();
-            notifyAboutIncompleteConfiguration(instance.settings.configFile, args[0]);
-        }
-    }
-
-    // Verify that settings are as they should be (nickname exists and not too long, etc)
-    immutable actionAfterVerification = verifySettings(instance);
-
-    with (Next)
-    final switch (actionAfterVerification)
-    {
-    case continue_:
-        break;
-
-    case returnFailure:
-        return ShellReturnValue.settingsVerificationFailure;
-
-    case retry:  // should never happen
-    case returnSuccess:  // ditto
-    case crash:  // ditto
-        import lu.conv : Enum;
-        import std.conv : text;
-        assert(0, text("`verifySettings` returned `", Enum!Next.toString(actionAfterVerification), "`"));
-    }
-
-    // Resolve resource and private key/certificate paths.
-    resolvePaths(instance);
-    instance.conn.certFile = instance.connSettings.certFile;
-    instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
-
-    // Save the original nickname *once*, outside the connection loop and before
-    // initialising plugins (who will make a copy of it). Knowing this is useful
-    // when authenticating.
-    instance.parser.client.origNickname = instance.parser.client.nickname;
-
-    scope(exit)
-    {
-        // Tear down plugins outside the loop too, to cover errors during initialisation
-        // It does nothing if the plugins array is empty
-        instance.teardownPlugins();
-    }
-
-    // Initialise plugins outside the loop once, for the error messages
-    try
-    {
-        import std.file : exists;
-
-        instance.instantiatePlugins();
-
-        if (!instance.settings.headless &&
-            instance.missingConfigurationEntries.length &&
-            instance.settings.configFile.exists)
-        {
-            import kameloso.config : notifyAboutMissingSettings;
-
-            notifyAboutMissingSettings(
-                instance.missingConfigurationEntries,
-                args[0],
-                instance.settings.configFile);
-        }
-    }
-    catch (ConvException e)
-    {
-        // Configuration file/--set argument syntax error
-        logger.error(e.msg);
-        version(PrintStacktraces) logger.trace(e.info);
-        if (!instance.settings.force) return ShellReturnValue.customConfigSyntaxFailure;
-    }
-    catch (IRCPluginSettingsException e)
-    {
-        // --set plugin/setting name error
-        logger.error(e.msg);
-        version(PrintStacktraces) logger.trace(e.info);
-        if (!instance.settings.force) return ShellReturnValue.customConfigFailure;
-    }
-
-    // Save the original nickname *once*, outside the connection loop.
-    // It will change later and knowing this is useful when authenticating
-    instance.parser.client.origNickname = instance.parser.client.nickname;
-
-    // Plugins were instantiated but not initialised, so do that here
-    // initialisePlugins internally handles exceptions so let any unhandled ones fall through
-    immutable success = instance.initialisePlugins();
-    if (*instance.abort) return ShellReturnValue.failure;
-    if (!success) return ShellReturnValue.pluginInitialisationFailure;
-
-    // Check for concurrency messages in case any were sent during plugin initialisation
     while (true)
     {
         import kameloso.thread : ThreadMessage;
@@ -4062,31 +4010,332 @@ auto run(string[] args)
                 break;
 
             default:
-                enum pattern = "onThreadMessage received unexpected message type: <t>%s";
-                logger.errorf(pattern, message.type);
-                if (instance.settings.flush) stdout.flush();
+                import lu.conv : Enum;
+                import std.stdio : stdout;
+
+                enum pattern = "checkInitialisationMessages.onThreadMessage " ~
+                    "received unexpected message type: <t>%s";
+                logger.errorf(
+                    pattern,
+                    Enum!(ThreadMessage.Type).toString(message.type));
                 halt = true;
                 break;
             }
         }
-
-        if (halt) return ShellReturnValue.pluginInitialisationFailure;
 
         immutable receivedSomething = receiveTimeout(Duration.zero,
             &onThreadMessage,
             (Variant v) scope
             {
                 // Caught an unhandled message
-                enum pattern = "run received unknown Variant: <l>%s";
-                logger.warningf(pattern, v.type);
+                enum pattern = "checkInitialisationMessages received unknown Variant: <l>%s";
+                logger.errorf(pattern, v.type);
+                halt = true;
             }
         );
 
-        if (!receivedSomething) break;
+        if (!receivedSomething)
+        {
+            return true;
+        }
+        else if (halt)
+        {
+            retval = ShellReturnValue.pluginInitialisationFailure;
+            return false;
+        }
     }
 
+    assert(0, "Unreachable");
+}
+
+
+public:
+
+
+// run
+/++
+    Entry point of the program.
+
+    This function is very long, but mostly because it's tricky to split up into
+    free functions and have them convey "parent function should exit".
+
+    Params:
+        args = Command-line arguments passed to the program.
+
+    Returns:
+        `0` on success, non-`0` on failure.
+ +/
+auto run(string[] args)
+{
+    import kameloso.plugins.common.misc : IRCPluginInitialisationException, IRCPluginSettingsException;
+    import kameloso.common : Next;
+    import kameloso.constants : ShellReturnValue;
+    import kameloso.logger : KamelosoLogger;
+    import kameloso.string : doublyBackslashed, replaceTokens;
+    import std.algorithm.comparison : among;
+    import std.conv : ConvException;
+    import std.exception : ErrnoException;
+    static import kameloso.common;
+
+    // Set up the Kameloso instance.
+    auto instance = new Kameloso(args);
+    postInstanceSetup();
+
+    scope(exit)
+    {
+        import kameloso.terminal : isTerminal, resetTerminalTitle;
+        if (isTerminal) resetTerminalTitle();
+        resetSignals();
+    }
+
+    // Set the abort pointer.
+    instance.abort = &kameloso.common.globalAbort;
+
+    // Set up default directories in the settings.
+    setDefaultDirectories(*instance.settings);
+
+    // Initialise the logger immediately so it's always available.
+    // handleGetopt re-inits later when we know the settings for colours and headless
+    kameloso.common.logger = new KamelosoLogger(*instance.settings);
+
+    // Set up signal handling so that we can gracefully catch Ctrl+C.
+    setupSignals();
+
+    scope(failure)
+    {
+        import kameloso.terminal : TerminalToken, isTerminal;
+
+        if (!instance.settings.headless)
+        {
+            enum bellString = TerminalToken.bell ~ "";
+            immutable bell = isTerminal ? bellString : string.init;
+            logger.error("We just crashed!", bell);
+        }
+
+        *instance.abort = Yes.abort;
+    }
+
+    // Handle command-line arguments.
+    immutable actionAfterGetopt = tryGetopt(instance);
+    kameloso.common.globalHeadless = cast(Flag!"headless")instance.settings.headless;
+
+    with (Next)
+    final switch (actionAfterGetopt)
+    {
+    case continue_:
+        break;
+
+    case returnSuccess:
+        return ShellReturnValue.success;
+
+    case returnFailure:
+        return ShellReturnValue.getoptFailure;
+
+    case unset:  // should never happen
+    case noop:   // ditto
+    case retry:  // ...
+    case crash:  // ...
+        import lu.conv : Enum;
+        import std.conv : text;
+        assert(0, text("`tryGetopt` returned `", Enum!Next.toString(actionAfterGetopt), "`"));
+    }
+
+    if (!instance.settings.headless || instance.settings.force)
+    {
+        try
+        {
+            import kameloso.terminal : ensureAppropriateBuffering;
+
+            // Ensure stdout is buffered by line if we think it isn't being
+            ensureAppropriateBuffering();
+        }
+        catch (ErrnoException e)
+        {
+            import std.stdio : writeln;
+            if (!instance.settings.headless) writeln("Failed to set stdout buffer mode/size! errno:", e.errno);
+            if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
+        }
+        catch (Exception e)
+        {
+            if (!instance.settings.headless)
+            {
+                import std.stdio : writeln;
+                writeln("Failed to set stdout buffer mode/size!");
+                writeln(e);
+            }
+
+            if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
+        }
+        finally
+        {
+            import std.stdio : stdout;
+            if (instance.settings.flush) stdout.flush();
+        }
+    }
+
+    // Apply some defaults to empty members, as stored in `kameloso.constants`.
+    // It's done before in tryGetopt but do it again to ensure we don't have an empty nick etc
+    // Skip if --force was passed.
+    if (!instance.settings.force)
+    {
+        import kameloso.config : applyDefaults;
+        applyDefaults(instance);
+    }
+
+    // Additionally if the port is an SSL-like port, assume SSL,
+    // but only if the user isn't forcing settings
+    if (!instance.connSettings.ssl &&
+        !instance.settings.force &&
+        instance.parser.server.port.among!(6697, 7000, 7001, 7029, 7070, 9999, 443))
+    {
+        instance.connSettings.ssl = true;
+    }
+
+    // Copy ssl setting to the Connection after the above
+    instance.conn.ssl = instance.connSettings.ssl;
+
+    if (!instance.settings.headless && !instance.flags.numReexecs)
+    {
+        prettyPrintStartScreen(instance, args);
+    }
+
+    // Verify that settings are as they should be (nickname exists and not too long, etc)
+    immutable actionAfterVerification = verifySettings(instance);
+
+    with (Next)
+    final switch (actionAfterVerification)
+    {
+    case continue_:
+        break;
+
+    case returnFailure:
+        return ShellReturnValue.settingsVerificationFailure;
+
+    case returnSuccess:  // should never happen
+    case unset:  // ditto
+    case noop:   // ...
+    case retry:  // ...
+    case crash:  // ...
+        import lu.conv : Enum;
+        import std.conv : text;
+        assert(0, text("`verifySettings` returned `", Enum!Next.toString(actionAfterVerification), "`"));
+    }
+
+    // Resolve resource and private key/certificate paths.
+    resolvePaths(instance);
+
+    // Sync settings and connSettings.
+    instance.conn.certFile = instance.connSettings.certFile;
+    instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
+
+    // Save the original nickname *once*, outside the connection loop and before
+    // initialising plugins (who will make a copy of it). Knowing this is useful
+    // when authenticating.
+    instance.parser.client.origNickname = instance.parser.client.nickname;
+
+    scope(success)
+    {
+        // Tearing down tears down plugins too
+        instance.teardown();
+        destroy(instance);
+        instance = null;
+    }
+
+    // Initialise plugins outside the loop once, for the error messages
+    try
+    {
+        import std.file : exists;
+
+        instance.instantiatePlugins();
+
+        if (!instance.settings.headless &&
+            !instance.flags.numReexecs &&
+            instance.missingConfigurationEntries.length &&
+            instance.settings.configFile.exists)
+        {
+            import kameloso.config : notifyAboutMissingSettings;
+            notifyAboutMissingSettings(
+                instance.missingConfigurationEntries,
+                args[0],
+                instance.settings.configFile);
+        }
+    }
+    catch (ConvException e)
+    {
+        // Configuration file/--set argument syntax error
+        logger.error(e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
+        if (!instance.settings.force) return ShellReturnValue.customConfigSyntaxFailure;
+    }
+    catch (IRCPluginSettingsException e)
+    {
+        // --set plugin/setting name error
+        logger.error(e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
+        if (!instance.settings.force) return ShellReturnValue.customConfigFailure;
+    }
+    catch (Exception e)
+    {
+        enum pattern = "An unexpected error occurred while instantiating plugins: " ~
+            "<t>%s</> (at <l>%s</>:<l>%d</>)";
+        logger.errorf(
+            pattern,
+            e.msg,
+            e.file.doublyBackslashed,
+            e.line);
+
+        version(PrintStacktraces) logger.trace(e);
+        if (!instance.settings.force) return ShellReturnValue.pluginInstantiationException;
+    }
+
+    // Save the original nickname *once*, outside the connection loop.
+    // It will change later and knowing this is useful when authenticating
+    instance.parser.client.origNickname = instance.parser.client.nickname;
+
+    // Plugins were instantiated but not initialised, so do that here
+    try
+    {
+        instance.initialisePlugins();
+    }
+    catch (IRCPluginInitialisationException e)
+    {
+        import kameloso.plugins.common.misc : pluginFileBaseName;
+
+        enum pattern = "The <l>%s</> plugin failed to initialise: " ~
+            "<t>%s</> (at <l>%s</>:<l>%d</>)";
+        logger.errorf(
+            pattern,
+            e.pluginName,
+            e.msg,
+            e.file.pluginFileBaseName.doublyBackslashed,
+            e.line);
+
+        version(PrintStacktraces) logger.trace(e.info);
+        return ShellReturnValue.pluginInitialisationFailure;
+    }
+    catch (Exception e)
+    {
+        enum pattern = "An unexpected error occurred while initialising plugins: " ~
+            "<t>%s</> (at <l>%s</>:<l>%d</>)";
+        logger.errorf(
+            pattern,
+            e.msg,
+            e.file.doublyBackslashed,
+            e.line);
+
+        version(PrintStacktraces) logger.trace(e);
+        return ShellReturnValue.pluginInitialisationException;
+    }
+
+    if (*instance.abort) return ShellReturnValue.failure;
+
+    // Check for concurrency messages in case any were sent during plugin initialisation
+    ShellReturnValue initRetval;
+    immutable proceed = checkInitialisationMessages(instance, initRetval);
+    if (!proceed) return initRetval;
+
     // Go!
-    startBot(instance, attempt);
+    auto attempt = startBot(instance);  // mustn't be const
 
     // If we're here, we should exit. The only question is in what way.
 
@@ -4095,7 +4344,10 @@ auto run(string[] args)
         // If not already sent, send a proper QUIT, optionally verbosely
         string reason;  // mutable
 
-        if (!*instance.abort && !instance.settings.headless && !instance.settings.hideOutgoing)
+        if (
+            !*instance.abort &&
+            !instance.settings.headless &&
+            !instance.settings.hideOutgoing)
         {
             import kameloso.thread : exhaustMessages;
 
@@ -4106,10 +4358,10 @@ auto run(string[] args)
             reason = reason.replaceTokens(instance.parser.client);
             echoQuitMessage(instance, reason);
         }
-
-        if (!reason.length)
+        else
         {
-            reason = instance.bot.quitReason.replaceTokens(instance.parser.client);
+            reason = instance.bot.quitReason
+                .replaceTokens(instance.parser.client);
         }
 
         instance.conn.sendline("QUIT :" ~ reason);
@@ -4127,9 +4379,15 @@ auto run(string[] args)
         catch (Exception e)
         {
             import kameloso.string : doublyBackslashed;
+
             enum pattern = "Caught Exception when saving settings: " ~
                 "<t>%s</> (at <l>%s</>:<l>%d</>)";
-            logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
+            logger.warningf(
+                pattern,
+                e.msg,
+                e.file.doublyBackslashed,
+                e.line);
+
             version(PrintStacktraces) logger.trace(e);
         }
     }

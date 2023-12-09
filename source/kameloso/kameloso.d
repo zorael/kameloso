@@ -1,5 +1,5 @@
 /++
-    Module for the main [Kameloso] instance struct.
+    Module for the main [Kameloso] class.
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -9,19 +9,14 @@
  +/
 module kameloso.kameloso;
 
-private:
-
-import std.typecons : Flag, No, Yes;
-
 public:
 
 
 // Kameloso
 /++
-    State needed for the kameloso bot, aggregated in a struct for easier passing
-    by reference.
+    Main class.
  +/
-struct Kameloso
+final class Kameloso
 {
 private:
     import kameloso.common : OutgoingLine, logger;
@@ -33,19 +28,21 @@ private:
     import dialect.parsing : IRCParser;
     import lu.container : Buffer;
     import std.algorithm.comparison : among;
-    import std.datetime.systime : SysTime;
+    import std.typecons : Flag, No, Yes;
 
     // Throttle
     /++
-        Aggregate of values and state needed to throttle outgoing messages.
+        Aggregate of values and state needed to rate-limit outgoing messages.
      +/
     static struct Throttle
     {
+        private import core.time : MonoTime;
+
         // t0
         /++
             Origo of x-axis (last sent message).
          +/
-        SysTime t0;
+        MonoTime t0;
 
         // m
         /++
@@ -114,6 +111,12 @@ private:
          +/
         bool askedToReexec;
 
+        // numReexecs
+        /++
+            How many times the program has reexecuted itself.
+         +/
+        uint numReexecs;
+
         version(TwitchSupport)
         {
             // sawWelcome
@@ -132,14 +135,63 @@ private:
      +/
     uint _connectionID;
 
+    // _args
+    /++
+        Command-line arguments passed to the program.
+     +/
+    string[] _args;
+
 public:
     // ctor
     /++
-        Constructor taking an [args] string array.
+        Constructor taking an `args` string array.
      +/
-    this(string[] args) pure @safe nothrow @nogc
+    this(const string[] args) @safe
     {
-        this.args = args;
+        static import kameloso.common;
+
+        this._args = args.dup;
+        conn = new Connection;
+        settings = &kameloso.common.settings;
+    }
+
+    // ctor
+    /++
+        No-param constructor used in unit tests.
+
+        Take the address of the global settings struct at the very least.
+        Unsure if we really need it but just in case, save ourselves an
+        unexpected null pointer dereference.
+     +/
+    version(unittest)
+    this() @safe
+    {
+        static import kameloso.common;
+        settings = &kameloso.common.settings;
+    }
+
+    // teardown
+    /++
+        Teardown plugins and connection.
+     +/
+    void teardown()
+    {
+        teardownPlugins();
+        conn.teardown();
+        destroy(conn);
+        conn = null;
+    }
+
+    // args
+    /++
+        Returns a const slice of the command-line arguments passed to the program.
+
+        Returns:
+            A 'string[]' of the program arguments.
+     +/
+    auto args() const
+    {
+        return _args;
     }
 
     // flags
@@ -147,12 +199,6 @@ public:
         Transient state flags of this [Kameloso] instance.
      +/
     StateFlags flags;
-
-    // args
-    /++
-        Command-line arguments passed to the program.
-     +/
-    string[] args;
 
     // conn
     /++
@@ -171,9 +217,9 @@ public:
 
     // settings
     /++
-        The root copy of the program-wide settings.
+        Pointer to the program-wide settings global.
      +/
-    CoreSettings settings;
+    CoreSettings* settings;
 
     // connSettings
     /++
@@ -293,12 +339,6 @@ public:
         bool callgrindRunning = true;
     }
 
-    // this(this)
-    /++
-        Never copy this.
-     +/
-    @disable this(this);
-
     // connectionID
     /++
         Numeric ID of the current connection, to disambiguate between multiple
@@ -365,11 +405,11 @@ public:
         const Flag!"sendFaster" sendFaster = No.sendFaster,
         const Flag!"immediate" immediate = No.immediate)
     {
-        import std.datetime.systime : Clock;
+        import core.time : MonoTime;
 
         alias t = throttle;
 
-        immutable now = Clock.currTime;
+        immutable now = MonoTime.currTime;
         double k = connSettings.messageRate;
         double burst = connSettings.messageBurst;
 
@@ -425,7 +465,7 @@ public:
 
                 version(Colours)
                 {
-                    if (!settings.monochrome)
+                    if (settings.colours)
                     {
                         import kameloso.irccolours : mapEffects;
                         logger.trace("--> ", buffer.front.line.mapEffects);
@@ -469,18 +509,18 @@ public:
         teardownPlugins();
 
         auto state = IRCPluginState(this.connectionID);
-        state.client = parser.client;
-        state.server = parser.server;
+        state.client = this.parser.client;
+        state.server = this.parser.server;
         state.bot = this.bot;
         state.mainThread = thisTid;
-        state.settings = settings;
-        state.connSettings = connSettings;
-        state.abort = abort;
+        state.settings = *this.settings;
+        state.connSettings = this.connSettings;
+        state.abort = this.abort;
 
         // Leverage kameloso.plugins.instantiatePlugins to construct all plugins.
         this.plugins = kameloso.plugins.instantiatePlugins(state);
 
-        foreach (plugin; plugins)
+        foreach (plugin; this.plugins)
         {
             import lu.meld : meldInto;
 
@@ -503,7 +543,7 @@ public:
             }
         }
 
-        immutable allCustomSuccess = plugins.applyCustomSettings(this.customSettings, this.settings);
+        immutable allCustomSuccess = applyCustomSettings(this.plugins, this.customSettings);
 
         if (!allCustomSuccess)
         {
@@ -514,31 +554,45 @@ public:
 
     // issuePluginCallImpl
     /++
-        Issues a call to all plugins, where such a call is one of "setup",
+        Issues a call to all plugins, where such a call is one of "initialise", "setup",
         "start", "initResources" or "reload". This invokes their module-level
         functions of the same name, where available.
 
-        In the case of "initResources", the call does not care whether the
+        In the case of "initialise" and "initResources", the call does not care whether the
         plugins are enabled, but in all other cases they are skipped if so.
 
         Params:
             call = String name of call to issue to all plugins.
      +/
     private void issuePluginCallImpl(string call)()
-    if (call.among!("setup", "reload", "initResources"))
+    if (call.among!("initialise", "setup", "reload", "initResources"))
     {
         foreach (plugin; this.plugins)
         {
-            static if (call != "initResources")
+            // Skip disabled plugins for all calls except "initialise" and "initResources"
+            static if (!call.among!("initialise", "initResources"))
             {
-                // Always init resources, even if the plugin is disabled
                 if (!plugin.isEnabled) continue;
             }
 
             mixin("plugin." ~ call ~ "();");
+            if (*this.abort) return;
             checkPluginForUpdates(plugin);
         }
     }
+
+    // initialisePlugins
+    /++
+        Initialises all plugins, calling any module-level `.initialise` functions.
+
+        This merely calls
+        [kameloso.plugins.common.core.IRCPlugin.initialise|IRCPlugin.initialise]
+        on each plugin.
+
+        If any plugin fails to initialise, it will have thrown and something up
+        the call stack will catch it.
+     +/
+    alias initialisePlugins = issuePluginCallImpl!"initialise";
 
     // setupPlugins
     /++
@@ -586,9 +640,9 @@ public:
      +/
     void teardownPlugins() @system
     {
-        if (!plugins.length) return;
+        if (!this.plugins.length) return;
 
-        foreach (ref plugin; plugins)
+        foreach (ref plugin; this.plugins)
         {
             import std.exception : ErrnoException;
             import core.thread : Fiber;
@@ -599,7 +653,7 @@ public:
             {
                 plugin.teardown();
 
-                foreach (scheduledFiber; plugin.state.scheduledFibers)
+                foreach (ref scheduledFiber; plugin.state.scheduledFibers)
                 {
                     // All Fibers should be at HOLD state but be conservative
                     if (scheduledFiber.fiber.state != Fiber.State.EXEC)
@@ -611,7 +665,7 @@ public:
 
                 plugin.state.scheduledFibers = null;
 
-                foreach (scheduledDelegate; plugin.state.scheduledDelegates)
+                foreach (ref scheduledDelegate; plugin.state.scheduledDelegates)
                 {
                     destroy(scheduledDelegate.dg);
                     scheduledDelegate.dg = null;
@@ -621,7 +675,7 @@ public:
 
                 foreach (immutable type, ref fibersForType; plugin.state.awaitingFibers)
                 {
-                    foreach (fiber; fibersForType)
+                    foreach (ref fiber; fibersForType)
                     {
                         // As above
                         if (fiber.state != Fiber.State.EXEC)
@@ -674,66 +728,7 @@ public:
         }
 
         // Zero out old plugins array
-        plugins = null;
-    }
-
-    // initialisePlugins
-    /++
-        Initialises all plugins, calling any module-level `.initialise` functions.
-
-        This merely calls
-        [kameloso.plugins.common.core.IRCPlugin.initialise|IRCPlugin.initialise]
-        on each plugin.
-
-        If any plugin fails to initialise, this function returns false and
-        the bot will not start.
-
-        Don't use an in-contract to enforce `plugins.length`, as not having any
-        plugins is technically a valid use-case (even if it's a fairly pointless one).
-
-        Returns:
-            `true` if all plugins initialised successfully, `false` otherwise.
-     +/
-    auto initialisePlugins() @system
-    //in (this.plugins.length, "Tried to initialise plugins but there were no plugins instantiated")
-    {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-
-        string[] failedPlugins;
-
-        foreach (plugin; this.plugins)
-        {
-            try
-            {
-                immutable success = plugin.initialise();
-                if (*this.abort) return false;
-                if (!success) failedPlugins ~= plugin.name;
-            }
-            catch (IRCPluginInitialisationException e)
-            {
-                enum pattern = "Exception when initialising <l>%s</>: <l>%s";
-                logger.warningf(pattern, plugin.name, e.msg);
-                version(PrintStacktraces) logger.trace(e.info);
-                if (!this.settings.force) return false;
-                failedPlugins ~= plugin.name;
-            }
-            catch (Exception e)
-            {
-                enum pattern = "General exception when initialising <l>%s</>: <l>%s";
-                logger.warningf(pattern, plugin.name, e.msg);
-                version(PrintStacktraces) logger.trace(e.info);
-                if (!this.settings.force) throw e;
-            }
-        }
-
-        if (failedPlugins.length)
-        {
-            enum pattern = "Failed to initialise plugin(s): <l>%-(%s, %)";
-            logger.errorf(pattern, failedPlugins);
-            return false;
-        }
-
-        return true;
+        this.plugins = null;
     }
 
     // checkPluginForUpdates
@@ -780,9 +775,9 @@ public:
             // Something changed the settings; propagate
             plugin.state.updates &= ~Update.settings;
             propagate(plugin.state.settings);
-            this.settings = plugin.state.settings;
+            *this.settings = plugin.state.settings;
 
-            // This shouldn't be necessary since kameloso.common.settings points to this.settings
+            // not necessary now that this.settings is a pointer to kameloso.common.settings
             //*kameloso.common.settings = plugin.state.settings;
         }
 

@@ -73,11 +73,13 @@ immutable string[] installedTimezones;
  +/
 shared static this()
 {
+    import std.exception : assumeUnique;
+
     version(Posix)
     {
         import std.datetime.timezone : PosixTimeZone;
 
-        installedTimezones = PosixTimeZone.getInstalledTZNames().idup;
+        installedTimezones = PosixTimeZone.getInstalledTZNames().assumeUnique();
 
         zonestringAliases =
         [
@@ -93,7 +95,7 @@ shared static this()
     {
         import std.datetime.timezone : WindowsTimeZone;
 
-        installedTimezones = WindowsTimeZone.getInstalledTZNames().idup;
+        installedTimezones = WindowsTimeZone.getInstalledTZNames().assumeUnique();
 
         /+
         Some excerpts:

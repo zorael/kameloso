@@ -29,9 +29,9 @@ public:
     ---
     Appender!(char[]) sink;
 
-    immutable then = Clock.currTime;
+    immutable then = MonoTime.currTime;
     Thread.sleep(1.seconds);
-    immutable now = Clock.currTime;
+    immutable now = MonoTime.currTime;
 
     immutable duration = (now - then);
     immutable inEnglish = duration.timeSinceInto(sink);
@@ -645,9 +645,9 @@ unittest
 
     Example:
     ---
-    immutable then = Clock.currTime;
+    immutable then = MonoTime.currTime;
     Thread.sleep(1.seconds);
-    immutable now = Clock.currTime;
+    immutable now = MonoTime.currTime;
 
     immutable duration = (now - then);
     immutable inEnglish = timeSince(duration);
@@ -841,7 +841,8 @@ auto nextMidnight(const SysTime now)
         gets the exact same SysTime.
      +/
 
-    auto next = SysTime(DateTime(now.year, now.month, now.day, 0, 0, 0), now.timezone)
+    const dateTime = DateTime(now.year, cast(uint)now.month, now.day, 0, 0, 0);
+    auto next = SysTime(dateTime, now.timezone)
         .roll!"days"(1);
 
     if (next.day == 1)
@@ -864,7 +865,7 @@ unittest
     immutable christmasEve = SysTime(DateTime(2018, 12, 24, 12, 34, 56), utc);
     immutable nextDay = christmasEve.nextMidnight;
     immutable christmasDay = SysTime(DateTime(2018, 12, 25, 0, 0, 0), utc);
-    assert(nextDay.toUnixTime == christmasDay.toUnixTime);
+    assert(nextDay.toUnixTime() == christmasDay.toUnixTime());
 
     immutable someDay = SysTime(DateTime(2018, 6, 30, 12, 27, 56), utc);
     immutable afterSomeDay = someDay.nextMidnight;

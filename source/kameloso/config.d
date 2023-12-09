@@ -26,9 +26,7 @@ import kameloso.kameloso : Kameloso;
 import kameloso.common : logger;
 import kameloso.pods : IRCBot;
 import dialect.defs : IRCClient, IRCServer;
-import lu.common : Next;
 import std.getopt : GetoptResult;
-import std.stdio : stdout;
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -101,8 +99,10 @@ void printHelp(GetoptResult results)
 /++
     Writes configuration to file, verbosely.
 
+    This is called if `--save` was passed.
+
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         client = Reference to the current [dialect.defs.IRCClient|IRCClient].
         server = Reference to the current [dialect.defs.IRCServer|IRCServer].
         bot = Reference to the current [kameloso.pods.IRCBot|IRCBot].
@@ -110,21 +110,20 @@ void printHelp(GetoptResult results)
             generated file and supply admins and/or home channels.
  +/
 void verboselyWriteConfig(
-    ref Kameloso instance,
+    Kameloso instance,
     ref IRCClient client,
     ref IRCServer server,
     ref IRCBot bot,
     const Flag!"giveInstructions" giveInstructions = Yes.giveInstructions) @system
 {
-    import kameloso.common : logger, printVersionInfo;
-    import kameloso.printing : printObjects;
-    import std.file : exists;
-
-    // --save was passed; write configuration to file and quit
+    import kameloso.common : logger;
+    static import kameloso.common;
 
     if (!instance.settings.headless)
     {
-        import std.stdio : writeln;
+        import kameloso.common : printVersionInfo;
+        import std.stdio : stdout, writeln;
+
         printVersionInfo();
         writeln();
         if (instance.settings.flush) stdout.flush();
@@ -132,19 +131,15 @@ void verboselyWriteConfig(
 
     // If we don't instantiate the plugins there'll be no plugins array
     instance.instantiatePlugins();
-
-    immutable shouldGiveBrightTerminalHint =
-        !instance.settings.monochrome &&
-        !instance.settings.brightTerminal &&
-        !instance.settings.configFile.exists;
-
     writeConfigurationFile(instance, instance.settings.configFile);
 
     if (!instance.settings.headless)
     {
+        import kameloso.printing : printObjects;
         import kameloso.string : doublyBackslashed;
+        import std.file : exists;
 
-        printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
+        printObjects(client, instance.bot, server, instance.connSettings, *instance.settings);
         enum pattern = "Configuration written to <i>%s";
         logger.logf(pattern, instance.settings.configFile.doublyBackslashed);
 
@@ -154,6 +149,11 @@ void verboselyWriteConfig(
             logger.log("Edit it and make sure it contains at least one of the following:");
             giveConfigurationMinimalInstructions();
         }
+
+        immutable shouldGiveBrightTerminalHint =
+            instance.settings.colours &&
+            !instance.settings.brightTerminal &&
+            !instance.settings.configFile.exists;
 
         if (shouldGiveBrightTerminalHint)
         {
@@ -169,13 +169,21 @@ void verboselyWriteConfig(
     Prints the core settings and all plugins' settings to screen.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void printSettings(ref Kameloso instance) @system
+void printSettings(Kameloso instance) @system
 {
     import kameloso.common : printVersionInfo;
+    import kameloso.plugins.common.misc : applyCustomSettings;
     import kameloso.printing : printObjects;
-    import std.stdio : writeln;
+    import std.stdio : stdout, writeln;
+    static import kameloso.common;
+
+    if (instance.customSettings.length)
+    {
+        // Apply custom settings to the settings struct. Disregard returned value
+        cast(void)applyCustomSettings(null, instance.customSettings);
+    }
 
     printVersionInfo();
     writeln();
@@ -185,7 +193,7 @@ void printSettings(ref Kameloso instance) @system
         instance.bot,
         instance.parser.server,
         instance.connSettings,
-        instance.settings);
+        *instance.settings);
 
     instance.instantiatePlugins();
 
@@ -212,7 +220,7 @@ void printSettings(ref Kameloso instance) @system
             otherwise uses `notepad.exe`.
  +/
 void manageConfigFile(
-    ref Kameloso instance,
+    Kameloso instance,
     const Flag!"shouldWriteConfig" shouldWriteConfig,
     const Flag!"shouldOpenTerminalEditor" shouldOpenTerminalEditor,
     const Flag!"shouldOpenGraphicalEditor" shouldOpenGraphicalEditor,
@@ -254,8 +262,8 @@ void manageConfigFile(
         enum pattern = "Attempting to open <i>%s</> with <i>%s</>...";
         logger.logf(pattern, instance.settings.configFile.doublyBackslashed, editor.doublyBackslashed);
 
-        immutable command = [ editor, instance.settings.configFile ];
-        spawnProcess(command).wait;
+        immutable string[2] command = [ editor, instance.settings.configFile ];
+        spawnProcess(command[]).wait;
     }
 
     /++
@@ -325,7 +333,7 @@ void manageConfigFile(
             cast(Flag!"giveInstructions")(!configFileExists));
     }
 
-    if (shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
+    if (!instance.settings.headless && (shouldOpenTerminalEditor || shouldOpenGraphicalEditor))
     {
         // If instructions were given, add an extra linebreak to make it prettier
         if (!configFileExists) logger.trace();
@@ -403,29 +411,28 @@ void writeToDisk(
  +/
 void giveConfigurationMinimalInstructions()
 {
-    enum adminPattern = "...one or more <i>admins</> who get administrative control over the bot.";
+    enum adminPattern = "<i>*</> one or more <i>admins</> who get administrative control over the bot.";
+    enum homePattern = "<i>*</> one or more <i>homeChannels</> in which to operate.";
     logger.trace(adminPattern);
-    enum homePattern = "...one or more <i>homeChannels</> in which to operate.";
     logger.trace(homePattern);
 }
 
 
 // flatten
 /++
-    Flattens a dynamic array by splitting elements containing more than one
-    value (as separated by a separator string) into separate elements.
+    Flattens a dynamic array of strings by splitting elements containing more
+    than one value (as separated by a separator string) into separate elements.
 
     Params:
+        arr = A dynamic `string[]` array.
         separator = Separator, defaults to a space string (" ").
-        arr = A dynamic array.
 
     Returns:
         A new array, with any elements previously containing more than one
         `separator`-separated entries now in separate elements.
  +/
-auto flatten(string separator = " ", T)(const T[] arr)
+auto flatten(const string[] arr, const string separator = " ")
 {
-    import lu.semver : LuSemVer;
     import lu.string : stripped;
     import std.algorithm.iteration : filter, joiner, map, splitter;
     import std.array : array;
@@ -437,19 +444,7 @@ auto flatten(string separator = " ", T)(const T[] arr)
         .filter!(elem => elem.length)
         .array;
 
-    static if (
-        (LuSemVer.majorVersion >= 1) &&
-        (LuSemVer.minorVersion >= 2) &&
-        (LuSemVer.patchVersion >= 2))
-    {
-        return toReturn;
-    }
-    else
-    {
-        // FIXME: lu.string.stripped makes the type const
-        // Remove this when we update lu
-        return toReturn.dup;
-    }
+    return toReturn;
 }
 
 ///
@@ -464,18 +459,66 @@ unittest
     }
     {
         auto arr = [ "a", "b", "c,d,e,,,", "f" ];
-        arr = flatten!","(arr);
+        arr = flatten(arr, ",");
         assert((arr == [ "a", "b", "c", "d", "e", "f" ]), arr.to!string);
     }
     {
         auto arr = [ "a", "b", "c dhonk  e ", "f" ];
-        arr = flatten!"honk"(arr);
+        arr = flatten(arr, "honk");
         assert((arr == [ "a", "b", "c d", "e", "f" ]), arr.to!string);
     }
     {
         auto arr = [ "a", "b", "c" ];
         arr = flatten(arr);
         assert((arr == [ "a", "b", "c" ]), arr.to!string);
+    }
+}
+
+
+// resolveFlagString
+/++
+    Resolves a string to a boolean value.
+
+    Params:
+        input = String to resolve.
+        colours = Reference to a boolean to set. Must not be an out-reference.
+ +/
+void resolveFlagString(const string input, ref bool output) @system
+{
+    switch (input)
+    {
+        case "auto":
+        case "tty":
+        case "if-tty":
+            import kameloso.terminal : isTerminal;
+            output = isTerminal;
+            break;
+
+        case "always":
+        case "yes":
+        case "force":
+        case "true":  // Not a valid value, but we'll accept it anyway
+            output = true;
+            break;
+
+        case "never":
+        case "no":
+        case "none":
+        case "false":  // as above
+            output = false;
+            break;
+
+        case string.init:
+            break;
+
+        default:
+            import std.format : format;
+            import std.getopt : GetOptException;
+
+            enum pattern = `Invalid getopt flag value; "<l>%s<t>" is not one ` ~
+                "of <e>auto<t>, <e>always<t> or <e>never";
+            immutable message = pattern.format(input);
+            throw new GetOptException(message);
     }
 }
 
@@ -500,7 +543,7 @@ public:
     ---
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
         [lu.common.Next.continue_|Next.continue_] or
@@ -510,15 +553,15 @@ public:
     Throws:
         [std.getopt.GetOptException|GetOptException] if an unknown flag is passed.
  +/
-auto handleGetopt(ref Kameloso instance) @system
+auto handleGetopt(Kameloso instance) @system
 {
-    import kameloso.common : printVersionInfo;
+    import kameloso.common : Next, printVersionInfo, settings;
     import kameloso.configreader : readConfigInto;
     import kameloso.logger : KamelosoLogger;
-    import kameloso.terminal : applyMonochromeAndFlushOverrides;
+    import kameloso.terminal : applyTerminalOverrides;
     import lu.objmanip : replaceMembers;
-    import std.getopt : arraySep, config, getopt;
     static import kameloso.common;
+    static import std.getopt;
 
     bool shouldWriteConfig;
     bool shouldOpenTerminalEditor;
@@ -539,24 +582,26 @@ auto handleGetopt(ref Kameloso instance) @system
     string[] inputHomeChannels;
     string[] inputAdmins;
 
-    arraySep = ",";
+    string colourString;
+    string nothing;
 
     /+
-        Call getopt on args once and look for any specified configuration files
+        Call getopt on (a copy of) args once and look for any specified configuration files
         so we know what to read. As such it has to be done before the
-        [kameloso.configreader.readConfigInto] call. Then call getopt on the rest.
+        [kameloso.configreader.readConfigInto] call. Then call getopt on the rest later.
         Include "c|config" in the normal getopt to have it automatically
         included in the --help text.
      +/
 
     // Results can be const
-    auto argsSlice = instance.args[];
-    const configFileResults = getopt(argsSlice,
-        config.caseSensitive,
-        config.bundling,
-        config.passThrough,
+    auto args = instance.args.dup;
+    const configFileResults = std.getopt.getopt(args,
+        std.getopt.config.caseSensitive,
+        std.getopt.config.bundling,
+        std.getopt.config.passThrough,
         "c|config", &instance.settings.configFile,
         "version", &shouldShowVersion,
+        "num-reexecs", &instance.flags.numReexecs,
     );
 
     if (shouldShowVersion)
@@ -572,23 +617,26 @@ auto handleGetopt(ref Kameloso instance) @system
         instance.bot,
         instance.parser.server,
         instance.connSettings,
-        instance.settings);
+        *instance.settings);
 
     applyDefaults(instance);
+    applyTerminalOverrides(instance.settings.flush, instance.settings.colours);
 
-    // Non-TTYs (eg. pagers) can't show colours.
-    // Apply overrides here after having read config file
-    applyMonochromeAndFlushOverrides(instance.settings.monochrome, instance.settings.flush);
-
-    // Get `--monochrome` again; let it overwrite what applyMonochromeAndFlushOverrides
-    // and readConfigInto set it to
-    cast(void)getopt(argsSlice,
-        config.caseSensitive,
-        config.bundling,
-        config.passThrough,
-        "monochrome", &instance.settings.monochrome,
+    /+
+        Call getopt once more just to get values for colour and the Twitch
+        --setup-twitch. Catching --setup-twitch here means we can override
+        its defaults with the main getopt call.
+     +/
+    cast(void)std.getopt.getopt(args,
+        std.getopt.config.caseSensitive,
+        std.getopt.config.bundling,
+        std.getopt.config.passThrough,
+        "colour", &colourString,
+        "color", &colourString,
         "setup-twitch", &shouldSetupTwitch,
     );
+
+    if (colourString.length) resolveFlagString(colourString, instance.settings.colours);
 
     /++
         Call getopt in a nested function so we can call it both to merely
@@ -629,7 +677,7 @@ auto handleGetopt(ref Kameloso instance) @system
                 " [<i>%s</>]".expandTags(LogLevel.trace).format(editorCommand) :
                 string.init;
 
-        string formatNum(const size_t num)
+        auto formatNum(const size_t num)
         {
             return (quiet || (num == 0)) ? string.init :
                 " (<i>%d</>)".expandTags(LogLevel.trace).format(num);
@@ -688,9 +736,11 @@ auto handleGetopt(ref Kameloso instance) @system
                 "(or the application defined in the <i>$EDITOR</> environment variable)";
         }
 
-        return getopt(theseArgs,
-            config.caseSensitive,
-            config.bundling,
+        std.getopt.arraySep = ",";
+
+        return std.getopt.getopt(theseArgs,
+            std.getopt.config.caseSensitive,
+            std.getopt.config.bundling,
             "n|nickname",
                 quiet ? string.init :
                     "Nickname [<i>%s</>]"
@@ -779,13 +829,16 @@ auto handleGetopt(ref Kameloso instance) @system
                         .expandTags(LogLevel.trace)
                         .format(instance.settings.brightTerminal),
                 &instance.settings.brightTerminal,
-            "monochrome",
+            "color",
                 quiet ? string.init :
-                    "Use monochrome output [<i>%s</>]"
-                        .expandTags(LogLevel.trace)
-                        .format(instance.settings.monochrome),
-                //&settings.monochrome,  // already handled
-                &noop,
+                    "Use colours in terminal output (<i>auto</>|<i>always</>|<i>never</>)"
+                        .expandTags(LogLevel.trace),
+                    &nothing,
+            /*"colour",
+                quiet ? string.init :
+                    "(Alias to <i>--color</>)"
+                        .expandTags(LogLevel.trace),
+                    &nothing,*/
             "set",
                 quiet ? string.init :
                     text("Manually change a setting (syntax: ", setSyntax, ')'),
@@ -900,7 +953,7 @@ auto handleGetopt(ref Kameloso instance) @system
     }
 
     // No need to catch the return value, only used for --help
-    cast(void)callGetopt(instance.args, Yes.quiet);
+    cast(void)callGetopt(args, Yes.quiet);
 
     // Save the user from themselves. (A receive timeout of 0 breaks all sorts of things.)
     if (instance.connSettings.receiveTimeout == 0)
@@ -910,7 +963,8 @@ auto handleGetopt(ref Kameloso instance) @system
     }
 
     // Reinitialise the logger with new settings
-    kameloso.common.logger = new KamelosoLogger(instance.settings);
+    destroy(kameloso.common.logger);
+    kameloso.common.logger = new KamelosoLogger(*instance.settings);
 
     // Support channels and admins being separated by spaces (mirror config file behaviour)
     if (inputHomeChannels.length) inputHomeChannels = flatten(inputHomeChannels);
@@ -982,8 +1036,9 @@ auto handleGetopt(ref Kameloso instance) @system
 
         if (!instance.settings.headless)
         {
+            import std.stdio : stdout;
             printVersionInfo();
-            printHelp(callGetopt(instance.args, No.quiet));
+            printHelp(callGetopt(args, No.quiet));
             if (instance.settings.flush) stdout.flush();
         }
 
@@ -1019,13 +1074,6 @@ auto handleGetopt(ref Kameloso instance) @system
     if (shouldWriteConfig || shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
     {
         // --save and/or --edit was passed; defer to manageConfigFile
-
-        if (instance.settings.headless)
-        {
-            // Silently abort if we're in headless mode
-            return Next.returnFailure;
-        }
-
         // Also pass Yes.shouldWriteConfig if something was changed via getopt
         shouldWriteConfig =
             shouldWriteConfig ||
@@ -1075,7 +1123,7 @@ auto handleGetopt(ref Kameloso instance) @system
         filename = String filename of the file to write to.
  +/
 void writeConfigurationFile(
-    ref Kameloso instance,
+    Kameloso instance,
     const string filename) @system
 {
     import kameloso.platform : rbd = resourceBaseDirectory;
@@ -1083,11 +1131,12 @@ void writeConfigurationFile(
     import lu.string : encode64;
     import std.algorithm.searching : startsWith;
     import std.array : Appender;
+    import std.exception : assumeUnique;
     import std.file : exists;
     import std.path : buildNormalizedPath, expandTilde;
 
     Appender!(char[]) sink;
-    sink.reserve(4096);  // ~2234
+    sink.reserve(4096);  // ~3325
 
     // Only make some changes if we're creating a new file
     if (!filename.exists)
@@ -1165,7 +1214,7 @@ void writeConfigurationFile(
         instance.bot,
         instance.parser.server,
         instance.connSettings,
-        instance.settings);
+        *instance.settings);
     sink.put('\n');
 
     foreach (immutable i, plugin; instance.plugins)
@@ -1178,7 +1227,7 @@ void writeConfigurationFile(
         }
     }
 
-    immutable justified = sink.data.idup.justifiedEntryValueText;
+    immutable justified = sink.data.assumeUnique().justifiedEntryValueText;
     writeToDisk(filename, justified, Yes.addBanner);
 
     // Restore resource dir in case we aren't exiting
@@ -1272,14 +1321,16 @@ void notifyAboutIncompleteConfiguration(
 void giveBrightTerminalHint(
     const Flag!"alsoAboutConfigSetting" alsoConfigSetting = No.alsoAboutConfigSetting)
 {
-    enum brightPattern = "If text is difficult to read (eg. white on white), " ~
-        "try running the program with <i>--bright</> or <i>--monochrome</>.";
+    // Don't highlight the getopt flags as they might be difficult to read
+    enum brightPattern = "If text is difficult to read (e.g. white on white), " ~
+        "try running the program with --bright or --color=never.";
     logger.trace(brightPattern);
 
     if (alsoConfigSetting)
     {
+        // As above
         enum configPattern = "The setting will be made persistent if you pass it " ~
-            "at the same time as <i>--save</>.";
+            "at the same time as --save.";
         logger.trace(configPattern);
     }
 }
@@ -1296,9 +1347,9 @@ void giveBrightTerminalHint(
     (and [kameloso.constants.KamelosoDefaultIntegers|KamelosoDefaultIntegers]).
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void applyDefaults(ref Kameloso instance)
+void applyDefaults(Kameloso instance)
 out (; (instance.parser.client.nickname.length), "Empty client nickname")
 out (; (instance.parser.client.user.length), "Empty client username")
 out (; (instance.parser.client.realName.length), "Empty client GECOS/real name")
@@ -1367,7 +1418,7 @@ unittest
     import kameloso.constants : KamelosoDefaults, KamelosoDefaultIntegers;
     import std.conv : to;
 
-    Kameloso instance;
+    auto instance = new Kameloso;
 
     with (instance.parser)
     {

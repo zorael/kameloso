@@ -5,8 +5,8 @@
     Example:
     ---
     auto logger = new KamelosoLogger(
-        No.monochrome,
-        No.brigtTerminal,
+        Yes.colours,
+        No.brightTerminal,
         No.headless,
         No.flush);
 
@@ -138,7 +138,7 @@ private:
     /++
         Whether to use colours or not in logger output.
      +/
-    bool monochrome;
+    bool colours;
 
     /++
         Whether or not to use colours for a bright background.
@@ -160,20 +160,21 @@ public:
         Creates a new [KamelosoLogger] with the passed settings.
 
         Params:
-            monochrome = Whether or not to print colours.
+            colours = Whether or not to print colours.
             brightTerminal = Bright terminal setting.
             headless = Headless setting.
             flush = Flush setting.
      +/
+    deprecated("Use the constructor taking a `CoreSettings` struct instead")
     this(
-        const Flag!"monochrome" monochrome,
+        const Flag!"colours" colours,
         const Flag!"brightTerminal" brightTerminal,
         const Flag!"headless" headless,
         const Flag!"flush" flush) pure nothrow @safe
     {
         linebuffer.reserve(bufferInitialSize);
         messagebuffer.reserve(bufferInitialSize);
-        this.monochrome = monochrome;
+        this.colours = colours;
         this.brightTerminal = brightTerminal;
         this.headless = headless;
         this.flush = flush;
@@ -189,11 +190,12 @@ public:
      +/
     this(const CoreSettings settings) pure nothrow @safe
     {
-        this(
-            cast(Flag!"monochrome")settings.monochrome,
-            cast(Flag!"brightTerminal")settings.brightTerminal,
-            cast(Flag!"headless")settings.headless,
-            cast(Flag!"flush")settings.flush);
+        linebuffer.reserve(bufferInitialSize);
+        messagebuffer.reserve(bufferInitialSize);
+        this.colours = settings.colours;
+        this.brightTerminal = settings.brightTerminal;
+        this.headless = settings.headless;
+        this.flush = settings.flush;
     }
 
     version(Colours)
@@ -272,7 +274,7 @@ public:
          +/
         private auto tintImpl(LogLevel level)() const pure @safe nothrow @nogc
         {
-            if (headless || monochrome)
+            if (headless || !colours)
             {
                 return string.init;
             }
@@ -355,7 +357,7 @@ public:
 
         version(Colours)
         {
-            if (!monochrome)
+            if (colours)
             {
                 alias Timestamp = DefaultColours.TimestampColour;
                 //linebuffer.applyANSI(brightTerminal ? Timestamp.bright : Timestamp.dark);
@@ -369,7 +371,7 @@ public:
 
         version(Colours)
         {
-            if (!monochrome)
+            if (colours)
             {
                 linebuffer.applyANSI(brightTerminal ?
                     logcoloursBright[logLevel] :
@@ -382,13 +384,13 @@ public:
     /++
         Outputs the tail of a logger message.
      +/
-    private void finishLogMsg() @trusted  // writeln trusts stdout.flush, so we should be able to too
+    private void finishLogMsg() @safe
     {
         import std.stdio : stdout, writeln;
 
         version(Colours)
         {
-            if (!monochrome)
+            if (colours)
             {
                 import kameloso.terminal.colours : applyANSI;
                 // Reset.blink in case a fatal message was thrown
@@ -397,7 +399,12 @@ public:
         }
 
         writeln(linebuffer.data);
-        if (flush) stdout.flush();
+
+        () @trusted
+        {
+            // writeln trusts stdout.flush, so we should be able to too
+            if (flush) stdout.flush();
+        }();
     }
 
 
@@ -468,7 +475,8 @@ public:
                         messagebuffer.put(arg.to!string);
                     }
                 }
-                else static if (is(typeof(T.toString)) &&
+                else static if (
+                    is(typeof(T.toString)) &&
                     is(UnqualArray!(typeof(T.toString)) : char[]))
                 {
                     // toString string/char[] literal
@@ -489,7 +497,7 @@ public:
             }
         }
 
-        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")monochrome));
+        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")!colours));
         finishLogMsg();
     }
 
@@ -522,7 +530,7 @@ public:
 
         beginLogMsg(logLevel);
         messagebuffer.formattedWrite(pattern, args);
-        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")monochrome));
+        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")!colours));
         finishLogMsg();
     }
 
@@ -553,7 +561,7 @@ public:
 
         beginLogMsg(logLevel);
         messagebuffer.formattedWrite!pattern(args);
-        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")monochrome));
+        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")!colours));
         finishLogMsg();
     }
 
@@ -607,6 +615,8 @@ void " ~ Enum!LogLevel.toString(lv) ~ "f(string pattern, Args...)(auto ref Args 
 ///
 unittest
 {
+    import kameloso.pods : CoreSettings;
+
     struct S1
     {
         void toString(Sink)(auto ref Sink sink) const
@@ -651,7 +661,13 @@ unittest
         }
     }
 
-    auto log_ = new KamelosoLogger(Yes.monochrome, No.brightTerminal, No.headless, Yes.flush);
+    CoreSettings settings;
+    settings.colours = false;
+    settings.brightTerminal = false;
+    settings.headless = false;
+    settings.flush = true;
+
+    auto log_ = new KamelosoLogger(settings);
 
     log_.logf!"log: %s"("log");
     log_.infof!"log: %s"("info");
@@ -664,7 +680,9 @@ unittest
 
     version(Colours)
     {
-        log_ = new KamelosoLogger(No.monochrome, Yes.brightTerminal, No.headless, Yes.flush);
+        settings.colours = true;
+        settings.brightTerminal = true;
+        log_ = new KamelosoLogger(settings);
 
         log_.log("log: log");
         log_.info("log: info");
@@ -675,7 +693,8 @@ unittest
         log_.trace("log: trace");
         log_.off("log: off");
 
-        log_ = new KamelosoLogger(No.monochrome, No.brightTerminal, No.headless, Yes.flush);
+        settings.brightTerminal = false;
+        log_ = new KamelosoLogger(settings);
 
         log_.log("log: log");
         log_.info("log: info");

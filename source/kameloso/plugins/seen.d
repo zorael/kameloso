@@ -320,10 +320,10 @@ private:  // Module-level private.
 
         Example:
         ---
-        seenUsers["joe"] = Clock.currTime.toUnixTime;
+        seenUsers["joe"] = Clock.currTime.toUnixTime();
         // ..later..
-        immutable now = Clock.currTime.toUnixTime;
-        writeln("Seconds since we last saw joe: ", (now - seenUsers["joe"]));
+        immutable nowInUnix = Clock.currTime.toUnixTime();
+        writeln("Seconds since we last saw joe: ", (nowInUnix - seenUsers["joe"]));
         ---
      +/
     RehashingAA!(string, long) seenUsers;
@@ -927,8 +927,8 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
     Example:
     ---
     string potentiallySignedNickname = "@kameloso";
-    long now = Clock.currTime.toUnixTime;
-    updateUser(plugin, potentiallySignedNickname, now);
+    long nowInUnix = Clock.currTime.toUnixTime();
+    updateUser(plugin, potentiallySignedNickname, nowInUnix);
     ---
 
     Params:
@@ -986,11 +986,11 @@ void updateAllObservedUsers(SeenPlugin plugin)
         }
     }
 
-    immutable now = Clock.currTime.toUnixTime;
+    immutable nowInUnix = Clock.currTime.toUnixTime();
 
     foreach (immutable nickname; uniqueUsers.byKey)
     {
-        updateUser(plugin, nickname, now, Yes.skipModesignStrip);
+        updateUser(plugin, nickname, nowInUnix, Yes.skipModesignStrip);
     }
 }
 
@@ -1053,11 +1053,15 @@ void saveSeen(SeenPlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File;
 
-    if (!plugin.seenUsers.length) return;
+    version(Callgrind) {}
+    else
+    {
+        if (!plugin.seenUsers.length) return;
 
-    auto file = File(plugin.seenFile, "w");
-    file.writeln(JSONValue(plugin.seenUsers.aaOf).toPrettyString);
-    //file.flush();
+        auto file = File(plugin.seenFile, "w");
+        file.writeln(JSONValue(plugin.seenUsers.aaOf).toPrettyString);
+        //file.flush();
+    }
 }
 
 

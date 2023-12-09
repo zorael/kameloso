@@ -1,5 +1,5 @@
 name "kameloso"
-description "IRC bot with Twitch support"
+description "IRC bot"
 authors "JR"
 copyright "Copyright © 2016+ JR"
 homepage "https://www.github.com/zorael/kameloso"
@@ -30,7 +30,6 @@ importPaths "source"
 versions \
     "WithAdminPlugin" \
     "WithAutomodePlugin" \
-    "WithBashPlugin" \
     "WithChatbotPlugin" \
     "WithCounterPlugin" \
     "WithHelpPlugin" \
@@ -46,6 +45,7 @@ versions \
     "WithTimePlugin" \
     "WithTimerPlugin" \
     "WithWebtitlePlugin"
+    //"WithBashPlugin"
     //"WithSamePlugin"
 
 /**
@@ -87,9 +87,8 @@ versions \
     "OSXTMPDIR" \
     "TraceWhois" \
     "IncludeHeavyStuff" \
-    "PrintAccountNamesToo" \
-    "PrintClassNamesToo" \
     "BenchmarkHTTPRequests" \
+    "ThreadedSSLFree" \
     "Callgrind"
 */
 
@@ -143,8 +142,6 @@ configuration "dev" {
         //"OmniscientQueries" \
         //"OSXTMPDIR" \
         //"TraceWhois" \
-        //"PrintAccountNamesToo" \
-        //"PrintClassNamesToo" \
         //"BenchmarkHTTPRequests" \
 }
 
@@ -168,8 +165,6 @@ configuration "dev-lowmem" {
         //"OmniscientQueries" \
         //"OSXTMPDIR" \
         //"TraceWhois" \
-        //"PrintAccountNamesToo" \
-        //"PrintClassNamesToo" \
         //"BenchmarkHTTPRequests" \
 }
 
@@ -187,8 +182,6 @@ configuration "unittest" {
         "TraceWhois" \
         "TwitchPromoteEverywhere" \
         "TwitchCustomEmotesEverywhere" \
-        "PrintAccountNamesToo" \
-        "PrintClassNamesToo" \
         "BenchmarkHTTPRequests" \
         "OSXTMPDIR"
 }
@@ -208,8 +201,6 @@ configuration "unittest-lowmem" {
         "TraceWhois" \
         "TwitchPromoteEverywhere" \
         "TwitchCustomEmotesEverywhere" \
-        "PrintAccountNamesToo" \
-        "PrintClassNamesToo" \
         "BenchmarkHTTPRequests" \
         "OSXTMPDIR"
 }

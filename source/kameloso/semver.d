@@ -26,12 +26,12 @@ enum KamelosoSemVer
     /++
         SemVer minor version of the program.
      +/
-    minor = 11,
+    minor = 13,
 
     /++
         SemVer patch version of the program.
      +/
-    patch = 1,
+    patch = 0,
 
     /++
         SemVer version of the program. Deprecated; use `KamelosoSemVer.major` instead.

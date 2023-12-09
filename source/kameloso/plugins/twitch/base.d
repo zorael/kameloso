@@ -119,19 +119,19 @@ public:
         bool bellOnImportant = false;
 
         /++
-            Whether or not to start a captive session for requesting a Twitch
+            Whether or not to start a terminal wizard requesting a Twitch
             access token with normal chat privileges.
          +/
         bool keygen = false;
 
         /++
-            Whether or not to start a captive session for requesting a Twitch
+            Whether or not to start a terminal wizard requesting a Twitch
             access token with broadcaster privileges.
          +/
         bool superKeygen = false;
 
         /++
-            Whether or not to start a captive session for requesting Google
+            Whether or not to start a terminal wizard requesting Google
             access tokens.
          +/
         bool googleKeygen = false;
@@ -142,10 +142,15 @@ public:
         bool youtubeKeygen = false;
 
         /++
-            Whether or not to start a captive session for requesting Spotify
+            Whether or not to start a terminal wizard requesting Spotify
             access tokens.
          +/
         bool spotifyKeygen = false;
+
+        /++
+            Whether or not to import custom emotes.
+         +/
+        bool customEmotes = true;
     }
 }
 
@@ -193,7 +198,6 @@ import dialect.postprocessors.twitch;  // To trigger the module ctor
 import kameloso.plugins;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : RehashingAA, logger;
-import kameloso.constants : BufferSize;
 import kameloso.messaging;
 import dialect.defs;
 import std.datetime.systime : SysTime;
@@ -323,14 +327,14 @@ package struct Credentials
 }
 
 
-// Follow
+// Follower
 /++
     Embodiment of the notion of someone following someone else on Twitch.
 
-    This cannot be a Voldemort type inside [kameloso.plugins.twitch.api.getFollows|getFollows]
+    This cannot be a Voldemort type inside [kameloso.plugins.twitch.api.getFollowers|getFollowers]
     since we need an array of them inside [TwitchPlugin.Room].
  +/
-package struct Follow
+package struct Follower
 {
 private:
     import std.datetime.systime : SysTime;
@@ -342,44 +346,47 @@ public:
     string displayName;
 
     /++
+        Account name of follower.
+     +/
+    string login;
+
+    /++
         Time when the follow action took place.
      +/
     SysTime when;
 
     /++
-        Twitch ID of follower.
+        Twitch ID of follower as a string.
      +/
-    uint followerID;
+    string idString;
 
     // fromJSON
     /++
-        Constructs a [Follow] from a JSON representation.
+        Constructs a [Follower] from a JSON representation.
 
         Params:
-            json = JSON representation of a follow.
+            json = JSON representation of a follower.
 
         Returns:
-            A new [Follow] with values derived from the passed JSON.
+            A new [Follower] with values derived from the passed JSON.
      +/
     static auto fromJSON(const JSONValue json)
     {
-        import std.conv : to;
+        /+
+        {
+            "user_id": "11111",
+            "user_name": "UserDisplayName",
+            "user_login": "userloginname",
+            "followed_at": "2022-05-24T22:22:08Z",
+        },
+         +/
 
-        /*{
-            "followed_at": "2019-09-13T13:07:43Z",
-            "from_id": "20739840",
-            "from_name": "mike_bison",
-            "to_id": "22216721",
-            "to_name": "Zorael"
-        }*/
-
-        Follow follow;
-
-        follow.displayName = json["from_name"].str;
-        follow.when = SysTime.fromISOExtString(json["followed_at"].str);
-        follow.followerID = json["from_id"].str.to!uint;
-
-        return follow;
+        Follower follower;
+        follower.idString = json["user_id"].str;
+        follower.displayName = json["user_name"].str;
+        follower.login = json["user_login"].str;
+        follower.when = SysTime.fromISOExtString(json["followed_at"].str);
+        return follower;
     }
 }
 
@@ -690,7 +697,7 @@ void reportStreamTime(
             room.broadcasterDisplayName,
             gameName,
             previousStream.stopTime.year,
-            cast(int)previousStream.stopTime.month,
+            cast(uint)previousStream.stopTime.month,
             previousStream.stopTime.day,
             timestring,
             previousStream.numViewersMax);
@@ -704,7 +711,7 @@ void reportStreamTime(
             room.broadcasterDisplayName,
             gameName,
             previousStream.stopTime.year,
-            cast(int)previousStream.stopTime.month,
+            cast(uint)previousStream.stopTime.month,
             previousStream.stopTime.day,
             timestring);
         return chan(plugin.state, room.channelName, message);
@@ -720,7 +727,7 @@ void reportStreamTime(
     Lookups are done asynchronously in subthreads.
 
     See_Also:
-        [kameloso.plugins.twitch.api.getFollows]
+        [kameloso.plugins.twitch.api.getFollowers]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -740,41 +747,28 @@ void reportStreamTime(
 void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : advancePast, stripped;
+    import std.algorithm.comparison : among;
     import std.algorithm.searching : startsWith;
-    import std.conv : to;
 
-    void sendNoSuchUser(const string givenName)
+    auto room = event.channel in plugin.rooms;
+    assert(room, "Tried to look up follow age in a nonexistent room");
+
+    string slice = event.content.stripped;  // mutable
+    if ((slice.length) && (slice[0] == '@')) slice = slice[1..$];
+
+    immutable otherNameSpecified = slice.length &&
+        !slice.among(event.sender.nickname, event.sender.displayName);
+
+    void sendNoSuchUser(const string name)
     {
-        immutable message = "No such user: " ~ givenName;
+        immutable message = "No such user: " ~ name;
         chan(plugin.state, event.channel, message);
     }
 
-    string slice = event.content.stripped;  // mutable
-    string idString;
-    string displayName;
-    immutable nameSpecified = (slice.length > 0);
-
-    if (!nameSpecified)
-    {
-        // Assume the user is asking about itself
-        idString = event.sender.id.to!string;
-        displayName = event.sender.displayName;
-    }
-    else
-    {
-        string givenName = slice.advancePast(' ', Yes.inherit);  // mutable
-        if (givenName.startsWith('@')) givenName = givenName[1..$];
-        immutable user = getTwitchUser(plugin, givenName, string.init, Yes.searchByDisplayName);
-        if (!user.nickname.length) return sendNoSuchUser(givenName);
-
-        idString = user.idString;
-        displayName = user.displayName;
-    }
-
-    void reportFollowAge(const Follow follow)
+    void reportFollowAge(const Follower follower)
     {
         import kameloso.time : timeSince;
-        import std.datetime.systime : Clock, SysTime;
+        import std.datetime.systime : Clock;
         import std.format : format;
 
         static immutable string[12] months =
@@ -794,16 +788,16 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         ];
 
         enum datestampPattern = "%s %d";
-        immutable diff = Clock.currTime - follow.when;
-        immutable timeline = diff.timeSince!(7, 3);
+        immutable delta = (Clock.currTime - follower.when);
+        immutable timeline = delta.timeSince!(7, 3);
         immutable datestamp = datestampPattern.format(
-            months[cast(int)follow.when.month-1],
-            follow.when.year);
+            months[cast(uint)follower.when.month-1],
+            follower.when.year);
 
-        if (nameSpecified)
+        if (otherNameSpecified)
         {
             enum pattern = "%s has been a follower for %s, since %s.";
-            immutable message = pattern.format(follow.displayName, timeline, datestamp);
+            immutable message = pattern.format(follower.displayName, timeline, datestamp);
             chan(plugin.state, event.channel, message);
         }
         else
@@ -814,55 +808,80 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    // Identity ascertained; look up in cached list
-
-    auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to look up follow age in a nonexistent room");
-
-    if (!room.follows.length)
+    void reportNotAFollower(const string name)
     {
-        // Follows have not yet been cached!
+        if (otherNameSpecified)
+        {
+            import std.format : format;
+
+            immutable user = getTwitchUser(plugin, name, string.init, Yes.searchByDisplayName);
+            if (!user.nickname.length) return sendNoSuchUser(name);
+
+            enum pattern = "%s is currently not a follower.";
+            immutable message = pattern.format(user.displayName);
+            chan(plugin.state, event.channel, message);
+        }
+        else
+        {
+            // Assume the user is asking about itself
+            enum message = "You are currently not a follower.";
+            chan(plugin.state, event.channel, message);
+        }
+    }
+
+    auto reportFromCache(const string name)
+    {
+        if (const follower = name in room.followers)
+        {
+            reportFollowAge(*follower);
+            return true;
+        }
+
+        foreach (const follower; room.followers.byValue)
+        {
+            // No need to check key or login property
+
+            if (follower.displayName == name)
+            {
+                reportFollowAge(follower);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    if (!room.followers.length)
+    {
+        // Followers have not yet been cached!
         // This can technically happen, though practically the caching is
         // done immediately after joining so there should be no time for
         // !followage queries to sneak in.
         // Luckily we're inside a Fiber so we can cache it ourselves.
-        room.follows = getFollows(plugin, room.id);
-        room.followsLastCached = event.time;
+        room.followers = getFollowers(plugin, room.id);
+        room.followersLastCached = event.time;
     }
 
-    enum minimumTimeBetweenRecaches = 10;
+    immutable name = slice.length ?
+        slice :
+        event.sender.nickname;
 
-    if (const thisFollow = idString in room.follows)
+    bool found = reportFromCache(name);  // mutable for reuse
+    if (found) return;
+
+    enum minimumSecondsBetweenRecaches = 10;
+
+    if (event.time > (room.followersLastCached + minimumSecondsBetweenRecaches))
     {
-        return reportFollowAge(*thisFollow);
-    }
-    else if (event.time > (room.followsLastCached + minimumTimeBetweenRecaches))
-    {
-        // No match, but minimumTimeBetweenRecaches passed since last recache
-        room.follows = getFollows(plugin, room.id);
-        room.followsLastCached = event.time;
-
-        if (const thisFollow = idString in room.follows)
-        {
-            return reportFollowAge(*thisFollow);
-        }
+        // No match, but minimumSecondsBetweenRecaches passed since last recache
+        room.followers = getFollowers(plugin, room.id);
+        room.followersLastCached = event.time;
+        found = reportFromCache(name);
+        if (found) return;
     }
 
-    // If we're here there were no matches.
-
-    if (nameSpecified)
-    {
-        import std.format : format;
-
-        enum pattern = "%s is currently not a follower.";
-        immutable message = pattern.format(displayName);
-        chan(plugin.state, event.channel, message);
-    }
-    else
-    {
-        enum message = "You are currently not a follower.";
-        chan(plugin.state, event.channel, message);
-    }
+    // No matches and/or not enough time has passed since last recache
+    return reportNotAFollower(name);
 }
 
 
@@ -929,7 +948,12 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     if (shouldStartRoomMonitor)
     {
         startRoomMonitorFibers(plugin, event.channel);
-        importCustomEmotes(plugin, event.channel, room.id);  // also only do this once
+
+        if (plugin.twitchSettings.customEmotes)
+        {
+            // also only do this once
+            importCustomEmotes(plugin, event.channel, room.id);
+        }
     }
 }
 
@@ -947,6 +971,8 @@ version(TwitchCustomEmotesEverywhere)
 )
 void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    if (!plugin.twitchSettings.customEmotes) return;
+
     if (event.channel in plugin.customEmotesByChannel)
     {
         // Already done
@@ -1225,20 +1251,27 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import std.conv : text;
+    import lu.string : stripped, unquoted;
     import std.uni : toLower;
 
-    if (!event.content.length)
+    void sendUsage()
     {
         import std.format : format;
         enum pattern = "Usage: %s%s [word or phrase]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        return chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel, message);
     }
+
+    if (!event.content.length) return sendUsage();
 
     auto room = event.channel in plugin.rooms;
     assert(room, "Tried to nuke a word in a nonexistent room");
-    immutable phraseToLower = event.content.toLower;
+    immutable phraseToLower = event.content
+        .stripped
+        .unquoted
+        .toLower;
+
+    if (!phraseToLower.length) return sendUsage();
 
     foreach (immutable storedEvent; room.lastNMessages)
     {
@@ -1251,7 +1284,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
         if (storedEvent.content.asLowerCase.canFind(phraseToLower))
         {
             enum properties = Message.Property.priority;
-            immutable message = text(".delete ", storedEvent.id);
+            immutable message = ".delete " ~ storedEvent.id;
             chan(plugin.state, event.channel, message, properties);
         }
     }
@@ -1265,7 +1298,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 // onCommandSongRequest
 /++
     Implements `!songrequest`, allowing viewers to request songs (actually
-    YouTube videos) to be added to the streamer's playlist.
+    YouTube videos or Spotify tracks) to be added to the streamer's playlist.
 
     See_Also:
         [kameloso.plugins.twitch.google.addVideoToYouTubePlaylist]
@@ -1316,7 +1349,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         immutable channelMessage = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
             "Missing Google API credentials and/or YouTube playlist ID." :
-            "Missing Spotify API credentials and/or playlist ID.";
+            "Missing Spotify API credentials and/or Spotify playlist ID.";
         immutable terminalMessage = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
             channelMessage ~ " Run the program with <l>--set twitch.googleKeygen</> to set it up." :
             channelMessage ~ " Run the program with <l>--set twitch.spotifyKeygen</> to set it up.";
@@ -1334,8 +1367,11 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     void sendAtLastNSecondsMustPass()
     {
-        enum pattern = "At least %d seconds must pass between song requests.";
-        immutable message = pattern.format(minimumTimeBetweenSongRequests);
+        import kameloso.time : timeSince;
+
+        enum pattern = "At least %s must pass between song requests.";
+        immutable duration = timeSince(minimumTimeBetweenSongRequests.seconds);
+        immutable message = pattern.format(duration);
         chan(plugin.state, event.channel, message);
     }
 
@@ -2413,6 +2449,9 @@ in (Fiber.getThis, "Tried to call `importCustomEmotes` from outside a Fiber")
 in (channelName.length, "Tried to import custom emotes with an empty channel name string")
 in (idString.length, "Tried to import custom emotes with an empty ID string")
 {
+    import kameloso.plugins.twitch.emotes.bttv : getBTTVEmotes;
+    import kameloso.plugins.twitch.emotes.ffz : getFFZEmotes;
+    import kameloso.plugins.twitch.emotes.seventv : get7tvEmotes;
     import core.memory : GC;
 
     GC.disable();
@@ -2421,6 +2460,7 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
     // Initialise the AA so we can get a pointer to it.
     plugin.customEmotesByChannel[channelName][dstring.init] = false;
     auto customEmotes = channelName in plugin.customEmotesByChannel;
+    *customEmotes = null;
 
     alias GetEmoteFun = void function(
         TwitchPlugin,
@@ -2443,12 +2483,19 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
         }
     }
 
-    //(*customEmotes).remove(dstring.init);
-    customEmotes = null;  // In case we're reimporting definitions
     getEmoteSet(&getBTTVEmotes, "BetterTTV");
     getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
     getEmoteSet(&get7tvEmotes, "7tv");
-    customEmotes.rehash();
+
+    if (customEmotes.length)
+    {
+        customEmotes.rehash();
+    }
+    else
+    {
+        // Nothing imported, may as well remove the AA
+        plugin.customEmotesByChannel.remove(channelName);
+    }
 }
 
 
@@ -2462,6 +2509,9 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
 void importCustomGlobalEmotes(TwitchPlugin plugin)
 in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fiber")
 {
+    import kameloso.plugins.twitch.emotes.bttv : getBTTVGlobalEmotes;
+    import kameloso.plugins.twitch.emotes.ffz : getFFZGlobalEmotes;
+    import kameloso.plugins.twitch.emotes.seventv : get7tvGlobalEmotes;
     import core.memory : GC;
 
     GC.disable();
@@ -2489,6 +2539,7 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
 
     plugin.customGlobalEmotes = null;  // In case we're reimporting definitions
     getGlobalEmoteSet(&getBTTVGlobalEmotes, "BetterTTV");
+    getGlobalEmoteSet(&getFFZGlobalEmotes, "FrankerFaceZ");
     getGlobalEmoteSet(&get7tvGlobalEmotes, "7tv");
     plugin.customGlobalEmotes.rehash();
 }
@@ -2496,19 +2547,21 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
 
 // embedCustomEmotes
 /++
-    Embeds custom emotes into the [dialect.defs.IRCEvent|IRCEvent] passed by reference,
+    Embeds custom emotes into the `emotes` string passed by reference,
     so that the [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin] can
-    highlight them with colours.
+    highlight `content` with colours.
 
     This is called in [postprocess].
 
     Params:
-        event = [dialect.defs.IRCEvent|IRCEvent] in flight.
+        content = Content string.
+        emotes = Reference string into which to save the emote list.
         customEmotes = `bool[dstring]` associative array of channel-specific custom emotes.
         customGlobalEmotes = `bool[dstring]` associative array of global custom emotes.
  +/
 void embedCustomEmotes(
-    ref IRCEvent event,
+    const string content,
+    ref string emotes,
     const bool[dstring] customEmotes,
     const bool[dstring] customGlobalEmotes)
 {
@@ -2524,14 +2577,14 @@ void embedCustomEmotes(
     {
         if (sink.data.length)
         {
-            event.emotes ~= sink.data;
+            emotes ~= sink.data;
             sink.clear();
         }
     }
 
     if (sink.capacity == 0) sink.reserve(64);  // guesstimate
 
-    immutable dline = event.content.strippedRight.to!dstring;
+    immutable dline = content.strippedRight.to!dstring;
     ptrdiff_t pos = dline.indexOf(' ');
     dstring previousEmote;  // mutable
     size_t prev;
@@ -2552,7 +2605,7 @@ void embedCustomEmotes(
         import std.format : formattedWrite;
 
         enum pattern = "/%s:%d-%d";
-        immutable slicedPattern = (event.emotes.length || sink.data.length) ?
+        immutable slicedPattern = (emotes.length || sink.data.length) ?
             pattern :
             pattern[1..$];
         immutable dwordEscaped = dword.replace(dchar(':'), dchar(';'));
@@ -2639,40 +2692,38 @@ unittest
         "gg"d : true,
     ];
 
-    IRCEvent event;
-    event.type = IRCEvent.Type.CHAN;
-
     {
-        event.content = "come on its easy, now rest then talk talk more left, left, " ~
+        enum content = "come on its easy, now rest then talk talk more left, left, " ~
             "right re st, up, down talk some rest a bit talk poop  :tf:";
-        //event.emotes = string.init;
-        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        string emotes;
+        embedCustomEmotes(content, emotes, customEmotes, customGlobalEmotes);
         enum expectedEmotes = ";tf;:113-116";
-        assert((event.emotes == expectedEmotes), event.emotes);
+        assert((emotes == expectedEmotes), emotes);
     }
     {
-        event.content = "NOTED  FrankerZ  NOTED NOTED    gg";
-        event.emotes = string.init;
-        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        enum content = "NOTED  FrankerZ  NOTED NOTED    gg";
+        string emotes;
+        embedCustomEmotes(content, emotes, customEmotes, customGlobalEmotes);
         enum expectedEmotes = "NOTED:0-4/FrankerZ:7-14/NOTED:17-21,23-27/gg:32-33";
-        assert((event.emotes == expectedEmotes), event.emotes);
+        assert((emotes == expectedEmotes), emotes);
     }
     {
-        event.content = "No emotes here KAPPA";
-        event.emotes = string.init;
-        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        enum content = "No emotes here KAPPA";
+        string emotes;
+        embedCustomEmotes(content, emotes, customEmotes, customGlobalEmotes);
         enum expectedEmotes = string.init;
-        assert((event.emotes == expectedEmotes), event.emotes);
+        assert((emotes == expectedEmotes), emotes);
     }
 }
 
 
 // initialise
 /++
-    Start the captive key generation routine(s) before connecting to the server.
+    Start any key generation terminal wizard(s) before connecting to the server.
  +/
-auto initialise(TwitchPlugin plugin)
+void initialise(TwitchPlugin plugin)
 {
+    import kameloso.plugins.common.misc : IRCPluginInitialisationException;
     import kameloso.terminal : isTerminal;
     import std.algorithm.searching : endsWith;
 
@@ -2693,15 +2744,12 @@ auto initialise(TwitchPlugin plugin)
     {
         if (someKeygenWanted)
         {
+            // Not connecting to Twitch yet keygens requested
             enum message = "A Twitch keygen was requested but the configuration " ~
-                "file is not set up to connect to Twitch. (<l>irc.chat.twitch.tv</>)";
-            logger.trace();
-            logger.warning(message);
-            logger.trace();
+                "file is not set up to connect to Twitch";
+            throw new IRCPluginInitialisationException(message, plugin.name);
         }
-
-        // Not connecting to Twitch yet keygens requested, return true unless forcing
-        if (!plugin.state.settings.force) return true;
+        return;
     }
 
     if (someKeygenWanted || (!plugin.state.bot.pass.length && !plugin.state.settings.force))
@@ -2712,8 +2760,8 @@ auto initialise(TwitchPlugin plugin)
 
         if (plugin.state.settings.headless)
         {
-            // Headless mode is enabled, so a captive keygen session doesn't make sense
-            return false;
+            // Headless mode is enabled, so a terminal wizard doesn't make sense
+            return;
         }
 
         // Some keygen, reload to load secrets so existing ones are read
@@ -2735,7 +2783,7 @@ auto initialise(TwitchPlugin plugin)
         {
             import kameloso.plugins.twitch.keygen : requestTwitchKey;
             requestTwitchKey(plugin);
-            if (*plugin.state.abort) return false;
+            if (*plugin.state.abort) return;
             plugin.twitchSettings.keygen = false;
             plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.keygen"));
             needSeparator = true;
@@ -2746,7 +2794,7 @@ auto initialise(TwitchPlugin plugin)
             import kameloso.plugins.twitch.keygen : requestTwitchSuperKey;
             if (needSeparator) logger.trace(separator);
             requestTwitchSuperKey(plugin);
-            if (*plugin.state.abort) return false;
+            if (*plugin.state.abort) return;
             plugin.twitchSettings.superKeygen = false;
             plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.superKeygen"));
             needSeparator = true;
@@ -2758,7 +2806,7 @@ auto initialise(TwitchPlugin plugin)
             import kameloso.plugins.twitch.google : requestGoogleKeys;
             if (needSeparator) logger.trace(separator);
             requestGoogleKeys(plugin);
-            if (*plugin.state.abort) return false;
+            if (*plugin.state.abort) return;
             plugin.twitchSettings.googleKeygen = false;
             plugin.twitchSettings.youtubeKeygen = false;
             plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.googleKeygen"));
@@ -2771,13 +2819,11 @@ auto initialise(TwitchPlugin plugin)
             import kameloso.plugins.twitch.spotify : requestSpotifyKeys;
             if (needSeparator) logger.trace(separator);
             requestSpotifyKeys(plugin);
-            if (*plugin.state.abort) return false;
+            if (*plugin.state.abort) return;
             plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.spotifyKeygen"));
             plugin.twitchSettings.spotifyKeygen = false;
         }
     }
-
-    return true;
 }
 
 
@@ -2812,8 +2858,9 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
 in (channelName.length, "Tried to start room monitor fibers with an empty channel name string")
 {
     import kameloso.plugins.common.delayawait : delay;
-    import std.datetime.systime : Clock, SysTime;
-    import core.time : hours, seconds;
+    import kameloso.constants : BufferSize;
+    import std.datetime.systime : Clock;
+    import core.time : MonoTime, hours, seconds;
 
     // How often to poll the servers for various information about a channel.
     static immutable monitorUpdatePeriodicity = 60.seconds;
@@ -2826,7 +2873,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
         immutable idSnapshot = room.uniqueID;
 
         static immutable botUpdatePeriodicity = 3.hours;
-        SysTime lastBotUpdateTime;
+        MonoTime lastBotUpdateTime;
         string[] botBlacklist;
 
         while (true)
@@ -2842,7 +2889,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
 
             try
             {
-                immutable now = Clock.currTime;
+                immutable now = MonoTime.currTime;
                 immutable sinceLastBotUpdate = (now - lastBotUpdateTime);
 
                 if (sinceLastBotUpdate >= botUpdatePeriodicity)
@@ -2936,6 +2983,15 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
             room.stream = TwitchPlugin.Room.Stream.init;
         }
 
+        void reportCurrentGame(const TwitchPlugin.Room.Stream stream)
+        {
+            if (stream.gameIDString != "0")
+            {
+                enum pattern = "Current game: <l>%s";
+                logger.logf(pattern, stream.gameName);
+            }
+        }
+
         auto room = channelName in plugin.rooms;
         assert(room, "Tried to start chatter monitor delegate on non-existing room");
 
@@ -2958,6 +3014,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                         // Was up but just ended
                         closeStream(room);
                         rotateStream(room);
+                        logger.info("Stream ended.");
 
                         if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
                         {
@@ -2973,6 +3030,8 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                     {
                         // New stream!
                         room.stream = streamFromServer;
+                        logger.info("Stream started.");
+                        reportCurrentGame(streamFromServer);
 
                         /*if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
                         {
@@ -2991,6 +3050,8 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                         closeStream(room);
                         rotateStream(room);
                         room.stream = streamFromServer;
+                        logger.info("Stream change detected.");
+                        reportCurrentGame(streamFromServer);
 
                         if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
                         {
@@ -3009,7 +3070,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
         }
     }
 
-    // Clear and re-cache follows once every midnight
+    // Clear and re-cache followers once every midnight
     void cacheFollowersDg()
     {
         auto room = channelName in plugin.rooms;
@@ -3028,8 +3089,8 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
 
             try
             {
-                room.follows = getFollows(plugin, room.id);
-                room.followsLastCached = now.toUnixTime;
+                room.followers = getFollowers(plugin, room.id);
+                room.followersLastCached = now.toUnixTime();
             }
             catch (Exception _)
             {
@@ -3063,6 +3124,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
  +/
 void startValidator(TwitchPlugin plugin)
 {
+    import kameloso.constants : BufferSize;
     import core.thread : Fiber;
 
     void validatorDg()
@@ -3084,8 +3146,8 @@ void startValidator(TwitchPlugin plugin)
                     immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                     plugin.botUserIDString = validationJSON["user_id"].str;
                     immutable expiresIn = validationJSON["expires_in"].integer;
-                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
                     immutable now = Clock.currTime;
+                    immutable expiresWhen = SysTime.fromUnixTime(now.toUnixTime() + expiresIn);
                     immutable delta = (expiresWhen - now);
 
                     // Schedule quitting on expiry
@@ -3133,7 +3195,7 @@ void startValidator(TwitchPlugin plugin)
                 immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                 plugin.botUserIDString = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
-                immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+                immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime() + expiresIn);
                 generateExpiryReminders(plugin, expiresWhen);
             }
             catch (TwitchQueryException e)
@@ -3207,6 +3269,7 @@ void startValidator(TwitchPlugin plugin)
 void startSaver(TwitchPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
     import core.thread : Fiber;
     import core.time : hours;
 
@@ -3273,7 +3336,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         // More than a week away, just .info
         enum pattern = "Your Twitch authorisation token will expire " ~
             "in <l>%d days</> on <l>%4d-%02d-%02d";
-        logger.infof(pattern, numDays, expiresWhen.year, expiresWhen.month, expiresWhen.day);
+        logger.infof(pattern, numDays, expiresWhen.year, cast(uint)expiresWhen.month, expiresWhen.day);
     }
 
     void warnOnDaysDg()
@@ -3291,7 +3354,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
             logger.warningf(pattern,
                 numDays, numDays.plurality("day", "days"),
                 numHours, numHours.plurality("hour", "hours"),
-                expiresWhen.year, expiresWhen.month, expiresWhen.day,
+                expiresWhen.year, cast(uint)expiresWhen.month, expiresWhen.day,
                 expiresWhen.hour, expiresWhen.minute);
         }
         else
@@ -3300,7 +3363,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
                 "in <l>%d %s</> at <l>%4d-%02d-%02d %02d:%02d";
             logger.warningf(pattern,
                 numDays, numDays.plurality("day", "days"),
-                expiresWhen.year, expiresWhen.month, expiresWhen.day,
+                expiresWhen.year, cast(uint)expiresWhen.month, expiresWhen.day,
                 expiresWhen.hour, expiresWhen.minute);
         }
     }
@@ -3413,6 +3476,163 @@ void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream s
 }
 
 
+// promoteUserFromBadges
+/++
+    Infers a user's class based on their badge(s).
+
+    Params:
+        class_ = Reference to the user's [dialect.defs.IRCUser.Class|class].
+        badges = String of comma-separated badges.
+        promoteModerators = Whether to promote moderators to
+            [dialect.defs.IRCUser.Class.operator|operator].
+        promoteVIPs = Whether to promote VIPs to
+            [dialect.defs.IRCUser.Class.elevated|elevated].
+ +/
+void promoteUserFromBadges(
+    ref IRCUser.Class class_,
+    const string badges,
+    const bool promoteModerators,
+    const bool promoteVIPs) pure @safe
+{
+    import std.string : indexOf;
+    import std.algorithm.iteration : splitter;
+
+    if (class_ >= IRCUser.Class.operator) return;  // already as high as we go
+
+    foreach (immutable badge; badges.splitter(','))
+    {
+        immutable slashPos = badge.indexOf('/');
+        if (!slashPos) break;  // something's wrong
+
+        immutable badgePart = badge[0..slashPos];
+
+        switch (badgePart)
+        {
+        case "subscriber":
+            if (class_ < IRCUser.Class.registered)
+            {
+                class_ = IRCUser.Class.registered;
+            }
+            break;  // Check next badge
+
+        case "vip":
+            if (promoteVIPs && (class_ < IRCUser.Class.elevated))
+            {
+                class_ = IRCUser.Class.elevated;
+            }
+            break;  // as above
+
+        case "moderator":
+            if (promoteModerators && (class_ < IRCUser.Class.operator))
+            {
+                class_ = IRCUser.Class.operator;
+                return;  // We don't go any higher than moderator here
+            }
+            break;  // as above
+
+        /+case "broadcaster":
+            // This is already done by comparing the user's name to the channel
+            // name in the calling function.
+
+            if (class_ < IRCUser.Class.staff)
+            {
+                class_ = IRCUser.Class.staff;
+            }
+            return;  // No need to check more badges
+         +/
+
+        default:
+            // Non-applicable badge
+            break;
+        }
+    }
+}
+
+///
+unittest
+{
+    import lu.conv : Enum;
+
+    {
+        enum badges = "subscriber/12,sub-gift-leader/1";
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, false, false);
+        enum expected = IRCUser.Class.registered;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "premium/1";
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, false, false);
+        enum expected = IRCUser.Class.anyone;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "subscriber/12,vip/1";
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, false, false);
+        enum expected = IRCUser.Class.registered;  // because promoteVIPs false
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "subscriber/12,vip/1";
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, true, true);
+        enum expected = IRCUser.Class.elevated;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "moderator/1,subscriber/3012";
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, true, true);
+        enum expected = IRCUser.Class.operator;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "moderator/1,subscriber/3012";
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, false, true);
+        enum expected = IRCUser.Class.registered;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "broadcaster/1,subscriber/12,partner/1";
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, false, true);
+        enum expected = IRCUser.Class.registered;  // not staff because broadcasters are identified elsewhere
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "moderator/1";  // no comma splitter test
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, true, true);
+        enum expected = IRCUser.Class.operator;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = "subscriber/1";
+        auto class_ = IRCUser.Class.operator;
+        promoteUserFromBadges(class_, badges, true, true);
+        enum expected = IRCUser.Class.operator;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = string.init;
+        auto class_ = IRCUser.Class.staff;
+        promoteUserFromBadges(class_, badges, true, true);
+        enum expected = IRCUser.Class.staff;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+    {
+        enum badges = string.init;
+        auto class_ = IRCUser.Class.anyone;
+        promoteUserFromBadges(class_, badges, false, false);
+        enum expected = IRCUser.Class.anyone;
+        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+    }
+}
+
+
 // teardown
 /++
     De-initialises the plugin. Shuts down any persistent worker threads.
@@ -3454,7 +3674,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
     import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
 
-    if ((plugin.twitchSettings.fakeChannelFromQueries) && (event.type == IRCEvent.Type.QUERY))
+    if (plugin.twitchSettings.fakeChannelFromQueries && (event.type == IRCEvent.Type.QUERY))
     {
         alias pred = (homeChannelEntry, senderNickname) => (homeChannelEntry[1..$] == senderNickname);
 
@@ -3469,45 +3689,66 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         return;
     }
 
-    immutable eventCanContainEmotes = event.content.length &&
-        event.type.among!(IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE);
+    immutable isEmotePossibleEventType = event.type.among!
+        (IRCEvent.Type.CHAN,
+        IRCEvent.Type.EMOTE,
+        IRCEvent.Type.SELFCHAN,
+        IRCEvent.Type.SELFEMOTE);
+
+    immutable eventCanContainEmotes =
+        plugin.twitchSettings.customEmotes &&
+        event.content.length &&
+        isEmotePossibleEventType;
 
     version(TwitchCustomEmotesEverywhere)
     {
-        if (eventCanContainEmotes)
-        {
-            // No checks needed
-            if (const customEmotes = event.channel in plugin.customEmotesByChannel)
-            {
-                embedCustomEmotes(event, *customEmotes, plugin.customGlobalEmotes);
-            }
-        }
+        // Always embed regardless of channel
+        alias shouldEmbedEmotes = eventCanContainEmotes;
     }
     else
     {
         // Only embed if the event is in a home channel
         immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
+        immutable shouldEmbedEmotes = eventCanContainEmotes && isHomeChannel;
+    }
 
-        if (isHomeChannel && eventCanContainEmotes)
+    if (shouldEmbedEmotes)
+    {
+        if (const customEmotes = event.channel in plugin.customEmotesByChannel)
         {
-            if (const customEmotes = event.channel in plugin.customEmotesByChannel)
+            import std.conv : text;
+
+            embedCustomEmotes(
+                event.content,
+                event.emotes,
+                *customEmotes,
+                plugin.customGlobalEmotes);
+
+            if (event.target.nickname.length && event.aux[0].length)
             {
-                embedCustomEmotes(event, *customEmotes, plugin.customGlobalEmotes);
+                enum emoteDelimiter = '\0';
+                string emotes;  // passed by ref
+
+                embedCustomEmotes(
+                    event.aux[0],
+                    emotes,
+                    *customEmotes,
+                    plugin.customGlobalEmotes);
+
+                event.aux[0] = text(emotes, emoteDelimiter, event.aux[0]);
             }
         }
     }
 
     version(TwitchPromoteEverywhere)
     {
-        // No checks needed
+        // No checks needed, always pass through and promote
     }
     else
     {
         version(TwitchCustomEmotesEverywhere)
         {
-            import std.algorithm.searching : canFind;
-
-            // isHomeChannel only defined if version not TwitchCustomEmotesEverywhere
+            // isHomeChannel was not declared above
             immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
         }
 
@@ -3516,17 +3757,28 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
     static void postprocessImpl(
         const TwitchPlugin plugin,
-        const ref IRCEvent event,
+        const string channelName,
         ref IRCUser user)
     {
-        import std.string : indexOf;
+        if (user.class_ >= IRCUser.Class.staff)
+        {
+            // User is already staff or higher, no need to promote
+            return;
+        }
 
-        if (user.class_ == IRCUser.Class.blacklist) return;
+        if (user.class_ == IRCUser.Class.blacklist)
+        {
+            // Ignore blacklist for obvious reasons
+            return;
+        }
 
         if (plugin.twitchSettings.promoteBroadcasters)
         {
+            // Already ensured channel has length in parent function
+            assert(channelName.length, "Empty channelName in postprocess.postprocessImpl");
+
             if ((user.class_ < IRCUser.Class.staff) &&
-                (user.nickname == event.channel[1..$]))
+                (user.nickname == channelName[1..$]))
             {
                 // User is broadcaster but is not registered as staff
                 user.class_ = IRCUser.Class.staff;
@@ -3534,41 +3786,19 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
             }
         }
 
-        // Stop here if there are no badges to promote
-        if (!user.badges.length) return;
-
-        if (plugin.twitchSettings.promoteModerators)
+        if (user.badges.length)
         {
-            if ((user.class_ < IRCUser.Class.operator) &&
-                (user.badges.indexOf("moderator/") != -1))
-            {
-                // User is moderator but is not registered as at least operator
-                user.class_ = IRCUser.Class.operator;
-                return;
-            }
-        }
-
-        if (plugin.twitchSettings.promoteVIPs)
-        {
-            if ((user.class_ < IRCUser.Class.elevated) &&
-                (user.badges.indexOf("vip/") != -1))
-            {
-                // User is VIP but is not registered as at least elevated
-                user.class_ = IRCUser.Class.elevated;
-                return;
-            }
-        }
-
-        // There is no "registered" list; just map subscribers to registered 1:1
-        if ((user.class_ < IRCUser.Class.registered) &&
-            (user.badges.indexOf("subscriber/") != -1))
-        {
-            user.class_ = IRCUser.Class.registered;
+            // Infer class from the user's badge(s)
+            promoteUserFromBadges(
+                user.class_,
+                user.badges,
+                plugin.twitchSettings.promoteModerators,
+                plugin.twitchSettings.promoteVIPs);
         }
     }
 
-    /*if (event.sender.nickname.length)*/ postprocessImpl(plugin, event, event.sender);
-    if (event.target.nickname.length) postprocessImpl(plugin, event, event.target);
+    /*if (event.sender.nickname.length)*/ postprocessImpl(plugin, event.channel, event.sender);
+    if (event.target.nickname.length) postprocessImpl(plugin, event.channel, event.target);
 }
 
 
@@ -3582,9 +3812,10 @@ void initResources(TwitchPlugin plugin)
     import lu.json : JSONStorage;
     import std.file : exists, mkdir;
     import std.json : JSONException, JSONType;
-    import std.path : baseName, dirName;
+    import std.path : dirName;
 
     void loadFile(
+        const string fileDescription,
         ref JSONStorage json,
         const string file,
         const size_t line = __LINE__)
@@ -3597,7 +3828,7 @@ void initResources(TwitchPlugin plugin)
         {
             version(PrintStacktraces) logger.error("JSONException: ", e.msg);
             throw new IRCPluginInitialisationException(
-                file.baseName ~ " is malformed",
+                fileDescription ~ " file is malformed",
                 plugin.name,
                 file,
                 __FILE__,
@@ -3616,10 +3847,10 @@ void initResources(TwitchPlugin plugin)
     immutable subdir = plugin.ecountFile.dirName;
     if (!subdir.exists) mkdir(subdir);
 
-    loadFile(ecountJSON, plugin.ecountFile);
-    loadFile(viewersJSON, plugin.viewersFile);
-    loadFile(secretsJSON, plugin.secretsFile);
-    loadFile(historyJSON, plugin.streamHistoryFile);
+    loadFile("ecount", ecountJSON, plugin.ecountFile);
+    loadFile("Viewers", viewersJSON, plugin.viewersFile);
+    loadFile("Secrets", secretsJSON, plugin.secretsFile);
+    loadFile("Stream history", historyJSON, plugin.streamHistoryFile);
 
     if (historyJSON.type != JSONType.array) historyJSON.array = null;  // coerce to array if needed
 
@@ -3742,6 +3973,8 @@ void reload(TwitchPlugin plugin)
 
     void importDg()
     {
+        if (!plugin.twitchSettings.customEmotes) return;
+
         plugin.customGlobalEmotes = null;
         importCustomGlobalEmotes(plugin);
 
@@ -4040,14 +4273,14 @@ package:
         string id;
 
         /++
-            A JSON list of the followers of the channel.
+            Associative array of the [Follower]s of this channel, keyed by nickname.
          +/
-        Follow[string] follows;
+        Follower[string] followers;
 
         /++
-            UNIX timestamp of when [follows] was last cached.
+            UNIX timestamp of when [followers] was last cached.
          +/
-        long followsLastCached;
+        long followersLastCached;
 
         /++
             How many messages to keep in memory, to allow for nuking.

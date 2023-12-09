@@ -82,7 +82,7 @@ auto currentEnvironment()
     On non-macOS Posix it defaults to `$XDG_CONFIG_HOME` and falls back to
     `~/.config` if no `$XDG_CONFIG_HOME` environment variable present.
 
-    On macOS it defaults to `$HOME/Library/Application Support`.
+    On macOS it defaults to `$HOME/Library/Preferences`.
 
     On Windows it defaults to `%APPDATA%`.
 
@@ -306,11 +306,11 @@ auto openInBrowser(const string url)
 }
 
 
-// execvp
+// exec
 /++
     Re-executes the program.
 
-    Filters out any captive `--set twitch.*` keygen settings from the
+    Filters out any `--set twitch.*` keygen terminal wizard flags from the
     arguments originally passed to the program, then calls
     [std.process.execvp|execvp].
 
@@ -318,19 +318,23 @@ auto openInBrowser(const string url)
 
     Params:
         args = Arguments passed to the program.
+        numReexecs = How many reexecutions have been done so far.
 
     Returns:
         On Windows, a [std.process.Pid|Pid] of the spawned process.
         On Posix, it either exits the program or it throws.
 
     Throws:
-        On Posix, [ExecException] on failure.
+        On Posix, [lu.common.ReturnValueException|ReturnValueException] on failure.
         On Windows, [std.process.ProcessException|ProcessException] on failure.
  +/
-Pid execvp(/*const*/ string[] args) @system
+Pid exec(
+    /*const*/ string[] args,
+    const uint numReexecs) @system
 {
     import kameloso.common : logger;
     import std.algorithm.comparison : among;
+    import std.conv : text;
 
     if (args.length > 1)
     {
@@ -373,7 +377,8 @@ Pid execvp(/*const*/ string[] args) @system
                 if (setting.among!(
                     //"--setup-twitch",  // this only does the keygen, then exits
                     "--get-cacert",
-                    "--get-openssl"))
+                    "--get-openssl",
+                    "--num-reexecs"))
                 {
                     toRemove ~= i;
                 }
@@ -387,20 +392,25 @@ Pid execvp(/*const*/ string[] args) @system
         }
     }
 
+    // Add the reexec count argument
+    args ~= text("--num-reexecs=", numReexecs+1);
+
     version(Posix)
     {
+        import lu.common : ReturnValueException;
         import std.process : execvp;
 
         immutable retval = execvp(args[0], args);
 
         // If we're here, the call failed
-        enum message = "execvp failed";
-        throw new ExecException(message, retval);
+        enum message = "exec failed";
+        throw new ReturnValueException(message, args[0], retval);
     }
     else version(Windows)
     {
         import std.algorithm.searching : startsWith;
         import std.array : Appender;
+        import std.exception : assumeUnique;
         import std.process : ProcessException, spawnProcess;
 
         Appender!(char[]) sink;
@@ -455,50 +465,11 @@ Pid execvp(/*const*/ string[] args) @system
             "/min",
             "powershell",
             "-c"
-        ] ~ arg0 ~ sink.data.idup;
+        ] ~ arg0 ~ sink.data.assumeUnique();
         return spawnProcess(commandLine[]);
     }
     else
     {
         static assert(0, "Unsupported platform, please file a bug.");
-    }
-}
-
-
-// ExecException
-/++
-    Exception thrown when an [std.process.execvp|execvp] action failed.
- +/
-final class ExecException : Exception
-{
-    /++
-        [std.process.execvp|execvp] return value.
-     +/
-    int retval;
-
-    /++
-        Constructor attaching a return value.
-     +/
-    this(
-        const string msg,
-        const int retval,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        this.retval = retval;
-        super(msg, file, line, nextInChain);
-    }
-
-    /++
-        Passthrough constructor.
-     +/
-    this(
-        const string msg,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        super(msg, file, line, nextInChain);
     }
 }

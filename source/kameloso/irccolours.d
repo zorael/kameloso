@@ -260,7 +260,7 @@ in (line.length, "Tried to apply IRC colours to a string but no string was given
 {
     import std.array : Appender;
 
-    if (!line.length) return string.init;
+    if (!line.length) return line;
 
     Appender!(char[]) sink;
 
@@ -384,7 +384,7 @@ in (word.length, "Tried to apply IRC colours by hash to a string but no string w
     import lu.conv : toAlphaInto;
     import std.array : Appender;
 
-    if (!word.length) return string.init;
+    if (!word.length) return word;
 
     Appender!(char[]) sink;
     sink.reserve(word.length + 4);  // colour, index, word, colour
@@ -604,7 +604,7 @@ auto mapEffects(
     alias I = IRCControlCharacter;
     alias TF = TerminalFormat;
 
-    if (!origLine.length) return string.init;
+    if (!origLine.length) return origLine;
 
     string line = origLine;  // mutable
 
@@ -792,7 +792,7 @@ private string mapColoursImpl(Flag!"strip" strip = No.strip)
     {
         immutable segmentIndex = segments.length;  // snapshot
         segments ~= Segment.init;
-        Segment* segment = &segments[segmentIndex];
+        auto segment = &segments[segmentIndex];
 
         segment.pre = slice[0..pos];
         if (slice.length == pos) break;
@@ -1060,8 +1060,9 @@ unittest
  +/
 auto stripColours(const string line) pure nothrow
 {
-    if (!line.length) return line;
-    return mapColoursImpl!(Yes.strip)(line, TerminalForeground.default_, TerminalBackground.default_);
+    return line.length ?
+        mapColoursImpl!(Yes.strip)(line, TerminalForeground.default_, TerminalBackground.default_) :
+        string.init;
 }
 
 ///
@@ -1241,7 +1242,7 @@ unittest
     Returns:
         The passed `line` but with tags expanded to formatting and colouring.
  +/
-T expandIRCTags(T)
+auto expandIRCTags(T)
     (const T line,
     const Flag!"extendedOutgoingColours" extendedOutgoingColours,
     const Flag!"strip" strip) @system
@@ -1342,21 +1343,6 @@ T expandIRCTags(T)
 T expandIRCTags(T)(const T line) @system
 {
     static import kameloso.common;
-
-    debug
-    {
-        if (kameloso.common.settings is null)
-        {
-            import std.stdio : stdout, writeln;
-
-            // We're likely threading and forgot to initialise global settings
-            kameloso.common.settings = new typeof(*kameloso.common.settings);
-
-            writeln("-- Warning: attempted to expand IRC tags by relying on " ~
-                "global `kameloso.common.settings`, and it was null");
-            stdout.flush();
-        }
-    }
 
     immutable extendedOutgoingColours =
         cast(Flag!"extendedOutgoingColours")kameloso.common.settings.extendedOutgoingColours;
@@ -1777,5 +1763,9 @@ private T expandIRCTagsImpl(T)
         }
     }
 
-    return dirty ? sink.data.idup : line;
+    return () @trusted
+    {
+        import std.exception : assumeUnique;
+        return dirty ? sink.data.assumeUnique() : line;
+    }();
 }

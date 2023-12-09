@@ -291,7 +291,7 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
     string replaceThis = slice[0..delimPos];  // mutable
 
     slice = slice[delimPos+1..$];
-    if (!slice.length) return string.init;
+    if (!slice.length) return slice;
 
     // ...to here.
     replaceThis = replaceThis.replace(escapedCharAsString, charAsString);
@@ -526,14 +526,15 @@ void onWelcome(SedReplacePlugin plugin)
         // timeBetweenPurges duration has passed
         delay(plugin, plugin.timeBetweenPurges, Yes.yield);
 
-        immutable now = Clock.currTime.toUnixTime;
+        immutable nowInUnix = Clock.currTime.toUnixTime();
 
         foreach (ref channelLines; plugin.prevlines)
         {
             foreach (immutable nickname, const senderLines; channelLines)
             {
-                if (senderLines.empty ||
-                    ((now - senderLines.front.timestamp) >= plugin.prevlineLifetime))
+                immutable delta = (nowInUnix - senderLines.front.timestamp);
+
+                if (senderLines.empty || (delta >= plugin.prevlineLifetime))
                 {
                     // Something is either wrong with the sender's entries or
                     // the most recent entry is too old

@@ -1,10 +1,7 @@
 /++
-    This module provides a mixin template [UnderscoreOpDispatcher] that
-    redirects calls to members whose names match the passed variable string
-    but with an underscore prepended.
-
-    This module is a copy of the one from lu.typecons, but with a fallback
-    implementation for older versions of lu.
+    This module is currently empty now that `UnderscoreOpDispatcher` was upstreamed
+    into `lu`. It is kept for backwards-compatibility reasons, and will be removed
+    in a future release.
 
     See_Also:
         https://github.com/zorael/lu/blob/master/source/lu/typecons.d
@@ -19,137 +16,10 @@ module kameloso.typecons;
 
 private:
 
-import lu.semver : LuSemVer;
-
 public:
 
-
-// UnderscoreOpDispatcher
 /+
-    If the version of lu is too old to include UnderscoreOpDispatcher, we
-    provide our own. This is the case for lu 1.2.5 and older.
+    Backwards-compatibility alias to [lu.typecons.UnderscoreOpDispatcher].
  +/
-static if (
-    (LuSemVer.majorVersion <= 1) &&
-    (LuSemVer.minorVersion <= 2) &&
-    (LuSemVer.patchVersion <= 5))
-{
-    /++
-        Mixin template mixing in an `opDispatch` redirecting calls to members whose
-        names match the passed variable string but with an underscore prepended.
-
-        Example:
-        ---
-        struct Foo
-        {
-            int _i;
-            string _s;
-            bool _b;
-
-            mixin UnderscoreOpDispatcher;
-        }
-
-        Foo f;
-        f.i = 42;       // f.opDispatch!"i"(42);
-        f.s = "hello";  // f.opDispatch!"s"("hello");
-        f.b = true;     // f.opDispatch!"b"(true);
-
-        assert(f.i == 42);
-        assert(f.s == "hello");
-        assert(f.b);
-        ---
-     +/
-    mixin template UnderscoreOpDispatcher()
-    {
-        version(unittest)
-        {
-            import lu.traits : MixinConstraints, MixinScope;
-            mixin MixinConstraints!(
-                (MixinScope.struct_ | MixinScope.class_ | MixinScope.union_),
-                typeof(this).stringof);
-        }
-
-        /++
-            Mutator.
-
-            Params:
-                var = The variable name to set.
-                value = The value to set the variable to.
-
-            Returns:
-                A reference to the object which this is mixed into.
-         +/
-        ref auto opDispatch(string var, T)(T value)
-        {
-            import std.traits : isArray, isAssociativeArray, isSomeString;
-
-            enum realVar = '_' ~ var;
-            alias V = typeof(mixin(realVar));
-
-            static if (isAssociativeArray!V)
-            {
-                import lu.meld : MeldingStrategy, meldInto;
-                value.meldInto!(MeldingStrategy.overwriting)(mixin(realVar));
-            }
-            else static if (isArray!V && !isSomeString!V)
-            {
-                mixin(realVar) ~= value;
-            }
-            else
-            {
-                mixin(realVar) = value;
-            }
-
-            return this;
-        }
-
-        /++
-            Accessor.
-
-            Params:
-                var = The variable name to get.
-
-            Returns:
-                The value of the variable.
-         +/
-        auto opDispatch(string var)() inout
-        {
-            enum realVar = '_' ~ var;
-            return mixin(realVar);
-        }
-    }
-
-    ///
-    unittest
-    {
-        import dialect.defs;
-
-        struct Foo
-        {
-            IRCEvent.Type[] _acceptedEventTypes;
-            alias _onEvent = _acceptedEventTypes;
-            bool _verbose;
-            bool _chainable;
-
-            mixin UnderscoreOpDispatcher;
-        }
-
-        auto f = Foo()
-            .onEvent(IRCEvent.Type.CHAN)
-            .onEvent(IRCEvent.Type.EMOTE)
-            .onEvent(IRCEvent.Type.QUERY)
-            .chainable(true)
-            .verbose(false);
-
-        assert(f.acceptedEventTypes == [ IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE, IRCEvent.Type.QUERY ]);
-        assert(f.chainable);
-        assert(!f.verbose);
-    }
-}
-else
-{
-    /+
-        Use the one from lu.typecons instead.
-     +/
-    public import lu.typecons : UnderscoreOpDispatcher;
-}
+deprecated("Use `lu.typecons.UnderscoreOpDispatcher` instead")
+import lu.typecons : UnderscoreOpDispatcher;

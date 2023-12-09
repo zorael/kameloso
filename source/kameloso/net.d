@@ -14,7 +14,7 @@
     import std.concurrency : Generator;
 
     Connection conn;
-    Flag!"abort" abort;  // Set to Yes.abort if something goes wrong
+    Flag!"abort"* abort;  // Set to Yes.abort if something goes wrong
 
     conn.reset();
 
@@ -26,13 +26,12 @@
             No.useIPv6,
             abort));
 
-    resolver.call();
-
     resolveloop:
     foreach (const attempt; resolver)
     {
         // attempt is a yielded `ResolveAttempt`
         // switch on `attempt.state`, deal with it accordingly
+        // it may be `typeof(attepmt.state).noop` on the first iteration
     }
 
     // Resolution done
@@ -45,13 +44,11 @@
             connectionRetries,
             abort));
 
-    connector.call();
-
     connectorloop:
     foreach (const attempt; connector)
     {
         // attempt is a yielded `ConnectionAttempt`
-        // switch on `attempt.state`, deal with it accordingly
+        // as above
     }
 
     // Connection established
@@ -69,6 +66,7 @@
     foreach (const attempt; listener)
     {
         // attempt is a yielded `ListenAttempt`
+        // as above
         doThingsWithLineFromServer(attempt.line);
         // program logic goes here
     }
@@ -99,7 +97,7 @@ public:
     This is simply to decrease the amount of globals and to create some
     convenience functions.
  +/
-struct Connection
+final class Connection
 {
 private:
     import requests.ssl_adapter : SSL, SSL_CTX, openssl;
@@ -169,10 +167,21 @@ public:
     Address[] ips;
 
     /++
-        Implicitly proxies calls to the current [std.socket.Socket|Socket].
-        This successfully proxies to [std.socket.Socket.receive|Socket.receive].
+        Proxies calls to [std.socket.Socket.receive|socket.receive].
+
+        This replaces `alias socket this`, which is deprecated for classes in
+        some compiler versions.
+
+        Params:
+            buffer = Buffer to receive data into.
+
+        Returns:
+            The amount of bytes received.
      +/
-    alias socket this;
+    auto receive(ubyte[] buffer)
+    {
+        return socket.receive(buffer);
+    }
 
     /++
         Whether we are connected or not.
@@ -252,7 +261,6 @@ public:
     {
         teardown();
         setup();
-        connected = false;
     }
 
     // resetSSL
@@ -279,13 +287,13 @@ public:
     auto getSSLErrorMessage(const int code) @system
     in (ssl, "Tried to get SSL error message on a non-SSL `Connection`")
     {
+        import std.exception : assumeUnique;
         import std.string : fromStringz;
 
         immutable errorCode = openssl.SSL_get_error(sslInstance, code);
-
         return openssl.ERR_reason_error_string(errorCode)
             .fromStringz
-            .idup;
+            .assumeUnique();
     }
 
     // setDefaultOptions
@@ -390,8 +398,32 @@ public:
     void teardownSSL()
     in (ssl, "Tried to teardown SSL on a non-SSL `Connection`")
     {
-        if (sslInstance) openssl.SSL_free(sslInstance);
-        if (sslContext) openssl.SSL_CTX_free(sslContext);
+        if (!this.sslInstance && !this.sslContext) return;
+
+        version(ThreadedSSLFree)
+        {
+            import std.concurrency : spawn;
+
+            static void freeSSL(shared SSL* sslInstance, shared SSL_CTX* sslContext)
+            {
+                if (sslInstance) openssl.SSL_free(cast(SSL*)sslInstance);
+                if (sslContext) openssl.SSL_CTX_free(cast(SSL_CTX*)sslContext);
+            }
+
+            // Casting to and from shared is not @safe. Hopefully history will forgive me for this.
+            () @trusted
+            {
+                cast(void)spawn(&freeSSL, cast(shared)this.sslInstance, cast(shared)this.sslContext);
+            }();
+        }
+        else
+        {
+            if (this.sslInstance) openssl.SSL_free(this.sslInstance);
+            if (this.sslContext) openssl.SSL_CTX_free(this.sslContext);
+        }
+
+        this.sslInstance = null;
+        this.sslContext = null;
     }
 
     // teardown
@@ -410,6 +442,9 @@ public:
             thisSocket.shutdown(SocketShutdown.BOTH);
             thisSocket.close();
         }
+
+        if (ssl) teardownSSL();
+        connected = false;
     }
 
     // setup
@@ -532,6 +567,7 @@ struct ListenAttempt
     enum State
     {
         unset,      /// Init value.
+        noop,       /// Nothing.
         prelisten,  /// About to listen.
         isEmpty,    /// Empty result; nothing read or similar.
         hasString,  /// String read, ready for processing.
@@ -586,11 +622,10 @@ struct ListenAttempt
     enum connectionLostSeconds = 600;
 
     auto listener = new Generator!ListenAttempt(() =>
-        listenFiber(conn,
-        abort,
-        connectionLostSeconds));
-
-    listener.call();
+        listenFiber(
+            conn,
+            abort,
+            connectionLostSeconds));
 
     foreach (const attempt; listener)
     {
@@ -630,7 +665,7 @@ struct ListenAttempt
         bufferSize = What size static array to use as buffer. Defaults to twice of
             [kameloso.constants.BufferSize.socketReceive|BufferSize.socketReceive] for now.
         conn = [Connection] whose [std.socket.Socket|Socket] it reads from the server with.
-        abort = Reference "abort" flag, which -- if set -- should make the
+        abort = Pointer to the "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.
         connectionLost = How many seconds may pass before we consider the connection lost.
             Optional, defaults to
@@ -641,7 +676,7 @@ struct ListenAttempt
  +/
 void listenFiber(size_t bufferSize = BufferSize.socketReceive*2)
     (Connection conn,
-    ref Flag!"abort" abort,
+    const Flag!"abort"* abort,
     const int connectionLost = Timeout.connectionLost) @system
 in ((conn.connected), "Tried to set up a listening fiber on a dead connection")
 in ((connectionLost > 0), "Tried to set up a listening fiber with connection timeout of <= 0")
@@ -652,21 +687,14 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
     import std.socket : Socket, lastSocketError;
     import std.string : indexOf;
 
-    if (abort) return;
+    if (*abort) return;
 
     ubyte[bufferSize] buffer;
-    long timeLastReceived = Clock.currTime.toUnixTime;
+    long timeLastReceived = Clock.currTime.toUnixTime();
     size_t start;
 
     alias State = ListenAttempt.State;
-
-    /+
-        The Generator we use this function with popFronts the first thing it does
-        after being instantiated. To work around our main loop popping too we
-        yield an initial empty value; else the first thing to happen will be a
-        double pop, and the first line is missed.
-     +/
-    yield(ListenAttempt.init);
+    yield(ListenAttempt(State.noop));
 
     /// How many consecutive warnings to allow before yielding an error.
     enum maxConsecutiveWarningsUntilError = 20;
@@ -674,7 +702,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
     /// Current consecutive warnings count.
     uint consecutiveWarnings;
 
-    while (!abort)
+    while (!*abort)
     {
         version(Posix)
         {
@@ -761,7 +789,9 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
         if (attempt.bytesReceived == Socket.ERROR)
         {
-            if ((Clock.currTime.toUnixTime - timeLastReceived) > connectionLost)
+            immutable delta = (Clock.currTime.toUnixTime() - timeLastReceived);
+
+            if (delta > connectionLost)
             {
                 attempt.state = State.timeout;
                 yield(attempt);
@@ -849,7 +879,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
             }
         }
 
-        timeLastReceived = Clock.currTime.toUnixTime;
+        timeLastReceived = Clock.currTime.toUnixTime();
         consecutiveWarnings = 0;
 
         immutable ptrdiff_t end = cast(ptrdiff_t)(start + attempt.bytesReceived);
@@ -900,6 +930,7 @@ public:
     enum State
     {
         unset,                   /// Init value.
+        noop,                    /// Nothing.
         preconnect,              /// About to connect.
         connected,               /// Successfully connected.
         delayThenReconnect,      /// Failed to connect; should delay and retry.
@@ -910,6 +941,7 @@ public:
         fatalSSLFailure,         /// Fatal failure establishing an SSL connection, should abort.
         invalidConnectionError,  /// The current IP cannot be connected to.
         error,                   /// Error connecting; should abort.
+        exception,               /// Some other Exception was thrown.
     }
 
     /++
@@ -955,8 +987,6 @@ public:
             10,
             abort));
 
-    connector.call();
-
     connectorloop:
     foreach (const attempt; connector)
     {
@@ -994,33 +1024,28 @@ public:
     ---
 
     Params:
-        conn = Reference to the current, unconnected [Connection].
+        conn = The current, unconnected [Connection].
         connectionRetries = How many times to attempt to connect before signalling
             that we should move on to the next IP.
-        abort = Reference "abort" flag, which -- if set -- should make the
+        abort = Pointer to the "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.
  +/
 void connectFiber(
-    ref Connection conn,
+    Connection conn,
     const uint connectionRetries,
-    ref Flag!"abort" abort) @system
+    const Flag!"abort"* abort) @system
 in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
 in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 {
     import std.concurrency : yield;
     import std.socket : AddressFamily, SocketException;
 
-    if (abort) return;
+    if (*abort) return;
 
     alias State = ConnectionAttempt.State;
+    yield(ConnectionAttempt(State.noop));
 
-    yield(ConnectionAttempt.init);
-
-    scope(exit)
-    {
-        conn.teardown();
-        if (conn.ssl) conn.teardownSSL();
-    }
+    scope(exit) conn.teardown();
 
     do
     {
@@ -1035,7 +1060,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
             attemptloop:
             foreach (immutable retry; 0..connectionRetries)
             {
-                if (abort) return;
+                if (*abort) return;
 
                 conn.reset();
                 conn.socket = isIPv6 ? conn.socket6 : conn.socket4;
@@ -1053,7 +1078,22 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                     attempt.errno = 0;  // reset
                     yield(attempt);
 
-                    conn.socket.connect(ip);
+                    try
+                    {
+                        conn.socket.connect(ip);
+                    }
+                    catch (Exception e)
+                    {
+                        static import core.stdc.errno;
+                        attempt.state = State.exception;
+                        attempt.error = e.msg;
+                        attempt.errno = core.stdc.errno.errno;
+                        yield(attempt);
+
+                        // If it is an exception due to missing OpenSSL,
+                        // we can't continue, but let the caller decide
+                        continue attemptloop;
+                    }
 
                     if (conn.ssl)
                     {
@@ -1063,20 +1103,23 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 
                         if (code != 1)
                         {
-                            enum message = "Failed to establish SSL connection " ~
+                            attempt.state = State.fatalSSLFailure;
+                            attempt.error = "Failed to establish SSL connection " ~
                                 "after successful connect";
-                            throw new SSLException(message, code);
+                            attempt.errno = code;
+                            yield(attempt);
+                            // Should never get here
+                            assert(0, "Finished `connectFiber` resumed after yield (SSL error)");
                         }
                     }
 
                     // If we're here no exception was thrown and we didn't yield
                     // out of SSL errors, so we're connected
-
                     attempt.state = State.connected;
                     conn.connected = true;
                     yield(attempt);
                     // Should never get here
-                    assert(0, "Finished `connectFiber` resumed after yield");
+                    assert(0, "Finished `connectFiber` resumed after yield (connected)");
                 }
                 catch (SocketException e)
                 {
@@ -1213,7 +1256,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
             yield(attempt);
         }
     }
-    while (!abort);
+    while (!*abort);
 }
 
 
@@ -1229,7 +1272,7 @@ struct ResolveAttempt
     enum State
     {
         unset,          /// Init value.
-        preresolve,     /// About to resolve.
+        noop,           /// Do nothing.
         success,        /// Successfully resolved.
         exception,      /// Failure, recoverable exception thrown.
         failure,        /// Resolution failure; should abort.
@@ -1278,8 +1321,6 @@ struct ResolveAttempt
             false,
             abort));
 
-    resolver.call();
-
     resolveloop:
     foreach (const attempt; resolver)
     {
@@ -1316,34 +1357,33 @@ struct ResolveAttempt
     ---
 
     Params:
-        conn = Reference to the current [Connection].
+        conn = The current [Connection].
         address = String address to look up.
         port = Remote port build into the [std.socket.Address|Address].
         useIPv6 = Whether to include resolved IPv6 addresses or not.
-        abort = Reference "abort" flag, which -- if set -- should make the
+        abort = Pointer to the "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.
  +/
 void resolveFiber(
-    ref Connection conn,
+    Connection conn,
     const string address,
     const ushort port,
     const Flag!"useIPv6" useIPv6,
-    ref Flag!"abort" abort) @system
+    const Flag!"abort"* abort) @system
 in (!conn.connected, "Tried to set up a resolving fiber on an already live connection")
 in (address.length, "Tried to set up a resolving fiber on an empty address")
 {
     import std.concurrency : yield;
     import std.socket : AddressFamily, SocketOSException, getAddress;
 
-    if (abort) return;
+    if (*abort) return;
 
     alias State = ResolveAttempt.State;
-
-    yield(ResolveAttempt(State.preresolve));
+    yield(ResolveAttempt(State.noop));
 
     for (uint i; (i >= 0); ++i)
     {
-        if (abort) return;
+        if (*abort) return;
 
         ResolveAttempt attempt;
         attempt.retryNum = i;
