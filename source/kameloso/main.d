@@ -27,6 +27,18 @@ import kameloso.pods : CoreSettings;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
+version(DigitalMars)
+{
+    version(D_Optimized)
+    {
+        enum optimisedMessage1 = "Warning: optimised (release) builds are prone " ~
+            "to memory corruption and crashes when compiled with dmd.";
+        enum optimisedMessage2 = "Please use ldc instead for optimised builds.";
+        pragma(msg, optimisedMessage1);
+        pragma(msg, optimisedMessage2);
+    }
+}
+
 
 // gcOptions
 /++
