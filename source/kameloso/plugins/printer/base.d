@@ -232,13 +232,16 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
     if (plugin.printerSettings.hideBlacklistedUsers && (event.sender.class_ == IRCUser.Class.blacklist)) return;
 
-    // Exclude types explicitly declared as to be excluded
-    immutable exclude = plugin.exclude.length && plugin.exclude.canFind(event.type);
-    if (exclude) return;
-
     // For many types there's no need to display the target nickname when it's the bot's
     // Clear event.target.nickname for those types.
     event.clearTargetNicknameIfUs(plugin.state);
+
+    debug
+    {
+        // Exclude types explicitly declared as to be excluded
+        immutable exclude = plugin.exclude.length && plugin.exclude.canFind(event.type);
+        if (exclude) return;
+    }
 
     /++
         Return whether or not the current event should be squelched based on
@@ -340,9 +343,12 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         if (plugin.state.settings.flush) stdout.flush();
     }
 
-    // Immediately print events of types declared to be included
-    immutable include = plugin.include.length && plugin.include.canFind(event.type);
-    if (include) return printEvent(plugin, event);
+    debug
+    {
+        // Immediately print events of types declared to be included
+        immutable include = plugin.include.length && plugin.include.canFind(event.type);
+        if (include) return printEvent(plugin, event);
+    }
 
     with (IRCEvent.Type)
     switch (event.type)
@@ -1013,15 +1019,18 @@ package:
      +/
     static string bell = "" ~ cast(char)(TerminalToken.bell);
 
-    /++
-        [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to exclude from printing.
-     +/
-    IRCEvent.Type[] exclude;
+    debug
+    {
+        /++
+            [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to exclude from printing.
+         +/
+        IRCEvent.Type[] exclude;
 
-    /++
-        [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to include in printing.
-     +/
-    IRCEvent.Type[] include;
+        /++
+            [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to include in printing.
+         +/
+        IRCEvent.Type[] include;
+    }
 
     mixin IRCPluginImpl;
 }
