@@ -232,10 +232,6 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
     if (plugin.printerSettings.hideBlacklistedUsers && (event.sender.class_ == IRCUser.Class.blacklist)) return;
 
-    // For many types there's no need to display the target nickname when it's the bot's
-    // Clear event.target.nickname for those types.
-    event.clearTargetNicknameIfUs(plugin.state);
-
     debug
     {
         // Exclude types explicitly declared as to be excluded
@@ -342,6 +338,10 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         writeln(plugin.linebuffer.data);
         if (plugin.state.settings.flush) stdout.flush();
     }
+
+    // For many types there's no need to display the target nickname when it's the bot's
+    // Clear event.target.nickname for those types.
+    event.clearTargetNicknameIfUs(plugin.state);
 
     debug
     {
