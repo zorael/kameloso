@@ -413,13 +413,13 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                 event.sender.nickname,
                 event.target.nickname);
 
-        if (!shouldSquelch && !plugin.printerSettings.filterWhois)
+        if (shouldSquelch || plugin.printerSettings.filterWhois)
         {
-            goto default;
+            break;
         }
         else
         {
-            break;
+            goto default;
         }
 
     case RPL_NAMREPLY:
@@ -519,13 +519,13 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                     event.sender.nickname,
                     event.target.nickname);
 
-            if (!shouldSquelch && !plugin.printerSettings.filterMost)
+            if (shouldSquelch || plugin.printerSettings.filterMost)
             {
-                goto default;
+                break;
             }
             else
             {
-                break;
+                goto default;
             }
         }
 
