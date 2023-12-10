@@ -1425,18 +1425,21 @@ void processLineFromServer(
         {
             import std.algorithm.searching : canFind;
             import std.stdio : stdout;
+            import std.string : representation;
 
             // Something asserted
             logger.error("scopeguard tripped.");
             printEventDebugDetails(event, raw, cast(Flag!"eventWasInitialised")eventWasInitialised);
 
+            immutable rawRepresentation = raw.representation;
+
             // Print the raw line char by char if it contains non-printables
-            if (raw.canFind!((c) => c < ' '))
+            if (rawRepresentation.canFind!((c) => c < ' '))
             {
                 import std.stdio : writefln;
                 import std.string : representation;
 
-                foreach (immutable c; raw.representation)
+                foreach (immutable c; rawRepresentation)
                 {
                     enum pattern = "%3d: '%c'";
                     writefln(pattern, c, cast(char)c);
