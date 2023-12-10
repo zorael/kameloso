@@ -3200,13 +3200,11 @@ auto startBot(Kameloso instance)
                     logger.info(message);
                 }
 
+                // Clear the terminal title if we're in a terminal
+                if (isTerminal) resetTerminalTitle();
+
                 try
                 {
-                    import core.stdc.stdlib : exit;
-
-                    // Clear the terminal title if we're in a terminal
-                    if (isTerminal) resetTerminalTitle();
-
                     const pid = exec(instance.args.dup, instance.flags.numReexecs);
                     // On Windows, if we're here, the call succeeded
                     // Posix should never be here; it will either exec or throw
@@ -3217,6 +3215,8 @@ auto startBot(Kameloso instance)
                     }
                     else
                     {
+                        import core.stdc.stdlib : exit;
+
                         enum pattern = "Forked into PID <l>%d</>.";
                         logger.infof(pattern, pid.processID);
                         //resetConsoleModeAndCodepage(); // Don't, it will be called via atexit
