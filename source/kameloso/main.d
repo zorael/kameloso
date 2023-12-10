@@ -835,11 +835,6 @@ auto mainLoop(Kameloso instance)
     import std.datetime.systime : Clock, SysTime;
     import core.thread : Fiber;
 
-    /// Variable denoting what we should do next loop.
-    Next next;
-
-    alias State = ListenAttempt.State;
-
     // Instantiate a Generator to read from the socket and yield lines
     auto listener = new Generator!ListenAttempt(() =>
         listenFiber(
@@ -861,7 +856,7 @@ auto mainLoop(Kameloso instance)
     /++
         Invokes the messenger Generator.
      +/
-    Next callMessenger()
+    auto callMessenger()
     {
         try
         {
@@ -915,9 +910,10 @@ auto mainLoop(Kameloso instance)
         }
     }
 
-    // Immediately check for messages, in case starting plugins left some
-    next = callMessenger();
+    /// Variable denoting what we should do next loop.
+    auto next = callMessenger();  // Immediately check for messages, in case starting plugins left some
     if (next != Next.continue_) return next;
+    else if (*instance.abort) return Next.returnFailure;
 
     /// The history entry for the current connection.
     Kameloso.ConnectionHistoryEntry* historyEntry;
@@ -1026,7 +1022,8 @@ auto mainLoop(Kameloso instance)
         if (shouldCheckMessages)
         {
             next = callMessenger();
-            if (*instance.abort) return Next.returnFailure;
+            if (next != Next.continue_) return next;
+            else if (*instance.abort) return Next.returnFailure;
 
             try
             {
@@ -2515,22 +2512,26 @@ auto tryConnect(Kameloso instance)
         connector.call();
         if (*instance.abort) return Next.returnFailure;
         const attempt = connector.front;
-        immutable lastRetry = (attempt.retryNum+1 == ConnectionDefaultIntegers.retries);
+        immutable isLastRetry = (attempt.retryNum+1 == ConnectionDefaultIntegers.retries);
 
-        enum unableToConnectString = "Unable to connect socket: ";
-        immutable errorString = attempt.error.length ?
-            (attempt.error.startsWith(unableToConnectString) ?
-                attempt.error[unableToConnectString.length..$] :
-                attempt.error) :
-            string.init;
+        auto errorString()
+        {
+            enum unableToConnectString = "Unable to connect socket: ";
+            return attempt.error.length ?
+                (attempt.error.startsWith(unableToConnectString) ?
+                    attempt.error[unableToConnectString.length..$] :
+                    attempt.error) :
+                string.init;
+        }
 
         void verboselyDelay()
         {
+            import std.algorithm.comparison : min;
+
             enum pattern = "Retrying in <i>%d</> seconds...";
             logger.logf(pattern, incrementedRetryDelay);
             interruptibleSleep(incrementedRetryDelay.seconds, instance.abort);
 
-            import std.algorithm.comparison : min;
             incrementedRetryDelay = cast(uint)(incrementedRetryDelay *
                 ConnectionDefaultFloats.delayIncrementMultiplier);
             incrementedRetryDelay = min(incrementedRetryDelay, Timeout.connectionDelayCap);
@@ -2584,16 +2585,14 @@ auto tryConnect(Kameloso instance)
                 (attempt.ip.addressFamily == AddressFamily.INET6) ?
                     "Connecting to [<i>%s</>]:<i>%s</> %s..." :
                     "Connecting to <i>%s</>:<i>%s</> %s...";
-
-            immutable ssl = instance.conn.ssl ? "(SSL) " : string.init;
-
+            immutable sslText = instance.conn.ssl ? "(SSL) " : string.init;
             immutable address = (!resolvedHost.length ||
                 (instance.parser.server.address == resolvedHost) ||
                 (sharedDomains(instance.parser.server.address, resolvedHost) < 2)) ?
                     attempt.ip.toAddrString :
                     resolvedHost;
 
-            logger.logf(rtPattern, address, attempt.ip.toPortString, ssl);
+            logger.logf(rtPattern, address, attempt.ip.toPortString, sslText);
             continue;
 
         case connected:
@@ -2643,7 +2642,7 @@ auto tryConnect(Kameloso instance)
                 }
             }
 
-            if (!lastRetry) verboselyDelay();
+            if (!isLastRetry) verboselyDelay();
             numTransientSSLFailures = 0;
             continue;
 
@@ -2674,7 +2673,7 @@ auto tryConnect(Kameloso instance)
                 static assert(0, "Unsupported platform, please file a bug.");
             }
 
-            if (!lastRetry) goto case delayThenNextIP;
+            if (!isLastRetry) goto case delayThenNextIP;
             numTransientSSLFailures = 0;
             continue;
 
@@ -2695,7 +2694,7 @@ auto tryConnect(Kameloso instance)
             }
             else
             {
-                if (!lastRetry) verboselyDelay();
+                if (!isLastRetry) verboselyDelay();
             }
             continue;
 
