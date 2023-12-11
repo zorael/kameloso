@@ -3737,7 +3737,10 @@ void printSummary(const Kameloso instance) @safe
             start.second);
 
         auto stop = SysTime.fromUnixTime(entry.stopTime);
-        immutable stopString = (start.dayOfGregorianCal == stop.dayOfGregorianCal) ?
+        immutable sameDay =
+            (start.year == stop.year) &&
+            (start.dayOfGregorianCal == stop.dayOfGregorianCal);
+        immutable stopString = sameDay ?
             onlyTimePattern.format(
                 stop.hour,
                 stop.minute,
