@@ -1103,13 +1103,25 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 
                         if (code != 1)
                         {
-                            attempt.state = State.fatalSSLFailure;
-                            attempt.error = "Failed to establish SSL connection " ~
-                                "after successful connect";
-                            attempt.errno = code;
-                            yield(attempt);
-                            // Should never get here
-                            assert(0, "Finished `connectFiber` resumed after yield (SSL error)");
+                            if (code == -1)
+                            {
+                                // Seems to happen sometimes for no reason
+                                attempt.state = State.transientSSLFailure;
+                                attempt.error = "Hopefully transient SSL failure";
+                                attempt.errno = code;
+                                yield(attempt);
+                                continue attemptloop;
+                            }
+                            else
+                            {
+                                attempt.state = State.fatalSSLFailure;
+                                attempt.error = "Failed to establish SSL connection " ~
+                                    "after successful connect";
+                                attempt.errno = code;
+                                yield(attempt);
+                                // Should never get here
+                                assert(0, "Finished `connectFiber` resumed after yield (SSL error)");
+                            }
                         }
                     }
 
