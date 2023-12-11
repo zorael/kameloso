@@ -3705,7 +3705,15 @@ void printSummary(const Kameloso instance) @safe
     ulong totalBytesReceived;
     uint i;
 
-    logger.info("== Connection summary ==");
+    if (instance.transient.numReexecs > 0)
+    {
+        enum summaryPattern = "== Connection summary == <t>(</>%d<t> reexecs)";
+        logger.infof(summaryPattern, instance.transient.numReexecs);
+    }
+    else
+    {
+        logger.info("== Connection summary == ");
+    }
 
     foreach (const entry; instance.connectionHistory)
     {
