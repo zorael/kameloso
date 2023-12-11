@@ -563,7 +563,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     populating arrays of lines to be written in bulk, once in a while.
 
     See_Also:
-        [commitAllLogs]
+        [commitAllLogsImpl]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ANY)
@@ -577,9 +577,9 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 }
 
 
-// commitAllLogs
+// onPING
 /++
-    Writes all buffered log lines to disk.
+    Writes all buffered log lines to disk on [dialect.defs.IRCEvent.Type.PING|PING].
 
     Merely wraps [commitAllLogsImpl] by iterating over all buffers and invoking it.
 
@@ -592,7 +592,7 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
 )
-void commitAllLogs(PrinterPlugin plugin)
+void onPING(PrinterPlugin plugin)
 {
     commitAllLogsImpl(plugin);
 }
@@ -747,7 +747,7 @@ void setup(PrinterPlugin plugin)
 
                 if (plugin.printerSettings.logs)
                 {
-                    commitAllLogs(plugin);
+                    commitAllLogsImpl(plugin);
                     plugin.buffers = null;  // Uncommitted lines will be LOST. Not trivial to work around.
                 }
             }
@@ -794,7 +794,7 @@ void teardown(PrinterPlugin plugin)
     if (plugin.printerSettings.bufferedWrites)
     {
         // Commit all logs before exiting
-        commitAllLogs(plugin);
+        commitAllLogsImpl(plugin);
     }
 }
 
