@@ -3248,7 +3248,7 @@ auto startBot(Kameloso instance)
 
             // Carry some values but otherwise restore the pristine client backup
             backupClient.nickname = instance.parser.client.nickname;
-            //instance.parser.client = backupClient;  // Initialised below
+            //instance.parser = IRCParser(backupClient, instance.parser.server);  // done below
 
             // Exhaust leftover queued messages
             exhaustMessages();
@@ -3707,12 +3707,12 @@ void printSummary(const Kameloso instance) @safe
 
     if (instance.transient.numReexecs > 0)
     {
-        enum summaryPattern = "== Connection summary == <t>(</>%d<t> reexecs)";
+        enum summaryPattern = "== Connection summary == <t>(reexecs: </>%d<t>)";
         logger.infof(summaryPattern, instance.transient.numReexecs);
     }
     else
     {
-        logger.info("== Connection summary == ");
+        logger.info("== Connection summary ==");
     }
 
     foreach (const entry; instance.connectionHistory)
