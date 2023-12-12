@@ -728,9 +728,11 @@ auto getTimeStringFromTimestamp(
         return when.year.to!string;
 
     case month:
-        import std.conv : text, to;
+        import lu.conv : Enum;
+        import std.conv : text;
         import std.string : capitalize;
-        return text(when.month.to!string.capitalize, ' ', when.year);
+        import std.datetime : Month;
+        return text(Enum!Month.toString(when.month).capitalize, ' ', when.year);
 
     case day:
         enum pattern = "%d-%02d-%02d";
