@@ -531,7 +531,9 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
     version(TwitchSupport)
     {
-        case USERSTATE: // Once per channel join? Once per message sent?
+        case USERSTATE:
+            // Seemingly once per channel join when connected via SSL,
+            // once per message sent otherwise. It's spam regardless.
             break;
     }
 
@@ -577,7 +579,7 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 }
 
 
-// onPING
+// onPing
 /++
     Writes all buffered log lines to disk on [dialect.defs.IRCEvent.Type.PING|PING].
 
@@ -592,7 +594,7 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
 )
-void onPING(PrinterPlugin plugin)
+void onPing(PrinterPlugin plugin)
 {
     commitAllLogsImpl(plugin);
 }
