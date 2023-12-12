@@ -197,8 +197,6 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     // Normal buffers
                     if (plugin.printerSettings.bufferedWrites)
                     {
-                        import std.exception : assumeUnique;
-
                         // Normal log
                         formatMessageMonochrome(
                             plugin,
@@ -206,7 +204,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                             event,
                             No.bellOnMention,
                             No.bellOnError);
-                        buffer.lines ~= plugin.linebuffer.data.assumeUnique();
+                        buffer.lines ~= plugin.linebuffer.data.idup;
                         plugin.linebuffer.clear();
                     }
                     else
