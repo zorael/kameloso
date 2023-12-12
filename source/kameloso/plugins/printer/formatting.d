@@ -438,13 +438,20 @@ void formatMessageMonochrome(Sink)
         {
             import std.string : indexOf;
 
-            enum emoteDelimiter = '\0';
-            immutable delimiterPos = event.aux[0].indexOf(emoteDelimiter);
-            assert((delimiterPos != -1), "No emote delimiter in aux[0]");
-
             /*if (content.length)*/ putContent();
             putTarget();
-            .put(sink, `: "`, event.aux[0][delimiterPos+1..$], '"');
+
+            enum emoteDelimiter = '\0';
+            immutable delimiterPos = event.aux[0].indexOf(emoteDelimiter);
+
+            if (delimiterPos == -1)
+            {
+                .put(sink, `: "`, event.aux[0][delimiterPos+1..$], '"');
+            }
+            else
+            {
+                .put(sink, `: "`, event.aux[0], '"');
+            }
 
             putQuotedTwitchMessage = true;
             auxRange.popFront();
