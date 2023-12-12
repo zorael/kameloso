@@ -815,6 +815,7 @@ void teardown(PrinterPlugin plugin)
  +/
 void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable content)
 {
+    import kameloso.common : logger;
     import kameloso.thread : Boxed;
     import lu.string : advancePast;
     import std.typecons : Flag, No, Yes;
@@ -841,8 +842,13 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
         plugin.hasSquelches = (plugin.squelches.length > 0);
         break;
 
+    case "commit":
+        logger.info("Committing logs to disk.");
+        commitAllLogsImpl(plugin);
+        foreach (ref buffer; plugin.buffers) buffer.clear();  // don't null the array
+        break;
+
     default:
-        import kameloso.common : logger;
         logger.error("[printer] Unimplemented bus message verb: ", verb);
         break;
     }
