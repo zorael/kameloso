@@ -66,6 +66,14 @@ public:
     Appender!(string[]) lines;
 
     /++
+        Clears the buffer of lines.
+     +/
+    void clear() @safe nothrow
+    {
+        lines.clear();
+    }
+
+    /++
         Constructor taking a [std.datetime.systime.SysTime|SysTime], to save as the date
         the buffer was created.
      +/
