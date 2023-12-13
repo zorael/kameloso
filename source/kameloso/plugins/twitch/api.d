@@ -4,6 +4,7 @@
     See_Also:
         [kameloso.plugins.twitch.base],
         [kameloso.plugins.twitch.keygen],
+        [kameloso.plugins.twitch.common],
         [kameloso.plugins.common.core],
         [kameloso.plugins.common.misc]
 
@@ -80,6 +81,7 @@ struct QueryResponse
 
     Throws:
         [MissingBroadcasterTokenException] if the delegate throws it.
+        [InvalidCredentialsException] likewise.
         [Exception] if the delegate throws it and `endlessly` is not passed.
  +/
 auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, Dg)(TwitchPlugin plugin, Dg dg)
@@ -479,6 +481,11 @@ in (url.length, "Tried to send an HTTP request without a URL")
             }
             {
                 "message": "user not found"
+            }
+            {
+                "error": "Unauthorized",
+                "message": "Invalid OAuth token",
+                "status": 401
             }
              +/
 
@@ -1721,7 +1728,6 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
         string after;
         uint retry;
 
-        inner:
         do
         {
             immutable paginatedURL = after.length ?
@@ -2094,7 +2100,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
         A `string[]` array of online bot account names.
 
     Throws:
-        [TwitchQueryException] on unexpected JSON.
+        [UnexpectedJSONException] on unexpected JSON.
 
     See_Also:
         https://twitchinsights.net/bots
