@@ -847,7 +847,38 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
         if (async)
         {
-            response = sendHTTPRequest(plugin, url, caller, authorizationHeader);
+            try
+            {
+                response = sendHTTPRequest(
+                    plugin,
+                    url,
+                    caller,
+                    authorizationHeader);
+            }
+            catch (ErrorJSONException e)
+            {
+                if (const statusJSON = "status" in e.json)
+                {
+                    if (statusJSON.integer == 401)
+                    {
+                        switch (e.json["message"].str)
+                        {
+                        case "invalid access token":
+                            enum message = "API token has expired";
+                            throw new InvalidCredentialsException(message, e.json);
+
+                        case "missing authorization token":
+                            enum message = "Missing API token";
+                            throw new InvalidCredentialsException(message, e.json);
+
+                        default:
+                            //drop down
+                            break;
+                        }
+                    }
+                }
+                throw e;
+            }
         }
         else
         {
