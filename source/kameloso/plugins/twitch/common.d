@@ -20,6 +20,9 @@ version(WithTwitchPlugin):
 
 private:
 
+import kameloso.plugins.twitch.base : TwitchPlugin;
+import kameloso.common : logger;
+import std.datetime.systime : SysTime;
 import std.typecons : Flag, No, Yes;
 
 package:
@@ -636,4 +639,177 @@ void complainAboutMissingTokens(const Exception base)
         enum superMessage = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
         logger.error(superMessage);
     }
+}
+
+
+// generateExpiryReminders
+/++
+    Generates and delays Twitch authorisation token expiry reminders.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+        expiresWhen = A [std.datetime.systime.SysTime|SysTime] of when the expiry occurs.
+        what = The string of what kind of token is expiring.
+        getoptFlag = The getopt flag with which to run the program to remedy the expired token.
+        quitOnExpiry = Whether or not to quit the program when the final expiry reminder is due.
+ +/
+void generateExpiryReminders(
+    TwitchPlugin plugin,
+    const SysTime expiresWhen,
+    const string what,
+    const string getoptFlag,
+    const Flag!"quitOnExpiry" quitOnExpiry)
+{
+    import kameloso.plugins.common.delayawait : delay;
+    import lu.string : plurality;
+    import std.datetime.systime : Clock;
+    import std.meta : AliasSeq;
+    import core.time : days, hours, minutes, seconds, weeks;
+
+    auto untilExpiry()
+    {
+        immutable now = Clock.currTime;
+        return (expiresWhen - now) + 59.seconds;
+    }
+
+    void warnOnWeeksDg()
+    {
+        immutable numDays = untilExpiry.total!"days";
+        if (numDays <= 0) return;
+
+        // More than a week away, just .info
+        enum pattern = "%s will expire in <l>%d days</> on <l>%4d-%02d-%02d";
+        logger.infof(
+            pattern,
+            what,
+            numDays,
+            expiresWhen.year,
+            cast(uint)expiresWhen.month,
+            expiresWhen.day);
+    }
+
+    void warnOnDaysDg()
+    {
+        int numDays;
+        int numHours;
+        untilExpiry.split!("days", "hours")(numDays, numHours);
+        if ((numDays < 0) || (numHours < 0)) return;
+
+        // A week or less, more than a day; warning
+        if (numHours > 0)
+        {
+            enum pattern = "Warning: %s will expire " ~
+                "in <l>%d %s and %d %s</> at <l>%4d-%02d-%02d %02d:%02d";
+            logger.warningf(
+                pattern,
+                what,
+                numDays, numDays.plurality("day", "days"),
+                numHours, numHours.plurality("hour", "hours"),
+                expiresWhen.year, cast(uint)expiresWhen.month, expiresWhen.day,
+                expiresWhen.hour, expiresWhen.minute);
+        }
+        else
+        {
+            enum pattern = "Warning: %s will expire " ~
+                "in <l>%d %s</> at <l>%4d-%02d-%02d %02d:%02d";
+            logger.warningf(
+                pattern,
+                what,
+                numDays, numDays.plurality("day", "days"),
+                expiresWhen.year, cast(uint)expiresWhen.month, expiresWhen.day,
+                expiresWhen.hour, expiresWhen.minute);
+        }
+    }
+
+    void warnOnHoursDg()
+    {
+        int numHours;
+        int numMinutes;
+        untilExpiry.split!("hours", "minutes")(numHours, numMinutes);
+        if ((numHours < 0) || (numMinutes < 0)) return;
+
+        // Less than a day; warning
+        if (numMinutes > 0)
+        {
+            enum pattern = "WARNING: %s will expire " ~
+                "in <l>%d %s and %d %s</> at <l>%02d:%02d";
+            logger.warningf(
+                pattern,
+                what,
+                numHours, numHours.plurality("hour", "hours"),
+                numMinutes, numMinutes.plurality("minute", "minutes"),
+                expiresWhen.hour, expiresWhen.minute);
+        }
+        else
+        {
+            enum pattern = "WARNING: %s will expire in <l>%d %s</> at <l>%02d:%02d";
+            logger.warningf(
+                pattern,
+                what,
+                numHours, numHours.plurality("hour", "hours"),
+                expiresWhen.hour, expiresWhen.minute);
+        }
+    }
+
+    void warnOnMinutesDg()
+    {
+        immutable numMinutes = untilExpiry.total!"minutes";
+        if (numMinutes <= 0) return;
+
+        // Less than an hour; warning
+        enum pattern = "WARNING: %s will expire in <l>%d minutes</> at <l>%02d:%02d";
+        logger.warningf(
+            pattern,
+            what,
+            numMinutes,
+            expiresWhen.hour,
+            expiresWhen.minute);
+    }
+
+    void onTrueExpiry()
+    {
+        import kameloso.messaging : quit;
+
+        // Key expired
+        enum pattern = "%s has expired. Run the program with <l>%s/> to generate a new one.";
+        logger.errorf(pattern, what, getoptFlag);
+        if (quitOnExpiry) quit(plugin.state, "Token expired");
+    }
+
+    alias reminderPoints = AliasSeq!(
+        14.days,
+        7.days,
+        3.days,
+        1.days,
+        12.hours,
+        6.hours,
+        1.hours,
+        30.minutes,
+        10.minutes,
+        5.minutes,
+    );
+
+    immutable now = Clock.currTime;
+    immutable trueExpiry = (expiresWhen - now);
+
+    foreach (immutable reminderPoint; reminderPoints)
+    {
+        if (trueExpiry >= reminderPoint)
+        {
+            immutable untilPoint = (trueExpiry - reminderPoint);
+            if (reminderPoint >= 1.weeks) delay(plugin, &warnOnWeeksDg, untilPoint);
+            else if (reminderPoint >= 1.days) delay(plugin, &warnOnDaysDg, untilPoint);
+            else if (reminderPoint >= 1.hours) delay(plugin, &warnOnHoursDg, untilPoint);
+            else /*if (reminderPoint >= 1.minutes)*/ delay(plugin, &warnOnMinutesDg, untilPoint);
+        }
+    }
+
+    // Notify on expiry, maybe quit
+    delay(plugin, &onTrueExpiry, trueExpiry);
+
+    // Also announce once normally how much time is left
+    if (trueExpiry >= 1.weeks) warnOnWeeksDg();
+    else if (trueExpiry >= 1.days) warnOnDaysDg();
+    else if (trueExpiry >= 1.hours) warnOnHoursDg();
+    else /*if (trueExpiry >= 1.minutes)*/ warnOnMinutesDg();
 }

@@ -1584,7 +1584,7 @@ in (channelName.length, "Tried to get broadcaster authorisation with an empty ch
 
         if (creds && creds.broadcasterKey.length)
         {
-            import std.datetime.systime : Clock;
+            import std.datetime.systime : Clock, SysTime;
 
             enum validationIntervalSeconds = 3600 * 24;  // 24 hours
             immutable nowInUnix = Clock.currTime.toUnixTime();
