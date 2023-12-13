@@ -1596,10 +1596,22 @@ in (channelName.length, "Tried to get broadcaster authorisation with an empty ch
                 {
                     try
                     {
-                        cast(void)getValidation(
+                        import kameloso.plugins.twitch.common : generateExpiryReminders;
+
+                        immutable validationJSON = getValidation(
                             plugin,
                             creds.broadcasterKey,
                             Yes.async);
+                        immutable expiresIn = validationJSON["expires_in"].integer;
+                        immutable expiresWhen = SysTime.fromUnixTime(nowInUnix + expiresIn);
+
+                        generateExpiryReminders(
+                            plugin,
+                            expiresWhen,
+                            "The broadcaster-level authorisation token for channel <l>" ~ channelName ~ "</>",
+                            "--set twitch.superKeygen",
+                            No.quitOnExpiry);
+
                         creds.broadcasterKeyValidationTimestamp = nowInUnix;
                         saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
                     }
