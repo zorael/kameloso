@@ -1572,6 +1572,7 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
         for the supplied channel in the secrets storage.
  +/
 auto getBroadcasterAuthorisation(TwitchPlugin plugin, const string channelName)
+in (Fiber.getThis, "Tried to call `getBroadcasterAuthorisation` from outside a Fiber")
 in (channelName.length, "Tried to get broadcaster authorisation with an empty channel name string")
 {
     static string[string] authorizationByChannel;
@@ -2209,6 +2210,7 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
         populated with all (relevant) information.
  +/
 auto getStream(TwitchPlugin plugin, const string loginName)
+in (Fiber.getThis, "Tried to call `getStream` from outside a Fiber")
 in (loginName.length, "Tried to get a stream with an empty login name string")
 {
     import std.algorithm.iteration : map;
