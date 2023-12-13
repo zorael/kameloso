@@ -221,6 +221,11 @@ package struct Credentials
     string broadcasterKey;
 
     /++
+        Broadcaster-level Twitch key validation timestamp.
+     +/
+    long broadcasterKeyValidationTimestamp;
+
+    /++
         Google client ID.
      +/
     string googleClientID;
@@ -283,6 +288,7 @@ package struct Credentials
         json.object = null;
 
         json["broadcasterKey"] = this.broadcasterKey;
+        json["broadcasterKeyValidationTimestamp"] = this.broadcasterKeyValidationTimestamp;
         json["googleClientID"] = this.googleClientID;
         json["googleClientSecret"] = this.googleClientSecret;
         json["googleAccessToken"] = this.googleAccessToken;
@@ -321,6 +327,12 @@ package struct Credentials
         creds.spotifyAccessToken = json["spotifyAccessToken"].str;
         creds.spotifyRefreshToken = json["spotifyRefreshToken"].str;
         creds.spotifyPlaylistID = json["spotifyPlaylistID"].str;
+
+        if (const broadcasterTimestamp = "broadcasterKeyValidationTimestamp" in json)
+        {
+            // New field, be conservative
+            creds.broadcasterKeyValidationTimestamp = broadcasterTimestamp.integer;
+        }
 
         return creds;
     }
