@@ -836,7 +836,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
     // Validation needs an "Authorization: OAuth xxx" header, as opposed to the
     // "Authorization: Bearer xxx" used everywhere else.
-    authToken = plugin.state.bot.pass.startsWith("oauth:") ?
+    authToken = authToken.startsWith("oauth:") ?
         authToken[6..$] :
         authToken;
     immutable authorizationHeader = "OAuth " ~ authToken;
