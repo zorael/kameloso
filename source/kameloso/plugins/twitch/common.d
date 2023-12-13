@@ -537,6 +537,11 @@ public:
     JSONValue json;
 
     /++
+        The channel name for which the credentials were invalid, if applicable.
+     +/
+    string channelName;
+
+    /++
         Create a new [InvalidCredentialsException], attaching a response body.
      +/
     this(
@@ -547,6 +552,20 @@ public:
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
         this.json = json;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Create a new [InvalidCredentialsException], attaching a channel name.
+     +/
+    this(
+        const string message,
+        const string channelName,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.channelName = channelName;
         super(message, file, line, nextInChain);
     }
 
