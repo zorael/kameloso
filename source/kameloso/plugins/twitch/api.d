@@ -102,7 +102,7 @@ auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, Dg)(TwitchPlugin p
                 import kameloso.plugins.common.delayawait : delay;
                 import core.time : seconds;
 
-                static immutable retryDelay = 10.seconds;
+                static immutable retryDelay = 4.seconds;
                 delay(plugin, retryDelay, Yes.yield);
             }
             return dg();
