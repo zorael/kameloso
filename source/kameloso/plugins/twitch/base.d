@@ -1307,6 +1307,53 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 }
 
 
+// onCommandSubs
+/++
+    Reports the number of subscribers of the current channel.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("subs")
+            .policy(PrefixPolicy.prefixed)
+            .description("Reports the number of subscribers of the current channel.")
+    )
+)
+void onCommandSubs(TwitchPlugin plugin, const ref IRCEvent event)
+{
+    import kameloso.constants : BufferSize;
+    import std.format : format;
+
+    const room = event.channel in plugin.rooms;
+    assert(room, "Tried to get the subscriber count of a channel for which there existed no room");
+
+    void getSubCountDg()
+    {
+        try
+        {
+            enum pattern = "%s has %d subscribers.";
+            const subs = getSubscribers(plugin, event.channel, Yes.totalOnly);
+            immutable message = pattern.format(room.broadcasterDisplayName, subs[0].total);
+            chan(plugin.state, event.channel, message);
+        }
+        catch (MissingBroadcasterTokenException e)
+        {
+            complainAboutMissingTokens(e);
+        }
+        catch (InvalidCredentialsException e)
+        {
+            complainAboutMissingTokens(e);
+        }
+    }
+
+    Fiber getSubCountFiber = new Fiber(&getSubCountDg, BufferSize.fiberStack);
+    getSubCountFiber.call();
+}
+
+
 // onCommandSongRequest
 /++
     Implements `!songrequest`, allowing viewers to request songs (actually
