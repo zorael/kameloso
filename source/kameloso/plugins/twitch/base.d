@@ -3280,7 +3280,13 @@ void startValidator(TwitchPlugin plugin)
                 plugin.botUserIDString = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime() + expiresIn);
-                generateExpiryReminders(plugin, expiresWhen);
+
+                generateExpiryReminders(
+                    plugin,
+                    expiresWhen,
+                    "Your Twitch authorisastion token",
+                    "--set twitch.keygen",
+                    Yes.quitOnExpiry);
             }
             catch (TwitchQueryException e)
             {
