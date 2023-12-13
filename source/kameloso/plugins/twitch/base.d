@@ -484,6 +484,8 @@ void onSelfjoin(TwitchPlugin plugin, const ref IRCEvent event)
     Registers a new [TwitchPlugin.Room] as we join a channel, so there's
     always a state struct available.
 
+    Validates any broadcaster-level access tokens and displays an error if it has expired.
+
     Params:
         plugin = The current [TwitchPlugin].
         channelName = The name of the channel we're supposedly joining.
@@ -491,7 +493,29 @@ void onSelfjoin(TwitchPlugin plugin, const ref IRCEvent event)
 void initRoom(TwitchPlugin plugin, const string channelName)
 in (channelName.length, "Tried to init Room with an empty channel string")
 {
+    import kameloso.constants : BufferSize;
+
     plugin.rooms[channelName] = TwitchPlugin.Room(channelName);
+    const creds = channelName in plugin.secretsByChannel;
+
+    if (creds && creds.broadcasterKey.length)
+    {
+        void validateBroadcasterKeyDg()
+        {
+            try
+            {
+                cast(void)getBroadcasterAuthorisation(plugin, channelName);
+            }
+            catch (InvalidCredentialsException e)
+            {
+                enum pattern = "The broadcaster-level access token for channel <l>%s</> has expired.";
+                logger.errorf(pattern, channelName);
+            }
+        }
+
+        Fiber validateBroadcasterKeyFiber = new Fiber(&validateBroadcasterKeyDg, BufferSize.fiberStack);
+        validateBroadcasterKeyFiber.call();
+    }
 }
 
 
