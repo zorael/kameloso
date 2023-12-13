@@ -1671,12 +1671,13 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         immutable message = pattern.format(responseJSON[0].object["title"].str);
         chan(plugin.state, event.channel, message);
     }
-    catch (MissingBroadcasterTokenException _)
+    catch (MissingBroadcasterTokenException e)
     {
-        enum message = "Missing broadcaster-level API token.";
-        enum superMessage = message ~ " Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
-        chan(plugin.state, event.channel, message);
-        logger.error(superMessage);
+        complainAboutMissingTokens(e);
+    }
+    catch (InvalidCredentialsException e)
+    {
+        complainAboutMissingTokens(e);
     }
     catch (TwitchQueryException e)
     {
@@ -1793,11 +1794,11 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
     catch (MissingBroadcasterTokenException e)
     {
-        enum pattern = "Missing broadcaster-level API token for channel <l>%s</>.";
-        logger.errorf(pattern, e.channelName);
-
-        enum superMessage = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
-        logger.error(superMessage);
+        complainAboutMissingTokens(e);
+    }
+    catch (InvalidCredentialsException e)
+    {
+        complainAboutMissingTokens(e);
     }
 }
 
@@ -2207,15 +2208,15 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         immutable message = pattern.format(title);
         chan(plugin.state, event.channel, message);
     }
-    catch (MissingBroadcasterTokenException _)
+    catch (MissingBroadcasterTokenException e)
     {
-        enum channelMessage = "Missing broadcaster-level API key.";
-        enum terminalMessage = channelMessage ~
-            " Run the program with <l>--set twitch.superKeygen</> to set it up.";
-        chan(plugin.state, event.channel, channelMessage);
-        logger.error(terminalMessage);
+        complainAboutMissingTokens(e);
     }
-    catch (TwitchQueryException e)
+    catch (InvalidCredentialsException e)
+    {
+        complainAboutMissingTokens(e);
+    }
+    /*catch (TwitchQueryException e)
     {
         if ((e.code == 401) && (e.error == "Unauthorized"))
         {
@@ -2233,7 +2234,7 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             throw e;
         }
-    }
+    }*/
 }
 
 
@@ -2319,15 +2320,15 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         enum message = "Could not find a game by that name; check spelling.";
         chan(plugin.state, event.channel, message);
     }
-    catch (MissingBroadcasterTokenException _)
+    catch (MissingBroadcasterTokenException e)
     {
-        enum channelMessage = "Missing broadcaster-level API key.";
-        enum terminalMessage = channelMessage ~
-            " Run the program with <l>--set twitch.superKeygen</> to set it up.";
-        chan(plugin.state, event.channel, channelMessage);
-        logger.error(terminalMessage);
+        complainAboutMissingTokens(e);
     }
-    catch (TwitchQueryException e)
+    catch (InvalidCredentialsException e)
+    {
+        complainAboutMissingTokens(e);
+    }
+    /*catch (TwitchQueryException e)
     {
         if ((e.code == 401) && (e.error == "Unauthorized"))
         {
@@ -2345,7 +2346,7 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             throw e;
         }
-    }
+    }*/
 }
 
 
@@ -2407,11 +2408,11 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
     catch (MissingBroadcasterTokenException e)
     {
-        enum pattern = "Missing broadcaster-level API token for channel <l>%s</>.";
-        logger.errorf(pattern, e.channelName);
-
-        enum superMessage = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
-        logger.error(superMessage);
+        complainAboutMissingTokens(e);
+    }
+    catch (InvalidCredentialsException e)
+    {
+        complainAboutMissingTokens(e);
     }
     catch (EmptyResponseException _)
     {
