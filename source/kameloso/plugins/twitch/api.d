@@ -1576,22 +1576,23 @@ in (Fiber.getThis, "Tried to call `getBroadcasterAuthorisation` from outside a F
 in (channelName.length, "Tried to get broadcaster authorisation with an empty channel name string")
 {
     static string[string] authorizationByChannel;
-
     auto authorizationBearer = channelName in authorizationByChannel;
 
     if (!authorizationBearer)
     {
-        if (auto creds = channelName in plugin.secretsByChannel)
+        auto creds = channelName in plugin.secretsByChannel;
+
+        if (creds && creds.broadcasterKey.length)
         {
-            if (creds.broadcasterKey.length)
+            import std.datetime.systime : Clock;
+
+            enum validationIntervalSeconds = 3600 * 24;  // 24 hours
+            immutable nowInUnix = Clock.currTime.toUnixTime();
+            immutable delta = (nowInUnix - creds.broadcasterKeyValidationTimestamp);
+
+            if (delta > validationIntervalSeconds)
             {
-                import std.datetime.systime : Clock;
-
-                enum validationInterval = 3600 * 24;  // 24 hours
-                immutable nowInUnix = Clock.currTime.toUnixTime();
-                immutable delta = (nowInUnix - creds.broadcasterKeyValidationTimestamp);
-
-                if (delta > validationInterval)
+                void getBroadcasterValidationDg()
                 {
                     try
                     {
@@ -1607,20 +1608,18 @@ in (channelName.length, "Tried to get broadcaster authorisation with an empty ch
                         e.channelName = channelName;
                         throw e;
                     }
-                    /*catch (Exception e)
-                    {
-                        throw e;
-                    }*/
-                }
-                else
-                {
-                    // No need to validate, too recent
                 }
 
-                immutable bearer = "Bearer " ~ creds.broadcasterKey;
-                authorizationByChannel[channelName] = bearer;
-                return bearer;
+                retryDelegate(plugin, &getBroadcasterValidationDg);
             }
+            else
+            {
+                // No need to validate, too recent
+            }
+
+            immutable bearer = "Bearer " ~ creds.broadcasterKey;
+            authorizationByChannel[channelName] = bearer;
+            return bearer;
         }
     }
 
