@@ -114,6 +114,11 @@ auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, Dg)(TwitchPlugin p
             // This is never a transient error
             throw e;
         }
+        catch (InvalidCredentialsException e)
+        {
+            // Neither is this
+            throw e;
+        }
         catch (Exception e)
         {
             static if (endlessly)
