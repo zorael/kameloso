@@ -2311,15 +2311,17 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to fetch subscribers of.
+        totalOnly = Whether or not to return all subscribers or only one stub
+            entry with the total number of subscribers in its `.total` member.
         caller = Name of the calling function.
 
     Returns:
         An array of Voldemort subscribers.
  +/
-version(none)
 auto getSubscribers(
     TwitchPlugin plugin,
     const string channelName,
+    const Flag!"totalOnly" totalOnly,
     const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `getSubscribers` from outside a Fiber")
 in (channelName.length, "Tried to get subscribers with an empty channel name string")
@@ -2347,39 +2349,30 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             User user;
             User gifter;
             bool wasGift;
+            uint number;
+            uint total;
         }
-
-        enum url = "https://api.twitch.tv/helix/subscribers";
-        enum initialPattern = `
-{
-    "broadcaster_id": "%s",
-    "first": "100"
-}`;
-
-        enum subsequentPattern = `
-{
-    "broadcaster_id": "%s",
-    "after": "%s",
-}`;
 
         Appender!(Subscription[]) subs;
         string after;
+        uint number;
         uint retry;
 
-        inner:
+        immutable firstURL = "https://api.twitch.tv/helix/subscriptions?broadcaster_id=" ~ room.id;
+        immutable subsequentURL = totalOnly ?
+            firstURL ~ "&first=1&after=" :
+            firstURL ~ "&after=";
+
         do
         {
-            immutable body_ = after.length ?
-                subsequentPattern.format(room.id, after) :
-                initialPattern.format(room.id);
+            immutable url = after.length ?
+                subsequentURL ~ after :
+                firstURL;
             immutable response = sendHTTPRequest(
                 plugin,
                 url,
                 caller,
-                authorizationBearer,
-                HttpVerb.GET,
-                cast(ubyte[])body_,
-                "application/json");
+                authorizationBearer);
             immutable responseJSON = parseJSON(response.str);
 
             /*
@@ -2411,7 +2404,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             if (responseJSON.type != JSONType.object)
             {
                 // Invalid response in some way, retry until we reach the limit
-                if (++retry < TwitchPlugin.delegateRetries) continue inner;
+                if (++retry < TwitchPlugin.delegateRetries) continue;
                 enum message = "`getSubscribers` response has unexpected JSON";
                 throw new UnexpectedJSONException(message, responseJSON);
             }
@@ -2421,18 +2414,26 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             if (!dataJSON)
             {
                 // As above
-                if (++retry < TwitchPlugin.delegateRetries) continue inner;
+                if (++retry < TwitchPlugin.delegateRetries) continue;
                 enum message = "`getSubscribers` response has unexpected JSON " ~
                     `(no "data" key)`;
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
-            retry = 0;
+            immutable total = cast(uint)responseJSON["total"].integer;
 
-            if (!subs.capacity)
+            if (totalOnly)
             {
-                subs.reserve(responseJSON["total"].integer);
+                // We only want the total number of subscribers
+                Subscription sub;
+                sub.total = total;
+                subs.put(sub);
+                return subs.data;
             }
+
+            if (!subs.capacity) subs.reserve(total);
+
+            retry = 0;
 
             foreach (immutable subJSON; dataJSON.array)
             {
@@ -2444,6 +2445,8 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 sub.gifter.id = subJSON["gifter_id"].str;
                 sub.gifter.name = subJSON["gifter_login"].str;
                 sub.gifter.displayName = subJSON["gifter_name"].str;
+                if (number == 0) sub.total = total;
+                sub.number = number++;
                 subs.put(sub);
             }
 
@@ -2457,7 +2460,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
         }
         while (after.length);
 
-        return subs;
+        return subs.data;
     }
 
     return retryDelegate(plugin, &getSubscribersDg);
