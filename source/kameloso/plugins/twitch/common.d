@@ -603,3 +603,37 @@ final class EmptyResponseException : Exception
         super(message, file, line, nextInChain);
     }
 }
+
+
+// complainAboutMissingTokens
+/++
+    Helper function to complain about missing Twitch authorisation tokens..
+
+    Params:
+        base = The exception to complain about.
+ +/
+void complainAboutMissingTokens(const Exception base)
+{
+    import kameloso.common : logger;
+
+    bool match;  // mutable
+
+    if (const e = cast(MissingBroadcasterTokenException)base)
+    {
+        enum pattern = "Missing broadcaster-level API token for channel <l>%s</>.";
+        logger.errorf(pattern, e.channelName);
+        match = true;
+    }
+    else if (const e = cast(InvalidCredentialsException)base)
+    {
+        enum pattern = "The broadcaster-level API token for channel <l>%s</> has expired.";
+        logger.errorf(pattern, e.channelName);
+        match = true;
+    }
+
+    if (match)
+    {
+        enum superMessage = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
+        logger.error(superMessage);
+    }
+}
