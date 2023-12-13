@@ -1568,12 +1568,45 @@ in (channelName.length, "Tried to get broadcaster authorisation with an empty ch
 
     if (!authorizationBearer)
     {
-        if (const creds = channelName in plugin.secretsByChannel)
+        if (auto creds = channelName in plugin.secretsByChannel)
         {
             if (creds.broadcasterKey.length)
             {
-                authorizationByChannel[channelName] = "Bearer " ~ creds.broadcasterKey;
-                authorizationBearer = channelName in authorizationByChannel;
+                import std.datetime.systime : Clock;
+
+                enum validationInterval = 3600 * 24;  // 24 hours
+                immutable nowInUnix = Clock.currTime.toUnixTime();
+                immutable delta = (nowInUnix - creds.broadcasterKeyValidationTimestamp);
+
+                if (delta > validationInterval)
+                {
+                    try
+                    {
+                        cast(void)getValidation(
+                            plugin,
+                            creds.broadcasterKey,
+                            Yes.async);
+                        creds.broadcasterKeyValidationTimestamp = nowInUnix;
+                        saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+                    }
+                    catch (InvalidCredentialsException e)
+                    {
+                        e.channelName = channelName;
+                        throw e;
+                    }
+                    /*catch (Exception e)
+                    {
+                        throw e;
+                    }*/
+                }
+                else
+                {
+                    // No need to validate, too recent
+                }
+
+                immutable bearer = "Bearer " ~ creds.broadcasterKey;
+                authorizationByChannel[channelName] = bearer;
+                return bearer;
             }
         }
     }
