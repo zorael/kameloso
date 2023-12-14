@@ -221,9 +221,14 @@ package struct Credentials
     string broadcasterKey;
 
     /++
-        Broadcaster-level Twitch key validation timestamp.
+        Broadcaster-level full Bearer token.
      +/
-    long broadcasterKeyValidationTimestamp;
+    string broadcasterBearerToken;
+
+    /++
+        Broadcaster-level token expiry timestamp.
+     +/
+    long broadcasterKeyExpiry;
 
     /++
         Google client ID.
@@ -288,7 +293,8 @@ package struct Credentials
         json.object = null;
 
         json["broadcasterKey"] = this.broadcasterKey;
-        json["broadcasterKeyValidationTimestamp"] = this.broadcasterKeyValidationTimestamp;
+        json["broadcasterBearerToken"] = this.broadcasterBearerToken;
+        json["broadcasterKeyExpiry"] = this.broadcasterKeyExpiry;
         json["googleClientID"] = this.googleClientID;
         json["googleClientSecret"] = this.googleClientSecret;
         json["googleAccessToken"] = this.googleAccessToken;
@@ -328,10 +334,16 @@ package struct Credentials
         creds.spotifyRefreshToken = json["spotifyRefreshToken"].str;
         creds.spotifyPlaylistID = json["spotifyPlaylistID"].str;
 
-        if (const broadcasterTimestamp = "broadcasterKeyValidationTimestamp" in json)
+        if (const broadcasterBearerToken = "broadcasterBearerToken" in json)
         {
-            // New field, be conservative
-            creds.broadcasterKeyValidationTimestamp = broadcasterTimestamp.integer;
+            // New field, be conservative for a few releases
+            creds.broadcasterBearerToken = broadcasterBearerToken.str;
+        }
+
+        if (const broadcasterExpiry = "broadcasterKeyExpiry" in json)
+        {
+            // New field, be conservative for a few releases
+            creds.broadcasterKeyExpiry = broadcasterExpiry.integer;
         }
 
         return creds;
