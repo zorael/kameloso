@@ -3316,6 +3316,16 @@ void startValidator(TwitchPlugin plugin)
                 }
                 */
 
+                void onExpiryDg()
+                {
+                    import kameloso.messaging : quit;
+
+                    enum message = "Your Twitch authorisation token has expired. " ~
+                        "Run the program with <l>--set twitch.keygen/> to generate a new one.";
+                    logger.error(message);
+                    quit(plugin.state, "Twitch authorisation token expired");
+                }
+
                 immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                 plugin.botUserIDString = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
@@ -3325,8 +3335,7 @@ void startValidator(TwitchPlugin plugin)
                     plugin,
                     expiresWhen,
                     "Your Twitch authorisastion token",
-                    "--set twitch.keygen",
-                    Yes.quitOnExpiry);
+                    &onExpiryDg);
             }
             catch (TwitchQueryException e)
             {
