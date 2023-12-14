@@ -133,6 +133,31 @@ in ((!async || Fiber.getThis), "Tried to call async `retryDelegate` from outside
         }
         catch (Exception e)
         {
+            if (auto errorException = cast(ErrorJSONException)e)
+            {
+                switch (errorException.json["error"].str)
+                {
+                case "Unauthorized":
+                    // Likewise
+                    throw errorException;
+
+                case "Bad Request":
+                    switch (errorException.json["message"].str)
+                    {
+                    case "You cannot delete the broadcaster's messages.":
+                        // Special case for deleteMessage
+                        throw errorException;
+
+                    default:
+                        break;
+                    }
+                    break;
+
+                default:
+                    break;
+                }
+            }
+
             static if (endlessly)
             {
                 // Unconditionally continue, but print the exception once if it's erroring
