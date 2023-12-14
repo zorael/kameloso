@@ -84,7 +84,11 @@ struct QueryResponse
         [InvalidCredentialsException] likewise.
         [Exception] if the delegate throws it and `endlessly` is not passed.
  +/
-auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, Dg)(TwitchPlugin plugin, Dg dg)
+auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, Dg)
+    (TwitchPlugin plugin,
+    Dg dg,
+    const Flag!"async" async = Yes.async)
+in ((!async || Fiber.getThis), "Tried to call async `retryDelegate` from outside a Fiber")
 {
     static if (endlessly)
     {
@@ -101,11 +105,19 @@ auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, Dg)(TwitchPlugin p
         {
             if (i > 0)
             {
-                import kameloso.plugins.common.delayawait : delay;
                 import core.time : seconds;
-
                 static immutable retryDelay = 4.seconds;
-                delay(plugin, retryDelay, Yes.yield);
+
+                if (async)
+                {
+                    import kameloso.plugins.common.delayawait : delay;
+                    delay(plugin, retryDelay, Yes.yield);
+                }
+                else
+                {
+                    import core.thread : Thread;
+                    Thread.sleep(retryDelay);
+                }
             }
             return dg();
         }
