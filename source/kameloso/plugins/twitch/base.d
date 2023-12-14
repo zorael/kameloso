@@ -482,7 +482,7 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.SELFJOIN)
     .channelPolicy(ChannelPolicy.home)
 )
-void onSelfjoin(TwitchPlugin plugin, const ref IRCEvent event)
+void onSelfjoin(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (event.channel !in plugin.rooms)
     {
@@ -573,7 +573,7 @@ in (channelName.length, "Tried to init Room with an empty channel string")
     .onEvent(IRCEvent.Type.USERSTATE)
     .channelPolicy(ChannelPolicy.home)
 )
-void onUserstate(TwitchPlugin plugin, const ref IRCEvent event)
+void onUserstate(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import std.string : indexOf;
 
@@ -1386,7 +1386,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
             .description("Reports the number of subscribers of the current channel.")
     )
 )
-void onCommandSubs(TwitchPlugin plugin, const ref IRCEvent event)
+void onCommandSubs(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.constants : BufferSize;
     import std.format : format;
