@@ -850,7 +850,7 @@ auto getValidation(
     /*const*/ string authToken,
     const Flag!"async" async,
     const string caller = __FUNCTION__)
-in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from outside a Fiber")
+in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
     import std.algorithm.searching : startsWith;
