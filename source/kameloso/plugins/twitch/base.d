@@ -498,6 +498,8 @@ void onSelfjoin(TwitchPlugin plugin, const ref IRCEvent event)
 
     Validates any broadcaster-level access tokens and displays an error if it has expired.
 
+    Sets up reminders about when the broadcaster-level token will expire.
+
     Params:
         plugin = The current [TwitchPlugin].
         channelName = The name of the channel we're supposedly joining.
@@ -505,28 +507,54 @@ void onSelfjoin(TwitchPlugin plugin, const ref IRCEvent event)
 void initRoom(TwitchPlugin plugin, const string channelName)
 in (channelName.length, "Tried to init Room with an empty channel string")
 {
-    import kameloso.constants : BufferSize;
-
     plugin.rooms[channelName] = TwitchPlugin.Room(channelName);
-    const creds = channelName in plugin.secretsByChannel;
 
-    if (creds && creds.broadcasterKey.length)
+    auto creds = channelName in plugin.secretsByChannel;
+    if (!creds || !creds.broadcasterKey.length) return;
+
+    void onExpiryDg()
     {
-        void validateBroadcasterKeyDg()
+        enum pattern = "The broadcaster-level access token for channel <l>%s</> has expired. " ~
+            "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
+        logger.errorf(pattern, channelName);
+        creds.broadcasterKey = string.init;
+        creds.broadcasterBearerToken = string.init;
+        creds.broadcasterKeyExpiry = 0;
+        saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+    }
+
+    void validateDg()
+    {
+        import std.datetime.systime : SysTime;
+
+        // There's no need to do this; believe in creds.broadcasterKeyExpiry
+        /+void validateDgImpl()
         {
-            try
-            {
-                cast(void)getBroadcasterAuthorisation(plugin, channelName);
-            }
-            catch (InvalidCredentialsException e)
-            {
-                enum pattern = "The broadcaster-level access token for channel <l>%s</> has expired.";
-                logger.errorf(pattern, channelName);
-            }
+            // Discard the results, we only want to know if it throws
+            cast(void)getValidation(
+                plugin,
+                creds.broadcasterKey,
+                Yes.async);
         }
 
-        Fiber validateBroadcasterKeyFiber = new Fiber(&validateBroadcasterKeyDg, BufferSize.fiberStack);
-        validateBroadcasterKeyFiber.call();
+        retryDelegate!(Yes.endlessly)(plugin, &validateDgImpl);+/
+
+        generateExpiryReminders(
+            plugin,
+            SysTime.fromUnixTime(creds.broadcasterKeyExpiry),
+            "The broadcaster-level authorisation token for channel <l>" ~ channelName ~ "</>",
+            &onExpiryDg);
+    }
+
+    try
+    {
+        import kameloso.constants : BufferSize;
+        Fiber validateFiber = new Fiber(&validateDg, BufferSize.fiberStack);
+        validateFiber.call();
+    }
+    catch (InvalidCredentialsException _)
+    {
+        return onExpiryDg();
     }
 }
 
