@@ -101,6 +101,7 @@ your <w>BOT</> account.
         //"moderator:manage:automod_settings",
         //"moderator:read:chat_settings",
         //"moderator:manage:chat_settings",
+        "moderator:manage:chat_messages",
         //"user:edit",
         //"user:edit:follows",
         //"user:manage:blocked_users",
