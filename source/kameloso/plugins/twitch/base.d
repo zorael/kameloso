@@ -3665,16 +3665,11 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
             if (event.target.nickname.length && event.aux[0].length)
             {
-                enum emoteDelimiter = '\0';
-                string emotes;  // passed by ref
-
                 embedCustomEmotes(
                     event.aux[0],
-                    emotes,
+                    event.aux[$-2],
                     *customEmotes,
                     plugin.customGlobalEmotes);
-
-                event.aux[0] = text(emotes, emoteDelimiter, event.aux[0]);
             }
         }
     }

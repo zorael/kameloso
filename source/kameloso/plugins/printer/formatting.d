@@ -434,25 +434,11 @@ void formatMessageMonochrome(Sink)
 
         if (isEmotePossibleEventType &&
             event.target.nickname.length &&
-            (event.aux[0].length > 1))  // need space to fit the delimiter plus teext
+            (event.aux[0].length))
         {
-            import std.string : indexOf;
-
             /*if (content.length)*/ putContent();
             putTarget();
-
-            enum emoteDelimiter = '\0';
-            immutable delimiterPos = event.aux[0].indexOf(emoteDelimiter);
-
-            if (delimiterPos == -1)
-            {
-                .put(sink, `: "`, event.aux[0][delimiterPos+1..$], '"');
-            }
-            else
-            {
-                .put(sink, `: "`, event.aux[0], '"');
-            }
-
+            .put(sink, `: "`, event.aux[0], '"');
             putQuotedTwitchMessage = true;
             auxRange.popFront();
         }
@@ -1145,23 +1131,18 @@ void formatMessageColoured(Sink)
         if (isEmotePossibleEventType &&
             event.content.length &&
             event.target.nickname.length &&
-            (event.aux[0].length > 1))  // need space to fit the delimiter plus teext
+            event.aux[0].length)
         {
-            import std.array : Appender;
-            import std.string : indexOf;
-
-            static Appender!(char[]) customEmoteSink;
-
             /*if (content.length)*/ putContent();
             putTarget();
             immutable code = bright ? Bright.content : Dark.content;
             sink.applyANSI(code, ANSICodeType.foreground);
 
-            enum emoteDelimiter = '\0';
-            immutable delimiterPos = event.aux[0].indexOf(emoteDelimiter);
-
-            if (delimiterPos != -1)
+            if (event.aux[$-2].length)
             {
+                import std.array : Appender;
+
+                static Appender!(char[]) customEmoteSink;
                 scope(exit) customEmoteSink.clear();
 
                 immutable TerminalForeground highlight = plugin.state.settings.brightTerminal ?
@@ -1170,11 +1151,10 @@ void formatMessageColoured(Sink)
                 immutable TerminalForeground emoteFgBase = plugin.state.settings.brightTerminal ?
                     Bright.emote :
                     Dark.emote;
-                immutable emotes = event.aux[0][0..delimiterPos];
 
                 customEmoteSink.highlightEmotesImpl(
-                    event.aux[0][delimiterPos+1..$],
-                    emotes,
+                    event.aux[0],
+                    event.aux[$-2],
                     highlight,
                     emoteFgBase,
                     cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
