@@ -650,15 +650,13 @@ void complainAboutMissingTokens(const Exception base)
         plugin = The current [TwitchPlugin].
         expiresWhen = A [std.datetime.systime.SysTime|SysTime] of when the expiry occurs.
         what = The string of what kind of token is expiring.
-        getoptFlag = The getopt flag with which to run the program to remedy the expired token.
-        quitOnExpiry = Whether or not to quit the program when the final expiry reminder is due.
+        onExpiryDg = Delegate to call when the token expires.
  +/
 void generateExpiryReminders(
     TwitchPlugin plugin,
     const SysTime expiresWhen,
     const string what,
-    const string getoptFlag,
-    const Flag!"quitOnExpiry" quitOnExpiry)
+    void delegate() onExpiryDg)
 {
     import kameloso.plugins.common.delayawait : delay;
     import lu.string : plurality;
@@ -768,12 +766,8 @@ void generateExpiryReminders(
 
     void onTrueExpiry()
     {
-        import kameloso.messaging : quit;
-
         // Key expired
-        enum pattern = "%s has expired. Run the program with <l>%s/> to generate a new one.";
-        logger.errorf(pattern, what, getoptFlag);
-        if (quitOnExpiry) quit(plugin.state, "Token expired");
+        onExpiryDg();
     }
 
     alias reminderPoints = AliasSeq!(
