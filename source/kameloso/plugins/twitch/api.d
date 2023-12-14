@@ -1586,77 +1586,20 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
 auto getBroadcasterAuthorisation(TwitchPlugin plugin, const string channelName)
 in (Fiber.getThis, "Tried to call `getBroadcasterAuthorisation` from outside a Fiber")
 in (channelName.length, "Tried to get broadcaster authorisation with an empty channel name string")
+out (token; token.length, "`getBroadcasterAuthorisation` returned an empty string")
 {
-    static string[string] authorizationByChannel;
-    auto authorizationBearer = channelName in authorizationByChannel;
+    auto creds = channelName in plugin.secretsByChannel;
 
-    if (!authorizationBearer)
+    if (!creds || !creds.broadcasterBearerToken.length)
     {
-        auto creds = channelName in plugin.secretsByChannel;
-
-        if (creds && creds.broadcasterKey.length)
-        {
-            import std.datetime.systime : Clock, SysTime;
-
-            enum validationIntervalSeconds = 3600 * 24;  // 24 hours
-            immutable nowInUnix = Clock.currTime.toUnixTime();
-            immutable delta = (nowInUnix - creds.broadcasterKeyValidationTimestamp);
-
-            if (delta > validationIntervalSeconds)
-            {
-                void getBroadcasterValidationDg()
-                {
-                    try
-                    {
-                        import kameloso.plugins.twitch.common : generateExpiryReminders;
-
-                        immutable validationJSON = getValidation(
-                            plugin,
-                            creds.broadcasterKey,
-                            Yes.async);
-                        immutable expiresIn = validationJSON["expires_in"].integer;
-                        immutable expiresWhen = SysTime.fromUnixTime(nowInUnix + expiresIn);
-
-                        generateExpiryReminders(
-                            plugin,
-                            expiresWhen,
-                            "The broadcaster-level authorisation token for channel <l>" ~ channelName ~ "</>",
-                            "--set twitch.superKeygen",
-                            No.quitOnExpiry);
-
-                        creds.broadcasterKeyValidationTimestamp = nowInUnix;
-                        saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-                    }
-                    catch (InvalidCredentialsException e)
-                    {
-                        e.channelName = channelName;
-                        throw e;
-                    }
-                }
-
-                retryDelegate(plugin, &getBroadcasterValidationDg);
-            }
-            else
-            {
-                // No need to validate, too recent
-            }
-
-            immutable bearer = "Bearer " ~ creds.broadcasterKey;
-            authorizationByChannel[channelName] = bearer;
-            return bearer;
-        }
-    }
-
-    if (!authorizationBearer)
-    {
-        enum message = "Missing broadcaster key";
+        enum message = "Missing broadcaster token";
         throw new MissingBroadcasterTokenException(
             message,
             channelName,
             __FILE__);
     }
 
-    return *authorizationBearer;
+    return creds.broadcasterBearerToken;
 }
 
 
