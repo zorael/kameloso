@@ -1974,6 +1974,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
             auto channelcount = event.channel in plugin.ecount;
             if (!channelcount)
             {
+                plugin.ecount[event.channel] = (long[string]).init;
                 plugin.ecount[event.channel][string.init] = 0L;
                 channelcount = event.channel in plugin.ecount;
                 (*channelcount).remove(string.init);
