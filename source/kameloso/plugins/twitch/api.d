@@ -2543,3 +2543,52 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
 
     return retryDelegate(plugin, &shoutoutDg);
 }
+
+
+// deleteMessage
+/++
+    Deletes a message, or all messages in a channel.
+
+    Doesn't require broadcaster-level authorisation; the normal bot token is enough.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        roomID = ID of room to delete message in.
+        messageID = ID of message to delete. Pass an empty string to delete all messages.
+        caller = Name of the calling function.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#delete-chat-messages
+ +/
+auto deleteMessage(
+    TwitchPlugin plugin,
+    const string roomID,
+    const string messageID,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis, "Tried to call `deleteMessage` from outside a Fiber")
+{
+    import std.algorithm.searching : startsWith;
+    import std.format : format;
+
+    immutable urlPattern =
+        "https://api.twitch.tv/helix/moderation/chat" ~
+        "?broadcaster_id=%s" ~
+        "&moderator_id=%s" ~
+        (messageID.length ?
+            "&message_id=%s" :
+            "%s");
+    immutable url = urlPattern.format(roomID, plugin.botUserIDString, messageID);
+
+    auto deleteDg()
+    {
+        return sendHTTPRequest(
+            plugin,
+            url,
+            caller,
+            plugin.authorizationBearer,
+            HttpVerb.DELETE);
+    }
+
+    enum msecsBetweenFailedDeletes = 100;
+    return retryDelegate!(Yes.endlessly, msecsBetweenFailedDeletes)(plugin, &deleteDg);
+}
