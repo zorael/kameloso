@@ -2173,7 +2173,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 
     void sendNotATwitchEmote()
     {
-        enum message = "That is not a Twitch, BetterTTV, FrankerFaceZ or 7tv emote.";
+        enum message = "That is not a (known) Twitch, BetterTTV, FrankerFaceZ or 7tv emote.";
         chan(plugin.state, event.channel, message);
     }
 
