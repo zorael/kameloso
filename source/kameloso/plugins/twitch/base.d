@@ -2019,8 +2019,10 @@ void onCommandNuke(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             }
             else
             {
+                import kameloso.plugins.common : nameOf;
+
                 enum pattern = "Failed to delete a message from <h>%s</> in <l>%s";
-                logger.warningf(pattern, storedEvent.sender.nickname, event.channel);
+                logger.warningf(pattern, nameOf(storedEvent.sender), event.channel);
 
                 version(PrintStacktraces)
                 {
