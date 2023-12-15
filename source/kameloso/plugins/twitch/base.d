@@ -2615,14 +2615,16 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         return chan(plugin.state, event.channel, message);
     }
 
+    void sendNoOngoingStream()
+    {
+        enum message = "There is no ongoing stream.";
+        chan(plugin.state, event.channel, message);
+    }
+
     const room = event.channel in plugin.rooms;
     assert(room, "Tried to start a commercial in a nonexistent room");
 
-    if (!room.stream.live)
-    {
-        enum message = "There is no ongoing stream.";
-        return chan(plugin.state, event.channel, message);
-    }
+    if (!room.stream.live) return sendNoOngoingStream();
 
     if (!lengthString.among!("30", "60", "90", "120", "150", "180"))
     {
@@ -2633,6 +2635,19 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     try
     {
         startCommercial(plugin, event.channel, lengthString);
+    }
+    catch (ErrorJSONException e)
+    {
+        import std.algorithm.searching : endsWith;
+
+        if (e.msg.endsWith("To start a commercial, the broadcaster must be streaming live."))
+        {
+            return sendNoOngoingStream();
+        }
+        else
+        {
+            throw e;
+        }
     }
     catch (MissingBroadcasterTokenException e)
     {
