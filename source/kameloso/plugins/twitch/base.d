@@ -592,6 +592,7 @@ void initRoom(TwitchPlugin plugin, const string channelName)
 in (channelName.length, "Tried to init Room with an empty channel string")
 {
     plugin.rooms[channelName] = TwitchPlugin.Room(channelName);
+    plugin.rooms[channelName].lastNMessages.resize(TwitchPlugin.Room.messageMemory);
 
     auto creds = channelName in plugin.secretsByChannel;
     if (!creds || !creds.broadcasterKey.length) return;
@@ -4363,7 +4364,7 @@ package:
         /++
             The last n messages sent in the channel, used by `nuke`.
          +/
-        CircularBuffer!(IRCEvent, No.dynamic, messageMemory) lastNMessages;
+        CircularBuffer!(IRCEvent, Yes.dynamic, messageMemory) lastNMessages;
 
         /++
             Song request history; UNIX timestamps keyed by nickname.
