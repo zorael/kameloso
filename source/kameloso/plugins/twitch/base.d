@@ -1097,6 +1097,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             twitchUser.nickname ~ ".tmi.twitch.tv");
         newUser.account = newUser.nickname;
         newUser.class_ = IRCUser.Class.anyone;
+        newUser.displayName = twitchUser.displayName;
         plugin.state.users[newUser.nickname] = newUser;
         storedUser = newUser.nickname in plugin.state.users;
     }
