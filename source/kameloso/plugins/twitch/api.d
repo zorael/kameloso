@@ -73,8 +73,12 @@ struct QueryResponse
 
     Params:
         endlessly = Whether or not to endlessly retry.
+        delayMsecs = How many milliseconds to wait between retries.
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         dg = Delegate to call.
+        async = Whether or not the delegate should be called asynchronously,
+            scheduling attempts using [kameloso.plugins.common.delayawait.delay|delay].
+        args = Arguments to pass to the delegate.
 
     Returns:
         Whatever the passed delegate returns.
@@ -84,10 +88,11 @@ struct QueryResponse
         [InvalidCredentialsException] likewise.
         [Exception] if the delegate throws it and `endlessly` is not passed.
  +/
-auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, Dg)
+auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, uint delayMsecs = 4000, Dg, Args...)
     (TwitchPlugin plugin,
     Dg dg,
-    const Flag!"async" async = Yes.async)
+    const Flag!"async" async = Yes.async,
+    Args args)
 in ((!async || Fiber.getThis), "Tried to call async `retryDelegate` from outside a Fiber")
 {
     static if (endlessly)
@@ -105,8 +110,8 @@ in ((!async || Fiber.getThis), "Tried to call async `retryDelegate` from outside
         {
             if (i > 0)
             {
-                import core.time : seconds;
-                static immutable retryDelay = 4.seconds;
+                import core.time : msecs;
+                static immutable retryDelay = delayMsecs.msecs;
 
                 if (async)
                 {
@@ -119,7 +124,7 @@ in ((!async || Fiber.getThis), "Tried to call async `retryDelegate` from outside
                     Thread.sleep(retryDelay);
                 }
             }
-            return dg();
+            return dg(args);
         }
         catch (MissingBroadcasterTokenException e)
         {
