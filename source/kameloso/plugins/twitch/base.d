@@ -1826,21 +1826,11 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         immutable message = pattern.format(responseJSON[0].object["title"].str);
         chan(plugin.state, event.channel, message);
     }
-    catch (MissingBroadcasterTokenException e)
-    {
-        complainAboutMissingTokens(e);
-    }
-    catch (InvalidCredentialsException e)
-    {
-        complainAboutMissingTokens(e);
-    }
-    catch (TwitchQueryException e)
+    catch (ErrorJSONException e)
     {
         import std.algorithm.searching : endsWith;
 
-        if ((e.code == 403) &&
-            (e.error == "Forbidden") &&
-            e.msg.endsWith("is not a partner or affiliate"))
+        if (e.msg.endsWith("is not a partner or affiliate"))
         {
             version(WithPollPlugin)
             {
@@ -1856,11 +1846,17 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else
         {
-            // Fall back to twitchTryCatchDg's exception handling
             throw e;
         }
     }
-    // As above
+    catch (MissingBroadcasterTokenException e)
+    {
+        complainAboutMissingTokens(e);
+    }
+    catch (InvalidCredentialsException e)
+    {
+        complainAboutMissingTokens(e);
+    }
 }
 
 
