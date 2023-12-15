@@ -160,10 +160,10 @@ A normal URL to any playlist you can modify will work fine. They do not have to 
             // Likely a playlist ID
             creds.youtubePlaylistID = playlistURL;
         }
-        else if (playlistURL.indexOf("/playlist?list=") != -1)
+        else if (playlistURL.indexOf("list=") != -1)
         {
             string slice = playlistURL;  // mutable
-            slice.advancePast("/playlist?list=");
+            slice.advancePast("list=");
             creds.youtubePlaylistID = slice.advancePast('&', Yes.inherit);
         }
         else
