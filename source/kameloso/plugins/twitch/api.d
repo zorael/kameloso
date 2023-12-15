@@ -2580,3 +2580,110 @@ in (Fiber.getThis, "Tried to call `deleteMessage` from outside a Fiber")
     enum msecsBetweenFailedDeletes = 100;
     return retryDelegate!(Yes.endlessly, msecsBetweenFailedDeletes)(plugin, &deleteDg);
 }
+
+
+// timeoutUser
+/++
+    Times out a user in a channel.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        roomID = Twitch ID of room (broadcaster user) to timeout user in.
+        userID = Twitch ID of user to timeout.
+        durationSeconds = Duration of timeout in seconds.
+        caller = Name of the calling function.
+
+    Returns:
+        A Voldemort struct with information about the timeout action.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#create-a-banned-event
+ +/
+auto timeoutUser(
+    TwitchPlugin plugin,
+    const string roomID,
+    const uint userID,
+    const uint durationSeconds,
+    const string reason = string.init,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis, "Tried to call `timeoutUser` from outside a Fiber")
+in (roomID.length, "Tried to timeout a user with an empty room ID string")
+in ((userID > 0), "Tried to timeout a user with an empty user ID string")
+{
+    import std.algorithm.comparison : min;
+    import std.format : format;
+
+    static struct Timeout
+    {
+        string broadcasterID;
+        string moderatorID;
+        string userID;
+        string createdAt;
+        string endTime;
+        uint code;
+    }
+
+    enum maxDurationSeconds = 1_209_600;  // 14 days
+
+    enum urlPattern = "https://api.twitch.tv/helix/moderation/bans" ~
+        "?broadcaster_id=%s" ~
+        "&moderator_id=%s";
+
+    enum bodyPattern =
+`{
+    "data": {
+        "user_id": "%d",
+        "duration": %d,
+        "reason": "%s"
+    }
+}`;
+
+    immutable url = urlPattern.format(roomID, plugin.botUserIDString);
+    immutable body_ = bodyPattern.format(
+        userID,
+        min(durationSeconds, maxDurationSeconds),
+        reason);
+
+    auto timeoutDg()
+    {
+        import std.json : JSONType, parseJSON;
+
+        immutable response = sendHTTPRequest(
+            plugin,
+            url,
+            caller,
+            plugin.authorizationBearer,
+            HttpVerb.POST,
+            cast(ubyte[])body_,
+            "application/json");
+
+        immutable responseJSON = parseJSON(response.str);
+
+        if (responseJSON.type != JSONType.object)
+        {
+            enum message = "`timeoutUser` response has unexpected JSON " ~
+                "(wrong JSON type)";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        immutable dataJSON = "data" in responseJSON;
+
+        if (!dataJSON)
+        {
+            enum message = "`timeoutUser` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        Timeout timeout;
+        timeout.broadcasterID = (*dataJSON)["broadcaster_id"].str;
+        timeout.moderatorID = (*dataJSON)["moderator_id"].str;
+        timeout.userID = (*dataJSON)["user_id"].str;
+        timeout.createdAt = (*dataJSON)["created_at"].str;
+        timeout.endTime = (*dataJSON)["end_time"].str;
+        timeout.code = response.code;
+        return timeout;
+    }
+
+    return retryDelegate(plugin, &timeoutDg);
+}

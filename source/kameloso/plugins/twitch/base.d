@@ -1306,6 +1306,7 @@ void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("vanish")
@@ -1319,10 +1320,21 @@ void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandVanish(TwitchPlugin plugin, const ref IRCEvent event)
+void onCommandVanish(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    immutable message = ".timeout " ~ event.sender.nickname ~ " 1";
-    chan(plugin.state, event.channel, message);
+    const room = event.channel in plugin.rooms;
+    assert(room, "Tried to vanish a user in a nonexistent room");
+
+    try
+    {
+        cast(void)timeoutUser(plugin, room.id, event.sender.id, 1);
+    }
+    catch (ErrorJSONException e)
+    {
+        import kameloso.plugins.common : nameOf;
+        enum pattern = "Failed to vanish <h>%s</> in <l>%s</> <t>(%s)";
+        logger.warningf(pattern, nameOf(event.sender), event.channel, e.msg);
+    }
 }
 
 
