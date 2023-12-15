@@ -1080,15 +1080,11 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         resetting the room unique ID, we'd get two duplicate monitors. So don't.
      +/
     immutable shouldStartRoomMonitor = !room.id.length;
+    if (!room.id.length) room.id = event.aux[0];  // Assign this before spending time in getTwitchUser
+
     auto twitchUser = getTwitchUser(plugin, string.init, event.aux[0]);
+    if (!twitchUser.nickname.length) return;  // No such user?
 
-    if (!twitchUser.nickname.length)
-    {
-        // No such user?
-        return;
-    }
-
-    room.id = event.aux[0];  // Assign this here after the nickname.length check
     room.broadcasterDisplayName = twitchUser.displayName;
     auto storedUser = twitchUser.nickname in plugin.state.users;
 
