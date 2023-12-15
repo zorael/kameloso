@@ -1668,7 +1668,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             "application/json");
     }
 
-    return retryDelegate(plugin, &startCommercialDg);
+    retryDelegate(plugin, &startCommercialDg);
 }
 
 
