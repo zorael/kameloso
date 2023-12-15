@@ -1399,6 +1399,7 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("subs")
@@ -1414,27 +1415,21 @@ void onCommandSubs(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     const room = event.channel in plugin.rooms;
     assert(room, "Tried to get the subscriber count of a channel for which there existed no room");
 
-    void getSubCountDg()
+    try
     {
-        try
-        {
-            enum pattern = "%s has %d subscribers.";
-            const subs = getSubscribers(plugin, event.channel, Yes.totalOnly);
-            immutable message = pattern.format(room.broadcasterDisplayName, subs[0].total);
-            chan(plugin.state, event.channel, message);
-        }
-        catch (MissingBroadcasterTokenException e)
-        {
-            complainAboutMissingTokens(e);
-        }
-        catch (InvalidCredentialsException e)
-        {
-            complainAboutMissingTokens(e);
-        }
+        enum pattern = "%s has %d subscribers.";
+        const subs = getSubscribers(plugin, event.channel, Yes.totalOnly);
+        immutable message = pattern.format(room.broadcasterDisplayName, subs[0].total);
+        chan(plugin.state, event.channel, message);
     }
-
-    Fiber getSubCountFiber = new Fiber(&getSubCountDg, BufferSize.fiberStack);
-    getSubCountFiber.call();
+    catch (MissingBroadcasterTokenException e)
+    {
+        complainAboutMissingTokens(e);
+    }
+    catch (InvalidCredentialsException e)
+    {
+        complainAboutMissingTokens(e);
+    }
 }
 
 
