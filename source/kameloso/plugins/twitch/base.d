@@ -2011,11 +2011,9 @@ void onCommandNuke(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
         try
         {
-            import std.algorithm.comparison : among;
-
             immutable response = deleteMessage(plugin, room.id, storedEvent.id);
 
-            if (response.code.among!(204, 200))
+            if ((response.code >= 200) && (response.code < 300))
             {
                 return true;
             }
