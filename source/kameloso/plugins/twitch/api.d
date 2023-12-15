@@ -78,7 +78,6 @@ struct QueryResponse
         dg = Delegate to call.
         async = Whether or not the delegate should be called asynchronously,
             scheduling attempts using [kameloso.plugins.common.delayawait.delay|delay].
-        args = Arguments to pass to the delegate.
 
     Returns:
         Whatever the passed delegate returns.
@@ -88,11 +87,10 @@ struct QueryResponse
         [InvalidCredentialsException] likewise.
         [Exception] if the delegate throws it and `endlessly` is not passed.
  +/
-auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, uint delayMsecs = 4000, Dg, Args...)
+auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, uint delayMsecs = 4000, Dg)
     (TwitchPlugin plugin,
     Dg dg,
-    const Flag!"async" async = Yes.async,
-    Args args)
+    const Flag!"async" async = Yes.async)
 in ((!async || Fiber.getThis), "Tried to call async `retryDelegate` from outside a Fiber")
 {
     static if (endlessly)
@@ -124,7 +122,7 @@ in ((!async || Fiber.getThis), "Tried to call async `retryDelegate` from outside
                     Thread.sleep(retryDelay);
                 }
             }
-            return dg(args);
+            return dg();
         }
         catch (MissingBroadcasterTokenException e)
         {
