@@ -422,6 +422,90 @@ mixin TwitchAwareness;
 mixin PluginRegistration!(TwitchPlugin, -5.priority);
 
 
+// onAnyMessage
+/++
+    Bells on any message, if the [TwitchSettings.bellOnMessage] setting is set.
+    Also counts emotes for `ecount` and records active viewers.
+
+    Belling is useful with small audiences so you don't miss messages, but
+    obviously only makes sense when run locally.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.EMOTE)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .onEvent(IRCEvent.Type.SELFEMOTE)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(ChannelPolicy.home)
+    .chainable(true)
+)
+void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
+{
+    if (plugin.twitchSettings.bellOnMessage)
+    {
+        import kameloso.terminal : TerminalToken;
+        import std.stdio : stdout, write;
+
+        write(TwitchPlugin.bell);
+        stdout.flush();
+    }
+
+    if (event.type == IRCEvent.Type.QUERY)
+    {
+        // Ignore queries for the rest of this function
+        return;
+    }
+
+    // ecount!
+    if (plugin.twitchSettings.ecount && event.emotes.length)
+    {
+        import lu.string : advancePast;
+        import std.algorithm.iteration : splitter;
+        import std.algorithm.searching : count;
+        import std.conv : to;
+
+        foreach (immutable emotestring; event.emotes.splitter('/'))
+        {
+            if (!emotestring.length) continue;
+
+            auto channelcount = event.channel in plugin.ecount;
+            if (!channelcount)
+            {
+                plugin.ecount[event.channel] = (long[string]).init;
+                plugin.ecount[event.channel][string.init] = 0L;
+                channelcount = event.channel in plugin.ecount;
+                (*channelcount).remove(string.init);
+            }
+
+            string slice = emotestring;  // mutable
+            immutable id = slice.advancePast(':');
+
+            auto thisEmoteCount = id in *channelcount;
+            if (!thisEmoteCount)
+            {
+                (*channelcount)[id] = 0L;
+                thisEmoteCount = id in *channelcount;
+            }
+
+            *thisEmoteCount += slice.count(',') + 1;
+            plugin.ecountDirty = true;
+        }
+    }
+
+    // Record viewer as active
+    if (auto room = event.channel in plugin.rooms)
+    {
+        if (room.stream.live)
+        {
+            room.stream.activeViewers[event.sender.nickname] = true;
+        }
+
+        room.lastNMessages.put(event);
+    }
+}
+
+
 // onImportant
 /++
     Bells on any important event, like subscriptions, cheers and raids, if the
@@ -1306,71 +1390,6 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
 }
 
 
-// onCommandNuke
-/++
-    Deletes recent messages containing a supplied word or phrase.
-
-    See_Also:
-        [TwitchPlugin.Room.lastNMessages]
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(Permissions.operator)
-    .channelPolicy(ChannelPolicy.home)
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("nuke")
-            .policy(PrefixPolicy.prefixed)
-            .description("Deletes recent messages containing a supplied word or phrase.")
-            .addSyntax("$command [word or phrase]")
-    )
-)
-void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
-{
-    import lu.string : stripped, unquoted;
-    import std.uni : toLower;
-
-    void sendUsage()
-    {
-        import std.format : format;
-        enum pattern = "Usage: %s%s [word or phrase]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
-    }
-
-    if (!event.content.length) return sendUsage();
-
-    auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to nuke a word in a nonexistent room");
-    immutable phraseToLower = event.content
-        .stripped
-        .unquoted
-        .toLower;
-
-    if (!phraseToLower.length) return sendUsage();
-
-    foreach (immutable storedEvent; room.lastNMessages)
-    {
-        import std.algorithm.searching : canFind;
-        import std.uni : asLowerCase;
-
-        if (storedEvent.sender.class_ >= IRCUser.Class.operator) continue;
-        else if (!storedEvent.content.length) continue;
-
-        if (storedEvent.content.asLowerCase.canFind(phraseToLower))
-        {
-            enum properties = Message.Property.priority;
-            immutable message = ".delete " ~ storedEvent.id;
-            chan(plugin.state, event.channel, message, properties);
-        }
-    }
-
-    // Also nuke the nuking message in case there were spoilers in it
-    immutable message = ".delete " ~ event.id;
-    chan(plugin.state, event.channel, message);
-}
-
-
 // onCommandSubs
 /++
     Reports the number of subscribers of the current channel.
@@ -1926,85 +1945,155 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
-// onAnyMessage
+// onCommandNuke
 /++
-    Bells on any message, if the [TwitchSettings.bellOnMessage] setting is set.
-    Also counts emotes for `ecount` and records active viewers.
+    Deletes recent messages containing a supplied word or phrase.
 
-    Belling is useful with small audiences so you don't miss messages, but
-    obviously only makes sense when run locally.
+    Must be placed after [onAnyMessage] in the chain.
+
+    See_Also:
+        [TwitchPlugin.Room.lastNMessages]
+
+        https://dev.twitch.tv/docs/api/reference/#delete-chat-messages
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.QUERY)
-    .onEvent(IRCEvent.Type.EMOTE)
-    .permissionsRequired(Permissions.ignore)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
-    .chainable(true)
+    .fiber(true)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("nuke")
+            .policy(PrefixPolicy.prefixed)
+            .description("Deletes recent messages containing a supplied word or phrase.")
+            .addSyntax("$command [word or phrase]")
+    )
 )
-void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
+void onCommandNuke(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    if (plugin.twitchSettings.bellOnMessage)
-    {
-        import kameloso.terminal : TerminalToken;
-        import std.stdio : stdout, write;
+    import lu.string : plurality, stripped, unquoted;
+    import std.uni : toLower;
 
-        write(TwitchPlugin.bell);
-        stdout.flush();
+    void sendUsage()
+    {
+        import std.format : format;
+        enum pattern = "Usage: %s%s [word or phrase]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        chan(plugin.state, event.channel, message);
     }
 
-    if (event.type == IRCEvent.Type.QUERY)
-    {
-        // Ignore queries for the rest of this function
-        return;
-    }
+    if (!event.content.length) return sendUsage();
 
-    // ecount!
-    if (plugin.twitchSettings.ecount && event.emotes.length)
-    {
-        import lu.string : advancePast;
-        import std.algorithm.iteration : splitter;
-        import std.algorithm.searching : count;
-        import std.conv : to;
+    auto room = event.channel in plugin.rooms;
+    assert(room, "Tried to nuke a word in a nonexistent room");
 
-        foreach (immutable emotestring; event.emotes.splitter('/'))
+    immutable phraseToLower = event.content
+        .stripped
+        .unquoted
+        .toLower;
+    if (!phraseToLower.length) return sendUsage();
+
+    auto deleteEvent(const ref IRCEvent storedEvent)
+    {
+        version(PrintStacktraces)
+        void printStacktrace(Exception e)
         {
-            if (!emotestring.length) continue;
-
-            auto channelcount = event.channel in plugin.ecount;
-            if (!channelcount)
+            if (!plugin.state.settings.headless)
             {
-                plugin.ecount[event.channel] = (long[string]).init;
-                plugin.ecount[event.channel][string.init] = 0L;
-                channelcount = event.channel in plugin.ecount;
-                (*channelcount).remove(string.init);
+                import std.stdio : stdout, writeln;
+                writeln(e);
+                stdout.flush();
+            }
+        }
+
+        try
+        {
+            import std.algorithm.comparison : among;
+
+            immutable response = deleteMessage(plugin, room.id, storedEvent.id);
+
+            if (response.code.among!(204, 200))
+            {
+                return true;
+            }
+            else
+            {
+                enum pattern = "Failed to delete a message from <h>%s</> in <l>%s";
+                logger.warningf(pattern, storedEvent.sender.nickname, event.channel);
+
+                version(PrintStacktraces)
+                {
+                    import std.stdio : stdout, writeln;
+                    writeln(response.str);
+                    writeln("code: ", response.code);
+                    stdout.flush();
+                }
+                return false;
+            }
+        }
+        /*catch (ErrorJSONException e)
+        {
+            if (e.json["message"].str == "You cannot delete the broadcaster's messages.")
+            {
+                // Should never happen as we filter by class_ before calling this...
+                return true;
             }
 
-            string slice = emotestring;  // mutable
-            immutable id = slice.advancePast(':');
-
-            auto thisEmoteCount = id in *channelcount;
-            if (!thisEmoteCount)
-            {
-                (*channelcount)[id] = 0L;
-                thisEmoteCount = id in *channelcount;
-            }
-
-            *thisEmoteCount += slice.count(',') + 1;
-            plugin.ecountDirty = true;
+            version(PrintStacktraces) printStacktrace(e);
+            return false;
+        }*/
+        catch (Exception e)
+        {
+            version(PrintStacktraces) printStacktrace(e);
+            return false;
         }
     }
 
-    // Record viewer as active
-    if (auto room = event.channel in plugin.rooms)
-    {
-        if (room.stream.live)
-        {
-            room.stream.activeViewers[event.sender.nickname] = true;
-        }
+    uint numDeleted;
 
-        room.lastNMessages.put(event);
+    foreach (ref IRCEvent storedEvent; room.lastNMessages)  // explicit IRCEvent required on lu <2.0.1
+    {
+        import std.algorithm.searching : canFind;
+        import std.uni : asLowerCase;
+
+        if (!storedEvent.id.length || (storedEvent.id == event.id)) continue;  // delete command event separately
+        if (storedEvent.sender.class_ >= IRCUser.Class.operator) continue;  // DON'T nuke moderators
+
+        if (storedEvent.content.asLowerCase.canFind(phraseToLower))
+        {
+            immutable success = deleteEvent(storedEvent);
+
+            if (success)
+            {
+                storedEvent = IRCEvent.init;
+                ++numDeleted;
+            }
+        }
     }
+
+    if (numDeleted > 0)
+    {
+        // Delete the command event itself
+        // Do it from within a foreach so we can clear the event by ref
+        foreach (ref IRCEvent storedEvent; room.lastNMessages)  // as above
+        {
+            if (storedEvent.id != event.id) continue;
+
+            immutable success = deleteEvent(storedEvent);
+
+            if (success)
+            {
+                storedEvent = IRCEvent.init;
+                //++numDeleted;  // Don't include in final count
+            }
+            break;
+        }
+    }
+
+    enum pattern = "Deleted <l>%d</> %s containing \"<l>%s</>\"";
+    immutable messageWord = numDeleted.plurality("message", "messages");
+    logger.infof(pattern, numDeleted, messageWord, event.content.stripped);
 }
 
 
