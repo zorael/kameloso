@@ -534,6 +534,11 @@ in (url.length, "Tried to send an HTTP request without a URL")
                 "message": "Invalid OAuth token",
                 "status": 401
             }
+            {
+                "error": "Unauthorized",
+                "message": "Missing scope: moderator:manage:chat_messages",
+                "status": 401
+            }
              +/
 
             immutable json = parseJSON(response.str);

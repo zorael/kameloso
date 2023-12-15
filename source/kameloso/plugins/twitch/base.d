@@ -3420,7 +3420,7 @@ void startValidator(TwitchPlugin plugin)
                 generateExpiryReminders(
                     plugin,
                     expiresWhen,
-                    "Your Twitch authorisastion token",
+                    "Your Twitch authorisation token",
                     &onExpiryDg);
             }
             catch (TwitchQueryException e)
