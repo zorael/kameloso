@@ -3786,24 +3786,22 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
     if (shouldEmbedEmotes)
     {
-        if (const customEmotes = event.channel in plugin.customEmotesByChannel)
+        const customEmotes = event.channel in plugin.customEmotesByChannel;
+
+        // event.content is guaranteed to not be empty here
+        embedCustomEmotes(
+            event.content,
+            event.emotes,
+            customEmotes ? *customEmotes : null,
+            plugin.customGlobalEmotes);
+
+        if (event.target.nickname.length && event.aux[0].length)
         {
-            import std.conv : text;
-
             embedCustomEmotes(
-                event.content,
-                event.emotes,
-                *customEmotes,
+                event.aux[0],
+                event.aux[$-2],
+                customEmotes ? *customEmotes : null,
                 plugin.customGlobalEmotes);
-
-            if (event.target.nickname.length && event.aux[0].length)
-            {
-                embedCustomEmotes(
-                    event.aux[0],
-                    event.aux[$-2],
-                    *customEmotes,
-                    plugin.customGlobalEmotes);
-            }
         }
     }
 
