@@ -2779,6 +2779,8 @@ void embedCustomEmotes(
 
     static Appender!(char[]) sink;
 
+    if (!customEmotes.length && !customGlobalEmotes.length) return;
+
     scope(exit)
     {
         if (sink.data.length)
