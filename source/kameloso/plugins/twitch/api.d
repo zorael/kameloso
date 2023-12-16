@@ -2591,6 +2591,7 @@ in (Fiber.getThis, "Tried to call `deleteMessage` from outside a Fiber")
         roomID = Twitch ID of room (broadcaster user) to timeout user in.
         userID = Twitch ID of user to timeout.
         durationSeconds = Duration of timeout in seconds.
+        reason = Timeout reason.
         caller = Name of the calling function.
 
     Returns:
