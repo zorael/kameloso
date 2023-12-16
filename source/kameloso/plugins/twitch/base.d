@@ -2851,7 +2851,7 @@ void embedCustomEmotes(
             return;  // cannot return non-void from `void` function
         }
 
-        if ((dword in customEmotes) || (dword in customGlobalEmotes))
+        if ((dword in customGlobalEmotes) || (dword in customEmotes))
         {
             return appendEmote(dword);
         }
