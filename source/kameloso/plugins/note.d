@@ -517,7 +517,7 @@ void loadNotes(NotePlugin plugin)
         if (!channelNotes)
         {
             plugin.notes[channelName][string.init] = [ Note.init ];
-            channelNotes = plugin.notes[channelName];
+            channelNotes = channelName in plugin.notes;
             (*channelNotes).remove(string.init);
         }
 
