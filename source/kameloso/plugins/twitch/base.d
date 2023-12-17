@@ -2683,8 +2683,10 @@ in (((channelName.length && idString.length) ||
         if (!customEmotes)
         {
             // Initialise it
-            plugin.customEmotesByChannel[channelName] = new bool[dstring];
+            //plugin.customEmotesByChannel[channelName] = new bool[dstring];  // fails with older compilers
+            plugin.customEmotesByChannel[channelName][dstring.init] = false;
             customEmotes = channelName in plugin.customEmotesByChannel;
+            (*customEmotes).remove(dstring.init);
         }
 
         emoteImports =

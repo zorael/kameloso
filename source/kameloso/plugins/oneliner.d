@@ -980,8 +980,10 @@ void loadOneliners(OnelinerPlugin plugin)
     foreach (immutable channelName, const channelOnelinersJSON; allOnelinersJSON.object)
     {
         // Initialise the AA
-        plugin.onelinersByChannel[channelName] = new Oneliner[string];
+        //plugin.onelinersByChannel[channelName] = new Oneliner[string];  // fails with older compilers
+        plugin.onelinersByChannel[channelName][string.init] = Oneliner.init;
         auto channelOneliners = channelName in plugin.onelinersByChannel;
+        (*channelOneliners).remove(string.init);
 
         foreach (immutable trigger, const onelinerJSON; channelOnelinersJSON.object)
         {
