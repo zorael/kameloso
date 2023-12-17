@@ -420,7 +420,7 @@ void formatMessageMonochrome(Sink)
     putSender();
 
     bool putQuotedTwitchMessage;
-    auto auxRange = event.aux[].filter!(s => s.length);
+    string[event.aux.length] auxCopy = event.aux;
 
     version(TwitchSupport)
     {
@@ -440,7 +440,7 @@ void formatMessageMonochrome(Sink)
             putTarget();
             .put(sink, `: "`, event.aux[0], '"');
             putQuotedTwitchMessage = true;
-            auxRange.popFront();
+            auxCopy[0] = string.init;
         }
     }
 
@@ -450,6 +450,8 @@ void formatMessageMonochrome(Sink)
         if (content.length) putContent();
     }
 
+    // Base the range on the modified copy
+    auto auxRange = auxCopy[].filter!(s => s.length);
     if (!auxRange.empty)
     {
         enum pattern = " (%-(%s%|) (%))";
@@ -468,7 +470,6 @@ void formatMessageMonochrome(Sink)
     }
 
     auto countRange = event.count[].filter!(n => !n.isNull);
-
     if (!countRange.empty)
     {
         enum pattern = " {%-(%s%|} {%)}";
@@ -1116,7 +1117,7 @@ void formatMessageColoured(Sink)
     putSender();
 
     bool putQuotedTwitchMessage;
-    auto auxRange = event.aux[].filter!(s => s.length);
+    string[event.aux.length] auxCopy = event.aux;
 
     version(TwitchSupport)
     {
@@ -1160,6 +1161,9 @@ void formatMessageColoured(Sink)
                     cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
                     plugin.state.settings);
                 .put(sink, `: "`, customEmoteSink.data, '"');
+
+                // Remove the custom emote definitions
+                auxCopy[$-2] = string.init;
             }
             else
             {
@@ -1168,7 +1172,7 @@ void formatMessageColoured(Sink)
             }
 
             putQuotedTwitchMessage = true;
-            auxRange.popFront();
+            auxCopy[0] = string.init;
         }
     }
 
@@ -1178,6 +1182,8 @@ void formatMessageColoured(Sink)
         if (content.length) putContent();
     }
 
+    // Base the range on the modified copy
+    auto auxRange = auxCopy[].filter!(s => s.length);
     if (!auxRange.empty)
     {
         enum pattern = " (%-(%s%|) (%))";
@@ -1197,7 +1203,6 @@ void formatMessageColoured(Sink)
     }
 
     auto countRange = event.count[].filter!(n => !n.isNull);
-
     if (!countRange.empty)
     {
         enum pattern = " {%-(%s%|} {%)}";
