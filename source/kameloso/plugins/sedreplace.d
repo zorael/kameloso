@@ -417,20 +417,17 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
         Line line = Line(string_, event.time);  // implicit ctor
 
         auto channelLines = event.channel in plugin.prevlines;
-
         if (!channelLines)
         {
-            plugin.prevlines[event.channel] = typeof(plugin.prevlines[string.init]).init;
+            initPrevlines(plugin, event.channel, event.sender.nickname);
             channelLines = event.channel in plugin.prevlines;
         }
 
         auto senderLines = event.sender.nickname in *channelLines;
-
         if (!senderLines)
         {
-            (*channelLines)[event.sender.nickname] = typeof((*channelLines)[string.init]).init;
+            initPrevlines(plugin, event.channel, event.sender.nickname);
             senderLines = event.sender.nickname in *channelLines;
-            //senderLines.resize(plugin.sedReplaceSettings.history);
         }
 
         senderLines.put(line);
@@ -546,13 +543,27 @@ void onWelcome(SedReplacePlugin plugin)
 }
 
 
+// onJoin
+/++
+    Initialises the records of previous messages from a user when they join a channel.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.JOIN)
+    .channelPolicy(ChannelPolicy.home)
+)
+void onJoin(SedReplacePlugin plugin, const ref IRCEvent event)
+{
+    initPrevlines(plugin, event.channel, event.sender.nickname);
+}
+
+
 // onPart
 /++
     Removes the records of previous messages from a user when they leave a channel.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PART)
-    .channelPolicy(ChannelPolicy.HOME)
+    .channelPolicy(ChannelPolicy.home)
 )
 void onPart(SedReplacePlugin plugin, const ref IRCEvent event)
 {
@@ -575,6 +586,39 @@ void onQuit(SedReplacePlugin plugin, const ref IRCEvent event)
     foreach (ref channelLines; plugin.prevlines)
     {
         channelLines.remove(event.sender.nickname);
+    }
+}
+
+
+// initPrevlines
+/++
+    Initialises the records of previous messages from a user when they join a channel.
+
+    Params:
+        plugin = Plugin instance.
+        channelName = Name of channel to initialise.
+        nickname = Nickname of user to initialise.
+ +/
+void initPrevlines(
+    SedReplacePlugin plugin,
+    const string channelName,
+    const string nickname)
+{
+    auto channelLines = channelName in plugin.prevlines;
+    if (!channelLines)
+    {
+        plugin.prevlines[channelName][nickname] = SedReplacePlugin.BufferType.init;
+        auto senderLines = nickname in plugin.prevlines[channelName];
+        senderLines.resize(SedReplacePlugin.messageMemory);
+        return;
+    }
+
+    auto senderLines = nickname in *channelLines;
+    if (!senderLines)
+    {
+        (*channelLines)[nickname] = SedReplacePlugin.BufferType.init;
+        senderLines = nickname in *channelLines;
+        senderLines.resize(SedReplacePlugin.messageMemory);
     }
 }
 
@@ -612,10 +656,15 @@ private:
     static immutable timeBetweenPurges = (prevlineLifetime * 3).seconds;
 
     /++
+        How many messages to keep in memory.
+     +/
+    enum messageMemory = 8;
+
+    /++
         What kind of container to use for sent lines.
         Now static and hardcoded to a history length of 8 messages.
      +/
-    alias BufferType = CircularBuffer!(Line, No.dynamic, 8);
+    alias BufferType = CircularBuffer!(Line, Yes.dynamic, messageMemory);
 
     /++
         An associative arary of [BufferType]s of the previous line(s) every user said,
