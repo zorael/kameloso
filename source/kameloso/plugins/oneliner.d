@@ -985,18 +985,7 @@ void loadOneliners(OnelinerPlugin plugin)
 
         foreach (immutable trigger, const onelinerJSON; channelOnelinersJSON.object)
         {
-            import std.json : JSONException;
-
-            try
-            {
-                (*channelOneliners)[trigger] = Oneliner.fromJSON(onelinerJSON);
-            }
-            catch (JSONException _)
-            {
-                import kameloso.string : doublyBackslashed;
-                enum pattern = "Failed to load oneliner \"<l>%s</>\"; <l>%s</> is outdated or corrupt.";
-                logger.errorf(pattern, trigger, plugin.onelinerFile.doublyBackslashed);
-            }
+            (*channelOneliners)[trigger] = Oneliner.fromJSON(onelinerJSON);
         }
 
         (*channelOneliners).rehash();
