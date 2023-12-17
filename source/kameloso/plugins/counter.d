@@ -813,9 +813,13 @@ void loadCounters(CounterPlugin plugin)
     {
         // Initialise the AA
         //plugin.counters[channelName] = new Counter[string];  // fails with older compilers
-        plugin.counters[channelName][string.init] = Counter.init;
         auto channelCounters = channelName in plugin.counters;
-        (*channelCounters).remove(string.init);
+        if (!channelCounters)
+        {
+            plugin.counters[channelName][string.init] = Counter.init;
+            channelCounters = channelName in plugin.counters;
+            (*channelCounters).remove(string.init);
+        }
 
         foreach (immutable word, counterJSON; channelCountersJSON.object)
         {
