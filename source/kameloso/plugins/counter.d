@@ -680,7 +680,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 )
 void onWelcome(CounterPlugin plugin)
 {
-    plugin.reload();
+    loadCounters(plugin);
 }
 
 
