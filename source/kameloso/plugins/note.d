@@ -525,7 +525,7 @@ void loadNotes(NotePlugin plugin)
         {
             foreach (noteJSON; notesJSON.array)
             {
-                plugin.notes[channelName][nickname] ~= Note.fromJSON(noteJSON);
+                (*channelNotes)[nickname] ~= Note.fromJSON(noteJSON);
             }
         }
 
