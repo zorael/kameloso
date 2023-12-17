@@ -612,18 +612,6 @@ in (channelName.length, "Tried to init Room with an empty channel string")
     {
         import std.datetime.systime : SysTime;
 
-        // There's no need to do this; believe in creds.broadcasterKeyExpiry
-        /+void validateDgImpl()
-        {
-            // Discard the results, we only want to know if it throws
-            cast(void)getValidation(
-                plugin,
-                creds.broadcasterKey,
-                Yes.async);
-        }
-
-        retryDelegate!(Yes.endlessly)(plugin, &validateDgImpl);+/
-
         generateExpiryReminders(
             plugin,
             SysTime.fromUnixTime(creds.broadcasterKeyExpiry),
