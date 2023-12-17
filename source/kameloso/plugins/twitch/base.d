@@ -703,7 +703,7 @@ void onGlobalUserstate(TwitchPlugin plugin)
 {
     // dialect sets the display name during parsing
     //assert(plugin.state.client.displayName == event.target.displayName);
-    importCustomGlobalEmotes(plugin);
+    importCustomEmotes(plugin);
 }
 
 
@@ -2628,58 +2628,213 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
 // importCustomEmotes
 /++
-    Fetches custom channel-specific BetterTTV, FrankerFaceZ and 7tv emotes via API calls.
+    Fetches custom BetterTTV, FrankerFaceZ and 7tv emotes via API calls.
+
+    If a channel name is supplied, the emotes are imported for that channel.
+    If not, global ones are imported. An `idString` can only be supplied if
+    a `channelName` is also supplied.
 
     Params:
         plugin = The current [TwitchPlugin].
-        channelName = Name of channel to import emotes for.
-        idString = Twitch ID of channel, in string form.
+        channelName = (Optional) Name of channel to import emotes for.
+        idString = (Optional, mandatory if `channelName` supplied)
+            Twitch ID of channel, in string form.
  +/
 void importCustomEmotes(
     TwitchPlugin plugin,
-    const string channelName,
-    const string idString)
+    const string channelName = string.init,
+    const string idString = string.init)
 in (Fiber.getThis, "Tried to call `importCustomEmotes` from outside a Fiber")
-in (channelName.length, "Tried to import custom emotes with an empty channel name string")
-in (idString.length, "Tried to import custom emotes with an empty ID string")
+in (((channelName.length && idString.length) ||
+    (!channelName.length && !idString.length)),
+    "Tried to import custom channel-specific emotes with insufficient arguments")
 {
-    import kameloso.plugins.twitch.emotes.bttv : getBTTVEmotes;
-    import kameloso.plugins.twitch.emotes.ffz : getFFZEmotes;
-    import kameloso.plugins.twitch.emotes.seventv : get7tvEmotes;
-    import core.memory : GC;
-
-    GC.disable();
-    scope(exit) GC.enable();
-
-    // Initialise the AA so we can get a pointer to it.
-    plugin.customEmotesByChannel[channelName][dstring.init] = false;
-    auto customEmotes = channelName in plugin.customEmotesByChannel;
-    *customEmotes = null;
-
     alias GetEmoteFun = void function(
         TwitchPlugin,
         ref bool[dstring],
         const string,
         const string);
 
-    void getEmoteSet(GetEmoteFun fun, const string setName)
+    static struct EmoteImport
     {
-        try
+        GetEmoteFun fun;
+        string name;
+        uint failures;
+    }
+
+    enum failureReportPeriodicity = 5;
+    enum giveUpThreshold = 15;  // multiple of failureReportPeriodicity
+
+    EmoteImport[] emoteImports;
+    bool[dstring]* customEmotes;
+    bool atLeastOneImportFailed;
+    version(assert) bool addedSomething;
+
+    if (channelName.length)
+    {
+        import kameloso.plugins.twitch.emotes.bttv : getBTTVEmotes;
+        import kameloso.plugins.twitch.emotes.ffz : getFFZEmotes;
+        import kameloso.plugins.twitch.emotes.seventv : get7tvEmotes;
+
+        // Channel-specific emotes
+        customEmotes = channelName in plugin.customEmotesByChannel;
+
+        if (!customEmotes)
         {
-            fun(plugin, *customEmotes, idString, __FUNCTION__);
+            // Initialise it
+            plugin.customEmotesByChannel[channelName] = new bool[dstring];
+            customEmotes = channelName in plugin.customEmotesByChannel;
         }
-        catch (Exception e)
+
+        emoteImports =
+        [
+            EmoteImport(&getBTTVEmotes, "BetterTTV"),
+            EmoteImport(&getFFZEmotes, "FrankerFaceZ"),
+            EmoteImport(&get7tvEmotes, "7tv"),
+        ];
+    }
+    else
+    {
+        import kameloso.plugins.twitch.emotes.bttv : getBTTVEmotesGlobal;
+        import kameloso.plugins.twitch.emotes.ffz : getFFZEmotesGlobal;
+        import kameloso.plugins.twitch.emotes.seventv : get7tvEmotesGlobal;
+
+        // Global emotes
+        customEmotes = &plugin.customGlobalEmotes;
+
+        emoteImports =
+        [
+            EmoteImport(&getBTTVEmotesGlobal, "BetterTTV"),
+            EmoteImport(&getFFZEmotesGlobal, "FrankerFaceZ"),
+            EmoteImport(&get7tvEmotesGlobal, "7tv"),
+        ];
+    }
+
+    // Loop until the array is exhausted. Remove completed and/or failed imports.
+    while (emoteImports.length)
+    {
+        import std.algorithm.mutation : SwapStrategy, remove;
+        import core.memory : GC;
+
+        GC.disable();
+        scope(exit) GC.enable();
+
+        size_t[] toRemove;
+
+        foreach (immutable i, ref emoteImport; emoteImports)
         {
-            enum pattern = "Failed to fetch custom <l>%s</> emotes for channel <l>%s</>: <t>%s";
-            logger.warningf(pattern, setName, channelName, e.msg);
-            version(PrintStacktraces) logger.trace(e);
-            //throw e;
+            immutable lengthBefore = customEmotes.length;
+
+            try
+            {
+                emoteImport.fun(plugin, *customEmotes, idString, __FUNCTION__);
+
+                if (plugin.state.settings.trace)
+                {
+                    immutable deltaLength = (customEmotes.length - lengthBefore);
+
+                    if (deltaLength)
+                    {
+                        version(assert) addedSomething = true;
+
+                        if (channelName.length)
+                        {
+                            enum pattern = "Successfully imported <l>%s</> emotes " ~
+                                "for channel <l>%s</> (<l>%d</>)";
+                            logger.infof(pattern, emoteImport.name, channelName, deltaLength);
+                        }
+                        else
+                        {
+                            enum pattern = "Successfully imported global <l>%s</> emotes (<l>%d</>)";
+                            logger.infof(pattern, emoteImport.name, deltaLength);
+                        }
+                    }
+                    /*else
+                    {
+                        if (channelName.length)
+                        {
+                            enum pattern = "No <l>%s</> emotes for channel <l>%s</>.";
+                            logger.infof(pattern, emoteImport.name, channelName);
+                        }
+                        else
+                        {
+                            enum pattern = "No global <l>%s</> emotes.";
+                            logger.infof(pattern, emoteImport.name);
+                        }
+                    }*/
+                }
+
+                // Success; flag it for deletion
+                toRemove ~= i;
+                continue;
+            }
+            catch (Exception e)
+            {
+                ++emoteImport.failures;
+
+                // Occasionally report failures
+                if ((emoteImport.failures % failureReportPeriodicity) == 0)
+                {
+                    if (channelName.length)
+                    {
+                        enum pattern = "Failed to import <l>%s</> emotes for channel <l>%s</>.";
+                        logger.warningf(pattern, emoteImport.name, channelName);
+                    }
+                    else
+                    {
+                        enum pattern = "Failed to import global <l>%s</> emotes.";
+                        logger.warningf(pattern, emoteImport.name);
+                    }
+
+                    version(PrintStacktraces)
+                    {
+                        import std.stdio : stdout, writeln;
+                        writeln(e);
+                        stdout.flush();
+                    }
+                }
+
+                if (emoteImport.failures >= giveUpThreshold)
+                {
+                    // Failed too many times; flag it for deletion
+                    toRemove ~= i;
+                    atLeastOneImportFailed = true;
+                    continue;
+                }
+            }
+        }
+
+        foreach_reverse (immutable i; toRemove)
+        {
+            // Remove completed and/or successively failed imports
+            emoteImports = emoteImports.remove!(SwapStrategy.unstable)(i);
+        }
+
+        if (emoteImports.length)
+        {
+            import kameloso.plugins.common.delayawait : delay;
+            import core.time : seconds;
+
+            // Still some left; repeat on remaining imports after a delay
+            static immutable retryDelay = 5.seconds;
+            delay(plugin, retryDelay, Yes.yield);
         }
     }
 
-    getEmoteSet(&getBTTVEmotes, "BetterTTV");
-    getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
-    getEmoteSet(&get7tvEmotes, "7tv");
+    version(assert)
+    {
+        if (addedSomething)
+        {
+            enum message = "Custom emotes were imported but the resulting AA is empty";
+            assert(customEmotes.length, message);
+        }
+    }
+
+    if (atLeastOneImportFailed)
+    {
+        enum message = "Some custom emotes failed to import.";
+        logger.error(message);
+    }
 
     if (customEmotes.length)
     {
@@ -2687,55 +2842,12 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
     }
     else
     {
-        // Nothing imported, may as well remove the AA
-        plugin.customEmotesByChannel.remove(channelName);
-    }
-}
-
-
-// importCustomGlobalEmotes
-/++
-    Fetches custom global BetterTTV, FrankerFaceZ and 7tv emotes via API calls.
-
-    Params:
-        plugin = The current [TwitchPlugin].
- +/
-void importCustomGlobalEmotes(TwitchPlugin plugin)
-in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fiber")
-{
-    import kameloso.plugins.twitch.emotes.bttv : getBTTVGlobalEmotes;
-    import kameloso.plugins.twitch.emotes.ffz : getFFZGlobalEmotes;
-    import kameloso.plugins.twitch.emotes.seventv : get7tvGlobalEmotes;
-    import core.memory : GC;
-
-    GC.disable();
-    scope(exit) GC.enable();
-
-    alias GetGlobalEmoteFun = void function(
-        TwitchPlugin,
-        ref bool[dstring],
-        const string);
-
-    void getGlobalEmoteSet(GetGlobalEmoteFun fun, const string setName)
-    {
-        try
+        if (channelName.length)
         {
-            fun(plugin, plugin.customGlobalEmotes, __FUNCTION__);
-        }
-        catch (Exception e)
-        {
-            enum pattern = "Failed to fetch global <l>%s</> emotes: <t>%s";
-            logger.warningf(pattern, setName, e.msg);
-            version(PrintStacktraces) logger.trace(e.msg);
-            //throw e;
+            // Nothing imported, may as well remove the AA
+            plugin.customEmotesByChannel.remove(channelName);
         }
     }
-
-    plugin.customGlobalEmotes = null;  // In case we're reimporting definitions
-    getGlobalEmoteSet(&getBTTVGlobalEmotes, "BetterTTV");
-    getGlobalEmoteSet(&getFFZGlobalEmotes, "FrankerFaceZ");
-    getGlobalEmoteSet(&get7tvGlobalEmotes, "7tv");
-    plugin.customGlobalEmotes.rehash();
 }
 
 
@@ -4029,7 +4141,7 @@ void reload(TwitchPlugin plugin)
         if (!plugin.twitchSettings.customEmotes) return;
 
         plugin.customGlobalEmotes = null;
-        importCustomGlobalEmotes(plugin);
+        importCustomEmotes(plugin);
 
         foreach (immutable channelName, const room; plugin.rooms)
         {
