@@ -513,15 +513,23 @@ void loadNotes(NotePlugin plugin)
 
     foreach (immutable channelName, channelNotesJSON; json.object)
     {
+        auto channelNotes = channelName in plugin.notes;
+        if (!channelNotes)
+        {
+            plugin.notes[channelName][string.init] = [ Note.init ];
+            channelNotes = channelName in plugin.notes;
+            (*channelNotes).remove(string.init);
+        }
+
         foreach (immutable nickname, notesJSON; channelNotesJSON.object)
         {
             foreach (noteJSON; notesJSON.array)
             {
-                plugin.notes[channelName][nickname] ~= Note.fromJSON(noteJSON);
+                (*channelNotes)[nickname] ~= Note.fromJSON(noteJSON);
             }
         }
 
-        plugin.notes[channelName].rehash();
+        (*channelNotes).rehash();
     }
 
     plugin.notes.rehash();
