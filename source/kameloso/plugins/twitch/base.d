@@ -465,11 +465,12 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
         import std.algorithm.searching : count;
         import std.conv : to;
 
+        auto channelcount = event.channel in plugin.ecount;
+
         foreach (immutable emotestring; event.emotes.splitter('/'))
         {
             if (!emotestring.length) continue;
 
-            auto channelcount = event.channel in plugin.ecount;
             if (!channelcount)
             {
                 plugin.ecount[event.channel] = RehashingAA!(string, long).init;
