@@ -513,7 +513,7 @@ void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
 )
 void onWelcome(AutomodePlugin plugin)
 {
-    plugin.reload();
+    loadAutomodes(plugin);
 }
 
 
@@ -522,6 +522,16 @@ void onWelcome(AutomodePlugin plugin)
     Reloads automode definitions from disk.
  +/
 void reload(AutomodePlugin plugin)
+{
+    loadAutomodes(plugin);
+}
+
+
+// loadAutomodes
+/++
+    Loads automode definitions from disk.
+ +/
+void loadAutomodes(AutomodePlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
