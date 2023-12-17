@@ -552,6 +552,7 @@ void onWelcome(SedReplacePlugin plugin)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PART)
+    .channelPolicy(ChannelPolicy.HOME)
 )
 void onPart(SedReplacePlugin plugin, const ref IRCEvent event)
 {
