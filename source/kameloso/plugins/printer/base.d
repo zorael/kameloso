@@ -232,13 +232,12 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
     if (plugin.printerSettings.hideBlacklistedUsers && (event.sender.class_ == IRCUser.Class.blacklist)) return;
 
-    // Exclude types explicitly declared as to be excluded
-    immutable exclude = plugin.exclude.length && plugin.exclude.canFind(event.type);
-    if (exclude) return;
-
-    // For many types there's no need to display the target nickname when it's the bot's
-    // Clear event.target.nickname for those types.
-    event.clearTargetNicknameIfUs(plugin.state);
+    debug
+    {
+        // Exclude types explicitly declared as to be excluded
+        immutable exclude = plugin.exclude.length && plugin.exclude.canFind(event.type);
+        if (exclude) return;
+    }
 
     /++
         Return whether or not the current event should be squelched based on
@@ -340,9 +339,16 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         if (plugin.state.settings.flush) stdout.flush();
     }
 
-    // Immediately print events of types declared to be included
-    immutable include = plugin.include.length && plugin.include.canFind(event.type);
-    if (include) return printEvent(plugin, event);
+    // For many types there's no need to display the target nickname when it's the bot's
+    // Clear event.target.nickname for those types.
+    event.clearTargetNicknameIfUs(plugin.state);
+
+    debug
+    {
+        // Immediately print events of types declared to be included
+        immutable include = plugin.include.length && plugin.include.canFind(event.type);
+        if (include) return printEvent(plugin, event);
+    }
 
     with (IRCEvent.Type)
     switch (event.type)
@@ -407,13 +413,13 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                 event.sender.nickname,
                 event.target.nickname);
 
-        if (!shouldSquelch && !plugin.printerSettings.filterWhois)
+        if (shouldSquelch || plugin.printerSettings.filterWhois)
         {
-            goto default;
+            break;
         }
         else
         {
-            break;
+            goto default;
         }
 
     case RPL_NAMREPLY:
@@ -513,19 +519,21 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                     event.sender.nickname,
                     event.target.nickname);
 
-            if (!shouldSquelch && !plugin.printerSettings.filterMost)
+            if (shouldSquelch || plugin.printerSettings.filterMost)
             {
-                goto default;
+                break;
             }
             else
             {
-                break;
+                goto default;
             }
         }
 
     version(TwitchSupport)
     {
-        case USERSTATE: // Once per channel join? Once per message sent?
+        case USERSTATE:
+            // Seemingly once per channel join when connected via SSL,
+            // once per message sent otherwise. It's spam regardless.
             break;
     }
 
@@ -557,7 +565,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     populating arrays of lines to be written in bulk, once in a while.
 
     See_Also:
-        [commitAllLogs]
+        [commitAllLogsImpl]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ANY)
@@ -571,9 +579,9 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 }
 
 
-// commitAllLogs
+// onPing
 /++
-    Writes all buffered log lines to disk.
+    Writes all buffered log lines to disk on [dialect.defs.IRCEvent.Type.PING|PING].
 
     Merely wraps [commitAllLogsImpl] by iterating over all buffers and invoking it.
 
@@ -586,7 +594,7 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
 )
-void commitAllLogs(PrinterPlugin plugin)
+void onPing(PrinterPlugin plugin)
 {
     commitAllLogsImpl(plugin);
 }
@@ -741,7 +749,7 @@ void setup(PrinterPlugin plugin)
 
                 if (plugin.printerSettings.logs)
                 {
-                    commitAllLogs(plugin);
+                    commitAllLogsImpl(plugin);
                     plugin.buffers = null;  // Uncommitted lines will be LOST. Not trivial to work around.
                 }
             }
@@ -788,7 +796,7 @@ void teardown(PrinterPlugin plugin)
     if (plugin.printerSettings.bufferedWrites)
     {
         // Commit all logs before exiting
-        commitAllLogs(plugin);
+        commitAllLogsImpl(plugin);
     }
 }
 
@@ -807,6 +815,7 @@ void teardown(PrinterPlugin plugin)
  +/
 void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable content)
 {
+    import kameloso.common : logger;
     import kameloso.thread : Boxed;
     import lu.string : advancePast;
     import std.typecons : Flag, No, Yes;
@@ -833,8 +842,13 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
         plugin.hasSquelches = (plugin.squelches.length > 0);
         break;
 
+    case "commit":
+        logger.info("Committing logs to disk.");
+        commitAllLogsImpl(plugin);
+        foreach (ref buffer; plugin.buffers) buffer.clear();  // don't null the array
+        break;
+
     default:
-        import kameloso.common : logger;
         logger.error("[printer] Unimplemented bus message verb: ", verb);
         break;
     }
@@ -1013,15 +1027,18 @@ package:
      +/
     static string bell = "" ~ cast(char)(TerminalToken.bell);
 
-    /++
-        [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to exclude from printing.
-     +/
-    IRCEvent.Type[] exclude;
+    debug
+    {
+        /++
+            [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to exclude from printing.
+         +/
+        IRCEvent.Type[] exclude;
 
-    /++
-        [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to include in printing.
-     +/
-    IRCEvent.Type[] include;
+        /++
+            [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to include in printing.
+         +/
+        IRCEvent.Type[] include;
+    }
 
     mixin IRCPluginImpl;
 }

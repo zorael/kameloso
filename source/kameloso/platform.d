@@ -378,7 +378,7 @@ Pid exec(
                     //"--setup-twitch",  // this only does the keygen, then exits
                     "--get-cacert",
                     "--get-openssl",
-                    "--num-reexecs"))
+                    "--internal-num-reexecs"))
                 {
                     toRemove ~= i;
                 }
@@ -393,7 +393,7 @@ Pid exec(
     }
 
     // Add the reexec count argument
-    args ~= text("--num-reexecs=", numReexecs+1);
+    args ~= text("--internal-num-reexecs=", numReexecs+1);
 
     version(Posix)
     {

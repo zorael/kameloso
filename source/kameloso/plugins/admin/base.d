@@ -330,10 +330,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
-    if (!event.content.length)
-    {
-        return sendUsage();
-    }
+    if (!event.content.length) return sendUsage();
 
     string slice = event.content.strippedRight;  // mutable
     immutable verb = slice.advancePast(' ', Yes.inherit);
@@ -376,12 +373,14 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
     import kameloso.plugins.common.delayawait : await, unawait;
     import kameloso.constants : BufferSize;
+    import kameloso.thread : CarryingFiber;
     import dialect.common : isValidChannel;
     import lu.string : stripped;
+    import std.algorithm.mutation : SwapStrategy, remove;
     import std.algorithm.searching : canFind, countUntil;
     import std.uni : toLower;
-
-    immutable channelName = rawChannel.stripped.toLower;
+    import core.thread : Fiber;
+    immutable channelName = rawChannel.stripped.toLower();
 
     if (!channelName.isValidChannel(plugin.state.server))
     {
@@ -414,7 +413,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         // Make sure there are no duplicates between homes and channels.
         plugin.state.bot.guestChannels = plugin.state.bot.guestChannels
             .remove!(SwapStrategy.unstable)(existingChannelIndex);
-
+        //plugin.state.updates |= typeof(plugin.state.updates).bot;  // done above
         return cycle(plugin, channelName);
     }
 
@@ -422,10 +421,6 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 
     // We have to follow up and see if we actually managed to join the channel
     // There are plenty ways for it to fail.
-
-    import kameloso.thread : CarryingFiber;
-    import core.thread : Fiber;
-
     static immutable IRCEvent.Type[13] joinTypes =
     [
         IRCEvent.Type.ERR_BANNEDFROMCHAN,
@@ -485,9 +480,6 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         }
 
         // Undo original addition
-        import std.algorithm.mutation : SwapStrategy, remove;
-        import std.algorithm.searching : countUntil;
-
         immutable homeIndex = plugin.state.bot.homeChannels.countUntil(followupEvent.channel);
 
         if (homeIndex != -1)
@@ -711,7 +703,6 @@ void onCommandReload(AdminPlugin plugin, const ref IRCEvent event)
     immutable message = event.content.length ?
         text("Reloading plugin \"<b>", event.content, "<b>\".") :
         "Reloading plugins.";
-
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
     plugin.state.mainThread.send(ThreadMessage.reload(event.content));
 }
@@ -1061,11 +1052,7 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
     import std.conv : ConvException;
 
     string slice = event.content.stripped;  // mutable
-
-    if (!slice.length)
-    {
-        return cycle(plugin, event.channel);
-    }
+    if (!slice.length) return cycle(plugin, event.channel);
 
     immutable channelName = slice.advancePast(' ', Yes.inherit);
 
@@ -1075,12 +1062,11 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
-    if (!slice.length)
-    {
-        return cycle(plugin, channelName);
-    }
+    if (!slice.length) return cycle(plugin, channelName);
 
-    immutable delaystring = slice.advancePast(' ', Yes.inherit);
+    immutable delaystring = slice
+        .advancePast(' ', Yes.inherit)
+        .stripped;
 
     try
     {
@@ -1358,7 +1344,7 @@ void onCommandReexec(AdminPlugin plugin, const ref IRCEvent event)
     import lu.string : stripped;
     import std.concurrency : prioritySend;
 
-    plugin.state.mainThread.send(ThreadMessage.reconnect(event.content.stripped, boxed(true)));
+    plugin.state.mainThread.prioritySend(ThreadMessage.reconnect(event.content.stripped, boxed(true)));
 }
 
 
@@ -1628,8 +1614,9 @@ void onBusMessage(
 
             if (results != SplitResults.match)
             {
-                return logger.warning("Invalid bus message syntax; " ~
-                    "expected hostmask add [account] [hostmask]");
+                enum invalidSyntaxMessage = "Invalid bus message syntax; " ~
+                    "expected <l>hostmask add [account] [hostmask]";
+                return logger.warning(message);
             }
 
             IRCEvent lvalueEvent;
@@ -1639,8 +1626,9 @@ void onBusMessage(
         case "remove":
             if (!slice.length)
             {
-                return logger.warning("Invalid bus message syntax; " ~
-                    "expected hostmask del [hostmask]");
+                enum invalidSyntaxMessage = "Invalid bus message syntax; " ~
+                    "expected <l>hostmask del [hostmask]";
+                return logger.warning(message);
             }
 
             IRCEvent lvalueEvent;

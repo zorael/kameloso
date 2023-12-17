@@ -951,7 +951,7 @@ void listCommands(OnelinerPlugin plugin, const ref IRCEvent event)
 )
 void onWelcome(OnelinerPlugin plugin)
 {
-    plugin.reload();
+    loadOneliners(plugin);
 }
 
 
@@ -960,6 +960,16 @@ void onWelcome(OnelinerPlugin plugin)
     Reloads oneliners from disk.
  +/
 void reload(OnelinerPlugin plugin)
+{
+    loadOneliners(plugin);
+}
+
+
+// reload
+/++
+    Reloads oneliners from disk.
+ +/
+void loadOneliners(OnelinerPlugin plugin)
 {
     import lu.json : JSONStorage;
 
@@ -970,24 +980,17 @@ void reload(OnelinerPlugin plugin)
     foreach (immutable channelName, const channelOnelinersJSON; allOnelinersJSON.object)
     {
         // Initialise the AA
-        plugin.onelinersByChannel[channelName][string.init] = Oneliner.init;
         auto channelOneliners = channelName in plugin.onelinersByChannel;
-        (*channelOneliners).remove(string.init);
+        if (!channelOneliners)
+        {
+            plugin.onelinersByChannel[channelName][string.init] = Oneliner.init;
+            channelOneliners = channelName in plugin.onelinersByChannel;
+            (*channelOneliners).remove(string.init);
+        }
 
         foreach (immutable trigger, const onelinerJSON; channelOnelinersJSON.object)
         {
-            import std.json : JSONException;
-
-            try
-            {
-                (*channelOneliners)[trigger] = Oneliner.fromJSON(onelinerJSON);
-            }
-            catch (JSONException _)
-            {
-                import kameloso.string : doublyBackslashed;
-                enum pattern = "Failed to load oneliner \"<l>%s</>\"; <l>%s</> is outdated or corrupt.";
-                logger.errorf(pattern, trigger, plugin.onelinerFile.doublyBackslashed);
-            }
+            (*channelOneliners)[trigger] = Oneliner.fromJSON(onelinerJSON);
         }
 
         (*channelOneliners).rehash();

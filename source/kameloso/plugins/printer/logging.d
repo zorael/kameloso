@@ -66,6 +66,14 @@ public:
     Appender!(string[]) lines;
 
     /++
+        Clears the buffer of lines.
+     +/
+    void clear() @safe nothrow
+    {
+        lines.clear();
+    }
+
+    /++
         Constructor taking a [std.datetime.systime.SysTime|SysTime], to save as the date
         the buffer was created.
      +/
@@ -197,8 +205,6 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     // Normal buffers
                     if (plugin.printerSettings.bufferedWrites)
                     {
-                        import std.exception : assumeUnique;
-
                         // Normal log
                         formatMessageMonochrome(
                             plugin,
@@ -206,7 +212,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                             event,
                             No.bellOnMention,
                             No.bellOnError);
-                        buffer.lines ~= plugin.linebuffer.data.assumeUnique();
+                        buffer.lines ~= plugin.linebuffer.data.idup;
                         plugin.linebuffer.clear();
                     }
                     else

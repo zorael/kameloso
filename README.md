@@ -471,6 +471,7 @@ Assuming a prefix of `!`, commands to test are:
 * `!commercial`
 * `!shoutout`
 * `!startpoll`/`!endpoll` (*highly* experimental, need help from affiliate)
+* `!subs`
 
 ...alongside `!oneliner`, `!counter`, `!timer`, `!poll` (chat poll), `!time`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
 

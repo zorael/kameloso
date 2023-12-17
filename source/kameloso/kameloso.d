@@ -73,11 +73,11 @@ private:
         }
     }
 
-    // State
+    // TransientState
     /++
-        Transient state bool flags, aggregated in a struct.
+        Transient state variables, aggregated in a struct.
      +/
-    static struct StateFlags
+    static struct TransientState
     {
         // wantReceiveTimeoutShortened
         /++
@@ -194,11 +194,11 @@ public:
         return _args;
     }
 
-    // flags
+    // transient
     /++
-        Transient state flags of this [Kameloso] instance.
+        Transient state of this [Kameloso] instance.
      +/
-    StateFlags flags;
+    TransientState transient;
 
     // conn
     /++

@@ -23,6 +23,7 @@ import kameloso.plugins.twitch.common;
 import kameloso.common : logger;
 import kameloso.terminal.colours.tags : expandTags;
 import std.typecons : Flag, No, Yes;
+import core.thread : Fiber;
 
 package:
 
@@ -36,6 +37,7 @@ package:
  +/
 void requestTwitchKey(TwitchPlugin plugin)
 {
+    import kameloso.constants : BufferSize;
     import kameloso.logger : LogLevel;
     import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
@@ -99,6 +101,8 @@ your <w>BOT</> account.
         //"moderator:manage:automod_settings",
         //"moderator:read:chat_settings",
         //"moderator:manage:chat_settings",
+        "moderator:manage:chat_messages",
+        "moderator:manage:banned_users",
         //"user:edit",
         //"user:edit:follows",
         //"user:manage:blocked_users",
@@ -181,18 +185,24 @@ your <w>BOT</> account.
     writeln();
     logger.info("Validating...");
 
-    immutable expiry = getTokenExpiry(plugin, plugin.state.bot.pass);
-    if (*plugin.state.abort) return;
+    void getExpiryDg()
+    {
+        immutable expiry = getTokenExpiry(plugin, plugin.state.bot.pass);
+        if (*plugin.state.abort) return;
 
-    immutable delta = (expiry - Clock.currTime);
-    immutable numDays = delta.total!"days";
+        immutable delta = (expiry - Clock.currTime);
+        immutable numDays = delta.total!"days";
 
-    enum isValidPattern = "Your key is valid for another <l>%d</> days.";
-    logger.infof(isValidPattern, numDays);
-    logger.trace();
+        enum isValidPattern = "Your key is valid for another <l>%d</> days.";
+        logger.infof(isValidPattern, numDays);
+        logger.trace();
 
-    plugin.state.updates |= typeof(plugin.state.updates).bot;
-    plugin.state.mainThread.send(ThreadMessage.save);
+        plugin.state.updates |= typeof(plugin.state.updates).bot;
+        plugin.state.mainThread.send(ThreadMessage.save);
+    }
+
+    Fiber getExpiryFiber = new Fiber(&getExpiryDg, BufferSize.fiberStack);
+    getExpiryFiber.call();
 }
 
 
@@ -205,7 +215,9 @@ your <w>BOT</> account.
  +/
 void requestTwitchSuperKey(TwitchPlugin plugin)
 {
+    import kameloso.constants : BufferSize;
     import kameloso.logger : LogLevel;
+    import lu.meld : MeldingStrategy, meldInto;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : stdout, writeln;
     import std.datetime.systime : Clock;
@@ -362,35 +374,41 @@ your main <w>STREAMER</> account.
         }
     }
 
-    Credentials creds;
-    creds.broadcasterKey = readURLAndParseKey(plugin, authNode);
-
+    Credentials inputCreds;
+    inputCreds.broadcasterKey = readURLAndParseKey(plugin, authNode);
     if (*plugin.state.abort) return;
 
-    if (auto storedCreds = channel in plugin.secretsByChannel)
+    auto creds = channel in plugin.secretsByChannel;
+    if (!creds)
     {
-        import lu.meld : MeldingStrategy, meldInto;
-        creds.meldInto!(MeldingStrategy.aggressive)(*storedCreds);
+        plugin.secretsByChannel[channel] = inputCreds;
+        creds = channel in plugin.secretsByChannel;
     }
-    else
-    {
-        plugin.secretsByChannel[channel] = creds;
-    }
+
+    inputCreds.meldInto!(MeldingStrategy.aggressive)(*creds);
 
     writeln();
     logger.info("Validating...");
 
-    immutable expiry = getTokenExpiry(plugin, creds.broadcasterKey);
-    if (*plugin.state.abort) return;
+    void getExpiryDg()
+    {
+        immutable expiry = getTokenExpiry(plugin, creds.broadcasterKey);
+        if (*plugin.state.abort) return;
 
-    immutable delta = (expiry - Clock.currTime);
-    immutable numDays = delta.total!"days";
+        immutable delta = (expiry - Clock.currTime);
+        immutable numDays = delta.total!"days";
 
-    enum isValidPattern = "Your key is valid for another <l>%d</> days.";
-    logger.infof(isValidPattern, numDays);
-    logger.trace();
+        enum isValidPattern = "Your key is valid for another <l>%d</> days.";
+        logger.infof(isValidPattern, numDays);
+        logger.trace();
 
-    saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+        creds.broadcasterBearerToken = "Bearer " ~ creds.broadcasterKey;
+        creds.broadcasterKeyExpiry = expiry.toUnixTime();
+        saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+    }
+
+    Fiber getExpiryFiber = new Fiber(&getExpiryDg, BufferSize.fiberStack);
+    getExpiryFiber.call();
 }
 
 
@@ -518,6 +536,7 @@ private auto buildAuthNodeURL(const string authNode, const string[] scopes)
         A [std.datetime.systime.SysTime|SysTime] of when the passed token expires.
  +/
 auto getTokenExpiry(TwitchPlugin plugin, const string authToken)
+in (Fiber.getThis, "Tried to call `getTokenExpiry` from outside a Fiber")
 {
     import kameloso.plugins.twitch.api : getValidation;
     import std.datetime.systime : Clock, SysTime;

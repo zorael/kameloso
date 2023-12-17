@@ -585,6 +585,8 @@ auto handleGetopt(Kameloso instance) @system
     string colourString;
     string nothing;
 
+    std.getopt.arraySep = ",";
+
     /+
         Call getopt on (a copy of) args once and look for any specified configuration files
         so we know what to read. As such it has to be done before the
@@ -601,7 +603,6 @@ auto handleGetopt(Kameloso instance) @system
         std.getopt.config.passThrough,
         "c|config", &instance.settings.configFile,
         "version", &shouldShowVersion,
-        "num-reexecs", &instance.flags.numReexecs,
     );
 
     if (shouldShowVersion)
@@ -634,6 +635,7 @@ auto handleGetopt(Kameloso instance) @system
         "colour", &colourString,
         "color", &colourString,
         "setup-twitch", &shouldSetupTwitch,
+        "internal-num-reexecs", &instance.transient.numReexecs,
     );
 
     if (colourString.length) resolveFlagString(colourString, instance.settings.colours);
@@ -735,8 +737,6 @@ auto handleGetopt(Kameloso instance) @system
             enum editorMessage = "Open the configuration file in a *terminal* text editor " ~
                 "(or the application defined in the <i>$EDITOR</> environment variable)";
         }
-
-        std.getopt.arraySep = ",";
 
         return std.getopt.getopt(theseArgs,
             std.getopt.config.caseSensitive,

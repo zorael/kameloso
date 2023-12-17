@@ -4,6 +4,7 @@
     See_Also:
         [kameloso.plugins.twitch.base],
         [kameloso.plugins.twitch.keygen],
+        [kameloso.plugins.twitch.common],
         [kameloso.plugins.common.core],
         [kameloso.plugins.common.misc]
 
@@ -72,17 +73,25 @@ struct QueryResponse
 
     Params:
         endlessly = Whether or not to endlessly retry.
+        delayMsecs = How many milliseconds to wait between retries.
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         dg = Delegate to call.
+        async = Whether or not the delegate should be called asynchronously,
+            scheduling attempts using [kameloso.plugins.common.delayawait.delay|delay].
 
     Returns:
         Whatever the passed delegate returns.
 
     Throws:
         [MissingBroadcasterTokenException] if the delegate throws it.
+        [InvalidCredentialsException] likewise.
         [Exception] if the delegate throws it and `endlessly` is not passed.
  +/
-auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, Dg)(TwitchPlugin plugin, Dg dg)
+auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, uint delayMsecs = 4000, Dg)
+    (TwitchPlugin plugin,
+    Dg dg,
+    const Flag!"async" async = Yes.async)
+in ((!async || Fiber.getThis), "Tried to call async `retryDelegate` from outside a Fiber")
 {
     static if (endlessly)
     {
@@ -99,11 +108,19 @@ auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, Dg)(TwitchPlugin p
         {
             if (i > 0)
             {
-                import kameloso.plugins.common.delayawait : delay;
-                import core.time : seconds;
+                import core.time : msecs;
+                static immutable retryDelay = delayMsecs.msecs;
 
-                static immutable retryDelay = 10.seconds;
-                delay(plugin, retryDelay, Yes.yield);
+                if (async)
+                {
+                    import kameloso.plugins.common.delayawait : delay;
+                    delay(plugin, retryDelay, Yes.yield);
+                }
+                else
+                {
+                    import core.thread : Thread;
+                    Thread.sleep(retryDelay);
+                }
             }
             return dg();
         }
@@ -112,8 +129,28 @@ auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, Dg)(TwitchPlugin p
             // This is never a transient error
             throw e;
         }
+        catch (InvalidCredentialsException e)
+        {
+            // Neither is this
+            throw e;
+        }
+        catch (EmptyDataJSONException e)
+        {
+            // Should be transient?
+            throw e;
+        }
         catch (Exception e)
         {
+            if (auto errorException = cast(ErrorJSONException)e)
+            {
+                const statusJSON = "status" in errorException.json;
+                if ((statusJSON.integer >= 400) && (statusJSON.integer < 500))
+                {
+                    // Also never transient
+                    throw errorException;
+                }
+            }
+
             static if (endlessly)
             {
                 // Unconditionally continue, but print the exception once if it's erroring
@@ -480,6 +517,16 @@ in (url.length, "Tried to send an HTTP request without a URL")
             {
                 "message": "user not found"
             }
+            {
+                "error": "Unauthorized",
+                "message": "Invalid OAuth token",
+                "status": 401
+            }
+            {
+                "error": "Unauthorized",
+                "message": "Missing scope: moderator:manage:chat_messages",
+                "status": 401
+            }
              +/
 
             immutable json = parseJSON(response.str);
@@ -826,7 +873,7 @@ auto getValidation(
     /*const*/ string authToken,
     const Flag!"async" async,
     const string caller = __FUNCTION__)
-in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from outside a Fiber")
+in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
     import std.algorithm.searching : startsWith;
@@ -836,7 +883,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
     // Validation needs an "Authorization: OAuth xxx" header, as opposed to the
     // "Authorization: Bearer xxx" used everywhere else.
-    authToken = plugin.state.bot.pass.startsWith("oauth:") ?
+    authToken = authToken.startsWith("oauth:") ?
         authToken[6..$] :
         authToken;
     immutable authorizationHeader = "OAuth " ~ authToken;
@@ -847,7 +894,38 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
         if (async)
         {
-            response = sendHTTPRequest(plugin, url, caller, authorizationHeader);
+            try
+            {
+                response = sendHTTPRequest(
+                    plugin,
+                    url,
+                    caller,
+                    authorizationHeader);
+            }
+            catch (ErrorJSONException e)
+            {
+                if (const statusJSON = "status" in e.json)
+                {
+                    if (statusJSON.integer == 401)
+                    {
+                        switch (e.json["message"].str)
+                        {
+                        case "invalid access token":
+                            enum message = "API token has expired";
+                            throw new InvalidCredentialsException(message, e.json);
+
+                        case "missing authorization token":
+                            enum message = "Missing API token";
+                            throw new InvalidCredentialsException(message, e.json);
+
+                        default:
+                            //drop down
+                            break;
+                        }
+                    }
+                }
+                throw e;
+            }
         }
         else
         {
@@ -939,7 +1017,8 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         return validationJSON;
     }
 
-    return retryDelegate!(Yes.endlessly)(plugin, &getValidationDg);
+    enum validationRetryDelayMsecs = 5_000;
+    return retryDelegate!(Yes.endlessly, validationRetryDelayMsecs)(plugin, &getValidationDg);
 }
 
 
@@ -1529,34 +1608,22 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
         for the supplied channel in the secrets storage.
  +/
 auto getBroadcasterAuthorisation(TwitchPlugin plugin, const string channelName)
+in (Fiber.getThis, "Tried to call `getBroadcasterAuthorisation` from outside a Fiber")
 in (channelName.length, "Tried to get broadcaster authorisation with an empty channel name string")
+out (token; token.length, "`getBroadcasterAuthorisation` returned an empty string")
 {
-    static string[string] authorizationByChannel;
+    auto creds = channelName in plugin.secretsByChannel;
 
-    auto authorizationBearer = channelName in authorizationByChannel;
-
-    if (!authorizationBearer)
+    if (!creds || !creds.broadcasterBearerToken.length)
     {
-        if (const creds = channelName in plugin.secretsByChannel)
-        {
-            if (creds.broadcasterKey.length)
-            {
-                authorizationByChannel[channelName] = "Bearer " ~ creds.broadcasterKey;
-                authorizationBearer = channelName in authorizationByChannel;
-            }
-        }
-    }
-
-    if (!authorizationBearer)
-    {
-        enum message = "Missing broadcaster key";
+        enum message = "Missing broadcaster token";
         throw new MissingBroadcasterTokenException(
             message,
             channelName,
             __FILE__);
     }
 
-    return *authorizationBearer;
+    return creds.broadcasterBearerToken;
 }
 
 
@@ -1607,7 +1674,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             "application/json");
     }
 
-    return retryDelegate(plugin, &startCommercialDg);
+    retryDelegate(plugin, &startCommercialDg);
 }
 
 
@@ -1657,7 +1724,6 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
         string after;
         uint retry;
 
-        inner:
         do
         {
             immutable paginatedURL = after.length ?
@@ -2030,7 +2096,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
         A `string[]` array of online bot account names.
 
     Throws:
-        [TwitchQueryException] on unexpected JSON.
+        [UnexpectedJSONException] on unexpected JSON.
 
     See_Also:
         https://twitchinsights.net/bots
@@ -2134,6 +2200,7 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
         populated with all (relevant) information.
  +/
 auto getStream(TwitchPlugin plugin, const string loginName)
+in (Fiber.getThis, "Tried to call `getStream` from outside a Fiber")
 in (loginName.length, "Tried to get a stream with an empty login name string")
 {
     import std.algorithm.iteration : map;
@@ -2234,15 +2301,17 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to fetch subscribers of.
+        totalOnly = Whether or not to return all subscribers or only one stub
+            entry with the total number of subscribers in its `.total` member.
         caller = Name of the calling function.
 
     Returns:
         An array of Voldemort subscribers.
  +/
-version(none)
 auto getSubscribers(
     TwitchPlugin plugin,
     const string channelName,
+    const Flag!"totalOnly" totalOnly,
     const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `getSubscribers` from outside a Fiber")
 in (channelName.length, "Tried to get subscribers with an empty channel name string")
@@ -2270,39 +2339,30 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             User user;
             User gifter;
             bool wasGift;
+            uint number;
+            uint total;
         }
-
-        enum url = "https://api.twitch.tv/helix/subscribers";
-        enum initialPattern = `
-{
-    "broadcaster_id": "%s",
-    "first": "100"
-}`;
-
-        enum subsequentPattern = `
-{
-    "broadcaster_id": "%s",
-    "after": "%s",
-}`;
 
         Appender!(Subscription[]) subs;
         string after;
+        uint number;
         uint retry;
 
-        inner:
+        immutable firstURL = "https://api.twitch.tv/helix/subscriptions?broadcaster_id=" ~ room.id;
+        immutable subsequentURL = totalOnly ?
+            firstURL ~ "&first=1&after=" :
+            firstURL ~ "&after=";
+
         do
         {
-            immutable body_ = after.length ?
-                subsequentPattern.format(room.id, after) :
-                initialPattern.format(room.id);
+            immutable url = after.length ?
+                subsequentURL ~ after :
+                firstURL;
             immutable response = sendHTTPRequest(
                 plugin,
                 url,
                 caller,
-                authorizationBearer,
-                HttpVerb.GET,
-                cast(ubyte[])body_,
-                "application/json");
+                authorizationBearer);
             immutable responseJSON = parseJSON(response.str);
 
             /*
@@ -2334,7 +2394,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             if (responseJSON.type != JSONType.object)
             {
                 // Invalid response in some way, retry until we reach the limit
-                if (++retry < TwitchPlugin.delegateRetries) continue inner;
+                if (++retry < TwitchPlugin.delegateRetries) continue;
                 enum message = "`getSubscribers` response has unexpected JSON";
                 throw new UnexpectedJSONException(message, responseJSON);
             }
@@ -2344,18 +2404,26 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             if (!dataJSON)
             {
                 // As above
-                if (++retry < TwitchPlugin.delegateRetries) continue inner;
+                if (++retry < TwitchPlugin.delegateRetries) continue;
                 enum message = "`getSubscribers` response has unexpected JSON " ~
                     `(no "data" key)`;
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
-            retry = 0;
+            immutable total = cast(uint)responseJSON["total"].integer;
 
-            if (!subs.capacity)
+            if (totalOnly)
             {
-                subs.reserve(responseJSON["total"].integer);
+                // We only want the total number of subscribers
+                Subscription sub;
+                sub.total = total;
+                subs.put(sub);
+                return subs.data;
             }
+
+            if (!subs.capacity) subs.reserve(total);
+
+            retry = 0;
 
             foreach (immutable subJSON; dataJSON.array)
             {
@@ -2367,6 +2435,8 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 sub.gifter.id = subJSON["gifter_id"].str;
                 sub.gifter.name = subJSON["gifter_login"].str;
                 sub.gifter.displayName = subJSON["gifter_name"].str;
+                if (number == 0) sub.total = total;
+                sub.number = number++;
                 subs.put(sub);
             }
 
@@ -2380,7 +2450,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
         }
         while (after.length);
 
-        return subs;
+        return subs.data;
     }
 
     return retryDelegate(plugin, &getSubscribersDg);
@@ -2466,4 +2536,161 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
     }
 
     return retryDelegate(plugin, &shoutoutDg);
+}
+
+
+// deleteMessage
+/++
+    Deletes a message, or all messages in a channel.
+
+    Doesn't require broadcaster-level authorisation; the normal bot token is enough.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        roomID = ID of room to delete message in.
+        messageID = ID of message to delete. Pass an empty string to delete all messages.
+        caller = Name of the calling function.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#delete-chat-messages
+ +/
+auto deleteMessage(
+    TwitchPlugin plugin,
+    const string roomID,
+    const string messageID,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis, "Tried to call `deleteMessage` from outside a Fiber")
+{
+    import std.algorithm.searching : startsWith;
+    import std.format : format;
+
+    immutable urlPattern =
+        "https://api.twitch.tv/helix/moderation/chat" ~
+        "?broadcaster_id=%s" ~
+        "&moderator_id=%s" ~
+        (messageID.length ?
+            "&message_id=%s" :
+            "%s");
+    immutable url = urlPattern.format(roomID, plugin.botUserIDString, messageID);
+
+    auto deleteDg()
+    {
+        return sendHTTPRequest(
+            plugin,
+            url,
+            caller,
+            plugin.authorizationBearer,
+            HttpVerb.DELETE);
+    }
+
+    enum failedDeleteRetryMsecs = 100;
+    return retryDelegate!(Yes.endlessly, failedDeleteRetryMsecs)(plugin, &deleteDg);
+}
+
+
+// timeoutUser
+/++
+    Times out a user in a channel.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        roomID = Twitch ID of room (broadcaster user) to timeout user in.
+        userID = Twitch ID of user to timeout.
+        durationSeconds = Duration of timeout in seconds.
+        reason = Timeout reason.
+        caller = Name of the calling function.
+
+    Returns:
+        A Voldemort struct with information about the timeout action.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#create-a-banned-event
+ +/
+auto timeoutUser(
+    TwitchPlugin plugin,
+    const string roomID,
+    const uint userID,
+    const uint durationSeconds,
+    const string reason = string.init,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis, "Tried to call `timeoutUser` from outside a Fiber")
+in (roomID.length, "Tried to timeout a user with an empty room ID string")
+in ((userID > 0), "Tried to timeout a user with an empty user ID string")
+{
+    import std.algorithm.comparison : min;
+    import std.format : format;
+
+    static struct Timeout
+    {
+        string broadcasterID;
+        string moderatorID;
+        string userID;
+        string createdAt;
+        string endTime;
+        uint code;
+    }
+
+    enum maxDurationSeconds = 1_209_600;  // 14 days
+
+    enum urlPattern = "https://api.twitch.tv/helix/moderation/bans" ~
+        "?broadcaster_id=%s" ~
+        "&moderator_id=%s";
+
+    enum bodyPattern =
+`{
+    "data": {
+        "user_id": "%d",
+        "duration": %d,
+        "reason": "%s"
+    }
+}`;
+
+    immutable url = urlPattern.format(roomID, plugin.botUserIDString);
+    immutable body_ = bodyPattern.format(
+        userID,
+        min(durationSeconds, maxDurationSeconds),
+        reason);
+
+    auto timeoutDg()
+    {
+        import std.json : JSONType, parseJSON;
+
+        immutable response = sendHTTPRequest(
+            plugin,
+            url,
+            caller,
+            plugin.authorizationBearer,
+            HttpVerb.POST,
+            cast(ubyte[])body_,
+            "application/json");
+
+        immutable responseJSON = parseJSON(response.str);
+
+        if (responseJSON.type != JSONType.object)
+        {
+            enum message = "`timeoutUser` response has unexpected JSON " ~
+                "(wrong JSON type)";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        immutable dataJSON = "data" in responseJSON;
+
+        if (!dataJSON)
+        {
+            enum message = "`timeoutUser` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        Timeout timeout;
+        timeout.broadcasterID = (*dataJSON)["broadcaster_id"].str;
+        timeout.moderatorID = (*dataJSON)["moderator_id"].str;
+        timeout.userID = (*dataJSON)["user_id"].str;
+        timeout.createdAt = (*dataJSON)["created_at"].str;
+        timeout.endTime = (*dataJSON)["end_time"].str;
+        timeout.code = response.code;
+        return timeout;
+    }
+
+    return retryDelegate(plugin, &timeoutDg);
 }

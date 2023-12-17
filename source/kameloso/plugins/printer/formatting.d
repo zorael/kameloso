@@ -434,18 +434,11 @@ void formatMessageMonochrome(Sink)
 
         if (isEmotePossibleEventType &&
             event.target.nickname.length &&
-            (event.aux[0].length > 1))  // need space to fit the delimiter plus teext
+            (event.aux[0].length))
         {
-            import std.string : indexOf;
-
-            enum emoteDelimiter = '\0';
-            immutable delimiterPos = event.aux[0].indexOf(emoteDelimiter);
-            assert((delimiterPos != -1), "No emote delimiter in aux[0]");
-
             /*if (content.length)*/ putContent();
             putTarget();
-            .put(sink, `: "`, event.aux[0][delimiterPos+1..$], '"');
-
+            .put(sink, `: "`, event.aux[0], '"');
             putQuotedTwitchMessage = true;
             auxRange.popFront();
         }
@@ -1136,42 +1129,44 @@ void formatMessageColoured(Sink)
             IRCEvent.Type.SELFEMOTE);
 
         if (isEmotePossibleEventType &&
+            event.content.length &&
             event.target.nickname.length &&
-            (event.aux[0].length > 1))  // need space to fit the delimiter plus teext
+            event.aux[0].length)
         {
-            import std.array : Appender;
-            import std.string : indexOf;
-
-            static Appender!(char[]) customEmoteSink;
-
             /*if (content.length)*/ putContent();
             putTarget();
             immutable code = bright ? Bright.content : Dark.content;
             sink.applyANSI(code, ANSICodeType.foreground);
 
-            enum emoteDelimiter = '\0';
-            immutable TerminalForeground highlight = plugin.state.settings.brightTerminal ?
-                Bright.highlight :
-                Dark.highlight;
-            immutable TerminalForeground emoteFgBase = plugin.state.settings.brightTerminal ?
-                Bright.emote :
-                Dark.emote;
+            if (event.aux[$-2].length)
+            {
+                import std.array : Appender;
 
-            immutable delimiterPos = event.aux[0].indexOf(emoteDelimiter);
-            assert((delimiterPos != -1), "No emote delimiter in aux[0]");
-            immutable emotes = event.aux[0][0..delimiterPos];
+                static Appender!(char[]) customEmoteSink;
+                scope(exit) customEmoteSink.clear();
 
-            scope(exit) customEmoteSink.clear();
+                immutable TerminalForeground highlight = plugin.state.settings.brightTerminal ?
+                    Bright.highlight :
+                    Dark.highlight;
+                immutable TerminalForeground emoteFgBase = plugin.state.settings.brightTerminal ?
+                    Bright.emote :
+                    Dark.emote;
 
-            customEmoteSink.highlightEmotesImpl(
-                event.aux[0][delimiterPos+1..$],
-                emotes,
-                highlight,
-                emoteFgBase,
-                cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
-                plugin.state.settings);
+                customEmoteSink.highlightEmotesImpl(
+                    event.aux[0],
+                    event.aux[$-2],
+                    highlight,
+                    emoteFgBase,
+                    cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
+                    plugin.state.settings);
+                .put(sink, `: "`, customEmoteSink.data, '"');
+            }
+            else
+            {
+                // No emotes embedded, probably not a home or no custom emotes for channel
+                .put(sink, `: "`, event.aux[0], '"');
+            }
 
-            .put(sink, `: "`, customEmoteSink.data, '"');
             putQuotedTwitchMessage = true;
             auxRange.popFront();
         }
