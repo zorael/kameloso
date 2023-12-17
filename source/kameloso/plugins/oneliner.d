@@ -951,7 +951,7 @@ void listCommands(OnelinerPlugin plugin, const ref IRCEvent event)
 )
 void onWelcome(OnelinerPlugin plugin)
 {
-    plugin.reload();
+    loadOneliners(plugin);
 }
 
 
@@ -960,6 +960,16 @@ void onWelcome(OnelinerPlugin plugin)
     Reloads oneliners from disk.
  +/
 void reload(OnelinerPlugin plugin)
+{
+    loadOneliners(plugin);
+}
+
+
+// reload
+/++
+    Reloads oneliners from disk.
+ +/
+void loadOneliners(OnelinerPlugin plugin)
 {
     import lu.json : JSONStorage;
 
