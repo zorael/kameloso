@@ -1017,7 +1017,8 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         return validationJSON;
     }
 
-    return retryDelegate!(Yes.endlessly)(plugin, &getValidationDg);
+    enum validationRetryDelayMsecs = 5_000;
+    return retryDelegate!(Yes.endlessly, validationRetryDelayMsecs)(plugin, &getValidationDg);
 }
 
 
@@ -2582,8 +2583,8 @@ in (Fiber.getThis, "Tried to call `deleteMessage` from outside a Fiber")
             HttpVerb.DELETE);
     }
 
-    enum msecsBetweenFailedDeletes = 100;
-    return retryDelegate!(Yes.endlessly, msecsBetweenFailedDeletes)(plugin, &deleteDg);
+    enum failedDeleteRetryMsecs = 100;
+    return retryDelegate!(Yes.endlessly, failedDeleteRetryMsecs)(plugin, &deleteDg);
 }
 
 
