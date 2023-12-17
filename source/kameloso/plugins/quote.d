@@ -1280,16 +1280,25 @@ void loadQuotes(QuotePlugin plugin)
     json.load(plugin.quotesFile);
     plugin.quotes = null;
 
-    foreach (immutable channelName, channelQuotes; json.object)
+    foreach (immutable channelName, channelQuotesJSON; json.object)
     {
-        foreach (immutable nickname, nicknameQuotesJSON; channelQuotes.object)
+        auto channelQuotes = channelName in plugin.quotes;
+        if (!channelQuotes)
+        {
+            plugin.quotes[channelName][string.init] = [ Quote.init ];
+            channelQuotes = channelName in plugin.quotes;
+            (*channelQuotes).remove(string.init);
+        }
+
+        foreach (immutable nickname, nicknameQuotesJSON; channelQuotesJSON.object)
         {
             foreach (quoteJSON; nicknameQuotesJSON.array)
             {
                 plugin.quotes[channelName][nickname] ~= Quote.fromJSON(quoteJSON);
             }
         }
-        plugin.quotes[channelName].rehash();
+
+        (*channelQuotes).rehash();
     }
 
     plugin.quotes.rehash();
