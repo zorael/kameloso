@@ -936,6 +936,7 @@ void onBusMessage(
 void setup(WebtitlePlugin plugin)
 {
     // No need to synchronise this; no worker threads are running
+    //plugin.cache = new TitleLookupResults[string];  // segfaults
     plugin.cache[string.init] = TitleLookupResults.init;
     plugin.cache.remove(string.init);
 }
