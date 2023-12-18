@@ -331,5 +331,13 @@ public:
             guest such was generated.
          +/
         bool hasGuestNickname;
+
+        // channelOverride
+        /++
+            Snapshot of channels we're in, carried from a previous connection
+            (even across re-executions).
+         +/
+        @Separator(",")
+        string[] channelOverride;
     }
 }
