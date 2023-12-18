@@ -300,7 +300,7 @@ void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
     in the [kameloso.pods.IRCBot.homeChannels|IRCBot.homeChannels] array of
     the current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
-    Merely passes on execution to [addHome] and [delHome].
+    Merely passes on execution to [addChannel] and [delChannel] with `Yes.home` as argument.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -338,10 +338,10 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
     switch (verb)
     {
     case "add":
-        return addHome(plugin, event, slice);
+        return addChannel(plugin, event, slice, Yes.home);
 
     case "del":
-        return delHome(plugin, event, slice);
+        return delChannel(plugin, event, slice, Yes.home);
 
     case "list":
         enum pattern = "Current home channels: %-(<b>%s<b>, %)<b>";
@@ -354,11 +354,73 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
 }
 
 
-// addHome
+// onCommandGuest
 /++
-    Adds a channel to the list of currently active home channels, in the
-    [kameloso.pods.IRCBot.homeChannels|IRCBot.homeChannels] array of the
-    current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
+    Adds or removes channels to/from the list of currently active guest channels,
+    in the [kameloso.pods.IRCBot.guestChannels|IRCBot.guestChannels] array of
+    the current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
+
+    Merely passes on execution to [addChannel] and [delChannel] with `No.home` as argument.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.admin)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("guest")
+            .policy(PrefixPolicy.prefixed)
+            .description("Adds or removes a channel to/from the list of guest channels.")
+            .addSyntax("$command add [channel]")
+            .addSyntax("$command del [channel]")
+            .addSyntax("$command list")
+    )
+)
+void onCommandGuest(AdminPlugin plugin, const ref IRCEvent event)
+{
+    import lu.string : advancePast, strippedRight;
+    import std.format : format;
+    import std.typecons : Flag, No, Yes;
+
+    void sendUsage()
+    {
+        enum pattern = "Usage: <b>%s%s<b> [add|del|list] [channel]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
+    if (!event.content.length) return sendUsage();
+
+    string slice = event.content.strippedRight;  // mutable
+    immutable verb = slice.advancePast(' ', Yes.inherit);
+
+    switch (verb)
+    {
+    case "add":
+        return addChannel(plugin, event, slice, No.home);
+
+    case "del":
+        return delChannel(plugin, event, slice, No.home);
+
+    case "list":
+        enum pattern = "Current guest channels: %-(<b>%s<b>, %)<b>";
+        immutable message = pattern.format(plugin.state.bot.homeChannels);
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+
+    default:
+        return sendUsage();
+    }
+}
+
+
+// addChannel
+/++
+    Adds a channel to the list of currently active home or guest channels, to the
+    [kameloso.pods.IRCBot.homeChannels|IRCBot.homeChannels] and
+    [kameloso.pods.IRCBot.guestChannels|IRCBot.guestChannels] arrays of the
+    current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+    respectively.
 
     Follows up with a [core.thread.fiber.Fiber|Fiber] to verify that the channel
     was actually joined.
@@ -367,8 +429,13 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
         plugin = The current [AdminPlugin].
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         rawChannel = The channel to be added, potentially in unstripped, cased form.
+        home = Whether to add the channel as a home or guest channel.
  +/
-void addHome(AdminPlugin plugin, const /*ref*/ IRCEvent event, const string rawChannel)
+void addChannel(
+    AdminPlugin plugin,
+    const /*ref*/ IRCEvent event,
+    const string rawChannel,
+    const Flag!"home" addAsHome)
 in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
     import kameloso.plugins.common.delayawait : await, unawait;
@@ -376,45 +443,73 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
     import kameloso.thread : CarryingFiber;
     import dialect.common : isValidChannel;
     import lu.string : stripped;
-    import std.algorithm.mutation : SwapStrategy, remove;
     import std.algorithm.searching : canFind, countUntil;
     import std.uni : toLower;
     import core.thread : Fiber;
-    immutable channelName = rawChannel.stripped.toLower();
 
+    void sendWeAreAlreadyInChannel()
+    {
+        immutable message = addAsHome ?
+            "We are already in that home channel." :
+            "We are already in that guest channel.";
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
+    void sendChannelIsAlreadyAHome()
+    {
+        immutable message = "That channel is already a home channel.";
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
+    immutable channelName = rawChannel.stripped.toLower();
     if (!channelName.isValidChannel(plugin.state.server))
     {
         enum message = "Invalid channel name.";
         return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
-    if (plugin.state.bot.homeChannels.canFind(channelName))
+    immutable channelIsHome = plugin.state.bot.homeChannels.canFind(channelName);
+    immutable channelIsGuest = plugin.state.bot.guestChannels.canFind(channelName);
+
+    if (addAsHome && channelIsHome)
     {
-        enum message = "We are already in that home channel.";
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return sendWeAreAlreadyInChannel();
+    }
+    else if (!addAsHome && channelIsGuest)
+    {
+        return sendWeAreAlreadyInChannel();
+    }
+    else if (!addAsHome && channelIsHome)
+    {
+        return sendChannelIsAlreadyAHome();
     }
 
     // We need to add it to the homeChannels array so as to get ChannelPolicy.home
     // ChannelAwareness to pick up the SELFJOIN.
-    plugin.state.bot.homeChannels ~= channelName;
+    if (addAsHome) plugin.state.bot.homeChannels ~= channelName;
+    else plugin.state.bot.guestChannels ~= channelName;
     plugin.state.updates |= typeof(plugin.state.updates).bot;
 
-    enum addedMessage = "Home added.";
+    immutable addedMessage = addAsHome ?
+        "Home channel added." :
+        "Guest channel added.";
     privmsg(plugin.state, event.channel, event.sender.nickname, addedMessage);
 
-    immutable existingChannelIndex = plugin.state.bot.guestChannels.countUntil(channelName);
-
-    if (existingChannelIndex != -1)
+    if (addAsHome)
     {
-        import std.algorithm.mutation : SwapStrategy, remove;
+        immutable guestChannelIndex = plugin.state.bot.guestChannels.countUntil(channelName);
+        if (guestChannelIndex != -1)
+        {
+            import std.algorithm.mutation : SwapStrategy, remove;
 
-        logger.info("We're already in this channel as a guest. Cycling.");
+            logger.info("We're already in this channel as a guest. Cycling.");
 
-        // Make sure there are no duplicates between homes and channels.
-        plugin.state.bot.guestChannels = plugin.state.bot.guestChannels
-            .remove!(SwapStrategy.unstable)(existingChannelIndex);
-        //plugin.state.updates |= typeof(plugin.state.updates).bot;  // done above
-        return cycle(plugin, channelName);
+            // Make sure there are no duplicates between homes and channels.
+            plugin.state.bot.guestChannels = plugin.state.bot.guestChannels
+                .remove!(SwapStrategy.unstable)(guestChannelIndex);
+            //plugin.state.updates |= typeof(plugin.state.updates).bot;  // done above
+            return cycle(plugin, channelName);
+        }
     }
 
     join(plugin.state, channelName);
@@ -438,74 +533,105 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         IRCEvent.Type.SELFJOIN,
     ];
 
-    void joinHomeDg()
+    void joinDg()
     {
-        CarryingFiber!IRCEvent thisFiber;
+        scope(exit) unawait(plugin, joinTypes[]);
 
         while (true)
         {
-            thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-            assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+            CarryingFiber!IRCEvent thisFiber;
 
-            if (thisFiber.payload.channel == channelName) break;
+            while (true)
+            {
+                thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+                assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+                assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
-            // Different channel; yield fiber, wait for another event
-            Fiber.yield();
+                if (thisFiber.payload.channel == channelName) break;
+
+                // Different channel; yield fiber, wait for another event
+                Fiber.yield();
+            }
+
+            const followupEvent = thisFiber.payload;
+
+            void undoChannelAppend()
+            {
+                immutable existingIndex = addAsHome ?
+                    plugin.state.bot.homeChannels.countUntil(followupEvent.channel) :
+                    plugin.state.bot.guestChannels.countUntil(followupEvent.channel);
+
+                if (existingIndex != -1)
+                {
+                    import std.algorithm.mutation : SwapStrategy, remove;
+
+                    if (addAsHome)
+                    {
+                        plugin.state.bot.homeChannels = plugin.state.bot.homeChannels
+                            .remove!(SwapStrategy.unstable)(existingIndex);
+                    }
+                    else
+                    {
+                        plugin.state.bot.guestChannels = plugin.state.bot.guestChannels
+                            .remove!(SwapStrategy.unstable)(existingIndex);
+                    }
+
+                    plugin.state.updates |= typeof(plugin.state.updates).bot;
+                }
+            }
+
+            with (IRCEvent.Type)
+            switch (followupEvent.type)
+            {
+            case SELFJOIN:
+                // Success!
+                // scopeguard unawaits
+                return;
+
+            case ERR_LINKCHANNEL:
+                // We were redirected. Still assume we wanted to add this one?
+                logger.info("Redirected!");
+                undoChannelAppend();
+                if (addAsHome) plugin.state.bot.homeChannels ~= followupEvent.content.toLower;  // note: content
+                else plugin.state.bot.guestChannels ~= followupEvent.content.toLower;  // ditto
+                continue;
+
+            default:
+                enum message = "Failed to join channel.";
+                privmsg(plugin.state, event.channel, event.sender.nickname, message);
+                undoChannelAppend();
+                // scopeguard unawaits
+                return;
+            }
+
+            assert(0, "Unreachable");
         }
-
-        const followupEvent = thisFiber.payload;
-
-        scope(exit) unawait(plugin, joinTypes[]);
-
-        with (IRCEvent.Type)
-        switch (followupEvent.type)
-        {
-        case SELFJOIN:
-            // Success!
-            // return so as to not drop down and undo the addition below.
-            return;
-
-        case ERR_LINKCHANNEL:
-            // We were redirected. Still assume we wanted to add this one?
-            logger.info("Redirected!");
-            plugin.state.bot.homeChannels ~= followupEvent.content.toLower;  // note: content
-            // Drop down and undo original addition
-            break;
-
-        default:
-            enum message = "Failed to join home channel.";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            break;
-        }
-
-        // Undo original addition
-        immutable homeIndex = plugin.state.bot.homeChannels.countUntil(followupEvent.channel);
-
-        if (homeIndex != -1)
-        {
-            plugin.state.bot.homeChannels = plugin.state.bot.homeChannels
-                .remove!(SwapStrategy.unstable)(homeIndex);
-            plugin.state.updates |= typeof(plugin.state.updates).bot;
-        }
-        /*else
-        {
-            logger.error("Tried to remove non-existent home channel.");
-        }*/
     }
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&joinHomeDg, BufferSize.fiberStack);
-    await(plugin, fiber, joinTypes);
+    Fiber fiber = new CarryingFiber!IRCEvent(&joinDg, BufferSize.fiberStack);
+    await(plugin, fiber, joinTypes[]);
 }
 
 
-// delHome
+// delChannel
 /++
-    Removes a channel from the list of currently active home channels, from the
-    [kameloso.pods.IRCBot.homeChannels|IRCBot.homeChannels] array of the
-    current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
+    Removes a channel from the list of currently active home or guest channels, from the
+    [kameloso.pods.IRCBot.homeChannels|IRCBot.homeChannels] and
+    [kameloso.pods.IRCBot.guestChannels|IRCBot.guestChannels] arrays of the
+    current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+    respectively.
+
+    Params:
+        plugin = The current [AdminPlugin].
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
+        rawChannel = The channel to be removed, potentially in unstripped, cased form.
+        home = Whether to remove a home or a guest channel.
  +/
-void delHome(AdminPlugin plugin, const ref IRCEvent event, const string rawChannel)
+void delChannel(
+    AdminPlugin plugin,
+    const ref IRCEvent event,
+    const string rawChannel,
+    const Flag!"home" delFromHomes)
 in (rawChannel.length, "Tried to delete a home but the channel string was empty")
 {
     import lu.string : stripped;
@@ -514,19 +640,31 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
     import std.uni : toLower;
 
     immutable channelName = rawChannel.stripped.toLower;
-    immutable homeIndex = plugin.state.bot.homeChannels.countUntil(channelName);
+    immutable existingIndex = delFromHomes ?
+        plugin.state.bot.homeChannels.countUntil(channelName) :
+        plugin.state.bot.guestChannels.countUntil(channelName);
 
-    if (homeIndex == -1)
+    if (existingIndex == -1)
     {
         import std.format : format;
 
-        enum pattern = "Channel <b>%s<b> was not listed as a home.";
-        immutable message = pattern.format(channelName);
+        enum pattern = "Channel <b>%s<b> was not listed as a %s channel.";
+        immutable what = delFromHomes ? "home" : "guest";
+        immutable message = pattern.format(channelName, what);
         return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
-    plugin.state.bot.homeChannels = plugin.state.bot.homeChannels
-        .remove!(SwapStrategy.unstable)(homeIndex);
+    if (delFromHomes)
+    {
+        plugin.state.bot.homeChannels = plugin.state.bot.homeChannels
+            .remove!(SwapStrategy.unstable)(existingIndex);
+    }
+    else
+    {
+        plugin.state.bot.guestChannels = plugin.state.bot.guestChannels
+            .remove!(SwapStrategy.unstable)(existingIndex);
+    }
+
     plugin.state.updates |= typeof(plugin.state.updates).bot;
     part(plugin.state, channelName);
 
@@ -534,7 +672,9 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
     {
         // We didn't just leave the channel, so we can report success
         // Otherwise we get ERR_CANNOTSENDTOCHAN
-        enum message = "Home removed.";
+        immutable message = delFromHomes ?
+            "Home channel removed." :
+            "Guest channel removed.";
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 }
