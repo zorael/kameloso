@@ -829,6 +829,32 @@ public:
         }
     }
 
+    // collectChannels
+    /++
+        Collects all channels from all plugins.
+
+        Returns:
+            An array of all channels.
+     +/
+    auto collectChannels()
+    {
+        import kameloso.constants : MagicStrings;
+
+        bool[string] channels;
+
+        foreach (plugin; this.plugins)
+        {
+            foreach (immutable channelName, _; plugin.state.channels)
+            {
+                channels[channelName] = true;
+            }
+        }
+
+        return channels.keys.length ?
+            channels.keys :
+            [ cast(string)MagicStrings.emptyArrayMarker ];
+    }
+
     // ConnectionHistoryEntry
     /++
         A record of a successful connection.
