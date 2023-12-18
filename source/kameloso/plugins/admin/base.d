@@ -760,7 +760,8 @@ void onCommandPrintBytes(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandJoin
 /++
-    Joins a supplied channel.
+    Joins a supplied channel temporarily, without recording as neither a home nor
+    as a guest channel.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -771,8 +772,9 @@ void onCommandPrintBytes(AdminPlugin plugin, const ref IRCEvent event)
         IRCEventHandler.Command()
             .word("join")
             .policy(PrefixPolicy.nickname)
-            .description("Joins a guest channel.")
-            .addSyntax("$command [channel]")
+            .description("Joins a channel temporarily, without recording as " ~
+                "neither a home nor as a guest chnanel.")
+            .addSyntax("$command [channel] [optional key]")
     )
 )
 void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
