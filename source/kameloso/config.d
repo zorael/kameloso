@@ -1000,6 +1000,8 @@ auto handleGetopt(Kameloso instance) @system
         import std.array : array;
         import std.uni : toLower;
 
+        if (!channels.length) return;
+
         channels = channels
             .map!(channelName => channelName.stripped.toLower)
             .array
