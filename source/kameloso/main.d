@@ -3207,7 +3207,7 @@ auto startBot(Kameloso instance)
 
                 try
                 {
-                    const pid = exec(instance.args.dup, instance.transient.numReexecs);
+                    const pid = exec(instance.args.dup, instance.transient.numReexecs, instance.bot.channelOverride);
                     // On Windows, if we're here, the call succeeded
                     // Posix should never be here; it will either exec or throw
 
@@ -3609,6 +3609,7 @@ auto startBot(Kameloso instance)
         // Start the main loop
         instance.transient.askedToReconnect = false;
         attempt.next = mainLoop(instance);
+        instance.bot.channelOverride = instance.collectChannels();  // snapshot channels
         attempt.firstConnect = false;
 
         if (*instance.abort || !attempt.next.among!(Next.continue_, Next.retry))

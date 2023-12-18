@@ -580,6 +580,7 @@ auto handleGetopt(Kameloso instance) @system
 
     string[] inputGuestChannels;
     string[] inputHomeChannels;
+    string[] channelOverride;
     string[] inputAdmins;
 
     string colourString;
@@ -636,6 +637,7 @@ auto handleGetopt(Kameloso instance) @system
         "color", &colourString,
         "setup-twitch", &shouldSetupTwitch,
         "internal-num-reexecs", &instance.transient.numReexecs,
+        "internal-channel-override", &channelOverride,
     );
 
     if (colourString.length) resolveFlagString(colourString, instance.settings.colours);
@@ -985,6 +987,8 @@ auto handleGetopt(Kameloso instance) @system
         if (inputAdmins.length) instance.bot.admins = inputAdmins;
     }
 
+    if (channelOverride.length) instance.bot.channelOverride = flatten(channelOverride);
+
     /++
         Strip channel whitespace and make lowercase.
      +/
@@ -1006,6 +1010,7 @@ auto handleGetopt(Kameloso instance) @system
 
     stripAndLower(instance.bot.homeChannels);
     stripAndLower(instance.bot.guestChannels);
+    stripAndLower(instance.bot.channelOverride);
 
     // Remove duplicate channels (where a home is also featured as a normal channel)
     size_t[] duplicates;

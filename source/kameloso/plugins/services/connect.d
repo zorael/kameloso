@@ -139,50 +139,86 @@ void joinChannels(ConnectService service)
     import kameloso.messaging : Message;
     import lu.string : plurality;
     import std.algorithm.iteration : filter, uniq;
-    import std.algorithm.sorting : sort;
-    import std.array : array, join;
+    import std.array : array;
     import std.range : walkLength;
     static import kameloso.messaging;
 
     scope(exit) service.joinedChannels = true;
 
-    if (!service.state.bot.homeChannels.length && !service.state.bot.guestChannels.length)
+    void printDefeat()
     {
         logger.warning("No channels, no purpose...");
-        return;
     }
 
-    auto homelist = service.state.bot.homeChannels
-        .filter!(channelName => (channelName != "-"))
-        .array
-        .sort
-        .uniq;
+    void printEmptyChannelText()
+    {
+        enum message = "An empty channel set was passed from a previous connection.";
+        logger.info(message);
+    }
 
-    auto guestlist = service.state.bot.guestChannels
-        .filter!(channelName => (channelName != "-"))
-        .array
-        .sort
-        .uniq;
+    auto filterSortUniq(string[] array_)
+    {
+        import kameloso.constants : MagicStrings;
+        import std.algorithm.sorting : sort;
+        import std.array : join;
 
-    immutable numChans = homelist.walkLength() + guestlist.walkLength();
+        return array_
+            .filter!(channelName =>
+                (channelName != "-") && (channelName != MagicStrings.emptyArrayMarker))
+            .array
+            .sort
+            .uniq;
+    }
+
+    void joinList(string[] array_)
+    {
+        import std.array : join;
+
+        if (!array_.length) return;
+
+        enum properties = Message.Property.quiet;
+        kameloso.messaging.join(
+            service.state,
+            array_.join(','),
+            string.init,
+            properties);
+    }
+
+    if (service.state.bot.channelOverride.length)
+    {
+        auto overrideList = filterSortUniq(service.state.bot.channelOverride);
+        immutable overrideListLength = overrideList.walkLength();
+
+        if (!overrideListLength)
+        {
+            printEmptyChannelText();
+            return printDefeat();
+        }
+
+        enum pattern = "Joining <i>%d</> %s (carried from previous connection)...";
+        logger.logf(
+            pattern,
+            overrideListLength,
+            overrideListLength.plurality("channel", "channels"));
+
+        return joinList(overrideList.array);
+    }
+
+    if (!service.state.bot.homeChannels.length && !service.state.bot.guestChannels.length)
+    {
+        return printDefeat();
+    }
+
+    auto homeList = filterSortUniq(service.state.bot.homeChannels);
+    auto guestList = filterSortUniq(service.state.bot.guestChannels);
+    immutable numChans = homeList.walkLength() + guestList.walkLength();
 
     enum pattern = "Joining <i>%d</> %s...";
     logger.logf(pattern, numChans, numChans.plurality("channel", "channels"));
 
     // Join in two steps so home channels don't get shoved away by guest channels
-    if (service.state.bot.homeChannels.length)
-    {
-        enum properties = Message.Property.quiet;
-        immutable channelString = homelist.join(',');
-        kameloso.messaging.join(service.state, channelString, string.init, properties);
-    }
-
-    if (service.state.bot.guestChannels.length)
-    {
-        enum properties = Message.Property.quiet;
-        immutable channelString = guestlist.join(',');
-        kameloso.messaging.join(service.state, channelString, string.init, properties);
-    }
+    joinList(homeList.array);
+    joinList(guestList.array);
 
     version(TwitchSupport)
     {
