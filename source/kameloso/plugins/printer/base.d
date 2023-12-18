@@ -27,6 +27,7 @@
 module kameloso.plugins.printer.base;
 
 version(WithPrinterPlugin):
+debug version = Debug;
 
 private:
 
@@ -232,7 +233,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
     if (plugin.printerSettings.hideBlacklistedUsers && (event.sender.class_ == IRCUser.Class.blacklist)) return;
 
-    debug
+    version(Debug)
     {
         // Exclude types explicitly declared as to be excluded
         immutable exclude = plugin.exclude.length && plugin.exclude.canFind(event.type);
@@ -343,7 +344,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     // Clear event.target.nickname for those types.
     event.clearTargetNicknameIfUs(plugin.state);
 
-    debug
+    version(Debug)
     {
         // Immediately print events of types declared to be included
         immutable include = plugin.include.length && plugin.include.canFind(event.type);
@@ -665,9 +666,9 @@ package auto datestamp()
     Populates the arrays of types to exclude and include from printing.
 
     Do this here instead of in [setup], so it gets done before resolving.
-    Gate it behind `debug` to be neat.
+    Gate it behind version `Debug` to be neat.
  +/
-debug
+version(Debug)
 void initialise(PrinterPlugin plugin)
 {
     import kameloso.common : logger;
@@ -1027,7 +1028,7 @@ package:
      +/
     static string bell = "" ~ cast(char)(TerminalToken.bell);
 
-    debug
+    version(Debug)
     {
         /++
             [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to exclude from printing.

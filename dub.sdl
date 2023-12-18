@@ -127,6 +127,7 @@ configuration "dev" {
     subConfiguration "dialect" "dev"
 
     versions \
+        "Debug" \
         "TwitchSupport" \
         "WithTwitchPlugin" \
         "TwitchWarnings" \
@@ -150,6 +151,7 @@ configuration "dev-lowmem" {
     dflags "-lowmem"
 
     versions \
+        "Debug" \
         "TwitchSupport" \
         "WithTwitchPlugin" \
         "TwitchWarnings" \
@@ -173,6 +175,7 @@ configuration "unittest" {
     subConfiguration "dialect" "dev"
 
     versions \
+        "Debug" \
         "TwitchSupport" \
         "WithTwitchPlugin" \
         "TwitchWarnings" \
@@ -193,6 +196,7 @@ configuration "unittest-lowmem" {
     dflags "-lowmem"
 
     versions \
+        "Debug" \
         "TwitchSupport" \
         "WithTwitchPlugin" \
         "TwitchWarnings" \

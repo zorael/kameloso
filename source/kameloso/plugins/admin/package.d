@@ -15,9 +15,10 @@
 module kameloso.plugins.admin;
 
 version(WithAdminPlugin):
+debug version = Debug;
 
 public:
 
 import kameloso.plugins.admin.base;
 import kameloso.plugins.admin.classifiers;
-debug import kameloso.plugins.admin.debugging;
+version(Debug) import kameloso.plugins.admin.debugging;

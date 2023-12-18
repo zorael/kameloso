@@ -14,6 +14,8 @@
  +/
 module kameloso.common;
 
+debug version = Debug;
+
 private:
 
 import kameloso.pods : CoreSettings;
@@ -805,7 +807,7 @@ unittest
 
 
 version(GCStatsOnExit) version = BuildPrintGCStats;
-else debug version = BuildPrintGCStats;
+else version(Debug) version = BuildPrintGCStats;
 
 
 // printGCStats

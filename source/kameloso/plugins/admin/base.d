@@ -22,11 +22,12 @@
 module kameloso.plugins.admin.base;
 
 version(WithAdminPlugin):
+debug version = Debug;
 
 private:
 
 import kameloso.plugins.admin.classifiers;
-debug import kameloso.plugins.admin.debugging;
+version(Debug) import kameloso.plugins.admin.debugging;
 
 import kameloso.plugins;
 import kameloso.plugins.common.core;
@@ -98,7 +99,7 @@ public:
     If [AdminPlugin.printBytes] is set by way of invoking [onCommandPrintBytes],
     prints all incoming server strings byte by byte.
  +/
-debug
+version(Debug)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ANY)
     .channelPolicy(ChannelPolicy.any)
@@ -117,7 +118,7 @@ void onAnyEvent(AdminPlugin plugin, const ref IRCEvent event)
 
     It basically prints the matching [dialect.defs.IRCUser|IRCUsers].
  +/
-debug
+version(Debug)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -221,7 +222,7 @@ void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
     Prints out the current `users` array of the [AdminPlugin]'s
     [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] to the local terminal.
  +/
-debug
+version(Debug)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -247,7 +248,7 @@ void onCommandShowUsers(AdminPlugin plugin)
 
     You need basic knowledge of IRC server strings to use this.
  +/
-debug
+version(Debug)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -854,7 +855,7 @@ void onCommandReload(AdminPlugin plugin, const ref IRCEvent event)
 
     This is for debugging purposes.
  +/
-debug
+version(Debug)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -879,7 +880,7 @@ void onCommandPrintRaw(AdminPlugin plugin, const ref IRCEvent event)
 
     This is for debugging purposes.
  +/
-debug
+version(Debug)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -1124,7 +1125,7 @@ void onCommandAuth(AdminPlugin plugin)
 
     This can be very spammy.
  +/
-debug
+version(Debug)
 version(IncludeHeavyStuff)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1495,7 +1496,7 @@ void onCommandReexec(AdminPlugin plugin, const ref IRCEvent event)
     Sends an internal bus message to other plugins, much like how such can be
     sent with the Pipeline plugin.
  +/
-debug
+version(Debug)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -1562,7 +1563,7 @@ void onBusMessage(
 
     switch (verb)
     {
-    debug
+    version(Debug)
     {
         version(IncludeHeavyStuff)
         {
