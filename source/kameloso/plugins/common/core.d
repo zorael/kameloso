@@ -2006,8 +2006,9 @@ auto prefixPolicyMatches(bool verbose)
 
     static if (verbose)
     {
+        import lu.conv : Enum;
         import std.stdio : writefln, writeln;
-        writeln("...prefixPolicyMatches! policy:", policy);
+        writeln("...prefixPolicyMatches invoked! policy:", Enum!PrefixPolicy.toString(policy));
     }
 
     bool strippedDisplayName;
@@ -2018,7 +2019,7 @@ auto prefixPolicyMatches(bool verbose)
     case direct:
         static if (verbose)
         {
-            writeln("direct, so just passes.");
+            writeln("    ...as such, just passes.");
         }
         return true;
 
@@ -2027,28 +2028,25 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("no prefix set, so defer to nickname case.");
+                writeln("    ...but no prefix defined; defer to nickname case.");
             }
-
             goto case nickname;
         }
         else if (event.content.startsWith(state.settings.prefix))
         {
             static if (verbose)
             {
-                enum pattern = "starts with prefix (%s)";
+                enum pattern = "    ...does start with prefix (%s)";
                 writefln(pattern, state.settings.prefix);
             }
-
             event.content = event.content[state.settings.prefix.length..$];
         }
         else
         {
             static if (verbose)
             {
-                writeln("did not start with prefix but falling back to nickname check");
+                writeln("    ...did not start with prefix but falling back to nickname check");
             }
-
             goto case nickname;
         }
         break;
@@ -2058,7 +2056,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("stripped away prepended '@'");
+                writeln("    ...stripped away prepended '@'");
             }
 
             // Using @name to refer to someone is not
@@ -2074,7 +2072,7 @@ auto prefixPolicyMatches(bool verbose)
             {
                 static if (verbose)
                 {
-                    writeln("begins with displayName! stripping it");
+                    writeln("    ...begins with displayName! stripping it");
                 }
 
                 event.content = event.content
@@ -2084,10 +2082,9 @@ auto prefixPolicyMatches(bool verbose)
                 {
                     static if (verbose)
                     {
-                        enum pattern = "further starts with prefix (%s)";
+                        enum pattern = "        ...further starts with prefix (%s)";
                         writefln(pattern, state.settings.prefix);
                     }
-
                     event.content = event.content[state.settings.prefix.length..$];
                 }
 
@@ -2104,7 +2101,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("begins with nickname! stripping it");
+                writeln("    ...content begins with nickname! stripping it");
             }
 
             event.content = event.content
@@ -2114,7 +2111,7 @@ auto prefixPolicyMatches(bool verbose)
             {
                 static if (verbose)
                 {
-                    enum pattern = "further starts with prefix (%s)";
+                    enum pattern = "        ...further starts with prefix (%s)";
                     writefln(pattern, state.settings.prefix);
                 }
 
@@ -2126,7 +2123,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("doesn't begin with nickname but it's a QUERY");
+                writeln("    ...doesn't begin with nickname but it's a QUERY");
             }
             // Drop down
         }
@@ -2134,7 +2131,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("nickname required but not present... returning false.");
+                writeln("    ...nickname required but not present; returning false.");
             }
             return false;
         }
@@ -2143,7 +2140,7 @@ auto prefixPolicyMatches(bool verbose)
 
     static if (verbose)
     {
-        writeln("policy checks out!");
+        writeln("    ...policy checks out! (droped down to return true)");
     }
 
     return true;
