@@ -4356,14 +4356,15 @@ package:
                 import std.algorithm.iteration : map;
                 import std.array : array;
 
-                if ("idString" !in json)
+                const idStringJSON = "idString" in json;
+                if (!idStringJSON)
                 {
                     // Invalid entry
                     enum message = "No `idString` key in Stream JSON representation";
                     throw new UnexpectedJSONException(message);
                 }
 
-                auto stream = Stream(json["idString"].str);
+                auto stream = Stream(idStringJSON.str);
                 stream.gameIDString = json["gameIDString"].str;
                 stream.gameName = json["gameName"].str;
                 stream.title = json["title"].str;
