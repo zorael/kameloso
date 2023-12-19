@@ -142,7 +142,11 @@ public:
      +/
     static auto fromJSON(const JSONValue json)
     {
+        import core.memory : GC;
         import core.time : seconds;
+
+        GC.disable();
+        scope(exit) GC.enable();
 
         Poll poll;
 

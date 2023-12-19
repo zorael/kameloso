@@ -211,6 +211,11 @@ public:
      +/
     static auto fromJSON(const JSONValue json)
     {
+        import core.memory : GC;
+
+        GC.disable();
+        scope(exit) GC.enable();
+
         Oneliner oneliner;
         oneliner.trigger = json["trigger"].str;
         oneliner.type = (json["type"].integer == cast(int)Type.random) ?

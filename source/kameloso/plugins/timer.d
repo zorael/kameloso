@@ -260,6 +260,11 @@ public:
      +/
     static auto fromJSON(const JSONValue json)
     {
+        import core.memory : GC;
+
+        GC.disable();
+        scope(exit) GC.enable();
+
         Timer timer;
         timer.name = json["name"].str;
         timer.messageCountThreshold = json["messageCountThreshold"].integer;
