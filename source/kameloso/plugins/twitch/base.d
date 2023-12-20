@@ -1068,7 +1068,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         If it does, it should already have a monitor running. Since we're not
         resetting the room unique ID, we'd get two duplicate monitors. So don't.
      +/
-    immutable shouldStartRoomMonitor = !room.id.length;
+    immutable shouldStartRoomMonitors = !room.id.length;
     if (!room.id.length) room.id = event.aux[0];  // Assign this before spending time in getTwitchUser
 
     auto twitchUser = getTwitchUser(plugin, string.init, event.aux[0]);
@@ -1094,9 +1094,9 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     IRCUser userCopy = *storedUser;  // dereference and copy
     plugin.state.mainThread.send(ThreadMessage.putUser(string.init, boxed(userCopy)));
 
-    if (shouldStartRoomMonitor)
+    if (shouldStartRoomMonitors)
     {
-        startRoomMonitorFibers(plugin, event.channel);
+        startRoomMonitors(plugin, event.channel);
 
         if (plugin.twitchSettings.customEmotes)
         {
@@ -1413,7 +1413,6 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSubs(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.constants : BufferSize;
     import std.format : format;
 
     const room = event.channel in plugin.rooms;
@@ -2111,6 +2110,7 @@ void onCommandNuke(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
+    .fiber(true)
 )
 void onEndOfMOTD(TwitchPlugin plugin)
 {
@@ -2531,6 +2531,8 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 // onCommandCommercial
 /++
     Starts a commercial in the current channel.
+
+    Note: Experimental, since we cannot try it out ourselves.
 
     See_Also:
         [kameloso.plugins.twitch.api.startCommercial]
@@ -3155,17 +3157,20 @@ void onMyInfo(TwitchPlugin plugin)
 }
 
 
-// startRoomMonitorFibers
+// startRoomMonitors
 /++
-    Starts room monitor fibers.
+    Starts room monitors as [core.thread.fiber.Fiber|Fiber]s for a given channel.
 
     These detect new streams (and updates ongoing ones), updates chatters, and caches followers.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [TwitchPlugin].
         channelName = String key of room to start the monitors of.
  +/
-void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
+void startRoomMonitors(TwitchPlugin plugin, const string channelName)
+in (Fiber.getThis, "Tried to call `startRoomMonitorFibers` from outside a Fiber")
 in (channelName.length, "Tried to start room monitor fibers with an empty channel name string")
 {
     import kameloso.plugins.common.delayawait : delay;
@@ -3412,119 +3417,50 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
         }
     }
 
-    Fiber uptimeMonitorFiber = new Fiber(&uptimeMonitorDg, BufferSize.fiberStack);
-    uptimeMonitorFiber.call();
-
-    Fiber chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
-    chatterMonitorFiber.call();
-
-    Fiber cacheFollowersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
-    cacheFollowersFiber.call();
+    // Each delegate forks by delaying itself
+    uptimeMonitorDg();
+    chatterMonitorDg();
+    cacheFollowersDg();
 }
 
 
 // startValidator
 /++
-    Starts a validator [core.thread.fiber.Fiber|Fiber].
+    Starts a validator routine.
 
     This will validate the API access token and output to the terminal for how
     much longer it is valid. If it has expired, it will exit the program.
+
+    Note: Must be called from within a [core.thread.Fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [TwitchPlugin].
  +/
 void startValidator(TwitchPlugin plugin)
+in (Fiber.getThis, "Tried to call `startValidator` from outside a Fiber")
 {
-    import kameloso.constants : BufferSize;
-    import core.thread : Fiber;
+    import kameloso.plugins.common.delayawait : delay;
+    import std.datetime.systime : Clock, SysTime;
+    import std.json : JSONValue;
+    import core.time : minutes;
 
-    void validatorDg()
+    static immutable retryDelay = 1.minutes;
+    JSONValue validationJSON;
+
+    while (!plugin.botUserIDString.length)
     {
-        import kameloso.plugins.common.delayawait : delay;
-        import core.time : minutes;
-
-        while (!plugin.botUserIDString.length)
+        try
         {
-            static immutable retryDelay = 1.minutes;
-
+            validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
+        }
+        catch (TwitchQueryException e)
+        {
             if (plugin.state.settings.headless)
             {
-                try
-                {
-                    import kameloso.messaging : quit;
-                    import std.datetime.systime : Clock, SysTime;
-
-                    immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
-                    plugin.botUserIDString = validationJSON["user_id"].str;
-                    immutable expiresIn = validationJSON["expires_in"].integer;
-                    immutable now = Clock.currTime;
-                    immutable expiresWhen = SysTime.fromUnixTime(now.toUnixTime() + expiresIn);
-                    immutable delta = (expiresWhen - now);
-
-                    // Schedule quitting on expiry
-                    delay(plugin, (() => quit(plugin.state)), delta);
-                }
-                catch (TwitchQueryException e)
-                {
-                    version(PrintStacktraces) logger.trace(e);
-                    delay(plugin, retryDelay, Yes.yield);
-                    continue;
-                }
-                catch (EmptyResponseException e)
-                {
-                    version(PrintStacktraces) logger.trace(e);
-                    delay(plugin, retryDelay, Yes.yield);
-                    continue;
-                }
-                return;
+                //version(PrintStacktraces) logger.trace(e);
+                delay(plugin, retryDelay, Yes.yield);
             }
-
-            try
-            {
-                import std.datetime.systime : Clock;
-
-                /*
-                {
-                    "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
-                    "expires_in": 5036421,
-                    "login": "zorael",
-                    "scopes": [
-                        "bits:read",
-                        "channel:moderate",
-                        "channel:read:subscriptions",
-                        "channel_editor",
-                        "chat:edit",
-                        "chat:read",
-                        "user:edit:broadcast",
-                        "whispers:edit",
-                        "whispers:read"
-                    ],
-                    "user_id": "22216721"
-                }
-                */
-
-                void onExpiryDg()
-                {
-                    import kameloso.messaging : quit;
-
-                    enum message = "Your Twitch authorisation token has expired. " ~
-                        "Run the program with <l>--set twitch.keygen/> to generate a new one.";
-                    logger.error(message);
-                    quit(plugin.state, "Twitch authorisation token expired");
-                }
-
-                immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
-                plugin.botUserIDString = validationJSON["user_id"].str;
-                immutable expiresIn = validationJSON["expires_in"].integer;
-                immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime() + expiresIn);
-
-                generateExpiryReminders(
-                    plugin,
-                    expiresWhen,
-                    "Your Twitch authorisation token",
-                    &onExpiryDg);
-            }
-            catch (TwitchQueryException e)
+            else
             {
                 import kameloso.constants : MagicErrorStrings;
 
@@ -3564,71 +3500,138 @@ void startValidator(TwitchPlugin plugin)
 
                 version(PrintStacktraces) logger.trace(e);
                 delay(plugin, retryDelay, Yes.yield);
-                continue;
             }
-            catch (EmptyResponseException e)
+            continue;
+        }
+        catch (EmptyResponseException e)
+        {
+            if (plugin.state.settings.headless)
+            {
+                //version(PrintStacktraces) logger.trace(e);
+                delay(plugin, retryDelay, Yes.yield);
+            }
+            else
             {
                 // HTTP query failed; just retry
                 enum pattern = "Failed to validate Twitch API keys: <t>%s</>";
                 logger.errorf(pattern, e.msg);
                 version(PrintStacktraces) logger.trace(e);
                 delay(plugin, retryDelay, Yes.yield);
-                continue;
             }
+            continue;
         }
+
+        const userIDJSON = "user_id" in validationJSON;
+        if (!userIDJSON)
+        {
+            // No key in response?
+            delay(plugin, retryDelay, Yes.yield);
+            continue;
+        }
+
+        plugin.botUserIDString = userIDJSON.str;  // ensures while loop break
+        //break;
     }
 
-    Fiber validatorFiber = new Fiber(&validatorDg, BufferSize.fiberStack);
-    validatorFiber.call();
+    // Validation successful
+    /+
+    {
+        "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+        "expires_in": 5036421,
+        "login": "zorael",
+        "scopes": [
+            "bits:read",
+            "channel:moderate",
+            "channel:read:subscriptions",
+            "channel_editor",
+            "chat:edit",
+            "chat:read",
+            "user:edit:broadcast",
+            "whispers:edit",
+            "whispers:read"
+        ],
+        "user_id": "22216721"
+    }
+     +/
+
+    enum expiryMessage = "Twitch authorisation token expired";
+    immutable expiresIn = validationJSON["expires_in"].integer;
+    immutable now = Clock.currTime;
+    immutable expiresWhen = SysTime.fromUnixTime(now.toUnixTime() + expiresIn);
+
+    if (plugin.state.settings.headless)
+    {
+        void onExpiryDg()
+        {
+            quit(plugin.state, expiryMessage);
+        }
+
+        immutable delta = (expiresWhen - now);
+        delay(plugin, &onExpiryDg, delta);
+    }
+    else
+    {
+        void onExpiryDg()
+        {
+            enum message = "Your Twitch authorisation token has expired. " ~
+                "Run the program with <l>--set twitch.keygen/> to generate a new one.";
+            logger.error(message);
+            quit(plugin.state, expiryMessage);
+        }
+
+        generateExpiryReminders(
+            plugin,
+            expiresWhen,
+            "Your Twitch authorisation token",
+            &onExpiryDg);
+    }
 }
 
 
 // startSaver
 /++
-    Starts a saver [core.thread.fiber.Fiber|Fiber].
+    Starts a saver routine.
 
     This will save resources to disk periodically.
+
+    Note: Must be called from within a [core.thread.Fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [TwitchPlugin].
  +/
 void startSaver(TwitchPlugin plugin)
+in (Fiber.getThis, "Tried to call `startSaver` from outside a Fiber")
 {
     import kameloso.plugins.common.delayawait : delay;
-    import kameloso.constants : BufferSize;
-    import core.thread : Fiber;
     import core.time : hours;
 
     // How often to save `ecount`s and viewer times, to ward against losing information to crashes.
     static immutable savePeriodicity = 2.hours;
 
-    void periodicallySaveDg()
+    // Delay initially
+    delay(plugin, savePeriodicity, Yes.yield);
+
+    // Periodically save ecounts and viewer times
+    while (true)
     {
-        // Periodically save ecounts and viewer times
-        while (true)
+        if (plugin.twitchSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
         {
-            if (plugin.twitchSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
-            {
-                saveResourceToDisk(plugin.ecount, plugin.ecountFile);
-                plugin.ecountDirty = false;
-            }
-
-            /+
-                Only save watchtimes if there's at least one broadcast currently ongoing.
-                Since we save at broadcast stop there won't be anything new to save otherwise.
-             +/
-            if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
-            {
-                saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-                plugin.viewerTimesDirty = false;
-            }
-
-            delay(plugin, savePeriodicity, Yes.yield);
+            saveResourceToDisk(plugin.ecount, plugin.ecountFile);
+            plugin.ecountDirty = false;
         }
-    }
 
-    Fiber periodicallySaveFiber = new Fiber(&periodicallySaveDg, BufferSize.fiberStack);
-    delay(plugin, periodicallySaveFiber, savePeriodicity);
+        /+
+            Only save watchtimes if there's at least one broadcast currently ongoing.
+            Since we save at broadcast stop there won't be anything new to save otherwise.
+            +/
+        if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
+        {
+            saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+            plugin.viewerTimesDirty = false;
+        }
+
+        delay(plugin, savePeriodicity, Yes.yield);
+    }
 }
 
 
@@ -4134,15 +4137,10 @@ void loadResources(TwitchPlugin plugin)
  +/
 void reload(TwitchPlugin plugin)
 {
-    import kameloso.constants : BufferSize;
-    import core.thread : Fiber;
-
     loadResources(plugin);
 
-    void importDg()
+    if (plugin.twitchSettings.customEmotes)
     {
-        if (!plugin.twitchSettings.customEmotes) return;
-
         plugin.customGlobalEmotes = null;
         importCustomEmotes(plugin);
 
@@ -4152,9 +4150,6 @@ void reload(TwitchPlugin plugin)
             importCustomEmotes(plugin, channelName, room.id);
         }
     }
-
-    Fiber importFiber = new Fiber(&importDg, BufferSize.fiberStack);
-    importFiber.call();
 }
 
 
