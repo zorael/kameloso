@@ -38,6 +38,7 @@ import kameloso.thread : Sendable;
 import dialect.defs;
 import std.concurrency : send;
 import std.typecons : Flag, No, Yes;
+import core.thread : Fiber;
 import core.time : Duration;
 
 
@@ -308,6 +309,7 @@ void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.QUERY)
     .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("home")
@@ -318,7 +320,7 @@ void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command list")
     )
 )
-void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandHome(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : advancePast, strippedRight;
     import std.format : format;
@@ -368,6 +370,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.QUERY)
     .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("guest")
@@ -378,7 +381,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command list")
     )
 )
-void onCommandGuest(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandGuest(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : advancePast, strippedRight;
     import std.format : format;
@@ -437,6 +440,7 @@ void addChannel(
     const /*ref*/ IRCEvent event,
     const string rawChannel,
     const Flag!"home" addAsHome)
+in (Fiber.getThis, "Tried to call `addChannel` from outside a Fiber")
 in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
     import kameloso.plugins.common.delayawait : await, unawait;
@@ -534,83 +538,78 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         IRCEvent.Type.SELFJOIN,
     ];
 
-    void joinDg()
-    {
-        scope(exit) unawait(plugin, joinTypes[]);
+    scope(exit) unawait(plugin, joinTypes[]);
+    await(plugin, joinTypes[], Yes.yield);
 
+    while (true)
+    {
+        CarryingFiber!IRCEvent thisFiber;
+
+        inner:
         while (true)
         {
-            CarryingFiber!IRCEvent thisFiber;
+            thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+            assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
-            while (true)
+            if (thisFiber.payload.channel == channelName) break inner;
+
+            // Different channel; yield fiber, wait for another event
+            Fiber.yield();
+        }
+
+        const followupEvent = thisFiber.payload;
+
+        void undoChannelAppend()
+        {
+            immutable existingIndex = addAsHome ?
+                plugin.state.bot.homeChannels.countUntil(followupEvent.channel) :
+                plugin.state.bot.guestChannels.countUntil(followupEvent.channel);
+
+            if (existingIndex != -1)
             {
-                thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-                assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-                assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+                import std.algorithm.mutation : SwapStrategy, remove;
 
-                if (thisFiber.payload.channel == channelName) break;
-
-                // Different channel; yield fiber, wait for another event
-                Fiber.yield();
-            }
-
-            const followupEvent = thisFiber.payload;
-
-            void undoChannelAppend()
-            {
-                immutable existingIndex = addAsHome ?
-                    plugin.state.bot.homeChannels.countUntil(followupEvent.channel) :
-                    plugin.state.bot.guestChannels.countUntil(followupEvent.channel);
-
-                if (existingIndex != -1)
+                if (addAsHome)
                 {
-                    import std.algorithm.mutation : SwapStrategy, remove;
-
-                    if (addAsHome)
-                    {
-                        plugin.state.bot.homeChannels = plugin.state.bot.homeChannels
-                            .remove!(SwapStrategy.unstable)(existingIndex);
-                    }
-                    else
-                    {
-                        plugin.state.bot.guestChannels = plugin.state.bot.guestChannels
-                            .remove!(SwapStrategy.unstable)(existingIndex);
-                    }
-
-                    plugin.state.updates |= typeof(plugin.state.updates).bot;
+                    plugin.state.bot.homeChannels = plugin.state.bot.homeChannels
+                        .remove!(SwapStrategy.unstable)(existingIndex);
                 }
+                else
+                {
+                    plugin.state.bot.guestChannels = plugin.state.bot.guestChannels
+                        .remove!(SwapStrategy.unstable)(existingIndex);
+                }
+
+                plugin.state.updates |= typeof(plugin.state.updates).bot;
             }
+        }
 
-            with (IRCEvent.Type)
-            switch (followupEvent.type)
-            {
-            case SELFJOIN:
-                // Success!
-                // scopeguard unawaits
-                return;
+        with (IRCEvent.Type)
+        switch (followupEvent.type)
+        {
+        case SELFJOIN:
+            // Success!
+            // scopeguard unawaits
+            return;
 
-            case ERR_LINKCHANNEL:
-                // We were redirected. Still assume we wanted to add this one?
-                logger.info("Redirected!");
-                undoChannelAppend();
-                if (addAsHome) plugin.state.bot.homeChannels ~= followupEvent.content.toLower;  // note: content
-                else plugin.state.bot.guestChannels ~= followupEvent.content.toLower;  // ditto
-                continue;
+        case ERR_LINKCHANNEL:
+            // We were redirected. Still assume we wanted to add this one?
+            logger.info("Redirected!");
+            undoChannelAppend();
+            if (addAsHome) plugin.state.bot.homeChannels ~= followupEvent.content.toLower;  // note: content
+            else plugin.state.bot.guestChannels ~= followupEvent.content.toLower;  // ditto
+            Fiber.yield();
+            continue;
 
-            default:
-                enum message = "Failed to join channel.";
-                privmsg(plugin.state, event.channel, event.sender.nickname, message);
-                undoChannelAppend();
-                // scopeguard unawaits
-                return;
-            }
-
-            assert(0, "Unreachable");
+        default:
+            enum message = "Failed to join channel.";
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            undoChannelAppend();
+            // scopeguard unawaits
+            return;
         }
     }
-
-    Fiber fiber = new CarryingFiber!IRCEvent(&joinDg, BufferSize.fiberStack);
-    await(plugin, fiber, joinTypes[]);
 }
 
 
@@ -993,7 +992,6 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
 void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : CarryingFiber;
-    import kameloso.constants : BufferSize;
     import std.typecons : Tuple;
     import core.thread : Fiber;
 
@@ -1039,7 +1037,6 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
     import core.thread : Fiber;
@@ -1180,6 +1177,7 @@ void onCommandSummary(AdminPlugin plugin)
     .onEvent(IRCEvent.Type.QUERY)
     .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("cycle")
@@ -1233,57 +1231,51 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
 // cycle
 /++
-    Implementation of cycling, called by [onCommandCycle]
+    Implementation of cycling, called by [onCommandCycle].
+
+    Note: Must be called from within a [core.thread.Fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [AdminPlugin].
         channelName = The name of the channel to cycle.
-        delay_ = [core.time.Duration|Duration] to delay rejoining.
-        key = The key to use when rejoining the channel.
+        delay_ = (Optional) [core.time.Duration|Duration] to delay rejoining.
+        key = (Optional) The key to use when rejoining the channel.
  +/
 void cycle(
     AdminPlugin plugin,
     const string channelName,
     const Duration delay_ = Duration.zero,
     const string key = string.init)
+in (Fiber.getThis, "Tried to call `cycle` from outside a Fiber")
 {
     import kameloso.plugins.common.delayawait : await, delay, unawait;
     import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
 
-    void cycleDg()
+    part(plugin.state, channelName, "Cycling");
+
+    scope(exit) unawait(plugin, IRCEvent.Type.SELFPART);
+    await(plugin, IRCEvent.Type.SELFPART, Yes.yield);
+
+    while (true)
     {
-        while (true)
+        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+        assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+        assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+
+        const partEvent = thisFiber.payload;
+
+        if (partEvent.channel != channelName)
         {
-            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-            assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
-
-            const partEvent = thisFiber.payload;
-
-            if (partEvent.channel == channelName)
-            {
-                void joinDg()
-                {
-                    join(plugin.state, channelName, key);
-                }
-
-                unawait(plugin, Fiber.getThis, IRCEvent.Type.SELFPART);
-
-                return (delay_ == Duration.zero) ?
-                    joinDg() :
-                    delay(plugin, &joinDg, delay_);
-            }
-
             // Wrong channel, wait for the next SELFPART
             Fiber.yield();
+            continue;
         }
-    }
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&cycleDg, BufferSize.fiberStack);
-    await(plugin, fiber, IRCEvent.Type.SELFPART);
-    part(plugin.state, channelName, "Cycling");
+        if (delay_ > Duration.zero) delay(plugin, delay_, Yes.yield);
+        return join(plugin.state, channelName, key);
+    }
 }
 
 
