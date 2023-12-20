@@ -29,6 +29,7 @@ import kameloso.messaging;
 import kameloso.thread : Sendable;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
+import core.thread : Fiber;
 
 
 // ConnectSettings
@@ -1135,6 +1136,7 @@ void onSASLFailure(ConnectService service)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
+    .fiber(true)
 )
 void onWelcome(ConnectService service)
 {
@@ -1144,7 +1146,7 @@ void onWelcome(ConnectService service)
     service.progress.registration = Progress.finished;
     service.renameDuringRegistration = string.init;
 
-    version(WithPingMonitor) startPingMonitorFiber(service);
+    version(WithPingMonitor) startPingMonitor(service);
 
     alias separator = ConnectSettings.sendAfterConnectSeparator;
     auto toSendRange = service.connectSettings.sendAfterConnect.splitter(separator);
@@ -1184,48 +1186,45 @@ void onWelcome(ConnectService service)
             IRCEvent.Type.ERR_NOMOTD,
         ];
 
-        void twitchWarningDg(IRCEvent)
+        scope(exit) unawait(service, endOfMotdEventTypes[]);
+        await(service, endOfMotdEventTypes[], Yes.yield);
+
+        version(TwitchSupport)
         {
-            scope(exit) unawait(service, &twitchWarningDg, endOfMotdEventTypes[]);
+            import std.algorithm.searching : startsWith;
 
-            version(TwitchSupport)
+            /+
+                Upon having connected, registered and logged onto the Twitch servers,
+                disable outgoing colours and warn about having a `.` or `/` prefix.
+
+                Twitch chat doesn't do colours, so ours would only show up like `00kameloso`.
+                Furthermore, Twitch's own commands are prefixed with a dot `.` and/or a slash `/`,
+                so we can't use that ourselves.
+                +/
+
+            if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
+
+            service.state.settings.colouredOutgoing = false;
+            service.state.updates |= typeof(service.state.updates).settings;
+
+            if (service.state.settings.prefix.startsWith(".") ||
+                service.state.settings.prefix.startsWith("/"))
             {
-                import std.algorithm.searching : startsWith;
-
-                /+
-                    Upon having connected, registered and logged onto the Twitch servers,
-                    disable outgoing colours and warn about having a `.` or `/` prefix.
-
-                    Twitch chat doesn't do colours, so ours would only show up like `00kameloso`.
-                    Furthermore, Twitch's own commands are prefixed with a dot `.` and/or a slash `/`,
-                    so we can't use that ourselves.
-                 +/
-
-                if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
-
-                service.state.settings.colouredOutgoing = false;
-                service.state.updates |= typeof(service.state.updates).settings;
-
-                if (service.state.settings.prefix.startsWith(".") ||
-                    service.state.settings.prefix.startsWith("/"))
-                {
-                    enum pattern = `WARNING: A prefix of "<l>%s</>" will *not* work on Twitch servers, ` ~
-                        "as <l>.</> and <l>/</> are reserved for Twitch's own commands.";
-                    logger.warningf(pattern, service.state.settings.prefix);
-                }
-            }
-            else
-            {
-                // No Twitch support built in
-                if (service.state.server.address.endsWith(".twitch.tv"))
-                {
-                    logger.warning("This bot was not built with Twitch support enabled. " ~
-                        "Expect errors and general uselessness.");
-                }
+                enum pattern = `WARNING: A prefix of "<l>%s</>" will *not* work on Twitch servers, ` ~
+                    "as <l>.</> and <l>/</> are reserved for Twitch's own commands.";
+                logger.warningf(pattern, service.state.settings.prefix);
             }
         }
-
-        await(service, &twitchWarningDg, endOfMotdEventTypes[]);
+        else
+        {
+            // No Twitch support built in
+            if (service.state.server.address.endsWith(".twitch.tv"))
+            {
+                enum message = "This bot was not built with Twitch support enabled. " ~
+                    "Expect errors and general uselessness.";
+                logger.warning(message);
+            }
+        }
     }
     else
     {
@@ -1234,35 +1233,31 @@ void onWelcome(ConnectService service)
             (service.state.client.nickname != service.state.client.origNickname))
         {
             import kameloso.plugins.common.delayawait : delay;
-            import kameloso.constants : BufferSize;
-            import core.thread : Fiber;
 
-            void regainDg()
+            delay(service, service.timing.nickRegainPeriodicity, Yes.yield);
+
+            // Concatenate the verb once
+            immutable squelchVerb = "squelch " ~ service.state.client.origNickname;
+
+            while (service.state.client.nickname != service.state.client.origNickname)
             {
-                // Concatenate the verb once
-                immutable squelchVerb = "squelch " ~ service.state.client.origNickname;
+                import kameloso.messaging : raw;
 
-                while (service.state.client.nickname != service.state.client.origNickname)
+                version(WithPrinterPlugin)
                 {
-                    import kameloso.messaging : raw;
-
-                    version(WithPrinterPlugin)
-                    {
-                        import kameloso.thread : ThreadMessage, boxed;
-                        import std.concurrency : send;
-                        service.state.mainThread.send(
-                            ThreadMessage.busMessage("printer", boxed(squelchVerb)));
-                    }
-
-                    enum properties = (Message.Property.quiet | Message.Property.background);
-                    immutable message = "NICK " ~ service.state.client.origNickname;
-                    raw(service.state, message, properties);
-                    delay(service, service.timing.nickRegainPeriodicity, Yes.yield);
+                    import kameloso.thread : ThreadMessage, boxed;
+                    import std.concurrency : send;
+                    service.state.mainThread.send(
+                        ThreadMessage.busMessage("printer", boxed(squelchVerb)));
                 }
+
+                enum properties = (Message.Property.quiet | Message.Property.background);
+                immutable message = "NICK " ~ service.state.client.origNickname;
+                raw(service.state, message, properties);
+                delay(service, service.timing.nickRegainPeriodicity, Yes.yield);
             }
 
-            auto regainFiber = new Fiber(&regainDg, BufferSize.fiberStack);
-            delay(service, regainFiber, service.timing.nickRegainPeriodicity);
+            // All done
         }
     }
 }
@@ -1445,117 +1440,38 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
 }
 
 
-// startPingMonitorFiber
+// startPingMonitor
 /++
-    Starts a monitor Fiber that sends a [dialect.defs.IRCEvent.Type.PING|PING]
+    Starts a looping monitor that sends a [dialect.defs.IRCEvent.Type.PING|PING]
     if we haven't received one from the server for a while. This is to ensure
     that dead connections are properly detected.
+
+    Note: Must be called from within a [core.thread.Fiber.Fiber|Fiber].
 
     Params:
         service = The current [ConnectService].
  +/
-void startPingMonitorFiber(ConnectService service)
+void startPingMonitor(ConnectService service)
+in (Fiber.getThis, "Tried to call `startPingMonitor` from outside a Fiber")
 {
-    import kameloso.plugins.common.delayawait : await, delay, undelay;
+    import kameloso.plugins.common.delayawait : await, delay, unawait, undelay;
     import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
-    import core.thread : Fiber;
     import core.time : seconds;
 
     if (service.connectSettings.maxPingPeriodAllowed <= 0) return;
 
     immutable pingMonitorPeriodicity = service.connectSettings.maxPingPeriodAllowed.seconds;
 
-    void pingMonitorDg()
+    static immutable timeToAllowForPingResponse = 30.seconds;
+    static immutable briefWait = 1.seconds;
+    long lastPongTimestamp;
+    uint strikes;
+
+    enum StrikeBreakpoints
     {
-        static immutable timeToAllowForPingResponse = 30.seconds;
-        static immutable briefWait = 1.seconds;
-        long lastPongTimestamp;
-        uint strikes;
-
-        enum StrikeBreakpoints
-        {
-            wait = 2,
-            ping = 3,
-        }
-
-        while (true)
-        {
-            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-            immutable thisEvent = thisFiber.payload;
-
-            with (IRCEvent.Type)
-            switch (thisEvent.type)
-            {
-            case UNSET:
-                import std.datetime.systime : Clock;
-
-                // Triggered by timer
-                immutable nowInUnix = Clock.currTime.toUnixTime();
-
-                if ((nowInUnix - lastPongTimestamp) >= service.connectSettings.maxPingPeriodAllowed)
-                {
-                    import kameloso.thread : ThreadMessage;
-                    import std.concurrency : prioritySend;
-
-                    /+
-                        Skip first two strikes; helps when resuming from suspend and similar,
-                        then allow for a PING with `timeToAllowForPingResponse` as timeout.
-                        Finally, if all else failed, reconnect.
-                     +/
-                    ++strikes;
-
-                    if (strikes <= StrikeBreakpoints.wait)
-                    {
-                        if (service.state.settings.trace && (strikes > 1))
-                        {
-                            logger.warning("Server is suspiciously quiet.");
-                        }
-                        delay(service, briefWait, Yes.yield);
-                        continue;
-                    }
-                    else if (strikes == StrikeBreakpoints.ping)
-                    {
-                        // Timeout. Send a preemptive ping
-                        service.state.mainThread.prioritySend(ThreadMessage.ping(service.state.server.resolvedAddress));
-                        delay(service, timeToAllowForPingResponse, Yes.yield);
-                        continue;
-                    }
-                    else /*if (strikes > StrikeBreakpoints.ping)*/
-                    {
-                        // All failed, reconnect
-                        logger.warning("No response from server. Reconnecting.");
-                        service.state.mainThread.prioritySend(ThreadMessage.reconnect);
-                        return;
-                    }
-                }
-                else
-                {
-                    // Early trigger, either interleaved with a PONG or due to preemptive PING
-                    // Remove current delay and re-delay at when the next PING check should be
-                    undelay(service);
-                    immutable elapsed = (nowInUnix - lastPongTimestamp);
-                    immutable remaining = (service.connectSettings.maxPingPeriodAllowed - elapsed);
-                    delay(service, remaining.seconds, Yes.yield);
-                }
-                continue;
-
-            case PING:
-            case PONG:
-                // Triggered by PING *or* PONG response from our preemptive PING
-                // Update and remove delay, so we can drop down and re-delay it
-                lastPongTimestamp = thisEvent.time;
-                strikes = 0;
-                undelay(service);
-                break;
-
-            default:
-                assert(0, "Impossible case hit in pingMonitorDg");
-            }
-
-            delay(service, pingMonitorPeriodicity, Yes.yield);
-        }
+        wait = 2,
+        ping = 3,
     }
 
     static immutable IRCEvent.Type[2] pingPongTypes =
@@ -1564,9 +1480,89 @@ void startPingMonitorFiber(ConnectService service)
         IRCEvent.Type.PONG,
     ];
 
-    Fiber pingMonitorFiber = new CarryingFiber!IRCEvent(&pingMonitorDg, BufferSize.fiberStack);
-    await(service, pingMonitorFiber, pingPongTypes[]);
-    delay(service, pingMonitorFiber, pingMonitorPeriodicity);
+    scope(exit) unawait(service, pingPongTypes[]);
+    scope(exit) undelay(service);
+    await(service, pingPongTypes[], No.yield);
+    delay(service, pingMonitorPeriodicity, Yes.yield);
+
+    while (true)
+    {
+        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+        immutable thisEvent = thisFiber.payload;
+
+        with (IRCEvent.Type)
+        switch (thisEvent.type)
+        {
+        case UNSET:
+            import std.datetime.systime : Clock;
+
+            // Triggered by timer
+            immutable nowInUnix = Clock.currTime.toUnixTime();
+
+            if ((nowInUnix - lastPongTimestamp) >= service.connectSettings.maxPingPeriodAllowed)
+            {
+                import kameloso.thread : ThreadMessage;
+                import std.concurrency : prioritySend;
+
+                /+
+                    Skip first two strikes; helps when resuming from suspend and similar,
+                    then allow for a PING with `timeToAllowForPingResponse` as timeout.
+                    Finally, if all else failed, reconnect.
+                    +/
+                ++strikes;
+
+                if (strikes <= StrikeBreakpoints.wait)
+                {
+                    if (service.state.settings.trace && (strikes > 1))
+                    {
+                        logger.warning("Server is suspiciously quiet.");
+                    }
+                    delay(service, briefWait, Yes.yield);
+                    continue;
+                }
+                else if (strikes == StrikeBreakpoints.ping)
+                {
+                    // Timeout. Send a preemptive ping
+                    logger.warning("Sending preemptive ping.");
+                    service.state.mainThread.prioritySend(ThreadMessage.ping(service.state.server.resolvedAddress));
+                    delay(service, timeToAllowForPingResponse, Yes.yield);
+                    continue;
+                }
+                else /*if (strikes > StrikeBreakpoints.ping)*/
+                {
+                    // All failed, reconnect
+                    logger.warning("No response from server. Reconnecting.");
+                    service.state.mainThread.prioritySend(ThreadMessage.reconnect);
+                    return;
+                }
+            }
+            else
+            {
+                // Early trigger, either interleaved with a PONG or due to preemptive PING
+                // Remove current delay and re-delay at when the next PING check should be
+                undelay(service);
+                immutable elapsed = (nowInUnix - lastPongTimestamp);
+                immutable remaining = (service.connectSettings.maxPingPeriodAllowed - elapsed);
+                delay(service, remaining.seconds, Yes.yield);
+            }
+            continue;
+
+        case PING:
+        case PONG:
+            // Triggered by PING *or* PONG response from our preemptive PING
+            // Update and remove delay, so we can drop down and re-delay it
+            lastPongTimestamp = thisEvent.time;
+            strikes = 0;
+            undelay(service);
+            break;
+
+        default:
+            assert(0, "Impossible case hit in pingMonitorDg");
+        }
+
+        delay(service, pingMonitorPeriodicity, Yes.yield);
+    }
 }
 
 
