@@ -708,16 +708,13 @@ void initialise(PrinterPlugin plugin)
 // setup
 /++
     Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
-    Sets up a Fiber to print the date in `YYYY-MM-DD` format to the screen and
-    to any active log files upon day change.
+    Loops (as a [core.thread.Fiber|Fiber] to print the date in `YYYY-MM-DD` format
+    to the screen and to any active log files upon day change.
  +/
 void setup(PrinterPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
-    import kameloso.constants : BufferSize;
     import kameloso.terminal : isTerminal;
-    import core.thread : Fiber;
-    import core.time : Duration;
 
     plugin.linebuffer.reserve(PrinterPlugin.linebufferInitialSize);
 
@@ -727,7 +724,7 @@ void setup(PrinterPlugin plugin)
         PrinterPlugin.bell = string.init;
     }
 
-    static Duration untilNextMidnight()
+    static auto untilNextMidnight()
     {
         import kameloso.time : nextMidnight;
         import std.datetime.systime : Clock;
@@ -736,31 +733,28 @@ void setup(PrinterPlugin plugin)
         return (now.nextMidnight - now);
     }
 
-    void daybreakDg()
-    {
-        while (true)
-        {
-            if (plugin.isEnabled)
-            {
-                if (plugin.printerSettings.monitor && plugin.printerSettings.daybreaks)
-                {
-                    import kameloso.common : logger;
-                    logger.info(datestamp);
-                }
+    // Delay until next midnight, then every midnight thereafter
+    delay(plugin, untilNextMidnight, Yes.yield);
 
-                if (plugin.printerSettings.logs)
-                {
-                    commitAllLogsImpl(plugin);
-                    plugin.buffers = null;  // Uncommitted lines will be LOST. Not trivial to work around.
-                }
+    while (true)
+    {
+        if (plugin.isEnabled)
+        {
+            if (plugin.printerSettings.monitor && plugin.printerSettings.daybreaks)
+            {
+                import kameloso.common : logger;
+                logger.info(datestamp);
             }
 
-            delay(plugin, untilNextMidnight, Yes.yield);
+            if (plugin.printerSettings.logs)
+            {
+                commitAllLogsImpl(plugin);
+                plugin.buffers = null;  // Uncommitted lines will be LOST. Not trivial to work around.
+            }
         }
-    }
 
-    Fiber daybreakFiber = new Fiber(&daybreakDg, BufferSize.fiberStack);
-    delay(plugin, daybreakFiber, untilNextMidnight);
+        delay(plugin, untilNextMidnight, Yes.yield);
+    }
 }
 
 
