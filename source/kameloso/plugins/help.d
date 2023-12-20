@@ -84,7 +84,6 @@ import std.typecons : Flag, No, Yes;
 )
 void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
     import core.thread : Fiber;

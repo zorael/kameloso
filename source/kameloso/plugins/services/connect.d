@@ -1455,7 +1455,6 @@ void startPingMonitor(ConnectService service)
 in (Fiber.getThis, "Tried to call `startPingMonitor` from outside a Fiber")
 {
     import kameloso.plugins.common.delayawait : await, delay, unawait, undelay;
-    import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import core.time : seconds;
 

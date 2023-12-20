@@ -444,13 +444,11 @@ in (Fiber.getThis, "Tried to call `addChannel` from outside a Fiber")
 in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
     import kameloso.plugins.common.delayawait : await, unawait;
-    import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import dialect.common : isValidChannel;
     import lu.string : stripped;
     import std.algorithm.searching : canFind, countUntil;
     import std.uni : toLower;
-    import core.thread : Fiber;
 
     void sendWeAreAlreadyInChannel()
     {
@@ -993,7 +991,6 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
-    import core.thread : Fiber;
 
     alias Payload = Tuple!(bool);
 
@@ -1039,7 +1036,6 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
-    import core.thread : Fiber;
 
     alias Payload = Tuple!(string, string, string);
 
@@ -1249,9 +1245,7 @@ void cycle(
 in (Fiber.getThis, "Tried to call `cycle` from outside a Fiber")
 {
     import kameloso.plugins.common.delayawait : await, delay, unawait;
-    import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
-    import core.thread : Fiber;
 
     part(plugin.state, channelName, "Cycling");
 
@@ -1632,10 +1626,8 @@ void onBusMessage(
         return plugin.state.mainThread.prioritySend(ThreadMessage.reconnect(string.init, boxed(true)));
 
     case "set":
-        import kameloso.constants : BufferSize;
         import kameloso.thread : CarryingFiber;
         import std.typecons : Tuple;
-        import core.thread : Fiber;
 
         alias Payload = Tuple!(bool);
 
