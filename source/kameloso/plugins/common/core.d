@@ -1712,9 +1712,9 @@ mixin template IRCPluginImpl(
                     import kameloso.constants : BufferSize;
                     import core.thread : Fiber;
 
-                    auto ` ~ funName ~ `Dg()
+                    void ` ~ funName ~ `Dg()
                     {
-                        return .` ~ funName ~ `(this);
+                        .` ~ funName ~ `(this);
                     }
 
                     auto ` ~ funName ~ `Fiber = new Fiber(&` ~ funName ~ `Dg, BufferSize.fiberStack);
