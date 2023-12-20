@@ -3561,13 +3561,13 @@ in (Fiber.getThis, "Tried to call `startValidator` from outside a Fiber")
 
     if (plugin.state.settings.headless)
     {
-        void onExpiryDg()
+        void onExpiryHeadlessDg()
         {
             quit(plugin.state, expiryMessage);
         }
 
         immutable delta = (expiresWhen - now);
-        delay(plugin, &onExpiryDg, delta);
+        delay(plugin, &onExpiryHeadlessDg, delta);
     }
     else
     {
