@@ -3363,7 +3363,13 @@ public:
     /++
         String context of the request.
      +/
-    string context();
+    string context() const pure @safe nothrow @nogc;
+
+    // creator
+    /++
+        Name of the function that created this request.
+     +/
+    string creator() const pure @safe nothrow @nogc;
 
     // fiber
     /++
@@ -3395,6 +3401,11 @@ private:
     string _context;
 
     /++
+        Private creator string.
+     +/
+    string _creator;
+
+    /++
         Private [kameloso.thread.CarryingFiber|CarryingFiber].
      +/
     CarryingFiber!T _fiber;
@@ -3407,11 +3418,16 @@ public:
         Params:
             context = String context of the request.
             fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
+            creator = Name of the function that created this request.
      +/
-    this(string context, CarryingFiber!T fiber) pure @safe nothrow @nogc
+    this(
+        string context,
+        CarryingFiber!T fiber,
+        const string creator) pure @safe nothrow @nogc
     {
         this._context = context;
         this._fiber = fiber;
+        this._creator = creator;
     }
 
     // this
@@ -3421,13 +3437,19 @@ public:
         Params:
             context = String context of the request.
             dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
+            creator = Name of the function that created this request.
      +/
-    this(string context, void delegate() dg) /*pure @safe @nogc*/ nothrow
+    this(
+        string context,
+        void delegate() dg,
+        const string creator) /*pure @safe @nogc*/ nothrow
     {
         import kameloso.constants : BufferSize;
 
         this._context = context;
         this._fiber = new CarryingFiber!T(dg, BufferSize.fiberStack);
+        this._fiber.creator = creator;
+        this._creator = creator;
     }
 
     // context
@@ -3437,9 +3459,21 @@ public:
         Returns:
             A string.
      +/
-    string context()
+    string context() const pure @safe nothrow @nogc
     {
         return _context;
+    }
+
+    // creator
+    /++
+        Name of the function that created this request.
+
+        Returns:
+            A string.
+     +/
+    string creator() const pure @safe nothrow @nogc
+    {
+        return _creator;
     }
 
     // fiber
@@ -3466,13 +3500,17 @@ public:
         T = Type to instantiate [SpecialRequestImpl] with.
         context = String context of the request.
         fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
+        creator = Name of the function that created this request.
 
     Returns:
         A new [SpecialRequest] that is in actually a [SpecialRequestImpl].
  +/
-SpecialRequest specialRequest(T)(const string context, CarryingFiber!T fiber)
+SpecialRequest specialRequest(T)
+    (const string context,
+    CarryingFiber!T fiber,
+    const string creator = __FUNCTION__) pure @safe nothrow
 {
-    return new SpecialRequestImpl!T(context, fiber);
+    return new SpecialRequestImpl!T(context, fiber, creator);
 }
 
 
@@ -3485,13 +3523,17 @@ SpecialRequest specialRequest(T)(const string context, CarryingFiber!T fiber)
         T = Type to instantiate [SpecialRequestImpl] with.
         context = String context of the request.
         dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
+        creator = Name of the function that created this request.
 
     Returns:
         A new [SpecialRequest] that is in actually a [SpecialRequestImpl].
  +/
-SpecialRequest specialRequest(T)(const string context, void delegate() dg)
+SpecialRequest specialRequest(T)
+    (const string context,
+    void delegate() dg,
+    const string creator = __FUNCTION__) /*pure @safe*/ nothrow
 {
-    return new SpecialRequestImpl!T(context, dg);
+    return new SpecialRequestImpl!T(context, dg, creator);
 }
 
 
