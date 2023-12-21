@@ -1729,12 +1729,12 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
 {
     import core.thread : Fiber;
 
+    Fiber[] expiredFibers;
+
     /++
         Handle awaiting Fibers of a specified type.
      +/
-    void processAwaitingFibersImpl(
-        Fiber[] fibersForType,
-        ref Fiber[] expiredFibers)
+    void processAwaitingFibersImpl(Fiber[] fibersForType)
     {
         foreach (immutable i, fiber; fibersForType)
         {
@@ -1781,20 +1781,15 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
         }
     }
 
-    Fiber[] expiredFibers;
 
     if (plugin.state.awaitingFibers[event.type].length)
     {
-        processAwaitingFibersImpl(
-            plugin.state.awaitingFibers[event.type],
-            expiredFibers);
+        processAwaitingFibersImpl(plugin.state.awaitingFibers[event.type]);
     }
 
     if (plugin.state.awaitingFibers[IRCEvent.Type.ANY].length)
     {
-        processAwaitingFibersImpl(
-            plugin.state.awaitingFibers[IRCEvent.Type.ANY],
-            expiredFibers);
+        processAwaitingFibersImpl(plugin.state.awaitingFibers[IRCEvent.Type.ANY]);
     }
 
     // Clean up processed Fibers
