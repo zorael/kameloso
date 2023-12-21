@@ -610,7 +610,7 @@ auto replay(Plugin, Fun)
                     &call,
                     replay.event,
                     BufferSize.fiberStack);
-                fiber.call();
+                fiber.call(caller);
 
                 if (fiber.state == Fiber.State.TERM)
                 {

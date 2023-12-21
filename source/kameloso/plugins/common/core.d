@@ -1033,7 +1033,7 @@ mixin template IRCPluginImpl(
                     () => call!(inFiber, SystemFun)(fun, event),
                     event,
                     BufferSize.fiberStack);
-                fiber.call();
+                fiber.call(uda.fqn);
 
                 if (fiber.state == Fiber.State.TERM)
                 {
