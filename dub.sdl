@@ -89,6 +89,7 @@ versions \
     "IncludeHeavyStuff" \
     "BenchmarkHTTPRequests" \
     "ThreadedSSLFree" \
+    "TraceFibersAndDelegates" \
     "Callgrind"
 */
 
