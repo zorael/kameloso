@@ -657,6 +657,54 @@ unittest
 }
 
 
+// carryingFiber
+/++
+    Convenience function creating a new [CarryingFiber] while inferring the payload
+    type `T` from the passed `payload` argument.
+
+    Params:
+        T = Type to embed into the class as the type of [CarryingFiber.payload].
+        fnOrDg = Function/delegate pointer to call when invoking the resulting [CarryingFiber].
+        payload = Payload to assign to the [CarryingFiber.payload|payload] member
+            of the resulting [CarryingFiber].
+        args = Arguments to pass to the [core.thread.fiber.Fiber|Fiber] `super`
+            constructor. If empty, its default arguments are used.
+
+    Returns:
+        A [CarryingFiber] with an automatically-inferred template parameter `T`,
+        whose [CarryingFiber.payload|payload] is set to the passed `payload`.
+ +/
+auto carryingFiber(T, FnOrDg, Args...)(FnOrDg fnOrDg, T payload, Args args)
+if (isSomeFunction!FnOrDg && (!Args.length || allSatisfy!(isNumeric, Args)))
+{
+    import std.traits : Unqual;
+    return new CarryingFiber!(Unqual!T)(fnOrDg, payload, args);
+}
+
+///
+unittest
+{
+    import kameloso.constants : BufferSize;
+
+    static struct Payload
+    {
+        string s;
+        int i;
+    }
+
+    void dg() {}
+
+    Payload payload;
+    payload.s = "Hello";
+    payload.i = 42;
+
+    auto fiber = carryingFiber(&dg, payload, BufferSize.fiberStack);
+    assert(fiber.payload == payload);
+    fiber.call();
+    assert(fiber.called == 1);
+}
+
+
 // interruptibleSleep
 /++
     Sleep in small periods, checking the passed `abort` bool in between to see
