@@ -133,6 +133,30 @@ struct ScheduledDelegate
         When [dg] is scheduled to be called, in hnsecs from midnight Jan 1st 1970.
      +/
     long timestamp;
+
+    /++
+        String name of the function that created this [ScheduledDelegate].
+     +/
+    string creator;
+
+    /++
+        Constructor.
+
+        Params:
+            dg = Delegate to trigger at the point in time [timestamp].
+            timestamp = When [dg] is scheduled to be called, in hecto-nanoseconds
+                from midnight Jan 1st 1970.
+            creator = String name of the function that created this [ScheduledDelegate].
+     +/
+    this(
+        void delegate() dg,
+        const long timestamp,
+        const string creator = __FUNCTION__)
+    {
+        this.dg = dg;
+        this.timestamp = timestamp;
+        this.creator = creator;
+    }
 }
 
 
