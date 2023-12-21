@@ -1026,13 +1026,13 @@ mixin template IRCPluginImpl(
             static if (inFiber)
             {
                 import kameloso.constants : BufferSize;
-                import kameloso.thread : CarryingFiber;
+                import kameloso.thread : carryingFiber;
                 import core.thread : Fiber;
 
-                auto fiber = new CarryingFiber!IRCEvent(
+                auto fiber = carryingFiber(
                     () => call!(inFiber, SystemFun)(fun, event),
+                    event,
                     BufferSize.fiberStack);
-                fiber.payload = event;
                 fiber.call();
 
                 if (fiber.state == Fiber.State.TERM)
