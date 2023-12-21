@@ -78,6 +78,30 @@ struct ScheduledFiber
         When [fiber] is scheduled to be called, in hnsecs from midnight Jan 1st 1970.
      +/
     long timestamp;
+
+    /++
+        String name of the function that created this [ScheduledFiber].
+     +/
+    string creator;
+
+    /++
+        Constructor.
+
+        Params:
+            fiber = Fiber to trigger at the point in time [timestamp].
+            timestamp = When [fiber] is scheduled to be called, in hecto-nanoseconds
+                from midnight Jan 1st 1970.
+            creator = String name of the function that created this [ScheduledFiber].
+     +/
+    this(
+        Fiber fiber,
+        const long timestamp,
+        const string creator = __FUNCTION__)
+    {
+        this.fiber = fiber;
+        this.timestamp = timestamp;
+        this.creator = creator;
+    }
 }
 
 
