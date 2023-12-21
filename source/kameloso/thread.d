@@ -717,16 +717,23 @@ unittest
             of the resulting [CarryingFiber].
         args = Arguments to pass to the [core.thread.fiber.Fiber|Fiber] `super`
             constructor. If empty, its default arguments are used.
+        caller = String name of the calling function creating the resulting [CarryingFiber].
 
     Returns:
         A [CarryingFiber] with an automatically-inferred template parameter `T`,
         whose [CarryingFiber.payload|payload] is set to the passed `payload`.
  +/
-auto carryingFiber(T, FnOrDg, Args...)(FnOrDg fnOrDg, T payload, Args args)
+auto carryingFiber(T, FnOrDg, Args...)
+    (FnOrDg fnOrDg,
+    T payload,
+    Args args,
+    const string caller = __FUNCTION__)
 if (isSomeFunction!FnOrDg && (!Args.length || allSatisfy!(isNumeric, Args)))
 {
     import std.traits : Unqual;
-    return new CarryingFiber!(Unqual!T)(fnOrDg, payload, args);
+    auto fiber = new CarryingFiber!(Unqual!T)(fnOrDg, payload, args);
+    fiber.creator = caller;
+    return fiber;
 }
 
 ///
