@@ -39,6 +39,8 @@ module kameloso.thread;
 
 private:
 
+import std.meta : allSatisfy;
+import std.traits : isNumeric, isSomeFunction;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 import core.time : Duration;
@@ -412,7 +414,8 @@ unittest
 
 // CarryingFiber
 /++
-    A [core.thread.fiber.Fiber|Fiber] carrying a payload of type `T`.
+    A [core.thread.fiber.Fiber|Fiber] carrying a payload of type `T`, along with
+    some metadata.
 
     Used interchangeably with [core.thread.fiber.Fiber|Fiber], but allows for
     casting to true `CarryingFiber!T`-ness to access the `payload` member.
@@ -429,8 +432,10 @@ unittest
         assert(!fiber.payload);
     }
 
-    auto fiber = new CarryingFiber!bool(true, &dg, BufferSize.fiberStack);
+    auto fiber = new CarryingFiber!bool(&dg, true, BufferSize.fiberStack);
+    assert(fiber.called == 0);
     fiber.call();
+    assert(fiber.called == 1);
     fiber.payload = false;
     fiber.call();
     ---
@@ -441,39 +446,214 @@ unittest
 final class CarryingFiber(T) : Fiber
 {
     /++
-        Embedded payload value in this Fiber; what distinguishes it from plain `Fiber`s.
+        Embedded payload value in this Fiber; what distinguishes it from plain
+        [core.thread.fiber.Fiber|Fiber]s.
      +/
     T payload;
 
     /++
-        Constructor function merely taking a function/delegate pointer, to call
-        when invoking this Fiber (via `.call()`).
+        String name of the function that created this [CarryingFiber].
      +/
-    this(Fn, Args...)(Fn fn, Args args)  // attributes inferred
+    string creator;
+
+    /++
+        String name of the function that last called this [CarryingFiber]
+        (via [CarryingFiber.call|.call()]).
+     +/
+    string caller;
+
+    /++
+        How many times this [CarryingFiber] has been called (via
+        [CarryingFiber.call|.call()]).
+     +/
+    uint called;
+
+    /++
+        Constructor function merely taking a function/delegate pointer, to call
+        when invoking this Fiber (via [CarryingFiber.call|.call()]).
+
+        Params:
+            fnOrDg = Function/delegate pointer to call when invoking this [CarryingFiber].
+            args = Arguments to pass to the [core.thread.fiber.Fiber|Fiber] `super`
+                constructor. If empty, its default arguments are used.
+            creator = String name of the creating function of this [CarryingFiber].
+     +/
+    this(FnOrDg, Args...)
+        (FnOrDg fnOrDg,
+        Args args,
+        const string creator = __FUNCTION__)  // attributes inferred
+    if (isSomeFunction!FnOrDg && (!Args.length || allSatisfy!(isNumeric, Args)))
     {
-        // fn is a pointer
-        super(fn, args);
+        this.creator = creator;
+        super(fnOrDg, args);
     }
 
     /++
         Constructor function taking a `T` `payload` to assign to its own
-        internal `this.payload`, as well as a function/delegate pointer to call
-        when invoking this Fiber (via `.call()`).
+        internal [CarryingFiber.payload|this.payload], as well as a function/delegate pointer to call
+        when invoking this Fiber (via [CarryingFiber.call|.call()]).
+
+        Params:
+            fnOrDg = Function/delegate pointer to call when invoking this [CarryingFiber].
+            payload = Payload to assign to [CarryingFiber.payload|.payload].
+            args = Arguments to pass to the [core.thread.fiber.Fiber|Fiber] `super`
+                constructor. If empty, the default arguments are used.
+            creator = String name of the creating function of this [CarryingFiber].
      +/
-    this(Fn, Args...)(T payload, Fn fn, Args args)  // as above
+    this(FnOrDg, Args...)
+        (FnOrDg fnOrDg,
+        T payload,
+        Args args,
+        const string creator = __FUNCTION__)  // ditto
+    if (isSomeFunction!FnOrDg && (!Args.length || allSatisfy!(isNumeric, Args)))
     {
         this.payload = payload;
-        // fn is a pointer
-        super(fn, args);
+        this.creator = creator;
+        super(fnOrDg, args);
     }
 
     /++
-        Resets the payload to its initial value.
+        Constructor function taking a `T` `payload` to assign to its own
+        internal [CarryingFiber.payload|this.payload], as well as a function/delegate pointer to call
+        when invoking this Fiber (via [CarryingFiber.call|.call()]).
+
+        Deprecated: Use the constructor taking a function/delegate pointer first
+            instead. This overload will be removed in a later release.
+
+        Params:
+            payload = Payload to assign to [CarryingFiber.payload|.payload].
+            fnOrDg = Function/delegate pointer to call when invoking this [CarryingFiber].
+            args = Arguments to pass to the [core.thread.fiber.Fiber|Fiber] `super`
+                constructor. If empty, the default arguments are used.
+            creator = String name of the creating function of this [CarryingFiber].
+     +/
+    deprecated("Use the constructor taking a function/delegate pointer first instead" ~
+        "This overload will be removed in a later release")
+    this(FnOrDg, Args...)
+        (T payload,
+        FnOrDg fnOrDg,
+        Args args,
+        const string creator = __FUNCTION__)  // as above
+    if (isSomeFunction!FnOrDg && (!Args.length || allSatisfy!(isNumeric, Args)))
+    {
+        this.payload = payload;
+        this.creator = creator;
+        super(fnOrDg, args);
+    }
+
+    /++
+        Hijacks the invocation of the [core.thread.fiber.Fiber|Fiber] and injects
+        the string name of the calling function into the [caller] member before
+        calling the [core.thread.fiber.Fiber|Fiber]'s own `.call()`.
+
+        Params:
+            caller = String name of the function calling this [CarryingFiber]
+                (via [CarryingFiber.call|.call()]).
+
+        Returns:
+            A [core.object.Throwable|Throwable] if the underlying
+            [core.thread.fiber.Fiber|Fiber] threw one when called; `null` otherwise.
+     +/
+    auto call(const string caller = __FUNCTION__)
+    {
+        this.caller = caller;
+        ++this.called;
+        return super.call();
+    }
+
+    /++
+        Resets the [CarryingFiber.payload|payload] to its `.init` value.
      +/
     void resetPayload()
     {
         payload = T.init;
     }
+}
+
+///
+unittest
+{
+    import std.conv : to;
+
+    static struct Payload
+    {
+        string s = "Hello";
+        size_t i = 42;
+
+        static auto getCompileTimeRandomPayload()
+        {
+            enum randomString = __TIMESTAMP__;
+            return Payload(randomString, hashOf(randomString));
+        }
+    }
+
+    static auto creatorTest(void delegate() dg)
+    {
+        import kameloso.constants : BufferSize;
+
+        auto fiber = new CarryingFiber!Payload
+            (dg,
+            Payload.getCompileTimeRandomPayload(),
+            BufferSize.fiberStack);
+        assert((fiber.called == 0), fiber.called.to!string);
+        return fiber;
+    }
+
+    static void callerTest1(CarryingFiber!Payload fiber)
+    {
+        immutable payload = Payload.getCompileTimeRandomPayload();
+
+        assert((fiber.payload.s == payload.s), fiber.payload.s);
+        assert((fiber.payload.i == payload.i), fiber.payload.i.to!string);
+        fiber.call();
+        assert((fiber.payload.s == Payload.init.s), fiber.payload.s);
+        assert((fiber.payload.i == Payload.init.i), fiber.payload.i.to!string);
+    }
+
+    static void callerTest2(CarryingFiber!Payload fiber)
+    {
+        fiber.call();
+    }
+
+    void dg()
+    {
+        auto thisFiber = cast(CarryingFiber!Payload)(Fiber.getThis);
+        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+
+        // __FUNCTION__ will be something like "kameloso.thread.__unittest_L577_C1.dg"
+        enum expectedFunction = __FUNCTION__[0..$-2] ~ "dg";
+
+        static if (__FUNCTION__ == expectedFunction)
+        {
+            enum expectedCreator = __FUNCTION__[0..$-2] ~ "creatorTest";
+            enum expectedCaller1 = __FUNCTION__[0..$-2] ~ "callerTest1";
+            enum expectedCaller2 = __FUNCTION__[0..$-2] ~ "callerTest2";
+
+            // First state
+            assert((thisFiber.creator == expectedCreator), thisFiber.creator);
+            assert((thisFiber.caller == expectedCaller1), thisFiber.caller);
+            assert((thisFiber.called == 1), thisFiber.called.to!string);
+            thisFiber.resetPayload();
+            Fiber.yield();
+
+            // Second state
+            assert((thisFiber.caller == expectedCaller2), thisFiber.caller);
+            assert((thisFiber.called == 2), thisFiber.called.to!string);
+        }
+        else
+        {
+            enum message = "Bad logic slicing function names in `CarryingFiber` unit test; " ~
+                "please report this as a bug. (Was there a change in the compiler?)";
+            pragma(msg, message);
+
+            // Yield once so the tests still pass
+            Fiber.yield();
+        }
+    }
+
+    auto fiber = creatorTest(&dg);
+    callerTest1(fiber);
+    callerTest2(fiber);
 }
 
 
