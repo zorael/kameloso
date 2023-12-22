@@ -352,7 +352,7 @@ unittest
             .addSyntax("$command list")
     )
 )
-void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
+void onCommandTimer(TimerPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : advancePast, stripped;
     import std.format : format;
@@ -1044,7 +1044,7 @@ void onWelcome(TimerPlugin plugin)
     .onEvent(IRCEvent.Type.SELFJOIN)
     .channelPolicy(ChannelPolicy.home)
 )
-void onSelfjoin(TimerPlugin plugin, const ref IRCEvent event)
+void onSelfjoin(TimerPlugin plugin, const /*ref*/ IRCEvent event)
 {
     handleSelfjoin(plugin, event.channel, No.force);
 }
