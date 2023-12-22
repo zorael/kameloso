@@ -1362,50 +1362,57 @@ mixin template IRCPluginImpl(
         //this.state.previousWhoisTimestamps = null;  // keep
         this.state.updates = IRCPluginState.Update.nothing;
 
-        foreach (immutable i, ref member; this.tupleof)
+        foreach (immutable i, _; this.tupleof)
         {
-            static if (isSerialisable!member)
+            static if (isSerialisable!(this.tupleof[i]))
             {
                 import kameloso.traits : udaIndexOf;
 
                 enum resourceUDAIndex = udaIndexOf!(this.tupleof[i], Resource);
-                enum configurationUDAIndex = udaIndexOf!(this.tupleof[i], Configuration);
-                alias attrs = __traits(getAttributes, this.tupleof[i]);
-
                 static if (resourceUDAIndex != -1)
                 {
                     import std.path : buildNormalizedPath;
 
+                    alias attrs = __traits(getAttributes, this.tupleof[i]);
                     static if (is(typeof(attrs[resourceUDAIndex])))
                     {
                         // Instance of Resource, e.g. @Resource("subdir") annotation
-                        member = buildNormalizedPath(
+                        this.tupleof[i] = buildNormalizedPath(
                             state.settings.resourceDirectory,
                             attrs[resourceUDAIndex].subdirectory,
-                            member);
+                            this.tupleof[i]);
                     }
                     else
                     {
                         // Resource as a type, e.g. @Resource annotation
-                        member = buildNormalizedPath(state.settings.resourceDirectory, member);
+                        this.tupleof[i] = buildNormalizedPath(
+                            state.settings.resourceDirectory,
+                            this.tupleof[i]);
                     }
                 }
-                else static if (configurationUDAIndex != -1)
+                else
                 {
-                    import std.path : buildNormalizedPath;
+                    enum configurationUDAIndex = udaIndexOf!(this.tupleof[i], Configuration);
+                    static if (configurationUDAIndex != -1)
+                    {
+                        import std.path : buildNormalizedPath;
 
-                    static if (is(typeof(attrs[configurationUDAIndex])))
-                    {
-                        // Instance of Configuration, e.g. @Configuration("subdir") annotation
-                        member = buildNormalizedPath(
-                            state.settings.configDirectory,
-                            attrs[configurationUDAIndex].subdirectory,
-                            member);
-                    }
-                    else
-                    {
-                        // Configuration as a type, e.g. @Configuration annotation
-                        member = buildNormalizedPath(state.settings.configDirectory, member);
+                        alias attrs = __traits(getAttributes, this.tupleof[i]);
+                        static if (is(typeof(attrs[configurationUDAIndex])))
+                        {
+                            // Instance of Configuration, e.g. @Configuration("subdir") annotation
+                            this.tupleof[i] = buildNormalizedPath(
+                                state.settings.configDirectory,
+                                attrs[configurationUDAIndex].subdirectory,
+                                this.tupleof[i]);
+                        }
+                        else
+                        {
+                            // Configuration as a type, e.g. @Configuration annotation
+                            this.tupleof[i] = buildNormalizedPath(
+                                state.settings.configDirectory,
+                                this.tupleof[i]);
+                        }
                     }
                 }
             }
