@@ -42,6 +42,78 @@ version(DigitalMars)
 }
 
 
+struct Sender
+{
+    IRCPlugin plugin;
+
+    string botNickname;
+
+    string channelName;
+
+    CarryingFiber!IRCEvent fiber;
+
+    static immutable delayBetween = 3.seconds;
+
+    this(
+        IRCPlugin plugin,
+        CarryingFiber!IRCEvent fiber,
+        const string channelName,
+        const string botNickname)
+    {
+        this.plugin = plugin;
+        this.fiber = fiber;
+        this.channelName = channelName;
+        this.botNickname = botNickname;
+    }
+
+    void send(const string line)
+    in (plugin)
+    {
+        delay(plugin, delayBetween, Yes.yield);
+        chan(plugin.state, channelName, botNickname ~ ": " ~ line);
+    }
+
+    void sendPrefixed(const string line)
+    in (plugin)
+    {
+        delay(plugin, delayBetween, Yes.yield);
+        chan(plugin.state, channelName, plugin.state.settings.prefix ~ line);
+    }
+
+    void sendNoPrefix(const string line)
+    in (plugin)
+    {
+        delay(plugin, delayBetween, Yes.yield);
+        chan(plugin.state, channelName, line);
+    }
+
+    void awaitReply()
+    in (plugin)
+    {
+        do Fiber.yield();
+        while ((fiber.payload.channel != channelName) ||
+            (fiber.payload.sender.nickname != botNickname));
+    }
+
+    void expect(
+        const string expected,
+        const string file = __FILE__,
+        const size_t line = __LINE__)
+    in (plugin)
+    {
+        awaitReply();
+
+        immutable actual = fiber.payload.content.stripEffects();
+        if (actual != expected)
+        {
+            enum pattern = "'%s' != '%s' (%s:%d)";
+            immutable message = pattern.format(actual, expected, file, line);
+            throw new Exception(message);
+        }
+    }
+}
+
+
 // onCommandTest
 /++
  +
@@ -49,6 +121,7 @@ version(DigitalMars)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.admin)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("test")
@@ -66,6 +139,9 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
 
     logger.info("tester invoked.");
 
+    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+    assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+
     string slice = event.content;  // mutable
     string pluginName;
     string botNickname;
@@ -80,30 +156,7 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
         return;
     }
 
-    void send(const string line)
-    {
-        chan(plugin.state, event.channel, botNickname ~ ": " ~ line);
-    }
-
-    void awaitReply()
-    {
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-        Fiber.yield();
-        while ((thisFiber.payload.channel != event.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-        awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
-    }
+    auto s = Sender(plugin, thisFiber, event.channel, botNickname);
 
     void sync()
     {
@@ -114,8 +167,8 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
 
         immutable id = uniform(0, 1000);
 
-        send(text("say ", id));
-        do awaitReply(); while (thisFiber.payload.content != id.text);
+        s.send(text("say ", id));
+        do s.awaitReply(); while (thisFiber.payload.content != id.text);
     }
 
     bool runTestAndReport(alias fun)()
@@ -177,8 +230,9 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
                 runTestAndReport!test();
             }
 
-            Fiber fiber = new CarryingFiber!IRCEvent(&caseDg, BufferSize.fiberStack);
-            fiber.call();
+            /*Fiber fiber = new CarryingFiber!IRCEvent(&caseDg, BufferSize.fiberStack);
+            fiber.call();*/
+            caseDg();
             break top;
     }
 
@@ -219,11 +273,12 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
             enum pattern = "%d/%d tests finished successfully. failed: %-(%s, %)";
             immutable message = pattern.format(successes, tests.length, failedTestNames);
             logger.info(message);
-            send(message);
+            s.send(message);
         }
 
-        Fiber fiber = new CarryingFiber!IRCEvent(&allDg, BufferSize.fiberStack);
-        fiber.call();
+        /*Fiber fiber = new CarryingFiber!IRCEvent(&allDg, BufferSize.fiberStack);
+        fiber.call();*/
+        allDg();
         break;
 
     default:
@@ -243,42 +298,24 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    void send(const string line)
-    {
-        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-    }
-
-    void awaitReply()
-    {
-        do Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname));
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
-    }
+    auto s = Sender(plugin, thisFiber, origEvent.channel, botNickname);
 
     // ------------ !home
 
-    send("home del #harpsteff");
-    expect("Channel #harpsteff was not listed as a home.");
+    s.send("home del #harpsteff");
+    s.expect("Channel #harpsteff was not listed as a home channel.");
 
-    send("home add #harpsteff");
-    expect("Home added.");
+    s.send("home add #harpsteff");
+    s.expect("Home channel added.");
 
-    send("home add #harpsteff");
-    expect("We are already in that home channel.");
+    s.send("home add #harpsteff");
+    s.expect("We are already in that home channel.");
 
-    send("home del #harpsteff");
-    expect("Home removed.");
+    s.send("home del #harpsteff");
+    s.expect("Home channel removed.");
 
-    send("home del #harpsteff");
-    expect("Channel #harpsteff was not listed as a home.");
+    s.send("home del #harpsteff");
+    s.expect("Channel #harpsteff was not listed as a home channel.");
 
     // ------------ lists
 
@@ -299,76 +336,76 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
             /*(list == "blacklist") ?*/ "blacklisted users";
 
         //"No such account xorael to remove as %s in %s."
-        send(list ~ " del xorael");
-        expect("xorael isn't %s in %s.".format(definiteFormSingular, origEvent.channel));
+        s.send(list ~ " del xorael");
+        s.expect("xorael isn't %s in %s.".format(definiteFormSingular, origEvent.channel));
 
-        send(list ~ " add xorael");
-        expect("Added xorael as %s in %s.".format(definiteFormSingular, origEvent.channel));
+        s.send(list ~ " add xorael");
+        s.expect("Added xorael as %s in %s.".format(definiteFormSingular, origEvent.channel));
 
-        send(list ~ " add xorael");
-        expect("xorael was already %s in %s.".format(definiteFormSingular, origEvent.channel));
+        s.send(list ~ " add xorael");
+        s.expect("xorael was already %s in %s.".format(definiteFormSingular, origEvent.channel));
 
-        send(list ~ " list");
-        expect("Current %s in %s: xorael".format(plural, origEvent.channel));
+        s.send(list ~ " list");
+        s.expect("Current %s in %s: xorael".format(plural, origEvent.channel));
 
-        send(list ~ " del xorael");
-        expect("Removed xorael as %s in %s.".format(definiteFormSingular, origEvent.channel));
+        s.send(list ~ " del xorael");
+        s.expect("Removed xorael as %s in %s.".format(definiteFormSingular, origEvent.channel));
 
-        send(list ~ " list");
-        expect("There are no %s in %s.".format(plural, origEvent.channel));
+        s.send(list ~ " list");
+        s.expect("There are no %s in %s.".format(plural, origEvent.channel));
 
-        send(list ~ " add");
-        expect("No nickname supplied.");
+        s.send(list ~ " add");
+        s.expect("No nickname supplied.");
     }
 
     // ------------ misc
 
-    send("cycle #flirrp");
-    expect("I am not in that channel.");
+    s.send("cycle #flirrp");
+    s.expect("I am not in that channel.");
 
     // ------------ hostmasks
 
-    send("hostmask");
-    awaitReply();
+    s.send("hostmask");
+    s.awaitReply();
     if (thisFiber.payload.content != "This bot is not currently configured " ~
         "to use hostmasks for authentication.")
     {
-        send("hostmask add");
-        expect("Usage: !hostmask [add|del|list] ([account] [hostmask]/[hostmask])");
+        s.send("hostmask add");
+        s.expect("Usage: !hostmask [add|del|list] ([account] [hostmask]/[hostmask])");
 
-        send("hostmask add kameloso HIRF#%%!SNIR@sdasdasd");
-        expect("Invalid hostmask.");
+        s.send("hostmask add kameloso HIRF#%%!SNIR@sdasdasd");
+        s.expect("Invalid hostmask.");
 
-        send("hostmask add kameloso kameloso^!*@*");
-        expect("Hostmask list updated.");
+        s.send("hostmask add kameloso kameloso^!*@*");
+        s.expect("Hostmask list updated.");
 
-        send("hostmask list");
+        s.send("hostmask list");
         // `Current hostmasks: ["kameloso^!*@*":"kameloso"]`);
-        awaitReply();
+        s.awaitReply();
         enforce((thisFiber.payload.content.indexOf(`"kameloso^!*@*":"kameloso"`) != -1),
             thisFiber.payload.content, __FILE__, __LINE__);
 
-        send("hostmask del kameloso^!*@*");
-        expect("Hostmask list updated.");
+        s.send("hostmask del kameloso^!*@*");
+        s.expect("Hostmask list updated.");
 
-        send("hostmask del kameloso^!*@*");
-        expect("No such hostmask on file.");
+        s.send("hostmask del kameloso^!*@*");
+        s.expect("No such hostmask on file.");
     }
 
-    send("reload");
-    expect("Reloading plugins.");
+    s.send("reload");
+    s.expect("Reloading plugins.");
 
-    send("reload admin");
-    expect("Reloading plugin \"admin\".");
+    s.send("reload admin");
+    s.expect("Reloading plugin \"admin\".");
 
-    send("join #skabalooba");
-    send("part #skabalooba");
+    s.send("join #skabalooba");
+    s.send("part #skabalooba");
 
-    send("get admin.enabled");
-    expect("admin.enabled=true");
+    s.send("get admin.enabled");
+    s.expect("admin.enabled=true");
 
-    send("get core.prefix");
-    expect("core.prefix=\"%s\"".format(plugin.state.settings.prefix));
+    s.send("get core.prefix");
+    s.expect("core.prefix=\"%s\"".format(plugin.state.settings.prefix));
 }
 
 
@@ -381,70 +418,52 @@ in (origEvent.channel.length, "Tried to test Automode with empty channel in orig
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    void send(const string line)
-    {
-        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-    }
-
-    void awaitReply()
-    {
-        do Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname));
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
-    }
+    auto s = Sender(plugin, thisFiber, origEvent.channel, botNickname);
 
     // ------------ !automode
 
     /*send("automode list");
-    expect("No automodes defined for channel %s.".format(origEvent.channel));*/
+    s.expect("No automodes defined for channel %s.".format(origEvent.channel));*/
 
-    send("automode del");
-    expect("Usage: %sautomode [add|clear|list] [nickname/account] [mode]"
+    s.send("automode del");
+    s.expect("Usage: %sautomode [add|clear|list] [nickname/account] [mode]"
         .format(plugin.state.settings.prefix));
 
-    send("automode");
-    expect("Usage: %sautomode [add|clear|list] [nickname/account] [mode]"
+    s.send("automode");
+    s.expect("Usage: %sautomode [add|clear|list] [nickname/account] [mode]"
         .format(plugin.state.settings.prefix));
 
-    send("automode add $¡$¡ +o");
-    expect("Invalid nickname.");
+    s.send("automode add $¡$¡ +o");
+    s.expect("Invalid nickname.");
 
-    send("automode add kameloso -v");
-    expect("Automodes cannot be negative.");
+    s.send("automode add kameloso -v");
+    s.expect("Automodes cannot be negative.");
 
-    send("automode add kameloso +");
-    expect("You must supply a valid mode.");
+    s.send("automode add kameloso +");
+    s.expect("You must supply a valid mode.");
 
-    send("automode add kameloso +o");
-    expect("Automode modified! kameloso in %s: +o".format(origEvent.channel));
+    s.send("automode add kameloso +o");
+    s.expect("Automode modified! kameloso in %s: +o".format(origEvent.channel));
 
-    send("automode add kameloso +v");
-    expect("Automode modified! kameloso in %s: +v".format(origEvent.channel));
+    s.send("automode add kameloso +v");
+    s.expect("Automode modified! kameloso in %s: +v".format(origEvent.channel));
 
-    send("automode list");
-    awaitReply();
+    s.send("automode list");
+    s.awaitReply();
     enforce((thisFiber.payload.content.indexOf(`"kameloso":"v"`) != -1),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    send("automode del $¡$¡");
-    expect("Automode for $¡$¡ cleared.");
+    s.send("automode del $¡$¡");
+    s.expect("Automode for $¡$¡ cleared.");
 
-    send("automode del kameloso");
-    expect("Automode for kameloso cleared.");
+    s.send("automode del kameloso");
+    s.expect("Automode for kameloso cleared.");
 
     /*send("automode list");
-    expect("No automodes defined for channel %s.".format(origEvent.channel));*/
+    s.expect("No automodes defined for channel %s.".format(origEvent.channel));*/
 
-    send("automode del flerrp");
-    expect("Automode for flerrp cleared.");
+    s.send("automode del flerrp");
+    s.expect("Automode for flerrp cleared.");
 }
 
 
@@ -457,35 +476,12 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    void send(const string line)
-    {
-        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-    }
-
-    void sendNoPrefix(const string line)
-    {
-        chan(plugin.state, origEvent.channel, line);
-    }
-
-    void awaitReply()
-    {
-        do Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname));
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
-    }
+    auto s = Sender(plugin, thisFiber, origEvent.channel, botNickname);
 
     // ------------ !say
 
-    send("say xoraelblarbhl");
-    expect("xoraelblarbhl");
+    s.send("say xoraelblarbhl");
+    s.expect("xoraelblarbhl");
 
     // ------------ !8ball
 
@@ -515,8 +511,8 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
         "Very doubtful",
     ];
 
-    send("8ball");
-    awaitReply();
+    s.send("8ball");
+    s.awaitReply();
     enforce(eightballAnswers[].canFind(thisFiber.payload.content),
         thisFiber.payload.content, __FILE__, __LINE__);*/
 
@@ -524,10 +520,10 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
 
     await(plugin, IRCEvent.Type.EMOTE, No.yield);
 
-    sendNoPrefix("get on up and DANCE");
-    expect("dances :D-<");
-    expect("dances :D|-<");
-    expect("dances :D/-<");
+    s.sendNoPrefix("get on up and DANCE");
+    s.expect("dances :D-<");
+    s.expect("dances :D|-<");
+    s.expect("dances :D/-<");
 
     unawait(plugin, IRCEvent.Type.EMOTE);
 }
@@ -542,25 +538,7 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    void send(const string line)
-    {
-        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-    }
-
-    void awaitReply()
-    {
-        do Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname));
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        awaitReply();
-        immutable stripped = thisFiber.payload.content.stripEffects();
-        enforce((stripped == msg), "'%s' != '%s'".format(stripped, msg), file, line);
-    }
+    auto s = Sender(plugin, thisFiber, origEvent.channel, botNickname);
 
     void cycle()
     {
@@ -579,39 +557,39 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
 
     // ------------ !note
 
-    send("note %s test".format(botNickname));
-    expect("You cannot leave me a message; it would never be replayed.");
+    s.send("note %s test".format(botNickname));
+    s.expect("You cannot leave me a message; it would never be replayed.");
 
-    send("note %s test".format(plugin.state.client.nickname));
-    expect("Note saved.");
+    s.send("note %s test".format(plugin.state.client.nickname));
+    s.expect("Note saved.");
 
     cycle();
 
-    awaitReply();
+    s.awaitReply();
     immutable stripped = thisFiber.payload.content.stripEffects();
     enforce(stripped.startsWith("%s! %1$s left note"
         .format(plugin.state.client.nickname)) &&
         stripped.endsWith("ago: test"),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    send("set note.playBackOnAnyActivity=false");
-    expect("Setting changed.");
+    s.send("set note.playBackOnAnyActivity=false");
+    s.expect("Setting changed.");
 
-    send("note %s abc def ghi".format(plugin.state.client.nickname));
-    expect("Note saved.");
+    s.send("note %s abc def ghi".format(plugin.state.client.nickname));
+    s.expect("Note saved.");
 
-    send("note %s 123 456 789".format(plugin.state.client.nickname));
-    expect("Note saved.");
+    s.send("note %s 123 456 789".format(plugin.state.client.nickname));
+    s.expect("Note saved.");
 
     cycle();
-    expect("%s! You have 2 notes.".format(plugin.state.client.nickname));
+    s.expect("%s! You have 2 notes.".format(plugin.state.client.nickname));
 
-    awaitReply();
+    s.awaitReply();
     immutable stripped2 = thisFiber.payload.content.stripEffects();
     enforce(stripped2.endsWith("ago: abc def ghi"),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    awaitReply();
+    s.awaitReply();
     immutable stripped3 = thisFiber.payload.content.stripEffects();
     enforce(stripped3.endsWith("ago: 123 456 789"),
         thisFiber.payload.content, __FILE__, __LINE__);
@@ -625,117 +603,94 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
 void testOnelinersFiber(TesterPlugin plugin, const /*ref*/ IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Oneliners with empty channel in original event")
 {
-    immutable prefix = plugin.state.settings.prefix;
-
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+    auto s = Sender(plugin, thisFiber, origEvent.channel, botNickname);
 
-    void send(const string line)
-    {
-        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-    }
-
-    void sendPrefixed(const string line)
-    {
-        chan(plugin.state, origEvent.channel, plugin.state.settings.prefix ~ line);
-    }
-
-    void awaitReply()
-    {
-        do Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname));
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
-    }
+    immutable prefix = plugin.state.settings.prefix;
 
     // ------------ !oneliner
 
-    send("commands");
-    expect("There are no commands available right now.");
+    s.send("commands");
+    s.expect("There are no commands available right now.");
 
-    send("oneliner");
-    expect("Usage: %soneliner [new|insert|add|edit|del|list] ...".format(prefix));
+    s.send("oneliner");
+    s.expect("Usage: %soneliner [new|insert|add|edit|del|list] ...".format(prefix));
 
-    send("oneliner add herp derp dirp darp");
-    expect("No such oneliner: %sherp".format(prefix));
+    s.send("oneliner add herp derp dirp darp");
+    s.expect("No such oneliner: %sherp".format(prefix));
 
-    send("oneliner new");
-    expect("Usage: %soneliner new [trigger] [type] [optional cooldown]".format(prefix));
+    s.send("oneliner new");
+    s.expect("Usage: %soneliner new [trigger] [type] [optional cooldown]".format(prefix));
 
-    send("oneliner new herp ordered");
-    expect("Oneliner %sherp created! Use %1$soneliner add to add lines.".format(prefix));
+    s.send("oneliner new herp ordered");
+    s.expect("Oneliner %sherp created! Use %1$soneliner add to add lines.".format(prefix));
 
-    sendPrefixed("herp");
-    expect("(Empty oneliner; use %soneliner add herp to add lines.)".format(prefix));
+    s.sendPrefixed("herp");
+    s.expect("(Empty oneliner; use %soneliner add herp to add lines.)".format(prefix));
 
-    send("oneliner add herp 123");
-    expect("Oneliner line added.");
+    s.send("oneliner add herp 123");
+    s.expect("Oneliner line added.");
 
-    send("oneliner add herp 456");
-    expect("Oneliner line added.");
+    s.send("oneliner add herp 456");
+    s.expect("Oneliner line added.");
 
-    sendPrefixed("herp");
-    expect("123");
+    s.sendPrefixed("herp");
+    s.expect("123");
 
-    sendPrefixed("herp");
-    expect("456");
+    s.sendPrefixed("herp");
+    s.expect("456");
 
-    sendPrefixed("herp");
-    expect("123");
+    s.sendPrefixed("herp");
+    s.expect("123");
 
-    send("oneliner insert herp 0 000");
-    expect("Oneliner line inserted.");
+    s.send("oneliner insert herp 0 000");
+    s.expect("Oneliner line inserted.");
 
-    sendPrefixed("herp");
-    expect("000");
+    s.sendPrefixed("herp");
+    s.expect("000");
 
-    sendPrefixed("herp");
-    expect("123");
+    s.sendPrefixed("herp");
+    s.expect("123");
 
-    send("oneliner list");
-    expect("Available commands: %sherp".format(prefix));
+    s.send("oneliner list");
+    s.expect("Available commands: %sherp".format(prefix));
 
-    send("oneliner del hurp");
-    expect("No such oneliner: %shurp".format(prefix));
+    s.send("oneliner del hurp");
+    s.expect("No such oneliner: %shurp".format(prefix));
 
-    send("oneliner del herp");
-    expect("Oneliner %sherp removed.".format(prefix));
+    s.send("oneliner del herp");
+    s.expect("Oneliner %sherp removed.".format(prefix));
 
-    send("oneliner list");
-    expect("There are no commands available right now.");
+    s.send("oneliner list");
+    s.expect("There are no commands available right now.");
 
-    send("oneliner new herp random 10");
-    expect("Oneliner %sherp created! Use %1$soneliner add to add lines.".format(prefix));
+    s.send("oneliner new herp random 10");
+    s.expect("Oneliner %sherp created! Use %1$soneliner add to add lines.".format(prefix));
 
-    sendPrefixed("herp");
-    expect("(Empty oneliner; use %soneliner add herp to add lines.)".format(prefix));
+    s.sendPrefixed("herp");
+    s.expect("(Empty oneliner; use %soneliner add herp to add lines.)".format(prefix));
 
-    send("oneliner add herp abc");
-    expect("Oneliner line added.");
+    s.send("oneliner add herp abc");
+    s.expect("Oneliner line added.");
 
-    sendPrefixed("herp");
-    expect("abc");
+    s.sendPrefixed("herp");
+    s.expect("abc");
 
-    sendPrefixed("herp");
+    s.sendPrefixed("herp");
 
     logger.info("wait 10 seconds...");
     delay(plugin, 10.seconds, Yes.yield);
     enforce(!thisFiber.payload.content.length);
 
-    sendPrefixed("herp");
-    expect("abc");
+    s.sendPrefixed("herp");
+    s.expect("abc");
 
-    send("oneliner del herp");
-    expect("Oneliner %sherp removed.".format(prefix));
+    s.send("oneliner del herp");
+    s.expect("Oneliner %sherp removed.".format(prefix));
 
-    send("commands");
-    expect("There are no commands available right now.");
+    s.send("commands");
+    s.expect("There are no commands available right now.");
 }
 
 
@@ -748,103 +703,85 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    void send(const string line)
-    {
-        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-    }
-
-    void awaitReply()
-    {
-        do Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname));
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
-    }
+    auto s = Sender(plugin, thisFiber, origEvent.channel, botNickname);
 
     // ------------ !quote
 
-    send("quote");
-    expect("Usage: %squote [nickname] [optional search terms or #index]"
+    s.send("quote");
+    s.expect("Usage: %squote [nickname] [optional search terms or #index]"
         .format(plugin.state.settings.prefix));
 
-    send("quote $¡$¡");
-    expect("Invalid nickname: $¡$¡");
+    s.send("quote $¡$¡");
+    s.expect("Invalid nickname: $¡$¡");
 
-    send("quote flerrp");
-    expect("No quotes on record for flerrp!");
+    s.send("quote flerrp");
+    s.expect("No quotes on record for flerrp!");
 
-    send("addquote");
-    expect("Usage: %saddquote [nickname] [new quote]"
+    s.send("addquote");
+    s.expect("Usage: %saddquote [nickname] [new quote]"
         .format(plugin.state.settings.prefix));
 
-    send("addquote flerrp flirrp flarrp flurble");
-    expect("Quote added at index #0.");
+    s.send("addquote flerrp flirrp flarrp flurble");
+    s.expect("Quote added at index #0.");
 
-    send("addquote flerrp flirrp flarrp FLARBLE");
-    expect("Quote added at index #1.");
+    s.send("addquote flerrp flirrp flarrp FLARBLE");
+    s.expect("Quote added at index #1.");
 
-    send("quote flerrp");
-    awaitReply();
+    s.send("quote flerrp");
+    s.awaitReply();
     enforce(thisFiber.payload.content.stripEffects().startsWith("flirrp flarrp"),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    send("quote flerrp #1");
-    awaitReply();
+    s.send("quote flerrp #1");
+    s.awaitReply();
     enforce(thisFiber.payload.content.stripEffects().startsWith("flirrp flarrp FLARBLE ("),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    send("quote flerrp #99");
-    expect("Index #99 out of range; valid is [0..1] (inclusive).");
+    s.send("quote flerrp #99");
+    s.expect("Index #99 out of range; valid is [0..1] (inclusive).");
 
-    send("quote flerrp #honk");
-    expect("Index must be a positive number.");
+    s.send("quote flerrp #honk");
+    s.expect("Index must be a positive number.");
 
-    send("quote flerrp flarble");
-    awaitReply();
+    s.send("quote flerrp flarble");
+    s.awaitReply();
     enforce(thisFiber.payload.content.stripEffects().startsWith("flirrp flarrp FLARBLE ("),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    send("quote flerrp honkedonk");
-    expect("No quotes found for search terms \"honkedonk\"");
+    s.send("quote flerrp honkedonk");
+    s.expect("No quotes found for search terms \"honkedonk\"");
 
-    send("modquote");
-    expect("Usage: %smodquote [nickname] [index] [new quote text]"
+    s.send("modquote");
+    s.expect("Usage: %smodquote [nickname] [index] [new quote text]"
         .format(plugin.state.settings.prefix));
 
-    send("modquote flerrp #0 KAAS FLAAS");
-    expect("Quote modified.");
+    s.send("modquote flerrp #0 KAAS FLAAS");
+    s.expect("Quote modified.");
 
-    send("quote flerrp #0");
-    awaitReply();
+    s.send("quote flerrp #0");
+    s.awaitReply();
     enforce(thisFiber.payload.content.stripEffects().startsWith("KAAS FLAAS ("),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    send("mergequotes flerrp flirrp");
-    expect("2 quotes merged.");
+    s.send("mergequotes flerrp flirrp");
+    s.expect("2 quotes merged.");
 
-    send("quote flirrp #0");
-    awaitReply();
+    s.send("quote flirrp #0");
+    s.awaitReply();
     enforce(thisFiber.payload.content.stripEffects().startsWith("KAAS FLAAS ("),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    send("quote flerrp");
-    expect("No quotes on record for flerrp!");
+    s.send("quote flerrp");
+    s.expect("No quotes on record for flerrp!");
 
-    send("delquote flirrp #0");
-    expect("Quote removed, indexes updated.");
+    s.send("delquote flirrp #0");
+    s.expect("Quote removed, indexes updated.");
 
-    send("delquote flirrp #0");
-    expect("Quote removed, indexes updated.");
+    s.send("delquote flirrp #0");
+    s.expect("Quote removed, indexes updated.");
 
-    send("delquote flirrp #0");
-    expect("No quotes on record for flirrp!");
+    s.send("delquote flirrp #0");
+    s.expect("No quotes on record for flirrp!");
 }
 
 
@@ -857,47 +794,24 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    void send(const string line)
-    {
-        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-    }
-
-    void sendNoPrefix(const string line)
-    {
-        chan(plugin.state, origEvent.channel, line);
-    }
-
-    void awaitReply()
-    {
-        do Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname));
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
-    }
+    auto s = Sender(plugin, thisFiber, origEvent.channel, botNickname);
 
     // ------------ s/abc/ABC/
 
-    sendNoPrefix("I am a fish");
-    sendNoPrefix("s/fish/snek/");
-    expect("%s | I am a snek".format(plugin.state.client.nickname));
+    s.sendNoPrefix("I am a fish");
+    s.sendNoPrefix("s/fish/snek/");
+    s.expect("%s | I am a snek".format(plugin.state.client.nickname));
 
-    sendNoPrefix("I am a fish fish");
-    sendNoPrefix("s#fish#snek#");
-    expect("%s | I am a snek fish".format(plugin.state.client.nickname));
+    s.sendNoPrefix("I am a fish fish");
+    s.sendNoPrefix("s#fish#snek#");
+    s.expect("%s | I am a snek fish".format(plugin.state.client.nickname));
 
-    sendNoPrefix("I am a fish fish");
-    sendNoPrefix("s_fish_snek_g");
-    expect("%s | I am a snek snek".format(plugin.state.client.nickname));
+    s.sendNoPrefix("I am a fish fish");
+    s.sendNoPrefix("s_fish_snek_g");
+    s.expect("%s | I am a snek snek".format(plugin.state.client.nickname));
 
-    sendNoPrefix("s/harbusnarbu");
-    sendNoPrefix("s#snarbu#snofl/#");
+    s.sendNoPrefix("s/harbusnarbu");
+    s.sendNoPrefix("s#snarbu#snofl/#");
     // Should be no response
     delay(plugin, 3.seconds, Yes.yield);
     enforce(!thisFiber.payload.content.length);
@@ -913,42 +827,24 @@ in (origEvent.channel.length, "Tried to test Seen with empty channel in original
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    void send(const string line)
-    {
-        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-    }
-
-    void awaitReply()
-    {
-        do Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname));
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
-    }
+    auto s = Sender(plugin, thisFiber, origEvent.channel, botNickname);
 
     // ------------ !seen
 
-    send("!seen");
-    expect("Usage: !seen [nickname]");
+    s.send("!seen");
+    s.expect("Usage: !seen [nickname]");
 
-    send("!seen ####");
-    expect("Invalid user: ####");
+    s.send("!seen ####");
+    s.expect("Invalid user: ####");
 
-    send("!seen HarblSnarbl");
-    expect("I have never seen HarblSnarbl.");
+    s.send("!seen HarblSnarbl");
+    s.expect("I have never seen HarblSnarbl.");
 
-    send("!seen " ~ plugin.state.client.nickname);
-    expect("That's you!");
+    s.send("!seen " ~ plugin.state.client.nickname);
+    s.expect("That's you!");
 
-    send("!seen " ~ botNickname);
-    expect("T-that's me though...");
+    s.send("!seen " ~ botNickname);
+    s.expect("T-that's me though...");
 }
 
 
@@ -961,68 +857,45 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    void send(const string line)
-    {
-        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-    }
-
-    void sendPrefixed(const string line)
-    {
-        chan(plugin.state, origEvent.channel, plugin.state.settings.prefix ~ line);
-    }
-
-    void awaitReply()
-    {
-        do Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname));
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
-    }
+    auto s = Sender(plugin, thisFiber, origEvent.channel, botNickname);
 
     // ------------ !counter
 
-    send("counter");
-    expect("Usage: !counter [add|del|format|list] [counter word]");
+    s.send("counter");
+    s.expect("Usage: !counter [add|del|format|list] [counter word]");
 
-    send("counter list");
-    awaitReply();
+    s.send("counter list");
+    s.awaitReply();
     enforce(((thisFiber.payload.content == "No counters currently active in this channel.") ||
         thisFiber.payload.content.startsWith("Current counters: ")), thisFiber.payload.content);
 
-    send("counter last");
-    expect("Usage: !counter [add|del|format|list] [counter word]");
+    s.send("counter last");
+    s.expect("Usage: !counter [add|del|format|list] [counter word]");
 
-    send("counter add");
-    expect("Usage: !counter [add|del|format|list] [counter word]");
+    s.send("counter add");
+    s.expect("Usage: !counter [add|del|format|list] [counter word]");
 
-    send("counter del blah");
-    awaitReply();
+    s.send("counter del blah");
+    s.awaitReply();
     enforce(((thisFiber.payload.content == "No such counter available.") ||
         (thisFiber.payload.content == "Counter blah removed.")), thisFiber.payload.content);
 
-    send("counter del bluh");
-    awaitReply();
+    s.send("counter del bluh");
+    s.awaitReply();
     enforce(((thisFiber.payload.content == "No such counter available.") ||
         (thisFiber.payload.content == "Counter bluh removed.")), thisFiber.payload.content);
 
-    send("counter add blah");
-    expect("Counter blah added! Access it with !blah.");
+    s.send("counter add blah");
+    s.expect("Counter blah added! Access it with !blah.");
 
-    send("counter add bluh");
-    expect("Counter bluh added! Access it with !bluh.");
+    s.send("counter add bluh");
+    s.expect("Counter bluh added! Access it with !bluh.");
 
-    send("counter add bluh");
-    expect("A counter with that name already exists.");
+    s.send("counter add bluh");
+    s.expect("A counter with that name already exists.");
 
-    send("counter list");
-    awaitReply();
+    s.send("counter list");
+    s.awaitReply();
     immutable stripped = thisFiber.payload.content.stripEffects();
     enforce(stripped.startsWith("Current counters: ") &&
         ((stripped.indexOf("!blah") != -1) &&
@@ -1030,85 +903,85 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
 
     // ------------ ![word]
 
-    sendPrefixed("blah");
-    expect("blah count so far: 0");
+    s.sendPrefixed("blah");
+    s.expect("blah count so far: 0");
 
-    sendPrefixed("blah+");
-    expect("blah +1! Current count: 1");
+    s.sendPrefixed("blah+");
+    s.expect("blah +1! Current count: 1");
 
-    sendPrefixed("blah++");
-    expect("blah +1! Current count: 2");
+    s.sendPrefixed("blah++");
+    s.expect("blah +1! Current count: 2");
 
-    sendPrefixed("blah+2");
-    expect("blah +2! Current count: 4");
+    s.sendPrefixed("blah+2");
+    s.expect("blah +2! Current count: 4");
 
-    sendPrefixed("blah+abc");
-    expect("abc is not a number.");
+    s.sendPrefixed("blah+abc");
+    s.expect("abc is not a number.");
 
-    sendPrefixed("blah-");
-    expect("blah -1! Current count: 3");
+    s.sendPrefixed("blah-");
+    s.expect("blah -1! Current count: 3");
 
-    sendPrefixed("blah--");
-    expect("blah -1! Current count: 2");
+    s.sendPrefixed("blah--");
+    s.expect("blah -1! Current count: 2");
 
-    sendPrefixed("blah-2");
-    expect("blah -2! Current count: 0");
+    s.sendPrefixed("blah-2");
+    s.expect("blah -2! Current count: 0");
 
-    sendPrefixed("blah=10");
-    expect("blah count assigned to 10!");
+    s.sendPrefixed("blah=10");
+    s.expect("blah count assigned to 10!");
 
-    sendPrefixed("blah");
-    expect("blah count so far: 10");
+    s.sendPrefixed("blah");
+    s.expect("blah count so far: 10");
 
-    sendPrefixed("blah?");
-    expect("blah count so far: 10");
+    s.sendPrefixed("blah?");
+    s.expect("blah count so far: 10");
 
-    send("counter format blah ? ABC $count DEF");
-    expect("Format pattern updated.");
+    s.send("counter format blah ? ABC $count DEF");
+    s.expect("Format pattern updated.");
 
-    send("counter format blah + count +$step = $count");
-    expect("Format pattern updated.");
+    s.send("counter format blah + count +$step = $count");
+    s.expect("Format pattern updated.");
 
-    send("counter format blah - count -$step = $count");
-    expect("Format pattern updated.");
+    s.send("counter format blah - count -$step = $count");
+    s.expect("Format pattern updated.");
 
-    send("counter format blah = count := $count");
-    expect("Format pattern updated.");
+    s.send("counter format blah = count := $count");
+    s.expect("Format pattern updated.");
 
-    sendPrefixed("blah");
-    expect("ABC 10 DEF");
+    s.sendPrefixed("blah");
+    s.expect("ABC 10 DEF");
 
-    sendPrefixed("blah+");
-    expect("count +1 = 11");
+    s.sendPrefixed("blah+");
+    s.expect("count +1 = 11");
 
-    sendPrefixed("blah-2");
-    expect("count -2 = 9");
+    s.sendPrefixed("blah-2");
+    s.expect("count -2 = 9");
 
-    sendPrefixed("blah=42");
-    expect("count := 42");
+    s.sendPrefixed("blah=42");
+    s.expect("count := 42");
 
-    send("counter format blah ? -");
-    expect("Format pattern cleared.");
+    s.send("counter format blah ? -");
+    s.expect("Format pattern cleared.");
 
-    sendPrefixed("blah");
-    expect("blah count so far: 42");
+    s.sendPrefixed("blah");
+    s.expect("blah count so far: 42");
 
     // ------------ !counter cleanup
 
-    send("counter del blah");
-    expect("Counter blah removed.");
+    s.send("counter del blah");
+    s.expect("Counter blah removed.");
 
-    send("counter del blah");
-    expect("No such counter available."); //available.");
+    s.send("counter del blah");
+    s.expect("No such counter available."); //available.");
 
-    send("counter list");
-    expect("Current counters: !bluh");
+    s.send("counter list");
+    s.expect("Current counters: !bluh");
 
-    send("counter del bluh");
-    expect("Counter bluh removed.");
+    s.send("counter del bluh");
+    s.expect("Counter bluh removed.");
 
-    send("counter list");
-    awaitReply();
+    s.send("counter list");
+    s.awaitReply();
     enforce(((thisFiber.payload.content == "No counters currently active in this channel.") ||
         thisFiber.payload.content.startsWith("Current counters: ")), thisFiber.payload.content);
 }
@@ -1123,69 +996,69 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    void send(const string line)
-    {
-        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-    }
-
-    void awaitReply()
-    {
-        do Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname));
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
-    }
+    auto s = Sender(plugin, thisFiber, origEvent.channel, botNickname);
 
     // ------------ !stopwatch
 
-    send("stopwatch harbl");
-    expect("Usage: !stopwatch [start|stop|status]");
+    s.send("stopwatch harbl");
+    s.expect("Usage: !stopwatch [start|stop|status]");
 
-    send("stopwatch");
-    expect("You do not have a stopwatch running.");
+    s.send("stopwatch");
+    s.expect("You do not have a stopwatch running.");
 
-    send("stopwatch status");
-    expect("You do not have a stopwatch running.");
+    s.send("stopwatch status");
+    s.expect("You do not have a stopwatch running.");
 
-    send("stopwatch status harbl");
-    expect("There is no such stopwatch running. (harbl)");
+    s.send("stopwatch status harbl");
+    s.expect("There is no such stopwatch running. (harbl)");
 
-    send("stopwatch start");
-    expect("Stopwatch started!");
+    s.send("stopwatch start");
+    s.expect("Stopwatch started!");
 
-    send("stopwatch");
-    awaitReply();
-    enforce(thisFiber.payload.content.stripEffects().startsWith("Elapsed time: "),
-        thisFiber.payload.content, __FILE__, __LINE__);
+    s.send("stopwatch");
+    s.awaitReply();
 
-    send("stopwatch status");
-    awaitReply();
-    enforce(thisFiber.payload.content.stripEffects().startsWith("Elapsed time: "),
-        thisFiber.payload.content, __FILE__, __LINE__);
+    {
+        immutable actual = thisFiber.payload.content.stripEffects();
+        if (!actual.startsWith("Elapsed time: "))
+        {
+            throw new Exception(actual);
+        }
+    }
 
-    send("stopwatch start");
-    expect("Stopwatch restarted!");
+    s.send("stopwatch status");
+    s.awaitReply();
 
-    send("stopwatch stop");
-    awaitReply();
-    enforce(thisFiber.payload.content.stripEffects().startsWith("Stopwatch stopped after "),
-        thisFiber.payload.content, __FILE__, __LINE__);
+    {
+        immutable actual = thisFiber.payload.content.stripEffects();
+        if (!actual.startsWith("Elapsed time: "))
+        {
+            throw new Exception(actual);
+        }
+    }
 
-    send("stopwatch start");
-    expect("Stopwatch started!");
+    s.send("stopwatch start");
+    s.expect("Stopwatch restarted!");
 
-    send("stopwatch clear");
-    expect("Clearing all stopwatches in channel " ~ origEvent.channel ~ '.');
+    s.send("stopwatch stop");
+    s.awaitReply();
 
-    send("stopwatch");
-    expect("You do not have a stopwatch running.");
+    {
+        immutable actual = thisFiber.payload.content.stripEffects();
+        if (!actual.startsWith("Stopwatch stopped after "))
+        {
+            throw new Exception(actual);
+        }
+    }
+
+    s.send("stopwatch start");
+    s.expect("Stopwatch started!");
+
+    s.send("stopwatch clear");
+    s.expect("Clearing all stopwatches in channel " ~ origEvent.channel ~ '.');
+
+    s.send("stopwatch");
+    s.expect("You do not have a stopwatch running.");
 }
 
 
@@ -1198,59 +1071,41 @@ in (origEvent.channel.length, "Tried to test Timer with empty channel in origina
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    void send(const string line)
-    {
-        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-    }
-
-    void awaitReply()
-    {
-        do Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname));
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
-    }
+    auto s = Sender(plugin, thisFiber, origEvent.channel, botNickname);
 
     // ------------ !timer
 
-    send("timer");
-    expect("Usage: %stimer [new|add|del|suspend|resume|list] ..."
+    s.send("timer");
+    s.expect("Usage: %stimer [new|add|del|suspend|resume|list] ..."
         .format(plugin.state.settings.prefix));
 
-    send("timer new");
-    expect(("Usage: %stimer new [name] [type] [condition] [message count threshold] " ~
+    s.send("timer new");
+    s.expect(("Usage: %stimer new [name] [type] [condition] [message count threshold] " ~
         "[time threshold] [stagger message count] [stagger time]")
             .format(plugin.state.settings.prefix));
 
-    send("timer new hirrsteff ordered both 0 10s 0 10s");
-    expect("New timer added! Use !timer add to add lines.");
+    s.send("timer new hirrsteff ordered both 0 10s 0 10s");
+    s.expect("New timer added! Use !timer add to add lines.");
 
-    send("timer suspend hirrsteff");
-    expect("Timer suspended. Use %stimer resume hirrsteff to resume it."
+    s.send("timer suspend hirrsteff");
+    s.expect("Timer suspended. Use %stimer resume hirrsteff to resume it."
         .format(plugin.state.settings.prefix));
 
-    send("timer add splorf hello");
-    expect("No such timer is defined. Add a new one with !timer new.");
+    s.send("timer add splorf hello");
+    s.expect("No such timer is defined. Add a new one with !timer new.");
 
-    send("timer add hirrsteff HERLO");
-    expect("Line added to timer hirrsteff.");
+    s.send("timer add hirrsteff HERLO");
+    s.expect("Line added to timer hirrsteff.");
 
-    send("timer insert hirrsteff 0 fgsfds");
-    expect("Line added to timer hirrsteff.");
+    s.send("timer insert hirrsteff 0 fgsfds");
+    s.expect("Line added to timer hirrsteff.");
 
-    send("timer edit hirrsteff 1 HARLO");
-    expect("Line #1 of timer hirrsteff edited.");
+    s.send("timer edit hirrsteff 1 HARLO");
+    s.expect("Line #1 of timer hirrsteff edited.");
 
-    send("timer list");
-    expect("Current timers for channel %s:".format(origEvent.channel));
-    expect(`["hirrsteff"] lines:2 | type:ordered | condition:both | ` ~
+    s.send("timer list");
+    s.expect("Current timers for channel %s:".format(origEvent.channel));
+    s.expect(`["hirrsteff"] lines:2 | type:ordered | condition:both | ` ~
         "message count threshold:0 | time threshold:10 | stagger message count:0 | stagger time:10 | suspended:true");
 
     logger.info("Wait ~1 cycle, nothing should happen...");
@@ -1258,31 +1113,31 @@ in (origEvent.channel.length, "Tried to test Timer with empty channel in origina
     enforce(!thisFiber.payload.content.length,
         "'%s' != '%s'".format(thisFiber.payload.content, string.init), __FILE__, __LINE__           );
 
-    send("timer resume hirrsteff");
-    expect("Timer resumed!");
+    s.send("timer resume hirrsteff");
+    s.expect("Timer resumed!");
 
     logger.info("Wait 3 cycles + 10 seconds...");
 
-    expect("fgsfds");
+    s.expect("fgsfds");
     logger.info("ok");
 
-    expect("HARLO");
+    s.expect("HARLO");
     logger.info("ok");
 
-    expect("fgsfds");
+    s.expect("fgsfds");
     logger.info("all ok");
 
-    send("timer del hirrsteff 0");
-    expect("Line removed from timer hirrsteff. Lines remaining: 1");
+    s.send("timer del hirrsteff 0");
+    s.expect("Line removed from timer hirrsteff. Lines remaining: 1");
 
-    expect("HARLO");
+    s.expect("HARLO");
     logger.info("all ok again");
 
-    send("timer del hirrsteff");
-    expect("Timer removed.");
+    s.send("timer del hirrsteff");
+    s.expect("Timer removed.");
 
-    send("timer del hirrsteff");
-    expect("There is no timer by that name.");
+    s.send("timer del hirrsteff");
+    s.expect("There is no timer by that name.");
 }
 
 
@@ -1295,66 +1150,46 @@ in (origEvent.channel.length, "Tried to test Time with empty channel in original
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    void send(const string line)
-    {
-        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-    }
-
-    void awaitReply()
-    {
-        do Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname));
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
-    }
-
-
+    auto s = Sender(plugin, thisFiber, origEvent.channel, botNickname);
 
     // ------------ !time
 
     string response;  // mutable
 
-    send("time");
-    awaitReply();
+    s.send("time");
+    s.awaitReply();
     response = thisFiber.payload.content.stripEffects();
     enforce(response.startsWith("The time is currently "),
         thisFiber.payload.content, __FILE__, __LINE__);
     enforce(response.endsWith(" locally."),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    send("time CET");
-    awaitReply();
+    s.send("time CET");
+    s.awaitReply();
     response = thisFiber.payload.content.stripEffects();
     enforce(response.startsWith("The time is currently "),
         thisFiber.payload.content, __FILE__, __LINE__);
     enforce(response.endsWith(" in CET."),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    send("time Europe/Stockholm");
-    awaitReply();
+    s.send("time Europe/Stockholm");
+    s.awaitReply();
     response = thisFiber.payload.content.stripEffects();
     enforce(response.startsWith("The time is currently "),
         thisFiber.payload.content, __FILE__, __LINE__);
     enforce(response.endsWith(" in Europe/Stockholm."),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    send("time Dubai");
-    awaitReply();
+    s.send("time Dubai");
+    s.awaitReply();
     response = thisFiber.payload.content.stripEffects();
     enforce(response.startsWith("The time is currently "),
         thisFiber.payload.content, __FILE__, __LINE__);
     enforce(response.endsWith(" in Dubai."),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    send("time honk");
-    expect("Invalid timezone: honk");
+    s.send("time honk");
+    s.expect("Invalid timezone: honk");
 }
 
 
@@ -1367,70 +1202,47 @@ in (origEvent.channel.length, "Tried to test Poll with empty channel in original
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    void send(const string line)
-    {
-        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-    }
-
-    void sendNoPrefix(const string line)
-    {
-        chan(plugin.state, origEvent.channel, line);
-    }
-
-    void awaitReply()
-    {
-        do Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname));
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
-    }
+    auto s = Sender(plugin, thisFiber, origEvent.channel, botNickname);
 
     // ------------ !poll
 
-    send("poll");
-    expect("Usage: %spoll [duration] [choice1] [choice2] ...".format(plugin.state.settings.prefix));
+    s.send("poll");
+    s.expect("Usage: %spoll [duration] [choice1] [choice2] ...".format(plugin.state.settings.prefix));
 
-    send("poll arf");
-    expect("Need one duration and at least two choices.");
+    s.send("poll arf");
+    s.expect("Need one duration and at least two choices.");
 
-    send("poll arf urf hirf");
-    expect("Malformed duration.");
+    s.send("poll arf urf hirf");
+    s.expect("Malformed duration.");
 
-    send("poll 5s snik snek");
-    expect("Voting commenced! Please place your vote for one of: snek, snik (5 seconds)");
-    expect("Voting complete, no one voted.");
+    s.send("poll 5s snik snek");
+    s.expect("Voting commenced! Please place your vote for one of: snek, snik (5 seconds)");
+    s.expect("Voting complete, no one voted.");
 
-    send("poll 7 snik snek");
-    expect("Voting commenced! Please place your vote for one of: snek, snik (7 seconds)");
-    sendNoPrefix("snek");
-    expect("Voting complete! Here are the results:");
-    expect("snik : 0 votes");
-    expect("snek : 1 vote (100.0%)");
+    s.send("poll 7 snik snek");
+    s.expect("Voting commenced! Please place your vote for one of: snek, snik (7 seconds)");
+    s.sendNoPrefix("snek");
+    s.expect("Voting complete! Here are the results:");
+    s.expect("snik : 0 votes");
+    s.expect("snek : 1 vote (100.0%)");
 
-    send("poll 1h2m3s snik snek");
-    expect("Voting commenced! Please place your vote for one of: snek, snik (1 hour, 2 minutes and 3 seconds)");
+    s.send("poll 1h2m3s snik snek");
+    s.expect("Voting commenced! Please place your vote for one of: snek, snik (1 hour, 2 minutes and 3 seconds)");
 
-    send("poll end");
-    expect("Voting complete, no one voted.");
+    s.send("poll end");
+    s.expect("Voting complete, no one voted.");
 
-    send("poll 1d23h59m59s snik snek");
-    expect("Voting commenced! Please place your vote for one of: snek, snik (1 day, 23 hours, 59 minutes and 59 seconds)");
+    s.send("poll 1d23h59m59s snik snek");
+    s.expect("Voting commenced! Please place your vote for one of: snek, snik (1 day, 23 hours, 59 minutes and 59 seconds)");
 
-    send("poll abort");
-    expect("Poll aborted.");
+    s.send("poll abort");
+    s.expect("Poll aborted.");
 
-    send("poll abort");
-    expect("There is no ongoing poll.");
+    s.send("poll abort");
+    s.expect("There is no ongoing poll.");
 
-    send("poll end");
-    expect("There is no ongoing poll.");
+    s.send("poll end");
+    s.expect("There is no ongoing poll.");
 }
 
 
@@ -1444,36 +1256,18 @@ in (origEvent.channel.length, "Tried to test Bash with empty channel in original
 {
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-
-    void send(const string line)
-    {
-        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
-    }
-
-    void awaitReply()
-    {
-        do Fiber.yield();
-        while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname));
-    }
-
-    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
-    {
-        awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
-    }
+    auto s = Sender(plugin, thisFiber, origEvent.channel, botNickname);
 
     // ------------ !bash
 
-    send("bash 5273");
-    awaitReply();
+    s.send("bash 5273");
+    s.awaitReply();
     immutable banner = thisFiber.payload.content.stripEffects();
 
     if (banner == "[bash.org] #5273")
     {
         // Ok
-        expect("erno> hm. I've lost a machine.. literally _lost_. it responds to ping, " ~
+        s.expect("erno> hm. I've lost a machine.. literally _lost_. it responds to ping, " ~
             "it works completely, I just can't figure out where in my apartment it is.");
     }
     else if (banner == "No reponse received from bash.org; is it down?")
@@ -1487,8 +1281,8 @@ in (origEvent.channel.length, "Tried to test Bash with empty channel in original
         throw new Exception(banner);
     }
 
-    send("bash honk");
-    awaitReply();
+    s.send("bash honk");
+    s.awaitReply();
     immutable honk = thisFiber.payload.content.stripEffects();
 
     if (honk == "Could not fetch bash.org quote: No such quote found.")
