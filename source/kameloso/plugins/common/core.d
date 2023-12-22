@@ -2380,7 +2380,8 @@ void sanitiseEvent(ref IRCEvent event)
     event.content = sanitize(event.content);
     event.tags = sanitize(event.tags);
     event.errors = sanitize(event.errors);
-    event.errors ~= event.errors.length ? " | Sanitised" : "Sanitised";
+    if (event.errors.length) event.errors ~= " | ";
+    event.errors ~= "Sanitised";
 
     foreach (ref auxN; event.aux)
     {
