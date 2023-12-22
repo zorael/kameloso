@@ -185,6 +185,7 @@ configuration "unittest" {
         "GCStatsOnExit" \
         "IncludeHeavyStuff" \
         "TraceWhois" \
+        "TraceFibersAndDelegates" \
         "TwitchPromoteEverywhere" \
         "TwitchCustomEmotesEverywhere" \
         "BenchmarkHTTPRequests" \
@@ -206,6 +207,7 @@ configuration "unittest-lowmem" {
         "GCStatsOnExit" \
         "IncludeHeavyStuff" \
         "TraceWhois" \
+        "TraceFibersAndDelegates" \
         "TwitchPromoteEverywhere" \
         "TwitchCustomEmotesEverywhere" \
         "BenchmarkHTTPRequests" \
