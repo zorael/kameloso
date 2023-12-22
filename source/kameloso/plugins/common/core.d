@@ -1524,29 +1524,34 @@ mixin template IRCPluginImpl(
         out string[][string] missingEntries,
         out string[][string] invalidEntries)
     {
-        import kameloso.configreader : readConfigInto;
-        import kameloso.traits : udaIndexOf;
-        import lu.meld : meldInto;
-
-        foreach (immutable i, ref symbol; this.tupleof)
+        foreach (immutable i, _; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
-                enum typeUDAIndex = udaIndexOf!(typeof(this.tupleof[i]), Settings);
-                enum valueUDAIndex = udaIndexOf!(this.tupleof[i], Settings);
+                import kameloso.traits : udaIndexOf;
 
-                static if ((typeUDAIndex != -1) || (valueUDAIndex != -1))
+                enum hasSettingsUDA =
+                    (udaIndexOf!(typeof(this.tupleof[i]), Settings) != -1) ||
+                    (udaIndexOf!(this.tupleof[i], Settings) != -1);
+
+                static if (hasSettingsUDA)
                 {
-                    if (symbol != typeof(symbol).init)
+                    import kameloso.configreader : readConfigInto;
+                    import lu.meld : meldInto;
+
+                    if (this.tupleof[i] != typeof(this.tupleof[i]).init)
                     {
-                        // This symbol has had configuration applied to it already
-                        continue;
+                        // Symbol found but it has had configuration applied to it already
+                        break;
                     }
 
                     string[][string] theseMissingEntries;
                     string[][string] theseInvalidEntries;
 
-                    configFile.readConfigInto(theseMissingEntries, theseInvalidEntries, symbol);
+                    configFile.readConfigInto(
+                        theseMissingEntries,
+                        theseInvalidEntries,
+                        this.tupleof[i]);
                     theseMissingEntries.meldInto(missingEntries);
                     theseInvalidEntries.meldInto(invalidEntries);
                     break;
