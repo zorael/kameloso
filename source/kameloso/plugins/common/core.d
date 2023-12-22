@@ -2178,6 +2178,9 @@ auto prefixPolicyMatches(bool verbose)
     Returns:
         A [FilterResult] saying the event should `pass`, `fail`, or that more
         information about the sender is needed via a WHOIS call.
+
+    Also_See:
+        [filterSenderImpl]
  +/
 auto filterSender(
     const ref IRCEvent event,
@@ -2186,15 +2189,7 @@ auto filterSender(
 {
     import kameloso.constants : Timeout;
 
-    version(WithPersistenceService) {}
-    else
-    {
-        pragma(msg, "Warning: The Persistence service is not compiled in. " ~
-            "Event triggers may or may not work. You get to keep the pieces.");
-    }
-
-    immutable class_ = event.sender.class_;
-    if (class_ == IRCUser.Class.blacklist) return FilterResult.fail;
+    if (event.sender.class_ == IRCUser.Class.blacklist) return FilterResult.fail;
 
     immutable timediff = (event.time - event.sender.updated);
 
@@ -2204,51 +2199,7 @@ auto filterSender(
 
     if (event.sender.account.length)
     {
-        immutable isAdmin = (class_ == IRCUser.Class.admin);  // Trust in Persistence
-        immutable isStaff = (class_ == IRCUser.Class.staff);
-        immutable isOperator = (class_ == IRCUser.Class.operator);
-        immutable isElevated = (class_ == IRCUser.Class.elevated);
-        immutable isWhitelisted = (class_ == IRCUser.Class.whitelist);
-        immutable isAnyone = (class_ == IRCUser.Class.anyone);
-
-        if (isAdmin)
-        {
-            return FilterResult.pass;
-        }
-        else if (isStaff && (permissionsRequired <= Permissions.staff))
-        {
-            return FilterResult.pass;
-        }
-        else if (isOperator && (permissionsRequired <= Permissions.operator))
-        {
-            return FilterResult.pass;
-        }
-        else if (isElevated && (permissionsRequired <= Permissions.elevated))
-        {
-            return FilterResult.pass;
-        }
-        else if (isWhitelisted && (permissionsRequired <= Permissions.whitelist))
-        {
-            return FilterResult.pass;
-        }
-        else if (/*event.sender.account.length &&*/ permissionsRequired <= Permissions.registered)
-        {
-            return FilterResult.pass;
-        }
-        else if (isAnyone && (permissionsRequired <= Permissions.anyone))
-        {
-            return whoisExpired ? FilterResult.whois : FilterResult.pass;
-        }
-        else if (permissionsRequired == Permissions.ignore)
-        {
-            /*assert(0, "`filterSender` saw a `Permissions.ignore` and the call " ~
-                "to it could have been skipped");*/
-            return FilterResult.pass;
-        }
-        else
-        {
-            return FilterResult.fail;
-        }
+        return filterSenderImpl(permissionsRequired, event.sender.class_, whoisExpired);
     }
     else
     {
@@ -2279,6 +2230,87 @@ auto filterSender(
 }
 
 
+// filterSenderImpl
+/++
+    Judges whether an event may be triggered, based on the event itself and
+    the annotated [kameloso.plugins.common.core.Permissions|Permissions] of the
+    handler in question. Implementation function.
+
+    Params:
+        permissionsRequired = The [Permissions] context in which this user should be filtered.
+        class_ = [IRCUser.Class] of the sender to filter.
+        whoisExpired = Whether or not the sender's WHOIS result has expired
+            (and thus may be reissued).
+
+    Returns:
+        [FilterResult.pass] if the event should be allowed to trigger,
+        [FilterResult.whois] if a WHOIS is required to tell and [FilterResult.fail]
+        if the trigger should be denied.
+
+    See_Also:
+        [filterSender]
+ +/
+auto filterSenderImpl(
+    const Permissions permissionsRequired,
+    const IRCUser.Class class_,
+    const bool whoisExpired)
+{
+    version(WithPersistenceService) {}
+    else
+    {
+        pragma(msg, "Warning: The Persistence service is not compiled in. " ~
+            "Event triggers may or may not work. You get to keep the pieces.");
+    }
+
+    // Trust in Persistence to have divined the sender's class
+    immutable isAdmin = (class_ == IRCUser.Class.admin);
+    immutable isStaff = (class_ == IRCUser.Class.staff);
+    immutable isOperator = (class_ == IRCUser.Class.operator);
+    immutable isElevated = (class_ == IRCUser.Class.elevated);
+    immutable isWhitelisted = (class_ == IRCUser.Class.whitelist);
+    immutable isRegistered = (class_ == IRCUser.Class.registered);
+    immutable isAnyone = (class_ == IRCUser.Class.anyone);
+
+    if (isAdmin)
+    {
+        return FilterResult.pass;
+    }
+    else if (isStaff && (permissionsRequired <= Permissions.staff))
+    {
+        return FilterResult.pass;
+    }
+    else if (isOperator && (permissionsRequired <= Permissions.operator))
+    {
+        return FilterResult.pass;
+    }
+    else if (isElevated && (permissionsRequired <= Permissions.elevated))
+    {
+        return FilterResult.pass;
+    }
+    else if (isWhitelisted && (permissionsRequired <= Permissions.whitelist))
+    {
+        return FilterResult.pass;
+    }
+    else if (isRegistered && (permissionsRequired <= Permissions.registered))
+    {
+        return FilterResult.pass;
+    }
+    else if (isAnyone && (permissionsRequired <= Permissions.anyone))
+    {
+        return whoisExpired ? FilterResult.whois : FilterResult.pass;
+    }
+    else if (permissionsRequired == Permissions.ignore)
+    {
+        // Ideally this function should not be called if we know it's Permissions.ignore
+        return FilterResult.pass;
+    }
+    else
+    {
+        return FilterResult.fail;
+    }
+}
+
+
 // allowImpl
 /++
     Judges whether an event may be triggered, based on the event itself and
@@ -2297,32 +2329,33 @@ auto filterSender(
 
     See_Also:
         [filterSender]
+        [filterSenderImpl]
  +/
 auto allowImpl(
     IRCPlugin plugin,
     const ref IRCEvent event,
     const Permissions permissionsRequired) pure @safe
 {
+    if (permissionsRequired == Permissions.ignore) return FilterResult.pass;
+
     version(TwitchSupport)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            if (((permissionsRequired == Permissions.anyone) ||
-                (permissionsRequired == Permissions.registered)) &&
-                (event.sender.class_ != IRCUser.Class.blacklist))
-            {
-                // We can't WHOIS on Twitch, and Permissions.anyone is just
-                // Permissions.ignore with an extra WHOIS for good measure.
-                // Also everyone is registered on Twitch, by definition.
-                return FilterResult.pass;
-            }
+            // Watered-down version of filterSender, since we don't need
+            // (and can't rely on) WHOIS
+
+            if (event.sender.class_ == IRCUser.Class.blacklist) return FilterResult.fail;
+
+            return filterSenderImpl(
+                permissionsRequired,
+                event.sender.class_,
+                false);  // whoisExpired
         }
     }
 
     // Permissions.ignore always passes, even for Class.blacklist.
-    return (permissionsRequired == Permissions.ignore) ?
-        FilterResult.pass :
-        filterSender(event, permissionsRequired, plugin.state.settings.preferHostmasks);
+    return filterSender(event, permissionsRequired, plugin.state.settings.preferHostmasks);
 }
 
 
