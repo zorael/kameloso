@@ -576,7 +576,7 @@ mixin template IRCPluginImpl(
             `true` if the event should be allowed to trigger, `false` if not.
      +/
     pragma(inline, true)
-    private auto allow(const ref IRCEvent event, const Permissions permissionsRequired)
+    private FilterResult allow(const ref IRCEvent event, const Permissions permissionsRequired) @system
     {
         import kameloso.plugins.common.core : allowImpl;
         return allowImpl(this, event, permissionsRequired);
