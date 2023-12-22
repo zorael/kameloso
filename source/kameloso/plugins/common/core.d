@@ -483,9 +483,8 @@ mixin template IRCPluginImpl(
 
             foreach (immutable i, fun; allEventHandlerFunctionsInModule)
             {
-                enum fqn = module_ ~ '.' ~ __traits(identifier, allEventHandlerFunctionsInModule[i]);
                 udas[i] = getUDAs!(fun, IRCEventHandler)[0];
-                udas[i].fqn = fqn;
+                udas[i].fqn = module_ ~ '.' ~ __traits(identifier, allEventHandlerFunctionsInModule[i]);
                 version(unittest) udaSanityCheckCTFE(udas[i]);
                 udas[i].generateTypemap();
             }
@@ -719,7 +718,6 @@ mixin template IRCPluginImpl(
          +/
         auto process(bool verbose, bool inFiber, bool hasRegexes, Fun)
             (scope Fun fun,
-            const string fqn,
             const IRCEventHandler uda,
             ref IRCEvent event) scope
         {
@@ -728,7 +726,7 @@ mixin template IRCPluginImpl(
                 import lu.conv : Enum;
                 import std.stdio : stdout, writeln, writefln;
 
-                writeln("-- ", fqn, " @ ", Enum!(IRCEvent.Type).toString(event.type));
+                writeln("-- ", uda.fqn, " @ ", Enum!(IRCEvent.Type).toString(event.type));
                 writeln("   ...", Enum!ChannelPolicy.toString(uda._channelPolicy));
                 if (state.settings.flush) stdout.flush();
             }
@@ -977,7 +975,7 @@ mixin template IRCPluginImpl(
                     {
                         // Unsure why we need to specifically specify IRCPlugin
                         // now despite typeof(this) being a subclass...
-                        enqueue(this, event, uda._permissionsRequired, uda._fiber, fun, fqn);
+                        enqueue(this, event, uda._permissionsRequired, uda._fiber, fun, uda.fqn);
                         return uda._chainable ? NextStep.continue_ : NextStep.return_;
                     }
                     else
@@ -1071,7 +1069,6 @@ mixin template IRCPluginImpl(
             immutable uda = this.Introspection.allEventHandlerUDAsInModule[i];
             alias fun = this.Introspection.allEventHandlerFunctionsInModule[i];
             enum verbose = (uda._verbose || debug_);
-            enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
 
             version(unittest)
             {
@@ -1125,7 +1122,6 @@ mixin template IRCPluginImpl(
                     cast(bool)uda._fiber,
                     cast(bool)uda.regexes.length)
                     (&fun,
-                    fqn,
                     uda,
                     event);
 
@@ -1141,7 +1137,6 @@ mixin template IRCPluginImpl(
                         cast(bool)uda._fiber,
                         cast(bool)uda.regexes.length)
                         (&fun,
-                        fqn,
                         uda,
                         event);
                 }
@@ -1166,7 +1161,7 @@ mixin template IRCPluginImpl(
                 import core.exception : UnicodeException;
 
                 /*enum pattern = "tryProcess some exception on <l>%s</>: <l>%s";
-                logger.warningf(pattern, fqn, e);*/
+                logger.warningf(pattern, uda.fqn, e);*/
 
                 immutable isRecoverableException =
                     (cast(UnicodeException)e !is null) ||
@@ -1897,6 +1892,7 @@ mixin template IRCPluginImpl(
                     {
                         import std.format : format;
 
+                        // Cannot use uda.fqn, it has not been given a value at this point
                         enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
                         enum pattern = "Warning: `%s` non-hidden command word \"%s\" is missing a description";
                         enum message = pattern.format(fqn, command._word);
@@ -1917,6 +1913,7 @@ mixin template IRCPluginImpl(
                     {
                         import std.format : format;
 
+                        // As above
                         enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
                         enum pattern = "Warning: `%s` non-hidden expression \"%s\" is missing a description";
                         enum message = pattern.format(fqn, regex._expression);
