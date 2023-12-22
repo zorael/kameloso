@@ -37,7 +37,6 @@ package:
  +/
 void requestTwitchKey(TwitchPlugin plugin)
 {
-    import kameloso.constants : BufferSize;
     import kameloso.logger : LogLevel;
     import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
@@ -185,24 +184,18 @@ your <w>BOT</> account.
     writeln();
     logger.info("Validating...");
 
-    void getExpiryDg()
-    {
-        immutable expiry = getTokenExpiry(plugin, plugin.state.bot.pass);
-        if (*plugin.state.abort) return;
+    immutable expiry = getTokenExpiry(plugin, plugin.state.bot.pass);
+    if (*plugin.state.abort) return;
 
-        immutable delta = (expiry - Clock.currTime);
-        immutable numDays = delta.total!"days";
+    immutable delta = (expiry - Clock.currTime);
+    immutable numDays = delta.total!"days";
 
-        enum isValidPattern = "Your key is valid for another <l>%d</> days.";
-        logger.infof(isValidPattern, numDays);
-        logger.trace();
+    enum isValidPattern = "Your key is valid for another <l>%d</> days.";
+    logger.infof(isValidPattern, numDays);
+    logger.trace();
 
-        plugin.state.updates |= typeof(plugin.state.updates).bot;
-        plugin.state.mainThread.send(ThreadMessage.save);
-    }
-
-    Fiber getExpiryFiber = new Fiber(&getExpiryDg, BufferSize.fiberStack);
-    getExpiryFiber.call();
+    plugin.state.updates |= typeof(plugin.state.updates).bot;
+    plugin.state.mainThread.send(ThreadMessage.save);
 }
 
 
@@ -215,7 +208,6 @@ your <w>BOT</> account.
  +/
 void requestTwitchSuperKey(TwitchPlugin plugin)
 {
-    import kameloso.constants : BufferSize;
     import kameloso.logger : LogLevel;
     import lu.meld : MeldingStrategy, meldInto;
     import std.process : Pid, ProcessException, wait;
@@ -390,25 +382,19 @@ your main <w>STREAMER</> account.
     writeln();
     logger.info("Validating...");
 
-    void getExpiryDg()
-    {
-        immutable expiry = getTokenExpiry(plugin, creds.broadcasterKey);
-        if (*plugin.state.abort) return;
+    immutable expiry = getTokenExpiry(plugin, creds.broadcasterKey);
+    if (*plugin.state.abort) return;
 
-        immutable delta = (expiry - Clock.currTime);
-        immutable numDays = delta.total!"days";
+    immutable delta = (expiry - Clock.currTime);
+    immutable numDays = delta.total!"days";
 
-        enum isValidPattern = "Your key is valid for another <l>%d</> days.";
-        logger.infof(isValidPattern, numDays);
-        logger.trace();
+    enum isValidPattern = "Your key is valid for another <l>%d</> days.";
+    logger.infof(isValidPattern, numDays);
+    logger.trace();
 
-        creds.broadcasterBearerToken = "Bearer " ~ creds.broadcasterKey;
-        creds.broadcasterKeyExpiry = expiry.toUnixTime();
-        saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-    }
-
-    Fiber getExpiryFiber = new Fiber(&getExpiryDg, BufferSize.fiberStack);
-    getExpiryFiber.call();
+    creds.broadcasterBearerToken = "Bearer " ~ creds.broadcasterKey;
+    creds.broadcasterKeyExpiry = expiry.toUnixTime();
+    saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
 }
 
 

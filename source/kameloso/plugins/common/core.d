@@ -1721,7 +1721,16 @@ mixin template IRCPluginImpl(
                     is(typeof(.` ~ funName ~ `) == function) &&
                     TakesParams!(.` ~ funName ~ `, typeof(this)))
                 {
-                    .` ~ funName ~ `(this);
+                    import kameloso.constants : BufferSize;
+                    import core.thread : Fiber;
+
+                    void ` ~ funName ~ `Dg()
+                    {
+                        .` ~ funName ~ `(this);
+                    }
+
+                    auto ` ~ funName ~ `Fiber = new Fiber(&` ~ funName ~ `Dg, BufferSize.fiberStack);
+                    ` ~ funName ~ `Fiber.call();
                 }
                 else
                 {

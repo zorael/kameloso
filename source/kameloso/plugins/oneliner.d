@@ -410,7 +410,6 @@ void handleNewOneliner(
     const /*ref*/ IRCEvent event,
     /*const*/ string slice)
 {
-    import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import lu.string : SplitResults, splitInto;
     import std.format : format;

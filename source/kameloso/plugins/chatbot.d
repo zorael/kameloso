@@ -86,12 +86,16 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
 /++
     Does the bash.org dance emotes.
 
+    This will be called on each channel message, so don't annotate it `.fiber(true)`
+    and instead create a Fiber manually iff we should actually go ahead and dance.
+
     See_Also: http://bash.org/?4281
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
+    //.fiber(true)
 )
 void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 {
