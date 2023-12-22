@@ -1591,21 +1591,22 @@ mixin template IRCPluginImpl(
      +/
     override public bool setSettingByName(const string setting, const string value)
     {
-        import kameloso.traits : udaIndexOf;
-        import lu.objmanip : setMemberByName;
-
         bool success;
 
-        foreach (immutable i, ref symbol; this.tupleof)
+        foreach (immutable i, _; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
-                enum typeUDAIndex = udaIndexOf!(typeof(this.tupleof[i]), Settings);
-                enum valueUDAIndex = udaIndexOf!(this.tupleof[i], Settings);
+                import kameloso.traits : udaIndexOf;
 
-                static if ((typeUDAIndex != -1) || (valueUDAIndex != -1))
+                enum hasSettingsUDA =
+                    (udaIndexOf!(typeof(this.tupleof[i]), Settings) != -1) ||
+                    (udaIndexOf!(this.tupleof[i], Settings) != -1);
+
+                static if (hasSettingsUDA)
                 {
-                    success = symbol.setMemberByName(setting, value);
+                    import lu.objmanip : setMemberByName;
+                    success = this.tupleof[i].setMemberByName(setting, value);
                     break;
                 }
             }
