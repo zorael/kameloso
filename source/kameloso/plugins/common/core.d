@@ -515,7 +515,7 @@ mixin template IRCPluginImpl(
         bool retval = true;
 
         top:
-        foreach (immutable i, _; this.tupleof)
+        foreach (immutable i, ref _; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
@@ -1362,7 +1362,7 @@ mixin template IRCPluginImpl(
         //this.state.previousWhoisTimestamps = null;  // keep
         this.state.updates = IRCPluginState.Update.nothing;
 
-        foreach (immutable i, _; this.tupleof)
+        foreach (immutable i, ref _; this.tupleof)
         {
             static if (isSerialisable!(this.tupleof[i]))
             {
@@ -1524,7 +1524,7 @@ mixin template IRCPluginImpl(
         out string[][string] missingEntries,
         out string[][string] invalidEntries)
     {
-        foreach (immutable i, _; this.tupleof)
+        foreach (immutable i, ref _; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
@@ -1593,7 +1593,7 @@ mixin template IRCPluginImpl(
     {
         bool success;
 
-        foreach (immutable i, _; this.tupleof)
+        foreach (immutable i, ref _; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
@@ -1621,7 +1621,7 @@ mixin template IRCPluginImpl(
      +/
     override public void printSettings() const
     {
-        foreach (immutable i, _; this.tupleof)
+        foreach (immutable i, ref _; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
@@ -1666,7 +1666,7 @@ mixin template IRCPluginImpl(
     {
         bool didSomething;
 
-        foreach (immutable i, _; this.tupleof)
+        foreach (immutable i, ref _; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
