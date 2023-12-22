@@ -207,7 +207,6 @@ public:
 )
 void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.constants : BufferSize;
     import lu.string : advancePast, stripped, strippedLeft;
     import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
@@ -301,7 +300,6 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
     switch (verb)
     {
     case "add":
-        import kameloso.constants : BufferSize;
         import kameloso.thread : CarryingFiber;
         import std.typecons : Tuple;
         import core.thread : Fiber;

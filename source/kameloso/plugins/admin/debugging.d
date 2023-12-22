@@ -18,7 +18,8 @@
 module kameloso.plugins.admin.debugging;
 
 version(WithAdminPlugin):
-debug:
+debug version = Debug;
+version(Debug):
 
 private:
 

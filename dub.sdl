@@ -18,7 +18,7 @@ dependency "lu" version="~>2.0.0"
 dependency "dialect" version="~>2.0.4"
 dependency "arsd-official:dom" version="~>10.9.0"
 dependency "arsd-official:http" version="~>10.9.0"
-dependency "requests" version="~>2.1.0"
+dependency "requests" version="~>2.1.2"
 
 sourcePaths "source"
 importPaths "source"
@@ -89,6 +89,7 @@ versions \
     "IncludeHeavyStuff" \
     "BenchmarkHTTPRequests" \
     "ThreadedSSLFree" \
+    "TraceFibersAndDelegates" \
     "Callgrind"
 */
 
@@ -127,6 +128,7 @@ configuration "dev" {
     subConfiguration "dialect" "dev"
 
     versions \
+        "Debug" \
         "TwitchSupport" \
         "WithTwitchPlugin" \
         "TwitchWarnings" \
@@ -150,6 +152,7 @@ configuration "dev-lowmem" {
     dflags "-lowmem"
 
     versions \
+        "Debug" \
         "TwitchSupport" \
         "WithTwitchPlugin" \
         "TwitchWarnings" \
@@ -173,6 +176,7 @@ configuration "unittest" {
     subConfiguration "dialect" "dev"
 
     versions \
+        "Debug" \
         "TwitchSupport" \
         "WithTwitchPlugin" \
         "TwitchWarnings" \
@@ -181,6 +185,7 @@ configuration "unittest" {
         "GCStatsOnExit" \
         "IncludeHeavyStuff" \
         "TraceWhois" \
+        "TraceFibersAndDelegates" \
         "TwitchPromoteEverywhere" \
         "TwitchCustomEmotesEverywhere" \
         "BenchmarkHTTPRequests" \
@@ -193,6 +198,7 @@ configuration "unittest-lowmem" {
     dflags "-lowmem"
 
     versions \
+        "Debug" \
         "TwitchSupport" \
         "WithTwitchPlugin" \
         "TwitchWarnings" \
@@ -201,6 +207,7 @@ configuration "unittest-lowmem" {
         "GCStatsOnExit" \
         "IncludeHeavyStuff" \
         "TraceWhois" \
+        "TraceFibersAndDelegates" \
         "TwitchPromoteEverywhere" \
         "TwitchCustomEmotesEverywhere" \
         "BenchmarkHTTPRequests" \

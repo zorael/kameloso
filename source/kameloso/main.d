@@ -1729,12 +1729,12 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
 {
     import core.thread : Fiber;
 
+    Fiber[] expiredFibers;
+
     /++
         Handle awaiting Fibers of a specified type.
      +/
-    void processAwaitingFibersImpl(
-        Fiber[] fibersForType,
-        ref Fiber[] expiredFibers)
+    void processAwaitingFibersImpl(Fiber[] fibersForType)
     {
         foreach (immutable i, fiber; fibersForType)
         {
@@ -1749,6 +1749,24 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
 
                     if (auto carryingFiber = cast(CarryingFiber!IRCEvent)fiber)
                     {
+                        version(TraceFibersAndDelegates)
+                        {
+                            import lu.conv : Enum;
+
+                            enum pattern = "<l>%s</>.awaitingFibers[%d] " ~
+                                "event type <l>%s</> " ~
+                                "creator <l>%s</> " ~
+                                "call <l>%d";
+
+                            logger.tracef(
+                                pattern,
+                                plugin.name,
+                                i,
+                                Enum!(IRCEvent.Type).toString(event.type),
+                                carryingFiber.creator,
+                                carryingFiber.called+1);
+                        }
+
                         carryingFiber.payload = event;
                         carryingFiber.call();
 
@@ -1760,6 +1778,21 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
                     }
                     else
                     {
+                        version(TraceFibersAndDelegates)
+                        {
+                            import lu.conv : Enum;
+
+                            enum pattern = "<l>%s</>.awaitingFibers[%d] " ~
+                                "event type <l>%s</> " ~
+                                "plain fiber";
+
+                            logger.tracef(
+                                pattern,
+                                plugin.name,
+                                i,
+                                Enum!(IRCEvent.Type).toString(event.type));
+                        }
+
                         fiber.call();
                     }
                 }
@@ -1781,20 +1814,15 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
         }
     }
 
-    Fiber[] expiredFibers;
 
     if (plugin.state.awaitingFibers[event.type].length)
     {
-        processAwaitingFibersImpl(
-            plugin.state.awaitingFibers[event.type],
-            expiredFibers);
+        processAwaitingFibersImpl(plugin.state.awaitingFibers[event.type]);
     }
 
     if (plugin.state.awaitingFibers[IRCEvent.Type.ANY].length)
     {
-        processAwaitingFibersImpl(
-            plugin.state.awaitingFibers[IRCEvent.Type.ANY],
-            expiredFibers);
+        processAwaitingFibersImpl(plugin.state.awaitingFibers[IRCEvent.Type.ANY]);
     }
 
     // Clean up processed Fibers
@@ -1809,10 +1837,41 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
             {
                 import std.algorithm.mutation : SwapStrategy, remove;
 
-                if (fiber is expiredFiber)
+                if (fiber !is expiredFiber) continue;
+
+                version(TraceFibersAndDelegates)
                 {
-                    fibersByType = fibersByType.remove!(SwapStrategy.unstable)(i);
+                    import kameloso.thread : CarryingFiber;
+                    import lu.conv : Enum;
+
+                    if (auto carryingFiber = cast(CarryingFiber!IRCEvent)fiber)
+                    {
+                        enum pattern = "<l>%s</>.expiredFibers[%d] " ~
+                            "event type <l>%s</> " ~
+                            "creator <l>%s</> " ~
+                            "DELETED";
+
+                        logger.tracef(
+                            pattern,
+                            plugin.name,
+                            i,
+                            Enum!(IRCEvent.Type).toString(carryingFiber.payload.type),
+                            carryingFiber.creator);
+                    }
+                    else
+                    {
+                        enum pattern = "<l>%s</>.expiredFibers[%d] " ~
+                            "plain fiber " ~
+                            "DELETED";
+
+                        logger.tracef(
+                            pattern,
+                            plugin.name,
+                            i);
+                    }
                 }
+
+                fibersByType = fibersByType.remove!(SwapStrategy.unstable)(i);
             }
         }
 
@@ -1847,6 +1906,20 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
 
         try
         {
+            version(TraceFibersAndDelegates)
+            {
+                import lu.conv : Enum;
+
+                enum pattern = "<l>%s</>.scheduledDelegates[%d] " ~
+                    "creator <l>%s";
+
+                logger.tracef(
+                    pattern,
+                    plugin.name,
+                    i,
+                    scheduledDg.creator);
+            }
+
             scheduledDg.dg();
         }
         catch (Exception e)
@@ -1903,6 +1976,33 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
 
         try
         {
+            version(TraceFibersAndDelegates)
+            {
+                import kameloso.thread : CarryingFiber;
+
+                if (auto carryingFiber = cast(CarryingFiber!IRCEvent)scheduledFiber.fiber)
+                {
+                    enum pattern = "<l>%s</>.scheduledFibers[%d] " ~
+                        "creator <l>%s";
+
+                    logger.tracef(
+                        pattern,
+                        plugin.name,
+                        i,
+                        carryingFiber.creator);
+                }
+                else
+                {
+                    enum pattern = "<l>%s</>.scheduledFibers[%d] " ~
+                        "plain fiber";
+
+                    logger.tracef(
+                        pattern,
+                        plugin.name,
+                        i);
+                }
+            }
+
             if (scheduledFiber.fiber.state == Fiber.State.HOLD)
             {
                 scheduledFiber.fiber.call();
@@ -3207,7 +3307,7 @@ auto startBot(Kameloso instance)
 
                 try
                 {
-                    const pid = exec(instance.args.dup, instance.transient.numReexecs);
+                    const pid = exec(instance.args.dup, instance.transient.numReexecs, instance.bot.channelOverride);
                     // On Windows, if we're here, the call succeeded
                     // Posix should never be here; it will either exec or throw
 
@@ -3609,6 +3709,7 @@ auto startBot(Kameloso instance)
         // Start the main loop
         instance.transient.askedToReconnect = false;
         attempt.next = mainLoop(instance);
+        instance.bot.channelOverride = instance.collectChannels();  // snapshot channels
         attempt.firstConnect = false;
 
         if (*instance.abort || !attempt.next.among!(Next.continue_, Next.retry))
@@ -4358,8 +4459,7 @@ auto run(string[] args)
         // If not already sent, send a proper QUIT, optionally verbosely
         string reason;  // mutable
 
-        if (
-            !*instance.abort &&
+        if (!*instance.abort &&
             !instance.settings.headless &&
             !instance.settings.hideOutgoing)
         {

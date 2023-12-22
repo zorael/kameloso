@@ -136,8 +136,8 @@ void startChannelQueries(ChanQueryService service)
         {
             import std.conv : text;
 
-            await(service, types, No.yield);
             scope(exit) unawait(service, types);
+            await(service, types, No.yield);
 
             version(WithPrinterPlugin)
             {
@@ -158,13 +158,13 @@ void startChannelQueries(ChanQueryService service)
         /++
             Event types that signal the end of a query response.
          +/
-        static immutable topicTypes =
+        static immutable IRCEvent.Type[2] topicTypes =
         [
             IRCEvent.Type.RPL_TOPIC,
             IRCEvent.Type.RPL_NOTOPIC,
         ];
 
-        queryAwaitAndUnlist("TOPIC", topicTypes);
+        queryAwaitAndUnlist("TOPIC", topicTypes[]);
         if (channelName !in service.channelStates) continue chanloop;
         queryAwaitAndUnlist("WHO", IRCEvent.Type.RPL_ENDOFWHO);
         if (channelName !in service.channelStates) continue chanloop;
@@ -251,7 +251,7 @@ void startChannelQueries(ChanQueryService service)
 
     scope(exit)
     {
-        unawait(service, whoisTypes);
+        unawait(service, whoisTypes[]);
 
         version(WithPrinterPlugin)
         {

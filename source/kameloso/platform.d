@@ -319,6 +319,8 @@ auto openInBrowser(const string url)
     Params:
         args = Arguments passed to the program.
         numReexecs = How many reexecutions have been done so far.
+        channels = A snapshot of the channels currently joined, to pass as override
+            to the new execution via an `--internal-channel-override` getopt flag.
 
     Returns:
         On Windows, a [std.process.Pid|Pid] of the spawned process.
@@ -330,10 +332,12 @@ auto openInBrowser(const string url)
  +/
 Pid exec(
     /*const*/ string[] args,
-    const uint numReexecs) @system
+    const uint numReexecs,
+    const string[] channels) @system
 {
     import kameloso.common : logger;
     import std.algorithm.comparison : among;
+    import std.array : join;
     import std.conv : text;
 
     if (args.length > 1)
@@ -378,22 +382,24 @@ Pid exec(
                     //"--setup-twitch",  // this only does the keygen, then exits
                     "--get-cacert",
                     "--get-openssl",
-                    "--internal-num-reexecs"))
+                    "--internal-num-reexecs",
+                    "--internal-channel-override"))
                 {
                     toRemove ~= i;
                 }
             }
         }
 
-        foreach (immutable i; toRemove)
+        foreach_reverse (immutable i; toRemove)
         {
             import std.algorithm.mutation : SwapStrategy, remove;
             args = args.remove!(SwapStrategy.stable)(i);
         }
     }
 
-    // Add the reexec count argument
+    // Add the reexec count and channel override arguments
     args ~= text("--internal-num-reexecs=", numReexecs+1);
+    if (channels.length) args ~= text("--internal-channel-override=", channels.join(','));
 
     version(Posix)
     {

@@ -82,66 +82,66 @@ public:
 
     1. Sets up the FIFO pipe, resolving the filename and creating it.
     2. Prints the usage text.
-    3. Lastly, sets up a [core.thread.fiber.Fiber|Fiber] that checks once per
-       hour if the FIFO has disappeared and recreates it if so. This is to allow
+    3. Lastly, endlessly loops (as a [core.thread.fiber.Fiber|Fiber]) and checks once per
+       hour if the FIFO has disappeared, and recreates it if so. This is to allow
        for recovery from the FIFO being deleted.
+
+    Initialises the FIFO *here*, where we know our nickname (we don't in .initialise).
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
+    .fiber(true)
 )
 void onWelcome(PipelinePlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
-    import kameloso.constants : BufferSize;
     import lu.common : ReturnValueException;
-    import core.thread : Fiber;
     import core.time : minutes;
 
-    static immutable discoveryPeriod = 1.minutes;
-
-    void discoverFIFODg()
+    void initRoutine()
     {
-        while (true)
-        {
-            import std.file : exists;
-
-            if (!plugin.fifoFilename.exists || !plugin.fifoFilename.isFIFO)
-            {
-                if (plugin.fd != -1) closeFD(plugin.fd);
-
-                try
-                {
-                    plugin.fifoFilename = initialiseFIFO(plugin);
-                    plugin.fd = openFIFO(plugin.fifoFilename);
-                    printUsageText(plugin, Yes.reinit);
-                }
-                catch (Exception _)
-                {
-                    // Gag errors
-                }
-            }
-
-            delay(plugin, discoveryPeriod, Yes.yield);
-        }
+        plugin.fifoFilename = initialiseFIFO(plugin);
+        plugin.fd = openFIFO(plugin.fifoFilename);
+        printUsageText(plugin, No.reinit);
     }
 
     try
     {
-        // Initialise the FIFO *here*, where we know our nickname
-        // (we don't in .initialise)
-        plugin.fifoFilename = initialiseFIFO(plugin);
-        plugin.fd = openFIFO(plugin.fifoFilename);
-        printUsageText(plugin, No.reinit);
+        initRoutine();
     }
     catch (ReturnValueException e)
     {
         enum pattern = "The <l>Pipeline</> plugin failed to start up: <l>%s";
         logger.errorf(pattern, e.msg);
+        //return;
     }
 
-    // Queue fiber to check if the FIFO has disappeared even if initialising threw
-    Fiber discoverFIFOFiber = new Fiber(&discoverFIFODg, BufferSize.fiberStack);
-    delay(plugin, discoverFIFOFiber, discoveryPeriod);
+    // Check once per minute is the FIFO has disappeared and recreate it if so
+    static immutable discoveryPeriod = 1.minutes;
+
+    // Delay once before entering loop
+    delay(plugin, discoveryPeriod, Yes.yield);
+
+    while (true)
+    {
+        import std.file : exists;
+
+        if (!plugin.fifoFilename.exists || !plugin.fifoFilename.isFIFO)
+        {
+            if (plugin.fd != -1) closeFD(plugin.fd);
+
+            try
+            {
+                initRoutine();
+            }
+            catch (Exception _)
+            {
+                // Gag errors
+            }
+        }
+
+        delay(plugin, discoveryPeriod, Yes.yield);
+    }
 }
 
 

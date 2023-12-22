@@ -483,9 +483,8 @@ mixin template IRCPluginImpl(
 
             foreach (immutable i, fun; allEventHandlerFunctionsInModule)
             {
-                enum fqn = module_ ~ '.' ~ __traits(identifier, allEventHandlerFunctionsInModule[i]);
                 udas[i] = getUDAs!(fun, IRCEventHandler)[0];
-                udas[i].fqn = fqn;
+                udas[i].fqn = module_ ~ '.' ~ __traits(identifier, allEventHandlerFunctionsInModule[i]);
                 version(unittest) udaSanityCheckCTFE(udas[i]);
                 udas[i].generateTypemap();
             }
@@ -516,7 +515,7 @@ mixin template IRCPluginImpl(
         bool retval = true;
 
         top:
-        foreach (immutable i, _; this.tupleof)
+        foreach (immutable i, ref _; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
@@ -576,7 +575,7 @@ mixin template IRCPluginImpl(
             `true` if the event should be allowed to trigger, `false` if not.
      +/
     pragma(inline, true)
-    private auto allow(const ref IRCEvent event, const Permissions permissionsRequired)
+    private FilterResult allow(const ref IRCEvent event, const Permissions permissionsRequired) @system
     {
         import kameloso.plugins.common.core : allowImpl;
         return allowImpl(this, event, permissionsRequired);
@@ -719,7 +718,6 @@ mixin template IRCPluginImpl(
          +/
         auto process(bool verbose, bool inFiber, bool hasRegexes, Fun)
             (scope Fun fun,
-            const string fqn,
             const IRCEventHandler uda,
             ref IRCEvent event) scope
         {
@@ -728,7 +726,7 @@ mixin template IRCPluginImpl(
                 import lu.conv : Enum;
                 import std.stdio : stdout, writeln, writefln;
 
-                writeln("-- ", fqn, " @ ", Enum!(IRCEvent.Type).toString(event.type));
+                writeln("-- ", uda.fqn, " @ ", Enum!(IRCEvent.Type).toString(event.type));
                 writeln("   ...", Enum!ChannelPolicy.toString(uda._channelPolicy));
                 if (state.settings.flush) stdout.flush();
             }
@@ -977,7 +975,7 @@ mixin template IRCPluginImpl(
                     {
                         // Unsure why we need to specifically specify IRCPlugin
                         // now despite typeof(this) being a subclass...
-                        enqueue(this, event, uda._permissionsRequired, uda._fiber, fun, fqn);
+                        enqueue(this, event, uda._permissionsRequired, uda._fiber, fun, uda.fqn);
                         return uda._chainable ? NextStep.continue_ : NextStep.return_;
                     }
                     else
@@ -1026,14 +1024,15 @@ mixin template IRCPluginImpl(
             static if (inFiber)
             {
                 import kameloso.constants : BufferSize;
-                import kameloso.thread : CarryingFiber;
+                import kameloso.thread : carryingFiber;
                 import core.thread : Fiber;
 
-                auto fiber = new CarryingFiber!IRCEvent(
+                auto fiber = carryingFiber(
                     () => call!(inFiber, SystemFun)(fun, event),
+                    event,
                     BufferSize.fiberStack);
-                fiber.payload = event;
-                fiber.call();
+                fiber.creator = uda.fqn;
+                fiber.call(uda.fqn);
 
                 if (fiber.state == Fiber.State.TERM)
                 {
@@ -1070,7 +1069,6 @@ mixin template IRCPluginImpl(
             immutable uda = this.Introspection.allEventHandlerUDAsInModule[i];
             alias fun = this.Introspection.allEventHandlerFunctionsInModule[i];
             enum verbose = (uda._verbose || debug_);
-            enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
 
             version(unittest)
             {
@@ -1124,7 +1122,6 @@ mixin template IRCPluginImpl(
                     cast(bool)uda._fiber,
                     cast(bool)uda.regexes.length)
                     (&fun,
-                    fqn,
                     uda,
                     event);
 
@@ -1140,7 +1137,6 @@ mixin template IRCPluginImpl(
                         cast(bool)uda._fiber,
                         cast(bool)uda.regexes.length)
                         (&fun,
-                        fqn,
                         uda,
                         event);
                 }
@@ -1165,7 +1161,7 @@ mixin template IRCPluginImpl(
                 import core.exception : UnicodeException;
 
                 /*enum pattern = "tryProcess some exception on <l>%s</>: <l>%s";
-                logger.warningf(pattern, fqn, e);*/
+                logger.warningf(pattern, uda.fqn, e);*/
 
                 immutable isRecoverableException =
                     (cast(UnicodeException)e !is null) ||
@@ -1366,50 +1362,57 @@ mixin template IRCPluginImpl(
         //this.state.previousWhoisTimestamps = null;  // keep
         this.state.updates = IRCPluginState.Update.nothing;
 
-        foreach (immutable i, ref member; this.tupleof)
+        foreach (immutable i, ref _; this.tupleof)
         {
-            static if (isSerialisable!member)
+            static if (isSerialisable!(this.tupleof[i]))
             {
                 import kameloso.traits : udaIndexOf;
 
                 enum resourceUDAIndex = udaIndexOf!(this.tupleof[i], Resource);
-                enum configurationUDAIndex = udaIndexOf!(this.tupleof[i], Configuration);
-                alias attrs = __traits(getAttributes, this.tupleof[i]);
-
                 static if (resourceUDAIndex != -1)
                 {
                     import std.path : buildNormalizedPath;
 
+                    alias attrs = __traits(getAttributes, this.tupleof[i]);
                     static if (is(typeof(attrs[resourceUDAIndex])))
                     {
                         // Instance of Resource, e.g. @Resource("subdir") annotation
-                        member = buildNormalizedPath(
+                        this.tupleof[i] = buildNormalizedPath(
                             state.settings.resourceDirectory,
                             attrs[resourceUDAIndex].subdirectory,
-                            member);
+                            this.tupleof[i]);
                     }
                     else
                     {
                         // Resource as a type, e.g. @Resource annotation
-                        member = buildNormalizedPath(state.settings.resourceDirectory, member);
+                        this.tupleof[i] = buildNormalizedPath(
+                            state.settings.resourceDirectory,
+                            this.tupleof[i]);
                     }
                 }
-                else static if (configurationUDAIndex != -1)
+                else
                 {
-                    import std.path : buildNormalizedPath;
+                    enum configurationUDAIndex = udaIndexOf!(this.tupleof[i], Configuration);
+                    static if (configurationUDAIndex != -1)
+                    {
+                        import std.path : buildNormalizedPath;
 
-                    static if (is(typeof(attrs[configurationUDAIndex])))
-                    {
-                        // Instance of Configuration, e.g. @Configuration("subdir") annotation
-                        member = buildNormalizedPath(
-                            state.settings.configDirectory,
-                            attrs[configurationUDAIndex].subdirectory,
-                            member);
-                    }
-                    else
-                    {
-                        // Configuration as a type, e.g. @Configuration annotation
-                        member = buildNormalizedPath(state.settings.configDirectory, member);
+                        alias attrs = __traits(getAttributes, this.tupleof[i]);
+                        static if (is(typeof(attrs[configurationUDAIndex])))
+                        {
+                            // Instance of Configuration, e.g. @Configuration("subdir") annotation
+                            this.tupleof[i] = buildNormalizedPath(
+                                state.settings.configDirectory,
+                                attrs[configurationUDAIndex].subdirectory,
+                                this.tupleof[i]);
+                        }
+                        else
+                        {
+                            // Configuration as a type, e.g. @Configuration annotation
+                            this.tupleof[i] = buildNormalizedPath(
+                                state.settings.configDirectory,
+                                this.tupleof[i]);
+                        }
                     }
                 }
             }
@@ -1521,29 +1524,34 @@ mixin template IRCPluginImpl(
         out string[][string] missingEntries,
         out string[][string] invalidEntries)
     {
-        import kameloso.configreader : readConfigInto;
-        import kameloso.traits : udaIndexOf;
-        import lu.meld : meldInto;
-
-        foreach (immutable i, ref symbol; this.tupleof)
+        foreach (immutable i, ref _; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
-                enum typeUDAIndex = udaIndexOf!(typeof(this.tupleof[i]), Settings);
-                enum valueUDAIndex = udaIndexOf!(this.tupleof[i], Settings);
+                import kameloso.traits : udaIndexOf;
 
-                static if ((typeUDAIndex != -1) || (valueUDAIndex != -1))
+                enum hasSettingsUDA =
+                    (udaIndexOf!(typeof(this.tupleof[i]), Settings) != -1) ||
+                    (udaIndexOf!(this.tupleof[i], Settings) != -1);
+
+                static if (hasSettingsUDA)
                 {
-                    if (symbol != typeof(symbol).init)
+                    import kameloso.configreader : readConfigInto;
+                    import lu.meld : meldInto;
+
+                    if (this.tupleof[i] != typeof(this.tupleof[i]).init)
                     {
-                        // This symbol has had configuration applied to it already
-                        continue;
+                        // Symbol found but it has had configuration applied to it already
+                        break;
                     }
 
                     string[][string] theseMissingEntries;
                     string[][string] theseInvalidEntries;
 
-                    configFile.readConfigInto(theseMissingEntries, theseInvalidEntries, symbol);
+                    configFile.readConfigInto(
+                        theseMissingEntries,
+                        theseInvalidEntries,
+                        this.tupleof[i]);
                     theseMissingEntries.meldInto(missingEntries);
                     theseInvalidEntries.meldInto(invalidEntries);
                     break;
@@ -1583,21 +1591,22 @@ mixin template IRCPluginImpl(
      +/
     override public bool setSettingByName(const string setting, const string value)
     {
-        import kameloso.traits : udaIndexOf;
-        import lu.objmanip : setMemberByName;
-
         bool success;
 
-        foreach (immutable i, ref symbol; this.tupleof)
+        foreach (immutable i, ref _; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
-                enum typeUDAIndex = udaIndexOf!(typeof(this.tupleof[i]), Settings);
-                enum valueUDAIndex = udaIndexOf!(this.tupleof[i], Settings);
+                import kameloso.traits : udaIndexOf;
 
-                static if ((typeUDAIndex != -1) || (valueUDAIndex != -1))
+                enum hasSettingsUDA =
+                    (udaIndexOf!(typeof(this.tupleof[i]), Settings) != -1) ||
+                    (udaIndexOf!(this.tupleof[i], Settings) != -1);
+
+                static if (hasSettingsUDA)
                 {
-                    success = symbol.setMemberByName(setting, value);
+                    import lu.objmanip : setMemberByName;
+                    success = this.tupleof[i].setMemberByName(setting, value);
                     break;
                 }
             }
@@ -1612,20 +1621,22 @@ mixin template IRCPluginImpl(
      +/
     override public void printSettings() const
     {
-        import kameloso.printing : printObject;
-        import kameloso.traits : udaIndexOf;
-
-        foreach (immutable i, const ref symbol; this.tupleof)
+        foreach (immutable i, ref _; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
-                enum typeUDAIndex = udaIndexOf!(typeof(this.tupleof[i]), Settings);
-                enum valueUDAIndex = udaIndexOf!(this.tupleof[i], Settings);
+                import kameloso.traits : udaIndexOf;
 
-                static if ((typeUDAIndex != -1) || (valueUDAIndex != -1))
+                enum hasSettingsUDA =
+                    (udaIndexOf!(typeof(this.tupleof[i]), Settings) != -1) ||
+                    (udaIndexOf!(this.tupleof[i], Settings) != -1);
+
+                static if (hasSettingsUDA)
                 {
+                    import kameloso.printing : printObject;
                     import std.typecons : No, Yes;
-                    printObject!(No.all)(symbol);
+
+                    printObject!(No.all)(this.tupleof[i]);
                     break;
                 }
             }
@@ -1653,22 +1664,23 @@ mixin template IRCPluginImpl(
      +/
     override public bool serialiseConfigInto(ref Appender!(char[]) sink) const
     {
-        import kameloso.traits : udaIndexOf;
-
         bool didSomething;
 
-        foreach (immutable i, ref symbol; this.tupleof)
+        foreach (immutable i, ref _; this.tupleof)
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
-                enum typeUDAIndex = udaIndexOf!(typeof(this.tupleof[i]), Settings);
-                enum valueUDAIndex = udaIndexOf!(this.tupleof[i], Settings);
+                import kameloso.traits : udaIndexOf;
 
-                static if ((typeUDAIndex != -1) || (valueUDAIndex != -1))
+                enum hasSettingsUDA =
+                    (udaIndexOf!(typeof(this.tupleof[i]), Settings) != -1) ||
+                    (udaIndexOf!(this.tupleof[i], Settings) != -1);
+
+                static if (hasSettingsUDA)
                 {
                     import lu.serialisation : serialise;
 
-                    sink.serialise(symbol);
+                    sink.serialise(this.tupleof[i]);
                     didSomething = true;
                     break;
                 }
@@ -1709,7 +1721,16 @@ mixin template IRCPluginImpl(
                     is(typeof(.` ~ funName ~ `) == function) &&
                     TakesParams!(.` ~ funName ~ `, typeof(this)))
                 {
-                    .` ~ funName ~ `(this);
+                    import kameloso.constants : BufferSize;
+                    import core.thread : Fiber;
+
+                    void ` ~ funName ~ `Dg()
+                    {
+                        .` ~ funName ~ `(this);
+                    }
+
+                    auto ` ~ funName ~ `Fiber = new Fiber(&` ~ funName ~ `Dg, BufferSize.fiberStack);
+                    ` ~ funName ~ `Fiber.call();
                 }
                 else
                 {
@@ -1896,8 +1917,10 @@ mixin template IRCPluginImpl(
                     {
                         import std.format : format;
 
+                        // Cannot use uda.fqn, it has not been given a value at this point
                         enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
-                        enum pattern = "Warning: `%s` non-hidden command word \"%s\" is missing a description";
+                        enum pattern = "Warning: `%s` non-hidden command word " ~
+                            `"%s" is missing a description`;
                         enum message = pattern.format(fqn, command._word);
                         pragma(msg, message);
                     }
@@ -1916,8 +1939,10 @@ mixin template IRCPluginImpl(
                     {
                         import std.format : format;
 
+                        // As above
                         enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
-                        enum pattern = "Warning: `%s` non-hidden expression \"%s\" is missing a description";
+                        enum pattern = "Warning: `%s` non-hidden regex expression " ~
+                            `"%s" is missing a description`;
                         enum message = pattern.format(fqn, regex._expression);
                         pragma(msg, message);
                     }
@@ -1956,13 +1981,6 @@ mixin template IRCPluginImpl(
             {
                 .onBusMessage(this, header, content);
             }
-            /*else static if (
-                is(typeof(.onBusMessage)) &&
-                is(typeof(.onBusMessage) == function) &&
-                TakesParams!(.onBusMessage, typeof(this), string))
-            {
-                .onBusMessage(this, header);
-            }*/
             else
             {
                 import kameloso.traits : stringOfTypeOf;
@@ -2006,8 +2024,9 @@ auto prefixPolicyMatches(bool verbose)
 
     static if (verbose)
     {
+        import lu.conv : Enum;
         import std.stdio : writefln, writeln;
-        writeln("...prefixPolicyMatches! policy:", policy);
+        writeln("...prefixPolicyMatches invoked! policy:", Enum!PrefixPolicy.toString(policy));
     }
 
     bool strippedDisplayName;
@@ -2018,7 +2037,7 @@ auto prefixPolicyMatches(bool verbose)
     case direct:
         static if (verbose)
         {
-            writeln("direct, so just passes.");
+            writeln("    ...as such, just passes.");
         }
         return true;
 
@@ -2027,28 +2046,25 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("no prefix set, so defer to nickname case.");
+                writeln("    ...but no prefix defined; defer to nickname case.");
             }
-
             goto case nickname;
         }
         else if (event.content.startsWith(state.settings.prefix))
         {
             static if (verbose)
             {
-                enum pattern = "starts with prefix (%s)";
+                enum pattern = "    ...does start with prefix (%s)";
                 writefln(pattern, state.settings.prefix);
             }
-
             event.content = event.content[state.settings.prefix.length..$];
         }
         else
         {
             static if (verbose)
             {
-                writeln("did not start with prefix but falling back to nickname check");
+                writeln("    ...did not start with prefix but falling back to nickname check");
             }
-
             goto case nickname;
         }
         break;
@@ -2058,7 +2074,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("stripped away prepended '@'");
+                writeln("    ...stripped away prepended '@'");
             }
 
             // Using @name to refer to someone is not
@@ -2074,7 +2090,7 @@ auto prefixPolicyMatches(bool verbose)
             {
                 static if (verbose)
                 {
-                    writeln("begins with displayName! stripping it");
+                    writeln("    ...begins with displayName! stripping it");
                 }
 
                 event.content = event.content
@@ -2084,10 +2100,9 @@ auto prefixPolicyMatches(bool verbose)
                 {
                     static if (verbose)
                     {
-                        enum pattern = "further starts with prefix (%s)";
+                        enum pattern = "        ...further starts with prefix (%s)";
                         writefln(pattern, state.settings.prefix);
                     }
-
                     event.content = event.content[state.settings.prefix.length..$];
                 }
 
@@ -2104,7 +2119,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("begins with nickname! stripping it");
+                writeln("    ...content begins with nickname! stripping it");
             }
 
             event.content = event.content
@@ -2114,7 +2129,7 @@ auto prefixPolicyMatches(bool verbose)
             {
                 static if (verbose)
                 {
-                    enum pattern = "further starts with prefix (%s)";
+                    enum pattern = "        ...further starts with prefix (%s)";
                     writefln(pattern, state.settings.prefix);
                 }
 
@@ -2126,7 +2141,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("doesn't begin with nickname but it's a QUERY");
+                writeln("    ...doesn't begin with nickname but it's a QUERY");
             }
             // Drop down
         }
@@ -2134,7 +2149,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("nickname required but not present... returning false.");
+                writeln("    ...nickname required but not present; returning false.");
             }
             return false;
         }
@@ -2143,7 +2158,7 @@ auto prefixPolicyMatches(bool verbose)
 
     static if (verbose)
     {
-        writeln("policy checks out!");
+        writeln("    ...policy checks out! (droped down to return true)");
     }
 
     return true;
@@ -2167,6 +2182,9 @@ auto prefixPolicyMatches(bool verbose)
     Returns:
         A [FilterResult] saying the event should `pass`, `fail`, or that more
         information about the sender is needed via a WHOIS call.
+
+    Also_See:
+        [filterSenderImpl]
  +/
 auto filterSender(
     const ref IRCEvent event,
@@ -2175,15 +2193,7 @@ auto filterSender(
 {
     import kameloso.constants : Timeout;
 
-    version(WithPersistenceService) {}
-    else
-    {
-        pragma(msg, "Warning: The Persistence service is not compiled in. " ~
-            "Event triggers may or may not work. You get to keep the pieces.");
-    }
-
-    immutable class_ = event.sender.class_;
-    if (class_ == IRCUser.Class.blacklist) return FilterResult.fail;
+    if (event.sender.class_ == IRCUser.Class.blacklist) return FilterResult.fail;
 
     immutable timediff = (event.time - event.sender.updated);
 
@@ -2193,51 +2203,7 @@ auto filterSender(
 
     if (event.sender.account.length)
     {
-        immutable isAdmin = (class_ == IRCUser.Class.admin);  // Trust in Persistence
-        immutable isStaff = (class_ == IRCUser.Class.staff);
-        immutable isOperator = (class_ == IRCUser.Class.operator);
-        immutable isElevated = (class_ == IRCUser.Class.elevated);
-        immutable isWhitelisted = (class_ == IRCUser.Class.whitelist);
-        immutable isAnyone = (class_ == IRCUser.Class.anyone);
-
-        if (isAdmin)
-        {
-            return FilterResult.pass;
-        }
-        else if (isStaff && (permissionsRequired <= Permissions.staff))
-        {
-            return FilterResult.pass;
-        }
-        else if (isOperator && (permissionsRequired <= Permissions.operator))
-        {
-            return FilterResult.pass;
-        }
-        else if (isElevated && (permissionsRequired <= Permissions.elevated))
-        {
-            return FilterResult.pass;
-        }
-        else if (isWhitelisted && (permissionsRequired <= Permissions.whitelist))
-        {
-            return FilterResult.pass;
-        }
-        else if (/*event.sender.account.length &&*/ permissionsRequired <= Permissions.registered)
-        {
-            return FilterResult.pass;
-        }
-        else if (isAnyone && (permissionsRequired <= Permissions.anyone))
-        {
-            return whoisExpired ? FilterResult.whois : FilterResult.pass;
-        }
-        else if (permissionsRequired == Permissions.ignore)
-        {
-            /*assert(0, "`filterSender` saw a `Permissions.ignore` and the call " ~
-                "to it could have been skipped");*/
-            return FilterResult.pass;
-        }
-        else
-        {
-            return FilterResult.fail;
-        }
+        return filterSenderImpl(permissionsRequired, event.sender.class_, whoisExpired);
     }
     else
     {
@@ -2268,6 +2234,87 @@ auto filterSender(
 }
 
 
+// filterSenderImpl
+/++
+    Judges whether an event may be triggered, based on the event itself and
+    the annotated [kameloso.plugins.common.core.Permissions|Permissions] of the
+    handler in question. Implementation function.
+
+    Params:
+        permissionsRequired = The [Permissions] context in which this user should be filtered.
+        class_ = [IRCUser.Class] of the sender to filter.
+        whoisExpired = Whether or not the sender's WHOIS result has expired
+            (and thus may be reissued).
+
+    Returns:
+        [FilterResult.pass] if the event should be allowed to trigger,
+        [FilterResult.whois] if a WHOIS is required to tell and [FilterResult.fail]
+        if the trigger should be denied.
+
+    See_Also:
+        [filterSender]
+ +/
+auto filterSenderImpl(
+    const Permissions permissionsRequired,
+    const IRCUser.Class class_,
+    const bool whoisExpired)
+{
+    version(WithPersistenceService) {}
+    else
+    {
+        pragma(msg, "Warning: The Persistence service is not compiled in. " ~
+            "Event triggers may or may not work. You get to keep the pieces.");
+    }
+
+    // Trust in Persistence to have divined the sender's class
+    immutable isAdmin = (class_ == IRCUser.Class.admin);
+    immutable isStaff = (class_ == IRCUser.Class.staff);
+    immutable isOperator = (class_ == IRCUser.Class.operator);
+    immutable isElevated = (class_ == IRCUser.Class.elevated);
+    immutable isWhitelisted = (class_ == IRCUser.Class.whitelist);
+    immutable isRegistered = (class_ == IRCUser.Class.registered);
+    immutable isAnyone = (class_ == IRCUser.Class.anyone);
+
+    if (isAdmin)
+    {
+        return FilterResult.pass;
+    }
+    else if (isStaff && (permissionsRequired <= Permissions.staff))
+    {
+        return FilterResult.pass;
+    }
+    else if (isOperator && (permissionsRequired <= Permissions.operator))
+    {
+        return FilterResult.pass;
+    }
+    else if (isElevated && (permissionsRequired <= Permissions.elevated))
+    {
+        return FilterResult.pass;
+    }
+    else if (isWhitelisted && (permissionsRequired <= Permissions.whitelist))
+    {
+        return FilterResult.pass;
+    }
+    else if (isRegistered && (permissionsRequired <= Permissions.registered))
+    {
+        return FilterResult.pass;
+    }
+    else if (isAnyone && (permissionsRequired <= Permissions.anyone))
+    {
+        return whoisExpired ? FilterResult.whois : FilterResult.pass;
+    }
+    else if (permissionsRequired == Permissions.ignore)
+    {
+        // Ideally this function should not be called if we know it's Permissions.ignore
+        return FilterResult.pass;
+    }
+    else
+    {
+        return FilterResult.fail;
+    }
+}
+
+
 // allowImpl
 /++
     Judges whether an event may be triggered, based on the event itself and
@@ -2286,32 +2333,33 @@ auto filterSender(
 
     See_Also:
         [filterSender]
+        [filterSenderImpl]
  +/
 auto allowImpl(
     IRCPlugin plugin,
     const ref IRCEvent event,
     const Permissions permissionsRequired) pure @safe
 {
+    if (permissionsRequired == Permissions.ignore) return FilterResult.pass;
+
     version(TwitchSupport)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            if (((permissionsRequired == Permissions.anyone) ||
-                (permissionsRequired == Permissions.registered)) &&
-                (event.sender.class_ != IRCUser.Class.blacklist))
-            {
-                // We can't WHOIS on Twitch, and Permissions.anyone is just
-                // Permissions.ignore with an extra WHOIS for good measure.
-                // Also everyone is registered on Twitch, by definition.
-                return FilterResult.pass;
-            }
+            // Watered-down version of filterSender, since we don't need
+            // (and can't rely on) WHOIS
+
+            if (event.sender.class_ == IRCUser.Class.blacklist) return FilterResult.fail;
+
+            return filterSenderImpl(
+                permissionsRequired,
+                event.sender.class_,
+                false);  // whoisExpired
         }
     }
 
     // Permissions.ignore always passes, even for Class.blacklist.
-    return (permissionsRequired == Permissions.ignore) ?
-        FilterResult.pass :
-        filterSender(event, permissionsRequired, plugin.state.settings.preferHostmasks);
+    return filterSender(event, permissionsRequired, plugin.state.settings.preferHostmasks);
 }
 
 
@@ -2433,8 +2481,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
 
         if (uda.commands.length || uda.regexes.length)
         {
-            if (
-                (type != IRCEvent.Type.CHAN) &&
+            if ((type != IRCEvent.Type.CHAN) &&
                 (type != IRCEvent.Type.QUERY) &&
                 (type != IRCEvent.Type.SELFCHAN) &&
                 (type != IRCEvent.Type.SELFQUERY))
@@ -2565,8 +2612,7 @@ auto assertSaneStorageClasses(
     }
     else if (!paramIsConst)
     {
-        if (
-            (storageClass & ParameterStorageClass.ref_) ||
+        if ((storageClass & ParameterStorageClass.ref_) ||
             (storageClass & ParameterStorageClass.out_))
         {
             enum pattern = fix ~ "`%s` has a `%s` event handler that takes an " ~
@@ -3366,7 +3412,13 @@ public:
     /++
         String context of the request.
      +/
-    string context();
+    string context() const pure @safe nothrow @nogc;
+
+    // creator
+    /++
+        Name of the function that created this request.
+     +/
+    string creator() const pure @safe nothrow @nogc;
 
     // fiber
     /++
@@ -3398,6 +3450,11 @@ private:
     string _context;
 
     /++
+        Private creator string.
+     +/
+    string _creator;
+
+    /++
         Private [kameloso.thread.CarryingFiber|CarryingFiber].
      +/
     CarryingFiber!T _fiber;
@@ -3410,11 +3467,16 @@ public:
         Params:
             context = String context of the request.
             fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
+            creator = Name of the function that created this request.
      +/
-    this(string context, CarryingFiber!T fiber) pure @safe nothrow @nogc
+    this(
+        string context,
+        CarryingFiber!T fiber,
+        const string creator) pure @safe nothrow @nogc
     {
         this._context = context;
         this._fiber = fiber;
+        this._creator = creator;
     }
 
     // this
@@ -3424,13 +3486,19 @@ public:
         Params:
             context = String context of the request.
             dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
+            creator = Name of the function that created this request.
      +/
-    this(string context, void delegate() dg) /*pure @safe @nogc*/ nothrow
+    this(
+        string context,
+        void delegate() dg,
+        const string creator) /*pure @safe @nogc*/ nothrow
     {
         import kameloso.constants : BufferSize;
 
         this._context = context;
         this._fiber = new CarryingFiber!T(dg, BufferSize.fiberStack);
+        this._fiber.creator = creator;
+        this._creator = creator;
     }
 
     // context
@@ -3440,9 +3508,21 @@ public:
         Returns:
             A string.
      +/
-    string context()
+    string context() const pure @safe nothrow @nogc
     {
         return _context;
+    }
+
+    // creator
+    /++
+        Name of the function that created this request.
+
+        Returns:
+            A string.
+     +/
+    string creator() const pure @safe nothrow @nogc
+    {
+        return _creator;
     }
 
     // fiber
@@ -3469,13 +3549,17 @@ public:
         T = Type to instantiate [SpecialRequestImpl] with.
         context = String context of the request.
         fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
+        creator = Name of the function that created this request.
 
     Returns:
         A new [SpecialRequest] that is in actually a [SpecialRequestImpl].
  +/
-SpecialRequest specialRequest(T)(const string context, CarryingFiber!T fiber)
+SpecialRequest specialRequest(T)
+    (const string context,
+    CarryingFiber!T fiber,
+    const string creator = __FUNCTION__) pure @safe nothrow
 {
-    return new SpecialRequestImpl!T(context, fiber);
+    return new SpecialRequestImpl!T(context, fiber, creator);
 }
 
 
@@ -3488,13 +3572,17 @@ SpecialRequest specialRequest(T)(const string context, CarryingFiber!T fiber)
         T = Type to instantiate [SpecialRequestImpl] with.
         context = String context of the request.
         dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
+        creator = Name of the function that created this request.
 
     Returns:
         A new [SpecialRequest] that is in actually a [SpecialRequestImpl].
  +/
-SpecialRequest specialRequest(T)(const string context, void delegate() dg)
+SpecialRequest specialRequest(T)
+    (const string context,
+    void delegate() dg,
+    const string creator = __FUNCTION__) /*pure @safe*/ nothrow
 {
-    return new SpecialRequestImpl!T(context, dg);
+    return new SpecialRequestImpl!T(context, dg, creator);
 }
 
 

@@ -603,14 +603,15 @@ auto replay(Plugin, Fun)
             if (inFiber)
             {
                 import kameloso.constants : BufferSize;
-                import kameloso.thread : CarryingFiber;
+                import kameloso.thread : carryingFiber;
                 import core.thread : Fiber;
 
-                auto fiber = new CarryingFiber!IRCEvent(
+                auto fiber = carryingFiber(
                     &call,
+                    replay.event,
                     BufferSize.fiberStack);
-                fiber.payload = replay.event;
-                fiber.call();
+                fiber.creator = caller;
+                fiber.call(caller);
 
                 if (fiber.state == Fiber.State.TERM)
                 {

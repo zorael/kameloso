@@ -611,6 +611,20 @@ enum MagicErrorStrings
 }
 
 
+// MagicStrings
+/++
+    Hardcoded non-error strings.
+ +/
+enum MagicStrings
+{
+    /++
+        When used as the first and only element in an array, signifies that is
+        should be considered empty. Used internally.
+     +/
+    emptyArrayMarker = "__empty",
+}
+
+
 // DefaultColours
 /++
     Default colours gathered in one struct namespace.

@@ -28,7 +28,6 @@ import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
-import core.time : Duration;
 
 
 // PollSettings
@@ -80,6 +79,11 @@ public:
     SysTime start;
 
     /++
+        Timestamp of when the poll is to end.
+     +/
+    SysTime end;
+
+    /++
         Current vote tallies.
      +/
     uint[string] voteCounts;
@@ -100,11 +104,6 @@ public:
     RehashingAA!(string, string) votes;
 
     /++
-        Poll duration.
-     +/
-    Duration duration;
-
-    /++
         Unique identifier to help Fibers know if the poll they belong to is stale
         or has been replaced.
      +/
@@ -121,13 +120,13 @@ public:
     {
         JSONValue json;
         json.object = null;
-        json["start"] = this.start.toUnixTime();
+        json["start"] = JSONValue(this.start.toUnixTime());
+        json["end"] = JSONValue(this.end.toUnixTime());
         json["voteCounts"] = JSONValue(this.voteCounts);
         json["origChoiceNames"] = JSONValue(this.origChoiceNames);
         json["sortedChoices"] = JSONValue(this.sortedChoices);
         json["votes"] = JSONValue(this.votes.aaOf);
-        json["duration"] = JSONValue(duration.total!"seconds");
-        json["uniqueID"] = JSONValue(uniqueID);
+        json["uniqueID"] = JSONValue(this.uniqueID);
         return json;
     }
 
@@ -143,7 +142,10 @@ public:
      +/
     static auto fromJSON(const JSONValue json)
     {
-        import core.time : seconds;
+        import core.memory : GC;
+
+        GC.disable();
+        scope(exit) GC.enable();
 
         Poll poll;
 
@@ -168,7 +170,7 @@ public:
         }
 
         poll.start = SysTime.fromUnixTime(json["start"].integer);
-        poll.duration = json["duration"].integer.seconds;
+        poll.end = SysTime.fromUnixTime(json["end"].integer);
         poll.uniqueID = cast(uint)json["uniqueID"].integer;
         poll.votes = poll.votes.rehash();
         return poll;
@@ -209,9 +211,10 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
     import std.algorithm.searching : count;
     import std.algorithm.sorting : sort;
     import std.conv : ConvException;
-    import std.datetime.systime : Clock;
+    import std.datetime.systime : Clock, SysTime;
     import std.format : format;
     import std.random : uniform;
+    import core.time : Duration;
 
     void sendUsage()
     {
@@ -317,12 +320,13 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
     }
 
     Poll poll;
+    Duration duration;
     string slice = event.content.stripped;  // mutable
 
     try
     {
         import lu.string : advancePast;
-        poll.duration = slice.advancePast(' ').asAbbreviatedDuration;
+        duration = slice.advancePast(' ').asAbbreviatedDuration;
     }
     catch (ConvException _)
     {
@@ -339,7 +343,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
         return;
     }
 
-    if (poll.duration <= Duration.zero)
+    if (duration <= Duration.zero)
     {
         return sendNegativeDuration();
     }
@@ -353,6 +357,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
     }
 
     poll.start = Clock.currTime;
+    poll.end = (poll.start + duration);
     poll.uniqueID = uniform(1, uint.max);
     poll.voteCounts = choicesVoldemort.choices;
     poll.origChoiceNames = choicesVoldemort.origChoiceNames;
@@ -366,7 +371,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
     generateVoteReminders(plugin, event.channel, poll);
     generateEndFiber(plugin, event.channel, poll);
 
-    immutable timeInWords = poll.duration.timeSince!(7, 0);
+    immutable timeInWords = duration.timeSince!(7, 0);
     enum pattern = "<b>Voting commenced!<b> Please place your vote for one of: " ~
         "%-(<b>%s<b>, %)<b> (%s)";  // extra <b> needed outside of %-(%s, %)
     immutable message = pattern.format(poll.sortedChoices, timeInWords);
@@ -725,9 +730,7 @@ void reportStatus(
     import std.datetime.systime : Clock;
     import std.format : format;
 
-    immutable now = Clock.currTime;
-    immutable end = (poll.start + poll.duration);
-    immutable delta = (end - now);
+    immutable delta = (poll.end - Clock.currTime);
     immutable timeInWords = delta.timeSince!(7, 0);
 
     enum pattern = "There is an ongoing poll! Place your vote for one of: %-(<b>%s<b>, %)<b> (%s)";
@@ -752,7 +755,7 @@ void generateVoteReminders(
 {
     import std.datetime.systime : Clock;
     import std.meta : AliasSeq;
-    import core.time : days, hours, minutes, seconds;
+    import core.time : Duration, days, hours, minutes, seconds;
 
     void reminderDg(const Duration reminderPoint)
     {
@@ -824,12 +827,12 @@ void generateVoteReminders(
         10.seconds,
     );
 
-    immutable elapsed = (Clock.currTime - poll.start);
-    immutable remaining = (poll.duration - elapsed);
+    immutable duration = (poll.end - poll.start);
+    immutable remaining = (poll.end - Clock.currTime);
 
     foreach (immutable reminderPoint; reminderPoints)
     {
-        if (poll.duration >= (reminderPoint * 2))
+        if (duration >= (reminderPoint * 2))
         {
             immutable untilReminder = (remaining - reminderPoint);
 
@@ -893,8 +896,7 @@ void generateEndFiber(
     }
 
     Fiber endFiber = new CarryingFiber!IRCEvent(&endPollDg, BufferSize.fiberStack);
-    immutable elapsed = Clock.currTime - poll.start;
-    immutable remaining = poll.duration - elapsed;
+    immutable remaining = (poll.end - Clock.currTime);
     delay(plugin, endFiber, remaining);
 }
 

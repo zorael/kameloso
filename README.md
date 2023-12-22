@@ -5,14 +5,13 @@
 ### So what does it do
 
 * real-time chat monitoring
-* channel polls, user quotes, `!seen`, counters, oneliners, recurring timed announcements, ...
+* channel polls, user quotes, `!seen`, counters, oneliner commands, recurring timed announcements, [...](https://github.com/zorael/kameloso/wiki/Current-plugins)
 * saving notes to offline users that get played back when they come online
 * reporting titles of pasted URLs, YouTube video information
 * `sed`-like replacement of messages (`s/this/that/` substitution)
+* [Twitch support](#twitch) with some [common bot features](#twitch-bot)
 * logs
 * bugs
-* [Twitch support](#twitch) with some [common bot features](#twitch-bot)
-* more [random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
 All of the above [are plugins](source/kameloso/plugins) and can be disabled at runtime or omitted from compilation entirely. It is modular and easy to extend. A skeletal Hello World plugin is [less than 30 lines of code](source/kameloso/plugins/hello.d).
 

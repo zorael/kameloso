@@ -42,6 +42,9 @@ module kameloso.plugins.seen;
 // We only want to compile this if we're compiling specifically this plugin.
 version(WithSeenPlugin):
 
+// For when we want to limit some functionality to debug builds.
+debug version = Debug;
+
 // We need the bits to register the plugin to be automatically instantiated.
 private import kameloso.plugins;
 
@@ -1221,7 +1224,7 @@ else
         header = String header describing the passed content payload.
         content = Boxed message content.
  +/
-debug
+version(Debug)
 //version(ShouldImplementOnBusMessage)
 static if (shouldImplementOnBusMessage)
 void onBusMessage(SeenPlugin plugin, const string header, shared Sendable content)

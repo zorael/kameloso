@@ -260,6 +260,11 @@ public:
      +/
     static auto fromJSON(const JSONValue json)
     {
+        import core.memory : GC;
+
+        GC.disable();
+        scope(exit) GC.enable();
+
         Timer timer;
         timer.name = json["name"].str;
         timer.messageCountThreshold = json["messageCountThreshold"].integer;
@@ -961,76 +966,73 @@ void onAnyMessage(TimerPlugin plugin, const ref IRCEvent event)
 
 // onWelcome
 /++
-    Loads timers from disk. Additionally sets up a [core.thread.fiber.Fiber|Fiber]
-    to periodically call timer [core.thread.fiber.Fiber|Fiber]s with a periodicity
-    of [TimerPlugin.timerPeriodicity].
+    Loads timers from disk.
 
-    Don't call `reload` for this! It undoes anything `handleSelfjoin` may have done.
+    Additionally loops to periodically call timer [core.thread.fiber.Fiber|Fiber]s
+    with a periodicity of [TimerPlugin.timerPeriodicity].
+
+    Don't call [reload] for this! It undoes anything [handleSelfjoin] may have done.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
+    .fiber(true)
 )
 void onWelcome(TimerPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
-    import kameloso.constants : BufferSize;
     import core.thread : Fiber;
 
     loadTimers(plugin);
 
-    void fiberTriggerDg()
+    // Delay once before entering loop
+    delay(plugin, plugin.timerPeriodicity, Yes.yield);
+
+    while (true)
     {
-        while (true)
+        import std.datetime.systime : Clock;
+
+        // Micro-optimise getting the current time
+        long nowInUnix; // = Clock.currTime.toUnixTime();
+
+        // Walk through channels, trigger fibers
+        foreach (immutable channelName, channel; plugin.channels)
         {
-            import std.datetime.systime : Clock;
-
-            // Micro-optimise getting the current time
-            long nowInUnix; // = Clock.currTime.toUnixTime();
-
-            // Walk through channels, trigger fibers
-            foreach (immutable channelName, channel; plugin.channels)
+            inner:
+            foreach (timerPtr; channel.timerPointers)
             {
-                innermost:
-                foreach (timerPtr; channel.timerPointers)
+                if (!timerPtr.fiber || (timerPtr.fiber.state != Fiber.State.HOLD))
                 {
-                    if (!timerPtr.fiber || (timerPtr.fiber.state != Fiber.State.HOLD))
+                    logger.error("Dead or busy timer Fiber in channel ", channelName);
+                    continue inner;
+                }
+
+                // Get time here and cache it
+                if (nowInUnix == 0) nowInUnix = Clock.currTime.toUnixTime();
+
+                immutable timeConditionMet =
+                    ((nowInUnix - timerPtr.lastTimestamp) >= timerPtr.timeThreshold);
+                immutable messageConditionMet =
+                    ((channel.messageCount - timerPtr.lastMessageCount) >= timerPtr.messageCountThreshold);
+
+                if (timerPtr.condition == Timer.Condition.both)
+                {
+                    if (timeConditionMet && messageConditionMet)
                     {
-                        logger.error("Dead or busy timer Fiber in channel ", channelName);
-                        continue innermost;
+                        timerPtr.fiber.call();
                     }
-
-                    // Get time here and cache it
-                    if (nowInUnix == 0) nowInUnix = Clock.currTime.toUnixTime();
-
-                    immutable timeConditionMet =
-                        ((nowInUnix - timerPtr.lastTimestamp) >= timerPtr.timeThreshold);
-                    immutable messageConditionMet =
-                        ((channel.messageCount - timerPtr.lastMessageCount) >= timerPtr.messageCountThreshold);
-
-                    if (timerPtr.condition == Timer.Condition.both)
+                }
+                else /*if (timerPtr.condition == Timer.Condition.either)*/
+                {
+                    if (timeConditionMet || messageConditionMet)
                     {
-                        if (timeConditionMet && messageConditionMet)
-                        {
-                            timerPtr.fiber.call();
-                        }
-                    }
-                    else /*if (timerPtr.condition == Timer.Condition.either)*/
-                    {
-                        if (timeConditionMet || messageConditionMet)
-                        {
-                            timerPtr.fiber.call();
-                        }
+                        timerPtr.fiber.call();
                     }
                 }
             }
-
-            delay(plugin, plugin.timerPeriodicity, Yes.yield);
-            // continue;
         }
-    }
 
-    Fiber fiberTriggerFiber = new Fiber(&fiberTriggerDg, BufferSize.fiberStack);
-    delay(plugin, fiberTriggerFiber, plugin.timerPeriodicity);
+        delay(plugin, plugin.timerPeriodicity, Yes.yield);
+    }
 }
 
 

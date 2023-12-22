@@ -27,6 +27,7 @@
 module kameloso.plugins.printer.base;
 
 version(WithPrinterPlugin):
+debug version = Debug;
 
 private:
 
@@ -232,7 +233,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
     if (plugin.printerSettings.hideBlacklistedUsers && (event.sender.class_ == IRCUser.Class.blacklist)) return;
 
-    debug
+    version(Debug)
     {
         // Exclude types explicitly declared as to be excluded
         immutable exclude = plugin.exclude.length && plugin.exclude.canFind(event.type);
@@ -343,7 +344,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     // Clear event.target.nickname for those types.
     event.clearTargetNicknameIfUs(plugin.state);
 
-    debug
+    version(Debug)
     {
         // Immediately print events of types declared to be included
         immutable include = plugin.include.length && plugin.include.canFind(event.type);
@@ -665,9 +666,9 @@ package auto datestamp()
     Populates the arrays of types to exclude and include from printing.
 
     Do this here instead of in [setup], so it gets done before resolving.
-    Gate it behind `debug` to be neat.
+    Gate it behind version `Debug` to be neat.
  +/
-debug
+version(Debug)
 void initialise(PrinterPlugin plugin)
 {
     import kameloso.common : logger;
@@ -707,16 +708,13 @@ void initialise(PrinterPlugin plugin)
 // setup
 /++
     Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
-    Sets up a Fiber to print the date in `YYYY-MM-DD` format to the screen and
-    to any active log files upon day change.
+    Loops (as a [core.thread.Fiber|Fiber] to print the date in `YYYY-MM-DD` format
+    to the screen and to any active log files upon day change.
  +/
 void setup(PrinterPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
-    import kameloso.constants : BufferSize;
     import kameloso.terminal : isTerminal;
-    import core.thread : Fiber;
-    import core.time : Duration;
 
     plugin.linebuffer.reserve(PrinterPlugin.linebufferInitialSize);
 
@@ -726,7 +724,7 @@ void setup(PrinterPlugin plugin)
         PrinterPlugin.bell = string.init;
     }
 
-    static Duration untilNextMidnight()
+    static auto untilNextMidnight()
     {
         import kameloso.time : nextMidnight;
         import std.datetime.systime : Clock;
@@ -735,31 +733,28 @@ void setup(PrinterPlugin plugin)
         return (now.nextMidnight - now);
     }
 
-    void daybreakDg()
-    {
-        while (true)
-        {
-            if (plugin.isEnabled)
-            {
-                if (plugin.printerSettings.monitor && plugin.printerSettings.daybreaks)
-                {
-                    import kameloso.common : logger;
-                    logger.info(datestamp);
-                }
+    // Delay until next midnight, then every midnight thereafter
+    delay(plugin, untilNextMidnight, Yes.yield);
 
-                if (plugin.printerSettings.logs)
-                {
-                    commitAllLogsImpl(plugin);
-                    plugin.buffers = null;  // Uncommitted lines will be LOST. Not trivial to work around.
-                }
+    while (true)
+    {
+        if (plugin.isEnabled)
+        {
+            if (plugin.printerSettings.monitor && plugin.printerSettings.daybreaks)
+            {
+                import kameloso.common : logger;
+                logger.info(datestamp);
             }
 
-            delay(plugin, untilNextMidnight, Yes.yield);
+            if (plugin.printerSettings.logs)
+            {
+                commitAllLogsImpl(plugin);
+                plugin.buffers = null;  // Uncommitted lines will be LOST. Not trivial to work around.
+            }
         }
-    }
 
-    Fiber daybreakFiber = new Fiber(&daybreakDg, BufferSize.fiberStack);
-    delay(plugin, daybreakFiber, untilNextMidnight);
+        delay(plugin, untilNextMidnight, Yes.yield);
+    }
 }
 
 
@@ -1027,7 +1022,7 @@ package:
      +/
     static string bell = "" ~ cast(char)(TerminalToken.bell);
 
-    debug
+    version(Debug)
     {
         /++
             [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to exclude from printing.
