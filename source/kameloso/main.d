@@ -4459,8 +4459,7 @@ auto run(string[] args)
         // If not already sent, send a proper QUIT, optionally verbosely
         string reason;  // mutable
 
-        if (
-            !*instance.abort &&
+        if (!*instance.abort &&
             !instance.settings.headless &&
             !instance.settings.hideOutgoing)
         {

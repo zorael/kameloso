@@ -117,8 +117,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         immutable startsWithPrefix = plugin.state.settings.prefix.length &&
             mutEvent.content.startsWith(plugin.state.settings.prefix);
 
-        if (
-            startsWithPrefix ||
+        if (startsWithPrefix ||
             mutEvent.content.startsWith(plugin.state.client.nickname) ||
             mutEvent.content.startsWith(shorthandNicknamePrefix))
         {

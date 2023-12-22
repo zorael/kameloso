@@ -1910,7 +1910,8 @@ mixin template IRCPluginImpl(
 
                         // Cannot use uda.fqn, it has not been given a value at this point
                         enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
-                        enum pattern = "Warning: `%s` non-hidden command word \"%s\" is missing a description";
+                        enum pattern = "Warning: `%s` non-hidden command word " ~
+                            `"%s" is missing a description`;
                         enum message = pattern.format(fqn, command._word);
                         pragma(msg, message);
                     }
@@ -1931,7 +1932,8 @@ mixin template IRCPluginImpl(
 
                         // As above
                         enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
-                        enum pattern = "Warning: `%s` non-hidden expression \"%s\" is missing a description";
+                        enum pattern = "Warning: `%s` non-hidden regex expression " ~
+                            `"%s" is missing a description`;
                         enum message = pattern.format(fqn, regex._expression);
                         pragma(msg, message);
                     }
@@ -1970,13 +1972,6 @@ mixin template IRCPluginImpl(
             {
                 .onBusMessage(this, header, content);
             }
-            /*else static if (
-                is(typeof(.onBusMessage)) &&
-                is(typeof(.onBusMessage) == function) &&
-                TakesParams!(.onBusMessage, typeof(this), string))
-            {
-                .onBusMessage(this, header);
-            }*/
             else
             {
                 import kameloso.traits : stringOfTypeOf;
@@ -2477,8 +2472,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
 
         if (uda.commands.length || uda.regexes.length)
         {
-            if (
-                (type != IRCEvent.Type.CHAN) &&
+            if ((type != IRCEvent.Type.CHAN) &&
                 (type != IRCEvent.Type.QUERY) &&
                 (type != IRCEvent.Type.SELFCHAN) &&
                 (type != IRCEvent.Type.SELFQUERY))
@@ -2609,8 +2603,7 @@ auto assertSaneStorageClasses(
     }
     else if (!paramIsConst)
     {
-        if (
-            (storageClass & ParameterStorageClass.ref_) ||
+        if ((storageClass & ParameterStorageClass.ref_) ||
             (storageClass & ParameterStorageClass.out_))
         {
             enum pattern = fix ~ "`%s` has a `%s` event handler that takes an " ~
