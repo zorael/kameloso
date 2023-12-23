@@ -3163,20 +3163,17 @@ void onMyInfo(TwitchPlugin plugin)
 
     These detect new streams (and updates ongoing ones), updates chatters, and caches followers.
 
-    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
-
     Params:
         plugin = The current [TwitchPlugin].
         channelName = String key of room to start the monitors of.
  +/
 void startRoomMonitors(TwitchPlugin plugin, const string channelName)
-in (Fiber.getThis, "Tried to call `startRoomMonitorFibers` from outside a Fiber")
-in (channelName.length, "Tried to start room monitor fibers with an empty channel name string")
+in (channelName.length, "Tried to start room monitor with an empty channel name string")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
     import std.datetime.systime : Clock;
-    import core.time : MonoTime, hours, seconds;
+    import core.time : Duration, MonoTime, hours, seconds;
 
     // How often to poll the servers for various information about a channel.
     static immutable monitorUpdatePeriodicity = 60.seconds;
@@ -3417,10 +3414,14 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
         }
     }
 
-    // Each delegate forks by delaying itself
-    uptimeMonitorDg();
-    chatterMonitorDg();
-    cacheFollowersDg();
+    Fiber uptimeMonitorFiber = new Fiber(&uptimeMonitorDg, BufferSize.fiberStack);
+    Fiber chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
+    Fiber cacheFollowersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
+
+    // Detach by delaying zero seconds
+    delay(plugin, uptimeMonitorFiber, Duration.zero);
+    delay(plugin, chatterMonitorFiber, Duration.zero);
+    delay(plugin, cacheFollowersFiber, Duration.zero);
 }
 
 
