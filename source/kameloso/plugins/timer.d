@@ -538,6 +538,7 @@ void handleNewTimer(
     timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
     plugin.timersByChannel[event.channel][timer.name] = timer;
     channel.timerPointers[timer.name] = &plugin.timersByChannel[event.channel][timer.name];
+    saveTimers(plugin);
 
     // Start monitor if not already running
     if (plugin.monitorInstanceID == TimerPlugin.emptyMonitorMagicNumber) startTimerMonitor(plugin);
