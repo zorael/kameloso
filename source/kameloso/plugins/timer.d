@@ -541,7 +541,7 @@ void handleNewTimer(
     saveTimers(plugin);
 
     // Start monitor if not already running
-    if (plugin.monitorInstanceID == TimerPlugin.emptyMonitorMagicNumber) startTimerMonitor(plugin);
+    if (!plugin.monitorInstanceID) startTimerMonitor(plugin);
 
     enum appendPattern = "New timer added! Use <b>%s%s add<b> to add lines.";
     immutable message = appendPattern.format(plugin.state.settings.prefix, event.aux[$-1]);
@@ -990,7 +990,7 @@ void startTimerMonitor(TimerPlugin plugin)
     while (plugin.monitorInstanceID == oldInstanceID)
     {
         import std.random : uniform;
-        plugin.monitorInstanceID = uniform(0, 999);
+        plugin.monitorInstanceID = uniform(1, uint.max);
     }
 
     immutable instanceIDSnapshot = plugin.monitorInstanceID;
@@ -1065,7 +1065,7 @@ void startTimerMonitor(TimerPlugin plugin)
             if (!anyTimers)
             {
                 // There were channels but no timers in them, so end monitor
-                plugin.monitorInstanceID = TimerPlugin.emptyMonitorMagicNumber;
+                plugin.monitorInstanceID = 0;
                 return;
             }
 
@@ -1156,7 +1156,7 @@ void handleSelfjoin(
             channel.timerPointers[timer.name] = &timer;  // Will this work in release mode?
         }
 
-        if (plugin.monitorInstanceID == TimerPlugin.emptyMonitorMagicNumber)
+        if (!plugin.monitorInstanceID)
         {
             startTimerMonitor(plugin);
         }
@@ -1437,15 +1437,10 @@ public:
     Timer[string][string] timersByChannel;
 
     /++
-        Magic number denoting that no monitor fiber is currently running.
-     +/
-    enum emptyMonitorMagicNumber = -1;
-
-    /++
         Numeric instance of the monitor fiber, used to detect when a new monitor
         has been started elsewhere.
      +/
-    int monitorInstanceID = emptyMonitorMagicNumber;
+    uint monitorInstanceID;
 
     /++
         Filename of file with timer definitions.

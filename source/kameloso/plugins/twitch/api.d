@@ -412,7 +412,7 @@ QueryResponse sendHTTPRequest(
     /*const*/ HttpVerb verb = HttpVerb.GET,
     /*const*/ ubyte[] body_ = null,
     const string contentType = string.init,
-    int id = -1,
+    int id = 0,
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
@@ -438,7 +438,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
 
     immutable pre = MonoTime.currTime;
-    if (id == -1) id = reserveUniqueBucketID(plugin.bucket);
+    if (!id) id = reserveUniqueBucketID(plugin.bucket);
 
     plugin.transient.persistentWorkerTid.send(
         id,
@@ -1448,13 +1448,13 @@ auto reserveUniqueBucketID(shared QueryResponse[int] bucket)
 {
     import std.random : uniform;
 
-    int id = uniform(0, int.max);
+    int id = uniform(1, int.max);
 
     synchronized //()
     {
         while (id in bucket)
         {
-            id = uniform(0, int.max);
+            id = uniform(1, int.max);
         }
 
         bucket[id] = QueryResponse.init;  // reserve it
