@@ -29,6 +29,7 @@ import kameloso.messaging;
 import kameloso.thread : Sendable;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
+import core.time : Duration;
 
 
 // descriptionExemptions
@@ -192,6 +193,7 @@ void lookupURLs(WebtitlePlugin plugin, const /*ref*/ IRCEvent event, string[] ur
     import kameloso.thread : ThreadMessage;
     import lu.string : advancePast;
     import std.concurrency : prioritySend, spawn;
+    import core.time : msecs;
 
     bool[string] uniques;
 
@@ -251,7 +253,7 @@ void lookupURLs(WebtitlePlugin plugin, const /*ref*/ IRCEvent event, string[] ur
             &worker,
             cast(shared)request,
             plugin.cache,
-            (i * plugin.delayMsecs),
+            (i * plugin.lookupDelay),
             cast(Flag!"descriptions")plugin.webtitleSettings.descriptions,
             plugin.state.connSettings.caBundleFile);
     }
@@ -272,15 +274,15 @@ void lookupURLs(WebtitlePlugin plugin, const /*ref*/ IRCEvent event, string[] ur
         sRequest = Shared [TitleLookupRequest] aggregate with all the state and
             context needed to look up a URL and report the results to the local terminal.
         cache = Shared cache of previous [TitleLookupRequest]s.
-        delayMsecs = Milliseconds to delay before doing the lookup, to allow for
-            parallel lookups without bursting all of them at once.
+        lookupDelay = [core.time.Duration|Duration] to delay before doing the
+            lookup, to allow for parallel lookups without bursting all of them at once.
         descriptions = Whether or not to look up meta descriptions.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
 void worker(
     shared TitleLookupRequest sRequest,
     shared TitleLookupResults[string] cache,
-    const ulong delayMsecs,
+    const Duration lookupDelay,
     const Flag!"descriptions" descriptions,
     const string caBundleFile)
 {
@@ -303,11 +305,11 @@ void worker(
     // Set the global settings so messaging functions don't segfault us
     kameloso.common.settings = (cast()sRequest).state.settings;
 
-    if (delayMsecs > 0)
+    if (lookupDelay > Duration.zero)
     {
         import core.thread : Thread;
         import core.time : msecs;
-        Thread.sleep(delayMsecs.msecs);
+        Thread.sleep(lookupDelay);
     }
 
     TitleLookupRequest request = cast()sRequest;
@@ -957,6 +959,8 @@ public:
 final class WebtitlePlugin : IRCPlugin
 {
 private:
+    import core.time : msecs;
+
     /++
         All Webtitle options gathered.
      +/
@@ -974,9 +978,9 @@ private:
     enum expireSeconds = 600;
 
     /++
-        In the case of chained URL lookups, how many milliseconds to delay each lookup by.
+        In the case of chained URL lookups, how long to delay each lookup by.
      +/
-    enum delayMsecs = 100;
+    static immutable lookupDelay = 100.msecs;
 
     /++
         How big a buffer to initially allocate when downloading web pages to get
