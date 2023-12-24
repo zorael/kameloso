@@ -139,8 +139,10 @@ struct TitleLookupRequest
 /++
     Parses a message to see if the message contains one or more URLs.
 
-    It uses a simple state machine in [kameloso.common.findURLs|findURLs] to
-    exhaustively try to look up every URL returned by it.
+    Merely passes the event on to [onMessageImpl].
+
+    See_Also:
+        [onMessageImpl]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -148,6 +150,24 @@ struct TitleLookupRequest
     .channelPolicy(ChannelPolicy.home)
 )
 void onMessage(WebtitlePlugin plugin, const ref IRCEvent event)
+{
+    onMessageImpl(plugin, event);
+}
+
+
+// onMessageImpl
+/++
+    Parses a message to see if the message contains one or more URLs.
+    Implementation function.
+
+    It uses a simple state machine in [kameloso.common.findURLs|findURLs] to
+    exhaustively try to look up every URL returned by it.
+
+    Params:
+        plugin = The current [WebtitlePlugin].
+        event = The [dialect.defs.IRCEvent|IRCEvent] that instigated the lookup.
+ +/
+void onMessageImpl(WebtitlePlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : findURLs;
     import lu.string : strippedLeft;
@@ -925,7 +945,7 @@ void onBusMessage(
     auto message = cast(Boxed!IRCEvent)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
-    onMessage(plugin, message.payload);
+    onMessageImpl(plugin, message.payload);
 }
 
 
