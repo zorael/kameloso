@@ -1504,7 +1504,7 @@ void highlightEmotesImpl(Sink)
         The first and the last are duplicates.
      +/
     auto sortedHighlights = highlights.data
-        .dup
+        //.dup
         .sort!((a, b) => (a.start < b.start))
         .uniq!((a, b) => (a.start == b.start)); // && (a.end == b.end));
 
