@@ -1146,18 +1146,16 @@ void formatMessageColoured(Sink)
                 static Appender!(char[]) customEmoteSink;
                 scope(exit) customEmoteSink.clear();
 
-                immutable TerminalForeground highlight = plugin.state.settings.brightTerminal ?
-                    Bright.highlight :
-                    Dark.highlight;
-                immutable TerminalForeground emoteFgBase = plugin.state.settings.brightTerminal ?
-                    Bright.emote :
-                    Dark.emote;
+                immutable TerminalForeground highlight = bright ? Bright.highlight : Dark.highlight;
+                immutable TerminalForeground contentFgBase = bright ? Bright.content : Dark.content;
 
+                // We can't know whether the replied-to event is an emote-only
+                // event or not, so just treat it as if it isn't and pass contentFgBase
                 customEmoteSink.highlightEmotesImpl(
                     event.aux[0],
                     event.aux[$-2],
                     highlight,
-                    emoteFgBase,
+                    contentFgBase,
                     cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
                     plugin.state.settings);
                 .put(sink, `: "`, customEmoteSink.data, '"');
