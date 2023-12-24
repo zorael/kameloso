@@ -253,14 +253,15 @@ void messageFiber(Kameloso instance)
                     this a bit by only allocating the string once and keeping it
                     if the contents don't change.
                  +/
-                static string pongline;
+                enum pongHeader = "PONG :";
 
-                if (!pongline.length || (pongline[6..$] != message.content))
+                if (!instance.transient.pongline.length ||
+                    (instance.transient.pongline[pongHeader.length..$] != message.content))
                 {
-                    pongline = "PONG :" ~ message.content;
+                    instance.transient.pongline = pongHeader ~ message.content;
                 }
 
-                instance.priorityBuffer.put(OutgoingLine(pongline, Yes.quiet));
+                instance.priorityBuffer.put(OutgoingLine(instance.transient.pongline, Yes.quiet));
                 break;
 
             case ping:

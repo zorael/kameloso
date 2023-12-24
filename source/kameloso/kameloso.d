@@ -79,6 +79,15 @@ private:
      +/
     static struct TransientState
     {
+        // pongline
+        /++
+            Cached `PONG` string to send to the server, so we don't have to
+            concatenate a new one each time.
+
+            Its contents will typically be something like `PONG :irc.example.com`.
+         +/
+        string pongline;
+
         // wantReceiveTimeoutShortened
         /++
             Set when the Socket read timeout was requested to be shortened.

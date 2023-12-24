@@ -440,7 +440,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     immutable pre = MonoTime.currTime;
     if (id == -1) id = reserveUniqueBucketID(plugin.bucket);
 
-    plugin.persistentWorkerTid.send(
+    plugin.transient.persistentWorkerTid.send(
         id,
         url,
         authorisationHeader,
@@ -448,7 +448,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         body_.idup,
         contentType);
 
-    delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
+    delay(plugin, plugin.transient.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id);
 
     scope(exit)
@@ -709,7 +709,11 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
     import std.json : JSONException, JSONType, parseJSON;
 
     // Request here outside try-catch to let exceptions fall through
-    immutable response = sendHTTPRequest(plugin, url, caller, plugin.authorizationBearer);
+    immutable response = sendHTTPRequest(
+        plugin,
+        url,
+        caller,
+        plugin.transient.authorizationBearer);
 
     try
     {
@@ -795,7 +799,11 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
     auto getChattersDg()
     {
-        immutable response = sendHTTPRequest(plugin, chattersURL, caller, plugin.authorizationBearer);
+        immutable response = sendHTTPRequest(
+            plugin,
+            chattersURL,
+            caller,
+            plugin.transient.authorizationBearer);
         immutable responseJSON = parseJSON(response.str);
 
         /*
@@ -1105,7 +1113,11 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
         immutable paginatedURL = after.length ?
             text(url, "&after=", after) :
             url;
-        immutable response = sendHTTPRequest(plugin, paginatedURL, caller, plugin.authorizationBearer);
+        immutable response = sendHTTPRequest(
+            plugin,
+            paginatedURL,
+            caller,
+            plugin.transient.authorizationBearer);
         immutable responseJSON = parseJSON(response.str);
         immutable dataJSON = "data" in responseJSON;
 
@@ -1155,7 +1167,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 
     enum maxDeltaToResponse = 5000;
 
-    immutable current = plugin.approximateQueryTime;
+    immutable current = plugin.transient.approximateQueryTime;
     alias weight = TwitchPlugin.QueryConstants.averagingWeight;
     alias padding = TwitchPlugin.QueryConstants.measurementPadding;
     immutable responseAdjusted = cast(long)min(responseMsecs, (current + maxDeltaToResponse));
@@ -1174,7 +1186,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
             average);
     }
 
-    plugin.approximateQueryTime = cast(long)average;
+    plugin.transient.approximateQueryTime = cast(long)average;
 }
 
 
@@ -1194,9 +1206,9 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     ---
     immutable id = reserveUniqueBucketID(plugin.bucket);
     immutable url = "https://api.twitch.tv/helix/users?login=zorael";
-    plugin.persistentWorkerTid.send(id, url, plugin.authorizationBearer);
+    plugin.transient.persistentWorkerTid.send(id, url, plugin.transient.authorizationBearer);
 
-    delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
+    delay(plugin, plugin.transient.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id, url);
     // response.str is the response body
     ---
@@ -1224,7 +1236,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 
     immutable startTimeInUnix = Clock.currTime.toUnixTime();
     shared QueryResponse* response;
-    double accumulatingTime = plugin.approximateQueryTime;
+    double accumulatingTime = plugin.transient.approximateQueryTime;
 
     while (true)
     {
@@ -2571,7 +2583,7 @@ in (Fiber.getThis, "Tried to call `deleteMessage` from outside a Fiber")
         (messageID.length ?
             "&message_id=%s" :
             "%s");
-    immutable url = urlPattern.format(roomID, plugin.botUserIDString, messageID);
+    immutable url = urlPattern.format(roomID, plugin.transient.botUserIDString, messageID);
 
     auto deleteDg()
     {
@@ -2579,7 +2591,7 @@ in (Fiber.getThis, "Tried to call `deleteMessage` from outside a Fiber")
             plugin,
             url,
             caller,
-            plugin.authorizationBearer,
+            plugin.transient.authorizationBearer,
             HttpVerb.DELETE);
     }
 
@@ -2645,7 +2657,7 @@ in ((userID > 0), "Tried to timeout a user with an empty user ID string")
     }
 }`;
 
-    immutable url = urlPattern.format(roomID, plugin.botUserIDString);
+    immutable url = urlPattern.format(roomID, plugin.transient.botUserIDString);
     immutable body_ = bodyPattern.format(
         userID,
         min(durationSeconds, maxDurationSeconds),
@@ -2659,7 +2671,7 @@ in ((userID > 0), "Tried to timeout a user with an empty user ID string")
             plugin,
             url,
             caller,
-            plugin.authorizationBearer,
+            plugin.transient.authorizationBearer,
             HttpVerb.POST,
             cast(ubyte[])body_,
             "application/json");

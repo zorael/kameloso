@@ -424,7 +424,7 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
         try
         {
             plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
-            plugin.persistentWorkerTid.send(
+            plugin.transient.persistentWorkerTid.send(
                 id,
                 url,
                 authorizationBearer,
