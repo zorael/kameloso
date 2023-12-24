@@ -441,6 +441,7 @@ void formatMessageMonochrome(Sink)
             .put(sink, `: "`, event.aux[0], '"');
             putQuotedTwitchMessage = true;
             auxCopy[0] = string.init;
+            auxCopy[$-2] = string.init;
         }
     }
 
