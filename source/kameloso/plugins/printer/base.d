@@ -618,16 +618,12 @@ void onISUPPORT(PrinterPlugin plugin)
     import kameloso.common : logger;
     import lu.conv : Enum;
 
-    static uint idWhenPrintedISUPPORT;
-
-    if ((idWhenPrintedISUPPORT == plugin.state.connectionID) ||
+    if (!plugin.transient.printedISUPPORT &&
         !plugin.state.server.network.length)
     {
         // We already printed this information, or we haven't yet seen NETWORK
         return;
     }
-
-    idWhenPrintedISUPPORT = plugin.state.connectionID;
 
     enum pattern = "Detected <i>%s</> running daemon <i>%s</> <t>(%s)";
     logger.logf(
@@ -635,6 +631,8 @@ void onISUPPORT(PrinterPlugin plugin)
         plugin.state.server.network,
         Enum!(IRCServer.Daemon).toString(plugin.state.server.daemon),
         plugin.state.server.daemonstring);
+
+    plugin.transient.printedISUPPORT = true;
 }
 
 
@@ -766,7 +764,7 @@ void initResources(PrinterPlugin plugin)
 {
     if (!plugin.printerSettings.logs) return;
 
-    if (!establishLogLocation(plugin.logDirectory, plugin.state.connectionID))
+    if (!establishLogLocation(plugin.logDirectory, plugin.transient.naggedAboutDir))
     {
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
 
@@ -977,9 +975,31 @@ private:
 
 package:
     /++
+        Transient state variables, aggregated in a struct.
+     +/
+    static struct TransientState
+    {
+        /++
+            Whether or not we have nagged about the log directory not existing.
+         +/
+        bool naggedAboutDir;
+
+        /++
+            Whether or ont we have printed the
+            [dialect.defs.IRCEvent.Type.ISUPPORT|ISUPPORT] information.
+         +/
+        bool printedISUPPORT;
+    }
+
+    /++
         All Printer plugin options gathered.
      +/
     PrinterSettings printerSettings;
+
+    /++
+        Transient state of this [PrinterPlugin] instance.
+     +/
+    TransientState transient;
 
     /++
         How many seconds before a request to squelch list events times out.

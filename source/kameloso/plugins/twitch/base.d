@@ -447,7 +447,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
         import kameloso.terminal : TerminalToken;
         import std.stdio : stdout, write;
 
-        write(TwitchPlugin.bell);
+        write(plugin.transient.bell);
         stdout.flush();
     }
 
@@ -490,7 +490,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
             }
 
             *thisEmoteCount += slice.count(',') + 1;
-            plugin.ecountDirty = true;
+            plugin.transient.ecountDirty = true;
         }
     }
 
@@ -550,7 +550,7 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
 
     if (plugin.twitchSettings.bellOnImportant)
     {
-        write(TwitchPlugin.bell);
+        write(plugin.transient.bell);
         stdout.flush();
     }
 }
@@ -2122,14 +2122,14 @@ void onEndOfMOTD(TwitchPlugin plugin)
     immutable pass = plugin.state.bot.pass.startsWith("oauth:") ?
         plugin.state.bot.pass[6..$] :
         plugin.state.bot.pass;
-    plugin.authorizationBearer = "Bearer " ~ pass;
+    plugin.transient.authorizationBearer = "Bearer " ~ pass;
 
     // Initialise the bucket, just so that it isn't null
     plugin.bucket[0] = QueryResponse.init;
     plugin.bucket.remove(0);
 
     // Spawn the persistent worker.
-    plugin.persistentWorkerTid = spawn(
+    plugin.transient.persistentWorkerTid = spawn(
         &persistentQuerier,
         plugin.bucket,
         plugin.state.connSettings.caBundleFile);
@@ -3043,7 +3043,7 @@ void initialise(TwitchPlugin plugin)
     if (!isTerminal)
     {
         // Not a TTY so replace our bell string with an empty one
-        TwitchPlugin.bell = string.init;
+        plugin.transient.bell = string.init;
     }
 
     immutable someKeygenWanted =
@@ -3163,20 +3163,17 @@ void onMyInfo(TwitchPlugin plugin)
 
     These detect new streams (and updates ongoing ones), updates chatters, and caches followers.
 
-    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
-
     Params:
         plugin = The current [TwitchPlugin].
         channelName = String key of room to start the monitors of.
  +/
 void startRoomMonitors(TwitchPlugin plugin, const string channelName)
-in (Fiber.getThis, "Tried to call `startRoomMonitorFibers` from outside a Fiber")
-in (channelName.length, "Tried to start room monitor fibers with an empty channel name string")
+in (channelName.length, "Tried to start room monitor with an empty channel name string")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
     import std.datetime.systime : Clock;
-    import core.time : MonoTime, hours, seconds;
+    import core.time : Duration, MonoTime, hours, seconds;
 
     // How often to poll the servers for various information about a channel.
     static immutable monitorUpdatePeriodicity = 60.seconds;
@@ -3271,7 +3268,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                             plugin.viewerTimesByChannel[room.channelName][viewer] = periodicitySeconds;
                         }
 
-                        plugin.viewerTimesDirty = true;
+                        plugin.transient.viewerTimesDirty = true;
                     }
                 }
             }
@@ -3332,10 +3329,10 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                         rotateStream(room);
                         logger.info("Stream ended.");
 
-                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
+                        if (plugin.twitchSettings.watchtime && plugin.transient.viewerTimesDirty)
                         {
                             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-                            plugin.viewerTimesDirty = false;
+                            plugin.transient.viewerTimesDirty = false;
                         }
                     }
                 }
@@ -3349,10 +3346,10 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                         logger.info("Stream started.");
                         reportCurrentGame(streamFromServer);
 
-                        /*if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
+                        /*if (plugin.twitchSettings.watchtime && plugin.transient.viewerTimesDirty)
                         {
                             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-                            plugin.viewerTimesDirty = false;
+                            plugin.transient.viewerTimesDirty = false;
                         }*/
                     }
                     else if (room.stream.idString == streamFromServer.idString)
@@ -3369,10 +3366,10 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                         logger.info("Stream change detected.");
                         reportCurrentGame(streamFromServer);
 
-                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
+                        if (plugin.twitchSettings.watchtime && plugin.transient.viewerTimesDirty)
                         {
                             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-                            plugin.viewerTimesDirty = false;
+                            plugin.transient.viewerTimesDirty = false;
                         }
                     }
                 }
@@ -3417,10 +3414,14 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
         }
     }
 
-    // Each delegate forks by delaying itself
-    uptimeMonitorDg();
-    chatterMonitorDg();
-    cacheFollowersDg();
+    Fiber uptimeMonitorFiber = new Fiber(&uptimeMonitorDg, BufferSize.fiberStack);
+    Fiber chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
+    Fiber cacheFollowersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
+
+    // Detach by delaying zero seconds
+    delay(plugin, uptimeMonitorFiber, Duration.zero);
+    delay(plugin, chatterMonitorFiber, Duration.zero);
+    delay(plugin, cacheFollowersFiber, Duration.zero);
 }
 
 
@@ -3447,7 +3448,7 @@ in (Fiber.getThis, "Tried to call `startValidator` from outside a Fiber")
     static immutable retryDelay = 1.minutes;
     JSONValue validationJSON;
 
-    while (!plugin.botUserIDString.length)
+    while (!plugin.transient.botUserIDString.length)
     {
         try
         {
@@ -3529,7 +3530,7 @@ in (Fiber.getThis, "Tried to call `startValidator` from outside a Fiber")
             continue;
         }
 
-        plugin.botUserIDString = userIDJSON.str;  // ensures while loop break
+        plugin.transient.botUserIDString = userIDJSON.str;  // ensures while loop break
         //break;
     }
 
@@ -3614,20 +3615,22 @@ in (Fiber.getThis, "Tried to call `startSaver` from outside a Fiber")
     // Periodically save ecounts and viewer times
     while (true)
     {
-        if (plugin.twitchSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
+        if (plugin.twitchSettings.ecount &&
+            plugin.transient.ecountDirty &&
+            plugin.ecount.length)
         {
             saveResourceToDisk(plugin.ecount, plugin.ecountFile);
-            plugin.ecountDirty = false;
+            plugin.transient.ecountDirty = false;
         }
 
         /+
             Only save watchtimes if there's at least one broadcast currently ongoing.
             Since we save at broadcast stop there won't be anything new to save otherwise.
             +/
-        if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
+        if (plugin.twitchSettings.watchtime && plugin.transient.viewerTimesDirty)
         {
             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-            plugin.viewerTimesDirty = false;
+            plugin.transient.viewerTimesDirty = false;
         }
 
         delay(plugin, savePeriodicity, Yes.yield);
@@ -3820,10 +3823,10 @@ void teardown(TwitchPlugin plugin)
     import kameloso.thread : ThreadMessage;
     import std.concurrency : Tid, send;
 
-    if (plugin.persistentWorkerTid != Tid.init)
+    if (plugin.transient.persistentWorkerTid != Tid.init)
     {
         // It may not have been started if we're aborting very early.
-        plugin.persistentWorkerTid.send(ThreadMessage.teardown);
+        plugin.transient.persistentWorkerTid.send(ThreadMessage.teardown);
     }
 
     if (plugin.twitchSettings.ecount && plugin.ecount.length)
@@ -4469,9 +4472,59 @@ package:
     }
 
     /++
+        Transient state variables, aggregated in a struct.
+     +/
+    static struct TransientState
+    {
+        /++
+            The thread ID of the persistent worker thread.
+         +/
+        Tid persistentWorkerTid;
+
+        /++
+            Authorisation token for the "Authorization: Bearer <token>".
+         +/
+        string authorizationBearer;
+
+        /++
+            The bot's numeric account/ID.
+         +/
+        string botUserIDString;
+
+        /++
+            How long a Twitch HTTP query usually takes.
+
+            It tries its best to self-balance the number based on how long queries
+            actually take. Start off conservatively.
+         +/
+        long approximateQueryTime = 700;
+
+        /++
+            Effective bell after [kameloso.terminal.isTerminal] checks.
+         +/
+        string bell = "" ~ cast(char)(TerminalToken.bell);
+
+        /++
+            Whether or not [ecount] has been modified and there's a point in saving it to disk.
+         +/
+        bool ecountDirty;
+
+        /++
+            Whether or not [viewerTimesByChannel] has been modified and there's a
+            point in saving it to disk.
+         +/
+        bool viewerTimesDirty;
+    }
+
+    /++
         All Twitch plugin settings.
      +/
     TwitchSettings twitchSettings;
+
+    /++
+        Transient state of this [TwitchPlugin] instance.
+     +/
+    TransientState transient;
 
     /++
         Array of active bot channels' state.
@@ -4490,32 +4543,9 @@ package:
     bool[dstring] customGlobalEmotes;
 
     /++
-        Effective bell after [kameloso.terminal.isTerminal] checks.
-     +/
-    static string bell = "" ~ cast(char)(TerminalToken.bell);
-
-    /++
         The Twitch application ID for the kameloso bot.
      +/
     enum clientID = "tjyryd2ojnqr8a51ml19kn1yi2n0v1";
-
-    /++
-        Authorisation token for the "Authorization: Bearer <token>".
-     +/
-    string authorizationBearer;
-
-    /++
-        The bot's numeric account/ID.
-     +/
-    string botUserIDString;
-
-    /++
-        How long a Twitch HTTP query usually takes.
-
-        It tries its best to self-balance the number based on how long queries
-        actually take. Start off conservatively.
-     +/
-    long approximateQueryTime = 700;
 
     // QueryConstants
     /++
@@ -4560,20 +4590,9 @@ package:
     RehashingAA!(string, long)[string] viewerTimesByChannel;
 
     /++
-        Whether or not [viewerTimesByChannel] has been modified and there's a
-        point in saving it to disk.
-     +/
-    bool viewerTimesDirty;
-
-    /++
         API keys and tokens, keyed by channel.
      +/
     Credentials[string] secretsByChannel;
-
-    /++
-        The thread ID of the persistent worker thread.
-     +/
-    Tid persistentWorkerTid;
 
     /++
         Associative array of responses from async HTTP queries.
@@ -4607,11 +4626,6 @@ package:
         Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
      +/
     RehashingAA!(string, long)[string] ecount;
-
-    /++
-        Whether or not [ecount] has been modified and there's a point in saving it to disk.
-     +/
-    bool ecountDirty;
 
     // isEnabled
     /++

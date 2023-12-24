@@ -498,23 +498,18 @@ auto tick(PipelinePlugin plugin, const Duration elapsed)
 {
     import core.time : msecs;
 
+    static immutable minimumTimeBetweenReads = 250.msecs;
+
     if (plugin.fd == -1) return false;  // ?
 
-    static immutable minimumTimeBetweenReads = 250.msecs;
-    static Duration timeSinceLast;
-
-    if (elapsed >= minimumTimeBetweenReads)
+    if (elapsed < minimumTimeBetweenReads)
     {
-        // Skip adding the two durations together if the elapsed time alone is
-        // already more than the required minimum time between reads
-    }
-    else
-    {
-        timeSinceLast += elapsed;
-        if (timeSinceLast < minimumTimeBetweenReads) return false;
+        // Increment and evaluate
+        plugin.transient.timeSinceLast += elapsed;
+        if (plugin.transient.timeSinceLast < minimumTimeBetweenReads) return false;
     }
 
-    timeSinceLast = Duration.zero;
+    plugin.transient.timeSinceLast = Duration.zero;
     return readFIFO(plugin);
 }
 
@@ -591,11 +586,30 @@ public:
  +/
 final class PipelinePlugin : IRCPlugin
 {
+    // TransientState
+    /++
+        Transient state variables, aggregated in a struct.
+     +/
+    struct TransientState
+    {
+        // timeSinceLast
+        /++
+            How much time has passed since the last tick.
+         +/
+        Duration timeSinceLast;
+    }
+
     // pipelineSettings
     /++
         All Pipeline settings gathered.
      +/
     PipelineSettings pipelineSettings;
+
+    // transient
+    /++
+        Transient state of this [PipelinePlugin] instance.
+     +/
+    TransientState transient;
 
     // fifoFilename
     /++

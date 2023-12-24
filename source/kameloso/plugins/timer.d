@@ -538,6 +538,10 @@ void handleNewTimer(
     timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
     plugin.timersByChannel[event.channel][timer.name] = timer;
     channel.timerPointers[timer.name] = &plugin.timersByChannel[event.channel][timer.name];
+    saveTimers(plugin);
+
+    // Start monitor if not already running
+    if (!plugin.monitorInstanceID) startTimerMonitor(plugin);
 
     enum appendPattern = "New timer added! Use <b>%s%s add<b> to add lines.";
     immutable message = appendPattern.format(plugin.state.settings.prefix, event.aux[$-1]);
@@ -595,7 +599,8 @@ void handleDelTimer(
         if (!timerPtr) return sendNoSuchTimer();
 
         channel.timerPointers.remove(name);
-        if (!channel.timerPointers.length) plugin.channels.remove(event.channel);
+        // Don't remove no-timer channels from plugin.channels;
+        // they're still channels without them
 
         auto channelTimers = event.channel in plugin.timersByChannel;
         (*channelTimers).remove(name);
@@ -964,75 +969,131 @@ void onAnyMessage(TimerPlugin plugin, const ref IRCEvent event)
 }
 
 
+// startTimerMonitor
+/++
+    Starts the monitor which loops over [Timer]s and calls their
+    [core.thread.fiber.Fiber|Fiber]s in turn.
+
+    This overwrites any currently running monitors by changing the value of
+    [TimerPlugin.monitorInstanceID]. Likewise, it will end itself if the value
+    changes.
+
+    Params:
+        plugin = The current [TimerPlugin].
+ +/
+void startTimerMonitor(TimerPlugin plugin)
+{
+    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
+
+    immutable oldInstanceID = plugin.monitorInstanceID;
+    while (plugin.monitorInstanceID == oldInstanceID)
+    {
+        import std.random : uniform;
+        plugin.monitorInstanceID = uniform(1, uint.max);
+    }
+
+    immutable instanceIDSnapshot = plugin.monitorInstanceID;
+
+    void startMonitorDg()
+    {
+        while (true)
+        {
+            import std.datetime.systime : Clock;
+
+            if (plugin.monitorInstanceID != instanceIDSnapshot)
+            {
+                // New monitor started elsewhere
+                return;
+            }
+
+            // Micro-optimise getting the current time
+            long nowInUnix; // = Clock.currTime.toUnixTime();
+
+            // Whether or not there are any timers at all, in any channel
+            bool anyTimers;
+
+            // Walk through channels, trigger fibers
+            foreach (immutable channelName, channel; plugin.channels)
+            {
+                inner:
+                foreach (immutable timerName, timerPtr; channel.timerPointers)
+                {
+                    if (!timerPtr.fiber || (timerPtr.fiber.state != Fiber.State.HOLD))
+                    {
+                        enum pattern = `Dead or busy fiber in <l>%s</> timer "<l>%s</>"`;
+                        logger.errorf(pattern, channelName, timerName);
+                        continue inner;
+                    }
+
+                    anyTimers = true;
+
+                    // Get time here and cache it
+                    if (nowInUnix == 0) nowInUnix = Clock.currTime.toUnixTime();
+
+                    if (!timerPtr.lines.length)
+                    {
+                        // Message and time counting should not be done if there
+                        // are no lines in the timer.
+                        timerPtr.lastMessageCount = channel.messageCount;
+                        timerPtr.lastTimestamp = nowInUnix;
+                        continue;  // line-less timers are never called
+                    }
+
+                    immutable timeConditionMet =
+                        ((nowInUnix - timerPtr.lastTimestamp) >= timerPtr.timeThreshold);
+                    immutable messageConditionMet =
+                        ((channel.messageCount - timerPtr.lastMessageCount) >= timerPtr.messageCountThreshold);
+
+                    if (timerPtr.condition == Timer.Condition.both)
+                    {
+                        if (timeConditionMet && messageConditionMet)
+                        {
+                            timerPtr.fiber.call();
+                        }
+                    }
+                    else /*if (timerPtr.condition == Timer.Condition.either)*/
+                    {
+                        if (timeConditionMet || messageConditionMet)
+                        {
+                            timerPtr.fiber.call();
+                        }
+                    }
+                }
+            }
+
+            if (!anyTimers)
+            {
+                // There were channels but no timers in them, so end monitor
+                plugin.monitorInstanceID = 0;
+                return;
+            }
+
+            delay(plugin, plugin.timerPeriodicity, Yes.yield);
+        }
+    }
+
+    Fiber startMonitorFiber = new Fiber(&startMonitorDg, BufferSize.fiberStack);
+    startMonitorFiber.call();
+}
+
+
 // onWelcome
 /++
     Loads timers from disk.
 
-    Additionally loops to periodically call timer [core.thread.fiber.Fiber|Fiber]s
-    with a periodicity of [TimerPlugin.timerPeriodicity].
+    Additionally starts the monitor fiber, which loops to periodically call
+    timer [core.thread.fiber.Fiber|Fiber]s with a periodicity of
+    [TimerPlugin.timerPeriodicity].
 
     Don't call [reload] for this! It undoes anything [handleSelfjoin] may have done.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
-    .fiber(true)
 )
 void onWelcome(TimerPlugin plugin)
 {
-    import kameloso.plugins.common.delayawait : delay;
-    import core.thread : Fiber;
-
     loadTimers(plugin);
-
-    // Delay once before entering loop
-    delay(plugin, plugin.timerPeriodicity, Yes.yield);
-
-    while (true)
-    {
-        import std.datetime.systime : Clock;
-
-        // Micro-optimise getting the current time
-        long nowInUnix; // = Clock.currTime.toUnixTime();
-
-        // Walk through channels, trigger fibers
-        foreach (immutable channelName, channel; plugin.channels)
-        {
-            inner:
-            foreach (timerPtr; channel.timerPointers)
-            {
-                if (!timerPtr.fiber || (timerPtr.fiber.state != Fiber.State.HOLD))
-                {
-                    logger.error("Dead or busy timer Fiber in channel ", channelName);
-                    continue inner;
-                }
-
-                // Get time here and cache it
-                if (nowInUnix == 0) nowInUnix = Clock.currTime.toUnixTime();
-
-                immutable timeConditionMet =
-                    ((nowInUnix - timerPtr.lastTimestamp) >= timerPtr.timeThreshold);
-                immutable messageConditionMet =
-                    ((channel.messageCount - timerPtr.lastMessageCount) >= timerPtr.messageCountThreshold);
-
-                if (timerPtr.condition == Timer.Condition.both)
-                {
-                    if (timeConditionMet && messageConditionMet)
-                    {
-                        timerPtr.fiber.call();
-                    }
-                }
-                else /*if (timerPtr.condition == Timer.Condition.either)*/
-                {
-                    if (timeConditionMet || messageConditionMet)
-                    {
-                        timerPtr.fiber.call();
-                    }
-                }
-            }
-        }
-
-        delay(plugin, plugin.timerPeriodicity, Yes.yield);
-    }
 }
 
 
@@ -1093,6 +1154,11 @@ void handleSelfjoin(
             timer.lastTimestamp = nowInUnix;
             timer.fiber = createTimerFiber(plugin, channelName, timer.name);
             channel.timerPointers[timer.name] = &timer;  // Will this work in release mode?
+        }
+
+        if (!plugin.monitorInstanceID)
+        {
+            startTimerMonitor(plugin);
         }
     }
 }
@@ -1369,6 +1435,12 @@ public:
         Associative array of [Timer]s, keyed by nickname keyed by channel.
      +/
     Timer[string][string] timersByChannel;
+
+    /++
+        Numeric instance of the monitor fiber, used to detect when a new monitor
+        has been started elsewhere.
+     +/
+    uint monitorInstanceID;
 
     /++
         Filename of file with timer definitions.
