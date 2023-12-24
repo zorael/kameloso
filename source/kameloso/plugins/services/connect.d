@@ -144,7 +144,7 @@ void joinChannels(ConnectService service)
     import std.range : walkLength;
     static import kameloso.messaging;
 
-    scope(exit) service.joinedChannels = true;
+    scope(exit) service.transient.joinedChannels = true;
 
     void printDefeat()
     {
@@ -260,7 +260,7 @@ void joinChannels(ConnectService service)
             }
         }
 
-        delay(service, &delayedChannelCheckDg, service.timing.channelCheckDelay);
+        delay(service, &delayedChannelCheckDg, ConnectService.Timings.channelCheckDelay);
     }
 }
 
@@ -362,7 +362,7 @@ void tryAuth(ConnectService service)
     case "EFNet":
     case "WNet1":
         // No registration available
-        service.progress.authentication = Progress.finished;
+        service.transient.progress.authentication = Progress.finished;
         return;
 
     case "QuakeNet":
@@ -374,7 +374,7 @@ void tryAuth(ConnectService service)
         break;
     }
 
-    service.progress.authentication = Progress.inProgress;
+    service.transient.progress.authentication = Progress.inProgress;
 
     with (IRCServer.Daemon)
     switch (service.state.server.daemon)
@@ -395,7 +395,7 @@ void tryAuth(ConnectService service)
                 service.state.client.nickname,
                 service.state.client.origNickname);
 
-            service.progress.authentication = Progress.finished;
+            service.transient.progress.authentication = Progress.finished;
             return;
         }
 
@@ -461,7 +461,7 @@ void tryAuth(ConnectService service)
     {
         case twitch:
             // No registration available
-            service.progress.authentication = Progress.finished;
+            service.transient.progress.authentication = Progress.finished;
             return;
     }
 
@@ -485,19 +485,19 @@ void tryAuth(ConnectService service)
     {
         // If we're still authenticating after n seconds, abort and join channels.
 
-        if (service.progress.authentication == Progress.inProgress)
+        if (service.transient.progress.authentication == Progress.inProgress)
         {
             logger.warning("Authentication timed out.");
-            service.progress.authentication = Progress.finished;
+            service.transient.progress.authentication = Progress.finished;
         }
 
-        if (!service.joinedChannels)
+        if (!service.transient.joinedChannels)
         {
             joinChannels(service);
         }
     }
 
-    delay(service, &delayedJoinDg, service.timing.authenticationGracePeriod);
+    delay(service, &delayedJoinDg, ConnectService.Timings.authenticationGracePeriod);
 }
 
 
@@ -514,11 +514,11 @@ void tryAuth(ConnectService service)
 )
 void onAuthEnd(ConnectService service, const ref IRCEvent event)
 {
-    service.progress.authentication = Progress.finished;
+    service.transient.progress.authentication = Progress.finished;
 
-    if (service.progress.registration == Progress.finished)
+    if (service.transient.progress.registration == Progress.finished)
     {
-        if (!service.joinedChannels)
+        if (!service.transient.joinedChannels)
         {
             joinChannels(service);
         }
@@ -623,17 +623,17 @@ void onNickInUse(ConnectService service)
     import std.conv : to;
     import std.random : uniform;
 
-    if (service.progress.registration == Progress.inProgress)
+    if (service.transient.progress.registration == Progress.inProgress)
     {
-        if (!service.renameDuringRegistration.length)
+        if (!service.transient.renameDuringRegistration.length)
         {
             import kameloso.constants : KamelosoDefaults;
-            service.renameDuringRegistration = service.state.client.nickname ~
+            service.transient.renameDuringRegistration = service.state.client.nickname ~
                 KamelosoDefaults.altNickSeparator;
         }
 
-        service.renameDuringRegistration ~= uniform(0, 10).to!string;
-        immutable message = "NICK " ~ service.renameDuringRegistration;
+        service.transient.renameDuringRegistration ~= uniform(0, 10).to!string;
+        immutable message = "NICK " ~ service.transient.renameDuringRegistration;
         immediate(service.state, message);
     }
 }
@@ -649,11 +649,11 @@ void onNickInUse(ConnectService service)
 )
 void onBadNick(ConnectService service)
 {
-    if (service.progress.registration == Progress.inProgress)
+    if (service.transient.progress.registration == Progress.inProgress)
     {
         // Mid-registration and invalid nickname; abort
 
-        if (service.renameDuringRegistration.length)
+        if (service.transient.renameDuringRegistration.length)
         {
             logger.error("Your nickname was taken and an alternative nickname " ~
                 "could not be successfully generated.");
@@ -697,7 +697,7 @@ void onBanned(ConnectService service)
 )
 void onPassMismatch(ConnectService service)
 {
-    if (service.progress.registration != Progress.inProgress)
+    if (service.transient.progress.registration != Progress.inProgress)
     {
         // Unsure if this ever happens, but don't quit if we're actually registered
         return;
@@ -746,14 +746,14 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
     // http://ircv3.net/irc
     // https://blog.irccloud.com/ircv3
 
-    if (service.progress.registration == Progress.finished)
+    if (service.transient.progress.registration == Progress.finished)
     {
         // It's possible to call CAP LS after registration, and that would start
         // this whole process anew. So stop if we have registered.
         return;
     }
 
-    service.progress.capabilityNegotiation = Progress.inProgress;
+    service.transient.progress.capabilityNegotiation = Progress.inProgress;
 
     switch (event.content)
     {
@@ -850,7 +850,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 // znc SELFCHAN/SELFQUERY events
 
                 capsToReq ~= cap;
-                ++service.requestedCapabilitiesRemaining;
+                ++service.transient.requestedCapabilitiesRemaining;
                 break;
 
             default:
@@ -891,7 +891,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 
             default:
                 //logger.warning("Unhandled capability ACK: ", cap);
-                --service.requestedCapabilitiesRemaining;
+                --service.transient.requestedCapabilitiesRemaining;
                 break;
             }
         }
@@ -916,7 +916,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 
             default:
                 //logger.warning("Unhandled capability NAK: ", cap);
-                --service.requestedCapabilitiesRemaining;
+                --service.transient.requestedCapabilitiesRemaining;
                 break;
             }
         }
@@ -927,15 +927,15 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         break;
     }
 
-    if (!service.requestedCapabilitiesRemaining &&
-        (service.progress.capabilityNegotiation == Progress.inProgress))
+    if (!service.transient.requestedCapabilitiesRemaining &&
+        (service.transient.progress.capabilityNegotiation == Progress.inProgress))
     {
-        service.progress.capabilityNegotiation = Progress.finished;
+        service.transient.progress.capabilityNegotiation = Progress.finished;
         enum properties = Message.Property.quiet;
         enum message = "CAP END";
         immediate(service.state, message, properties);
 
-        if (!service.issuedNICK)
+        if (!service.transient.issuedNICK)
         {
             negotiateNick(service);
         }
@@ -953,15 +953,15 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 )
 void onSASLAuthenticate(ConnectService service)
 {
-    service.progress.authentication = Progress.inProgress;
+    service.transient.progress.authentication = Progress.inProgress;
 
     immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
         service.state.connSettings.certFile.length);
 
     if (service.state.connSettings.ssl && hasKey &&
-        (service.progress.saslExternal == Progress.notStarted))
+        (service.transient.progress.saslExternal == Progress.notStarted))
     {
-        service.progress.saslExternal = Progress.inProgress;
+        service.transient.progress.saslExternal = Progress.inProgress;
         enum message = "AUTHENTICATE +";
         return immediate(service.state, message);
     }
@@ -1046,7 +1046,7 @@ auto trySASLPlain(ConnectService service)
 )
 void onSASLSuccess(ConnectService service)
 {
-    service.progress.authentication = Progress.finished;
+    service.transient.progress.authentication = Progress.finished;
 
     /++
         The END subcommand signals to the server that capability negotiation
@@ -1062,15 +1062,16 @@ void onSASLSuccess(ConnectService service)
         Notes: Some servers don't ignore post-registration CAP.
      +/
 
-    if (!--service.requestedCapabilitiesRemaining &&
-        (service.progress.capabilityNegotiation == Progress.inProgress))
+    if (!--service.transient.requestedCapabilitiesRemaining &&
+        (service.transient.progress.capabilityNegotiation == Progress.inProgress))
     {
-        service.progress.capabilityNegotiation = Progress.finished;
+        service.transient.progress.capabilityNegotiation = Progress.finished;
         enum properties = Message.Property.quiet;
         enum message = "CAP END";
         immediate(service.state, message, properties);
 
-        if ((service.progress.registration == Progress.inProgress) && !service.issuedNICK)
+        if ((service.transient.progress.registration == Progress.inProgress) &&
+            !service.transient.issuedNICK)
         {
             negotiateNick(service);
         }
@@ -1091,10 +1092,11 @@ void onSASLSuccess(ConnectService service)
 )
 void onSASLFailure(ConnectService service)
 {
-    if ((service.progress.saslExternal == Progress.inProgress) && service.state.bot.password.length)
+    if ((service.transient.progress.saslExternal == Progress.inProgress) &&
+        service.state.bot.password.length)
     {
         // Fall back to PLAIN
-        service.progress.saslExternal = Progress.finished;
+        service.transient.progress.saslExternal = Progress.finished;
         enum properties = Message.Property.quiet;
         enum message = "AUTHENTICATE PLAIN";
         return immediate(service.state, message, properties);
@@ -1108,17 +1110,18 @@ void onSASLFailure(ConnectService service)
 
     // Auth failed and will fail even if we try NickServ, so flag as
     // finished auth and invoke `CAP END`
-    service.progress.authentication = Progress.finished;
+    service.transient.progress.authentication = Progress.finished;
 
-    if (!--service.requestedCapabilitiesRemaining &&
-        (service.progress.capabilityNegotiation == Progress.inProgress))
+    if (!--service.transient.requestedCapabilitiesRemaining &&
+        (service.transient.progress.capabilityNegotiation == Progress.inProgress))
     {
-        service.progress.capabilityNegotiation = Progress.finished;
+        service.transient.progress.capabilityNegotiation = Progress.finished;
         enum properties = Message.Property.quiet;
         enum message = "CAP END";
         immediate(service.state, message, properties);
 
-        if ((service.progress.registration == Progress.inProgress) && !service.issuedNICK)
+        if ((service.transient.progress.registration == Progress.inProgress) &&
+            !service.transient.issuedNICK)
         {
             negotiateNick(service);
         }
@@ -1143,8 +1146,8 @@ void onWelcome(ConnectService service)
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : endsWith;
 
-    service.progress.registration = Progress.finished;
-    service.renameDuringRegistration = string.init;
+    service.transient.progress.registration = Progress.finished;
+    service.transient.renameDuringRegistration = string.init;
 
     version(WithPingMonitor) startPingMonitor(service);
 
@@ -1234,7 +1237,7 @@ void onWelcome(ConnectService service)
         {
             import kameloso.plugins.common.delayawait : delay;
 
-            delay(service, service.timing.nickRegainPeriodicity, Yes.yield);
+            delay(service, ConnectService.Timings.nickRegainPeriodicity, Yes.yield);
 
             // Concatenate the verb once
             immutable squelchVerb = "squelch " ~ service.state.client.origNickname;
@@ -1254,7 +1257,7 @@ void onWelcome(ConnectService service)
                 enum properties = (Message.Property.quiet | Message.Property.background);
                 immutable message = "NICK " ~ service.state.client.origNickname;
                 raw(service.state, message, properties);
-                delay(service, service.timing.nickRegainPeriodicity, Yes.yield);
+                delay(service, ConnectService.Timings.nickRegainPeriodicity, Yes.yield);
             }
 
             // All done
@@ -1332,24 +1335,24 @@ void onEndOfMotd(ConnectService service)
     {
         if (service.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            service.serverSupportsWHOIS = false;
+            service.transient.serverSupportsWHOIS = false;
         }
     }
 
     if (service.state.server.network.length &&
         service.state.bot.password.length &&
-        (service.progress.authentication == Progress.notStarted) &&
+        (service.transient.progress.authentication == Progress.notStarted) &&
         (service.state.server.daemon != IRCServer.Daemon.twitch))
     {
         tryAuth(service);
     }
-    else if (((service.progress.authentication == Progress.finished) ||
+    else if (((service.transient.progress.authentication == Progress.finished) ||
         !service.state.bot.password.length ||
         (service.state.server.daemon == IRCServer.Daemon.twitch)) &&
-        !service.joinedChannels)
+        !service.transient.joinedChannels)
     {
         // tryAuth finished early with an unsuccessful login, else
-        // `service.progress.authentication` would be set much later.
+        // `service.transient.progress.authentication` would be set much later.
         // Twitch servers can't auth so join immediately
         // but don't do anything if we already joined channels.
         joinChannels(service);
@@ -1429,13 +1432,15 @@ void onReconnect(ConnectService service)
 )
 void onUnknownCommand(ConnectService service, const ref IRCEvent event)
 {
-    if (service.serverSupportsWHOIS && !service.state.settings.preferHostmasks && (event.aux[0] == "WHOIS"))
+    if (service.transient.serverSupportsWHOIS &&
+        !service.state.settings.preferHostmasks &&
+        (event.aux[0] == "WHOIS"))
     {
         logger.error("Error: This server does not seem to support user accounts.");
         enum message = "Consider enabling <l>Core</>.<l>preferHostmasks</>.";
         logger.error(message);
         logger.error("As it is, functionality will be greatly limited.");
-        service.serverSupportsWHOIS = false;
+        service.transient.serverSupportsWHOIS = false;
     }
 }
 
@@ -1577,7 +1582,7 @@ void register(ConnectService service)
     import std.algorithm.searching : canFind, endsWith, startsWith;
     import std.uni : toLower;
 
-    service.progress.registration = Progress.inProgress;
+    service.transient.progress.registration = Progress.inProgress;
 
     // Server networks we know to support capabilities
     static immutable capabilityServerWhitelistPrefix =
@@ -1732,14 +1737,14 @@ void register(ConnectService service)
         // Unsure, so monitor CAP progress
         void capMonitorDg()
         {
-            if (service.progress.capabilityNegotiation == Progress.notStarted)
+            if (service.transient.progress.capabilityNegotiation == Progress.notStarted)
             {
                 logger.warning("CAP timeout. Does the server not support capabilities?");
                 negotiateNick(service);
             }
         }
 
-        delay(service, &capMonitorDg, service.timing.capLSTimeout);
+        delay(service, &capMonitorDg, ConnectService.Timings.capLSTimeout);
     }
 }
 
@@ -1794,7 +1799,7 @@ void negotiateNick(ConnectService service)
         Message.Property.none;
     immutable message = "NICK " ~ service.state.client.nickname;
     immediate(service.state, message, properties);
-    service.issuedNICK = true;
+    service.transient.issuedNICK = true;
 }
 
 
@@ -1865,29 +1870,70 @@ final class ConnectService : IRCPlugin
 {
 private:
     /++
-        All [Progress]es gathered.
+        Transient state variables, aggregated in a struct.
      +/
-    static struct Progresses
+    static struct TransientState
     {
         /++
-            At what step we're currently at with regards to authentication.
-         +/
-        Progress authentication;
+            All [Progress]es gathered.
+        +/
+        static struct Progresses
+        {
+            /++
+                At what step we're currently at with regards to authentication.
+             +/
+            Progress authentication;
+
+            /++
+                At what step we're currently at with regards to SASL EXTERNAL authentication.
+             +/
+            Progress saslExternal;
+
+            /++
+                At what step we're currently at with regards to registration.
+             +/
+            Progress registration;
+
+            /++
+                At what step we're currently at with regards to capabilities.
+             +/
+            Progress capabilityNegotiation;
+        }
 
         /++
-            At what step we're currently at with regards to SASL EXTERNAL authentication.
+            All [Progress]es gathered.
          +/
-        Progress saslExternal;
+        Progresses progress;
 
         /++
-            At what step we're currently at with regards to registration.
+            Whether or not we have issued a NICK command during registration.
          +/
-        Progress registration;
+        bool issuedNICK;
 
         /++
-            At what step we're currently at with regards to capabilities.
+            Temporary: the nickname that we had to rename to, to successfully
+            register on the server.
+
+            This is to avoid modifying [dialect.defs.IRCClient.nickname|IRCClient.nickname]
+            before the nickname is actually changed, yet still carry information about the
+            incremental rename throughout calls of [onNickInUse].
          +/
-        Progress capabilityNegotiation;
+        string renameDuringRegistration;
+
+        /++
+            Whether or not the bot has joined its channels at least once.
+         +/
+        bool joinedChannels;
+
+        /++
+            Whether or not the server seems to be supporting WHOIS queries.
+         +/
+        bool serverSupportsWHOIS = true;
+
+        /++
+           Number of capabilities requested but still not awarded.
+         +/
+        uint requestedCapabilitiesRemaining;
     }
 
     /++
@@ -1928,34 +1974,9 @@ private:
     ConnectSettings connectSettings;
 
     /++
-        All [Progress]es gathered.
+        Transient state of this [ConnectService] instance.
      +/
-    Progresses progress;
-
-    /++
-        All timings gathered.
-     +/
-    Timings timing;
-
-    /++
-        Whether or not we have issued a NICK command during registration.
-     +/
-    bool issuedNICK;
-
-    /++
-        Temporary: the nickname that we had to rename to, to successfully
-        register on the server.
-
-        This is to avoid modifying [dialect.defs.IRCClient.nickname|IRCClient.nickname]
-        before the nickname is actually changed, yet still carry information about the
-        incremental rename throughout calls of [onNickInUse].
-     +/
-    string renameDuringRegistration;
-
-    /++
-        Whether or not the bot has joined its channels at least once.
-     +/
-    bool joinedChannels;
+    TransientState transient;
 
     version(TwitchSupport)
     {
@@ -1965,16 +1986,6 @@ private:
          +/
         bool[string] currentActualChannels;
     }
-
-    /++
-        Whether or not the server seems to be supporting WHOIS queries.
-     +/
-    bool serverSupportsWHOIS = true;
-
-    /++
-        Number of capabilities requested but still not awarded.
-     +/
-    uint requestedCapabilitiesRemaining;
 
     mixin IRCPluginImpl;
 }
