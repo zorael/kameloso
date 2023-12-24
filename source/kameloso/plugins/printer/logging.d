@@ -639,7 +639,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
 
     foreach (ref buffer; plugin.buffers)
     {
-        commitLog(buffer);
+        commitLog(plugin, buffer);
     }
 }
 
@@ -653,12 +653,13 @@ void commitAllLogsImpl(PrinterPlugin plugin)
     losing uncommitted lines in a catastrophical crash.
 
     Params:
+        plugin = The current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
         buffer = [LogLineBuffer] whose lines to commit to disk.
 
     See_Also:
         [commitAllLogsImpl]
  +/
-void commitLog(ref LogLineBuffer buffer)
+void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
     import kameloso.string : doublyBackslashed;
     import std.exception : ErrnoException;
@@ -704,7 +705,7 @@ void commitLog(ref LogLineBuffer buffer)
     catch (FileException e)
     {
         enum pattern = "File exception caught when committing log <l>%s</>: <t>%s%s";
-        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, PrinterPlugin.bell);
+        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, plugin.transient.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
@@ -713,12 +714,12 @@ void commitLog(ref LogLineBuffer buffer)
         {
             import kameloso.common : errnoStrings;
             enum pattern = "ErrnoException <l>%s</> caught when committing log to <l>%s</>: <t>%s%s";
-            logger.warningf(pattern, errnoStrings[e.errno], buffer.file.doublyBackslashed, e.msg, PrinterPlugin.bell);
+            logger.warningf(pattern, errnoStrings[e.errno], buffer.file.doublyBackslashed, e.msg, plugin.transient.bell);
         }
         else version(Windows)
         {
             enum pattern = "ErrnoException <l>%d</> caught when committing log to <l>%s</>: <t>%s%s";
-            logger.warningf(pattern, e.errno, buffer.file.doublyBackslashed, e.msg, PrinterPlugin.bell);
+            logger.warningf(pattern, e.errno, buffer.file.doublyBackslashed, e.msg, plugin.transient.bell);
         }
         else
         {
@@ -730,7 +731,7 @@ void commitLog(ref LogLineBuffer buffer)
     catch (Exception e)
     {
         enum pattern = "Unexpected exception caught when committing log <l>%s</>: <t>%s%s";
-        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, PrinterPlugin.bell);
+        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, plugin.transient.bell);
         version(PrintStacktraces) logger.trace(e);
     }
 }

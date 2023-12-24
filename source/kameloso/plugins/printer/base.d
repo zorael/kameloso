@@ -270,7 +270,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         if (!squelchstamp)
         {
-            plugin.hasSquelches = (plugin.squelches.length > 0);
+            plugin.transient.hasSquelches = (plugin.squelches.length > 0);
             return false;
         }
         else if ((time - *squelchstamp) <= plugin.squelchTimeout)
@@ -281,7 +281,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         else
         {
             plugin.squelches.remove(key);
-            plugin.hasSquelches = (plugin.squelches.length > 0);
+            plugin.transient.hasSquelches = (plugin.squelches.length > 0);
             return false;
         }
     }
@@ -406,7 +406,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case RPL_WHOISSERVER:
     case RPL_CHARSET:
     case RPL_STATSRLINE:
-        immutable shouldSquelch = plugin.hasSquelches &&
+        immutable shouldSquelch = plugin.transient.hasSquelches &&
             updateSquelchstamp(
                 plugin,
                 event.time,
@@ -512,7 +512,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case ERR_NOSUCHCHANNEL:
         // Error: switch skips declaration of variable shouldSquelch
         {
-            immutable shouldSquelch = plugin.hasSquelches &&
+            immutable shouldSquelch = plugin.transient.hasSquelches &&
                 updateSquelchstamp(
                     plugin,
                     event.time,
@@ -719,7 +719,7 @@ void setup(PrinterPlugin plugin)
     if (!isTerminal)
     {
         // Not a TTY so replace our bell string with an empty one
-        PrinterPlugin.bell = string.init;
+        plugin.transient.bell = string.init;
     }
 
     static auto untilNextMidnight()
@@ -827,12 +827,12 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
     case "squelch":
         import std.datetime.systime : Clock;
         plugin.squelches[target] = Clock.currTime.toUnixTime();
-        plugin.hasSquelches = true;
+        plugin.transient.hasSquelches = true;
         break;
 
     case "unsquelch":
         plugin.squelches.remove(target);
-        plugin.hasSquelches = (plugin.squelches.length > 0);
+        plugin.transient.hasSquelches = (plugin.squelches.length > 0);
         break;
 
     case "commit":
@@ -989,6 +989,16 @@ package:
             [dialect.defs.IRCEvent.Type.ISUPPORT|ISUPPORT] information.
          +/
         bool printedISUPPORT;
+
+        /++
+            Whether or not at least one squelch is active; whether [squelches] is non-empty.
+         +/
+        bool hasSquelches;
+
+        /++
+            Effective bell after [kameloso.terminal.isTerminal] checks.
+         +/
+        string bell = "" ~ cast(char)(TerminalToken.bell);
     }
 
     /++
@@ -1018,11 +1028,6 @@ package:
     long[string] squelches;
 
     /++
-        Whether or not at least one squelch is active; whether [squelches] is non-empty.
-     +/
-    bool hasSquelches;
-
-    /++
         Buffers, to clump log file writes together.
      +/
     LogLineBuffer[string] buffers;
@@ -1036,11 +1041,6 @@ package:
         Where to save logs.
      +/
     @Resource string logDirectory = "logs";
-
-    /++
-        Effective bell after [kameloso.terminal.isTerminal] checks.
-     +/
-    static string bell = "" ~ cast(char)(TerminalToken.bell);
 
     version(Debug)
     {

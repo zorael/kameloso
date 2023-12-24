@@ -86,7 +86,7 @@ void startChannelQueries(ChanQueryService service)
     import core.thread : Fiber;
     import core.time : seconds;
 
-    if (service.querying) return;  // Try again next PING
+    if (service.transient.querying) return;  // Try again next PING
 
     string[] querylist;
     foreach (immutable channelName, ref state; service.channelStates)
@@ -105,12 +105,12 @@ void startChannelQueries(ChanQueryService service)
     if (!querylist.length && !service.state.settings.eagerLookups) return;
 
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-    service.querying = true;  // "Lock"
+    service.transient.querying = true;  // "Lock"
 
     scope(exit)
     {
-        service.queriedAtLeastOnce = true;
-        service.querying = false;  // "Unlock"
+        service.transient.queriedAtLeastOnce = true;
+        service.transient.querying = false;  // "Unlock"
     }
 
     chanloop:
@@ -212,7 +212,7 @@ void startChannelQueries(ChanQueryService service)
     }
 
     // Stop here if we can't or are not interested in going further
-    if (!service.serverSupportsWHOIS || !service.state.settings.eagerLookups) return;
+    if (!service.transient.serverSupportsWHOIS || !service.state.settings.eagerLookups) return;
 
     immutable nowInUnix = Clock.currTime.toUnixTime();
     bool[string] uniqueUsers;
@@ -339,7 +339,7 @@ void startChannelQueries(ChanQueryService service)
                         enum message2 = "Consider enabling <l>core</>.<l>preferHostmasks</>.";
                         logger.error(message1);
                         logger.error(message2);
-                        service.serverSupportsWHOIS = false;
+                        service.transient.serverSupportsWHOIS = false;
                         return;
                     }
                 }
@@ -347,7 +347,7 @@ void startChannelQueries(ChanQueryService service)
                 {
                     // Cannot WHOIS on this server
                     // Connect will display an error, so don't do it here again
-                    service.serverSupportsWHOIS = false;
+                    service.transient.serverSupportsWHOIS = false;
                     return;
                 }
                 else
@@ -432,7 +432,7 @@ void onTopic(ChanQueryService service, const ref IRCEvent event)
 )
 void onEndOfNames(ChanQueryService service)
 {
-    if (!service.querying && service.queriedAtLeastOnce)
+    if (!service.transient.querying && service.transient.queriedAtLeastOnce)
     {
         startChannelQueries(service);
     }
@@ -497,6 +497,32 @@ private:
     import core.time : seconds;
 
     /++
+        Transient state variables, aggregated in a struct.
+     +/
+    static struct TransientState
+    {
+        /++
+            Whether or not a channel query Fiber is running.
+         +/
+        bool querying;
+
+        /++
+            Whether or not at least one channel query has been made.
+         +/
+        bool queriedAtLeastOnce;
+
+        /++
+            Whether or not the server is known to support WHOIS queries. (Defaults to true.)
+         +/
+        bool serverSupportsWHOIS = true;
+    }
+
+    /++
+        Transient state of this [ChanQueryService] instance.
+     +/
+    TransientState transient;
+
+    /++
         Extra delay between channel mode/user queries. Not delaying may
         cause kicks and disconnects if results are returned quickly.
      +/
@@ -512,22 +538,6 @@ private:
         they are in.
      +/
     ubyte[string] channelStates;
-
-    /++
-        Whether or not a channel query Fiber is running.
-     +/
-    bool querying;
-
-    /++
-        Whether or not at least one channel query has been made.
-     +/
-    bool queriedAtLeastOnce;
-
-    /++
-        Whether or not the server is known to support WHOIS queries. (Defaults to true.)
-     +/
-    bool serverSupportsWHOIS = true;
-
 
     // isEnabled
     /++

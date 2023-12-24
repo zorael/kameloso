@@ -494,7 +494,7 @@ void formatMessageMonochrome(Sink)
         ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
         (event.errors.length && bellOnError);
 
-    if (shouldBell) sink.put(PrinterPlugin.bell);
+    if (shouldBell) sink.put(plugin.transient.bell);
 }
 
 ///
@@ -1233,7 +1233,7 @@ void formatMessageColoured(Sink)
         ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
         (event.errors.length && bellOnError);
 
-    if (shouldBell) sink.put(PrinterPlugin.bell);
+    if (shouldBell) sink.put(plugin.transient.bell);
 }
 
 
