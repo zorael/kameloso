@@ -100,8 +100,8 @@ void onWelcome(PipelinePlugin plugin)
 
     void initRoutine()
     {
-        plugin.fifoFilename = initialiseFIFO(plugin);
-        plugin.fd = openFIFO(plugin.fifoFilename);
+        plugin.transient.fifoFilename = initialiseFIFO(plugin);
+        plugin.transient.fd = openFIFO(plugin.transient.fifoFilename);
         printUsageText(plugin, No.reinit);
     }
 
@@ -126,9 +126,9 @@ void onWelcome(PipelinePlugin plugin)
     {
         import std.file : exists;
 
-        if (!plugin.fifoFilename.exists || !plugin.fifoFilename.isFIFO)
+        if (!plugin.transient.fifoFilename.exists || !plugin.transient.fifoFilename.isFIFO)
         {
-            if (plugin.fd != -1) closeFD(plugin.fd);
+            if (plugin.transient.fd != -1) closeFD(plugin.transient.fd);
 
             try
             {
@@ -162,7 +162,7 @@ void printUsageText(PipelinePlugin plugin, const Flag!"reinit" reinit)
     }
 
     enum pattern = "Pipe text to the <i>%s</> file to send raw commands to the server.";
-    logger.logf(pattern, plugin.fifoFilename);
+    logger.logf(pattern, plugin.transient.fifoFilename);
 }
 
 
@@ -422,7 +422,7 @@ auto readFIFO(PipelinePlugin plugin)
     enum bufferSize = 1024;  // Should be enough? An IRC line is 512 bytes
     ubyte[bufferSize] buf;
 
-    immutable ptrdiff_t bytesRead = read(plugin.fd, buf.ptr, buf.length);
+    immutable ptrdiff_t bytesRead = read(plugin.transient.fd, buf.ptr, buf.length);
     if (bytesRead <= 0) return false;   // 0 or -1
 
     string slice = cast(string)buf[0..bytesRead].idup;  // mutable immutable
@@ -500,7 +500,7 @@ auto tick(PipelinePlugin plugin, const Duration elapsed)
 
     static immutable minimumTimeBetweenReads = 250.msecs;
 
-    if (plugin.fd == -1) return false;  // ?
+    if (plugin.transient.fd == -1) return false;  // ?
 
     if (elapsed < minimumTimeBetweenReads)
     {
@@ -524,15 +524,15 @@ void teardown(PipelinePlugin plugin)
     import std.file : exists;
     import std.file : remove;
 
-    if (plugin.fd == -1)  return;  // teardown before initialisation?
+    if (plugin.transient.fd == -1)  return;  // teardown before initialisation?
 
-    closeFD(plugin.fd);
+    closeFD(plugin.transient.fd);
 
-    if (plugin.fifoFilename.exists && plugin.fifoFilename.isFIFO)
+    if (plugin.transient.fifoFilename.exists && plugin.transient.fifoFilename.isFIFO)
     {
         try
         {
-            remove(plugin.fifoFilename);
+            remove(plugin.transient.fifoFilename);
         }
         catch (Exception _)
         {
@@ -554,22 +554,22 @@ void reload(PipelinePlugin plugin)
     import lu.common : ReturnValueException;
     import std.file : exists;
 
-    if (plugin.fifoFilename.exists && plugin.fifoFilename.isFIFO)
+    if (plugin.transient.fifoFilename.exists && plugin.transient.fifoFilename.isFIFO)
     {
         // Should still be okay.
         return;
     }
 
     // File doesn't exist!
-    if (plugin.fd != -1)
+    if (plugin.transient.fd != -1)
     {
         // ...yet there's an old file descriptor
-        closeFD(plugin.fd);
+        closeFD(plugin.transient.fd);
     }
 
     // Let exceptions fall through
-    plugin.fifoFilename = initialiseFIFO(plugin);
-    plugin.fd = openFIFO(plugin.fifoFilename);
+    plugin.transient.fifoFilename = initialiseFIFO(plugin);
+    plugin.transient.fd = openFIFO(plugin.transient.fifoFilename);
     printUsageText(plugin, Yes.reinit);
 }
 
@@ -586,42 +586,36 @@ public:
  +/
 final class PipelinePlugin : IRCPlugin
 {
-    // TransientState
     /++
         Transient state variables, aggregated in a struct.
      +/
     struct TransientState
     {
-        // timeSinceLast
         /++
             How much time has passed since the last tick.
          +/
         Duration timeSinceLast;
+
+        /++
+            File descriptor of the open FIFO.
+         +/
+        int fd = -1;
+
+        /++
+            Filename of the created FIFO.
+         +/
+        string fifoFilename;
     }
 
-    // pipelineSettings
     /++
         All Pipeline settings gathered.
      +/
     PipelineSettings pipelineSettings;
 
-    // transient
     /++
         Transient state of this [PipelinePlugin] instance.
      +/
     TransientState transient;
-
-    // fifoFilename
-    /++
-        Filename of the created FIFO.
-     +/
-    string fifoFilename;
-
-    // fd
-    /++
-        File descriptor of the open FIFO.
-     +/
-    int fd = -1;
 
     mixin IRCPluginImpl;
 }
