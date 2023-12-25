@@ -2492,7 +2492,7 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
 
     static struct Shoutout
     {
-        enum State
+        enum ShoutoutState
         {
             success,
             noSuchUser,
@@ -2500,7 +2500,7 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
             otherError,
         }
 
-        State state;
+        ShoutoutState state;
         string displayName;
         string gameName;
     }
@@ -2518,7 +2518,7 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
             immutable channelURL = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ id;
             immutable channelJSON = getTwitchData(plugin, channelURL);
 
-            shoutout.state = Shoutout.State.success;
+            shoutout.state = Shoutout.ShoutoutState.success;
             shoutout.displayName = channelJSON["broadcaster_name"].str;
             shoutout.gameName = channelJSON["game_name"].str;
             return shoutout;
@@ -2529,16 +2529,16 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
                 (e.json["error"].str == "Bad Request") &&
                 (e.json["message"].str == "Invalid username(s), email(s), or ID(s). Bad Identifiers."))
             {
-                shoutout.state = Shoutout.State.noSuchUser;
+                shoutout.state = Shoutout.ShoutoutState.noSuchUser;
                 return shoutout;
             }
 
-            shoutout.state = Shoutout.State.otherError;
+            shoutout.state = Shoutout.ShoutoutState.otherError;
             return shoutout;
         }
         catch (EmptyDataJSONException _)
         {
-            shoutout.state = Shoutout.State.noSuchUser;
+            shoutout.state = Shoutout.ShoutoutState.noSuchUser;
             return shoutout;
         }
         catch (Exception e)

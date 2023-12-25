@@ -1240,7 +1240,7 @@ auto listenAttemptToNext(Kameloso instance, const ListenAttempt attempt)
     import kameloso.common : Next;
 
     // Handle the attempt; switch on its state
-    with (ListenAttempt.State)
+    with (ListenAttempt.ListenState)
     final switch (attempt.state)
     {
     case isEmpty:
@@ -1320,7 +1320,12 @@ auto listenAttemptToNext(Kameloso instance, const ListenAttempt attempt)
     case prelisten:  // ditto
         import lu.conv : Enum;
         import std.conv : text;
-        assert(0, text("listener yielded `", Enum!(ListenAttempt.State).toString(attempt.state), "` state"));
+
+        immutable message = text(
+            "listener yielded `",
+            Enum!(ListenAttempt.ListenState).toString(attempt.state),
+            "` state");
+        assert(0, message);
     }
 }
 
@@ -2630,7 +2635,7 @@ auto tryConnect(Kameloso instance)
             interruptibleSleep(Timeout.connectionRetry.seconds, instance.abort);
         }
 
-        with (ConnectionAttempt.State)
+        with (ConnectionAttempt.ConnectState)
         final switch (attempt.state)
         {
         case unset:  // should never happen
@@ -2921,7 +2926,7 @@ auto tryResolve(Kameloso instance, const Flag!"firstConnect" firstConnect)
                 attempt.error) :
             string.init;
 
-        with (ResolveAttempt.State)
+        with (ResolveAttempt.ResolveState)
         final switch (attempt.state)
         {
         case unset:

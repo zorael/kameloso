@@ -54,10 +54,10 @@ private:
 public:
     /++
         The different kinds of [Timer]s. Either one that yields a
-        [Type.random|random] response each time, or one that yields a
-        [Type.ordered|ordered] one.
+        [TimerType.random|random] response each time, or one that yields a
+        [TimerType.ordered|ordered] one.
      +/
-    enum Type
+    enum TimerType
     {
         /++
             Lines should be yielded in a random (technically uniform) order.
@@ -73,7 +73,7 @@ public:
     /++
         Conditions upon which timers decide whether they are to fire yet, or wait still.
      +/
-    enum Condition
+    enum TimerCondition
     {
         /++
             Both message count and time criteria must be fulfilled.
@@ -99,7 +99,7 @@ public:
     /++
         What type of [Timer] this is.
      +/
-    Type type;
+    TimerType type;
 
     /++
         Workhorse [core.thread.fiber.Fiber|Fiber].
@@ -109,7 +109,7 @@ public:
     /++
         What message/time conditions this [Timer] abides by.
      +/
-    Condition condition;
+    TimerCondition condition;
 
     /++
         How many messages must have been sent since the last announce before we
@@ -164,7 +164,7 @@ public:
      +/
     auto getLine()
     {
-        return (type == Type.random) ?
+        return (type == TimerType.random) ?
             randomLine() :
             nextOrderedLine();
     }
@@ -271,12 +271,12 @@ public:
         timer.timeThreshold = json["timeThreshold"].integer;
         timer.messageCountStagger = json["messageCountStagger"].integer;
         timer.timeStagger = json["timeStagger"].integer;
-        timer.type = (json["type"].integer == cast(int)Type.random) ?
-            Type.random :
-            Type.ordered;
-        timer.condition = (json["condition"].integer == cast(int)Condition.both) ?
-            Condition.both :
-            Condition.either;
+        timer.type = (json["type"].integer == cast(int)TimerType.random) ?
+            TimerType.random :
+            TimerType.ordered;
+        timer.condition = (json["condition"].integer == cast(int)TimerCondition.both) ?
+            TimerCondition.both :
+            TimerCondition.either;
 
         // Compatibility with older versions, remove later
         if (const suspendedJSON = "suspended" in json)
@@ -300,7 +300,7 @@ unittest
     timer.lines = [ "abc", "def", "ghi" ];
 
     {
-        timer.type = Timer.Type.ordered;
+        timer.type = Timer.TimerType.ordered;
         assert(timer.getLine() == "abc");
         assert(timer.getLine() == "def");
         assert(timer.getLine() == "ghi");
@@ -311,7 +311,7 @@ unittest
     {
         import std.algorithm.comparison : among;
 
-        timer.type = Timer.Type.random;
+        timer.type = Timer.TimerType.random;
         bool[string] linesSeen;
 
         foreach (immutable i; 0..300)
@@ -475,11 +475,11 @@ void handleNewTimer(
     switch (type)
     {
     case "random":
-        timer.type = Timer.Type.random;
+        timer.type = Timer.TimerType.random;
         break;
 
     case "ordered":
-        timer.type = Timer.Type.ordered;
+        timer.type = Timer.TimerType.ordered;
         break;
 
     default:
@@ -490,11 +490,11 @@ void handleNewTimer(
     switch (condition)
     {
     case "both":
-        timer.condition = Timer.Condition.both;
+        timer.condition = Timer.TimerCondition.both;
         break;
 
     case "either":
-        timer.condition = Timer.Condition.either;
+        timer.condition = Timer.TimerCondition.either;
         break;
 
     default:
@@ -860,8 +860,8 @@ void handleListTimers(
         immutable timerMessage = timerPattern.format(
             timer.name,
             timer.lines.length,
-            ((timer.type == Timer.Type.random) ? "random" : "ordered"),
-            ((timer.condition == Timer.Condition.both) ? "both" : "either"),
+            ((timer.type == Timer.TimerType.random) ? "random" : "ordered"),
+            ((timer.condition == Timer.TimerCondition.both) ? "both" : "either"),
             timer.messageCountThreshold,
             timer.timeThreshold,
             timer.messageCountStagger,
@@ -1045,14 +1045,14 @@ void startTimerMonitor(TimerPlugin plugin)
                     immutable messageConditionMet =
                         ((channel.messageCount - timerPtr.lastMessageCount) >= timerPtr.messageCountThreshold);
 
-                    if (timerPtr.condition == Timer.Condition.both)
+                    if (timerPtr.condition == Timer.TimerCondition.both)
                     {
                         if (timeConditionMet && messageConditionMet)
                         {
                             timerPtr.fiber.call();
                         }
                     }
-                    else /*if (timerPtr.condition == Timer.Condition.either)*/
+                    else /*if (timerPtr.condition == Timer.TimerCondition.either)*/
                     {
                         if (timeConditionMet || messageConditionMet)
                         {
@@ -1207,11 +1207,11 @@ auto createTimerFiber(
             immutable messageCountDelta = (channel.messageCount - timer.lastMessageCount);
             immutable messageStaggerMet = (messageCountDelta >= timer.messageCountStagger);
 
-            if (timer.condition == Timer.Condition.both)
+            if (timer.condition == Timer.TimerCondition.both)
             {
                 if (timeStaggerMet && messageStaggerMet) break;
             }
-            else /*if (timer.condition == Timer.Condition.either)*/
+            else /*if (timer.condition == Timer.TimerCondition.either)*/
             {
                 if (timeStaggerMet || messageStaggerMet) break;
             }

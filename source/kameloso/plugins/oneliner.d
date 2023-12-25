@@ -62,13 +62,13 @@ private:
     import std.json : JSONValue;
 
 public:
-    // Type
+    // OnelinerType
     /++
         The different kinds of [Oneliner]s. Either one that yields a
-        [Type.random|random] response each time, or one that yields a
-        [Type.ordered|ordered] one.
+        [OnelinerType.random|random] response each time, or one that yields a
+        [OnelinerType.ordered|ordered] one.
      +/
-    enum Type
+    enum OnelinerType
     {
         /++
             Responses should be yielded in a random (technically uniform) order.
@@ -91,7 +91,7 @@ public:
     /++
         What type of [Oneliner] this is.
      +/
-    Type type;
+    OnelinerType type;
 
     // position
     /++
@@ -130,7 +130,7 @@ public:
      +/
     auto getResponse() /*const*/
     {
-        return (type == Type.random) ?
+        return (type == OnelinerType.random) ?
             randomResponse() :
             nextOrderedResponse();
     }
@@ -145,7 +145,7 @@ public:
             string is returned instead.
      +/
     auto nextOrderedResponse() /*const*/
-    in ((type == Type.ordered), "Tried to get an ordered response from a random Oneliner")
+    in ((type == OnelinerType.ordered), "Tried to get an ordered response from a random Oneliner")
     {
         if (!responses.length) return string.init;
 
@@ -169,7 +169,7 @@ public:
             string is returned instead.
      +/
     auto randomResponse() const
-    //in ((type == Type.random), "Tried to get an random response from an ordered Oneliner")
+    //in ((type == OnelinerType.random), "Tried to get an random response from an ordered Oneliner")
     {
         import std.random : uniform;
 
@@ -218,9 +218,9 @@ public:
 
         Oneliner oneliner;
         oneliner.trigger = json["trigger"].str;
-        oneliner.type = (json["type"].integer == cast(int)Type.random) ?
-            Type.random :
-            Type.ordered;
+        oneliner.type = (json["type"].integer == cast(int)OnelinerType.random) ?
+            OnelinerType.random :
+            OnelinerType.ordered;
 
         if (const cooldownJSON = "cooldown" in json)
         {
@@ -460,14 +460,14 @@ void handleNewOneliner(
 
     if (!typestring.length) return sendNewUsage();
 
-    Oneliner.Type type;
+    Oneliner.OnelinerType type;
 
     switch (typestring)
     {
     case "random":
     case "rnd":
     case "rng":
-        type = Oneliner.Type.random;
+        type = Oneliner.OnelinerType.random;
         break;
 
     case "ordered":
@@ -475,7 +475,7 @@ void handleNewOneliner(
     case "sequential":
     case "seq":
     case "sequence":
-        type = Oneliner.Type.ordered;
+        type = Oneliner.OnelinerType.ordered;
         break;
 
     default:
@@ -700,7 +700,7 @@ void handleAddToOneliner(
 
             oneliner.responses.insertInPlace(pos, line);
 
-            if (oneliner.type == Oneliner.Type.ordered)
+            if (oneliner.type == Oneliner.OnelinerType.ordered)
             {
                 // Reset ordered position to 0 on insertions
                 oneliner.position = 0;
@@ -874,7 +874,7 @@ void handleDelFromOneliner(
             oneliner.responses = oneliner.responses.remove!(SwapStrategy.stable)(pos);
             sendLineRemoved(trigger, pos);
 
-            if (oneliner.type == Oneliner.Type.ordered)
+            if (oneliner.type == Oneliner.OnelinerType.ordered)
             {
                 // Reset ordered position to 0 on removals
                 oneliner.position = 0;

@@ -564,7 +564,7 @@ struct ListenAttempt
     /++
         The various states a listening attempt may be in.
      +/
-    enum State
+    enum ListenState
     {
         unset,      /// Init value.
         noop,       /// Nothing.
@@ -577,9 +577,15 @@ struct ListenAttempt
     }
 
     /++
+        Deprecated alias to [ListenState].
+     +/
+    deprecated("Use `ListenAttempt.ListenState` instead")
+    alias State = ListenState;
+
+    /++
         The current state of the attempt.
      +/
-    State state;
+    ListenState state;
 
     /++
         The last read line of text sent by the server.
@@ -693,7 +699,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
     long timeLastReceived = Clock.currTime.toUnixTime();
     size_t start;
 
-    alias State = ListenAttempt.State;
+    alias State = ListenAttempt.ListenState;
     yield(ListenAttempt(State.noop));
 
     /// How many consecutive warnings to allow before yielding an error.
@@ -927,7 +933,7 @@ public:
     /++
         The various states a connection attempt may be in.
      +/
-    enum State
+    enum ConnectState
     {
         unset,                   /// Init value.
         noop,                    /// Nothing.
@@ -945,9 +951,15 @@ public:
     }
 
     /++
+        Deprecated alias to [ConnectState].
+     +/
+    deprecated("Use `ConnectionAttempt.ConnectState` instead")
+    alias State = ConnectState;
+
+    /++
         The current state of the attempt.
      +/
-    State state;
+    ConnectState state;
 
     /++
         The IP that the attempt is trying to connect to.
@@ -1042,7 +1054,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 
     if (*abort) return;
 
-    alias State = ConnectionAttempt.State;
+    alias State = ConnectionAttempt.ConnectState;
     yield(ConnectionAttempt(State.noop));
 
     scope(exit) conn.teardown();
@@ -1281,7 +1293,7 @@ struct ResolveAttempt
     /++
         The various states an address resolution attempt may be in.
      +/
-    enum State
+    enum ResolveState
     {
         unset,          /// Init value.
         noop,           /// Do nothing.
@@ -1292,9 +1304,15 @@ struct ResolveAttempt
     }
 
     /++
+        Deprecated alias to [ResolveState].
+     +/
+    deprecated("Use `ResolveAttempt.ResolveState` instead")
+    alias State = ResolveState;
+
+    /++
         The current state of the attempt.
      +/
-    State state;
+    ResolveState state;
 
     /++
         The error message as thrown by an exception.
@@ -1390,7 +1408,7 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 
     if (*abort) return;
 
-    alias State = ResolveAttempt.State;
+    alias State = ResolveAttempt.ResolveState;
     yield(ResolveAttempt(State.noop));
 
     for (uint i; (i >= 0); ++i)

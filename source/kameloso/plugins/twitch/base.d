@@ -1250,7 +1250,7 @@ void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     immutable shoutout = createShoutout(plugin, login);
 
-    with (typeof(shoutout).State)
+    with (typeof(shoutout).ShoutoutState)
     final switch (shoutout.state)
     {
     case success:
