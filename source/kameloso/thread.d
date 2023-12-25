@@ -195,8 +195,8 @@ version(Posix)
     information of different kinds yet still as one type, to stop [std.concurrency.send]
     from requiring so much compilation memory.
 
-    The type of the message is defined as a [ThreadMessage.Type|Type] in
-    [ThreadMessage.type]. Recipients will have to do a (final) switch over that
+    The type of the message is defined as a [ThreadMessage.MessageType|MessageType] in
+    [ThreadMessage.MessageType]. Recipients will have to do a (final) switch over that
     enum to deal with messages accordingly.
  +/
 struct ThreadMessage
@@ -204,7 +204,7 @@ struct ThreadMessage
     /++
         Different thread message types.
      +/
-    enum Type
+    enum MessageType
     {
         /++
             Request to send a server [dialect.defs.IRCEvent.Type.PONG|PONG] response.
@@ -339,9 +339,15 @@ struct ThreadMessage
     }
 
     /++
-        The [Type] of this thread message.
+        Deprecated alias to [MessageType].
      +/
-    Type type;
+    deprecated("Use `ThreadMessage.MessageType` instead")
+    alias Type = MessageType;
+
+    /++
+        The [MessageType] of this thread message.
+     +/
+    MessageType type;
 
     /++
         String content body of message, where applicable.
@@ -359,14 +365,14 @@ struct ThreadMessage
     bool quiet;
 
     /++
-        An `opDispatch`, constructing one function for each member in [Type].
+        An `opDispatch`, constructing one function for each member in [MessageType].
 
-        What the parameters functionally do is contextual to each [Type].
+        What the parameters functionally do is contextual to each [MessageType].
 
         Params:
-            memberstring = String name of a member of [Type].
+            memberstring = String name of a member of [MessageType].
             content = Optional content string.
-            payload = Optional boxed [Sendable] payloda.
+            payload = Optional boxed [Sendable] payload.
             quiet = Whether or not to pass a flag for the action to be done quietly.
 
         Returns:
@@ -377,7 +383,7 @@ struct ThreadMessage
         shared Sendable payload = null,
         const bool quiet = false)
     {
-        mixin("return ThreadMessage(Type." ~ memberstring ~ ", content, payload, quiet);");
+        mixin("return ThreadMessage(MessageType." ~ memberstring ~ ", content, payload, quiet);");
     }
 }
 
@@ -814,11 +820,11 @@ void interruptibleSleep(const Duration dur, const Flag!"abort"* abort) @system
 
     This is done between connection attempts to get a fresh start.
 
-    If a [kameloso.thread.ThreadMessage.Type.quit|quit] message is received,
+    If a [kameloso.thread.ThreadMessage.MessageType.quit|quit] message is received,
     its content is returned.
 
     Returns:
-        The content of a [kameloso.thread.ThreadMessage.Type.quit|quit] message,
+        The content of a [kameloso.thread.ThreadMessage.MessageType.quit|quit] message,
         if one was received, otherwise an empty string.
  +/
 auto exhaustMessages()
@@ -840,7 +846,7 @@ auto exhaustMessages()
         receivedSomething = receiveTimeout(almostInstant,
             (ThreadMessage message) scope
             {
-                if (message.type == ThreadMessage.Type.quit)
+                if (message.type == ThreadMessage.MessageType.quit)
                 {
                     quitMessage = message.content;
                 }

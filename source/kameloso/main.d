@@ -240,11 +240,11 @@ void messageFiber(Kameloso instance)
 
         /++
             Handle [kameloso.thread.ThreadMessage]s based on their
-            [kameloso.thread.ThreadMessage.Type|Type]s.
+            [kameloso.thread.ThreadMessage.MessageType|MessageType]s.
          +/
         void onThreadMessage(ThreadMessage message) scope
         {
-            with (ThreadMessage.Type)
+            with (ThreadMessage.MessageType)
             final switch (message.type)
             {
             case pong:
@@ -459,7 +459,7 @@ void messageFiber(Kameloso instance)
             case teardown:
                 import lu.conv : Enum;
                 enum pattern = "onThreadMessage received unexpected message type: <l>%s";
-                logger.errorf(pattern, Enum!(ThreadMessage.Type).toString(message.type));
+                logger.errorf(pattern, Enum!(ThreadMessage.MessageType).toString(message.type));
                 break;
             }
         }
@@ -4079,7 +4079,7 @@ auto checkInitialisationMessages(
 
         void onThreadMessage(ThreadMessage message) scope
         {
-            with (ThreadMessage.Type)
+            with (ThreadMessage.MessageType)
             switch (message.type)
             {
             case popCustomSetting:
@@ -4117,7 +4117,7 @@ auto checkInitialisationMessages(
                     "received unexpected message type: <t>%s";
                 logger.errorf(
                     pattern,
-                    Enum!(ThreadMessage.Type).toString(message.type));
+                    Enum!(ThreadMessage.MessageType).toString(message.type));
                 halt = true;
                 break;
             }

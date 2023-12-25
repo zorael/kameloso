@@ -1110,7 +1110,7 @@ void askToOutputImpl(string askVerb)(IRCPluginState state, const string line)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
-    mixin("state.mainThread.send(ThreadMessage(ThreadMessage.Type." ~ askVerb ~ ", line));");
+    mixin("state.mainThread.send(ThreadMessage(ThreadMessage.MessageType." ~ askVerb ~ ", line));");
 }
 
 
@@ -1210,7 +1210,7 @@ unittest
     state.askToCritical("critical");
     state.askToWriteln("writeln");
 
-    alias T = ThreadMessage.Type;
+    alias T = ThreadMessage.MessageType;
 
     static immutable T[7] expectedLevels =
     [
@@ -1247,7 +1247,8 @@ unittest
         cast(void)receiveTimeout(Duration.zero,
             (ThreadMessage message)
             {
-                assert((message.type == expectedLevels[i]), Enum!(ThreadMessage.Type).toString(message.type));
+                assert((message.type == expectedLevels[i]),
+                    Enum!(ThreadMessage.MessageType).toString(message.type));
                 assert((message.content == expectedMessages[i]), message.content);
             },
             (Variant _)

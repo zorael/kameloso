@@ -344,7 +344,7 @@ void persistentQuerier(
 
     void onMessage(ThreadMessage message) scope
     {
-        halt = (message.type == ThreadMessage.Type.teardown);
+        halt = (message.type == ThreadMessage.MessageType.teardown);
     }
 
     void onOwnerTerminated(OwnerTerminated _) scope
