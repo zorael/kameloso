@@ -1100,17 +1100,17 @@ alias immediateline = immediate;
     terminal, instead of doing it directly.
 
     Params:
-        logLevel = The [kameloso.logger.LogLevel|LogLevel] at which to log the message.
+        askVerb = An `askToX` string verb where `X` corresponds to the
+            [kameloso.logger.LogLevel|LogLevel] at which to log the message.
         state = Current [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             used to send the concurrency message to the main thread.
         line = The text body to ask the main thread to display.
  +/
-void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
+void askToOutputImpl(string askVerb)(IRCPluginState state, const string line)
 {
-    import kameloso.thread : OutputRequest;
-    import std.concurrency : prioritySend;
-
-    mixin("state.mainThread.prioritySend(OutputRequest(OutputRequest.Level.", logLevel, ", line));");
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : send;
+    mixin("state.mainThread.send(ThreadMessage(ThreadMessage.Type." ~ askVerb ~ ", line));");
 }
 
 
@@ -1123,49 +1123,56 @@ void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
  +/
 static if (__VERSION__ >= 2099L)
 {
-    private import kameloso.thread : OutputRequest;
-    private import std.string : capitalize;
-    private import std.traits : EnumMembers;
+    private import std.meta : AliasSeq;
 
-    static foreach (immutable member; EnumMembers!(OutputRequest.Level))
+    private alias askLevels = AliasSeq!(
+        "askToTrace",
+        "askToLog",
+        "askToInfo",
+        "askToWarn",
+        "askToError",
+        "askToCritical",
+        "askToFatal",
+        "askToWriteln",
+    );
+
+    static foreach (immutable askVerb; askLevels)
     {
         mixin(
 `
+        private import kameloso.thread : ThreadMessage;
+
         /++
-            Sends a concurrency message to the main thread to [KamelosoLogger.trace] text to the local terminal.
+            Sends a concurrency message to the main thread to print text using
+            the [KamelosoLogger] to the local terminal.
          +/
-        alias askTo` ~ __traits(identifier, member).capitalize ~ ` =
-            askToOutputImpl!"` ~ __traits(identifier, member) ~ `";
+        alias ` ~ askVerb ~ ` = askToOutputImpl!"` ~ askVerb ~ `";
 `);
     }
 
     /++
         Simple alias to [askToWarn], because both spellings are right.
      +/
-    alias askToWarn = askToWarning;
+    alias askToWarning = askToWarn;
 }
 else
 {
     /++
-        Sends a concurrency message to the main thread asking to print text to the local terminal.
-     +/
-    alias askToWriteln = askToOutputImpl!"writeln";
-    /++
         Sends a concurrency message to the main thread to [KamelosoLogger.trace] text to the local terminal.
      +/
-    alias askToTrace = askToOutputImpl!"trace";
+    alias askToTrace = askToOutputImpl!"askToTrace";
     /++
         Sends a concurrency message to the main thread to [KamelosoLogger.log] text to the local terminal.
      +/
-    alias askToLog = askToOutputImpl!"log";
+    alias askToLog = askToOutputImpl!"askToLog";
     /++
         Sends a concurrency message to the main thread to [KamelosoLogger.info] text to the local terminal.
      +/
-    alias askToInfo = askToOutputImpl!"info";
+    alias askToInfo = askToOutputImpl!"askToInfo";
     /++
         Sends a concurrency message to the main thread to [KamelosoLogger.warning] text to the local terminal.
      +/
-    alias askToWarn = askToOutputImpl!"warning";
+    alias askToWarn = askToOutputImpl!"askToWarn";
     /++
         Simple alias to [askToWarn], because both spellings are right.
      +/
@@ -1173,54 +1180,60 @@ else
     /++
         Sends a concurrency message to the main thread to [KamelosoLogger.error] text to the local terminal.
      +/
-    alias askToError = askToOutputImpl!"error";
+    alias askToError = askToOutputImpl!"askToError";
     /++
         Sends a concurrency message to the main thread to [KamelosoLogger.critical] text to the local terminal.
      +/
-    alias askToCritical = askToOutputImpl!"critical";
+    alias askToCritical = askToOutputImpl!"askToCritical";
     /++
         Sends a concurrency message to the main thread to [KamelosoLogger.fatal] text to the local terminal.
      +/
-    alias askToFatal = askToOutputImpl!"fatal";
+    alias askToFatal = askToOutputImpl!"askToFatal";
+    /++
+        Sends a concurrency message to the main thread asking to print text to the local terminal.
+     +/
+    alias askToWriteln = askToOutputImpl!"askToWriteln";
 }
 
 unittest
 {
-    import kameloso.thread : OutputRequest;
+    import kameloso.thread : ThreadMessage;
 
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    state.askToWriteln("writeln");
     state.askToTrace("trace");
     state.askToLog("log");
     state.askToInfo("info");
     state.askToWarn("warning");
     state.askToError("error");
     state.askToCritical("critical");
+    state.askToWriteln("writeln");
 
-    alias T = OutputRequest.Level;
+    alias T = ThreadMessage.Type;
 
     static immutable T[7] expectedLevels =
     [
-        T.writeln,
-        T.trace,
-        T.log,
-        T.info,
-        T.warning,
-        T.error,
-        T.critical,
+        T.askToTrace,
+        T.askToLog,
+        T.askToInfo,
+        T.askToWarn,
+        T.askToError,
+        T.askToCritical,
+        //T.askToFatal,
+        T.askToWriteln,
     ];
 
     static immutable string[7] expectedMessages =
     [
-        "writeln",
         "trace",
         "log",
         "info",
         "warning",
         "error",
         "critical",
+        //"fatal",
+        "writeln",
     ];
 
     static assert(expectedLevels.length == expectedMessages.length);
@@ -1232,10 +1245,10 @@ unittest
         import core.time : Duration;
 
         cast(void)receiveTimeout(Duration.zero,
-            (OutputRequest request)
+            (ThreadMessage message)
             {
-                assert((request.logLevel == expectedLevels[i]), request.logLevel.to!string);
-                assert((request.line == expectedMessages[i]), request.line);
+                assert((message.type == expectedLevels[i]), Enum!(ThreadMessage.Type).toString(message.type));
+                assert((message.content == expectedMessages[i]), message.content);
             },
             (Variant _)
             {

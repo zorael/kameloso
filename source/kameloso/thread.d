@@ -8,7 +8,7 @@
 
     mainThread.send(ThreadMessage.sendline("Message to send to server"));
     mainThread.send(ThreadMessage.pong("irc.libera.chat"));
-    mainThread.send(OutputRequest(ThreadMessage.TerminalOutput.writeln, "writeln this for me please"));
+    mainThread.send(ThreadMessage.askToWriteln("writeln this for me please"));
     mainThread.send(ThreadMessage.busMessage("header", boxed("payload")));
 
     auto fiber = new CarryingFiber!string(&someDelegate, BufferSize.fiberStack);
@@ -289,6 +289,53 @@ struct ThreadMessage
             associative array.
          +/
         putUser,
+
+        /++
+            Request to print a message using the [kameloso.logger.KamelosoLogger|KamelosoLogger]
+            at a level of [kameloso.logger.LogLevel.trace|trace].
+         +/
+        askToTrace,
+
+        /++
+            Request to print a message using the [kameloso.logger.KamelosoLogger|KamelosoLogger]
+            at a level of [kameloso.logger.LogLevel.all|all] (log).
+         +/
+        askToLog,
+
+        /++
+            Request to print a message using the [kameloso.logger.KamelosoLogger|KamelosoLogger]
+            at a level of [kameloso.logger.LogLevel.info|info].
+         +/
+        askToInfo,
+
+        /++
+            Request to print a message using the [kameloso.logger.KamelosoLogger|KamelosoLogger]
+            at a level of [kameloso.logger.LogLevel.warning|warning].
+         +/
+        askToWarn,
+
+        /++
+            Request to print a message using the [kameloso.logger.KamelosoLogger|KamelosoLogger]
+            at a level of [kameloso.logger.LogLevel.error|error].
+         +/
+        askToError,
+
+        /++
+            Request to print a message using the [kameloso.logger.KamelosoLogger|KamelosoLogger]
+            at a level of [kameloso.logger.LogLevel.critical|critical].
+         +/
+        askToCritical,
+
+        /++
+            Request to print a message using the [kameloso.logger.KamelosoLogger|KamelosoLogger]
+            at a level of [kameloso.logger.LogLevel.fatal|fatal].
+         +/
+        askToFatal,
+
+        /++
+            Request to print a message using [std.stdio.writeln|writeln].
+         +/
+        askToWriteln,
     }
 
     /++
@@ -332,47 +379,6 @@ struct ThreadMessage
     {
         mixin("return ThreadMessage(Type." ~ memberstring ~ ", content, payload, quiet);");
     }
-}
-
-
-// OutputRequest
-/++
-    Embodies the notion of a request to output something to the local terminal.
-
-    Merely bundles a [OutputRequest.Level|Level] log level and
-    a `string` message line. What log level is picked decides what log level is
-    passed to the [kameloso.logger.KamelosoLogger|KamelosoLogger] instance, and
-    dictates things like what colour to tint the message with (if any).
- +/
-struct OutputRequest
-{
-    /++
-        Output log levels.
-
-        See_Also:
-            [kameloso.logger.LogLevel]
-     +/
-    enum Level
-    {
-        writeln,    /// writeln the line.
-        trace,      /// Log at [kameloso.logger.LogLevel.trace].
-        log,        /// Log at [kameloso.logger.LogLevel.all] (log).
-        info,       /// Log at [kameloso.logger.LogLevel.info].
-        warning,    /// Log at [kameloso.logger.LogLevel.warning].
-        error,      /// Log at [kameloso.logger.LogLevel.error].
-        critical,   /// Log at [kameloso.logger.LogLevel.critical].
-        fatal,      /// Log at [kameloso.logger.LogLevel.fatal].
-    }
-
-    /++
-        Log level of the message.
-     +/
-    Level logLevel;
-
-    /++
-        String line to request to be output to the local terminal.
-     +/
-    string line;
 }
 
 

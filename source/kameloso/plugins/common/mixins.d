@@ -953,7 +953,7 @@ unittest
                     "dialect",
                     "kameloso",
                     "Message") ||
-                funstring.startsWith("askTo"))
+                funstring.startsWith("ask"))
             {
                 //pragma(msg, "ignoring " ~ funstring);
             }

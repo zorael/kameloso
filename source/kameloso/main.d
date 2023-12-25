@@ -229,7 +229,7 @@ void messageFiber(Kameloso instance)
     import kameloso.constants : Timeout;
     import kameloso.messaging : Message;
     import kameloso.string : replaceTokens;
-    import kameloso.thread : OutputRequest, ThreadMessage;
+    import kameloso.thread : ThreadMessage;
     import std.concurrency : yield;
     import core.time : Duration, MonoTime, msecs;
 
@@ -245,7 +245,7 @@ void messageFiber(Kameloso instance)
         void onThreadMessage(ThreadMessage message) scope
         {
             with (ThreadMessage.Type)
-            switch (message.type)
+            final switch (message.type)
             {
             case pong:
                 /+
@@ -419,13 +419,47 @@ void messageFiber(Kameloso instance)
                 }
                 break;
 
-            default:
-                import lu.conv : Enum;
-                import std.stdio : stdout;
+            case askToTrace:
+                logger.trace(message.content);
+                break;
 
+            case askToLog:
+                logger.log(message.content);
+                break;
+
+            case askToInfo:
+                logger.info(message.content);
+                break;
+
+            case askToWarn:
+                logger.warning(message.content);
+                break;
+
+            case askToError:
+                logger.error(message.content);
+                break;
+
+            case askToCritical:
+                logger.critical(message.content);
+                break;
+
+            case askToFatal:
+                logger.fatal(message.content);
+                break;
+
+            case askToWriteln:
+                import kameloso.logger : LogLevel;
+                import kameloso.terminal.colours.tags : expandTags;
+                import std.stdio : stdout, writeln;
+
+                writeln(message.content.expandTags(LogLevel.off));
+                if (instance.settings.flush) stdout.flush();
+                break;
+
+            case teardown:
+                import lu.conv : Enum;
                 enum pattern = "onThreadMessage received unexpected message type: <l>%s";
                 logger.errorf(pattern, Enum!(ThreadMessage.Type).toString(message.type));
-                if (instance.settings.flush) stdout.flush();
                 break;
             }
         }
@@ -722,55 +756,6 @@ void messageFiber(Kameloso instance)
         }
 
         /++
-            Proxies the passed message to the [kameloso.logger.logger].
-         +/
-        void proxyLoggerMessages(OutputRequest request) scope
-        {
-            if (instance.settings.headless) return;
-
-            with (OutputRequest.Level)
-            final switch (request.logLevel)
-            {
-            case writeln:
-                import kameloso.logger : LogLevel;
-                import kameloso.terminal.colours.tags : expandTags;
-                import std.stdio : stdout, writeln;
-
-                writeln(request.line.expandTags(LogLevel.off));
-                if (instance.settings.flush) stdout.flush();
-                break;
-
-            case trace:
-                logger.trace(request.line);
-                break;
-
-            case log:
-                logger.log(request.line);
-                break;
-
-            case info:
-                logger.info(request.line);
-                break;
-
-            case warning:
-                logger.warning(request.line);
-                break;
-
-            case error:
-                logger.error(request.line);
-                break;
-
-            case critical:
-                logger.critical(request.line);
-                break;
-
-            case fatal:
-                logger.fatal(request.line);
-                break;
-            }
-        }
-
-        /++
             Timestamp of when the loop started.
          +/
         immutable loopStartTime = MonoTime.currTime;
@@ -787,7 +772,6 @@ void messageFiber(Kameloso instance)
             immutable receivedSomething = receiveTimeout(Duration.zero,
                 &onThreadMessage,
                 &eventToServer,
-                &proxyLoggerMessages,
                 (Variant v) scope
                 {
                     // Caught an unhandled message
