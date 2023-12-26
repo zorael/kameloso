@@ -111,6 +111,7 @@ your <w>BOT</> account.
         //"user:read:follows",
         //"user:read:subscriptions"
         //"user:edit:broadcast",    // removed/undocumented? implied user:read:broadcast
+        "user:manage:whispers",
 
         // Twitch APIv5
         // --------------------------
