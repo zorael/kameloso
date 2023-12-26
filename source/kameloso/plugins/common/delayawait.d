@@ -132,6 +132,7 @@ in ((dg !is null), "Tried to delay a null delegate")
     so that the main loop knows when to process the array of [core.thread.fiber.Fiber|Fiber]s.
 
     Do not destroy and free the removed [core.thread.fiber.Fiber|Fiber], as it may be reused.
+    Simply `null` out the [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
@@ -144,24 +145,12 @@ in ((dg !is null), "Tried to delay a null delegate")
 void undelay(IRCPlugin plugin, Fiber fiber)
 in ((fiber !is null), "Tried to remove a delayed null Fiber")
 {
-    import std.algorithm.mutation : SwapStrategy, remove;
-
-    size_t[] toRemove;
-
-    foreach (immutable i, scheduledFiber; plugin.state.scheduledFibers)
+    foreach (ref scheduledFiber; plugin.state.scheduledFibers)
     {
         if (scheduledFiber.fiber is fiber)
         {
-            toRemove ~= i;
+            scheduledFiber.fiber = null;
         }
-    }
-
-    if (!toRemove.length) return;
-
-    foreach_reverse (immutable i; toRemove)
-    {
-        plugin.state.scheduledFibers = plugin.state.scheduledFibers
-            .remove!(SwapStrategy.unstable)(i);
     }
 
     plugin.state.updateSchedule();

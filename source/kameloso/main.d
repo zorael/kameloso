@@ -2008,8 +2008,10 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         }
         finally
         {
-            // destroy the Fiber if it has ended
-            if (scheduledFiber.fiber.state == Fiber.State.TERM)
+            // destroy the Fiber if it has ended UNLESS it was undelayed
+            // (in which case .fiber is null and we would segfault)
+            if (scheduledFiber.fiber &&
+                (scheduledFiber.fiber.state == Fiber.State.TERM))
             {
                 destroy(scheduledFiber.fiber);
                 scheduledFiber.fiber = null;  // needs ref
