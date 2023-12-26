@@ -414,7 +414,7 @@ final class Boxed(T) : Sendable
         Constructor that adds a passed payload to the internal stored [payload],
         creating a *shared* `Boxed`.
      +/
-    this(T payload) shared pure @safe nothrow @nogc
+    this(T payload) shared pure /*@safe*/ nothrow @nogc
     {
         this.payload = cast(shared)payload;
     }
