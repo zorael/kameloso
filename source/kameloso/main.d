@@ -2176,6 +2176,40 @@ void processPendingReplays(Kameloso instance, IRCPlugin plugin)
 }
 
 
+/+
+    These versions must be placed at the top level. They are used to determine
+    if one or more plugins request a specific feature, and if so, whether they
+    should be supported in [processSpecialRequests].
+
+ +/
+version(WantGetSetSettingHandlers)
+{
+    version = WantGetSettingHandler;
+    version = WantSetSettingHandler;
+}
+
+version(WithAdminPlugin)
+{
+    version = WantGetSettingHandler;
+    version = WantSetSettingHandler;
+}
+
+version(WithHelpPlugin)
+{
+    version = WantPeekCommandsHandler;
+}
+
+version(WithCounterPlugin)
+{
+    version = WantPeekCommandsHandler;
+}
+
+version(WithOnelinerPlugin)
+{
+    version = WantPeekCommandsHandler;
+}
+
+
 // processSpecialRequests
 /++
     Iterates through a plugin's array of [kameloso.plugins.common.core.SpecialRequest|SpecialRequest]s.
@@ -2220,44 +2254,7 @@ void processSpecialRequests(Kameloso instance, IRCPlugin plugin)
             request = null;
         }
 
-        version(WantGetSetSettingHandlers)
-        {
-            enum wantGetSettingHandler = true;
-            enum wantSetSettingHandler = true;
-        }
-        else version(WithAdminPlugin)
-        {
-            enum wantGetSettingHandler = true;
-            enum wantSetSettingHandler = true;
-        }
-        else
-        {
-            enum wantGetSettingHandler = false;
-            enum wantSetSettingHandler = false;
-        }
-
         version(WantPeekCommandsHandler)
-        {
-            enum wantPeekCommandsHandler = true;
-        }
-        else version(WithHelpPlugin)
-        {
-            enum wantPeekCommandsHandler = true;
-        }
-        else version(WithCounterPlugin)
-        {
-            enum wantPeekCommandsHandler = true;
-        }
-        else version(WithOnelinerPlugin)
-        {
-            enum wantPeekCommandsHandler = true;
-        }
-        else
-        {
-            enum wantPeekCommandsHandler = false;
-        }
-
-        static if (wantPeekCommandsHandler)
         {
             alias PeekCommandsPayload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
 
@@ -2285,7 +2282,7 @@ void processSpecialRequests(Kameloso instance, IRCPlugin plugin)
             }
         }
 
-        static if (wantGetSettingHandler)
+        version(WantGetSettingHandler)
         {
             alias GetSettingPayload = Tuple!(string, string, string);
 
@@ -2390,7 +2387,7 @@ void processSpecialRequests(Kameloso instance, IRCPlugin plugin)
             }
         }
 
-        static if (wantSetSettingHandler)
+        version(WantSetSettingHandler)
         {
             alias SetSettingPayload = Tuple!(bool);
 
