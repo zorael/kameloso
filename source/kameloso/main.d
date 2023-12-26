@@ -509,14 +509,12 @@ void messageFiber(Kameloso instance)
                 {
                     if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
                     {
-                        /*if (m.event.target.nickname == instance.parser.client.nickname)
-                        {
-                            // "You cannot whisper to yourself." (whisper_invalid_self)
-                            return;
-                        }*/
-
-                        enum pattern = "PRIVMSG #%s :/w %s ";
-                        prelude = pattern.format(instance.parser.client.nickname, m.event.target.nickname);
+                        enum message = "Tried to send a Twitch whisper " ~
+                            "but Twitch now requires them to be made through API calls.";
+                        enum pattern = "--> [<l>%s</>] %s";
+                        logger.error(message);
+                        logger.errorf(pattern, m.event.target.nickname, m.event.content);
+                        return;
                     }
                 }
 
