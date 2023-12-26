@@ -884,11 +884,10 @@ auto mainLoop(Kameloso instance)
 
         if (buffersHaveMessages)
         {
-            immutable untilNext = sendLines(instance);
-
-            if (untilNext > 0.0)
+            immutable untilNextSeconds = sendLines(instance);
+            if (untilNextSeconds > 0.0)
             {
-                timeoutFromMessages = cast(uint)(untilNext * 1000);
+                timeoutFromMessages = cast(uint)(untilNextSeconds * 1000);
             }
         }
     }
@@ -1173,7 +1172,8 @@ auto mainLoop(Kameloso instance)
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
-        How many milliseconds until the next message in the buffers should be sent.
+        A `double` of how many seconds until the next message in the buffers should be sent.
+        If `0.0`, the buffer was emptied.
  +/
 auto sendLines(Kameloso instance)
 {
@@ -1188,32 +1188,32 @@ auto sendLines(Kameloso instance)
 
     if (!instance.priorityBuffer.empty)
     {
-        immutable untilNext = instance.throttleline(instance.priorityBuffer);
-        if (untilNext > 0.0) return untilNext;
+        immutable untilNextSeconds = instance.throttleline(instance.priorityBuffer);
+        if (untilNextSeconds > 0.0) return untilNextSeconds;
     }
 
     version(TwitchSupport)
     {
         if (!instance.fastbuffer.empty)
         {
-            immutable untilNext = instance.throttleline(
+            immutable untilNextSeconds = instance.throttleline(
                 instance.fastbuffer,
                 No.dryRun,
                 Yes.sendFaster);
-            if (untilNext > 0.0) return untilNext;
+            if (untilNextSeconds > 0.0) return untilNextSeconds;
         }
     }
 
     if (!instance.outbuffer.empty)
     {
-        immutable untilNext = instance.throttleline(instance.outbuffer);
-        if (untilNext > 0.0) return untilNext;
+        immutable untilNextSeconds = instance.throttleline(instance.outbuffer);
+        if (untilNextSeconds > 0.0) return untilNextSeconds;
     }
 
     if (!instance.backgroundBuffer.empty)
     {
-        immutable untilNext = instance.throttleline(instance.backgroundBuffer);
-        if (untilNext > 0.0) return untilNext;
+        immutable untilNextSeconds = instance.throttleline(instance.backgroundBuffer);
+        if (untilNextSeconds > 0.0) return untilNextSeconds;
     }
 
     return 0.0;
