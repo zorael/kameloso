@@ -3674,7 +3674,7 @@ auto startBot(Kameloso instance)
                 import std.conv : to;
                 import std.process : execute, thisProcessID;
                 import std.stdio : writeln;
-                import std.string : chomp;
+                import std.string : chomp, stdout;
 
                 immutable dumpCommand =
                 [
@@ -3686,6 +3686,7 @@ auto startBot(Kameloso instance)
                 logger.info("$ callgrind_control -d ", thisProcessID);
                 immutable result = execute(dumpCommand);
                 writeln(result.output.chomp);
+                if (instance.settings.flush) stdout.flush();
                 instance.callgrindRunning = !result.output.startsWith("Error: Callgrind task with PID");
             }
 
