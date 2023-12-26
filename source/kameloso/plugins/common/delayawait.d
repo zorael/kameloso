@@ -177,14 +177,15 @@ in (Fiber.getThis, "Tried to call `undelay` from outside a Fiber")
 
 // undelay
 /++
-    Removes a `void delegate()` delegate from being called at any point later.
+    Removes a `void delegate()` delegate from being called at any point later
+    by nulling it.
 
     Updates the `nextScheduledTimestamp` UNIX timestamp so that the main loop knows
     when to process the array of delegates.
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
-        dg = Delegate to dequeue from being executed at a later point in time.
+        dg = Delegate to exempt from being executed at a later point in time.
 
     See_Also:
         [delay]
@@ -192,24 +193,12 @@ in (Fiber.getThis, "Tried to call `undelay` from outside a Fiber")
 void undelay(IRCPlugin plugin, void delegate() dg)
 in ((dg !is null), "Tried to remove a delayed null delegate")
 {
-    import std.algorithm.mutation : SwapStrategy, remove;
-
-    size_t[] toRemove;
-
-    foreach (immutable i, scheduledDg; plugin.state.scheduledDelegates)
+    foreach (ref scheduledDg; plugin.state.scheduledDelegates)
     {
         if (scheduledDg.dg is dg)
         {
-            toRemove ~= i;
+            scheduledDg.dg = null;
         }
-    }
-
-    if (!toRemove.length) return;
-
-    foreach_reverse (immutable i; toRemove)
-    {
-        plugin.state.scheduledDelegates = plugin.state.scheduledDelegates
-            .remove!(SwapStrategy.unstable)(i);
     }
 
     plugin.state.updateSchedule();
