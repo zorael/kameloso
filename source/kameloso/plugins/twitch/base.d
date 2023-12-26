@@ -4202,7 +4202,7 @@ void onBusMessage(
                     import core.time : msecs;
 
                     immutable untilNextSeconds = plugin.throttleline(plugin.whisperBuffer);
-                    if (plugin.whisperBuffer.empty) return;
+                    if (untilNextSeconds == 0.0) return;
 
                     immutable untilNextMsecs = cast(uint)(untilNextSeconds * 1000);
                     delay(plugin, untilNextMsecs.msecs, Yes.yield);
