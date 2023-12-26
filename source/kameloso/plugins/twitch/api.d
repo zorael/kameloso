@@ -136,7 +136,7 @@ in ((!async || Fiber.getThis), "Tried to call async `retryDelegate` from outside
         }
         catch (EmptyDataJSONException e)
         {
-            // Should be transient?
+            // Should never be transient?
             throw e;
         }
         catch (Exception e)

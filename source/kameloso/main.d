@@ -742,6 +742,7 @@ void messageFiber(Kameloso instance)
                         text('@', m.event.tags, ' ', prelude, splitLine) :
                         text(prelude, splitLine);
                     appropriateline(finalLine);
+                    lines[i] = string.init;
                 }
             }
             else if (line.length)
