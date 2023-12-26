@@ -193,6 +193,11 @@ unittest
     Replies to a message in a Twitch channel. Requires version `TwitchSupport`,
     without which it will just pass on to [chan].
 
+    If an [dialect.defs.IRCEvent|IRCEvent] of type [dialect.defs.IRCEvent.Type.QUERY|QUERY]
+    is passed *and* we're connected to a Twitch server *and* the
+    [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin] is compiled in,
+    it will send a bus message to have the reply be sent as a whisper instead.
+
     Params:
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
@@ -210,50 +215,95 @@ void reply(
     const string caller = __FUNCTION__)
 in (event.channel.length, "Tried to reply to a channel message but no channel was given")
 {
-    version(TwitchSupport)
+    /++
+        Just pass it onto [privmsg].
+     +/
+    void sendNormally()
     {
-        if ((state.server.daemon != IRCServer.Daemon.twitch) || !event.id.length)
-        {
-            return chan(
-                state,
-                event.channel,
-                content,
-                properties,
-                caller);
-        }
-
-        Message m;
-
-        m.event.type = IRCEvent.Type.CHAN;
-        m.event.channel = event.channel;
-        m.event.content = content.expandIRCTags;
-        m.event.tags = "reply-parent-msg-id=" ~ event.id;
-        m.properties = properties;
-        m.caller = caller;
-
-        if (auto channel = m.event.channel in state.channels)
-        {
-            if (auto ops = 'o' in channel.mods)
-            {
-                if (state.client.nickname in *ops)
-                {
-                    // We are a moderator and can as such send things fast
-                    m.properties |= Message.Property.fast;
-                }
-            }
-        }
-
-        if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-        else state.mainThread.send(m);
-    }
-    else
-    {
-        return chan(
+        privmsg(
             state,
             event.channel,
+            event.sender.nickname,
             content,
             properties,
             caller);
+    }
+
+    version(TwitchSupport)
+    {
+        import kameloso.common : logger;
+        import lu.conv : Enum;
+
+        if (state.server.daemon != IRCServer.Daemon.twitch) return sendNormally();
+
+        version(WithTwitchPlugin)
+        {
+            if (event.type == IRCEvent.Type.QUERY)
+            {
+                import kameloso.thread : boxed;
+
+                // Whisper
+                Message m;
+
+                m.event.type = IRCEvent.Type.QUERY;
+                m.event.content = content.stripIRCTags;
+                m.event.target = event.sender;
+                m.caller = caller;
+
+                if (properties & Message.Property.priority)
+                {
+                    state.mainThread.prioritySend(ThreadMessage.busMessage("twitch", boxed(m)));
+                }
+                else
+                {
+                    state.mainThread.send(ThreadMessage.busMessage("twitch", boxed(m)));
+                }
+                return;
+            }
+        }
+
+        if (event.type == IRCEvent.Type.CHAN)
+        {
+            // Channel reply
+            Message m;
+
+            m.event.type = IRCEvent.Type.CHAN;
+            m.event.channel = event.channel;
+            m.event.content = content.stripIRCTags;
+            m.event.tags = "reply-parent-msg-id=" ~ event.id;
+            m.properties = properties;
+            m.caller = caller;
+
+            if (auto channel = m.event.channel in state.channels)
+            {
+                if (auto ops = 'o' in channel.mods)
+                {
+                    if (state.client.nickname in *ops)
+                    {
+                        // We are a moderator and can as such send things fast
+                        m.properties |= Message.Property.fast;
+                    }
+                }
+            }
+
+            if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
+            else state.mainThread.send(m);
+        }
+        else if (event.type == IRCEvent.Type.QUERY)
+        {
+            // non-version WithTwitchPlugin
+            enum message = "Tried to <l>reply</> in a query but the <l>twitch</> plugin is not compiled in";
+            logger.error(message);
+        }
+        else
+        {
+            enum pattern = "Tried to <l>reply</> to an event of an unsupported type: <l>%s";
+            logger.errorf(pattern, Enum!(IRCEvent.Type).toString(event.type));
+        }
+    }
+    else
+    {
+        sendNormally();
     }
 }
 
@@ -266,6 +316,7 @@ unittest
     state.mainThread = thisTid;
 
     IRCEvent event;
+    event.type = IRCEvent.Type.CHAN;
     event.sender.nickname = "kameloso";
     event.channel = "#channel";
     event.content = "content";
