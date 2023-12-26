@@ -4642,7 +4642,8 @@ package:
     Throttle throttle;
 
     /++
-        Takes one or more lines from the passed buffer and sends them to the server.
+        Takes one or more lines from the passed buffer and sends them to the
+        server as whispers.
 
         Sends to the server in a throttled fashion, based on a simple
         `y = k*x + m` graph.
@@ -4658,6 +4659,9 @@ package:
         Returns:
             A `double` of the the time in seconds remaining until the next message
             may be sent. If `0.0`, the buffer was emptied.
+
+        See_Also:
+            [kameloso.plugins.twitch.api.sendWhisper]
      +/
     auto throttleline(Buffer)
         (ref Buffer buffer,

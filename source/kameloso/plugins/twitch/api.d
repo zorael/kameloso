@@ -2712,6 +2712,9 @@ in ((userID > 0), "Tried to timeout a user with an empty user ID string")
 /++
     Sends a whisper to a user.
 
+    The bot user sending the whisper must have a verified phone number or the
+    action will fail with a `401` response code.
+
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
