@@ -2808,6 +2808,8 @@ public:
 
         foreach (const scheduledFiber; scheduledFibers)
         {
+            if (!scheduledFiber.fiber) continue;  // undelayed
+
             if (scheduledFiber.timestamp < nextScheduledTimestamp)
             {
                 nextScheduledTimestamp = scheduledFiber.timestamp;
@@ -2816,6 +2818,8 @@ public:
 
         foreach (const scheduledDg; scheduledDelegates)
         {
+            if (!scheduledDg.dg) continue;  // ditto
+
             if (scheduledDg.timestamp < nextScheduledTimestamp)
             {
                 nextScheduledTimestamp = scheduledDg.timestamp;
