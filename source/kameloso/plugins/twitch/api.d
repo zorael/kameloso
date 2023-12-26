@@ -2706,3 +2706,143 @@ in ((userID > 0), "Tried to timeout a user with an empty user ID string")
 
     return retryDelegate(plugin, &timeoutDg);
 }
+
+
+// sendWhisper
+/++
+    Sends a whisper to a user.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        userID = Twitch ID of user to send whisper to.
+        unescapedMessage = Message to send.
+        caller = Name of the calling function.
+
+    Returns:
+        The HTTP response code received.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#send-whisper
+ +/
+auto sendWhisper(
+    TwitchPlugin plugin,
+    const uint userID,
+    const string unescapedMessage,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis, "Tried to call `sendWhisper` from outside a Fiber")
+in ((userID > 0), "Tried to send a whisper with an empty recipient ID string")
+{
+    import std.array : replace;
+    import std.format : format;
+
+    enum urlPattern = "https://api.twitch.tv/helix/whispers" ~
+        "?from_user_id=%s" ~
+        "&to_user_id=%d";
+
+    enum bodyPattern =
+`{
+    "message": "%s"
+}`;
+
+    immutable url = urlPattern.format(plugin.transient.botUserIDString, userID);
+    immutable message = unescapedMessage.replace(`"`, `\"`);  // won't work with already escaped quotes
+    immutable body_ = bodyPattern.format(message);
+
+    auto sendWhisperDg()
+    {
+        import std.json : JSONValue, parseJSON;
+        import std.stdio : writeln;
+
+        JSONValue responseJSON;
+        uint responseCode;
+
+        try
+        {
+            immutable response = sendHTTPRequest(
+                plugin,
+                url,caller,
+                plugin.transient.authorizationBearer,
+                HttpVerb.POST,
+                cast(ubyte[])body_,
+                "application/json");
+
+            responseJSON = parseJSON(response.str);
+            responseCode = response.code;
+        }
+        catch (ErrorJSONException e)
+        {
+            responseJSON = e.json;
+            responseCode = cast(uint)e.json["status"].integer;
+        }
+
+        switch (responseCode)
+        {
+        case 204:
+            // 204 No Content
+            // Successfully sent the whisper message or the message was silently dropped.
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                The ID in the from_user_id and to_user_id query parameters must be different.
+                The message field must not contain an empty string.
+                The user that you're sending the whisper to doesn't allow whisper messages
+                (see the Block Whispers from Strangers setting in your Security and Privacy settings).
+                Whisper messages may not be sent to suspended users.
+                The ID in the from_user_id query parameter is not valid.
+                The ID in the to_user_id query parameter is not valid.
+            +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The user in the from_user_id query parameter must have a verified phone number.
+                The Authorization header is required and must contain a user access token.
+                The user access token must include the user:manage:whispers scope.
+                The access token is not valid.
+                This ID in from_user_id must match the user ID in the user access token.
+                The client ID specified in the Client-Id header does not match the
+                client ID specified in the access token.
+            +/
+            goto default;
+
+        case 403:
+            // 403 Forbidden
+            /+
+                Suspended users may not send whisper messages.
+                The account that's sending the message doesn't allow sending whispers.
+            +/
+        case 404:
+            // 404 Not Found
+            /+
+                The ID in to_user_id was not found.
+            +/
+            goto default;
+
+        case 429:
+            // 429 Too Many Requests
+            /+
+                The sending user exceeded the number of whisper requests that they may make.
+
+                Rate Limits: You may whisper to a maximum of 40 unique recipients per day.
+                Within the per day limit, you may whisper a maximum of 3 whispers
+                per second and a maximum of 100 whispers per minute.
+            +/
+            goto default;
+
+        default:
+            import kameloso.common : logger;
+            enum pattern = "Failed to send whisper: <l>%s";
+            logger.errorf(pattern, responseJSON["message"].str);
+            break;
+        }
+
+        return responseCode;
+    }
+
+    return retryDelegate(plugin, &sendWhisperDg);
+}
