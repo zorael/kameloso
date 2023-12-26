@@ -240,7 +240,7 @@ in (event.channel.length, "Tried to reply to a channel message but no channel wa
         {
             if (event.type == IRCEvent.Type.QUERY)
             {
-                import kameloso.thread : boxed;
+                import kameloso.thread : ThreadMessage, boxed;
 
                 // Whisper
                 Message m;
