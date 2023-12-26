@@ -199,6 +199,7 @@ import kameloso.plugins;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : RehashingAA, logger;
 import kameloso.messaging;
+import kameloso.thread : Sendable;
 import dialect.defs;
 import std.datetime.systime : SysTime;
 import std.json : JSONValue;
@@ -4156,6 +4157,71 @@ void reload(TwitchPlugin plugin)
 }
 
 
+// onBusMessage
+/++
+    Receives a passed [kameloso.thread.Boxed|Boxed] instance with the `"twitch"`
+    header, and issues whispers based on its [kameloso.messaging.Message|Message]
+    payload.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+        header = String header describing the passed content payload.
+        content = Message content.
+ +/
+void onBusMessage(
+    TwitchPlugin plugin,
+    const string header,
+    shared Sendable content)
+{
+    import kameloso.messaging : Message;
+    import kameloso.thread : Boxed;
+
+    if (header != "twitch") return;
+
+    auto message = cast(Boxed!Message)content;
+    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    if (message.payload.event.type == IRCEvent.Type.QUERY)
+    {
+        plugin.whisperBuffer.put(message.payload);
+
+        if (!plugin.transient.whispererRunning)
+        {
+            import kameloso.constants : BufferSize;
+            import core.thread : Fiber;
+
+            void whispererDg()
+            {
+                import kameloso.plugins.common.delayawait : delay;
+
+                plugin.transient.whispererRunning = true;
+                scope(exit) plugin.transient.whispererRunning = false;
+
+                while (true)
+                {
+                    import core.time : msecs;
+
+                    immutable untilNextSeconds = plugin.throttleline(plugin.whisperBuffer);
+                    if (plugin.whisperBuffer.empty) return;
+
+                    immutable untilNextMsecs = cast(uint)(untilNextSeconds * 1000);
+                    delay(plugin, untilNextMsecs.msecs, Yes.yield);
+                }
+            }
+
+            Fiber whispererFiber = new Fiber(&whispererDg, BufferSize.fiberStack);
+            whispererFiber.call();
+        }
+    }
+    else
+    {
+        import lu.conv : Enum;
+        enum pattern = "Unknown message type <l>%s</> sent as TwitchPlugin bus message";
+        logger.errorf(Enum!(IRCEvent.Type).toString(message.payload.event.type));
+    }
+}
+
+
 public:
 
 
@@ -4167,8 +4233,10 @@ public:
 final class TwitchPlugin : IRCPlugin
 {
 private:
+    import kameloso.constants : BufferSize;
+    import kameloso.messaging : Message;
     import kameloso.terminal : TerminalToken;
-    import lu.container : CircularBuffer;
+    import lu.container : Buffer, CircularBuffer;
     import std.concurrency : Tid;
     import std.datetime.systime : SysTime;
 
@@ -4514,6 +4582,48 @@ package:
             point in saving it to disk.
          +/
         bool viewerTimesDirty;
+
+        /++
+            Whether or not a delegate sending whispers is currently running.
+         +/
+        bool whispererRunning;
+    }
+
+    /++
+        Aggregate of values and state needed to rate-limit outgoing messages.
+     +/
+    static struct Throttle
+    {
+        private import core.time : MonoTime;
+
+        /++
+            Origo of x-axis (last sent message).
+         +/
+        MonoTime t0;
+
+        /++
+            y at t0 (ergo y at x = 0, weight at last sent message).
+         +/
+        double m = 0.0;
+
+        /++
+            By how much to bump y on sent message.
+         +/
+        enum bump = 1.0;
+
+        /++
+            Don't copy this, just keep one instance.
+         +/
+        @disable this(this);
+
+        /++
+            Resets the throttle values in-place.
+         +/
+        void reset()
+        {
+            // No need to reset t0, it will just exceed burst on next throttleline
+            m = 0.0;
+        }
     }
 
     /++
@@ -4525,6 +4635,99 @@ package:
         Transient state of this [TwitchPlugin] instance.
      +/
     TransientState transient;
+
+    /++
+        The throttle instance used to rate-limit outgoing whispers.
+     +/
+    Throttle throttle;
+
+    /++
+        Takes one or more lines from the passed buffer and sends them to the server.
+
+        Sends to the server in a throttled fashion, based on a simple
+        `y = k*x + m` graph.
+
+        This is so we don't get kicked by the server for spamming, if a lot of
+        lines are to be sent at once.
+
+        Params:
+            buffer = Buffer instance.
+            immediate = Whether or not the line should just be sent straight away,
+                ignoring throttling.
+
+        Returns:
+            A `double` of the the time in seconds remaining until the next message
+            may be sent. If `0.0`, the buffer was emptied.
+     +/
+    auto throttleline(Buffer)
+        (ref Buffer buffer,
+        const Flag!"immediate" immediate = No.immediate)
+    {
+        import core.time : MonoTime;
+
+        alias t = throttle;
+
+        immutable now = MonoTime.currTime;
+        immutable k = 1.2;
+        immutable burst = 0.0;
+
+        while (!buffer.empty)
+        {
+            if (!immediate)
+            {
+                /// Position on x-axis; how many msecs have passed since last message was sent
+                immutable x = (now - t.t0).total!"msecs"/1000.0;
+                /// Value of point on line
+                immutable y = k*x + t.m;
+
+                if (y > burst)
+                {
+                    t.t0 = now;
+                    t.m = burst;
+                    // Drop down
+                }
+                else if (y < 0.0)
+                {
+                    // Not yet time, delay
+                    return -y/k;
+                }
+
+                // Record as sent and drop down to actually send
+                t.m -= Throttle.bump;
+            }
+
+            if (!this.state.settings.headless)
+            {
+                enum pattern = "--> [%s] %s";
+                logger.tracef(
+                    pattern,
+                    buffer.front.event.target.displayName,
+                    buffer.front.event.content);
+            }
+
+            immutable responseCode = sendWhisper(
+                this,
+                buffer.front.event.target.id,
+                buffer.front.event.content,
+                buffer.front.caller);
+
+            version(none)
+            if (responseCode == 429)
+            {
+                import kameloso.plugins.common.delayawait : delay;
+                import core.time : seconds;
+
+                // 429 Too Many Requests
+                // rate limited; delay and try again without popping?
+                delay(plugin, 10.seconds, Yes.yield);
+                continue;
+            }
+
+            buffer.popFront();
+        }
+
+        return 0.0;
+    }
 
     /++
         Array of active bot channels' state.
@@ -4626,6 +4829,11 @@ package:
         Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
      +/
     RehashingAA!(string, long)[string] ecount;
+
+    /++
+        Buffer of messages to send as whispers.
+     +/
+    Buffer!(Message, No.dynamic, BufferSize.outbuffer) whisperBuffer;
 
     // isEnabled
     /++
