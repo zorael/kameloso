@@ -892,8 +892,8 @@ void assertMultilineOpEquals(
                 string.init;
             immutable arrow = text(' '.repeat(linePos-1), '^');
 
-            enum pattern =
-`Line mismatch at %s:%d, block %d:%d; expected %s%s was %s%s
+            enum pattern = `
+Line mismatch at %s:%d, block %d:%d; expected %s%s was %s%s
 expected:"%s"
   actual:"%s"
           %s`;
