@@ -618,7 +618,7 @@ void onISUPPORT(PrinterPlugin plugin)
     import kameloso.common : logger;
     import lu.conv : Enum;
 
-    if (!plugin.transient.printedISUPPORT &&
+    if (plugin.transient.printedISUPPORT ||
         !plugin.state.server.network.length)
     {
         // We already printed this information, or we haven't yet seen NETWORK
