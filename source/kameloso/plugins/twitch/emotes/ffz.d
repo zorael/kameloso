@@ -42,7 +42,7 @@ void getFFZEmotes(
     ref bool[dstring] emoteMap,
     const string idString,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
 in (idString.length, "Tried to get FFZ emotes with an empty ID string")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
@@ -220,7 +220,7 @@ void getFFZEmotesGlobal(
     ref bool[dstring] emoteMap,
     const string _ = string.init,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
     import kameloso.plugins.twitch.common : UnexpectedJSONException;

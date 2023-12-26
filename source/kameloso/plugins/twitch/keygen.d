@@ -523,7 +523,7 @@ private auto buildAuthNodeURL(const string authNode, const string[] scopes)
         A [std.datetime.systime.SysTime|SysTime] of when the passed token expires.
  +/
 auto getTokenExpiry(TwitchPlugin plugin, const string authToken)
-in (Fiber.getThis, "Tried to call `getTokenExpiry` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getTokenExpiry` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : getValidation;
     import std.datetime.systime : Clock, SysTime;

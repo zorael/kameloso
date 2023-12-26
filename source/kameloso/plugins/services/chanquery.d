@@ -104,7 +104,8 @@ void startChannelQueries(ChanQueryService service)
     // Continue anyway if eagerLookups
     if (!querylist.length && !service.state.settings.eagerLookups) return;
 
-    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+    auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+    assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
     service.transient.querying = true;  // "Lock"
 
     scope(exit)
@@ -361,13 +362,13 @@ void startChannelQueries(ChanQueryService service)
 
             default:
                 import lu.conv : Enum;
-                immutable message = "Unexpected event type triggered query Fiber: " ~
+                immutable message = "Unexpected event type triggered query fiber: " ~
                     "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(thisFiber.payload.type) ~ '`';
                 assert(0, message);
             }
         }
 
-        assert(0, "Escaped `while (true)` loop in query Fiber delegate");
+        assert(0, "Escaped `while (true)` loop in query fiber delegate");
     }
 }
 
@@ -502,7 +503,7 @@ private:
     static struct TransientState
     {
         /++
-            Whether or not a channel query Fiber is running.
+            Whether or not a channel query fiber is running.
          +/
         bool querying;
 

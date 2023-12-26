@@ -104,7 +104,7 @@ public:
     RehashingAA!(string, string) votes;
 
     /++
-        Unique identifier to help Fibers know if the poll they belong to is stale
+        Unique identifier to help fibers know if the poll they belong to is stale
         or has been replaced.
      +/
     uint uniqueID;
@@ -463,12 +463,12 @@ auto getPollChoices(
 
 // generatePollFiber
 /++
-    Implementation function for generating a poll Fiber.
+    Implementation function for generating a poll fiber.
 
     Params:
         plugin = The current [PollPlugin].
         channelName = Name of the channel the poll belongs to.
-        poll = The [Poll] to generate a Fiber for.
+        poll = The [Poll] to generate a fiber for.
  +/
 void generatePollFiber(
     PollPlugin plugin,
@@ -516,15 +516,15 @@ void generatePollFiber(
             auto currentPoll = channelName in plugin.channelPolls;
             if (!currentPoll || (currentPoll.uniqueID != poll.uniqueID)) return;
 
-            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+            auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+            assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
             immutable thisEvent = thisFiber.payload;
 
             if (!thisEvent.sender.nickname.length) // == IRCEvent.init
             {
                 // Invoked by timer, not by event
                 // Should never happen now
-                logger.error("Poll Fiber invoked via delay");
+                logger.error("Poll fiber invoked via delay");
                 Fiber.yield();
                 continue;
             }
@@ -741,7 +741,7 @@ void reportStatus(
 
 // generateVoteReminders
 /++
-    Generates some vote reminder Fibers.
+    Generates some vote reminder fibers.
 
     Params:
         plugin = The current [PollPlugin].
@@ -848,12 +848,12 @@ void generateVoteReminders(
 
 // generateEndFiber
 /++
-    Generates a Fiber that ends a poll, reporting end results and cleaning up.
+    Generates a fiber that ends a poll, reporting end results and cleaning up.
 
     Params:
         plugin = The current [PollPlugin].
         channelName = The channel the poll belongs to.
-        poll = [Poll] to generate end Fiber for.
+        poll = [Poll] to generate end fiber for.
  +/
 void generateEndFiber(
     PollPlugin plugin,
@@ -883,8 +883,8 @@ void generateEndFiber(
 
         while (true)
         {
-            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+            auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+            assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
             if (thisFiber.payload.channel == channelName)
             {

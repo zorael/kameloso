@@ -664,7 +664,7 @@ public:
 
                 foreach (ref scheduledFiber; plugin.state.scheduledFibers)
                 {
-                    // All Fibers should be at HOLD state but be conservative
+                    // All fibers should be at HOLD state but be conservative
                     if (scheduledFiber.fiber.state != Fiber.State.EXEC)
                     {
                         destroy(scheduledFiber.fiber);

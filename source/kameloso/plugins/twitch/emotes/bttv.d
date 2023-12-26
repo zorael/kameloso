@@ -42,7 +42,7 @@ void getBTTVEmotes(
     ref bool[dstring] emoteMap,
     const string idString,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getBTTVEmotes` from outside a fiber")
 in (idString.length, "Tried to get BTTV emotes with an empty ID string")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
@@ -185,7 +185,7 @@ void getBTTVEmotesGlobal(
     ref bool[dstring] emoteMap,
     const string _ = string.init,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getBTTVEmotesGlobal` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
     import std.json : JSONType, parseJSON;

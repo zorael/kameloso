@@ -87,7 +87,7 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
     Does the bash.org dance emotes.
 
     This will be called on each channel message, so don't annotate it `.fiber(true)`
-    and instead create a Fiber manually iff we should actually go ahead and dance.
+    and instead create a fiber manually iff we should actually go ahead and dance.
 
     See_Also: http://bash.org/?4281
  +/

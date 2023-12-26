@@ -1197,7 +1197,7 @@ auto createTimerFiber(
         assert(timer, name ~ " not in *channelTimers");
 
         // Ensure that the Timer was set up with a UNIX timestamp prior to creating this
-        assert((timer.lastTimestamp > 0L), "Timer Fiber " ~ name ~ " created before initial timestamp was set");
+        assert((timer.lastTimestamp > 0L), "Timer fiber " ~ name ~ " created before initial timestamp was set");
 
         // Stagger based on message count and time thresholds
         while (true)
@@ -1369,7 +1369,7 @@ void reload(TimerPlugin plugin)
 {
     loadTimers(plugin);
 
-    // Recreate timer Fibers from definitions
+    // Recreate timer fibers from definitions
     foreach (immutable channelName, channel; plugin.channels)
     {
         // Just reuse the SELFJOIN routine, but be sure to force it

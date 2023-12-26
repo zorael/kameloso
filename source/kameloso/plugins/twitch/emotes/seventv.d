@@ -42,7 +42,7 @@ void get7tvEmotes(
     ref bool[dstring] emoteMap,
     const string idString,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `get7tvEmotes` from outside a fiber")
 in (idString.length, "Tried to get 7tv emotes with an empty ID string")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
@@ -210,7 +210,7 @@ void get7tvEmotesGlobal(
     ref bool[dstring] emoteMap,
     const string _ = string.init,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `get7tvEmotesGlobal` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
     import kameloso.plugins.twitch.common : UnexpectedJSONException;

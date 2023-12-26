@@ -440,7 +440,7 @@ void addChannel(
     const /*ref*/ IRCEvent event,
     const string rawChannel,
     const Flag!"home" addAsHome)
-in (Fiber.getThis, "Tried to call `addChannel` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `addChannel` from outside a fiber")
 in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
     import kameloso.plugins.common.delayawait : await, unawait;
@@ -546,8 +546,8 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         inner:
         while (true)
         {
-            thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+            thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+            assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
             assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
             if (thisFiber.payload.channel == channelName) break inner;
@@ -996,8 +996,8 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     void setSettingDg()
     {
-        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         immutable message = thisFiber.payload[0] ?
             "Setting changed." :
@@ -1041,8 +1041,8 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     void getSettingDg()
     {
-        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         immutable pluginName = thisFiber.payload[0];
         immutable setting = thisFiber.payload[1];
@@ -1242,7 +1242,7 @@ void cycle(
     const string channelName,
     const Duration delay_ = Duration.zero,
     const string key = string.init)
-in (Fiber.getThis, "Tried to call `cycle` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `cycle` from outside a fiber")
 {
     import kameloso.plugins.common.delayawait : await, delay, unawait;
     import kameloso.thread : CarryingFiber;
@@ -1254,8 +1254,8 @@ in (Fiber.getThis, "Tried to call `cycle` from outside a Fiber")
 
     while (true)
     {
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+        auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
         assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
         const partEvent = thisFiber.payload;
@@ -1633,8 +1633,8 @@ void onBusMessage(
 
         void setSettingBusDg()
         {
-            auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
-            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+            auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+            assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
             immutable success = thisFiber.payload[0];
 

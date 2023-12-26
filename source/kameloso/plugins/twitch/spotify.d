@@ -515,7 +515,7 @@ package JSONValue addTrackToSpotifyPlaylist(
     ref Credentials creds,
     const string trackID,
     const Flag!"recursing" recursing = No.recursing)
-in (Fiber.getThis, "Tried to call `addTrackToSpotifyPlaylist` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : reserveUniqueBucketID, waitForQueryResponse;
     import kameloso.plugins.common.delayawait : delay;

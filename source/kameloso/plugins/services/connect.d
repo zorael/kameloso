@@ -1298,7 +1298,7 @@ void onQuit(ConnectService service, const ref IRCEvent event)
         service.connectSettings.regainNickname &&
         (event.sender.nickname == service.state.client.origNickname))
     {
-        // The regain Fiber will end itself when it is next triggered
+        // The regain fiber will end itself when it is next triggered
         enum pattern = "Attempting to regain nickname <l>%s</>...";
         logger.infof(pattern, service.state.client.origNickname);
         immutable message = "NICK " ~ service.state.client.origNickname;
@@ -1457,7 +1457,7 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
         service = The current [ConnectService].
  +/
 void startPingMonitor(ConnectService service)
-in (Fiber.getThis, "Tried to call `startPingMonitor` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
 {
     import kameloso.plugins.common.delayawait : await, delay, unawait, undelay;
     import kameloso.thread : CarryingFiber;
@@ -1491,8 +1491,8 @@ in (Fiber.getThis, "Tried to call `startPingMonitor` from outside a Fiber")
 
     while (true)
     {
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+        auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
         immutable thisEvent = thisFiber.payload;
 
         with (IRCEvent.Type)

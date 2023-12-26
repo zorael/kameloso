@@ -52,7 +52,7 @@ void delay(
     IRCPlugin plugin,
     Fiber fiber,
     const Duration duration)
-in ((fiber !is null), "Tried to delay a null Fiber")
+in ((fiber !is null), "Tried to delay a null fiber")
 {
     import kameloso.thread : ScheduledFiber;
     import std.datetime.systime : Clock;
@@ -68,12 +68,12 @@ in ((fiber !is null), "Tried to delay a null Fiber")
     Queues a [core.thread.fiber.Fiber|Fiber] to be called at a point `duration`
     later, by appending it to the `plugin`'s
     [kameloso.plugins.common.core.IRCPluginState.scheduledFibers|IRCPluginState.scheduledFibers].
-    Overload that implicitly queues [core.thread.fiber.Fiber.getThis|Fiber.getThis].
+    Overload that implicitly queues [core.thread.fiber.Fiber.getThis()|Fiber.getThis()].
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
         duration = Amount of time to delay the implicit fiber in the current context.
-        yield = Whether or not to immediately yield the Fiber.
+        yield = Whether or not to immediately yield the fiber.
 
     See_Also:
         [undelay]
@@ -82,9 +82,9 @@ void delay(
     IRCPlugin plugin,
     const Duration duration,
     const Flag!"yield" yield)
-in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
+in (Fiber.getThis(), "Tried to delay the current fiber outside of a fiber")
 {
-    delay(plugin, Fiber.getThis, duration);
+    delay(plugin, Fiber.getThis(), duration);
     if (yield) Fiber.yield();
 }
 
@@ -143,7 +143,7 @@ in ((dg !is null), "Tried to delay a null delegate")
         [delay]
  +/
 void undelay(IRCPlugin plugin, Fiber fiber)
-in ((fiber !is null), "Tried to remove a delayed null Fiber")
+in ((fiber !is null), "Tried to remove a delayed null fiber")
 {
     foreach (ref scheduledFiber; plugin.state.scheduledFibers)
     {
@@ -160,7 +160,7 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
 // undelay
 /++
     Removes a [core.thread.fiber.Fiber|Fiber] from being called at any point later.
-    Overload that implicitly removes [core.thread.fiber.Fiber.getThis|Fiber.getThis].
+    Overload that implicitly removes [core.thread.fiber.Fiber.getThis()|Fiber.getThis()()].
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
@@ -169,9 +169,9 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
         [delay]
  +/
 void undelay(IRCPlugin plugin)
-in (Fiber.getThis, "Tried to call `undelay` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `undelay` from outside a fiber")
 {
-    return undelay(plugin, Fiber.getThis);
+    return undelay(plugin, Fiber.getThis());
 }
 
 
@@ -239,8 +239,8 @@ void await(
     IRCPlugin plugin,
     Fiber fiber,
     const IRCEvent.Type type)
-in ((fiber !is null), "Tried to set up a null Fiber to await events")
-in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`")
+in ((fiber !is null), "Tried to set up a null fiber to await events")
+in ((type != IRCEvent.Type.UNSET), "Tried to set up a fiber to await `IRCEvent.Type.UNSET`")
 {
     plugin.state.awaitingFibers[type] ~= fiber;
 }
@@ -251,13 +251,13 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
     Queues a [core.thread.fiber.Fiber|Fiber] to be called whenever the next parsed
     and triggering [dialect.defs.IRCEvent|IRCEvent] matches the passed
     [dialect.defs.IRCEvent.Type|IRCEvent.Type] type.
-    Overload that implicitly queues [core.thread.fiber.Fiber.getThis|Fiber.getThis].
+    Overload that implicitly queues [core.thread.fiber.Fiber.getThis()|Fiber.getThis()].
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
         type = The kind of [dialect.defs.IRCEvent|IRCEvent] that should trigger this
             implicit awaiting fiber (in the current context).
-        yield = Whether or not to immediately yield the Fiber.
+        yield = Whether or not to immediately yield the fiber.
 
     See_Also:
         [unawait]
@@ -266,10 +266,10 @@ void await(
     IRCPlugin plugin,
     const IRCEvent.Type type,
     const Flag!"yield" yield)
-in (Fiber.getThis, "Tried to `await` the current Fiber outside of a Fiber")
-in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`")
+in (Fiber.getThis(), "Tried to `await` the current fiber outside of a fiber")
+in ((type != IRCEvent.Type.UNSET), "Tried to set up a fiber to await `IRCEvent.Type.UNSET`")
 {
-    plugin.state.awaitingFibers[type] ~= Fiber.getThis;
+    plugin.state.awaitingFibers[type] ~= Fiber.getThis();
     if (yield) Fiber.yield();
 }
 
@@ -295,12 +295,12 @@ void await(
     IRCPlugin plugin,
     Fiber fiber,
     const IRCEvent.Type[] types)
-in ((fiber !is null), "Tried to set up a null Fiber to await events")
+in ((fiber !is null), "Tried to set up a null fiber to await events")
 {
     foreach (immutable type; types)
     {
         assert((type != IRCEvent.Type.UNSET),
-            "Tried to set up a Fiber to await `IRCEvent.Type.UNSET`");
+            "Tried to set up a fiber to await `IRCEvent.Type.UNSET`");
         plugin.state.awaitingFibers[type] ~= fiber;
     }
 }
@@ -311,14 +311,14 @@ in ((fiber !is null), "Tried to set up a null Fiber to await events")
     Queues a [core.thread.fiber.Fiber|Fiber] to be called whenever the next parsed
     and triggering [dialect.defs.IRCEvent|IRCEvent] matches any of the passed
     [dialect.defs.IRCEvent.Type|IRCEvent.Type] types.
-    Overload that implicitly queues [core.thread.fiber.Fiber.getThis|Fiber.getThis].
+    Overload that implicitly queues [core.thread.fiber.Fiber.getThis()|Fiber.getThis()].
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
         types = The kinds of [dialect.defs.IRCEvent|IRCEvent] that should trigger
             this implicit awaiting fiber (in the current context), in an array
             with elements of type [dialect.defs.IRCEvent.Type|IRCEvent.Type].
-        yield = Whether or not to immediately yield the Fiber.
+        yield = Whether or not to immediately yield the fiber.
 
     See_Also:
         [unawait]
@@ -327,13 +327,13 @@ void await(
     IRCPlugin plugin,
     const IRCEvent.Type[] types,
     const Flag!"yield" yield)
-in (Fiber.getThis, "Tried to `await` the current Fiber outside of a Fiber")
+in (Fiber.getThis(), "Tried to `await` the current fiber outside of a fiber")
 {
     foreach (immutable type; types)
     {
         assert((type != IRCEvent.Type.UNSET),
-            "Tried to set up the current Fiber to await `IRCEvent.Type.UNSET`");
-        plugin.state.awaitingFibers[type] ~= Fiber.getThis;
+            "Tried to set up the current fiber to await `IRCEvent.Type.UNSET`");
+        plugin.state.awaitingFibers[type] ~= Fiber.getThis();
     }
 
     if (yield) Fiber.yield();
@@ -478,7 +478,7 @@ void unawait(
     IRCPlugin plugin,
     Fiber fiber,
     const IRCEvent.Type type)
-in (fiber, "Tried to call `unawait` with a null Fiber")
+in (fiber, "Tried to call `unawait` with a null fiber")
 {
     return unawaitImpl(fiber, plugin.state.awaitingFibers, type);
 }
@@ -489,7 +489,7 @@ in (fiber, "Tried to call `unawait` with a null Fiber")
     Dequeues a [core.thread.fiber.Fiber|Fiber] from being called whenever the
     next parsed and triggering [dialect.defs.IRCEvent|IRCEvent] matches the passed
     [dialect.defs.IRCEvent.Type|IRCEvent.Type] type. Overload that implicitly dequeues
-    [core.thread.fiber.Fiber.getThis|Fiber.getThis].
+    [core.thread.fiber.Fiber.getThis()|Fiber.getThis()].
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
@@ -501,9 +501,9 @@ in (fiber, "Tried to call `unawait` with a null Fiber")
         [await]
  +/
 void unawait(IRCPlugin plugin, const IRCEvent.Type type)
-in (Fiber.getThis, "Tried to call `unawait` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `unawait` from outside a fiber")
 {
-    return unawait(plugin, Fiber.getThis, type);
+    return unawait(plugin, Fiber.getThis(), type);
 }
 
 
@@ -529,7 +529,7 @@ void unawait(
     IRCPlugin plugin,
     Fiber fiber,
     const IRCEvent.Type[] types)
-in (fiber, "Tried to call `unawait` with a null Fiber")
+in (fiber, "Tried to call `unawait` with a null fiber")
 {
     foreach (immutable type; types)
     {
@@ -543,7 +543,7 @@ in (fiber, "Tried to call `unawait` with a null Fiber")
     Dequeues a [core.thread.fiber.Fiber|Fiber] from being called whenever the
     next parsed and triggering [dialect.defs.IRCEvent|IRCEvent] matches any of the passed
     [dialect.defs.IRCEvent.Type|IRCEvent.Type] types. Overload that implicitly dequeues
-    [core.thread.fiber.Fiber.getThis|Fiber.getThis].
+    [core.thread.fiber.Fiber.getThis()|Fiber.getThis()].
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
@@ -556,11 +556,11 @@ in (fiber, "Tried to call `unawait` with a null Fiber")
         [await]
  +/
 void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
-in (Fiber.getThis, "Tried to call `unawait` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `unawait` from outside a fiber")
 {
     foreach (immutable type; types)
     {
-        unawait(plugin, Fiber.getThis, type);
+        unawait(plugin, Fiber.getThis(), type);
     }
 }
 

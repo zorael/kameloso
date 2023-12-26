@@ -32,7 +32,7 @@ public:
     alone as an arity-0 function.
 
     The mixed in function to call is named `enqueueAndWHOIS`. It will construct
-    the Fiber, enqueue it as awaiting the proper IRCEvent types, and issue the
+    the fiber, enqueue it as awaiting the proper IRCEvent types, and issue the
     WHOIS query.
 
     Example:
@@ -152,15 +152,15 @@ mixin template WHOISFiberDelegate(
 
         while (true)
         {
-            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+            auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+            assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
             assert((thisFiber.payload != IRCEvent.init),
                 "Uninitialised `payload` in " ~ typeof(thisFiber).stringof);
 
             immutable whoisEvent = thisFiber.payload;
 
             assert(whoisEventTypes[].canFind(whoisEvent.type),
-                "WHOIS Fiber delegate was invoked with an unexpected event type: " ~
+                "WHOIS fiber delegate was invoked with an unexpected event type: " ~
                 "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(whoisEvent.type) ~'`');
 
             /++
@@ -244,7 +244,7 @@ mixin template WHOISFiberDelegate(
                     // WHOIS query failed due to unknown command.
                     // Some flavours of ERR_UNKNOWNCOMMAND don't say what the
                     // command was, so we'll have to assume it's the right one.
-                    // Return and end Fiber.
+                    // Return and end fiber.
                     return callOnFailure();
                 }
                 else

@@ -376,7 +376,7 @@ package JSONValue addVideoToYouTubePlaylist(
     ref Credentials creds,
     const string videoID,
     const Flag!"recursing" recursing = No.recursing)
-in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : reserveUniqueBucketID, waitForQueryResponse;
     import kameloso.plugins.common.delayawait : delay;

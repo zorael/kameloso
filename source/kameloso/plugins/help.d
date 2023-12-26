@@ -96,8 +96,8 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         import std.algorithm.searching : startsWith;
         import std.string : indexOf;
 
-        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         IRCPlugin.CommandMetadata[string][string] allPluginCommands = thisFiber.payload[0];
 

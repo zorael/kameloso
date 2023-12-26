@@ -91,7 +91,7 @@ auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, uint delayMsecs = 
     (TwitchPlugin plugin,
     Dg dg,
     const Flag!"async" async = Yes.async)
-in ((!async || Fiber.getThis), "Tried to call async `retryDelegate` from outside a Fiber")
+in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outside a fiber")
 {
     static if (endlessly)
     {
@@ -414,7 +414,7 @@ QueryResponse sendHTTPRequest(
     const string contentType = string.init,
     int id = 0,
     const Flag!"recursing" recursing = No.recursing)
-in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
 {
     import kameloso.plugins.common.delayawait : delay;
@@ -704,7 +704,7 @@ auto getTwitchData(
     TwitchPlugin plugin,
     const string url,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getTwitchData` from outside a fiber")
 {
     import std.json : JSONException, JSONType, parseJSON;
 
@@ -789,7 +789,7 @@ auto getChatters(
     TwitchPlugin plugin,
     const string broadcaster,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getChatters` from outside a fiber")
 in (broadcaster.length, "Tried to get chatters with an empty broadcaster string")
 {
     import std.conv : text;
@@ -864,7 +864,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         authToken = Authorisation token to validate.
-        async = Whether or not the validation should be done asynchronously, using Fibers.
+        async = Whether or not the validation should be done asynchronously, using fibers.
         caller = Name of the calling function.
 
     Returns:
@@ -881,7 +881,7 @@ auto getValidation(
     /*const*/ string authToken,
     const Flag!"async" async,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getValidation` from outside a fiber")
 in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
     import std.algorithm.searching : startsWith;
@@ -1046,7 +1046,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         containing followers.
  +/
 auto getFollowers(TwitchPlugin plugin, const string id)
-in (Fiber.getThis, "Tried to call `getFollowers` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getFollowers` from outside a fiber")
 in (id.length, "Tried to get followers with an empty ID string")
 {
     immutable url = "https://api.twitch.tv/helix/channels/followers?first=100&broadcaster_id=" ~ id;
@@ -1098,7 +1098,7 @@ auto getMultipleTwitchData(
     TwitchPlugin plugin,
     const string url,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber")
 {
     import std.conv : text;
     import std.json : JSONValue, parseJSON;
@@ -1221,7 +1221,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
         A [QueryResponse] as constructed by other parts of the program.
  +/
 auto waitForQueryResponse(TwitchPlugin plugin, const int id)
-in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber")
 {
     import kameloso.constants : Timeout;
     import kameloso.plugins.common.delayawait : delay;
@@ -1318,7 +1318,7 @@ auto getTwitchUser(
     const string givenName,
     const string givenIDString,
     const Flag!"searchByDisplayName" searchByDisplayName = No.searchByDisplayName)
-in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getTwitchUser` from outside a fiber")
 in ((givenName.length || givenIDString.length),
     "Tried to get Twitch user without supplying a name nor an ID")
 {
@@ -1401,7 +1401,7 @@ in ((givenName.length || givenIDString.length),
         Voldemort aggregate struct with `id` and `name` members.
  +/
 auto getTwitchGame(TwitchPlugin plugin, const string name, const string id)
-in (Fiber.getThis, "Tried to call `getTwitchGame` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getTwitchGame` from outside a fiber")
 in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name nor game ID")
 {
     static struct Game
@@ -1483,7 +1483,7 @@ void modifyChannel(
     const string title,
     const string gameID,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `modifyChannel` from outside a fiber")
 in (channelName.length, "Tried to modify a channel with an empty channel name string")
 in ((title.length || gameID.length), "Tried to modify a channel with no title nor game ID supplied")
 {
@@ -1547,7 +1547,7 @@ in ((title.length || gameID.length), "Tried to modify a channel with no title no
 auto getChannel(
     TwitchPlugin plugin,
     const string channelName)
-in (Fiber.getThis, "Tried to call `getChannel` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getChannel` from outside a fiber")
 in (channelName.length, "Tried to fetch a channel with an empty channel name string")
 {
     import std.algorithm.iteration : map;
@@ -1620,7 +1620,7 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
         for the supplied channel in the secrets storage.
  +/
 auto getBroadcasterAuthorisation(TwitchPlugin plugin, const string channelName)
-in (Fiber.getThis, "Tried to call `getBroadcasterAuthorisation` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getBroadcasterAuthorisation` from outside a fiber")
 in (channelName.length, "Tried to get broadcaster authorisation with an empty channel name string")
 out (token; token.length, "`getBroadcasterAuthorisation` returned an empty string")
 {
@@ -1656,7 +1656,7 @@ void startCommercial(
     const string channelName,
     const string lengthString,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `startCommercial` from outside a fiber")
 in (channelName.length, "Tried to start a commercial with an empty channel name string")
 {
     import std.format : format;
@@ -1712,7 +1712,7 @@ auto getPolls(
     const string channelName,
     const string idString = string.init,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getPolls` from outside a fiber")
 in (channelName.length, "Tried to get polls with an empty channel name string")
 {
     import std.conv : text;
@@ -1854,7 +1854,7 @@ auto createPoll(
     const string durationString,
     const string[] choices,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `createPoll` from outside a fiber")
 in (channelName.length, "Tried to create a poll with an empty channel name string")
 {
     import std.array : Appender, replace;
@@ -1990,7 +1990,7 @@ auto endPoll(
     const string voteID,
     const Flag!"terminate" terminate,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `endPoll` from outside a fiber")
 in (channelName.length, "Tried to end a poll with an empty channel name string")
 {
     import std.format : format;
@@ -2212,7 +2212,7 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
         populated with all (relevant) information.
  +/
 auto getStream(TwitchPlugin plugin, const string loginName)
-in (Fiber.getThis, "Tried to call `getStream` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getStream` from outside a fiber")
 in (loginName.length, "Tried to get a stream with an empty login name string")
 {
     import std.algorithm.iteration : map;
@@ -2325,7 +2325,7 @@ auto getSubscribers(
     const string channelName,
     const Flag!"totalOnly" totalOnly,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getSubscribers` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getSubscribers` from outside a fiber")
 in (channelName.length, "Tried to get subscribers with an empty channel name string")
 {
     import std.array : Appender;
@@ -2485,7 +2485,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
 auto createShoutout(
     TwitchPlugin plugin,
     const string login)
-in (Fiber.getThis, "Tried to call `createShoutout` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `createShoutout` from outside a fiber")
 in (login.length, "Tried to create a shoutout with an empty login name string")
 {
     import std.json : JSONType;
@@ -2571,7 +2571,7 @@ auto deleteMessage(
     const string roomID,
     const string messageID,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `deleteMessage` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `deleteMessage` from outside a fiber")
 {
     import std.algorithm.searching : startsWith;
     import std.format : format;
@@ -2625,7 +2625,7 @@ auto timeoutUser(
     const uint durationSeconds,
     const string reason = string.init,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `timeoutUser` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `timeoutUser` from outside a fiber")
 in (roomID.length, "Tried to timeout a user with an empty room ID string")
 in ((userID > 0), "Tried to timeout a user with an empty user ID string")
 {
@@ -2734,7 +2734,7 @@ auto sendWhisper(
     const uint userID,
     const string unescapedMessage,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `sendWhisper` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
 in ((userID > 0), "Tried to send a whisper with an empty recipient ID string")
 {
     import std.array : replace;
@@ -2797,7 +2797,7 @@ in ((userID > 0), "Tried to send a whisper with an empty recipient ID string")
                 Whisper messages may not be sent to suspended users.
                 The ID in the from_user_id query parameter is not valid.
                 The ID in the to_user_id query parameter is not valid.
-            +/
+             +/
             goto default;
 
         case 401:
@@ -2810,7 +2810,7 @@ in ((userID > 0), "Tried to send a whisper with an empty recipient ID string")
                 This ID in from_user_id must match the user ID in the user access token.
                 The client ID specified in the Client-Id header does not match the
                 client ID specified in the access token.
-            +/
+             +/
             goto default;
 
         case 403:
@@ -2818,12 +2818,12 @@ in ((userID > 0), "Tried to send a whisper with an empty recipient ID string")
             /+
                 Suspended users may not send whisper messages.
                 The account that's sending the message doesn't allow sending whispers.
-            +/
+             +/
         case 404:
             // 404 Not Found
             /+
                 The ID in to_user_id was not found.
-            +/
+             +/
             goto default;
 
         case 429:
@@ -2834,7 +2834,7 @@ in ((userID > 0), "Tried to send a whisper with an empty recipient ID string")
                 Rate Limits: You may whisper to a maximum of 40 unique recipients per day.
                 Within the per day limit, you may whisper a maximum of 3 whispers
                 per second and a maximum of 100 whispers per minute.
-            +/
+             +/
             goto default;
 
         default:

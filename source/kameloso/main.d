@@ -214,7 +214,7 @@ void signalHandler(int sig) nothrow @nogc @system
 
 // messageFiber
 /++
-    A Generator Fiber function that checks for concurrency messages and performs
+    A Generator fiber function that checks for concurrency messages and performs
     action based on what was received.
 
     The return value yielded to the caller tells it whether the received action
@@ -862,7 +862,7 @@ auto mainLoop(Kameloso instance)
         }
         else
         {
-            logger.error("Internal error, thread messenger Fiber ended unexpectedly.");
+            logger.error("Internal error, thread messenger fiber ended unexpectedly.");
             return Next.returnFailure;
         }
     }
@@ -1721,7 +1721,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
     Fiber[] expiredFibers;
 
     /++
-        Handle awaiting Fibers of a specified type.
+        Handle awaiting fibers of a specified type.
      +/
     void processAwaitingFibersImpl(Fiber[] fibersForType)
     {
@@ -1760,7 +1760,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
                         carryingFiber.call();
 
                         // We need to reset the payload so that we can differentiate
-                        // between whether the Fiber was called due to an incoming
+                        // between whether the fiber was called due to an incoming
                         // (awaited) event or due to a timer. delegates will have
                         // to cache the event if they don't want it to get reset.
                         carryingFiber.resetPayload();
@@ -1814,7 +1814,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
         processAwaitingFibersImpl(plugin.state.awaitingFibers[IRCEvent.Type.ANY]);
     }
 
-    // Clean up processed Fibers
+    // Clean up processed fibers
     foreach (ref expiredFiber; expiredFibers)
     {
         // Detect duplicates that were already destroyed and skip
@@ -2007,7 +2007,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         }
         finally
         {
-            // destroy the Fiber if it has ended UNLESS it was undelayed
+            // destroy the fiber if it has ended UNLESS it was undelayed
             // (in which case .fiber is null and we would segfault)
             if (scheduledFiber.fiber &&
                 (scheduledFiber.fiber.state == Fiber.State.TERM))
@@ -2017,11 +2017,11 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
             }
         }
 
-        // Always remove a scheduled Fiber after processing
+        // Always remove a scheduled fiber after processing
         toRemove ~= i;
     }
 
-    // Clean up processed Fibers
+    // Clean up processed fibers
     foreach_reverse (immutable i; toRemove)
     {
         import std.algorithm.mutation : SwapStrategy, remove;
@@ -3946,7 +3946,7 @@ void syncGuestChannels(Kameloso instance) pure @safe nothrow
 // echoQuitMessage
 /++
     Echos the quit message to the local terminal, to fake it being sent verbosely
-    to the server. It is sent, but later, bypassing the message Fiber which would
+    to the server. It is sent, but later, bypassing the message fiber which would
     otherwise do the echoing.
 
     Params:

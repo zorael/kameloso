@@ -262,7 +262,7 @@ public:
     * [kameloso.plugins.common.core.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
         is an array of [core.thread.fiber.Fiber|Fiber]s indexed by [dialect.defs.IRCEvent.Type]s'
         numeric values. Fibers in the array of a particular event type will be
-        executed the next time such an event is incoming. Think of it as Fiber callbacks.
+        executed the next time such an event is incoming. Think of it as fiber callbacks.
 
     * [kameloso.plugins.common.core.IRCPluginState.awaitingDelegates|IRCPluginState.awaitingDelegates]
         is literally an array of callback delegates, to be triggered when an event
@@ -1071,7 +1071,7 @@ void saveSeen(SeenPlugin plugin)
 // onWelcome
 /++
     After we have registered on the server and seen the welcome messages, load
-    our seen users from file. Additionally set up a Fiber that periodically
+    our seen users from file. Additionally set up a fiber that periodically
     saves seen users to disk once every [SeenPlugin.timeBetweenSaves|timeBetweenSaves]
     seconds.
 

@@ -617,7 +617,7 @@ struct ListenAttempt
     It maintains its own buffer into which it receives from the server, though
     not necessarily full lines. It thus keeps filling the buffer until it
     finds a newline character, yields [ListenAttempt]s back to the caller of
-    the Fiber, checks for more lines to yield, and if none yields an attempt
+    the fiber, checks for more lines to yield, and if none yields an attempt
     with a [ListenAttempt.State] denoting that nothing was read and that a new
     attempt should be made later.
 

@@ -12,12 +12,12 @@
     mainThread.send(ThreadMessage.busMessage("header", boxed("payload")));
 
     auto fiber = new CarryingFiber!string(&someDelegate, BufferSize.fiberStack);
-    fiber.payload = "This string is carried by the Fiber and can be accessed from within it";
+    fiber.payload = "This string is carried by the fiber and can be accessed from within it";
     fiber.call();
     fiber.payload = "You can change it in between calls to pass information to it";
     fiber.call();
 
-    // As such we can make Fibers act like they're taking new arguments each call
+    // As such we can make fibers act like they're taking new arguments each call
     auto fiber2 = new CarryingFiber!IRCEvent(&otherDelegate, BufferSize.fiberStack);
     fiber2.payload = newIncomingIRCEvent;
     fiber2.call();
@@ -484,7 +484,7 @@ unittest
     ---
     void dg()
     {
-        CarryingFiber!bool fiber = cast(CarryingFiber!bool)(Fiber.getThis);
+        auto fiber = cast(CarryingFiber!bool)Fiber.getThis();
         assert(fiber !is null);  // Correct cast
 
         assert(fiber.payload);
@@ -506,7 +506,7 @@ unittest
 final class CarryingFiber(T) : Fiber
 {
     /++
-        Embedded payload value in this Fiber; what distinguishes it from plain
+        Embedded payload value in this fiber; what distinguishes it from plain
         [core.thread.fiber.Fiber|Fiber]s.
      +/
     T payload;
@@ -530,7 +530,7 @@ final class CarryingFiber(T) : Fiber
 
     /++
         Constructor function merely taking a function/delegate pointer, to call
-        when invoking this Fiber (via [CarryingFiber.call|.call()]).
+        when invoking this fiber (via [CarryingFiber.call|.call()]).
 
         Params:
             fnOrDg = Function/delegate pointer to call when invoking this [CarryingFiber].
@@ -551,7 +551,7 @@ final class CarryingFiber(T) : Fiber
     /++
         Constructor function taking a `T` `payload` to assign to its own
         internal [CarryingFiber.payload|this.payload], as well as a function/delegate pointer to call
-        when invoking this Fiber (via [CarryingFiber.call|.call()]).
+        when invoking this fiber (via [CarryingFiber.call|.call()]).
 
         Params:
             fnOrDg = Function/delegate pointer to call when invoking this [CarryingFiber].
@@ -575,7 +575,7 @@ final class CarryingFiber(T) : Fiber
     /++
         Constructor function taking a `T` `payload` to assign to its own
         internal [CarryingFiber.payload|this.payload], as well as a function/delegate pointer to call
-        when invoking this Fiber (via [CarryingFiber.call|.call()]).
+        when invoking this fiber (via [CarryingFiber.call|.call()]).
 
         Deprecated: Use the constructor taking a function/delegate pointer first
             instead. This overload will be removed in a later release.
@@ -677,8 +677,8 @@ unittest
 
     void dg()
     {
-        auto thisFiber = cast(CarryingFiber!Payload)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         // __FUNCTION__ will be something like "kameloso.thread.__unittest_L577_C1.dg"
         enum expectedFunction = __FUNCTION__[0..$-2] ~ "dg";

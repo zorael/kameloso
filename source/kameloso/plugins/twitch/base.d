@@ -1010,7 +1010,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         // This can technically happen, though practically the caching is
         // done immediately after joining so there should be no time for
         // !followage queries to sneak in.
-        // Luckily we're inside a Fiber so we can cache it ourselves.
+        // Luckily we're inside a fiber so we can cache it ourselves.
         room.followers = getFollowers(plugin, room.id);
         room.followersLastCached = event.time;
     }
@@ -1065,7 +1065,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     /+
-        Only start a room monitor Fiber if the room doesn't seem initialised.
+        Only start a room monitor fiber if the room doesn't seem initialised.
         If it does, it should already have a monitor running. Since we're not
         resetting the room unique ID, we'd get two duplicate monitors. So don't.
      +/
@@ -2648,7 +2648,7 @@ void importCustomEmotes(
     TwitchPlugin plugin,
     const string channelName = string.init,
     const string idString = string.init)
-in (Fiber.getThis, "Tried to call `importCustomEmotes` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `importCustomEmotes` from outside a fiber")
 in (((channelName.length && idString.length) ||
     (!channelName.length && !idString.length)),
     "Tried to import custom channel-specific emotes with insufficient arguments")
@@ -3143,7 +3143,7 @@ void initialise(TwitchPlugin plugin)
 
 // onMyInfo
 /++
-    Sets up a Fiber to periodically cache followers.
+    Sets up a fiber to periodically cache followers.
 
     Cannot be done on [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME] as the server
     daemon isn't known by then.
@@ -3439,7 +3439,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
         plugin = The current [TwitchPlugin].
  +/
 void startValidator(TwitchPlugin plugin)
-in (Fiber.getThis, "Tried to call `startValidator` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
 {
     import kameloso.plugins.common.delayawait : delay;
     import std.datetime.systime : Clock, SysTime;
@@ -3602,7 +3602,7 @@ in (Fiber.getThis, "Tried to call `startValidator` from outside a Fiber")
         plugin = The current [TwitchPlugin].
  +/
 void startSaver(TwitchPlugin plugin)
-in (Fiber.getThis, "Tried to call `startSaver` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
 {
     import kameloso.plugins.common.delayawait : delay;
     import core.time : hours;

@@ -503,7 +503,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 
 // onWelcome
 /++
-    Sets up a Fiber to periodically clear the lists of previous messages from
+    Sets up a fiber to periodically clear the lists of previous messages from
     users once every [SedReplacePlugin.timeBetweenPurges|timeBetweenPurges].
 
     This is to prevent the lists from becoming huge over time.
