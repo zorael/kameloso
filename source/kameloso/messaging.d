@@ -51,7 +51,7 @@ module kameloso.messaging;
 private:
 
 import kameloso.plugins.common.core : IRCPluginState;
-import kameloso.irccolours : expandIRCTags;
+import kameloso.irccolours : expandIRCTags, stripIRCTags;
 import dialect.defs;
 import std.concurrency : Tid, prioritySend, send;
 import std.typecons : Flag, No, Yes;
@@ -132,14 +132,18 @@ in (channelName.length, "Tried to send a channel message but no channel was give
 
     m.event.type = IRCEvent.Type.CHAN;
     m.event.channel = channelName;
-    m.event.content = content.expandIRCTags;
     m.properties = properties;
     m.caller = caller;
+
+    bool strippedTags;
 
     version(TwitchSupport)
     {
         if (state.server.daemon == IRCServer.Daemon.twitch)
         {
+            m.event.content = content.stripIRCTags;
+            strippedTags = true;
+
             if (auto channel = channelName in state.channels)
             {
                 if (auto ops = 'o' in channel.mods)
@@ -153,6 +157,8 @@ in (channelName.length, "Tried to send a channel message but no channel was give
             }
         }
     }
+
+    if (!strippedTags) m.event.content = content.expandIRCTags;
 
     if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
@@ -307,9 +313,21 @@ in (nickname.length, "Tried to send a private query but no nickname was given")
 
     m.event.type = IRCEvent.Type.QUERY;
     m.event.target.nickname = nickname;
-    m.event.content = content.expandIRCTags;
     m.properties = properties;
     m.caller = caller;
+
+    bool strippedTags;
+
+    version(TwitchSupport)
+    {
+        if (state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            m.event.content = content.stripIRCTags;
+            strippedTags = true;
+        }
+    }
+
+    if (!strippedTags) m.event.content = content.expandIRCTags;
 
     if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
@@ -449,7 +467,6 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
     Message m;
 
     m.event.type = IRCEvent.Type.EMOTE;
-    m.event.content = content.expandIRCTags;
     m.properties = properties;
     m.caller = caller;
 
@@ -461,6 +478,19 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
     {
         m.event.target.nickname = emoteTarget;
     }
+
+    bool strippedTags;
+
+    version(TwitchSupport)
+    {
+        if (state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            m.event.content = content.stripIRCTags;
+            strippedTags = true;
+        }
+    }
+
+    if (!strippedTags) m.event.content = content.expandIRCTags;
 
     if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
