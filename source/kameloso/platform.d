@@ -399,7 +399,7 @@ Pid exec(
 
     // Add the reexec count and channel override arguments
     args ~= text("--internal-num-reexecs=", numReexecs+1);
-    if (channels.length) args ~= text("--internal-channel-override=", channels.join(','));
+    if (channels.length) args ~= text("--internal-channel-override='", channels.join(','), '\'');
 
     version(Posix)
     {
@@ -452,6 +452,7 @@ Pid exec(
                     "--homeChannels",
                     "--guestChannels",
                     "--set"))
+                    //"--internal-channel-override"))  // No need, we add the quotes above
             {
                 // Octothorpes must be encased in single quotes
                 sink.formattedWrite("%s '%s'", args[i], args[i+1]);
