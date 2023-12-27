@@ -381,9 +381,9 @@ public:
     SysTime when;
 
     /++
-        Twitch ID of follower as a string.
+        Twitch numerical ID of follower.
      +/
-    string idString;
+    uint id;
 
     // fromJSON
     /++
@@ -397,6 +397,8 @@ public:
      +/
     static auto fromJSON(const JSONValue json)
     {
+        import std.conv : to;
+
         /+
         {
             "user_id": "11111",
@@ -407,7 +409,7 @@ public:
          +/
 
         Follower follower;
-        follower.idString = json["user_id"].str;
+        follower.id = json["user_id"].str.to!uint;
         follower.displayName = json["user_name"].str;
         follower.login = json["user_login"].str;
         follower.when = SysTime.fromISOExtString(json["followed_at"].str);
@@ -967,7 +969,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             import std.format : format;
 
-            immutable user = getTwitchUser(plugin, name, string.init, Yes.searchByDisplayName);
+            immutable user = getTwitchUser(plugin, name, 0, Yes.searchByDisplayName);
             if (!user.nickname.length) return sendNoSuchUser(name);
 
             enum pattern = "%s is currently not a follower.";
@@ -1054,6 +1056,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : ThreadMessage, boxed;
     import std.concurrency : send;
+    import std.conv : to;
 
     auto room = event.channel in plugin.rooms;
 
@@ -1069,10 +1072,10 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         If it does, it should already have a monitor running. Since we're not
         resetting the room unique ID, we'd get two duplicate monitors. So don't.
      +/
-    immutable shouldStartRoomMonitors = !room.id.length;
-    if (!room.id.length) room.id = event.aux[0];  // Assign this before spending time in getTwitchUser
+    immutable shouldStartRoomMonitors = !room.id;
+    if (!room.id) room.id = event.aux[0].to!uint;  // Assign this before spending time in getTwitchUser
 
-    auto twitchUser = getTwitchUser(plugin, string.init, event.aux[0]);
+    auto twitchUser = getTwitchUser(plugin, string.init, room.id);
     if (!twitchUser.nickname.length) return;  // No such user?
 
     room.broadcasterDisplayName = twitchUser.displayName;
@@ -1088,6 +1091,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         newUser.account = newUser.nickname;
         newUser.class_ = IRCUser.Class.anyone;
         newUser.displayName = twitchUser.displayName;
+        newUser.id = twitchUser.id;
         plugin.state.users[newUser.nickname] = newUser;
         storedUser = newUser.nickname in plugin.state.users;
     }
@@ -1121,6 +1125,8 @@ version(TwitchCustomEmotesEverywhere)
 )
 void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import std.conv : to;
+
     if (!plugin.twitchSettings.customEmotes) return;
 
     if (event.channel in plugin.customEmotesByChannel)
@@ -1129,7 +1135,7 @@ void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         return;
     }
 
-    importCustomEmotes(plugin, event.channel, event.aux[0]);
+    importCustomEmotes(plugin, event.channel, event.aux[0].to!uint);
 }
 
 
@@ -2293,7 +2299,7 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         string givenName = slice.advancePast(' ', Yes.inherit);  // mutable
         if (givenName.startsWith('@')) givenName = givenName[1..$];
-        immutable user = getTwitchUser(plugin, givenName, string.init, Yes.searchByDisplayName);
+        immutable user = getTwitchUser(plugin, givenName, 0, Yes.searchByDisplayName);
 
         if (!user.nickname.length)
         {
@@ -2418,7 +2424,7 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     try
     {
-        modifyChannel(plugin, event.channel, title, string.init);
+        modifyChannel(plugin, event.channel, title, 0);
 
         enum pattern = "Channel title set to: %s";
         immutable message = pattern.format(title);
@@ -2461,6 +2467,7 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : stripped, unquoted;
     import std.array : replace;
+    import std.conv : to;
     import std.format : format;
     import std.string : isNumeric;
     import std.uri : encodeComponent;
@@ -2480,19 +2487,20 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     immutable specified = unescapedGameName.unquoted.replace(`"`, `\"`);
-    string id = specified.isNumeric ? specified : string.init;  // mutable
+    immutable numberSupplied = (specified.length && specified.isNumeric);
+    uint id = numberSupplied ? specified.to!uint : 0;  // mutable
 
     try
     {
         string name;  // mutable
 
-        if (!id.length)
+        if (!numberSupplied)
         {
-            immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent, string.init);
+            immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent);
             id = gameInfo.id;
             name = gameInfo.name;
         }
-        else if (id == "0")
+        else if (id == 0)
         {
             name = "(unset)";
         }
@@ -2635,28 +2643,27 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     Fetches custom BetterTTV, FrankerFaceZ and 7tv emotes via API calls.
 
     If a channel name is supplied, the emotes are imported for that channel.
-    If not, global ones are imported. An `idString` can only be supplied if
+    If not, global ones are imported. An `id` can only be supplied if
     a `channelName` is also supplied.
 
     Params:
         plugin = The current [TwitchPlugin].
         channelName = (Optional) Name of channel to import emotes for.
-        idString = (Optional, mandatory if `channelName` supplied)
-            Twitch ID of channel, in string form.
+        id = (Optional, mandatory if `channelName` supplied) Twitch numeric ID of channel.
  +/
 void importCustomEmotes(
     TwitchPlugin plugin,
     const string channelName = string.init,
-    const string idString = string.init)
+    const uint id = 0)
 in (Fiber.getThis(), "Tried to call `importCustomEmotes` from outside a fiber")
-in (((channelName.length && idString.length) ||
-    (!channelName.length && !idString.length)),
+in (((channelName.length && id) ||
+    (!channelName.length && !id)),
     "Tried to import custom channel-specific emotes with insufficient arguments")
 {
     alias GetEmoteFun = void function(
         TwitchPlugin,
         ref bool[dstring],
-        const string,
+        const uint,
         const string);
 
     static struct EmoteImport
@@ -2733,7 +2740,7 @@ in (((channelName.length && idString.length) ||
 
             try
             {
-                emoteImport.fun(plugin, *customEmotes, idString, __FUNCTION__);
+                emoteImport.fun(plugin, *customEmotes, id, __FUNCTION__);
 
                 if (plugin.state.settings.trace)
                 {
@@ -3299,7 +3306,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
 
         void reportCurrentGame(const TwitchPlugin.Room.Stream stream)
         {
-            if (stream.gameIDString != "0")
+            if (stream.gameID != 0)
             {
                 enum pattern = "Current game: <l>%s";
                 logger.logf(pattern, stream.gameName);
@@ -3320,7 +3327,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
             {
                 auto streamFromServer = getStream(plugin, room.broadcasterName);  // must not be const nor immutable
 
-                if (!streamFromServer.idString.length)  // == TwitchPlugin.Room.Stream.init)
+                if (!streamFromServer.id)  // == TwitchPlugin.Room.Stream.init)
                 {
                     // Stream down
                     if (room.stream.live)
@@ -3340,7 +3347,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                 else
                 {
                     // Stream up
-                    if (!room.stream.idString.length)
+                    if (!room.stream.id)
                     {
                         // New stream!
                         room.stream = streamFromServer;
@@ -3353,12 +3360,12 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                             plugin.transient.viewerTimesDirty = false;
                         }*/
                     }
-                    else if (room.stream.idString == streamFromServer.idString)
+                    else if (room.stream.id == streamFromServer.id)
                     {
                         // Same stream running, just update it
                         room.stream.update(streamFromServer);
                     }
-                    else /*if (room.stream.idString != streamFromServer.idString)*/
+                    else /*if (room.stream.id != streamFromServer.id)*/
                     {
                         // New stream, but stale one exists. Rotate and insert
                         closeStream(room);
@@ -3442,6 +3449,7 @@ void startValidator(TwitchPlugin plugin)
 in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
 {
     import kameloso.plugins.common.delayawait : delay;
+    import std.conv : to;
     import std.datetime.systime : Clock, SysTime;
     import std.json : JSONValue;
     import core.time : minutes;
@@ -3449,7 +3457,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
     static immutable retryDelay = 1.minutes;
     JSONValue validationJSON;
 
-    while (!plugin.transient.botUserIDString.length)
+    while (!plugin.transient.botID)
     {
         try
         {
@@ -3531,7 +3539,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
             continue;
         }
 
-        plugin.transient.botUserIDString = userIDJSON.str;  // ensures while loop break
+        plugin.transient.botID = userIDJSON.str.to!uint;  // ensures while loop break
         //break;
     }
 
@@ -4266,7 +4274,7 @@ package:
 
                 Cannot be made immutable or generated `opAssign`s break.
              +/
-            /*immutable*/ string _idString;
+            /*immutable*/ uint _id;
 
         package:
             /++
@@ -4275,9 +4283,9 @@ package:
             bool live; // = false;
 
             /++
-                The numerical ID of the user/account of the channel owner. In string form.
+                The numerical ID of the user/account of the channel owner.
              +/
-            string userIDString;
+            uint userID;
 
             /++
                 The user/account name of the channel owner.
@@ -4290,9 +4298,9 @@ package:
             string userDisplayName;
 
             /++
-                The unique ID of a game, as supplied by Twitch. In string form.
+                The numerical ID of a game, as supplied by Twitch.
              +/
-            string gameIDString;
+            uint gameID;
 
             /++
                 The name of the game that's being streamed.
@@ -4341,14 +4349,14 @@ package:
             RehashingAA!(string, bool) activeViewers;
 
             /++
-                Accessor to [_idString].
+                Accessor to [_id].
 
                 Returns:
-                    This stream's ID, as reported by Twitch, in string form.
+                    This stream's numerical ID, as reported by Twitch.
              +/
-            auto idString() const
+            auto id() const
             {
-                return _idString;
+                return _id;
             }
 
             /++
@@ -4359,10 +4367,10 @@ package:
              +/
             void update(const Stream updated)
             {
-                assert(_idString.length, "Stream not properly initialised");
+                assert(_id, "Stream not properly initialised");
 
                 this.userDisplayName = updated.userDisplayName;
-                this.gameIDString = updated.gameIDString;
+                this.gameID = updated.gameID;
                 this.gameName = updated.gameName;
                 this.title = updated.title;
                 this.numViewers = updated.numViewers;
@@ -4378,11 +4386,11 @@ package:
                 Constructor.
 
                 Params:
-                    idString = This stream's ID, as reported by Twitch, in string form.
+                    id = This stream's numerical ID, as reported by Twitch.
              +/
-            this(const string idString) pure @safe nothrow @nogc
+            this(const uint id) pure @safe nothrow @nogc
             {
-                this._idString = idString;
+                this._id = id;
             }
 
             /++
@@ -4397,14 +4405,15 @@ package:
                 json = null;
                 json.object = null;
 
-                json["idString"] = JSONValue(this._idString);
-                json["gameIDString"] = JSONValue(this.gameIDString);
+                json["id"] = JSONValue(this._id);
+                json["gameID"] = JSONValue(this.gameID);
                 json["gameName"] = JSONValue(this.gameName);
                 json["title"] = JSONValue(this.title);
                 json["startTimeUnix"] = JSONValue(this.startTime.toUnixTime());
                 json["stopTimeUnix"] = JSONValue(this.stopTime.toUnixTime());
                 json["numViewersMax"] = JSONValue(this.numViewersMax);
                 json["tags"] = JSONValue(this.tags);
+
                 return json;
             }
 
@@ -4422,16 +4431,8 @@ package:
                 import std.algorithm.iteration : map;
                 import std.array : array;
 
-                const idStringJSON = "idString" in json;
-                if (!idStringJSON)
-                {
-                    // Invalid entry
-                    enum message = "No `idString` key in Stream JSON representation";
-                    throw new UnexpectedJSONException(message);
-                }
-
-                auto stream = Stream(idStringJSON.str);
-                stream.gameIDString = json["gameIDString"].str;
+                auto stream = Stream(cast(uint)json["id"].integer);
+                stream.gameID = cast(uint)json["gameID"].integer;
                 stream.gameName = json["gameName"].str;
                 stream.title = json["title"].str;
                 stream.startTime = SysTime.fromUnixTime(json["startTimeUnix"].integer);
@@ -4478,7 +4479,7 @@ package:
          +/
         auto uniqueID() const
         {
-            assert((_uniqueID > 0), "Room not properly initialised");
+            assert(_uniqueID, "Room not properly initialised");
             return _uniqueID;
         }
 
@@ -4505,7 +4506,7 @@ package:
         /++
             Broadcaster user/account/room ID (not name).
          +/
-        string id;
+        uint id;
 
         /++
             Associative array of the [Follower]s of this channel, keyed by nickname.
@@ -4557,7 +4558,7 @@ package:
         /++
             The bot's numeric account/ID.
          +/
-        string botUserIDString;
+        uint botID;
 
         /++
             How long a Twitch HTTP query usually takes.

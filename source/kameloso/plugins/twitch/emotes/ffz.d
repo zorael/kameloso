@@ -31,7 +31,7 @@ public:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
-        idString = Twitch user/channel ID in string form.
+        id = Numeric Twitch user/channel ID.
         caller = Name of the calling function.
 
     See_Also:
@@ -40,19 +40,20 @@ public:
 void getFFZEmotes(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
-    const string idString,
+    const uint id,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
-in (idString.length, "Tried to get FFZ emotes with an empty ID string")
+in (id, "Tried to get FFZ emotes with an unset ID")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
     import kameloso.plugins.twitch.common : ErrorJSONException, UnexpectedJSONException;
+    import std.conv : to;
     import std.json : JSONType, parseJSON;
     import std.typecons : Flag, No, Yes;
 
     try
     {
-        immutable url = "https://api.frankerfacez.com/v1/room/id/" ~ idString;
+        immutable url = "https://api.frankerfacez.com/v1/room/id/" ~ id.to!string;
         immutable response = sendHTTPRequest(plugin, url, caller);
         immutable responseJSON = parseJSON(response.str);
 
@@ -209,7 +210,7 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
-        _ = Unused, for compatibility with [getFFZEmotes].
+        _ = Unused, for signature compatibility with [getFFZEmotes].
         caller = Name of the calling function.
 
     See_Also:
@@ -218,7 +219,7 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
 void getFFZEmotesGlobal(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
-    const string _ = string.init,
+    const uint _ = 0,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
 {

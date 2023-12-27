@@ -31,7 +31,7 @@ public:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
-        idString = Twitch user/channel ID in string form.
+        id = Numeric Twitch user/channel ID.
         caller = Name of the calling function.
 
     See_Also:
@@ -40,19 +40,20 @@ public:
 void get7tvEmotes(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
-    const string idString,
+    const uint id,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `get7tvEmotes` from outside a fiber")
-in (idString.length, "Tried to get 7tv emotes with an empty ID string")
+in (id, "Tried to get 7tv emotes with an unset ID")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
     import kameloso.plugins.twitch.common : ErrorJSONException, UnexpectedJSONException;
+    import std.conv : to;
     import std.json : JSONType, parseJSON;
     import std.typecons : Flag, No, Yes;
 
     try
     {
-        immutable url = "https://7tv.io/v3/users/twitch/" ~ idString;
+        immutable url = "https://7tv.io/v3/users/twitch/" ~ id.to!string;
         immutable response = sendHTTPRequest(plugin, url, caller);
         immutable responseJSON = parseJSON(response.str);
 
@@ -199,7 +200,7 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
-        _ = Unused, for compatibility with [get7tvEmotes].
+        _ = Unused, for signature compatibility with [get7tvEmotes].
         caller = Name of the calling function.
 
     See_Also:
@@ -208,7 +209,7 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
 void get7tvEmotesGlobal(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
-    const string _ = string.init,
+    const uint _ = 0,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 {

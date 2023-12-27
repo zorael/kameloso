@@ -1039,17 +1039,19 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        id = The string identifier for the channel.
+        id = The numerical identifier for the channel.
 
     Returns:
         An associative array of [std.json.JSONValue|JSONValue]s keyed by nickname string,
         containing followers.
  +/
-auto getFollowers(TwitchPlugin plugin, const string id)
+auto getFollowers(TwitchPlugin plugin, const uint id)
 in (Fiber.getThis(), "Tried to call `getFollowers` from outside a fiber")
-in (id.length, "Tried to get followers with an empty ID string")
+in (id, "Tried to get followers with an unset ID")
 {
-    immutable url = "https://api.twitch.tv/helix/channels/followers?first=100&broadcaster_id=" ~ id;
+    import std.conv : to;
+
+    immutable url = "https://api.twitch.tv/helix/channels/followers?first=100&broadcaster_id=" ~ id.to!string;
 
     auto getFollowersDg()
     {
@@ -1299,27 +1301,27 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
 // getTwitchUser
 /++
     Fetches information about a Twitch user and returns it in the form of a
-    Voldemort struct with nickname, display name and account ID (as string) members.
+    Voldemort struct with nickname, display name and account ID members.
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         givenName = Name of user to look up.
-        givenIDString = ID of user to look up, if no `givenName` given.
+        givenID = Optional numeric ID of user to look up, if no `givenName` given.
         searchByDisplayName = Whether or not to also attempt to look up `givenName`
             as a display name.
 
     Returns:
-        Voldemort aggregate struct with `nickname`, `displayName` and `idString` members.
+        Voldemort aggregate struct with `nickname`, `displayName` and `id` members.
  +/
 auto getTwitchUser(
     TwitchPlugin plugin,
     const string givenName,
-    const string givenIDString,
+    const uint id = 0,
     const Flag!"searchByDisplayName" searchByDisplayName = No.searchByDisplayName)
 in (Fiber.getThis(), "Tried to call `getTwitchUser` from outside a fiber")
-in ((givenName.length || givenIDString.length),
+in ((givenName.length || id),
     "Tried to get Twitch user without supplying a name nor an ID")
 {
     import std.conv : to;
@@ -1327,9 +1329,9 @@ in ((givenName.length || givenIDString.length),
 
     static struct User
     {
-        string idString;
         string nickname;
         string displayName;
+        uint id;
     }
 
     User user;
@@ -1337,9 +1339,9 @@ in ((givenName.length || givenIDString.length),
     if (const stored = givenName in plugin.state.users)
     {
         // Stored user
-        user.idString = stored.id.to!string;
         user.nickname = stored.nickname;
         user.displayName = stored.displayName;
+        user.id = stored.id;
         return user;
     }
 
@@ -1351,18 +1353,18 @@ in ((givenName.length || givenIDString.length),
             if (stored.displayName == givenName)
             {
                 // Found user by displayName
-                user.idString = stored.id.to!string;
                 user.nickname = stored.nickname;
                 user.displayName = stored.displayName;
+                user.id = stored.id;
                 return user;
             }
         }
     }
 
     // None on record, look up
-    immutable userURL = givenName ?
+    immutable userURL = givenName.length ?
         "https://api.twitch.tv/helix/users?login=" ~ givenName :
-        "https://api.twitch.tv/helix/users?id=" ~ givenIDString;
+        "https://api.twitch.tv/helix/users?id=" ~ id.to!string;
 
     auto getTwitchUserDg()
     {
@@ -1374,9 +1376,9 @@ in ((givenName.length || givenIDString.length),
             return user; //User.init;
         }
 
-        user.idString = userJSON["id"].str;
         user.nickname = userJSON["login"].str;
         user.displayName = userJSON["display_name"].str;
+        user.id = userJSON["id"].str.to!uint;
         return user;
     }
 
@@ -1395,23 +1397,28 @@ in ((givenName.length || givenIDString.length),
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         name = Name of game to look up.
-        id = ID of game to look up.
+        id = Numerical ID of game to look up.
 
     Returns:
         Voldemort aggregate struct with `id` and `name` members.
  +/
-auto getTwitchGame(TwitchPlugin plugin, const string name, const string id)
+auto getTwitchGame(
+    TwitchPlugin plugin,
+    const string name,
+    const uint id = 0)
 in (Fiber.getThis(), "Tried to call `getTwitchGame` from outside a fiber")
-in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name nor game ID")
+in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor game ID")
 {
+    import std.conv : to;
+
     static struct Game
     {
-        string id;
+        uint id;
         string name;
     }
 
-    immutable gameURL = id.length ?
-        "https://api.twitch.tv/helix/games?id=" ~ id :
+    immutable gameURL = id ?
+        "https://api.twitch.tv/helix/games?id=" ~ id.to!string :
         "https://api.twitch.tv/helix/games?name=" ~ name;
 
     auto getTwitchGameDg()
@@ -1426,7 +1433,7 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
         }
         */
 
-        return Game(gameJSON["id"].str, gameJSON["name"].str);
+        return Game(gameJSON["id"].str.to!uint, gameJSON["name"].str);
     }
 
     return retryDelegate(plugin, &getTwitchGameDg);
@@ -1481,19 +1488,20 @@ void modifyChannel(
     TwitchPlugin plugin,
     const string channelName,
     const string title,
-    const string gameID,
+    const uint gameID,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `modifyChannel` from outside a fiber")
 in (channelName.length, "Tried to modify a channel with an empty channel name string")
-in ((title.length || gameID.length), "Tried to modify a channel with no title nor game ID supplied")
+in ((title.length || gameID), "Tried to modify a channel with no title nor game ID supplied")
 {
     import std.array : Appender;
+    import std.conv : to;
 
     const room = channelName in plugin.rooms;
     assert(room, "Tried to modify a channel for which there existed no room");
 
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ room.id;
+    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ room.id.to!string;
 
     Appender!(char[]) sink;
     sink.reserve(128);
@@ -1505,13 +1513,13 @@ in ((title.length || gameID.length), "Tried to modify a channel with no title no
         sink.put(`"title":"`);
         sink.put(title);
         sink.put('"');
-        if (gameID.length) sink.put(',');
+        if (gameID) sink.put(',');
     }
 
-    if (gameID.length)
+    if (gameID)
     {
         sink.put(`"game_id":"`);
-        sink.put(gameID);
+        sink.put(gameID.to!string);
         sink.put('"');
     }
 
@@ -1552,16 +1560,17 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
 {
     import std.algorithm.iteration : map;
     import std.array : array;
+    import std.conv : to;
     import std.json : parseJSON;
 
     const room = channelName in plugin.rooms;
     assert(room, "Tried to look up a channel for which there existed no room");
 
-    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ room.id;
+    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ room.id.to!string;
 
     static struct Channel
     {
-        string gameIDString;
+        uint gameID;
         string gameName;
         string[] tags;
         string title;
@@ -1590,7 +1599,7 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
          +/
 
         Channel channel;
-        channel.gameIDString = gameDataJSON["game_id"].str;
+        channel.gameID = gameDataJSON["game_id"].str.to!uint;
         channel.gameName = gameDataJSON["game_name"].str;
         channel.tags = gameDataJSON["tags"].array
             .map!(tagJSON => tagJSON.str)
@@ -1665,13 +1674,13 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
     assert(room, "Tried to look up start commercial in a channel for which there existed no room");
 
     enum url = "https://api.twitch.tv/helix/channels/commercial";
-    enum pattern = `
+    enum bodyPattern = `
 {
-    "broadcaster_id": "%s",
+    "broadcaster_id": "%d",
     "length": %s
 }`;
 
-    immutable body_ = pattern.format(room.id, lengthString);
+    immutable body_ = bodyPattern.format(room.id, lengthString);
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
     void startCommercialDg()
@@ -1701,7 +1710,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to fetch polls for.
-        idString = ID of a specific poll to get.
+        pollIDString = ID of a specific poll to get.
         caller = Name of the calling function.
 
     Returns:
@@ -1710,7 +1719,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
 auto getPolls(
     TwitchPlugin plugin,
     const string channelName,
-    const string idString = string.init,
+    const string pollIDString = string.init,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getPolls` from outside a fiber")
 in (channelName.length, "Tried to get polls with an empty channel name string")
@@ -1722,8 +1731,10 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
     assert(room, "Tried to get polls of a channel for which there existed no room");
 
     enum baseURL = "https://api.twitch.tv/helix/polls?broadcaster_id=";
-    string url = baseURL ~ room.id;  // mutable;
-    if (idString.length) url ~= "&id=" ~ idString;
+    immutable idPart = pollIDString.length ?
+        "&id=" ~ pollIDString :
+        string.init;
+    immutable url = text(baseURL, room.id, idPart);
 
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
@@ -1865,9 +1876,9 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
     assert(room, "Tried to create a poll in a channel for which there existed no room");
 
     enum url = "https://api.twitch.tv/helix/polls";
-    enum pattern = `
+    enum bodyPattern = `
 {
-    "broadcaster_id": "%s",
+    "broadcaster_id": "%d",
     "title": "%s",
     "choices":[
 %s
@@ -1887,7 +1898,11 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
     }
 
     immutable escapedTitle = title.replace(`"`, `\"`);
-    immutable body_ = pattern.format(room.id, escapedTitle, sink.data, durationString);
+    immutable body_ = bodyPattern.format(
+        room.id,
+        escapedTitle,
+        sink.data,
+        durationString);
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
     auto createPollDg()
@@ -2000,15 +2015,15 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
     assert(room, "Tried to end a poll in a channel for which there existed no room");
 
     enum url = "https://api.twitch.tv/helix/polls";
-    enum pattern = `
+    enum bodyPattern = `
 {
-    "broadcaster_id": "%s",
+    "broadcaster_id": "%d",
     "id": "%s",
     "status": "%s"
 }`;
 
     immutable status = terminate ? "TERMINATED" : "ARCHIVED";
-    immutable body_ = pattern.format(room.id, voteID, status);
+    immutable body_ = bodyPattern.format(room.id, voteID, status);
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
     auto endPollDg()
@@ -2217,6 +2232,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
 {
     import std.algorithm.iteration : map;
     import std.array : array;
+    import std.conv : to;
     import std.datetime.systime : SysTime;
 
     immutable streamURL = "https://api.twitch.tv/helix/streams?user_login=" ~ loginName;
@@ -2272,12 +2288,12 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             }
             */
 
-            auto stream = TwitchPlugin.Room.Stream(streamJSON["id"].str);
+            auto stream = TwitchPlugin.Room.Stream(streamJSON["id"].str.to!uint);
             stream.live = true;
-            stream.userIDString = streamJSON["user_id"].str;
+            stream.userID = streamJSON["user_id"].str.to!uint;
             stream.userLogin = streamJSON["user_login"].str;
             stream.userDisplayName = streamJSON["user_name"].str;
-            stream.gameIDString = streamJSON["game_id"].str;
+            stream.gameID = streamJSON["game_id"].str.to!uint;
             stream.gameName = streamJSON["game_name"].str;
             stream.title = streamJSON["title"].str;
             stream.startTime = SysTime.fromISOExtString(streamJSON["started_at"].str);
@@ -2329,6 +2345,7 @@ in (Fiber.getThis(), "Tried to call `getSubscribers` from outside a fiber")
 in (channelName.length, "Tried to get subscribers with an empty channel name string")
 {
     import std.array : Appender;
+    import std.conv : to;
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
@@ -2341,9 +2358,9 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
     {
         static struct User
         {
-            string id;
             string name;
             string displayName;
+            uint id;
         }
 
         static struct Subscription
@@ -2360,7 +2377,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
         uint number;
         uint retry;
 
-        immutable firstURL = "https://api.twitch.tv/helix/subscriptions?broadcaster_id=" ~ room.id;
+        immutable firstURL = "https://api.twitch.tv/helix/subscriptions?broadcaster_id=" ~ room.id.to!string;
         immutable subsequentURL = totalOnly ?
             firstURL ~ "&first=1&after=" :
             firstURL ~ "&after=";
@@ -2440,11 +2457,11 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             foreach (immutable subJSON; dataJSON.array)
             {
                 Subscription sub;
-                sub.user.id = subJSON["user_id"].str;
+                sub.user.id = subJSON["user_id"].str.to!uint;
                 sub.user.name = subJSON["user_login"].str;
                 sub.user.displayName = subJSON["user_name"].str;
                 sub.wasGift = subJSON["is_gift"].boolean;
-                sub.gifter.id = subJSON["gifter_id"].str;
+                sub.gifter.id = subJSON["gifter_id"].str.to!uint;
                 sub.gifter.name = subJSON["gifter_login"].str;
                 sub.gifter.displayName = subJSON["gifter_name"].str;
                 if (number == 0) sub.total = total;
@@ -2568,7 +2585,7 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
  +/
 auto deleteMessage(
     TwitchPlugin plugin,
-    const string roomID,
+    const uint roomID,
     const string messageID,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `deleteMessage` from outside a fiber")
@@ -2578,12 +2595,12 @@ in (Fiber.getThis(), "Tried to call `deleteMessage` from outside a fiber")
 
     immutable urlPattern =
         "https://api.twitch.tv/helix/moderation/chat" ~
-        "?broadcaster_id=%s" ~
-        "&moderator_id=%s" ~
+        "?broadcaster_id=%d" ~
+        "&moderator_id=%d" ~
         (messageID.length ?
             "&message_id=%s" :
             "%s");
-    immutable url = urlPattern.format(roomID, plugin.transient.botUserIDString, messageID);
+    immutable url = urlPattern.format(roomID, plugin.transient.botID, messageID);
 
     auto deleteDg()
     {
@@ -2620,23 +2637,24 @@ in (Fiber.getThis(), "Tried to call `deleteMessage` from outside a fiber")
  +/
 auto timeoutUser(
     TwitchPlugin plugin,
-    const string roomID,
+    const uint roomID,
     const uint userID,
     const uint durationSeconds,
     const string reason = string.init,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `timeoutUser` from outside a fiber")
-in (roomID.length, "Tried to timeout a user with an empty room ID string")
-in ((userID > 0), "Tried to timeout a user with an empty user ID string")
+in (roomID, "Tried to timeout a user with an unset room ID")
+in (userID, "Tried to timeout a user with an unset user ID")
 {
     import std.algorithm.comparison : min;
+    import std.conv : to;
     import std.format : format;
 
     static struct Timeout
     {
-        string broadcasterID;
-        string moderatorID;
-        string userID;
+        uint broadcasterID;
+        uint moderatorID;
+        uint userID;
         string createdAt;
         string endTime;
         uint code;
@@ -2645,8 +2663,8 @@ in ((userID > 0), "Tried to timeout a user with an empty user ID string")
     enum maxDurationSeconds = 1_209_600;  // 14 days
 
     enum urlPattern = "https://api.twitch.tv/helix/moderation/bans" ~
-        "?broadcaster_id=%s" ~
-        "&moderator_id=%s";
+        "?broadcaster_id=%d" ~
+        "&moderator_id=%d";
 
     enum bodyPattern =
 `{
@@ -2657,7 +2675,7 @@ in ((userID > 0), "Tried to timeout a user with an empty user ID string")
     }
 }`;
 
-    immutable url = urlPattern.format(roomID, plugin.transient.botUserIDString);
+    immutable url = urlPattern.format(roomID, plugin.transient.botID);
     immutable body_ = bodyPattern.format(
         userID,
         min(durationSeconds, maxDurationSeconds),
@@ -2695,9 +2713,9 @@ in ((userID > 0), "Tried to timeout a user with an empty user ID string")
         }
 
         Timeout timeout;
-        timeout.broadcasterID = (*dataJSON)["broadcaster_id"].str;
-        timeout.moderatorID = (*dataJSON)["moderator_id"].str;
-        timeout.userID = (*dataJSON)["user_id"].str;
+        timeout.broadcasterID = (*dataJSON)["broadcaster_id"].str.to!uint;
+        timeout.moderatorID = (*dataJSON)["moderator_id"].str.to!uint;
+        timeout.userID = (*dataJSON)["user_id"].str.to!uint;
         timeout.createdAt = (*dataJSON)["created_at"].str;
         timeout.endTime = (*dataJSON)["end_time"].str;
         timeout.code = response.code;
@@ -2735,13 +2753,13 @@ auto sendWhisper(
     const string unescapedMessage,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
-in ((userID > 0), "Tried to send a whisper with an empty recipient ID string")
+in (userID, "Tried to send a whisper with an empty recipient ID string")
 {
     import std.array : replace;
     import std.format : format;
 
     enum urlPattern = "https://api.twitch.tv/helix/whispers" ~
-        "?from_user_id=%s" ~
+        "?from_user_id=%d" ~
         "&to_user_id=%d";
 
     enum bodyPattern =
@@ -2749,7 +2767,7 @@ in ((userID > 0), "Tried to send a whisper with an empty recipient ID string")
     "message": "%s"
 }`;
 
-    immutable url = urlPattern.format(plugin.transient.botUserIDString, userID);
+    immutable url = urlPattern.format(plugin.transient.botID, userID);
     immutable message = unescapedMessage.replace(`"`, `\"`);  // won't work with already escaped quotes
     immutable body_ = bodyPattern.format(message);
 
