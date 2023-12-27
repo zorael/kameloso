@@ -586,10 +586,6 @@ void onSelfjoin(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     Registers a new [TwitchPlugin.Room] as we join a channel, so there's
     always a state struct available.
 
-    Validates any broadcaster-level access tokens and displays an error if it has expired.
-
-    Sets up reminders about when the broadcaster-level token will expire.
-
     Params:
         plugin = The current [TwitchPlugin].
         channelName = The name of the channel we're supposedly joining.
@@ -599,42 +595,6 @@ in (channelName.length, "Tried to init Room with an empty channel string")
 {
     plugin.rooms[channelName] = TwitchPlugin.Room(channelName);
     plugin.rooms[channelName].lastNMessages.resize(TwitchPlugin.Room.messageMemory);
-
-    auto creds = channelName in plugin.secretsByChannel;
-    if (!creds || !creds.broadcasterKey.length) return;
-
-    void onExpiryDg()
-    {
-        enum pattern = "The broadcaster-level access token for channel <l>%s</> has expired. " ~
-            "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
-        logger.errorf(pattern, channelName);
-        creds.broadcasterKey = string.init;
-        creds.broadcasterBearerToken = string.init;
-        creds.broadcasterKeyExpiry = 0;
-        saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-    }
-
-    void validateDg()
-    {
-        import std.datetime.systime : SysTime;
-
-        generateExpiryReminders(
-            plugin,
-            SysTime.fromUnixTime(creds.broadcasterKeyExpiry),
-            "The broadcaster-level authorisation token for channel <l>" ~ channelName ~ "</>",
-            &onExpiryDg);
-    }
-
-    try
-    {
-        import kameloso.constants : BufferSize;
-        Fiber validateFiber = new Fiber(&validateDg, BufferSize.fiberStack);
-        validateFiber.call();
-    }
-    catch (InvalidCredentialsException _)
-    {
-        return onExpiryDg();
-    }
 }
 
 
@@ -1048,7 +1008,11 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     Records the room ID of a home channel, and queries the Twitch servers for
     the display name of its broadcaster.
 
-    Additionally fetches custom BetterTV, FrankerFaceZ and 7tv emotes for the channel.
+    Fetches custom BetterTV, FrankerFaceZ and 7tv emotes for the channel.
+
+    Validates any broadcaster-level access tokens and displays an error if it has expired.
+
+    Sets up reminders about when the broadcaster-level token will expire.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
@@ -1062,24 +1026,26 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import std.conv : to;
 
     auto room = event.channel in plugin.rooms;
-
     if (!room)
     {
         // Race...
         initRoom(plugin, event.channel);
         room = event.channel in plugin.rooms;
     }
+    else
+    {
+        if (room.id) return;  // Already initialised? Double roomstate?
+    }
+
+    room.id = event.aux[0].to!uint;  // Assign this before spending time in getTwitchUser
 
     /+
-        Only start a room monitor fiber if the room doesn't seem initialised.
-        If it does, it should already have a monitor running. Since we're not
-        resetting the room unique ID, we'd get two duplicate monitors. So don't.
+        Fetch the broadcaster's Twitch user through an API call and store it as
+        a new IRCUser in the plugin.state.users AA, including its display name.
+        Additionally send the user to other plugins by way of a concurrency message.
      +/
-    immutable shouldStartRoomMonitors = !room.id;
-    if (!room.id) room.id = event.aux[0].to!uint;  // Assign this before spending time in getTwitchUser
-
     auto twitchUser = getTwitchUser(plugin, string.init, room.id);
-    if (!twitchUser.nickname.length) return;  // No such user?
+    if (!twitchUser.nickname.length) return;  // No such user? Something is deeply wrong
 
     room.broadcasterDisplayName = twitchUser.displayName;
     auto storedUser = twitchUser.nickname in plugin.state.users;
@@ -1099,17 +1065,62 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         storedUser = newUser.nickname in plugin.state.users;
     }
 
-    IRCUser userCopy = *storedUser;  // dereference and copy
+    IRCUser userCopy = *storedUser;  // dereference and blit
     plugin.state.mainThread.send(ThreadMessage.putUser(string.init, boxed(userCopy)));
 
-    if (shouldStartRoomMonitors)
-    {
-        startRoomMonitors(plugin, event.channel);
+    /+
+        Start room monitors for the chanenl. We can assume they have not already
+        been started, as room was either null or room.id was set above.
+     +/
+    startRoomMonitors(plugin, event.channel);
 
-        if (plugin.twitchSettings.customEmotes)
+    if (plugin.twitchSettings.customEmotes)
+    {
+        import kameloso.plugins.common.delayawait : delay;
+        import kameloso.constants : BufferSize;
+        import core.time : Duration;
+
+        void importEmotesDg()
         {
             import kameloso.plugins.twitch.emotes : importCustomEmotes;
             importCustomEmotes(plugin, event.channel, room.id);
+        }
+
+        /+
+            Custom emote import may take a long time, so delay it as a fiber to
+            defer invocation and avoid blocking here.
+         +/
+        Fiber importEmotesFiber = new Fiber(&importEmotesDg, BufferSize.fiberStack);
+        delay(plugin, importEmotesFiber, Duration.zero);
+    }
+
+    auto creds = event.channel in plugin.secretsByChannel;
+
+    if (creds && creds.broadcasterKey.length)
+    {
+        void onExpiryDg()
+        {
+            enum pattern = "The broadcaster-level access token for channel <l>%s</> has expired. " ~
+                "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
+            logger.errorf(pattern, event.channel);
+            creds.broadcasterKey = string.init;
+            creds.broadcasterBearerToken = string.init;
+            //creds.broadcasterKeyExpiry = 0;  // keep it for reference
+            saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+        }
+
+        try
+        {
+            import std.datetime.systime : SysTime;
+            generateExpiryReminders(
+                plugin,
+                SysTime.fromUnixTime(creds.broadcasterKeyExpiry),
+                "The broadcaster-level authorisation token for channel <l>" ~ event.channel ~ "</>",
+                &onExpiryDg);
+        }
+        catch (InvalidCredentialsException _)
+        {
+            onExpiryDg();
         }
     }
 }
