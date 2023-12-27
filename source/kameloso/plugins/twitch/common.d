@@ -175,10 +175,17 @@ auto readChannelName(
             logger.trace();
             benignAbort = Yes.benignAbort;
         }
-
         return string.init;
     }
-    else if (input[0] != '#')
+    else if (
+        (input.length >= 4+1) &&  // 4 as minimum length, +1 for the octothorpe
+        (input[0] == '#') &&
+        input[1..$].isValidTwitchUsername)
+    {
+        // Seems correct
+        return input;
+    }
+    else
     {
         enum invalidChannelNameMessage = "Channels are Twitch lowercase account names, " ~
             "prepended with a '<l>#</>' sign.";
@@ -186,8 +193,6 @@ auto readChannelName(
         numEmptyLinesEntered = 0;
         return string.init;
     }
-
-    return input;
 }
 
 
