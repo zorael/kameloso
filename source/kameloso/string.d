@@ -456,6 +456,87 @@ unittest
 }
 
 
+// replaceFromAA
+/++
+    Replaces tokens in a string with values from a supplied associative array.
+    The AA values are delegates that return strings.
+
+    Example:
+    ---
+    immutable aa = ["$foo": "bar", "$baz": "quux"];
+    immutable line = "$foo $baz";
+    enum expected = "bar quux";
+    immutable actual = line.replaceFromAA(aa);
+    assert((actual == expected), actual);
+    ---
+
+    Params:
+        tokenCharacter = What character to use to denote tokens, defaults to '`$`'.
+        line = String to replace tokens in.
+        aa = Associative array of token keys and replacement delegates.
+
+    Returns:
+        A new string with occurrences of tokens replaced, or the original string
+        if there were no changes made.
+ +/
+auto replaceFromAA(char tokenCharacter = '$')
+    (const string line,
+    const string delegate()[string] aa)
+{
+    import std.array : Appender;
+    import std.string : indexOf;
+
+    static Appender!(char[]) sink;
+    if (sink.capacity == 0) sink.reserve(line.length + 32);  // guesstimate
+
+    scope(exit) sink.clear();
+
+    size_t previousEnd;
+
+    for (size_t i = 0; i < line.length; ++i)
+    {
+		if (line[i] == tokenCharacter)
+        {
+            immutable spacePos = line.indexOf(' ', i);
+            immutable end = (spacePos == -1) ? line.length : spacePos;
+            immutable key = line[i..end];
+
+            if (const replacement = key in aa)
+            {
+                sink.put(line[previousEnd..i]);
+                sink.put((*replacement)());
+                i += key.length;
+                previousEnd = i;
+            }
+        }
+    }
+
+    if (previousEnd == 0) return line;
+
+    sink.put(line[previousEnd..$]);
+    return sink.data.idup;
+}
+
+///
+unittest
+{
+    static auto echo(const string what) { return what; }
+    immutable hello = "hello";
+
+    string delegate()[string] aa =
+    [
+        "$foo" : () => hello,
+        "$bar" : () => echo("I was one"),
+        "$baz" : () => "BAZ",
+    ];
+
+    enum line = "I thought what I'd $foo was, I'd pretend $bar of those deaf-$baz";
+    enum expected = "I thought what I'd hello was, I'd pretend I was one of those deaf-BAZ";
+    immutable actual = line.replaceFromAA(aa);
+    assert((actual == expected), actual);
+}
+
+
 // doublyBackslashed
 /++
     Returns the supplied string with any backslashes doubled. This is to make
