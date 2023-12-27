@@ -572,8 +572,10 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onSelfjoin(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    if (event.channel !in plugin.rooms)
+    const room = event.channel in plugin.rooms;
+    if (!room)
     {
+        // To be expected but may have been initialised elsewhere due to race
         initRoom(plugin, event.channel);
     }
 }
@@ -675,7 +677,6 @@ void onUserstate(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     else
     {
         auto room = event.channel in plugin.rooms;
-
         if (!room)
         {
             // Race...
