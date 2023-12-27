@@ -2626,7 +2626,7 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        roomID = ID of room to delete message in.
+        channelName = Name of channel to delete message(s) in.
         messageID = ID of message to delete. Pass an empty string to delete all messages.
         caller = Name of the calling function.
 
@@ -2635,13 +2635,17 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
  +/
 auto deleteMessage(
     TwitchPlugin plugin,
-    const uint roomID,
+    const string channelName,
     const string messageID,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `deleteMessage` from outside a fiber")
+in (channelName.length, "Tried to delete a message without providing a channel name")
 {
     import std.algorithm.searching : startsWith;
     import std.format : format;
+
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to delete a message in a nonexistent room");
 
     immutable urlPattern =
         "https://api.twitch.tv/helix/moderation/chat" ~
@@ -2650,7 +2654,7 @@ in (Fiber.getThis(), "Tried to call `deleteMessage` from outside a fiber")
         (messageID.length ?
             "&message_id=%s" :
             "%s");
-    immutable url = urlPattern.format(roomID, plugin.transient.botID, messageID);
+    immutable url = urlPattern.format(room.id, plugin.transient.botID, messageID);
 
     auto deleteDg()
     {
@@ -2673,7 +2677,7 @@ in (Fiber.getThis(), "Tried to call `deleteMessage` from outside a fiber")
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        roomID = Twitch ID of room (broadcaster user) to timeout user in.
+        channelName = Name of channel to timeout a user in.
         userID = Twitch ID of user to timeout.
         durationSeconds = Duration of timeout in seconds.
         reason = Timeout reason.
@@ -2687,18 +2691,21 @@ in (Fiber.getThis(), "Tried to call `deleteMessage` from outside a fiber")
  +/
 auto timeoutUser(
     TwitchPlugin plugin,
-    const uint roomID,
+    const string channelName,
     const uint userID,
     const uint durationSeconds,
     const string reason = string.init,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `timeoutUser` from outside a fiber")
-in (roomID, "Tried to timeout a user with an unset room ID")
+in (channelName.length, "Tried to timeout a user without providing a channel")
 in (userID, "Tried to timeout a user with an unset user ID")
 {
     import std.algorithm.comparison : min;
     import std.conv : to;
     import std.format : format;
+
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to timeout a user in a nonexistent room");
 
     static struct Timeout
     {
@@ -2725,7 +2732,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
     }
 }`;
 
-    immutable url = urlPattern.format(roomID, plugin.transient.botID);
+    immutable url = urlPattern.format(room.id, plugin.transient.botID);
     immutable body_ = bodyPattern.format(
         userID,
         min(durationSeconds, maxDurationSeconds),

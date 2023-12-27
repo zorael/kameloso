@@ -1318,12 +1318,9 @@ void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandVanish(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    const room = event.channel in plugin.rooms;
-    assert(room, "Tried to vanish a user in a nonexistent room");
-
     try
     {
-        cast(void)timeoutUser(plugin, room.id, event.sender.id, 1);
+        cast(void)timeoutUser(plugin, event.channel, event.sender.id, 1);
     }
     catch (ErrorJSONException e)
     {
@@ -1990,9 +1987,6 @@ void onCommandNuke(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (!event.content.length) return sendUsage();
 
-    auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to nuke a word in a nonexistent room");
-
     immutable phraseToLower = event.content
         .stripped
         .unquoted
@@ -2014,7 +2008,7 @@ void onCommandNuke(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
         try
         {
-            immutable response = deleteMessage(plugin, room.id, storedEvent.id);
+            immutable response = deleteMessage(plugin, event.channel, storedEvent.id);
 
             if ((response.code >= 200) && (response.code < 300))
             {
@@ -2054,6 +2048,9 @@ void onCommandNuke(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             return false;
         }
     }
+
+    auto room = event.channel in plugin.rooms;
+    assert(room, "Tried to nuke a word in a nonexistent room");
 
     uint numDeleted;
 
