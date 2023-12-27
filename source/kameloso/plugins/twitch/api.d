@@ -1471,9 +1471,57 @@ auto reserveUniqueBucketID(shared QueryResponse[int] bucket)
 }
 
 
-// modifyChannel
+// setChannelTitle
 /++
-    Modifies a channel's title or currently played game.
+    Changes the title of a channel.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        channelName = Name of channel to modify.
+        title = Optional channel title to set.
+        caller = Name of the calling function.
+ +/
+void setChannelTitle(
+    TwitchPlugin plugin,
+    const string channelName,
+    const string title,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis(), "Tried to call `setChannelTitle` from outside a fiber")
+in (channelName.length, "Tried to change a the channel title with an empty channel name string")
+{
+    modifyChannelImpl(plugin, channelName, title, 0, caller);
+}
+
+
+// setChannelGame
+/++
+    Changes the currently streamed game of a channel.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        channelName = Name of channel to modify.
+        gameID = Optional game ID to set the channel as playing.
+        caller = Name of the calling function.
+ +/
+void setChannelGame(
+    TwitchPlugin plugin,
+    const string channelName,
+    const uint gameID,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis(), "Tried to call `setChannelGame` from outside a fiber")
+in (gameID, "Tried to set the channel game with an empty channel name string")
+{
+    modifyChannelImpl(plugin, channelName, string.init, gameID, caller);
+}
+
+
+// modifyChannelImpl
+/++
+    Modifies a channel's title or currently played game. Implementation function.
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
@@ -1484,7 +1532,7 @@ auto reserveUniqueBucketID(shared QueryResponse[int] bucket)
         gameID = Optional game ID to set the channel as playing.
         caller = Name of the calling function.
  +/
-void modifyChannel(
+private void modifyChannelImpl(
     TwitchPlugin plugin,
     const string channelName,
     const string title,
@@ -1537,7 +1585,7 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
             "application/json");
     }
 
-    return retryDelegate(plugin, &modifyChannelDg);
+    retryDelegate(plugin, &modifyChannelDg);
 }
 
 

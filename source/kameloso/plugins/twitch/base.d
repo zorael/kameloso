@@ -2383,7 +2383,7 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     Changes the title of the current channel.
 
     See_Also:
-        [kameloso.plugins.twitch.api.modifyChannel]
+        [kameloso.plugins.twitch.api.setChannelTitle]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -2424,8 +2424,7 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     try
     {
-        modifyChannel(plugin, event.channel, title, 0);
-
+        setChannelTitle(plugin, event.channel, title);
         enum pattern = "Channel title set to: %s";
         immutable message = pattern.format(title);
         chan(plugin.state, event.channel, message);
@@ -2446,7 +2445,7 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     Changes the game of the current channel.
 
     See_Also:
-        [kameloso.plugins.twitch.api.modifyChannel]
+        [kameloso.plugins.twitch.api.setChannelGame]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -2488,7 +2487,7 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     immutable specified = unescapedGameName.unquoted.replace(`"`, `\"`);
     immutable numberSupplied = (specified.length && specified.isNumeric);
-    uint id = numberSupplied ? specified.to!uint : 0;  // mutable
+    uint gameID = numberSupplied ? specified.to!uint : 0;  // mutable
 
     try
     {
@@ -2497,21 +2496,20 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         if (!numberSupplied)
         {
             immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent);
-            id = gameInfo.id;
+            gameID = gameInfo.id;
             name = gameInfo.name;
         }
-        else if (id == 0)
+        else if (gameID == 0)
         {
             name = "(unset)";
         }
         else /*if (id.length)*/
         {
-            immutable gameInfo = getTwitchGame(plugin, string.init, id);
+            immutable gameInfo = getTwitchGame(plugin, string.init, gameID);
             name = gameInfo.name;
         }
 
-        modifyChannel(plugin, event.channel, string.init, id);
-
+        setChannelGame(plugin, event.channel, gameID);
         enum pattern = "Game set to: %s";
         immutable message = pattern.format(name);
         chan(plugin.state, event.channel, message);
