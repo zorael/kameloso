@@ -20,7 +20,7 @@ private:
 import kameloso.plugins.twitch.base : TwitchPlugin;
 import core.thread : Fiber;
 
-public:
+package:
 
 
 // getFFZEmotes
