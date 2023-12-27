@@ -249,16 +249,16 @@ void printRetryDelegateException(/*const*/ Exception base)
 
     Example:
     ---
-    spawn(&persistentQuerier, plugin.bucket, caBundleFile);
+    spawn(&persistentQuerier, plugin.responseBucket, caBundleFile);
     ---
 
     Params:
-        bucket = The shared associative array to put the results in, response
-            values keyed by a unique numerical ID.
+        responseBucket = The shared associative array to put the results in,
+            response values keyed by a unique numerical ID.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
 void persistentQuerier(
-    shared QueryResponse[int] bucket,
+    shared QueryResponse[int] responseBucket,
     const string caBundleFile)
 {
     import kameloso.thread : ThreadMessage;
@@ -297,7 +297,7 @@ void persistentQuerier(
 
         synchronized //()
         {
-            bucket[id] = response;  // empty str if code >= 400
+            responseBucket[id] = response;  // empty str if code >= 400
         }
 
         version(BenchmarkHTTPRequests)
@@ -398,7 +398,8 @@ void persistentQuerier(
             not be attempted.
 
     Returns:
-        The [QueryResponse] that was discovered while monitoring the `bucket`
+        The [QueryResponse] that was discovered while monitoring the
+        [kameloso.plugins.twitch.base.TwitchPlugin.responseBucket|TwitchPlugin.responseBucket]
         as having been received from the server.
 
     Throws:
@@ -438,7 +439,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
 
     immutable pre = MonoTime.currTime;
-    if (!id) id = reserveUniqueBucketID(plugin.bucket);
+    if (!id) id = reserveUniqueBucketID(plugin.responseBucket);
 
     plugin.transient.persistentWorkerTid.send(
         id,
@@ -456,7 +457,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         synchronized //()
         {
             // Always remove, otherwise there'll be stale entries
-            plugin.bucket.remove(id);
+            plugin.responseBucket.remove(id);
         }
     }
 
@@ -1196,8 +1197,9 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 /++
     Common code to wait for a query response.
 
-    Merely spins and monitors the shared `bucket` associative array for when a
-    response has arrived, and then returns it.
+    Merely spins and monitors the shared
+    [kameloso.plugins.twitch.base.TwitchPlugin.responseBucket|TwitchPlugin.responseBucket]
+    associative array for when a response has arrived, and then returns it.
 
     Times out after a hardcoded [kameloso.constants.Timeout.httpGET|Timeout.httpGET]
     if nothing was received.
@@ -1206,7 +1208,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 
     Example:
     ---
-    immutable id = reserveUniqueBucketID(plugin.bucket);
+    immutable id = reserveUniqueBucketID(plugin.responseBucket);
     immutable url = "https://api.twitch.tv/helix/users?login=zorael";
     plugin.transient.persistentWorkerTid.send(id, url, plugin.transient.authorizationBearer);
 
@@ -1242,7 +1244,7 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
 
     while (true)
     {
-        response = id in plugin.bucket;
+        response = id in plugin.responseBucket;
 
         if (!response || (*response == QueryResponse.init))
         {
@@ -1292,7 +1294,7 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
 
         // Make the new approximate query time a weighted average
         averageApproximateQueryTime(plugin, response.msecs);
-        plugin.bucket.remove(id);
+        plugin.responseBucket.remove(id);
         return *response;
     }
 }
@@ -1443,15 +1445,15 @@ in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor ga
 // reserveUniqueBucketID
 /++
     Generates a unique numerical ID for use as key in the passed associative array bucket.
-    Reservates the ID in the bucket by assigning it to an empty [QueryResponse].
+    Reservates the ID in the responseBucket by assigning it to an empty [QueryResponse].
 
     Params:
-        bucket = Shared associative array of responses from async HTTP queries.
+        responseBucket = Shared associative array of responses from async HTTP queries.
 
     Returns:
-        A unique integer for use as bucket key.
+        A unique integer for use as `responseBucket` key.
  +/
-auto reserveUniqueBucketID(shared QueryResponse[int] bucket)
+auto reserveUniqueBucketID(shared QueryResponse[int] responseBucket)
 {
     import std.random : uniform;
 
@@ -1459,12 +1461,12 @@ auto reserveUniqueBucketID(shared QueryResponse[int] bucket)
 
     synchronized //()
     {
-        while (id in bucket)
+        while (id in responseBucket)
         {
             id = uniform(1, int.max);
         }
 
-        bucket[id] = QueryResponse.init;  // reserve it
+        responseBucket[id] = QueryResponse.init;  // reserve it
     }
 
     return id;

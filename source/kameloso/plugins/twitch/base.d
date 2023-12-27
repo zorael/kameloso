@@ -2132,13 +2132,13 @@ void onEndOfMOTD(TwitchPlugin plugin)
     plugin.transient.authorizationBearer = "Bearer " ~ pass;
 
     // Initialise the bucket, just so that it isn't null
-    plugin.bucket[0] = QueryResponse.init;
-    plugin.bucket.remove(0);
+    plugin.responseBucket[0] = QueryResponse.init;
+    plugin.responseBucket.remove(0);
 
     // Spawn the persistent worker.
     plugin.transient.persistentWorkerTid = spawn(
         &persistentQuerier,
-        plugin.bucket,
+        plugin.responseBucket,
         plugin.state.connSettings.caBundleFile);
 
     startValidator(plugin);
@@ -4803,7 +4803,7 @@ package:
     /++
         Associative array of responses from async HTTP queries.
      +/
-    shared QueryResponse[int] bucket;
+    shared QueryResponse[int] responseBucket;
 
     @Resource("twitch")
     {

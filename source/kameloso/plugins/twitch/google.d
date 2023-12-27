@@ -417,7 +417,8 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
 }`;
 
     immutable data = pattern.format(creds.youtubePlaylistID, videoID).representation;
-    /*immutable*/ int id = reserveUniqueBucketID(plugin.bucket);  // Making immutable bumps compilation memory +44mb
+    // Making immutable bumps compilation memory +44mb
+    /*immutable*/ int id = reserveUniqueBucketID(plugin.responseBucket);
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
