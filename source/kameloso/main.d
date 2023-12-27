@@ -3669,8 +3669,8 @@ auto startBot(Kameloso instance)
                 import std.algorithm.searching : startsWith;
                 import std.conv : to;
                 import std.process : execute, thisProcessID;
-                import std.stdio : writeln;
-                import std.string : chomp, stdout;
+                import std.stdio : stdout, writeln;
+                import std.string : chomp;
 
                 immutable dumpCommand =
                 [
