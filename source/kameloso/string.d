@@ -12,6 +12,7 @@ module kameloso.string;
 private:
 
 import dialect.defs : IRCClient;
+import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -458,30 +459,42 @@ unittest
 
 // replaceFromAA
 /++
-    Replaces tokens in a string with values from a supplied associative array.
-    The AA values are delegates that return strings.
+    Replaces space-separated tokens (that begin with a token character) in a
+    string with values from a supplied associative array.
+
+    The AA values are of some type of function or delegate returning strings.
 
     Example:
     ---
-    immutable aa = ["$foo": "bar", "$baz": "quux"];
-    immutable line = "$foo $baz";
-    enum expected = "bar quux";
+    const @safe string delegate()[string] aa =
+    [
+        "$foo"  : () => "bar",
+        "$baz"  : () => "quux"
+        "$now"  : () => Clock.currTime.toISOExtString(),
+        "$rng"  : () => uniform(0, 100).to!string,
+        "$hirr" : () => 10.to!string,
+    ];
+
+    immutable line = "first $foo second $baz third $hirr end";
+    enum expected = "first bar second quux third 10 end";
     immutable actual = line.replaceFromAA(aa);
     assert((actual == expected), actual);
     ---
 
     Params:
-        tokenCharacter = What character to use to denote tokens, defaults to '`$`'.
+        tokenCharacter = What character to use to denote tokens, defaults to '`$`'
+            but may be any `char`.
         line = String to replace tokens in.
-        aa = Associative array of token keys and replacement delegates.
+        aa = Associative array of token keys and replacement callable values.
 
     Returns:
-        A new string with occurrences of tokens replaced, or the original string
-        if there were no changes made.
+        A new string with occurrences of any passed tokens replaced, or the
+        original string as-is if there were no changes made.
  +/
-auto replaceFromAA(char tokenCharacter = '$')
+auto replaceFromAA(char tokenCharacter = '$', Fn)
     (const string line,
-    const string delegate()[string] aa)
+    const Fn[string] aa)
+if (isSomeFunction!Fn)
 {
     import std.array : Appender;
     import std.string : indexOf;
