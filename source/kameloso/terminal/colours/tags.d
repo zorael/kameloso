@@ -76,8 +76,9 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
     import kameloso.common : logger;
     import std.array : Appender;
     import std.range : ElementEncodingType;
-    import std.string : indexOf, representation;
+    import std.string : indexOf;
     import std.traits : Unqual, isSomeString;
+    static import kameloso.common;
 
     static if (!isSomeString!T)
     {
@@ -87,8 +88,6 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
         immutable message = pattern.format(__FUNCTION__, T.stringof);
         static assert(0, message);
     }
-
-    static import kameloso.common;
 
     alias E = Unqual!(ElementEncodingType!T);
 
@@ -112,7 +111,8 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
     }
 
     Appender!(E[]) sink;
-    bool dirty;
+    size_t lastEnd;
+    bool reserved;
     bool escaping;
 
     // Work around the immutability being lost with -dip1000
@@ -121,273 +121,250 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
     immutable asBytes = () @trusted
     {
         import std.exception : assumeUnique;
-        return line.assumeUnique();
+        import std.string : representation;
+        return line.representation.assumeUnique();
     }();
 
-    immutable toReserve = (asBytes.length + 16);
+    void commitUpTo(const size_t i)
+    {
+        if (!reserved)
+        {
+            sink.reserve(asBytes.length + 16);  // guesstimate
+            reserved = true;
+        }
+        sink.put(asBytes[lastEnd..i]);
+    }
 
     byteloop:
     for (size_t i; i<asBytes.length; ++i)
     {
-        immutable c = asBytes[i];
-
-        switch (c)
+        charswitch:
+        switch (asBytes[i])
         {
         case '\\':
-            if (escaping)
-            {
-                // Always dirty
-                sink.put('\\');
-            }
-            else
-            {
-                if (!dirty)
-                {
-                    sink.reserve(toReserve);
-                    sink.put(asBytes[0..i]);
-                    dirty = true;
-                }
-            }
-
+            commitUpTo(i);
+            if (escaping) sink.put('\\');
+            lastEnd = i+1;
             escaping = !escaping;
-            break;
+            continue byteloop;
 
         case '<':
             if (escaping)
             {
-                // Always dirty
+                commitUpTo(i);
                 sink.put('<');
+                lastEnd = i+1;
                 escaping = false;
+                continue byteloop;
             }
-            else
-            {
-                immutable ptrdiff_t closingBracketPos = wrappedIndexOf(asBytes[i..$], '>');
 
-                if ((closingBracketPos == -1) || (closingBracketPos > 6))
-                {
-                    if (dirty)
+            immutable closingBracketPos = wrappedIndexOf(asBytes[i..$], '>');
+            if (closingBracketPos == -1) continue byteloop;
+
+            if (asBytes.length < i+2)
+            {
+                // Too close to the end to have a meaningful tag
+                // Break and return
+                break byteloop;
+            }
+
+            immutable tag = asBytes[i+1..i+closingBracketPos];
+            if (tag.length != 1) continue byteloop;
+
+            commitUpTo(i);
+
+            tagswitch:
+            switch (tag[0])
+            {
+            version(Colours)
+            {
+                case 'l':
+                    if (!strip) sink.put(logger.logtint);
+                    break;
+
+                case 't':
+                    if (!strip) sink.put(logger.tracetint);
+                    break;
+
+                case 'i':
+                    if (!strip) sink.put(logger.infotint);
+                    break;
+
+                case 'w':
+                    if (!strip) sink.put(logger.warningtint);
+                    break;
+
+                case 'e':
+                    if (!strip) sink.put(logger.errortint);
+                    break;
+
+                case 'c':
+                    if (!strip) sink.put(logger.criticaltint);
+                    break;
+
+                case 'f':
+                    if (!strip) sink.put(logger.fataltint);
+                    break;
+
+                case 'o':
+                    if (!strip) sink.put(logger.offtint);
+                    break;
+
+                case '/':
+                    if (!strip)
                     {
-                        sink.put(c);
+                        with (LogLevel)
+                        final switch (baseLevel)
+                        {
+                        case all:  //log
+                            //goto case 'l';
+                            sink.put(logger.logtint);
+                            break tagswitch;
+
+                        case trace:
+                            //goto case 't';
+                            sink.put(logger.tracetint);
+                            break tagswitch;
+
+                        case info:
+                            //goto case 'i';
+                            sink.put(logger.infotint);
+                            break tagswitch;
+
+                        case warning:
+                            //goto case 'w';
+                            sink.put(logger.warningtint);
+                            break tagswitch;
+
+                        case error:
+                            //goto case 'e';
+                            sink.put(logger.errortint);
+                            break tagswitch;
+
+                        case critical:
+                            //goto case 'c';
+                            sink.put(logger.criticaltint);
+                            break tagswitch;
+
+                        case fatal:
+                            //goto case 'f';
+                            sink.put(logger.fataltint);
+                            break tagswitch;
+
+                        case off:
+                            //goto case 'o';
+                            sink.put(logger.offtint);
+                            break tagswitch;
+                        }
+                    }
+                    break tagswitch;
+            }
+
+            case 'h':
+                immutable closingHashMarkPos = wrappedIndexOf(asBytes[i+3..$], "</>");
+                if (closingHashMarkPos == -1) goto default;
+
+                // Advance past "<h>"
+                i += 3;
+                immutable word = cast(string)asBytes[i..i+closingHashMarkPos];
+
+                version(Colours)
+                {
+                    if (!strip)
+                    {
+                        import kameloso.terminal.colours : colourByHash;
+
+                        sink.put(colourByHash(word, kameloso.common.settings));
+
+                        with (LogLevel)
+                        levelswitch:
+                        final switch (baseLevel)
+                        {
+                        case all:  //log
+                            sink.put(logger.logtint);
+                            break levelswitch;
+
+                        case trace:
+                            sink.put(logger.tracetint);
+                            break levelswitch;
+
+                        case info:
+                            sink.put(logger.infotint);
+                            break levelswitch;
+
+                        case warning:
+                            sink.put(logger.warningtint);
+                            break levelswitch;
+
+                        case error:
+                            sink.put(logger.errortint);
+                            break levelswitch;
+
+                        case critical:
+                            sink.put(logger.criticaltint);
+                            break levelswitch;
+
+                        case fatal:
+                            sink.put(logger.fataltint);
+                            break levelswitch;
+
+                        case off:
+                            sink.put(logger.offtint);
+                            break levelswitch;
+                        }
+                    }
+                    else
+                    {
+                        sink.put(word);
                     }
                 }
                 else
                 {
-                    // Valid; dirties now if not already dirty
-
-                    if (asBytes.length < i+2)
-                    {
-                        // Too close to the end to have a meaningful tag
-                        // Break and return
-
-                        if (dirty)
-                        {
-                            // Add rest first
-                            sink.put(asBytes[i..$]);
-                        }
-
-                        break byteloop;
-                    }
-
-                    if (!dirty)
-                    {
-                        sink.reserve(toReserve);
-                        sink.put(asBytes[0..i]);
-                        dirty = true;
-                    }
-
-                    immutable slice = asBytes[i+1..i+closingBracketPos];  // mutable
-                    if (slice.length != 1) break;
-
-                    sliceswitch:
-                    switch (slice[0])
-                    {
-
-                    version(Colours)
-                    {
-                        case 'l':
-                            if (!strip) sink.put(logger.logtint);
-                            break;
-
-                        case 't':
-                            if (!strip) sink.put(logger.tracetint);
-                            break;
-
-                        case 'i':
-                            if (!strip) sink.put(logger.infotint);
-                            break;
-
-                        case 'w':
-                            if (!strip) sink.put(logger.warningtint);
-                            break;
-
-                        case 'e':
-                            if (!strip) sink.put(logger.errortint);
-                            break;
-
-                        case 'c':
-                            if (!strip) sink.put(logger.criticaltint);
-                            break;
-
-                        case 'f':
-                            if (!strip) sink.put(logger.fataltint);
-                            break;
-
-                        case 'o':
-                            if (!strip) sink.put(logger.offtint);
-                            break;
-
-                        case '/':
-                            if (!strip)
-                            {
-                                with (LogLevel)
-                                final switch (baseLevel)
-                                {
-                                case all:  //log
-                                    //goto case 'l';
-                                    sink.put(logger.logtint);
-                                    break sliceswitch;
-
-                                case trace:
-                                    //goto case 't';
-                                    sink.put(logger.tracetint);
-                                    break sliceswitch;
-
-                                case info:
-                                    //goto case 'i';
-                                    sink.put(logger.infotint);
-                                    break sliceswitch;
-
-                                case warning:
-                                    //goto case 'w';
-                                    sink.put(logger.warningtint);
-                                    break sliceswitch;
-
-                                case error:
-                                    //goto case 'e';
-                                    sink.put(logger.errortint);
-                                    break sliceswitch;
-
-                                case critical:
-                                    //goto case 'c';
-                                    sink.put(logger.criticaltint);
-                                    break sliceswitch;
-
-                                case fatal:
-                                    //goto case 'f';
-                                    sink.put(logger.fataltint);
-                                    break sliceswitch;
-
-                                case off:
-                                    //goto case 'o';
-                                    sink.put(logger.offtint);
-                                    break sliceswitch;
-                                }
-                            }
-                            break;
-                    }
-
-                    case 'h':
-                        i += 3;  // advance past "<h>".length
-                        immutable closingHashMarkPos = wrappedIndexOf(asBytes[i..$], "</>");
-
-                        if (closingHashMarkPos == -1)
-                        {
-                            // Revert advance
-                            i -= 3;
-                            goto default;
-                        }
-                        else
-                        {
-                            immutable word = cast(string)asBytes[i..i+closingHashMarkPos];
-
-                            version(Colours)
-                            {
-                                if (!strip)
-                                {
-                                    import kameloso.terminal.colours : colourByHash;
-
-                                    sink.put(colourByHash(word, kameloso.common.settings));
-
-                                    with (LogLevel)
-                                    final switch (baseLevel)
-                                    {
-                                    case all:  //log
-                                        sink.put(logger.logtint);
-                                        break;
-
-                                    case trace:
-                                        sink.put(logger.tracetint);
-                                        break;
-
-                                    case info:
-                                        sink.put(logger.infotint);
-                                        break;
-
-                                    case warning:
-                                        sink.put(logger.warningtint);
-                                        break;
-
-                                    case error:
-                                        sink.put(logger.errortint);
-                                        break;
-
-                                    case critical:
-                                        sink.put(logger.criticaltint);
-                                        break;
-
-                                    case fatal:
-                                        sink.put(logger.fataltint);
-                                        break;
-
-                                    case off:
-                                        sink.put(logger.offtint);
-                                        break;
-                                    }
-                                }
-                                else
-                                {
-                                    sink.put(word);
-                                }
-                            }
-                            else
-                            {
-                                sink.put(word);
-                            }
-
-                            // Don't advance the full "<h>".length 3
-                            // because the for-loop ++i will advance one ahead
-                            i += (closingHashMarkPos+2);
-                            continue;  // Not break
-                        }
-
-                    default:
-                        // Invalid control character, just ignore
-                        break;
-                    }
-
-                    i += closingBracketPos;
+                    sink.put(word);
                 }
-            }
-            break;
 
-        default:
+                // Don't advance the full "<h>".length 3
+                // because the for-loop ++i will advance one ahead
+                i += closingHashMarkPos+2;
+                lastEnd = i+1;
+                continue byteloop;  // Not break
+
+            default:  // tagswitch
+                // Invalid control character, just ignore
+                // set lastEnd but otherwise skip ahead past the tag
+                lastEnd = i;
+                i += tag.length+1;
+                continue byteloop;
+            }
+
+            // Switch cases drop down to here
+            i += closingBracketPos;
+            lastEnd = i+1;
+            continue byteloop;
+
+        default:  // charswitch
             if (escaping)
             {
+                // Cancel escape if we're not escaping a tag
                 escaping = false;
             }
-
-            if (dirty)
-            {
-                sink.put(c);
-            }
-            break;
+            continue byteloop;
         }
     }
 
+    // Return the line as-is if it didn't contain any tags
+    if (!sink.data.length) return line;
+
+    sink.put(asBytes[lastEnd..$]);
+
+    /+
+        Since we can't manage to make this pure (because KamelosoLogger tints aren't),
+        we have to cheat and force sink.data to be unique and immutable.
+     +/
     return () @trusted
     {
         import std.exception : assumeUnique;
-        return dirty ? sink.data.assumeUnique() : line;
+        return sink.data.assumeUnique();
     }();
 }
 
