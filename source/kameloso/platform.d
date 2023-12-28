@@ -441,8 +441,6 @@ Pid exec(
 
         for (size_t i; i<args.length; ++i)
         {
-            import std.format : formattedWrite;
-
             if (sink.data.length) sink.put(' ');
 
             if ((args.length >= i+1) &&
@@ -454,8 +452,27 @@ Pid exec(
                     "--set"))
                     //"--internal-channel-override"))  // No need, we add the quotes above
             {
-                // Octothorpes must be encased in single quotes
-                sink.formattedWrite("%s '%s'", args[i], args[i+1]);
+                import kameloso.constants : KamelosoDefaultChars;
+                import std.array : replace;
+                import std.format : formattedWrite;
+
+                /+
+                    Parameters to the program are passed to powershell
+                    as a single string. We have to rely on quotes to separate
+                    each argument, as well as to escape some things like octothorpes.
+
+                    This does not work well with arguments that in turn contain
+                    quotes, such as --set connect.sendAfterConnect="abc def".
+                    It can still be made to reexec with some backslashes added,
+                    but the contents will be wrong and subsequent arguments may be skipped.
+
+                    To work around this, change all double quotes into
+                    KamelosoDefaultChars.doublequotePlaceholder, and undo the
+                    change early before getopt.
+                 +/
+                immutable quotesReplaced = args[i+1]
+                    .replace('"', cast(char)KamelosoDefaultChars.doublequotePlaceholder);
+                sink.formattedWrite(`%s "%s"`, args[i], quotesReplaced);
                 ++i;
             }
             else

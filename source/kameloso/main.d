@@ -4181,6 +4181,28 @@ auto run(string[] args)
     import std.exception : ErrnoException;
     static import kameloso.common;
 
+    version(Windows)
+    {
+        /+
+            Work around not being able to have arguments with double quotes in
+            them carry over re-executions with powershell, by replacing them with
+            KamelosoDefaultChars.doublequotePlaceholder before forking
+            (and now back to quotes before getopt).
+
+            See comments in kameloso.platform.exec for more information.
+         +/
+        if (args.length > 1)
+        {
+            // skip args[0]
+            foreach (immutable i; 1..args.length)
+            {
+                import kameloso.constants : KamelosoDefaultChars;
+                import std.array : replace;
+                args[i] = args[i].replace(cast(char)KamelosoDefaultChars.doublequotePlaceholder, '"');
+            }
+        }
+    }
+
     // Set up the Kameloso instance.
     auto instance = new Kameloso(args);
     postInstanceSetup();
