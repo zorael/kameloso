@@ -300,7 +300,7 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     }
 
     immutable args = slice.splitWithQuotes();
-    static string delegate()[string] aa;
+    static @safe string delegate()[string] aa;
 
     if (!aa.length)
     {
