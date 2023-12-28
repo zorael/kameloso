@@ -365,38 +365,56 @@ unittest
 
 // ircColourByHash
 /++
-    Returns the passed string coloured with an IRC colour depending on the hash
+    Returns the passed `string` coloured with an IRC colour depending on the hash
     of the string, making for good "random" (uniformly distributed) nick colours
     in IRC messages.
 
     Params:
-        word = String to tint.
+        word = `string` to tint.
         extendedOutgoingColours = Whether or not to use extended colours (16-98).
 
     Returns:
-        The passed string encased within IRC colour coding.
+        The passed `string` encased within IRC colour coding.
  +/
 string ircColourByHash(
     const string word,
     const Flag!"extendedOutgoingColours" extendedOutgoingColours) pure
 in (word.length, "Tried to apply IRC colours by hash to a string but no string was given")
 {
-    import lu.conv : toAlphaInto;
     import std.array : Appender;
 
     if (!word.length) return word;
 
     Appender!(char[]) sink;
-    sink.reserve(word.length + 4);  // colour, index, word, colour
+    ircColourByHashImpl(sink, word, extendedOutgoingColours);
+    return sink.data;
+}
 
-    immutable modulo = extendedOutgoingColours ? ircANSIColourMap.length : 16;
-    immutable colourInteger = (hashOf(word) % modulo);
 
-    sink.put(cast(char)IRCControlCharacter.colour);
-    colourInteger.toAlphaInto!(2, 2)(sink);
-    sink.put(word);
-    sink.put(cast(char)IRCControlCharacter.colour);
+// ircColourByHash
+/++
+    Returns the passed `dstring` coloured with an IRC colour depending on the hash
+    of the string, making for good "random" (uniformly distributed) nick colours
+    in IRC messages.
 
+    Params:
+        word = `dtring`` to tint.
+        extendedOutgoingColours = Whether or not to use extended colours (16-98).
+
+    Returns:
+        The passed `dstring`` encased within IRC colour coding.
+ +/
+dstring ircColourByHash(
+    const dstring word,
+    const Flag!"extendedOutgoingColours" extendedOutgoingColours) pure
+in (word.length, "Tried to apply IRC colours by hash to a dstring but no dstring was given")
+{
+    import std.array : Appender;
+
+    if (!word.length) return word;
+
+    Appender!(dchar[]) sink;
+    ircColourByHashImpl(sink, word, extendedOutgoingColours);
     return sink.data;
 }
 
@@ -427,6 +445,35 @@ unittest
         immutable expected = I.colour ~ "90flerrp" ~ I.colour;
         assert((actual == expected), actual);
     }
+}
+
+
+// ircColourByHashImpl
+/++
+    Implementation function used by [ircColourByHash]. Breaks out common functionality
+    and reuses it.
+
+    Params:
+        sink = Output range sink to fill with the function's output.
+        word = Some type of string to tint.
+        extendedOutgoingColours = Whether or not to use extended colours (16-98).
+ +/
+private void ircColourByHashImpl(Sink, String)
+    (ref Sink sink,
+    const String word,
+    const Flag!"extendedOutgoingColours" extendedOutgoingColours) pure
+{
+    import lu.conv : toAlphaInto;
+
+    sink.reserve(word.length + 4);  // colour, index, word, colour
+
+    immutable modulo = extendedOutgoingColours ? ircANSIColourMap.length : 16;
+    immutable colourInteger = (hashOf(word) % modulo);
+
+    sink.put(cast(char)IRCControlCharacter.colour);
+    colourInteger.toAlphaInto!(2, 2)(sink);
+    sink.put(word);
+    sink.put(cast(char)IRCControlCharacter.colour);
 }
 
 
