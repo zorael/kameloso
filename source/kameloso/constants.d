@@ -225,6 +225,19 @@ enum KamelosoDefaultIntegers
 }
 
 
+// KamelosoDefaultChars
+/++
+    Kameloso defaults, character version.
+ +/
+enum KamelosoDefaultChars
+{
+    /++
+        Placeholder for quote characters, used when re-executing on Windows.
+     +/
+    doublequotePlaceholder = '\1',
+}
+
+
 // KamelosoFilenames
 /++
     Kameloso filenames.
