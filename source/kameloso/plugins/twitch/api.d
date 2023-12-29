@@ -121,7 +121,11 @@ in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outsi
         }
         catch (Exception e)
         {
-            handleRetryDelegateException(plugin, e, i, endlessly);
+            handleRetryDelegateException(
+                e,
+                i,
+                endlessly,
+                cast(Flag!"headless")plugin.state.settings.headless);
             continue;  // If we're here the above didn't throw; continue
         }
     }
@@ -135,16 +139,17 @@ in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outsi
     Handles exceptions thrown by [retryDelegate].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         base = The exception to handle.
         i = The current retry count.
         endlessly = Whether or not to endlessly retry.
+        headless = Whether or not we are running headlessly, in which case all
+            terminal output will be skipped.
  +/
-auto handleRetryDelegateException(
-    TwitchPlugin plugin,
+private auto handleRetryDelegateException(
     Exception base,
     const size_t i,
-    const Flag!"endlessly" endlessly)
+    const Flag!"endlessly" endlessly,
+    const Flag!"headless" headless)
 {
     if (auto e = cast(MissingBroadcasterTokenException)base)
     {
@@ -178,7 +183,7 @@ auto handleRetryDelegateException(
             // Unconditionally continue, but print the exception once if it's erroring
             version(PrintStacktraces)
             {
-                if (!plugin.state.settings.headless)
+                if (!headless)
                 {
                     alias printExceptionAfterNFailures = TwitchPlugin.delegateRetries;
 
@@ -197,7 +202,7 @@ auto handleRetryDelegateException(
 
             version(PrintStacktraces)
             {
-                if (!plugin.state.settings.headless)
+                if (!headless)
                 {
                     printRetryDelegateException(base);
                 }
