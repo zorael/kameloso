@@ -1743,7 +1743,7 @@ void onBusMessage(
             {
                 enum invalidSyntaxMessage = "Invalid bus message syntax; " ~
                     "expected <l>hostmask add [account] [hostmask]";
-                return logger.warning(message);
+                return logger.warning(invalidSyntaxMessage);
             }
 
             IRCEvent lvalueEvent;
@@ -1755,7 +1755,7 @@ void onBusMessage(
             {
                 enum invalidSyntaxMessage = "Invalid bus message syntax; " ~
                     "expected <l>hostmask del [hostmask]";
-                return logger.warning(message);
+                return logger.warning(invalidSyntaxMessage);
             }
 
             IRCEvent lvalueEvent;

@@ -3828,7 +3828,7 @@ void onBusMessage(
     {
         import lu.conv : Enum;
         enum pattern = "Unknown message type <l>%s</> sent as TwitchPlugin bus message";
-        logger.errorf(Enum!(IRCEvent.Type).toString(message.payload.event.type));
+        logger.errorf(pattern, Enum!(IRCEvent.Type).toString(message.payload.event.type));
     }
 }
 
