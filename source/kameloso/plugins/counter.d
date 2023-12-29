@@ -747,6 +747,8 @@ auto formatMessage(
             aa["$streamerNickname"] = () => event.channel[1..$];
             aa["$streamer"] = () => nameOf(plugin, event.channel[1..$]);
         }
+
+        aa.rehash();
     }
 
     return pattern

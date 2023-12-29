@@ -341,6 +341,8 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
                 aa["$streamerNickname"] = () => event.channel[1..$];
             }
         }
+
+        aa.rehash();
     }
 
     immutable line = oneliner

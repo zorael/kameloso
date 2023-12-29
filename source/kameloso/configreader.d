@@ -110,7 +110,7 @@ if (allSatisfy!(isStruct, T))  // must be a constraint
         [lu.serialisation.ConfigurationFileReadFailureException|ConfigurationFileReadFailureException]
         if the reading and decoding of the configuration file failed.
  +/
-auto configurationText(const string configFile)
+auto configurationText(const string configFile) @safe
 {
     import std.file : exists, getAttributes, isFile, readText;
 
@@ -148,6 +148,15 @@ auto configurationText(const string configFile)
             "[Webtitles]\n"   : () => "[Webtitle]\n",
             "[Webtitles]\r\n" : () => "[Webtitle]\r\n",
         ];
+
+        /+
+            Ideally we'd rehash here, but that's not possible in @safe code.
+            Bend the rules and cheat a bit; surely history will forgive us.
+         +/
+        () @trusted
+        {
+            aa.rehash();
+        }();
 
         return configFile
             .readText

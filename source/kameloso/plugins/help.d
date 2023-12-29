@@ -250,6 +250,8 @@ void sendCommandHelpImpl(
                 "$nickname" : () => event.sender.nickname,
                 "$header"   : () => string.init,
             ];
+
+            aa.rehash();
         }
 
         return syntax
