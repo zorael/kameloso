@@ -1048,7 +1048,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         return validationJSON;
     }
 
-    return retryDelegate!(Yes.endlessly)(plugin, &getValidationDg);
+    return retryDelegate(plugin, &getValidationDg, Yes.async, Yes.endlessly);
 }
 
 
@@ -2664,6 +2664,7 @@ in (channelName.length, "Tried to delete a message without providing a channel n
 {
     import std.algorithm.searching : startsWith;
     import std.format : format;
+    import core.time : msecs;
 
     const room = channelName in plugin.rooms;
     assert(room, "Tried to delete a message in a nonexistent room");
@@ -2687,8 +2688,8 @@ in (channelName.length, "Tried to delete a message without providing a channel n
             HttpVerb.DELETE);
     }
 
-    enum failedDeleteRetryMsecs = 100;
-    return retryDelegate!(Yes.endlessly, failedDeleteRetryMsecs)(plugin, &deleteDg);
+    static immutable failedDeleteRetry = 100.msecs;
+    return retryDelegate(plugin, &deleteDg, Yes.async, Yes.endlessly, failedDeleteRetry);
 }
 
 
