@@ -1785,7 +1785,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
         caller = Name of the calling function.
 
     Returns:
-        An arary of [std.json.JSONValue|JSONValue]s with all the matched polls.
+        An arary of Voldemort `TwitchPoll` structs.
  +/
 auto getPolls(
     TwitchPlugin plugin,
@@ -1796,7 +1796,8 @@ in (Fiber.getThis(), "Tried to call `getPolls` from outside a fiber")
 in (channelName.length, "Tried to get polls with an empty channel name string")
 {
     import std.conv : text;
-    import std.json : JSONType, JSONValue, parseJSON;
+    import std.json : JSONType, parseJSON;
+    import std.datetime.systime : SysTime;
 
     const room = channelName in plugin.rooms;
     assert(room, "Tried to get polls of a channel for which there existed no room");
@@ -1809,12 +1810,41 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
 
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
+    static struct TwitchPoll
+    {
+        static struct Choice
+        {
+            string id;
+            string title;
+            uint votes;
+            uint channelPointsVotes;
+            uint bitsVotes;
+        }
+
+        /*enum PollStatus
+        {
+            active,
+            inactive,
+        }*/
+
+        string pollID;
+        string title;
+        uint broadcasterID;
+        string broadcasterLogin;
+        string broadcasterDisplayName;
+        Choice[] choices;
+        bool bitsVotingEnabled;
+        uint bitsPerVote;
+        bool channelPointsVotingEnabled;
+        uint channelPointsPerVote;
+        //PollStatus status;
+        uint duration;
+        SysTime startedAt;
+    }
+
     auto getPollsDg()
     {
-        JSONValue allPollsJSON;
-        allPollsJSON = null;
-        allPollsJSON.array = null;
-
+        TwitchPoll[] polls;
         string after;
         uint retry;
 
@@ -1835,6 +1865,8 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
 
             if (responseJSON.type != JSONType.object)
             {
+                // Invalid response in some way, retry until we reach the limit
+                if (++retry < TwitchPlugin.delegateRetries) continue;
                 enum message = "`getPolls` response has unexpected JSON " ~
                     "(wrong JSON type)";
                 throw new UnexpectedJSONException(message, responseJSON);
@@ -1845,6 +1877,8 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
             if (!dataJSON)
             {
                 // For some reason we received an object that didn't contain data
+                // Retry as above
+                if (++retry < TwitchPlugin.delegateRetries) continue;
                 enum message = "`getPolls` response has unexpected JSON " ~
                     `(no "data" key)`;
                 throw new UnexpectedJSONException(message, responseJSON);
@@ -1892,15 +1926,57 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
 
             foreach (const pollJSON; dataJSON.array)
             {
+                import std.conv : to;
+
+                // Skip non-active polls for now
                 if (pollJSON["status"].str != "ACTIVE") continue;
-                allPollsJSON.array ~= pollJSON;
+
+                foreach (const existingPoll; polls)
+                {
+                    if (existingPoll.pollID == pollJSON["id"].str)
+                    {
+                        // Already have this poll
+                        // Likely a request failed and we're retrying
+                        continue;
+                    }
+                }
+
+                TwitchPoll poll;
+                poll.pollID = pollJSON["id"].str;
+                poll.title = pollJSON["title"].str;
+                poll.broadcasterID = pollJSON["broadcaster_id"].str.to!uint;
+                poll.broadcasterLogin = pollJSON["broadcaster_login"].str;
+                poll.broadcasterDisplayName = pollJSON["broadcaster_name"].str;
+                poll.bitsVotingEnabled = pollJSON["bits_voting_enabled"].boolean;
+                poll.bitsPerVote = pollJSON["bits_per_vote"].str.to!uint;
+                poll.channelPointsVotingEnabled = pollJSON["channel_points_voting_enabled"].boolean;
+                poll.channelPointsPerVote = pollJSON["channel_points_per_vote"].str.to!uint;
+                poll.duration = cast(uint)pollJSON["duration"].integer;
+                poll.startedAt = SysTime.fromISOExtString(pollJSON["started_at"].str);
+
+                /*poll.status = pollJSON["status"].str == "ACTIVE" ?
+                    TwitchPoll.PollStatus.active :
+                    TwitchPoll.PollStatus.inactive;*/
+
+                foreach (const choiceJSON; pollJSON["choices"].array)
+                {
+                    TwitchPoll.Choice choice;
+                    choice.id = choiceJSON["id"].str;
+                    choice.title = choiceJSON["title"].str;
+                    choice.votes = choiceJSON["votes"].str.to!uint;
+                    choice.channelPointsVotes = choiceJSON["channel_points_votes"].str.to!uint;
+                    choice.bitsVotes = choiceJSON["bits_votes"].str.to!uint;
+                    poll.choices ~= choice;
+                }
+
+                polls ~= poll;
             }
 
             after = responseJSON["after"].str;
         }
         while (after.length);
 
-        return allPollsJSON.array;
+        return polls;
     }
 
     return retryDelegate(plugin, &getPollsDg);
