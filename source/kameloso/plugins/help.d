@@ -231,20 +231,29 @@ void sendCommandHelpImpl(
     const IRCPlugin.CommandMetadata command)
 {
     import std.algorithm.searching : startsWith;
-    import std.array : replace;
-    import std.conv : text;
     import std.format : format;
 
     auto getHumanlyReadable(const string syntax)
     {
+        import kameloso.string : replaceFromAA;
         import lu.string : strippedLeft;
 
+        static @safe string delegate()[string] aa;
+
+        if (!aa.length)
+        {
+            aa =
+            [
+                "$command"  : () => commandString,
+                "$bot"      : () => plugin.state.client.nickname,
+                "$prefix"   : () => plugin.state.settings.prefix,
+                "$nickname" : () => event.sender.nickname,
+                "$header"   : () => string.init,
+            ];
+        }
+
         return syntax
-            .replace("$command", commandString)
-            .replace("$bot", plugin.state.client.nickname)
-            .replace("$prefix", plugin.state.settings.prefix)
-            .replace("$nickname", event.sender.nickname)
-            .replace("$header", string.init)
+            .replaceFromAA(aa)
             .strippedLeft;
     }
 
