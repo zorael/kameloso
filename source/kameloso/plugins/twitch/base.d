@@ -1340,7 +1340,7 @@ void onCommandVanish(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     catch (ErrorJSONException e)
     {
         import kameloso.plugins.common : nameOf;
-        enum pattern = "Failed to vanish <h>%s</> in <l>%s</> <t>(%s)";
+        enum pattern = "Failed to vanish <l>%s</> in <l>%s</> <t>(%s)";
         logger.warningf(pattern, nameOf(event.sender), event.channel, e.msg);
     }
 }

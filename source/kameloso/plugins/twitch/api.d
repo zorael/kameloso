@@ -769,8 +769,9 @@ in (Fiber.getThis(), "Tried to call `getTwitchData` from outside a fiber")
         }
         else if (!dataJSON.array.length)
         {
+            // data exists but is empty
             enum message = "`getTwitchData` response has unexpected JSON " ~
-                `(empty "data" array)`;
+                `(zero-length "data")`;
             throw new EmptyDataJSONException(message, responseJSON);
         }
         else
