@@ -1131,6 +1131,7 @@ in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber
     allEntitiesJSON = null;
     allEntitiesJSON.array = null;
     string after;
+    uint retry;
 
     do
     {
@@ -1147,10 +1148,14 @@ in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber
 
         if (!dataJSON)
         {
+            // Invalid response in some way, retry until we reach the limit
+            if (++retry < TwitchPlugin.delegateRetries) continue;
             enum message = "`getMultipleTwitchData` response has unexpected JSON " ~
                 `(no "data" key)`;
             throw new UnexpectedJSONException(message, responseJSON);
         }
+
+        retry = 0;
 
         foreach (thisResponseJSON; dataJSON.array)
         {
