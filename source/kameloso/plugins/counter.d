@@ -712,10 +712,8 @@ auto formatMessage(
     const long step = long.init)
 {
     import kameloso.plugins.common.misc : nameOf;
-    import kameloso.string : replaceRandom;
+    import kameloso.string : replaceFromAA, replaceRandom;
     import std.conv : to;
-    import std.array : replace;
-    import std.math : abs;
 
     auto signedStep()
     {
@@ -725,29 +723,35 @@ auto formatMessage(
             step.to!string;
     }
 
-    string toReturn = pattern  // mutable
-        .replace("$step", abs(step).to!string)
-        .replace("$signedstep", signedStep())
-        .replace("$count", counter.count.to!string)
-        .replace("$word", counter.word)
-        .replace("$channel", event.channel)
-        .replace("$senderNickname", event.sender.nickname)
-        .replace("$sender", nameOf(event.sender))
-        .replace("$botNickname", plugin.state.client.nickname)
-        .replace("$bot", nameOf(plugin, plugin.state.client.nickname))
-        .replaceRandom();
+    static @safe string delegate()[string] aa;
 
-    version(TwitchSupport)
+    if (!aa.length)
     {
+        import std.math : abs;
+
+        aa =
+        [
+            "$step"        : () => abs(step).to!string,
+            "$signedstep"  : () => signedStep(),
+            "$count"       : () => counter.count.to!string,
+            "$word"        : () => counter.word,
+            "$channel"     : () => event.channel,
+            "$senderNickname" : () => event.sender.nickname,
+            "$sender"      : () => nameOf(event.sender),
+            "$botNickname" : () => plugin.state.client.nickname,
+            "$bot"         : () => nameOf(plugin, plugin.state.client.nickname),
+        ];
+
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            toReturn = toReturn
-                .replace("$streamerNickname", event.channel[1..$])
-                .replace("$streamer", nameOf(plugin, event.channel[1..$]));
+            aa["$streamerNickname"] = () => event.channel[1..$];
+            aa["$streamer"] = () => nameOf(plugin, event.channel[1..$]);
         }
     }
 
-    return toReturn;
+    return pattern
+        .replaceFromAA(aa)
+        .replaceRandom();
 }
 
 
