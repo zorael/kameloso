@@ -2135,7 +2135,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel whose poll to end.
-        voteID = ID of the specific vote to end.
+        pollID = ID of the specific poll to end.
         terminate = If set, ends the poll by putting it in a `"TERMINATED"` state.
             If unset, ends it in an `"ARCHIVED"` way.
         caller = Name of the calling function.
@@ -2149,7 +2149,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
 auto endPoll(
     TwitchPlugin plugin,
     const string channelName,
-    const string voteID,
+    const string pollID,
     const Flag!"terminate" terminate,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `endPoll` from outside a fiber")
@@ -2170,7 +2170,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
 }`;
 
     immutable status = terminate ? "TERMINATED" : "ARCHIVED";
-    immutable body_ = bodyPattern.format(room.id, voteID, status);
+    immutable body_ = bodyPattern.format(room.id, pollID, status);
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
     auto endPollDg()
@@ -2848,7 +2848,6 @@ in (userID, "Tried to timeout a user with an unset user ID")
             HttpVerb.POST,
             cast(ubyte[])body_,
             "application/json");
-
         immutable responseJSON = parseJSON(response.str);
 
         if (responseJSON.type != JSONType.object)
