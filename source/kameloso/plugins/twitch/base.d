@@ -1904,16 +1904,19 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     try
     {
-        const pollInfoJSON = getPolls(plugin, event.channel);
+        const polls = getPolls(plugin, event.channel);
 
-        if (!pollInfoJSON.length)
+        if (!polls.length)
         {
             enum message = "There are no active polls to end.";
             return chan(plugin.state, event.channel, message);
         }
 
-        immutable voteID = pollInfoJSON[0].object["id"].str;
-        immutable endResponseJSON = endPoll(plugin, event.channel, voteID, Yes.terminate);
+        immutable endResponseJSON = endPoll(
+            plugin,
+            event.channel,
+            polls[0].pollID,
+            Yes.terminate);
 
         if ((endResponseJSON.type != JSONType.object) ||
             ("choices" !in endResponseJSON) ||
@@ -1924,29 +1927,6 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             logger.trace(endResponseJSON.toPrettyString);
             return;
         }
-
-        /*static struct Choice
-        {
-            string title;
-            long votes;
-        }
-
-        Choice[] choices;
-        long totalVotes;
-
-        foreach (immutable i, const choiceJSON; endResponseJSON["choices"].array)
-        {
-            Choice choice;
-            choice.title = choiceJSON["title"].str;
-            choice.votes =
-                choiceJSON["votes"].integer +
-                choiceJSON["channel_points_votes"].integer +
-                choiceJSON["bits_votes"].integer;
-            choices ~= choice;
-            totalVotes += choice.votes;
-        }
-
-        auto sortedChoices = choices.sort!((a,b) => a.votes > b.votes);*/
 
         enum message = "Poll ended.";
         chan(plugin.state, event.channel, message);
