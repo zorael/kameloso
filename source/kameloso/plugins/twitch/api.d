@@ -28,6 +28,7 @@ import arsd.http2 : HttpVerb;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
+import core.time : Duration, seconds;
 
 package:
 
@@ -72,12 +73,12 @@ struct QueryResponse
     is reached, or forever if `endlessly` is passed.
 
     Params:
-        endlessly = Whether or not to endlessly retry.
-        delayMsecs = How many milliseconds to wait between retries.
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         dg = Delegate to call.
         async = Whether or not the delegate should be called asynchronously,
             scheduling attempts using [kameloso.plugins.common.delayawait.delay|delay].
+        endlessly = Whether or not to endlessly retry.
+        retryDelay = How long to wait between retries.
 
     Returns:
         Whatever the passed delegate returns.
@@ -87,20 +88,17 @@ struct QueryResponse
         [InvalidCredentialsException] likewise.
         [Exception] if the delegate throws it and `endlessly` is not passed.
  +/
-auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, uint delayMsecs = 4000, Dg)
+auto retryDelegate(Dg)
     (TwitchPlugin plugin,
     Dg dg,
-    const Flag!"async" async = Yes.async)
+    const Flag!"async" async = Yes.async,
+    const Flag!"endlessly" endlessly = No.endlessly,
+    const Duration retryDelay = 4.seconds)
 in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outside a fiber")
 {
-    static if (endlessly)
-    {
-        enum retries = size_t.max;
-    }
-    else
-    {
-        alias retries = TwitchPlugin.delegateRetries;
-    }
+    immutable retries = endlessly ?
+        size_t.max :
+        TwitchPlugin.delegateRetries;
 
     foreach (immutable i; 0..retries)
     {
@@ -108,9 +106,6 @@ in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outsi
         {
             if (i > 0)
             {
-                import core.time : msecs;
-                static immutable retryDelay = delayMsecs.msecs;
-
                 if (async)
                 {
                     import kameloso.plugins.common.delayawait : delay;
@@ -124,67 +119,94 @@ in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outsi
             }
             return dg();
         }
-        catch (MissingBroadcasterTokenException e)
-        {
-            // This is never a transient error
-            throw e;
-        }
-        catch (InvalidCredentialsException e)
-        {
-            // Neither is this
-            throw e;
-        }
-        catch (EmptyDataJSONException e)
-        {
-            // Should never be transient?
-            throw e;
-        }
         catch (Exception e)
         {
-            if (auto errorException = cast(ErrorJSONException)e)
-            {
-                const statusJSON = "status" in errorException.json;
-                if ((statusJSON.integer >= 400) && (statusJSON.integer < 500))
-                {
-                    // Also never transient
-                    throw errorException;
-                }
-            }
-
-            static if (endlessly)
-            {
-                // Unconditionally continue, but print the exception once if it's erroring
-                version(PrintStacktraces)
-                {
-                    if (!plugin.state.settings.headless)
-                    {
-                        alias printExceptionAfterNFailures = TwitchPlugin.delegateRetries;
-
-                        if (i == printExceptionAfterNFailures)
-                        {
-                            printRetryDelegateException(e);
-                        }
-                    }
-                }
-                continue;
-            }
-            else
-            {
-                // Retry until we reach the retry limit, then print if we should, before rethrowing
-                if (i < TwitchPlugin.delegateRetries-1) continue;
-
-                version(PrintStacktraces)
-                {
-                    if (!plugin.state.settings.headless)
-                    {
-                        printRetryDelegateException(e);
-                    }
-                }
-                throw e;
-            }
+            handleRetryDelegateException(plugin, e, i, endlessly);
+            continue;  // If we're here the above didn't throw; continue
         }
     }
 
+    assert(0, "Unreachable");
+}
+
+
+// handleRetryDelegateException
+/++
+    Handles exceptions thrown by [retryDelegate].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        base = The exception to handle.
+        i = The current retry count.
+        endlessly = Whether or not to endlessly retry.
+ +/
+auto handleRetryDelegateException(
+    TwitchPlugin plugin,
+    Exception base,
+    const size_t i,
+    const Flag!"endlessly" endlessly)
+{
+    if (auto e = cast(MissingBroadcasterTokenException)base)
+    {
+        // This is never a transient error
+        throw e;
+    }
+    else if (auto e = cast(InvalidCredentialsException)base)
+    {
+        // Neither is this
+        throw e;
+    }
+    else if (auto e = cast(EmptyDataJSONException)base)
+    {
+        // Should never be transient?
+        throw e;
+    }
+    else if (auto e = cast(ErrorJSONException)base)
+    {
+        const statusJSON = "status" in e.json;
+        if ((statusJSON.integer >= 400) && (statusJSON.integer < 500))
+        {
+            // Also never transient
+            throw e;
+        }
+        return;  //continue;
+    }
+    else
+    {
+        if (endlessly)
+        {
+            // Unconditionally continue, but print the exception once if it's erroring
+            version(PrintStacktraces)
+            {
+                if (!plugin.state.settings.headless)
+                {
+                    alias printExceptionAfterNFailures = TwitchPlugin.delegateRetries;
+
+                    if (i == printExceptionAfterNFailures)
+                    {
+                        printRetryDelegateException(base);
+                    }
+                }
+            }
+            return;  //continue;
+        }
+        else
+        {
+            // Retry until we reach the retry limit, then print if we should, before rethrowing
+            if (i < TwitchPlugin.delegateRetries-1) return;  //continue;
+
+            version(PrintStacktraces)
+            {
+                if (!plugin.state.settings.headless)
+                {
+                    printRetryDelegateException(base);
+                }
+            }
+            throw base;
+        }
+    }
+
+    // We can logically never get here
     assert(0, "Unreachable");
 }
 
