@@ -714,12 +714,21 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         {
             import kameloso.common : errnoStrings;
             enum pattern = "ErrnoException <l>%s</> caught when committing log to <l>%s</>: <t>%s%s";
-            logger.warningf(pattern, errnoStrings[e.errno], buffer.file.doublyBackslashed, e.msg, plugin.transient.bell);
+            logger.warningf(
+                pattern,
+                errnoStrings[e.errno],
+                buffer.file.doublyBackslashed,
+                e.msg,
+                plugin.transient.bell);
         }
         else version(Windows)
         {
             enum pattern = "ErrnoException <l>%d</> caught when committing log to <l>%s</>: <t>%s%s";
-            logger.warningf(pattern, e.errno, buffer.file.doublyBackslashed, e.msg, plugin.transient.bell);
+            logger.warningf(pattern,
+                e.errno,
+                buffer.file.doublyBackslashed,
+                e.msg,
+                plugin.transient.bell);
         }
         else
         {

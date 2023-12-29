@@ -1650,7 +1650,7 @@ private T expandIRCTagsImpl(T)
     byteloop:
     for (size_t i; i<asBytes.length; ++i)
     {
-        charswitch:
+        //charswitch:
         switch (asBytes[i])
         {
         case '\\':
@@ -1707,7 +1707,7 @@ private T expandIRCTagsImpl(T)
                 commitUpTo(i);
                 //lastEnd = i+1;  // set below
 
-                tagswitch:
+                //tagswitch:
                 switch (tag[0])
                 {
                 case 'b':

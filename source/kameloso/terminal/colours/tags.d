@@ -138,7 +138,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
     byteloop:
     for (size_t i; i<asBytes.length; ++i)
     {
-        charswitch:
+        //charswitch:
         switch (asBytes[i])
         {
         case '\\':

@@ -752,7 +752,7 @@ mixin template IRCPluginImpl(
             }
 
             immutable origContent = event.content;
-            auto origAux = event.aux;  // copy
+            const origAux = event.aux;  // copy
             bool auxDirty;
 
             scope(exit)
