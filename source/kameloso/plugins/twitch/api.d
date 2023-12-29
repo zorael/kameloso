@@ -1775,6 +1775,302 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
 }
 
 
+// TwitchPoll
+/++
+    Represents a Twitch native poll (not a poll of the Poll plugin).
+ +/
+private struct TwitchPoll
+{
+private:
+    import std.datetime.systime : SysTime;
+    import std.json : JSONValue;
+
+public:
+    /++
+        An option to vote for in the poll.
+     +/
+    static struct Choice
+    {
+        /++
+            Unique choice ID string.
+         +/
+        string id;
+
+        /++
+            The name of the choice, e.g. "heads".
+         +/
+        string title;
+
+        /++
+            How many votes were placed on this choice.
+         +/
+        uint votes;
+
+        /++
+            How many votes were placed with channel points on this choice.
+         +/
+        uint channelPointsVotes;
+    }
+
+    /++
+        The current state of the poll.
+     +/
+    enum PollStatus
+    {
+        /++
+            Initial state.
+         +/
+        unset,
+
+        /++
+            The poll is running.
+         +/
+        active,
+
+        /++
+            The poll ended on schedule.
+         +/
+        completed,
+
+        /++
+            The poll was terminated before its scheduled end.
+         +/
+        terminated,
+
+        /++
+            The poll has been archived and is no longer visible on the channel.
+         +/
+        archived,
+
+        /++
+            The poll was deleted.
+         +/
+        moderated,
+
+        /++
+            Something went wrong while determining the state.
+         +/
+        invalid,
+    }
+
+    /++
+        Unique poll ID string.
+     +/
+    string pollID;
+
+    /++
+        The current state of the poll.
+     +/
+    PollStatus status;
+
+    /++
+        Title of the poll, e.g. "heads or tails?".
+     +/
+    string title;
+
+    /++
+        Array of the [Choice]s that you can vote for in this poll.
+     +/
+    Choice[] choices;
+
+    /++
+        Twitch numeric ID of the broadcaster in whose channel the poll is held.
+     +/
+    uint broadcasterID;
+
+    /++
+        Twitch username of broadcaster.
+     +/
+    string broadcasterLogin;
+
+    /++
+        Twitch display name of broadcaster.
+     +/
+    string broadcasterDisplayName;
+
+    /++
+        Whether voting with channel points is enabled.
+     +/
+    bool channelPointsVotingEnabled;
+
+    /++
+        How many channel points you have to pay for one vote.
+     +/
+    uint channelPointsPerVote;
+
+    /++
+        How many seconds the poll was meant to run.
+     +/
+    uint duration;
+
+    /++
+        Timestamp of when the poll started.
+     +/
+    SysTime startedAt;
+
+    /++
+        Timestamp of when the poll ended, if applicable.
+     +/
+    SysTime endedAt;
+
+    /++
+        Constructs a new [TwitchPoll] from a passed [std.json.JSONValue|JSONValue]
+        as received from API calls.
+
+        Params:
+            json = JSON to parse.
+
+        Returns:
+            A new [TwitchPoll] with values derived from the passed `json`.
+     +/
+    static auto fromJSON(const JSONValue json)
+    {
+        import std.conv : to;
+
+        /*
+        {
+            "data": [
+                {
+                "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                "broadcaster_id": "55696719",
+                "broadcaster_name": "TwitchDev",
+                "broadcaster_login": "twitchdev",
+                "title": "Heads or Tails?",
+                "choices": [
+                    {
+                    "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                    "title": "Heads",
+                    "votes": 0,
+                    "channel_points_votes": 0,
+                    "bits_votes": 0
+                    },
+                    {
+                    "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                    "title": "Tails",
+                    "votes": 0,
+                    "channel_points_votes": 0,
+                    "bits_votes": 0
+                    }
+                ],
+                "bits_voting_enabled": false,
+                "bits_per_vote": 0,
+                "channel_points_voting_enabled": false,
+                "channel_points_per_vote": 0,
+                "status": "ACTIVE",
+                "duration": 1800,
+                "started_at": "2021-03-19T06:08:33.871278372Z"
+                }
+            ],
+            "pagination": {}
+        }
+         */
+        /*
+        {
+            "data": [
+                {
+                "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                "broadcaster_id": "141981764",
+                "broadcaster_name": "TwitchDev",
+                "broadcaster_login": "twitchdev",
+                "title": "Heads or Tails?",
+                "choices": [
+                    {
+                    "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                    "title": "Heads",
+                    "votes": 0,
+                    "channel_points_votes": 0,
+                    "bits_votes": 0
+                    },
+                    {
+                    "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                    "title": "Tails",
+                    "votes": 0,
+                    "channel_points_votes": 0,
+                    "bits_votes": 0
+                    }
+                ],
+                "bits_voting_enabled": false,
+                "bits_per_vote": 0,
+                "channel_points_voting_enabled": true,
+                "channel_points_per_vote": 100,
+                "status": "TERMINATED",
+                "duration": 1800,
+                "started_at": "2021-03-19T06:08:33.871278372Z",
+                "ended_at": "2021-03-19T06:11:26.746889614Z"
+                }
+            ]
+        }
+         */
+
+        TwitchPoll poll;
+        poll.pollID = json["id"].str;
+        poll.title = json["title"].str;
+        poll.broadcasterID = json["broadcaster_id"].str.to!uint;
+        poll.broadcasterLogin = json["broadcaster_login"].str;
+        poll.broadcasterDisplayName = json["broadcaster_name"].str;
+        poll.channelPointsVotingEnabled = json["channel_points_voting_enabled"].boolean;
+        poll.channelPointsPerVote = json["channel_points_per_vote"].str.to!uint;
+        poll.duration = cast(uint)json["duration"].integer;
+        poll.startedAt = SysTime.fromISOExtString(json["started_at"].str);
+
+        if (const endedAtJSON = "ended_at" in json)
+        {
+            import std.json : JSONType;
+
+            if (endedAtJSON.type == JSONType.string)
+            {
+                poll.endedAt = SysTime.fromISOExtString(endedAtJSON.str);
+            }
+            else
+            {
+                // "If status is ACTIVE, this field is set to null."
+            }
+        }
+
+        with (TwitchPoll.PollStatus)
+        switch (json["status"].str)
+        {
+        case "ACTIVE":
+            poll.status = active;
+            break;
+
+        case "COMPLETED":
+            poll.status = completed;
+            break;
+
+        case "TERMINATED":
+            poll.status = terminated;
+            break;
+
+        case "ARCHIVED":
+            poll.status = archived;
+            break;
+
+        case "MODERATED":
+            poll.status = moderated;
+            break;
+
+        //case "INVALID":
+        default:
+            poll.status = invalid;
+            break;
+        }
+
+        foreach (const choiceJSON; json["choices"].array)
+        {
+            TwitchPoll.Choice choice;
+            choice.id = choiceJSON["id"].str;
+            choice.title = choiceJSON["title"].str;
+            choice.votes = choiceJSON["votes"].str.to!uint;
+            choice.channelPointsVotes = choiceJSON["channel_points_votes"].str.to!uint;
+            poll.choices ~= choice;
+        }
+
+        return poll;
+    }
+}
+
+
 // getPolls
 /++
     Fetches information about polls in the specified channel. If an ID string is
@@ -1814,38 +2110,6 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
     immutable url = text(baseURL, room.id, idPart);
 
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-
-    static struct TwitchPoll
-    {
-        static struct Choice
-        {
-            string id;
-            string title;
-            uint votes;
-            uint channelPointsVotes;
-            uint bitsVotes;
-        }
-
-        /*enum PollStatus
-        {
-            active,
-            inactive,
-        }*/
-
-        string pollID;
-        string title;
-        uint broadcasterID;
-        string broadcasterLogin;
-        string broadcasterDisplayName;
-        Choice[] choices;
-        bool bitsVotingEnabled;
-        uint bitsPerVote;
-        bool channelPointsVotingEnabled;
-        uint channelPointsPerVote;
-        //PollStatus status;
-        uint duration;
-        SysTime startedAt;
-    }
 
     auto getPollsDg()
     {
@@ -1889,92 +2153,12 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
+            // See TwitchPoll.fromJSON for response layout
             retry = 0;
-
-            /*
-            {
-                "data": [
-                    {
-                    "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-                    "broadcaster_id": "55696719",
-                    "broadcaster_name": "TwitchDev",
-                    "broadcaster_login": "twitchdev",
-                    "title": "Heads or Tails?",
-                    "choices": [
-                        {
-                        "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                        "title": "Heads",
-                        "votes": 0,
-                        "channel_points_votes": 0,
-                        "bits_votes": 0
-                        },
-                        {
-                        "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                        "title": "Tails",
-                        "votes": 0,
-                        "channel_points_votes": 0,
-                        "bits_votes": 0
-                        }
-                    ],
-                    "bits_voting_enabled": false,
-                    "bits_per_vote": 0,
-                    "channel_points_voting_enabled": false,
-                    "channel_points_per_vote": 0,
-                    "status": "ACTIVE",
-                    "duration": 1800,
-                    "started_at": "2021-03-19T06:08:33.871278372Z"
-                    }
-                ],
-                "pagination": {}
-            }
-            */
 
             foreach (const pollJSON; dataJSON.array)
             {
-                import std.conv : to;
-
-                // Skip non-active polls for now
-                if (pollJSON["status"].str != "ACTIVE") continue;
-
-                foreach (const existingPoll; polls)
-                {
-                    if (existingPoll.pollID == pollJSON["id"].str)
-                    {
-                        // Already have this poll
-                        // Likely a request failed and we're retrying
-                        continue;
-                    }
-                }
-
-                TwitchPoll poll;
-                poll.pollID = pollJSON["id"].str;
-                poll.title = pollJSON["title"].str;
-                poll.broadcasterID = pollJSON["broadcaster_id"].str.to!uint;
-                poll.broadcasterLogin = pollJSON["broadcaster_login"].str;
-                poll.broadcasterDisplayName = pollJSON["broadcaster_name"].str;
-                poll.bitsVotingEnabled = pollJSON["bits_voting_enabled"].boolean;
-                poll.bitsPerVote = pollJSON["bits_per_vote"].str.to!uint;
-                poll.channelPointsVotingEnabled = pollJSON["channel_points_voting_enabled"].boolean;
-                poll.channelPointsPerVote = pollJSON["channel_points_per_vote"].str.to!uint;
-                poll.duration = cast(uint)pollJSON["duration"].integer;
-                poll.startedAt = SysTime.fromISOExtString(pollJSON["started_at"].str);
-
-                /*poll.status = pollJSON["status"].str == "ACTIVE" ?
-                    TwitchPoll.PollStatus.active :
-                    TwitchPoll.PollStatus.inactive;*/
-
-                foreach (const choiceJSON; pollJSON["choices"].array)
-                {
-                    TwitchPoll.Choice choice;
-                    choice.id = choiceJSON["id"].str;
-                    choice.title = choiceJSON["title"].str;
-                    choice.votes = choiceJSON["votes"].str.to!uint;
-                    choice.channelPointsVotes = choiceJSON["channel_points_votes"].str.to!uint;
-                    choice.bitsVotes = choiceJSON["bits_votes"].str.to!uint;
-                    poll.choices ~= choice;
-                }
-
-                polls ~= poll;
+                polls ~= TwitchPoll.fromJSON(pollJSON);
             }
 
             after = responseJSON["after"].str;
@@ -2069,43 +2253,6 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             "application/json");
         immutable responseJSON = parseJSON(response.str);
 
-        /*
-        {
-            "data": [
-                {
-                "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-                "broadcaster_id": "141981764",
-                "broadcaster_name": "TwitchDev",
-                "broadcaster_login": "twitchdev",
-                "title": "Heads or Tails?",
-                "choices": [
-                    {
-                    "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                    "title": "Heads",
-                    "votes": 0,
-                    "channel_points_votes": 0,
-                    "bits_votes": 0
-                    },
-                    {
-                    "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                    "title": "Tails",
-                    "votes": 0,
-                    "channel_points_votes": 0,
-                    "bits_votes": 0
-                    }
-                ],
-                "bits_voting_enabled": false,
-                "bits_per_vote": 0,
-                "channel_points_voting_enabled": true,
-                "channel_points_per_vote": 100,
-                "status": "ACTIVE",
-                "duration": 1800,
-                "started_at": "2021-03-19T06:08:33.871278372Z"
-                }
-            ]
-        }
-        */
-
         if (responseJSON.type != JSONType.object)
         {
             // Invalid response in some way
@@ -2124,7 +2271,15 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        return dataJSON.array;
+        if (!dataJSON.array.length)
+        {
+            // For some reason we received an object that didn't contain data
+            enum message = "`createPoll` response has unexpected JSON " ~
+                `(zero-length "data")`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        return TwitchPoll.fromJSON(dataJSON.array[0]);
     }
 
     return retryDelegate(plugin, &createPollDg);
@@ -2190,44 +2345,6 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             "application/json");
         immutable responseJSON = parseJSON(response.str);
 
-        /*
-        {
-            "data": [
-                {
-                "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-                "broadcaster_id": "141981764",
-                "broadcaster_name": "TwitchDev",
-                "broadcaster_login": "twitchdev",
-                "title": "Heads or Tails?",
-                "choices": [
-                    {
-                    "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                    "title": "Heads",
-                    "votes": 0,
-                    "channel_points_votes": 0,
-                    "bits_votes": 0
-                    },
-                    {
-                    "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                    "title": "Tails",
-                    "votes": 0,
-                    "channel_points_votes": 0,
-                    "bits_votes": 0
-                    }
-                ],
-                "bits_voting_enabled": false,
-                "bits_per_vote": 0,
-                "channel_points_voting_enabled": true,
-                "channel_points_per_vote": 100,
-                "status": "TERMINATED",
-                "duration": 1800,
-                "started_at": "2021-03-19T06:08:33.871278372Z",
-                "ended_at": "2021-03-19T06:11:26.746889614Z"
-                }
-            ]
-        }
-        */
-
         if (responseJSON.type != JSONType.object)
         {
             // Invalid response in some way
@@ -2253,7 +2370,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        return dataJSON.array[0];
+        return TwitchPoll.fromJSON(dataJSON.array[0]);
     }
 
     return retryDelegate(plugin, &endPollDg);

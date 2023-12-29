@@ -1828,9 +1828,9 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     try
     {
-        immutable responseJSON = createPoll(plugin, event.channel, title, durationString, choices);
+        const poll = createPoll(plugin, event.channel, title, durationString, choices);
         enum pattern = `Poll "%s" created.`;
-        immutable message = pattern.format(responseJSON[0].object["title"].str);
+        immutable message = pattern.format(poll.title);
         chan(plugin.state, event.channel, message);
     }
     catch (ErrorJSONException e)
@@ -1912,24 +1912,28 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             return chan(plugin.state, event.channel, message);
         }
 
-        immutable endResponseJSON = endPoll(
+        const endedPoll = endPoll(
             plugin,
             event.channel,
             polls[0].pollID,
             Yes.terminate);
 
-        if ((endResponseJSON.type != JSONType.object) ||
-            ("choices" !in endResponseJSON) ||
-            (endResponseJSON["choices"].array.length < 2))
-        {
-            // Invalid response in some way
-            logger.error("Unexpected response from server when ending a poll");
-            logger.trace(endResponseJSON.toPrettyString);
-            return;
-        }
+        alias Status = typeof(endedPoll.status);
 
-        enum message = "Poll ended.";
-        chan(plugin.state, event.channel, message);
+        if (endedPoll.status != Status.active)
+        {
+            import lu.conv : Enum;
+            import std.format : format;
+
+            enum pattern = "Poll ended; status %s";
+            immutable message = pattern.format(Enum!Status.toString(endedPoll.status));
+            chan(plugin.state, event.channel, message);
+        }
+        else
+        {
+            enum message = "Failed to end poll; status remains active";
+            chan(plugin.state, event.channel, message);
+        }
     }
     catch (MissingBroadcasterTokenException e)
     {
