@@ -82,11 +82,6 @@ struct QueryResponse
 
     Returns:
         Whatever the passed delegate returns.
-
-    Throws:
-        [MissingBroadcasterTokenException] if the delegate throws it.
-        [InvalidCredentialsException] likewise.
-        [Exception] if the delegate throws it and `endlessly` is not passed.
  +/
 auto retryDelegate(Dg)
     (TwitchPlugin plugin,
@@ -144,6 +139,14 @@ in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outsi
         endlessly = Whether or not to endlessly retry.
         headless = Whether or not we are running headlessly, in which case all
             terminal output will be skipped.
+
+    Throws:
+        [MissingBroadcasterTokenException] if the delegate throws it.
+        [InvalidCredentialsException] likewise.
+        [EmptyDataJSONException] also.
+        [ErrorJSONException] if the delegate throws it and the JSON embedded
+            contains an error code in the 400-499 range.
+        [Exception] if the delegate throws it and `endlessly` is not passed.
  +/
 private auto handleRetryDelegateException(
     Exception base,
@@ -430,7 +433,9 @@ void persistentQuerier(
         as having been received from the server.
 
     Throws:
-        [TwitchQueryException] if there were unrecoverable errors.
+        [EmptyResponseException] if the response body was empty.
+        [ErrorJSONException] if the response body was JSON but contained an `"error"` key.
+        [TwitchQueryException] if there were other unrecoverable errors.
  +/
 QueryResponse sendHTTPRequest(
     TwitchPlugin plugin,
@@ -723,9 +728,7 @@ auto sendHTTPRequestImpl(
 
     Throws:
         [EmptyDataJSONException] if the `"data"` field is empty for some reason.
-
         [UnexpectedJSONException] on unexpected JSON.
-
         [TwitchQueryException] on other JSON errors.
  +/
 auto getTwitchData(
@@ -902,7 +905,6 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON received.
-
         [TwitchQueryException] on other failure.
  +/
 auto getValidation(
@@ -1123,6 +1125,9 @@ in (id, "Tried to get followers with an unset ID")
     Returns:
         A [std.json.JSONValue|JSONValue] of type `array` containing all returned
         entities, over all paginated queries.
+
+    Throws:
+        [UnexpectedJSONException] on unexpected JSON received.
  +/
 auto getMultipleTwitchData(
     TwitchPlugin plugin,
@@ -2093,6 +2098,10 @@ public:
 
     Returns:
         An arary of Voldemort `TwitchPoll` structs.
+
+    Throws:
+        [UnexpectedJSONException] on unexpected JSON.
+        [EmptyDataJSONException] if the JSON has a `"data"` key but it is empty.
  +/
 auto getPolls(
     TwitchPlugin plugin,
@@ -2207,6 +2216,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON.
+        [EmptyDataJSONException] if the JSON has a `"data"` key but it is empty.
  +/
 auto createPoll(
     TwitchPlugin plugin,
@@ -2319,6 +2329,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON.
+        [EmptyDataJSONException] if the JSON has a `"data"` key but it is empty.
  +/
 auto endPoll(
     TwitchPlugin plugin,
@@ -2619,6 +2630,9 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
 
     Returns:
         An array of Voldemort subscribers.
+
+    Throws:
+        [UnexpectedJSONException] on unexpected JSON.
  +/
 auto getSubscribers(
     TwitchPlugin plugin,
@@ -2920,6 +2934,9 @@ in (channelName.length, "Tried to delete a message without providing a channel n
 
     Returns:
         A Voldemort struct with information about the timeout action.
+
+    Throws:
+        [UnexpectedJSONException] on unexpected JSON.
 
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#create-a-banned-event
