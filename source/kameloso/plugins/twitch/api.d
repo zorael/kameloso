@@ -2158,6 +2158,14 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
+            if (!dataJSON.array.length)
+            {
+                // data exists but is empty
+                enum message = "`getPolls` response has unexpected JSON " ~
+                    `(zero-length "data")`;
+                throw new EmptyDataJSONException(message, responseJSON);
+            }
+
             // See TwitchPoll.fromJSON for response layout
             retry = 0;
 
@@ -2278,10 +2286,10 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
 
         if (!dataJSON.array.length)
         {
-            // For some reason we received an object that didn't contain data
+            // data exists but is empty
             enum message = "`createPoll` response has unexpected JSON " ~
                 `(zero-length "data")`;
-            throw new UnexpectedJSONException(message, responseJSON);
+            throw new EmptyDataJSONException(message, responseJSON);
         }
 
         return TwitchPoll.fromJSON(dataJSON.array[0]);
@@ -2370,9 +2378,10 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
 
         if (!dataJSON.array.length)
         {
+            // data exists but is empty
             enum message = "`endPoll` response has unexpected JSON " ~
-                `(empty "data" array)`;
-            throw new UnexpectedJSONException(message, responseJSON);
+                `(zero-length "data")`;
+            throw new EmptyDataJSONException(message, responseJSON);
         }
 
         return TwitchPoll.fromJSON(dataJSON.array[0]);

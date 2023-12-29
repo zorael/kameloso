@@ -1935,6 +1935,11 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             chan(plugin.state, event.channel, message);
         }
     }
+    catch (EmptyDataJSONException e)
+    {
+        enum message = "There are no active polls to end.";
+        chan(plugin.state, event.channel, message);
+    }
     catch (MissingBroadcasterTokenException e)
     {
         complainAboutMissingTokens(e);
