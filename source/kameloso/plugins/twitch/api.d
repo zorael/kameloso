@@ -1310,7 +1310,7 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         givenName = Name of user to look up.
-        givenID = Optional numeric ID of user to look up, if no `givenName` given.
+        id = Optional numeric ID of user to look up, if no `givenName` given.
         searchByDisplayName = Whether or not to also attempt to look up `givenName`
             as a display name.
 

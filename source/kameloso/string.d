@@ -536,7 +536,7 @@ unittest
     static auto echo(const string what) { return what; }
     immutable hello = "hello";
 
-    string delegate()[string] aa =
+    @safe string delegate()[string] aa =
     [
         "$foo" : () => hello,
         "$bar" : () => echo("I was one"),
