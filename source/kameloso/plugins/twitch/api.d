@@ -1026,8 +1026,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         return validationJSON;
     }
 
-    enum validationRetryDelayMsecs = 5_000;
-    return retryDelegate!(Yes.endlessly, validationRetryDelayMsecs)(plugin, &getValidationDg);
+    return retryDelegate!(Yes.endlessly)(plugin, &getValidationDg);
 }
 
 
