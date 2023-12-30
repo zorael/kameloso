@@ -2928,6 +2928,12 @@ struct Replay
 
     /++
         Creates a new [Replay] with a timestamp of the current time.
+
+        Params:
+            dg = Delegate to call with a prepared [Replay] as argument.
+            event = [dialect.defs.IRCEvent|IRCEvent] to stored for later replay.
+            permissionsRequired = [Permissions] required by the function to replay.
+            caller = Name of the caller function or similar context.
      +/
     this(
         void delegate(Replay) dg,
@@ -3415,19 +3421,19 @@ private:
 public:
     // context
     /++
-        String context of the request.
+        String context of the action.
      +/
     string context() const pure @safe nothrow @nogc;
 
     // creator
     /++
-        Name of the function that created this request.
+        Name of the function that created this action.
      +/
     string creator() const pure @safe nothrow @nogc;
 
     // fiber
     /++
-        Fiber embedded into the request.
+        Fiber embedded into the action.
      +/
     Fiber fiber();
 }
@@ -3480,9 +3486,9 @@ public:
         Constructor.
 
         Params:
-            context = String context of the request.
-            fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
-            creator = Name of the function that created this request.
+            context = String context of the action.
+            fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the action.
+            creator = Name of the function that created this action.
      +/
     this(
         string context,
@@ -3499,9 +3505,9 @@ public:
         Constructor.
 
         Params:
-            context = String context of the request.
+            context = String context of the action.
             dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
-            creator = Name of the function that created this request.
+            creator = Name of the function that created this action.
      +/
     this(
         string context,
@@ -3518,7 +3524,7 @@ public:
 
     // context
     /++
-        String context of the request. May be anything; highly request-specific.
+        String context of the action. May be anything; highly action-specific.
 
         Returns:
             A string.
@@ -3530,7 +3536,7 @@ public:
 
     // creator
     /++
-        Name of the function that created this request.
+        Name of the function that created this action.
 
         Returns:
             A string.
@@ -3542,7 +3548,7 @@ public:
 
     // fiber
     /++
-        [kameloso.thread.CarryingFiber|CarryingFiber] embedded into the request.
+        [kameloso.thread.CarryingFiber|CarryingFiber] embedded into the action.
 
         Returns:
             A [kameloso.thread.CarryingFiber|CarryingFiber] in the guise of a
@@ -3572,9 +3578,9 @@ alias SpecialRequestImpl = DeferredActionImpl;
 
     Params:
         T = Type to instantiate [DeferredActionImpl] with.
-        fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
-        context = String context of the request.
-        creator = Name of the function that created this request.
+        fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the action.
+        context = String context of the action.
+        creator = Name of the function that created this action.
 
     Returns:
         A new [DeferredAction] that is in actually a [DeferredActionImpl].
@@ -3598,9 +3604,9 @@ DeferredAction defer(T)
 
     Params:
         T = Type to instantiate [DeferredActionImpl] with.
-        context = String context of the request.
-        fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
-        creator = Name of the function that created this request.
+        context = String context of the action.
+        fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the action.
+        creator = Name of the function that created this action.
 
     Returns:
         A new [DeferredAction] that is in actually a [DeferredActionImpl].
@@ -3623,8 +3629,8 @@ DeferredAction defer(T)
     Params:
         T = Type to instantiate [DeferredActionImpl] with.
         dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
-        context = String context of the request.
-        creator = Name of the function that created this request.
+        context = String context of the action.
+        creator = Name of the function that created this action.
 
     Returns:
         A new [DeferredAction] that is in actually a [DeferredActionImpl].
@@ -3648,9 +3654,9 @@ DeferredAction defer(T)
 
     Params:
         T = Type to instantiate [DeferredActionImpl] with.
-        context = String context of the request.
+        context = String context of the action.
         dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
-        creator = Name of the function that created this request.
+        creator = Name of the function that created this action.
 
     Returns:
         A new [DeferredAction] that is in actually a [DeferredActionImpl].
