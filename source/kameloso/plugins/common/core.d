@@ -3486,13 +3486,13 @@ public:
         Constructor.
 
         Params:
-            context = String context of the action.
             fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the action.
+            context = String context of the action.
             creator = Name of the function that created this action.
      +/
     this(
-        string context,
         CarryingFiber!T fiber,
+        string context,
         const string creator) pure @safe nothrow @nogc
     {
         this._context = context;
@@ -3505,13 +3505,13 @@ public:
         Constructor.
 
         Params:
-            context = String context of the action.
             dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
+            context = String context of the action.
             creator = Name of the function that created this action.
      +/
     this(
-        string context,
         void delegate() dg,
+        string context,
         const string creator) /*pure @safe @nogc*/ nothrow
     {
         import kameloso.constants : BufferSize;
@@ -3590,7 +3590,7 @@ DeferredAction defer(T)
     const string context = string.init,
     const string creator = __FUNCTION__) pure @safe nothrow
 {
-    return new DeferredActionImpl!T(context, fiber, creator);
+    return new DeferredActionImpl!T(fiber, context, creator);
 }
 
 
@@ -3617,7 +3617,7 @@ DeferredAction defer(T)
     CarryingFiber!T fiber,
     const string creator = __FUNCTION__) pure @safe nothrow
 {
-    return new DeferredActionImpl!T(context, fiber, creator);
+    return new DeferredActionImpl!T(fiber, context, creator);
 }
 
 
@@ -3640,7 +3640,7 @@ DeferredAction defer(T)
     const string context = string.init,
     const string creator = __FUNCTION__) /*pure @safe*/ nothrow
 {
-    return new DeferredActionImpl!T(context, dg, creator);
+    return new DeferredActionImpl!T(dg, context, creator);
 }
 
 
@@ -3667,7 +3667,7 @@ DeferredAction defer(T)
     void delegate() dg,
     const string creator = __FUNCTION__) /*pure @safe*/ nothrow
 {
-    return new DeferredActionImpl!T(context, dg, creator);
+    return new DeferredActionImpl!T(dg, context, creator);
 }
 
 
