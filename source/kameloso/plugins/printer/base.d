@@ -747,7 +747,29 @@ void setup(PrinterPlugin plugin)
             if (plugin.printerSettings.logs)
             {
                 flushAllLogsImpl(plugin);
-                plugin.buffers = null;  // Unflushed lines will be LOST. Not trivial to work around.
+
+                if (plugin.buffers.length)
+                {
+                    import std.datetime.systime : Clock;
+                    import core.time : weeks;
+
+                    // Not all logs were flushed (as they get removed when they are)
+                    // Remove any remaining buffers that are too old
+                    static immutable discardAge = 1.weeks;
+                    immutable now = Clock.currTime;
+                    string[] toRemove;
+
+                    foreach (immutable key, const remainingBuffer; plugin.buffers)
+                    {
+                        immutable age = (now - remainingBuffer.creationTime);
+                        if (age > discardAge) toRemove ~= key;
+                    }
+
+                    foreach (immutable key; toRemove)
+                    {
+                        plugin.buffers.remove(key);
+                    }
+                }
             }
         }
 

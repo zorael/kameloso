@@ -74,6 +74,11 @@ public:
     }
 
     /++
+        When this buffer was created.
+     +/
+    SysTime creationTime;
+
+    /++
         Constructor taking a [std.datetime.systime.SysTime|SysTime], to save as the date
         the buffer was created.
      +/
@@ -89,6 +94,7 @@ public:
         }
 
         this.dir = dir;
+        this.creationTime = now;
         this.file = buildNormalizedPath(this.dir, yyyyMMOf(now) ~ ".log");
     }
 
@@ -726,8 +732,8 @@ void flushLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         else if (!buffer.dir.isDir)
         {
             // Something is in the way of the log's directory
-            // Discard accumulated lines
-            buffer.clear();
+            // Leave lines in place, to be flushed next time or eventually
+            // discarded at a midnight update later
             return;
         }
 
