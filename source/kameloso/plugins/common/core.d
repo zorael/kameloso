@@ -3459,7 +3459,7 @@ alias SpecialRequest = DeferredAction;
     Params:
         T = Type to instantiate the [kameloso.thread.CarryingFiber|CarryingFiber] with.
  +/
-final class DeferredActionImpl(T) : DeferredAction
+private final class DeferredActionImpl(T) : DeferredAction
 {
 private:
     import kameloso.thread : CarryingFiber;
@@ -3559,16 +3559,6 @@ public:
         return _fiber;
     }
 }
-
-
-// DeferredActionImpl
-/++
-    Compatibility alias to [DeferredActionImpl].
-
-    This will be removed in a future release.
- +/
-deprecated("Use `DeferredActionImpl` instead")
-alias SpecialRequestImpl = DeferredActionImpl;
 
 
 // defer
