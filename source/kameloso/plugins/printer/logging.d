@@ -34,7 +34,7 @@ package:
 
 // LogLineBuffer
 /++
-    A struct containing lines to write to a log file when next committing such.
+    A struct containing lines to write to a log file when next flushing such.
 
     This is only relevant if
     [kameloso.plugins.printer.base.PrinterSettings.bufferedWrites|PrinterSettings.bufferedWrites]
@@ -119,7 +119,7 @@ public:
     populating arrays of lines to be written in bulk, once in a while.
 
     See_Also:
-        [commitAllLogsImpl]
+        [flushAllLogsImpl]
  +/
 void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 {
@@ -499,7 +499,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         if (plugin.printerSettings.bufferedWrites)
         {
             // Flush error buffer immediately
-            commitLog(plugin, plugin.buffers[errorMarker]);
+            flushLog(plugin, plugin.buffers[errorMarker]);
         }
     }
 
@@ -553,7 +553,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 if (event.type == QUIT)
                 {
                     // Flush the buffer if the user quit
-                    commitLog(plugin, *senderBuffer);
+                    flushLog(plugin, *senderBuffer);
 
                     // This would cause extra datestamps on relogins
                     //plugin.buffers.remove(event.sender.nickname);
@@ -675,45 +675,45 @@ auto establishLogLocation(const string logLocation, ref bool naggedAboutDir)
 }
 
 
-// commitAllLogsImpl
+// flushAllLogsImpl
 /++
     Writes all buffered log lines to disk.
 
-    Merely wraps [commitLog] by iterating over all buffers and invoking it.
+    Merely wraps [flushLog] by iterating over all buffers and invoking it.
 
     Params:
         plugin = The current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
 
     See_Also:
-        [commitLog]
+        [flushLog]
  +/
-void commitAllLogsImpl(PrinterPlugin plugin)
+void flushAllLogsImpl(PrinterPlugin plugin)
 {
     if (!plugin.printerSettings.logs || !plugin.printerSettings.bufferedWrites) return;
 
     foreach (ref buffer; plugin.buffers)
     {
-        commitLog(plugin, buffer);
+        flushLog(plugin, buffer);
     }
 }
 
 
-// commitLog
+// flushLog
 /++
     Writes a single log buffer to disk.
 
-    This is a way of queuing writes so that they can be committed seldom and
+    This is a way of queuing writes so that they can be flushed seldom and
     in bulk, supposedly being nicer to the hardware at the cost of the risk of
-    losing uncommitted lines in a catastrophical crash.
+    losing unflushed lines in a catastrophical crash.
 
     Params:
         plugin = The current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
-        buffer = [LogLineBuffer] whose lines to commit to disk.
+        buffer = [LogLineBuffer] whose lines to flush to disk.
 
     See_Also:
-        [commitAllLogsImpl]
+        [flushAllLogsImpl]
  +/
-void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
+void flushLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
     import kameloso.string : doublyBackslashed;
     import std.exception : ErrnoException;
@@ -756,7 +756,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     }
     catch (FileException e)
     {
-        enum pattern = "File exception caught when committing log to <l>%s</>: <t>%s%s";
+        enum pattern = "File exception caught when flushing log to <l>%s</>: <t>%s%s";
         logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, plugin.transient.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
@@ -765,7 +765,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         version(Posix)
         {
             import kameloso.common : errnoStrings;
-            enum pattern = "ErrnoException <l>%s</> caught when committing log to <l>%s</>: <t>%s%s";
+            enum pattern = "ErrnoException <l>%s</> caught when flushing log to <l>%s</>: <t>%s%s";
             logger.warningf(
                 pattern,
                 errnoStrings[e.errno],
@@ -775,7 +775,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         }
         else version(Windows)
         {
-            enum pattern = "ErrnoException <l>%d</> caught when committing log to <l>%s</>: <t>%s%s";
+            enum pattern = "ErrnoException <l>%d</> caught when flushing log to <l>%s</>: <t>%s%s";
             logger.warningf(pattern,
                 e.errno,
                 buffer.file.doublyBackslashed,
@@ -791,7 +791,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     }
     catch (Exception e)
     {
-        enum pattern = "Unexpected exception caught when committing log <l>%s</>: <t>%s%s";
+        enum pattern = "Unexpected exception caught when flusing log <l>%s</>: <t>%s%s";
         logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, plugin.transient.bell);
         version(PrintStacktraces) logger.trace(e);
     }

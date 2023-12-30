@@ -566,7 +566,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     populating arrays of lines to be written in bulk, once in a while.
 
     See_Also:
-        [commitAllLogsImpl]
+        [flushAllLogsImpl]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ANY)
@@ -584,20 +584,20 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 /++
     Writes all buffered log lines to disk on [dialect.defs.IRCEvent.Type.PING|PING].
 
-    Merely wraps [commitAllLogsImpl] by iterating over all buffers and invoking it.
+    Merely wraps [flushAllLogsImpl] by iterating over all buffers and invoking it.
 
     Params:
         plugin = The current [PrinterPlugin].
 
     See_Also:
-        [kameloso.plugins.printer.logging.commitAllLogsImpl|printer.logging.commitAllLogsImpl]
+        [kameloso.plugins.printer.logging.flushAllLogsImpl|printer.logging.flushAllLogsImpl]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
 )
 void onPing(PrinterPlugin plugin)
 {
-    commitAllLogsImpl(plugin);
+    flushAllLogsImpl(plugin);
 }
 
 
@@ -746,8 +746,8 @@ void setup(PrinterPlugin plugin)
 
             if (plugin.printerSettings.logs)
             {
-                commitAllLogsImpl(plugin);
-                plugin.buffers = null;  // Uncommitted lines will be LOST. Not trivial to work around.
+                flushAllLogsImpl(plugin);
+                plugin.buffers = null;  // Unflushed lines will be LOST. Not trivial to work around.
             }
         }
 
@@ -782,14 +782,14 @@ void initResources(PrinterPlugin plugin)
 /++
     De-initialises the plugin.
 
-    If we're buffering writes, commit all queued lines to disk.
+    If we're buffering writes, flush all queued lines to disk.
  +/
 void teardown(PrinterPlugin plugin)
 {
     if (plugin.printerSettings.bufferedWrites)
     {
-        // Commit all logs before exiting
-        commitAllLogsImpl(plugin);
+        // Flush all logs before exiting
+        flushAllLogsImpl(plugin);
     }
 }
 
@@ -836,8 +836,9 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
         break;
 
     case "commit":
-        logger.info("Committing logs to disk.");
-        commitAllLogsImpl(plugin);
+    case "flush":
+        logger.info("Flushing logs to disk.");
+        flushAllLogsImpl(plugin);
         foreach (ref buffer; plugin.buffers) buffer.clear();  // don't null the array
         break;
 
