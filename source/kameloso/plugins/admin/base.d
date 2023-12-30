@@ -1005,7 +1005,7 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
-    plugin.state.specialRequests ~= specialRequest!Payload(event.content, &setSettingDg);
+    plugin.state.deferredActions ~= defer!Payload(&setSettingDg, event.content);
 }
 
 
@@ -1075,7 +1075,7 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    plugin.state.specialRequests ~= specialRequest!Payload(event.content, &getSettingDg);
+    plugin.state.deferredActions ~= defer!Payload(&getSettingDg, event.content);
 }
 
 
@@ -1648,7 +1648,7 @@ void onBusMessage(
             }
         }
 
-        plugin.state.specialRequests ~= specialRequest!Payload(slice, &setSettingBusDg);
+        plugin.state.deferredActions ~= defer!Payload(&setSettingBusDg, slice);
         return;
 
     case "save":

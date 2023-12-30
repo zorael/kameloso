@@ -349,7 +349,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
             if (triggerConflicts(aa)) return;
 
             // Get channel AAs
-            plugin.state.specialRequests ~= specialRequest(event.channel, thisFiber);
+            plugin.state.deferredActions ~= defer(thisFiber, event.channel);
             Fiber.yield();
 
             IRCPlugin.CommandMetadata[string][string] channelSpecificAA = thisFiber.payload[0];
@@ -364,7 +364,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
             chan(plugin.state, event.channel, message);
         }
 
-        plugin.state.specialRequests ~= specialRequest!Payload(string.init, &addCounterDg);
+        plugin.state.deferredActions ~= defer!Payload(&addCounterDg);
         break;
 
     case "remove":

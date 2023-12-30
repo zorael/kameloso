@@ -960,11 +960,11 @@ auto mainLoop(Kameloso instance)
             // Tick the plugin, and flag to check for messages if it returns true
             shouldCheckMessages |= plugin.tick(elapsed);
 
-            if (plugin.state.specialRequests.length)
+            if (plugin.state.deferredActions.length)
             {
                 try
                 {
-                    processSpecialRequests(instance, plugin);
+                    processDeferredActions(instance, plugin);
                 }
                 catch (Exception e)
                 {
@@ -972,7 +972,7 @@ auto mainLoop(Kameloso instance)
                         e,
                         plugin,
                         IRCEvent.init,
-                        "specialRequests");
+                        "deferredActions");
                 }
 
                 if (*instance.abort) return Next.returnFailure;
@@ -2179,7 +2179,7 @@ void processPendingReplays(Kameloso instance, IRCPlugin plugin)
 /+
     These versions must be placed at the top level. They are used to determine
     if one or more plugins request a specific feature, and if so, whether they
-    should be supported in [processSpecialRequests].
+    should be supported in [processDeferredActions].
 
  +/
 version(WantGetSetSettingHandlers)
@@ -2210,10 +2210,10 @@ version(WithOnelinerPlugin)
 }
 
 
-// processSpecialRequests
+// processDeferredActions
 /++
-    Iterates through a plugin's array of [kameloso.plugins.common.core.SpecialRequest|SpecialRequest]s.
-    Depending on what their [kameloso.plugins.common.core.SpecialRequest.fiber|fiber] member
+    Iterates through a plugin's array of [kameloso.plugins.common.core.DeferredAction|DeferredAction]s.
+    Depending on what their [kameloso.plugins.common.core.DeferredAction.fiber|fiber] member
     (which is in actually a [kameloso.thread.CarryingFiber|CarryingFiber]) can be
     cast to, it prepares a payload, assigns it to the
     [kameloso.thread.CarryingFiber|CarryingFiber], and calls it.
@@ -2229,38 +2229,38 @@ version(WithOnelinerPlugin)
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         plugin = The relevant [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
  +/
-void processSpecialRequests(Kameloso instance, IRCPlugin plugin)
+void processDeferredActions(Kameloso instance, IRCPlugin plugin)
 {
     import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
     import core.thread : Fiber;
 
-    auto specialRequestsSnapshot = plugin.state.specialRequests;
-    plugin.state.specialRequests = null;
+    auto deferredActionsSnapshot = plugin.state.deferredActions;
+    plugin.state.deferredActions = null;
 
     top:
-    foreach (ref request; specialRequestsSnapshot)
+    foreach (ref action; deferredActionsSnapshot)
     {
         scope(exit)
         {
-            if (request.fiber.state == Fiber.State.TERM)
+            if (action.fiber.state == Fiber.State.TERM)
             {
                 // Clean up
-                destroy(request.fiber);
+                destroy(action.fiber);
                 //request.fiber = null;  // fiber is an accessor, cannot null it here
             }
 
-            destroy(request);
-            request = null;
+            destroy(action);
+            action = null;
         }
 
         version(WantPeekCommandsHandler)
         {
             alias PeekCommandsPayload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
 
-            if (auto fiber = cast(CarryingFiber!(PeekCommandsPayload))(request.fiber))
+            if (auto fiber = cast(CarryingFiber!(PeekCommandsPayload))(action.fiber))
             {
-                immutable channelName = request.context;
+                immutable channelName = action.context;
 
                 IRCPlugin.CommandMetadata[string][string] commandAA;
 
@@ -2286,14 +2286,14 @@ void processSpecialRequests(Kameloso instance, IRCPlugin plugin)
         {
             alias GetSettingPayload = Tuple!(string, string, string);
 
-            if (auto fiber = cast(CarryingFiber!(GetSettingPayload))(request.fiber))
+            if (auto fiber = cast(CarryingFiber!(GetSettingPayload))(action.fiber))
             {
                 import lu.string : advancePast;
                 import std.algorithm.iteration : splitter;
                 import std.algorithm.searching : startsWith;
                 import std.array : Appender;
 
-                immutable expression = request.context;
+                immutable expression = action.context;
                 string slice = expression;  // mutable
                 immutable pluginName = slice.advancePast('.', Yes.inherit);
                 alias setting = slice;
@@ -2391,11 +2391,11 @@ void processSpecialRequests(Kameloso instance, IRCPlugin plugin)
         {
             alias SetSettingPayload = Tuple!(bool);
 
-            if (auto fiber = cast(CarryingFiber!(SetSettingPayload))(request.fiber))
+            if (auto fiber = cast(CarryingFiber!(SetSettingPayload))(action.fiber))
             {
                 import kameloso.plugins.common.misc : applyCustomSettings;
 
-                immutable expression = request.context;
+                immutable expression = action.context;
 
                 // Borrow settings from the first plugin. It's taken by value
                 immutable success = applyCustomSettings(
@@ -2409,13 +2409,13 @@ void processSpecialRequests(Kameloso instance, IRCPlugin plugin)
         }
 
         // If we're here, nothing matched
-        logger.error("Unhandled special request type: <l>" ~ typeof(request).stringof);
+        logger.error("Unhandled deferred action type: <l>" ~ typeof(action).stringof);
     }
 
-    if (plugin.state.specialRequests.length)
+    if (plugin.state.deferredActions.length)
     {
         // One or more new requests were added while processing these ones
-        return processSpecialRequests(instance, plugin);
+        return processDeferredActions(instance, plugin);
     }
 }
 

@@ -2881,11 +2881,11 @@ public:
         this._connectionID = connectionID;
     }
 
-    // specialRequests
+    // deferredActions
     /++
-        This plugin's array of [SpecialRequest]s.
+        This plugin's array of [DeferredAction]s.
      +/
-    SpecialRequest[] specialRequests;
+    DeferredAction[] deferredActions;
 }
 
 
@@ -3403,11 +3403,11 @@ public:
 }
 
 
-// SpecialRequest
+// DeferredAction
 /++
-    Embodies the notion of a special request a plugin issues to the main thread.
+    Embodies the notion of an action a plugin defers to the main thread.
  +/
-interface SpecialRequest
+interface DeferredAction
 {
 private:
     import core.thread : Fiber;
@@ -3433,9 +3433,19 @@ public:
 }
 
 
-// SpecialRequestImpl
+// DeferredAction
 /++
-    Concrete implementation of a [SpecialRequest].
+    Compatibility alias to [DeferredAction].
+
+    This will be removed in a future release.
+ +/
+deprecated("Use `DeferredAction` instead")
+alias SpecialRequest = DeferredAction;
+
+
+// DeferredActionImpl
+/++
+    Concrete implementation of a [DeferredAction].
 
     The template parameter `T` defines that kind of
     [kameloso.thread.CarryingFiber|CarryingFiber] is embedded into it.
@@ -3443,7 +3453,7 @@ public:
     Params:
         T = Type to instantiate the [kameloso.thread.CarryingFiber|CarryingFiber] with.
  +/
-final class SpecialRequestImpl(T) : SpecialRequest
+final class DeferredActionImpl(T) : DeferredAction
 {
 private:
     import kameloso.thread : CarryingFiber;
@@ -3545,49 +3555,113 @@ public:
 }
 
 
-// specialRequest
+// DeferredActionImpl
 /++
-    Instantiates a [SpecialRequestImpl] in the guise of a [SpecialRequest]
+    Compatibility alias to [DeferredActionImpl].
+
+    This will be removed in a future release.
+ +/
+deprecated("Use `DeferredActionImpl` instead")
+alias SpecialRequestImpl = DeferredActionImpl;
+
+
+// defer
+/++
+    Instantiates a [DeferredActionImpl] in the guise of a [DeferredAction]
     with the implicit type `T` as payload.
 
     Params:
-        T = Type to instantiate [SpecialRequestImpl] with.
+        T = Type to instantiate [DeferredActionImpl] with.
+        fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
+        context = String context of the request.
+        creator = Name of the function that created this request.
+
+    Returns:
+        A new [DeferredAction] that is in actually a [DeferredActionImpl].
+ +/
+DeferredAction defer(T)
+    (CarryingFiber!T fiber,
+    const string context = string.init,
+    const string creator = __FUNCTION__) pure @safe nothrow
+{
+    return new DeferredActionImpl!T(context, fiber, creator);
+}
+
+
+// defer
+/++
+    Instantiates a [DeferredActionImpl] in the guise of a [DeferredAction]
+    with the implicit type `T` as payload.
+
+    Deprecated overload; use the one taking a `CarryingFiber!T` before a string `context` instead.
+    This will be removed in a future release.
+
+    Params:
+        T = Type to instantiate [DeferredActionImpl] with.
         context = String context of the request.
         fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
         creator = Name of the function that created this request.
 
     Returns:
-        A new [SpecialRequest] that is in actually a [SpecialRequestImpl].
+        A new [DeferredAction] that is in actually a [DeferredActionImpl].
  +/
-SpecialRequest specialRequest(T)
+deprecated("Use overload taking a `CarryingFiber!T` before an optional string `context`")
+DeferredAction defer(T)
     (const string context,
     CarryingFiber!T fiber,
     const string creator = __FUNCTION__) pure @safe nothrow
 {
-    return new SpecialRequestImpl!T(context, fiber, creator);
+    return new DeferredActionImpl!T(context, fiber, creator);
 }
 
 
-// specialRequest
+// defer
 /++
-    Instantiates a [SpecialRequestImpl] in the guise of a [SpecialRequest]
+    Instantiates a [DeferredActionImpl] in the guise of a [DeferredAction]
     with the explicit type `T` as payload.
 
     Params:
-        T = Type to instantiate [SpecialRequestImpl] with.
+        T = Type to instantiate [DeferredActionImpl] with.
+        dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
+        context = String context of the request.
+        creator = Name of the function that created this request.
+
+    Returns:
+        A new [DeferredAction] that is in actually a [DeferredActionImpl].
+ +/
+DeferredAction defer(T)
+    (void delegate() dg,
+    const string context = string.init,
+    const string creator = __FUNCTION__) /*pure @safe*/ nothrow
+{
+    return new DeferredActionImpl!T(context, dg, creator);
+}
+
+
+// defer
+/++
+    Instantiates a [DeferredActionImpl] in the guise of a [DeferredAction]
+    with the explicit type `T` as payload.
+
+    Deprecated overload; use the one taking a `void delegate()` before a string `context` instead.
+    This will be removed in a future release.
+
+    Params:
+        T = Type to instantiate [DeferredActionImpl] with.
         context = String context of the request.
         dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
         creator = Name of the function that created this request.
 
     Returns:
-        A new [SpecialRequest] that is in actually a [SpecialRequestImpl].
+        A new [DeferredAction] that is in actually a [DeferredActionImpl].
  +/
-SpecialRequest specialRequest(T)
+deprecated("Use overload taking a `void delegate()` before an optional string `context`")
+DeferredAction defer(T)
     (const string context,
     void delegate() dg,
     const string creator = __FUNCTION__) /*pure @safe*/ nothrow
 {
-    return new SpecialRequestImpl!T(context, dg, creator);
+    return new DeferredActionImpl!T(context, dg, creator);
 }
 
 

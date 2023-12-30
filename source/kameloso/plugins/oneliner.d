@@ -580,7 +580,7 @@ void handleNewOneliner(
         if (triggerConflicts(aa)) return;
 
         // Get channel AAs
-        plugin.state.specialRequests ~= specialRequest(event.channel, thisFiber);
+        plugin.state.deferredActions ~= defer(thisFiber, event.channel);
         Fiber.yield();
 
         IRCPlugin.CommandMetadata[string][string] channelSpecificAA = thisFiber.payload[0];
@@ -601,7 +601,7 @@ void handleNewOneliner(
         chan(plugin.state, event.channel, message);
     }
 
-    plugin.state.specialRequests ~= specialRequest!Payload(string.init, &addNewOnelinerDg);
+    plugin.state.deferredActions ~= defer!Payload(&addNewOnelinerDg);
 }
 
 

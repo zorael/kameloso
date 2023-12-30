@@ -150,7 +150,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    plugin.state.specialRequests ~= specialRequest!Payload(string.init, &sendHelpDg);
+    plugin.state.deferredActions ~= defer!Payload(&sendHelpDg);
 }
 
 
