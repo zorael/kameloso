@@ -1756,8 +1756,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
                                 carryingFiber.called+1);
                         }
 
-                        carryingFiber.payload = event;
-                        carryingFiber.call();
+                        carryingFiber.call(event);
 
                         // We need to reset the payload so that we can differentiate
                         // between whether the fiber was called due to an incoming
