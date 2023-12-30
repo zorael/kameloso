@@ -432,10 +432,15 @@ public:
      +/
     void teardown()
     {
-        import std.range : only;
         import std.socket : SocketShutdown;
 
-        foreach (thisSocket; only(socket4, socket6))
+        Socket[2] bothSockets =
+        [
+            socket4,
+            socket6,
+        ];
+
+        foreach (thisSocket; bothSockets[])
         {
             if (!thisSocket) continue;
 

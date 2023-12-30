@@ -3131,13 +3131,13 @@ void resolvePaths(Kameloso instance) @safe
 {
     import kameloso.platform : rbd = resourceBaseDirectory;
     import std.file : exists;
-    import std.path : absolutePath, buildNormalizedPath, dirName, expandTilde, isAbsolute;
-    import std.range : only;
+    import std.path : buildNormalizedPath, dirName;
 
     immutable defaultResourceHomeDir = buildNormalizedPath(rbd, "kameloso");
 
     version(Posix)
     {
+        import std.path : expandTilde;
         instance.settings.resourceDirectory = instance.settings.resourceDirectory.expandTilde();
     }
 
@@ -3178,26 +3178,31 @@ void resolvePaths(Kameloso instance) @safe
 
     instance.settings.configDirectory = instance.settings.configFile.dirName;
 
-    auto filerange = only(
+    string*[3] filenames =
+    [
         &instance.connSettings.caBundleFile,
         &instance.connSettings.privateKeyFile,
-        &instance.connSettings.certFile);
+        &instance.connSettings.certFile,
+    ];
 
-    foreach (/*const*/ file; filerange)
+    foreach (/*const*/ filenamePtr; filenames[])
     {
-        if (!file.length) continue;
+        import std.path : absolutePath, buildNormalizedPath, expandTilde, isAbsolute;
 
-        *file = (*file).expandTilde;
+        if (!filenamePtr.length) continue;
 
-        if (!(*file).isAbsolute && !(*file).exists)
+        *filenamePtr = (*filenamePtr).expandTilde();
+        immutable filename = *filenamePtr;
+
+        if (!filename.isAbsolute && !filename.exists)
         {
             immutable fullPath = instance.settings.configDirectory.isAbsolute ?
-                absolutePath(*file, instance.settings.configDirectory) :
-                buildNormalizedPath(instance.settings.configDirectory, *file);
+                absolutePath(filename, instance.settings.configDirectory) :
+                buildNormalizedPath(instance.settings.configDirectory, filename);
 
             if (fullPath.exists)
             {
-                *file = fullPath;
+                *filenamePtr = fullPath;
             }
             // else leave as-is
         }

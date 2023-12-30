@@ -317,16 +317,22 @@ void playbackNotesImpl(
     void onSuccess(const IRCUser user)
     {
         import std.datetime.systime : Clock;
-        import std.range : only;
 
         immutable now = Clock.currTime;
 
-        foreach (immutable id; only(user.nickname, user.account))
+        const string*[2] nicknameAndAccount =
+        [
+            &user.nickname,
+            &user.account,
+        ];
+
+        foreach (const idPtr; nicknameAndAccount[])
         {
             import kameloso.plugins.common.misc : nameOf;
             import kameloso.time : timeSince;
             import std.datetime.systime : SysTime;
 
+            immutable id = *idPtr;
             auto notes = id in *channelNotes;
             if (!notes || !notes.length) continue;
 

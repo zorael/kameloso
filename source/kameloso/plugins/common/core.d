@@ -2429,7 +2429,6 @@ auto allowImpl(bool verbose = false)
 void sanitiseEvent(ref IRCEvent event)
 {
     import std.encoding : sanitize;
-    import std.range : only;
 
     event.raw = sanitize(event.raw);
     event.channel = sanitize(event.channel);
@@ -2444,7 +2443,13 @@ void sanitiseEvent(ref IRCEvent event)
         auxN = sanitize(auxN);
     }
 
-    foreach (user; only(&event.sender, &event.target))
+    IRCUser*[2] bothUsers =
+    [
+        &event.sender,
+        &event.target,
+    ];
+
+    foreach (user; bothUsers[])
     {
         user.nickname = sanitize(user.nickname);
         user.ident = sanitize(user.ident);

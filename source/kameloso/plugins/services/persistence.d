@@ -803,9 +803,7 @@ void initAccountResources(PersistenceService service)
         assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.to!string);
     }+/
 
-    //import std.range : only;
-
-    static immutable listTypes =
+    static immutable string[5] listTypes =
     [
         "staff",
         "operator",
@@ -814,7 +812,7 @@ void initAccountResources(PersistenceService service)
         "blacklist",
     ];
 
-    foreach (liststring; listTypes)
+    foreach (liststring; listTypes[])
     {
         alias examplePlaceholderKey = PersistenceService.Placeholder.channel;
         auto listJSON = liststring in json;

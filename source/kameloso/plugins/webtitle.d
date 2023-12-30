@@ -310,7 +310,6 @@ void worker(
     import std.algorithm.searching : startsWith;
     import std.datetime.systime : Clock;
     import std.format : format;
-    import std.range : only;
     import std.string : indexOf;
     import std.typecons : No, Yes;
     import core.exception : UnicodeException;
@@ -437,7 +436,13 @@ void worker(
         }
     }
 
-    foreach (immutable firstTime; only(true, false))
+    static immutable bool[2] trueThenFalse =
+    [
+        true,
+        false,
+    ];
+
+    foreach (immutable firstTime; trueThenFalse[])
     {
         try
         {
