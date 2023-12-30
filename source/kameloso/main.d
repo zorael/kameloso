@@ -1742,7 +1742,8 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
                         {
                             import lu.conv : Enum;
 
-                            enum pattern = "<l>%s</>.awaitingFibers[%d] " ~
+                            enum pattern =
+                                "<l>%s</>.awaitingFibers[%d] " ~
                                 "event type <l>%s</> " ~
                                 "creator <l>%s</> " ~
                                 "call <l>%d";
@@ -1770,7 +1771,8 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
                         {
                             import lu.conv : Enum;
 
-                            enum pattern = "<l>%s</>.awaitingFibers[%d] " ~
+                            enum pattern =
+                                "<l>%s</>.awaitingFibers[%d] " ~
                                 "event type <l>%s</> " ~
                                 "plain fiber";
 
@@ -1801,7 +1803,6 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
             }
         }
     }
-
 
     if (plugin.state.awaitingFibers[event.type].length)
     {
