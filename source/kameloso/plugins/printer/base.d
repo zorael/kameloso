@@ -839,7 +839,6 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
     case "flush":
         logger.info("Flushing logs to disk.");
         flushAllLogsImpl(plugin);
-        foreach (ref buffer; plugin.buffers) buffer.clear();  // don't null the array
         break;
 
     default:
