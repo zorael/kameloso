@@ -155,7 +155,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         const ref IRCEvent event,
         const string key,
         const string givenPath = string.init,
-        const Flag!"extendPath" extendPath = Yes.extendPath,
+        const Flag!"intoSubdir" intoSubdir = Yes.intoSubdir,
         const Flag!"raw" raw = No.raw,
         const Flag!"errors" errors = No.errors)
     {
@@ -192,13 +192,34 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 file.writeln(datestamp);
             }
 
+            /++
+                Returns a simple representation of a user.
+
+                Only necessary outside of version IncludeHeavyStuff.
+             +/
+            version(IncludeHeavyStuff) {}
+            else
+            static auto getSimpleUserLine(const IRCUser user)
+            {
+                import lu.conv : Enum;
+                import std.conv : text;
+
+                return text(
+                    user.nickname, '!',
+                    user.ident, '@',
+                    user.address, ':',
+                    user.account, " -- ",
+                    Enum!(IRCUser.Class).toString(user.class_));//, "\n\n");
+            }
+
             if (!errors)
             {
+                // Normal event
                 auto buffer = key in plugin.buffers;
 
                 if (!buffer)
                 {
-                    if (extendPath)
+                    if (intoSubdir)
                     {
                         import std.datetime.systime : Clock;
                         import std.path : buildNormalizedPath;
@@ -215,36 +236,29 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     if (!raw) insertDatestamp(buffer);  // New buffer, new "day", except if raw
                 }
 
+                if (!ensureDir(buffer.dir)) return;
+
                 if (!raw)
                 {
                     // Normal buffers
+                    scope(exit)plugin.linebuffer.clear();
+
+                    formatMessageMonochrome(
+                        plugin,
+                        plugin.linebuffer,
+                        event,
+                        No.bellOnMention,
+                        No.bellOnError);
+
                     if (plugin.printerSettings.bufferedWrites)
                     {
-                        // Normal log
-                        formatMessageMonochrome(
-                            plugin,
-                            plugin.linebuffer,
-                            event,
-                            No.bellOnMention,
-                            No.bellOnError);
-
                         buffer.lines.put(plugin.linebuffer.data.idup);
                         plugin.linebuffer.clear();
                     }
                     else
                     {
-                        if (!ensureDir(buffer.dir)) return;
-
-                        formatMessageMonochrome(
-                            plugin,
-                            plugin.linebuffer,
-                            event,
-                            No.bellOnMention,
-                            No.bellOnError);
-
-                        scope(exit)plugin.linebuffer.clear();
                         auto file = File(buffer.file, "a");
-                        file.writeln(plugin.linebuffer);
+                        file.writeln(plugin.linebuffer.data);
                     }
                 }
                 else /*if (raw)*/
@@ -263,6 +277,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
             }
             else /*if (errors)*/
             {
+                // Error event
                 auto errBuffer = key in plugin.buffers;
 
                 if (!errBuffer)
@@ -271,6 +286,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     errBuffer = key in plugin.buffers;
                     insertDatestamp(errBuffer);  // New buffer, new "day"
                 }
+
+                if (!ensureDir(errBuffer.dir)) return;
 
                 if (plugin.printerSettings.bufferedWrites)
                 {
@@ -320,35 +337,20 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                             errBuffer.lines.put(plugin.linebuffer.data.idup);
                         }
                     }
-                    else
+                    else /*version (!IncludeHeavyStuff)*/
                     {
-                        import lu.conv : Enum;
                         import std.conv : text;
 
                         errBuffer.lines.put(text('@', event.tags, ' ', event.raw));
 
                         if (event.sender.nickname.length || event.sender.address.length)
                         {
-                            immutable senderLine = text(
-                                event.sender.nickname, '!',
-                                event.sender.ident, '@',
-                                event.sender.address, ':',
-                                event.sender.account, " -- ",
-                                Enum!(IRCUser.Class).toString(event.sender.class_), "\n\n");
-
-                            errBuffer.lines.put(senderLine);
+                            errBuffer.lines.put(getSimpleUserLine(event.sender));
                         }
 
                         if (event.target.nickname.length || event.target.address.length)
                         {
-                            immutable targetLine = text(
-                                event.target.nickname, '!',
-                                event.target.ident, '@',
-                                event.target.address, ':',
-                                event.target.account, " -- ",
-                                Enum!(IRCUser.Class).toString(event.target.class_), "\n\n");
-
-                            errBuffer.lines.put(targetLine);
+                            errBuffer.lines.put(getSimpleUserLine(event.target));
                         }
                     }
 
@@ -399,31 +401,18 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                             errFile.writeln(plugin.linebuffer.data);
                         }
                     }
-                    else
+                    else /*version (!IncludeHeavyStuff)*/
                     {
-                        import lu.conv : Enum;
-                        import std.conv : text;
-
                         errFile.writeln('@', event.tags, ' ', event.raw);
 
                         if (event.sender.nickname.length || event.sender.address.length)
                         {
-                            errFile.writeln(
-                                event.sender.nickname, '!',
-                                event.sender.ident, '@',
-                                event.sender.address, ':',
-                                event.sender.account, " -- ",
-                                Enum!(IRCUser.Class).toString(event.sender.class_), "\n\n");
+                            errFile.writeln(getSimpleUserLine(event.sender));
                         }
 
                         if (event.target.nickname.length || event.target.address.length)
                         {
-                            errFile.writeln(
-                                event.target.nickname, '!',
-                                event.target.ident, '@',
-                                event.target.address, ':',
-                                event.target.account, " -- ",
-                                Enum!(IRCUser.Class).toString(event.target.class_), "\n\n");
+                            errFile.writeln(getSimpleUserLine(event.target));
                         }
                     }
 
@@ -480,7 +469,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
             event,
             rawMarker,
             "raw.log",
-            No.extendPath,
+            No.intoSubdir,
             Yes.raw);
     }
 
@@ -492,7 +481,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
             event,
             errorMarker,
             "error.log",
-            No.extendPath,
+            No.intoSubdir,
             No.raw,
             Yes.errors);
 
@@ -609,7 +598,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 event,
                 plugin.state.server.address,
                 "server.log",
-                No.extendPath);
+                No.intoSubdir);
         }
         else
         {
