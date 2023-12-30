@@ -124,6 +124,7 @@ public:
 void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.printer.formatting : formatMessageMonochrome;
+    import std.algorithm.searching : canFind;
     import std.typecons : Flag, No, Yes;
 
     /++
@@ -460,9 +461,13 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
             No.extendPath,
             No.raw,
             Yes.errors);
-    }
 
-    import std.algorithm.searching : canFind;
+        if (plugin.printerSettings.bufferedWrites)
+        {
+            // Flush error buffer immediately
+            commitLog(plugin, plugin.buffers[errorMarker]);
+        }
+    }
 
     if (!plugin.printerSettings.logGuestChannels &&
         event.channel.length &&
