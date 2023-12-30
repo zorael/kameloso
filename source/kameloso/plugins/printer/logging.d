@@ -509,10 +509,22 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
             }
         }
 
-        if (event.sender.nickname.length && event.sender.nickname in plugin.buffers)
+        if (event.sender.nickname.length)
         {
-            // There is an open query buffer; write to it too
-            writeEventToFile(plugin, event, event.sender.nickname);
+            if (auto senderBuffer = event.sender.nickname in plugin.buffers)
+            {
+                // There is an open query buffer; write to it too
+                writeEventToFile(plugin, event, event.sender.nickname);
+
+                if (event.type == QUIT)
+                {
+                    // Flush the buffer if the user quit
+                    commitLog(plugin, *senderBuffer);
+
+                    // This would cause extra datestamps on relogins
+                    //plugin.buffers.remove(event.sender.nickname);
+                }
+            }
         }
         break;
 
