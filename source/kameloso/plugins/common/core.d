@@ -578,7 +578,7 @@ mixin template IRCPluginImpl(
     private FilterResult allow(const ref IRCEvent event, const Permissions permissionsRequired) @system
     {
         import kameloso.plugins.common.core : allowImpl;
-        return allowImpl(this, event, permissionsRequired);
+        return allowImpl!(cast(bool)debug_)(this, event, permissionsRequired);
     }
 
     // onEvent
@@ -2173,6 +2173,7 @@ auto prefixPolicyMatches(bool verbose)
     This requires the Persistence service to be active to work.
 
     Params:
+        verbose = Whether or not to output verbose debug information to the local terminal.
         event = [dialect.defs.IRCEvent|IRCEvent] to filter.
         permissionsRequired = The [Permissions] context in which this user should be filtered.
         preferHostmasks = Whether to rely on hostmasks for user identification,
@@ -2186,14 +2187,41 @@ auto prefixPolicyMatches(bool verbose)
     Also_See:
         [filterSenderImpl]
  +/
-auto filterSender(
-    const ref IRCEvent event,
+auto filterSender(bool verbose = false)
+    (const ref IRCEvent event,
     const Permissions permissionsRequired,
     const bool preferHostmasks) @safe
 {
     import kameloso.constants : Timeout;
 
-    if (event.sender.class_ == IRCUser.Class.blacklist) return FilterResult.fail;
+    static if (verbose)
+    {
+        import lu.conv : Enum;
+        import std.stdio : writeln;
+
+        writeln("filterSender of ", event.sender.nickname);
+        writeln("...permissions:", Enum!Permissions.toString(permissionsRequired));
+        writeln("...account:", event.sender.account);
+        writeln("...class:", Enum!(IRCUser.Class).toString(event.sender.class_));
+    }
+
+    if (permissionsRequired == Permissions.ignore)
+    {
+        static if (verbose)
+        {
+            writeln("...immediate pass (the call to filterSender could have been skipped)");
+        }
+        return FilterResult.pass;
+    }
+
+    if (event.sender.class_ == IRCUser.Class.blacklist)
+    {
+        static if (verbose)
+        {
+            writeln("...immediate fail (blacklist)");
+        }
+        return FilterResult.fail;
+    }
 
     immutable timediff = (event.time - event.sender.updated);
 
@@ -2201,13 +2229,31 @@ auto filterSender(
     // event will have the hostmask embedded in it, always.
     immutable whoisExpired = !preferHostmasks && (timediff > Timeout.whoisRetry);
 
+    static if (verbose)
+    {
+        writeln("...timediff:", timediff);
+        writeln("...whoisExpired:", whoisExpired);
+    }
+
     if (event.sender.account.length)
     {
-        return filterSenderImpl(permissionsRequired, event.sender.class_, whoisExpired);
+        immutable verdict = filterSenderImpl(
+            permissionsRequired,
+            event.sender.class_,
+            whoisExpired);
+
+        static if (verbose)
+        {
+            writeln("...filterSenderImpl verdict:", Enum!FilterResult.toString(verdict));
+        }
+
+        return verdict;
     }
     else
     {
         immutable isLogoutEvent = (event.type == IRCEvent.Type.ACCOUNT);
+
+        static if (verbose) writeln("...isLogoutEvent:", isLogoutEvent);
 
         with (Permissions)
         final switch (permissionsRequired)
@@ -2219,16 +2265,23 @@ auto filterSender(
         case whitelist:
         case registered:
             // Unknown sender; WHOIS if old result expired, otherwise fail
-            return (whoisExpired && !isLogoutEvent) ? FilterResult.whois : FilterResult.fail;
+            immutable verdict = (whoisExpired && !isLogoutEvent) ?
+                FilterResult.whois :
+                FilterResult.fail;
+            static if (verbose) writeln(Enum!FilterResult.toString(verdict));
+            return verdict;
 
         case anyone:
             // Unknown sender; WHOIS if old result expired in mere curiosity, else just pass
-            return (whoisExpired && !isLogoutEvent) ? FilterResult.whois : FilterResult.pass;
+            immutable verdict = (whoisExpired && !isLogoutEvent) ?
+                FilterResult.whois :
+                FilterResult.pass;
+            static if (verbose) writeln(Enum!FilterResult.toString(verdict));
+            return verdict;
 
         case ignore:
-            /*assert(0, "`filterSender` saw a `Permissions.ignore` and the call " ~
-                "to it could have been skipped");*/
-            return FilterResult.pass;
+            // Will have already returned earlier
+            assert(0, "Unreachable");
         }
     }
 }
@@ -2335,10 +2388,10 @@ auto filterSenderImpl(
         [filterSender]
         [filterSenderImpl]
  +/
-auto allowImpl(
-    IRCPlugin plugin,
+auto allowImpl(bool verbose = false)
+    (IRCPlugin plugin,
     const ref IRCEvent event,
-    const Permissions permissionsRequired) pure @safe
+    const Permissions permissionsRequired) @safe
 {
     if (permissionsRequired == Permissions.ignore) return FilterResult.pass;
 
@@ -2359,7 +2412,10 @@ auto allowImpl(
     }
 
     // Permissions.ignore always passes, even for Class.blacklist.
-    return filterSender(event, permissionsRequired, plugin.state.settings.preferHostmasks);
+    return filterSender!verbose
+        (event,
+        permissionsRequired,
+        plugin.state.settings.preferHostmasks);
 }
 
 
