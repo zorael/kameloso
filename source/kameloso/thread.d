@@ -622,6 +622,29 @@ final class CarryingFiber(T) : Fiber
     }
 
     /++
+        Hijacks the invocation of the [core.thread.fiber.Fiber|Fiber] and injects
+        the string name of the calling function into the [caller] member before
+        calling the [core.thread.fiber.Fiber|Fiber]'s own `.call()`.
+
+        Overload that takes a `T` `payload` to assign to its own internal
+        [CarryingFiber.payload|this.payload].
+
+        Params:
+            payload = Payload to assign to [CarryingFiber.payload|.payload].
+            caller = String name of the function calling this [CarryingFiber]
+                (via [CarryingFiber.call|.call()]).
+
+        Returns:
+            A [core.object.Throwable|Throwable] if the underlying
+            [core.thread.fiber.Fiber|Fiber] threw one when called; `null` otherwise.
+     +/
+    auto call(T payload, const string caller = __FUNCTION__)
+    {
+        this.payload = payload;
+        return this.call(caller);
+    }
+
+    /++
         Resets the [CarryingFiber.payload|payload] to its `.init` value.
      +/
     void resetPayload()
