@@ -1349,6 +1349,7 @@ mixin template IRCPluginImpl(
 
         // Inherit select members of state by zeroing out what we don't want
         this.state = state;
+        this.state.deferredActions = null;
         this.state.awaitingFibers = null;
         this.state.awaitingFibers.length = numEventTypes;
         this.state.awaitingDelegates = null;
