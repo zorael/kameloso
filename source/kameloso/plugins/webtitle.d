@@ -212,7 +212,7 @@ void lookupURLs(WebtitlePlugin plugin, const /*ref*/ IRCEvent event, string[] ur
     import kameloso.common : logger;
     import kameloso.thread : ThreadMessage;
     import lu.string : advancePast;
-    import std.concurrency : prioritySend, spawn;
+    import std.concurrency : spawn;
     import core.time : msecs;
 
     bool[string] uniques;
@@ -278,7 +278,7 @@ void lookupURLs(WebtitlePlugin plugin, const /*ref*/ IRCEvent event, string[] ur
             plugin.state.connSettings.caBundleFile);
     }
 
-    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
+    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
 }
 
 

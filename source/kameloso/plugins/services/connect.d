@@ -321,10 +321,8 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
 void onPing(ConnectService service, const ref IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : prioritySend;
-
     immutable target = event.content.length ? event.content : event.sender.address;
-    service.state.mainThread.prioritySend(ThreadMessage.pong(target));
+    service.state.priorityMessages ~= ThreadMessage.pong(target);
 }
 
 
@@ -1249,9 +1247,8 @@ void onWelcome(ConnectService service)
                 version(WithPrinterPlugin)
                 {
                     import kameloso.thread : ThreadMessage, boxed;
-                    import std.concurrency : send;
-                    service.state.mainThread.send(
-                        ThreadMessage.busMessage("printer", boxed(squelchVerb)));
+                    service.state.messages ~=
+                        ThreadMessage.busMessage("printer", boxed(squelchVerb));
                 }
 
                 enum properties = (Message.Property.quiet | Message.Property.background);
@@ -1279,9 +1276,8 @@ version(WithPrinterPlugin)
 void onSelfnickSuccessOrFailure(ConnectService service)
 {
     import kameloso.thread : ThreadMessage, boxed;
-    import std.concurrency : send;
-    service.state.mainThread.send(
-        ThreadMessage.busMessage("printer", boxed("unsquelch " ~ service.state.client.origNickname)));
+    service.state.messages ~=
+        ThreadMessage.busMessage("printer", boxed("unsquelch " ~ service.state.client.origNickname));
 }
 
 
@@ -1415,10 +1411,8 @@ version(TwitchSupport)
 void onReconnect(ConnectService service)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : send;
-
     logger.info("Reconnecting upon server request.");
-    service.state.mainThread.send(ThreadMessage.reconnect);
+    service.state.priorityMessages ~= ThreadMessage.reconnect;
 }
 
 
@@ -1507,7 +1501,6 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
             if ((nowInUnix - lastPongTimestamp) >= service.connectSettings.maxPingPeriodAllowed)
             {
                 import kameloso.thread : ThreadMessage;
-                import std.concurrency : prioritySend;
 
                 /+
                     Skip first two strikes; helps when resuming from suspend and similar,
@@ -1529,7 +1522,7 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
                 {
                     // Timeout. Send a preemptive ping
                     logger.warning("Sending preemptive ping.");
-                    service.state.mainThread.prioritySend(ThreadMessage.ping(service.state.server.resolvedAddress));
+                    service.state.priorityMessages ~= ThreadMessage.ping(service.state.server.resolvedAddress);
                     delay(service, timeToAllowForPingResponse, Yes.yield);
                     continue;
                 }
@@ -1537,7 +1530,7 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
                 {
                     // All failed, reconnect
                     logger.warning("No response from server. Reconnecting.");
-                    service.state.mainThread.prioritySend(ThreadMessage.reconnect);
+                    service.state.priorityMessages ~= ThreadMessage.reconnect;
                     return;
                 }
             }

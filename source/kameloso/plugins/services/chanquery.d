@@ -80,7 +80,6 @@ void startChannelQueries(ChanQueryService service)
 {
     import kameloso.thread : CarryingFiber, ThreadMessage, boxed;
     import kameloso.messaging : Message, mode, raw;
-    import std.concurrency : send;
     import std.datetime.systime : Clock;
     import std.string : representation;
     import core.thread : Fiber;
@@ -142,8 +141,8 @@ void startChannelQueries(ChanQueryService service)
 
             version(WithPrinterPlugin)
             {
-                service.state.mainThread.send(
-                    ThreadMessage.busMessage("printer", boxed(squelchMessage)));
+                service.state.messages ~=
+                    ThreadMessage.busMessage("printer", boxed(squelchMessage));
             }
 
             enum properties = (Message.Property.quiet | Message.Property.background);
@@ -191,8 +190,8 @@ void startChannelQueries(ChanQueryService service)
                 // channels for specific modes.
                 // [chanoprivsneeded] [#d] sinisalo.freenode.net: "You're not a channel operator" (#482)
                 // Ask the Printer to squelch those messages too.
-                service.state.mainThread.send(
-                    ThreadMessage.busMessage("printer", boxed(squelchMessage)));
+                service.state.messages ~=
+                    ThreadMessage.busMessage("printer", boxed(squelchMessage));
             }
 
             enum properties = (Message.Property.quiet | Message.Property.background);
@@ -256,8 +255,8 @@ void startChannelQueries(ChanQueryService service)
 
         version(WithPrinterPlugin)
         {
-            service.state.mainThread.send(
-                ThreadMessage.busMessage("printer", boxed("unsquelch")));
+            service.state.messages ~=
+                ThreadMessage.busMessage("printer", boxed("unsquelch"));
         }
     }
 
@@ -292,8 +291,8 @@ void startChannelQueries(ChanQueryService service)
 
         version(WithPrinterPlugin)
         {
-            service.state.mainThread.send(
-                ThreadMessage.busMessage("printer", boxed("squelch " ~ nickname)));
+            service.state.messages ~=
+                ThreadMessage.busMessage("printer", boxed("squelch " ~ nickname));
         }
 
         enum properties = (Message.Property.quiet | Message.Property.background);

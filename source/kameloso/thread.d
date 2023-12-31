@@ -39,6 +39,7 @@ module kameloso.thread;
 
 private:
 
+import kameloso.plugins.common.core : IRCPlugin;
 import std.meta : allSatisfy;
 import std.traits : isNumeric, isSomeFunction;
 import std.typecons : Flag, No, Yes;
@@ -850,58 +851,23 @@ void interruptibleSleep(const Duration dur, const Flag!"abort"* abort) @system
         The content of a [kameloso.thread.ThreadMessage.MessageType.quit|quit] message,
         if one was received, otherwise an empty string.
  +/
-auto exhaustMessages()
+auto exhaustMessages(IRCPlugin[] plugins)
 {
-    import std.concurrency : receiveTimeout, thisTid;
-    import std.variant : Variant;
-    import core.time : msecs;
+    string quitMessage;  // mutable
 
-    // core.exception.AssertError@std/concurrency.d(910): Cannot receive a message
-    // until a thread was spawned or thisTid was passed to a running thread.
-    cast(void)thisTid;
-
-    static immutable almostInstant = 10.msecs;
-    bool receivedSomething;  // mutable
-    string quitMessage;  // ditto
-
-    do
+    foreach (plugin; plugins)
     {
-        receivedSomething = receiveTimeout(almostInstant,
-            (ThreadMessage message) scope
+        foreach (message; plugin.state.priorityMessages)
+        {
+            if (message.type == ThreadMessage.MessageType.quit)
             {
-                if (message.type == ThreadMessage.MessageType.quit)
-                {
-                    quitMessage = message.content;
-                }
-            },
-            (Variant _) scope {},
-        );
+                quitMessage = message.content;
+            }
+        }
+
+        plugin.state.priorityMessages = null;
+        plugin.state.messages = null;
     }
-    while (receivedSomething);
 
     return quitMessage;
-}
-
-///
-unittest
-{
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : receiveTimeout, send, thisTid;
-    import std.variant : Variant;
-    import core.time : Duration;
-
-    foreach (immutable i; 0..10)
-    {
-        thisTid.send(i);
-    }
-
-    thisTid.send(ThreadMessage.quit("hello"));
-    immutable quitMessage = exhaustMessages();
-
-    immutable receivedSomething = receiveTimeout(Duration.zero,
-        (Variant _) {},
-    );
-
-    assert(!receivedSomething);
-    assert((quitMessage == "hello"), quitMessage);
 }

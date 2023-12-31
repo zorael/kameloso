@@ -39,7 +39,6 @@ void requestTwitchKey(TwitchPlugin plugin)
 {
     import kameloso.logger : LogLevel;
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : send;
     import std.datetime.systime : Clock;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : stdout, writeln;
@@ -196,7 +195,7 @@ your <w>BOT</> account.
     logger.trace();
 
     plugin.state.updates |= typeof(plugin.state.updates).bot;
-    plugin.state.mainThread.send(ThreadMessage.save);
+    plugin.state.messages ~= ThreadMessage.save;
 }
 
 

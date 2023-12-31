@@ -372,9 +372,9 @@ void persistentQuerier(
             string.init);
     }
 
-    void onMessage(ThreadMessage message) scope
+    void onMessage(bool) scope
     {
-        halt = (message.type == ThreadMessage.MessageType.teardown);
+        halt = true;
     }
 
     void onOwnerTerminated(OwnerTerminated _) scope
@@ -452,7 +452,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : prioritySend, send;
+    import std.concurrency : send;
     import core.time : MonoTime, msecs;
 
     if (plugin.state.settings.trace)
@@ -468,7 +468,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
             caller);
     }
 
-    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
+    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
 
     immutable pre = MonoTime.currTime;
     if (!id) id = reserveUniqueBucketID(plugin.responseBucket);

@@ -522,7 +522,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
     import kameloso.thread : ThreadMessage;
     import arsd.http2 : HttpVerb;
     import std.algorithm.searching : endsWith;
-    import std.concurrency : prioritySend, send;
+    import std.concurrency : send;
     import std.format : format;
     import std.json : JSONType, parseJSON;
     import core.time : msecs;
@@ -554,7 +554,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
     {
         try
         {
-            plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
+            plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
             plugin.transient.persistentWorkerTid.send(
                 id,
                 url,

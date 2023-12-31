@@ -615,7 +615,6 @@ auto alterAccountClassifier(
     import kameloso.thread : ThreadMessage;
     import lu.conv : Enum;
     import lu.json : JSONStorage;
-    import std.concurrency : send;
     import std.json : JSONValue;
 
     JSONStorage json;
@@ -681,7 +680,7 @@ auto alterAccountClassifier(
     version(WithPersistenceService)
     {
         // Force persistence to reload the file with the new changes
-        plugin.state.mainThread.send(ThreadMessage.reload("persistence"));
+        plugin.state.messages ~= ThreadMessage.reload("persistence");
     }
 
     return AlterationResult.success;
@@ -711,7 +710,6 @@ in (mask.length, "Tried to add an empty hostmask definition")
     import kameloso.pods : CoreSettings;
     import kameloso.thread : ThreadMessage;
     import lu.json : JSONStorage, populateFromJSON;
-    import std.concurrency : send;
     import std.conv : text;
     import std.format : format;
     import std.json : JSONValue;
@@ -826,6 +824,6 @@ in (mask.length, "Tried to add an empty hostmask definition")
     version(WithPersistenceService)
     {
         // Force persistence to reload the file with the new changes
-        plugin.state.mainThread.send(ThreadMessage.reload("persistence"));
+        plugin.state.messages ~= ThreadMessage.reload("persistence");
     }
 }

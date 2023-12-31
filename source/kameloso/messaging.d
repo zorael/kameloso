@@ -53,16 +53,10 @@ private:
 import kameloso.plugins.common.core : IRCPluginState;
 import kameloso.irccolours : expandIRCTags, stripIRCTags;
 import dialect.defs;
-import std.concurrency : Tid, prioritySend, send;
 import std.typecons : Flag, No, Yes;
 static import kameloso.common;
 
-version(unittest)
-{
-    import lu.conv : Enum;
-    import std.concurrency : receive, receiveOnly, thisTid;
-    import std.conv : to;
-}
+version(unittest) import lu.conv : Enum;
 
 public:
 
@@ -121,7 +115,7 @@ struct Message
         caller = String name of the calling function, or something else that gives context.
  +/
 void chan(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channelName,
     const string content,
     const Message.Property properties = Message.Property.none,
@@ -159,32 +153,25 @@ in (channelName.length, "Tried to send a channel message but no channel was give
     }
 
     if (!strippedTags) m.event.content = content.expandIRCTags;
-
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     enum properties = (Message.Property.quiet | Message.Property.background);
     chan(state, "#channel", "content", properties);
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((content == "content"), content);
-                //assert(m.properties & Message.Property.fast);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
+        assert((channel == "#channel"), channel);
+        assert((content == "content"), content);
+        //assert(m.properties & Message.Property.fast);
+    }
 }
 
 
@@ -208,7 +195,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void reply(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const ref IRCEvent event,
     const string content,
     const Message.Property properties = Message.Property.none,
@@ -250,14 +237,11 @@ in (event.channel.length, "Tried to reply to a channel message but no channel wa
                 m.event.target = event.sender;
                 m.caller = caller;
 
-                if (properties & Message.Property.priority)
-                {
-                    state.mainThread.prioritySend(ThreadMessage.busMessage("twitch", boxed(m)));
-                }
-                else
-                {
-                    state.mainThread.send(ThreadMessage.busMessage("twitch", boxed(m)));
-                }
+                auto messageBox = (properties & Message.Property.priority) ?
+                    &state.priorityMessages :
+                    &state.messages;
+
+                *messageBox ~= ThreadMessage.busMessage("twitch", boxed(m));
                 return;
             }
         }
@@ -286,8 +270,7 @@ in (event.channel.length, "Tried to reply to a channel message but no channel wa
                 }
             }
 
-            if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-            else state.mainThread.send(m);
+            state.outgoingMessages ~= m;
         }
         else if (event.type == IRCEvent.Type.QUERY)
         {
@@ -313,7 +296,6 @@ unittest
 {
     IRCPluginState state;
     state.server.daemon = IRCServer.Daemon.twitch;
-    state.mainThread = thisTid;
 
     IRCEvent event;
     event.type = IRCEvent.Type.CHAN;
@@ -324,18 +306,14 @@ unittest
 
     reply(state, event, "reply content");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
-                assert((content == "reply content"), content);
-                assert((tags == "reply-parent-msg-id=some-reply-id"), tags);
-                assert((m.properties == Message.Property.init));
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
+        assert((content == "reply content"), content);
+        assert((tags == "reply-parent-msg-id=some-reply-id"), tags);
+        assert((m.properties == Message.Property.init));
+    }
 }
 
 
@@ -353,7 +331,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void query(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string nickname,
     const string content,
     const Message.Property properties = Message.Property.none,
@@ -379,31 +357,24 @@ in (nickname.length, "Tried to send a private query but no nickname was given")
     }
 
     if (!strippedTags) m.event.content = content.expandIRCTags;
-
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     query(state, "kameloso", "content");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
-                assert((target.nickname == "kameloso"), target.nickname);
-                assert((content == "content"), content);
-                assert((m.properties == Message.Property.init));
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert((content == "content"), content);
+        assert((m.properties == Message.Property.init));
+    }
 }
 
 
@@ -426,7 +397,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void privmsg(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channel,
     const string nickname,
     const string content,
@@ -455,39 +426,35 @@ in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
-    privmsg(state, "#channel", string.init, "content");
+    {
+        privmsg(state, "#channel", string.init, "content");
 
-    receive(
-        (Message m)
+        immutable m = state.outgoingMessages[0];
+        with (m.event)
         {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((content == "content"), content);
-                assert(!target.nickname.length, target.nickname);
-                assert(m.properties == Message.Property.init);
-            }
+            assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
+            assert((channel == "#channel"), channel);
+            assert((content == "content"), content);
+            assert(!target.nickname.length, target.nickname);
+            assert(m.properties == Message.Property.init);
         }
-    );
 
-    privmsg(state, string.init, "kameloso", "content");
+        state.outgoingMessages = null;
+    }
+    {
+        privmsg(state, string.init, "kameloso", "content");
 
-    receive(
-        (Message m)
+        immutable m = state.outgoingMessages[0];
+        with (m.event)
         {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
-                assert(!channel.length, channel);
-                assert((target.nickname == "kameloso"), target.nickname);
-                assert((content == "content"), content);
-                assert(m.properties == Message.Property.init);
-            }
+            assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
+            assert(!channel.length, channel);
+            assert((target.nickname == "kameloso"), target.nickname);
+            assert((content == "content"), content);
+            assert(m.properties == Message.Property.init);
         }
-    );
+    }
 }
 
 
@@ -506,7 +473,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void emote(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string emoteTarget,
     const string content,
     const Message.Property properties = Message.Property.none,
@@ -542,48 +509,42 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
     }
 
     if (!strippedTags) m.event.content = content.expandIRCTags;
-
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
-    emote(state, "#channel", "content");
+    {
+        emote(state, "#channel", "content");
 
-    receive(
-        (Message m)
+        immutable m = state.outgoingMessages[0];
+        with (m.event)
         {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((content == "content"), content);
-                assert(!target.nickname.length, target.nickname);
-                assert(m.properties == Message.Property.init);
-            }
+            assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
+            assert((channel == "#channel"), channel);
+            assert((content == "content"), content);
+            assert(!target.nickname.length, target.nickname);
+            assert(m.properties == Message.Property.init);
         }
-    );
 
-    emote(state, "kameloso", "content");
+        state.outgoingMessages = null;
+    }
+    {
+        emote(state, "kameloso", "content");
 
-    receive(
-        (Message m)
+        immutable m = state.outgoingMessages[0];
+        with (m.event)
         {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
-                assert(!channel.length, channel);
-                assert((target.nickname == "kameloso"), target.nickname);
-                assert((content == "content"), content);
-                assert(m.properties == Message.Property.init);
-            }
+            assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
+            assert(!channel.length, channel);
+            assert((target.nickname == "kameloso"), target.nickname);
+            assert((content == "content"), content);
+            assert(m.properties == Message.Property.init);
         }
-    );
+    }
 }
 
 
@@ -604,7 +565,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void mode(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channel,
     const const(char)[] modes,
     const string content = string.init,
@@ -621,31 +582,25 @@ in (channel.length, "Tried to set a mode but no channel was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     mode(state, "#channel", "+o", "content");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((content == "content"), content);
-                assert((aux[0] == "+o"), aux[0]);
-                assert(m.properties == Message.Property.init);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(type));
+        assert((channel == "#channel"), channel);
+        assert((content == "content"), content);
+        assert((aux[0] == "+o"), aux[0]);
+        assert(m.properties == Message.Property.init);
+    }
 }
 
 
@@ -663,7 +618,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void topic(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channel,
     const string content,
     const Message.Property properties = Message.Property.none,
@@ -678,30 +633,24 @@ in (channel.length, "Tried to set a topic but no channel was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     topic(state, "#channel", "content");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.TOPIC), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((content == "content"), content);
-                assert(m.properties == Message.Property.init);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.TOPIC), Enum!(IRCEvent.Type).toString(type));
+        assert((channel == "#channel"), channel);
+        assert((content == "content"), content);
+        assert(m.properties == Message.Property.init);
+    }
 }
 
 
@@ -719,7 +668,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void invite(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channel,
     const string nickname,
     const Message.Property properties = Message.Property.none,
@@ -735,30 +684,24 @@ in (nickname.length, "Tried to send an invite but no nickname was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     invite(state, "#channel", "kameloso");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.INVITE), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((target.nickname == "kameloso"), target.nickname);
-                assert(m.properties == Message.Property.init);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.INVITE), Enum!(IRCEvent.Type).toString(type));
+        assert((channel == "#channel"), channel);
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert(m.properties == Message.Property.init);
+    }
 }
 
 
@@ -776,7 +719,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void join(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channel,
     const string key = string.init,
     const Message.Property properties = Message.Property.none,
@@ -791,29 +734,23 @@ in (channel.length, "Tried to join a channel but no channel was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     join(state, "#channel");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.JOIN), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert(m.properties == Message.Property.init);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.JOIN), Enum!(IRCEvent.Type).toString(type));
+        assert((channel == "#channel"), channel);
+        assert(m.properties == Message.Property.init);
+    }
 }
 
 
@@ -832,7 +769,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void kick(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channel,
     const string nickname,
     const string reason = string.init,
@@ -850,31 +787,25 @@ in (nickname.length, "Tried to kick someone but no nickname was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     kick(state, "#channel", "kameloso", "content");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.KICK), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((content == "content"), content);
-                assert((target.nickname == "kameloso"), target.nickname);
-                assert(m.properties == Message.Property.init);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.KICK), Enum!(IRCEvent.Type).toString(type));
+        assert((channel == "#channel"), channel);
+        assert((content == "content"), content);
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert(m.properties == Message.Property.init);
+    }
 }
 
 
@@ -892,7 +823,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void part(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channel,
     const string reason = string.init,
     const Message.Property properties = Message.Property.none,
@@ -907,30 +838,24 @@ in (channel.length, "Tried to part a channel but no channel was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     part(state, "#channel", "reason");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.PART), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((content == "reason"), content);
-                assert(m.properties == Message.Property.init);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.PART), Enum!(IRCEvent.Type).toString(type));
+        assert((channel == "#channel"), channel);
+        assert((content == "reason"), content);
+        assert(m.properties == Message.Property.init);
+    }
 }
 
 
@@ -948,7 +873,7 @@ unittest
  +/
 
 void quit(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string reason = string.init,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
@@ -960,31 +885,25 @@ void quit(
     m.caller = caller;
     m.properties = (properties | Message.Property.priority);
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     enum properties = Message.Property.quiet;
     quit(state, "reason", properties);
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.QUIT), Enum!(IRCEvent.Type).toString(type));
-                assert((content == "reason"), content);
-                assert(m.caller.length);
-                assert(m.properties & (Message.Property.forced | Message.Property.priority | Message.Property.quiet));
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.QUIT), Enum!(IRCEvent.Type).toString(type));
+        assert((content == "reason"), content);
+        assert(m.caller.length);
+        assert(m.properties & (Message.Property.forced | Message.Property.priority | Message.Property.quiet));
+    }
 }
 
 
@@ -1001,7 +920,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void whois(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string nickname,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
@@ -1031,30 +950,24 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
         if (state.settings.flush) stdout.flush();
     }
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     enum properties = Message.Property.forced;
     whois(state, "kameloso", properties);
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.RPL_WHOISACCOUNT), Enum!(IRCEvent.Type).toString(type));
-                assert((target.nickname == "kameloso"), target.nickname);
-                assert(m.properties & Message.Property.forced);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.RPL_WHOISACCOUNT), Enum!(IRCEvent.Type).toString(type));
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert(m.properties & Message.Property.forced);
+    }
 }
 
 
@@ -1076,7 +989,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void raw(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string line,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
@@ -1088,29 +1001,23 @@ void raw(
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     raw(state, "commands");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
-                assert((content == "commands"), content);
-                assert(m.properties == Message.Property.init);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
+        assert((content == "commands"), content);
+        assert(m.properties == Message.Property.init);
+    }
 }
 
 
@@ -1133,7 +1040,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void immediate(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string line,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
@@ -1145,28 +1052,23 @@ void immediate(
     m.caller = caller;
     m.properties = (properties | Message.Property.immediate);
 
-    state.mainThread.prioritySend(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     immediate(state, "commands");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
-                assert((content == "commands"), content);
-                assert(m.properties & Message.Property.immediate);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
+        assert((content == "commands"), content);
+        assert(m.properties & Message.Property.immediate);
+    }
 }
 
 /++
@@ -1190,8 +1092,7 @@ alias immediateline = immediate;
 void askToOutputImpl(string askVerb)(IRCPluginState state, const string line)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : send;
-    mixin("state.mainThread.send(ThreadMessage(ThreadMessage.MessageType." ~ askVerb ~ ", line));");
+    mixin("state.messages ~= ThreadMessage(ThreadMessage.MessageType." ~ askVerb ~ ", line);");
 }
 
 
@@ -1281,7 +1182,6 @@ unittest
     import kameloso.thread : ThreadMessage;
 
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     state.askToTrace("trace");
     state.askToLog("log");
@@ -1321,21 +1221,11 @@ unittest
 
     foreach (immutable i; 0..expectedMessages.length)
     {
-        import std.concurrency : receiveTimeout;
-        import std.variant : Variant;
-        import core.time : Duration;
-
-        cast(void)receiveTimeout(Duration.zero,
-            (ThreadMessage message)
-            {
-                assert((message.type == expectedLevels[i]),
-                    Enum!(ThreadMessage.MessageType).toString(message.type));
-                assert((message.content == expectedMessages[i]), message.content);
-            },
-            (Variant _)
-            {
-                assert(0, "Receive loop test in `messaging.d` failed.");
-            }
-        );
+        foreach (message; state.messages)
+        {
+            assert((message.type == expectedLevels[i]),
+                Enum!(ThreadMessage.MessageType).toString(message.type));
+            assert((message.content == expectedMessages[i]), message.content);
+        }
     }
 }

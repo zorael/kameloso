@@ -402,8 +402,6 @@ public:
 
         version(ThreadedSSLFree)
         {
-            import std.concurrency : spawn;
-
             static void freeSSL(shared SSL* sslInstance, shared SSL_CTX* sslContext)
             {
                 if (sslInstance) openssl.SSL_free(cast(SSL*)sslInstance);
@@ -413,6 +411,7 @@ public:
             // Casting to and from shared is not @safe. Hopefully history will forgive me for this.
             () @trusted
             {
+                import std.concurrency : spawn;
                 cast(void)spawn(&freeSSL, cast(shared)this.sslInstance, cast(shared)this.sslContext);
             }();
         }

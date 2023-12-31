@@ -1022,7 +1022,6 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : ThreadMessage, boxed;
-    import std.concurrency : send;
     import std.conv : to;
 
     auto room = event.channel in plugin.rooms;
@@ -1066,7 +1065,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     IRCUser userCopy = *storedUser;  // dereference and blit
-    plugin.state.mainThread.send(ThreadMessage.putUser(string.init, boxed(userCopy)));
+    plugin.state.messages ~= ThreadMessage.putUser(string.init, boxed(userCopy));
 
     /+
         Start room monitors for the chanenl. We can assume they have not already
@@ -2676,7 +2675,6 @@ void initialise(TwitchPlugin plugin)
     {
         import kameloso.thread : ThreadMessage;
         import lu.json : JSONStorage;
-        import std.concurrency : send;
 
         if (plugin.state.settings.headless)
         {
@@ -2705,7 +2703,7 @@ void initialise(TwitchPlugin plugin)
             requestTwitchKey(plugin);
             if (*plugin.state.abort) return;
             plugin.twitchSettings.keygen = false;
-            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.keygen"));
+            plugin.state.messages ~= ThreadMessage.popCustomSetting("twitch.keygen");
             needSeparator = true;
         }
 
@@ -2716,7 +2714,7 @@ void initialise(TwitchPlugin plugin)
             requestTwitchSuperKey(plugin);
             if (*plugin.state.abort) return;
             plugin.twitchSettings.superKeygen = false;
-            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.superKeygen"));
+            plugin.state.messages ~= ThreadMessage.popCustomSetting("twitch.superKeygen");
             needSeparator = true;
         }
 
@@ -2729,8 +2727,8 @@ void initialise(TwitchPlugin plugin)
             if (*plugin.state.abort) return;
             plugin.twitchSettings.googleKeygen = false;
             plugin.twitchSettings.youtubeKeygen = false;
-            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.googleKeygen"));
-            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.youtubeKeygen"));
+            plugin.state.messages ~= ThreadMessage.popCustomSetting("twitch.googleKeygen");
+            plugin.state.messages ~= ThreadMessage.popCustomSetting("twitch.youtubeKeygen");
             needSeparator = true;
         }
 
@@ -2740,7 +2738,7 @@ void initialise(TwitchPlugin plugin)
             if (needSeparator) logger.trace(separator);
             requestSpotifyKeys(plugin);
             if (*plugin.state.abort) return;
-            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.spotifyKeygen"));
+            plugin.state.messages ~= ThreadMessage.popCustomSetting("twitch.spotifyKeygen");
             plugin.twitchSettings.spotifyKeygen = false;
         }
     }
@@ -3428,13 +3426,12 @@ unittest
  +/
 void teardown(TwitchPlugin plugin)
 {
-    import kameloso.thread : ThreadMessage;
     import std.concurrency : Tid, send;
 
     if (plugin.transient.persistentWorkerTid != Tid.init)
     {
         // It may not have been started if we're aborting very early.
-        plugin.transient.persistentWorkerTid.send(ThreadMessage.teardown);
+        plugin.transient.persistentWorkerTid.send(true);
     }
 
     if (plugin.twitchSettings.ecount && plugin.ecount.length)
@@ -3848,7 +3845,6 @@ private:
     import kameloso.messaging : Message;
     import kameloso.terminal : TerminalToken;
     import lu.container : Buffer, CircularBuffer;
-    import std.concurrency : Tid;
     import std.datetime.systime : SysTime;
 
 package:
@@ -4148,6 +4144,10 @@ package:
      +/
     static struct TransientState
     {
+    private:
+        import std.concurrency : Tid;
+
+    public:
         /++
             The thread ID of the persistent worker thread.
          +/

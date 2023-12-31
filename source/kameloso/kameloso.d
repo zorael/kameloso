@@ -521,7 +521,6 @@ public:
         state.client = this.parser.client;
         state.server = this.parser.server;
         state.bot = this.bot;
-        state.mainThread = thisTid;
         state.settings = *this.settings;
         state.connSettings = this.connSettings;
         state.abort = this.abort;

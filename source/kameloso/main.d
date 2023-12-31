@@ -760,26 +760,114 @@ void messageFiber(Kameloso instance)
         immutable loopStartTime = MonoTime.currTime;
         static immutable maxReceiveTime = Timeout.messageReadMsecs.msecs;
 
-        while (
-            !*instance.abort &&
-            (next == Next.continue_) &&
-            ((MonoTime.currTime - loopStartTime) <= maxReceiveTime))
+        /++
+            Still time enough to act on messages?
+         +/
+        auto stillOnTime()
         {
-            import std.concurrency : receiveTimeout;
-            import std.variant : Variant;
+            return ((MonoTime.currTime - loopStartTime) <= maxReceiveTime);
+        }
 
-            immutable receivedSomething = receiveTimeout(Duration.zero,
-                &onThreadMessage,
-                &eventToServer,
-                (Variant v) scope
+        /++
+            Whether or not to continue the loop.
+         +/
+        auto shouldContinue()
+        {
+            return (next == Next.continue_) && !*instance.abort;
+        }
+
+        /++
+            Priority messages. Process these before normal messages.
+         +/
+        priorityMessageTop:
+        foreach (plugin; instance.plugins)
+        {
+            if (!plugin.isEnabled || !plugin.state.priorityMessages.length) continue;
+
+            foreach (immutable i, message; plugin.state.priorityMessages)
+            {
+                onThreadMessage(message);
+
+                if (!shouldContinue)
                 {
-                    // Caught an unhandled message
-                    enum pattern = "Main thread message fiber received unknown Variant: <l>%s";
-                    logger.warningf(pattern, v.type);
+                    break priorityMessageTop;
                 }
-            );
+                else if (!stillOnTime)
+                {
+                    // Ran out of time. Pop until where we are corrently
+                    auto copy = plugin.state.priorityMessages;
+                    plugin.state.priorityMessages = copy[i+1..$];
+                    break priorityMessageTop;
+                }
+            }
 
-            if (!receivedSomething) break;
+            plugin.state.priorityMessages = null;
+        }
+
+        if (!shouldContinue || !stillOnTime)
+        {
+            yield(next);
+            continue;
+        }
+
+        /++
+            Normal-priority messages.
+         +/
+        normalMessageTop:
+        foreach (plugin; instance.plugins)
+        {
+            if (!plugin.isEnabled || !plugin.state.messages.length) continue;
+
+            foreach (immutable i, message; plugin.state.messages)
+            {
+                onThreadMessage(message);
+
+                if (!shouldContinue)
+                {
+                    break normalMessageTop;
+                }
+                else if (!stillOnTime)
+                {
+                    // As above
+                    auto copy = plugin.state.messages;
+                    plugin.state.messages = copy[i+1..$];
+                    break normalMessageTop;
+                }
+            }
+        }
+
+        if (!shouldContinue || !stillOnTime)
+        {
+            yield(next);
+            continue;
+        }
+
+        /++
+            Outgoing messages.
+         +/
+        outgoingMessageTop:
+        foreach (plugin; instance.plugins)
+        {
+            if (!plugin.isEnabled || !plugin.state.outgoingMessages.length) continue;
+
+            foreach (immutable i, message; plugin.state.outgoingMessages)
+            {
+                eventToServer(message);
+
+                if (!shouldContinue)
+                {
+                    break outgoingMessageTop;
+                }
+                else if (!stillOnTime)
+                {
+                    // As above
+                    auto copy = plugin.state.outgoingMessages;
+                    plugin.state.outgoingMessages = copy[i+1..$];
+                    break outgoingMessageTop;
+                }
+            }
+
+            plugin.state.outgoingMessages = null;
         }
 
         yield(next);
@@ -3359,7 +3447,7 @@ auto startBot(Kameloso instance)
             //instance.parser = IRCParser(backupClient, instance.parser.server);  // done below
 
             // Exhaust leftover queued messages
-            exhaustMessages();
+            exhaustMessages(instance.plugins);
 
             // Clear outgoing messages
             instance.outbuffer.clear();
@@ -4095,8 +4183,6 @@ auto checkInitialisationMessages(
     while (true)
     {
         import kameloso.thread : ThreadMessage;
-        import std.concurrency : receiveTimeout;
-        import std.variant : Variant;
         import core.time : Duration;
 
         bool halt;
@@ -4147,25 +4233,40 @@ auto checkInitialisationMessages(
             }
         }
 
-        immutable receivedSomething = receiveTimeout(Duration.zero,
-            &onThreadMessage,
-            (Variant v) scope
-            {
-                // Caught an unhandled message
-                enum pattern = "checkInitialisationMessages received unknown Variant: <l>%s";
-                logger.errorf(pattern, v.type);
-                halt = true;
-            }
-        );
-
-        if (!receivedSomething)
+        priorityMessageTop:
+        foreach (plugin; instance.plugins)
         {
-            return true;
+            if (!plugin.state.priorityMessages.length) continue;
+
+            foreach (immutable i, message; plugin.state.priorityMessages)
+            {
+                onThreadMessage(message);
+            }
+
+            plugin.state.priorityMessages = null;
         }
-        else if (halt)
+
+        normalMessageTop:
+        foreach (plugin; instance.plugins)
+        {
+            if (!plugin.state.messages.length) continue;
+
+            foreach (immutable i, message; plugin.state.messages)
+            {
+                onThreadMessage(message);
+            }
+
+            plugin.state.messages = null;
+        }
+
+        if (halt)
         {
             retval = ShellReturnValue.pluginInitialisationFailure;
             return false;
+        }
+        else
+        {
+            return true;
         }
     }
 
@@ -4496,7 +4597,7 @@ auto run(string[] args)
         {
             import kameloso.thread : exhaustMessages;
 
-            immutable quitMessage = exhaustMessages();
+            immutable quitMessage = exhaustMessages(instance.plugins);
             reason = quitMessage.length ?
                 quitMessage :
                 instance.bot.quitReason;

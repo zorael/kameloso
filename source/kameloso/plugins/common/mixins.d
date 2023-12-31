@@ -482,9 +482,7 @@ mixin template WHOISFiberDelegate(
         version(WithPrinterPlugin)
         {
             import kameloso.thread : ThreadMessage, boxed;
-            import std.concurrency : send;
-
-            plugin.state.mainThread.send(ThreadMessage.busMessage("printer", boxed("squelch " ~ nicknamePart)));
+            plugin.state.messages ~= ThreadMessage.busMessage("printer", boxed("squelch " ~ nicknamePart));
         }
 
         if (issueWhois)

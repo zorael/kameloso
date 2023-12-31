@@ -435,7 +435,6 @@ auto readFIFO(PipelinePlugin plugin)
         import kameloso.thread : ThreadMessage, boxed;
         import lu.string : strippedLeft;
         import std.algorithm.searching : startsWith;
-        import std.concurrency : prioritySend, send;
         import std.uni : toLower;
 
         string line = originalLine.strippedLeft;  // mutable
@@ -449,7 +448,7 @@ auto readFIFO(PipelinePlugin plugin)
             immutable header = line.advancePast(' ', Yes.inherit);
             if (!header.length) continue;
 
-            plugin.state.mainThread.send(ThreadMessage.busMessage(header, boxed(line)));
+            plugin.state.messages ~= ThreadMessage.busMessage(header, boxed(line));
             shouldCheckMessages = true;
             continue;
         }
@@ -483,12 +482,12 @@ auto readFIFO(PipelinePlugin plugin)
         }
         else if (lowerLine == "reconnect")
         {
-            plugin.state.mainThread.prioritySend(ThreadMessage.reconnect);
+            plugin.state.priorityMessages ~= ThreadMessage.reconnect;
             return true;  // as above
         }
         else if (lowerLine == "reexec")
         {
-            plugin.state.mainThread.prioritySend(ThreadMessage.reconnect(string.init, boxed(true)));
+            plugin.state.priorityMessages ~= ThreadMessage.reconnect(string.init, boxed(true));
             return true;  // ditto
         }
 
@@ -512,8 +511,7 @@ auto readFIFO(PipelinePlugin plugin)
         elapsed = How much time has passed since the last tick.
 
     Returns:
-        Whether or not the main loop should check concurrency messages, to catch
-        messages sent to it.
+        Whether or not the main loop should check for messages.
  +/
 auto tick(PipelinePlugin plugin, const Duration elapsed)
 {

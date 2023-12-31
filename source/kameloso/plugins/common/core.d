@@ -2707,7 +2707,8 @@ struct IRCPluginState
 {
 private:
     import kameloso.pods : ConnectionSettings, CoreSettings, IRCBot;
-    import kameloso.thread : ScheduledDelegate, ScheduledFiber;
+    import kameloso.messaging : Message;
+    import kameloso.thread : ScheduledDelegate, ScheduledFiber, ThreadMessage;
     import std.concurrency : Tid;
     import core.thread : Fiber;
 
@@ -2787,6 +2788,7 @@ public:
     /++
         Thread ID to the main thread.
      +/
+    deprecated("Use `IRCPluginState.{messages,priorityMessages,outgoingMessages,deferredActions}` instead}")
     Tid mainThread;
 
     // users
@@ -2948,6 +2950,24 @@ public:
         This plugin's array of [DeferredAction]s.
      +/
     DeferredAction[] deferredActions;
+
+    // messages
+    /++
+        Messages for the main thread to take action on.
+     +/
+    ThreadMessage[] messages;
+
+    // priorityMessages
+    /++
+        Messages for the main thread to take action on with a higher priority.
+     +/
+    ThreadMessage[] priorityMessages;
+
+    // outgoingMessages
+    /++
+        Events to send to the IRC server.
+     +/
+    Message[] outgoingMessages;
 }
 
 
