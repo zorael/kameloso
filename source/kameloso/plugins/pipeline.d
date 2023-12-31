@@ -420,7 +420,7 @@ auto readFIFO(PipelinePlugin plugin)
     import std.algorithm.iteration : splitter;
     import core.sys.posix.unistd : read;
 
-    enum bufferSize = 1024;  // Should be enough? An IRC line is 512 bytes
+    enum bufferSize = 4096;
     ubyte[bufferSize] buf;
 
     immutable ptrdiff_t bytesRead = read(plugin.transient.fd, buf.ptr, buf.length);
