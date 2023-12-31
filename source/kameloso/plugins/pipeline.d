@@ -404,7 +404,7 @@ auto isFIFO(const string filename)
 
 // readFIFO
 /++
-    Reads from the FIFO and sends concurrency messages based upon what was read.
+    Reads from the FIFO and sends messages to the main thread based upon what was read.
     If something was indeed read, `true` is returned to signal to the caller that
     it should check for new messages.
 
@@ -412,8 +412,8 @@ auto isFIFO(const string filename)
         plugin = The current [PipelinePlugin].
 
     Returns:
-        `true` if concurrency messages were sent and should be read by other
-        parts of the program; `false` if not.
+        `true` if messages were sent and should be read by other parts of the
+        program; `false` if not.
  +/
 auto readFIFO(PipelinePlugin plugin)
 {

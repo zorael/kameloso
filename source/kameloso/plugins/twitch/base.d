@@ -1041,7 +1041,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     /+
         Fetch the broadcaster's Twitch user through an API call and store it as
         a new IRCUser in the plugin.state.users AA, including its display name.
-        Additionally send the user to other plugins by way of a concurrency message.
+        Additionally send the user to other plugins by way of a message to the main thread.
      +/
     auto twitchUser = getTwitchUser(plugin, string.init, room.id);
     if (!twitchUser.nickname.length) return;  // No such user? Something is deeply wrong

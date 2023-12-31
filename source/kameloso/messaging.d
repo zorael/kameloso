@@ -4,9 +4,9 @@
     To send a server message some information is needed; like
     message type, message target, perhaps channel, content and such.
     [dialect.defs.IRCEvent|IRCEvent] has all of this, so it lends itself to
-    repurposing it to aggregate and carry them, through concurrency messages.
-    These are caught by the concurrency message-reading parts of the main loop,
-    which reversely parses them into strings and sends them on to the server.
+    repurposing it to aggregate and carry them, through message structs in an array "queue".
+    These are caught by the main loop, which reversely parses them into strings
+    and sends them on to the server.
 
     Example:
     ---
@@ -1079,14 +1079,14 @@ alias immediateline = immediate;
 
 // askToOutputImpl
 /++
-    Sends a concurrency message asking to print the supplied text to the local
+    Sends a message asking to print the supplied text to the local
     terminal, instead of doing it directly.
 
     Params:
         askVerb = An `askToX` string verb where `X` corresponds to the
             [kameloso.logger.LogLevel|LogLevel] at which to log the message.
         state = Current [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
-            used to send the concurrency message to the main thread.
+            used for its [kameloso.plugins.common.core.IRCPluginState.messages|messages] array.
         line = The text body to ask the main thread to display.
  +/
 void askToOutputImpl(string askVerb)(IRCPluginState state, const string line)
@@ -1125,7 +1125,7 @@ static if (__VERSION__ >= 2099L)
         private import kameloso.thread : ThreadMessage;
 
         /++
-            Sends a concurrency message to the main thread to print text using
+            Sends a message to the main thread to print text using
             the [KamelosoLogger] to the local terminal.
          +/
         alias ` ~ askVerb ~ ` = askToOutputImpl!"` ~ askVerb ~ `";
@@ -1140,19 +1140,19 @@ static if (__VERSION__ >= 2099L)
 else
 {
     /++
-        Sends a concurrency message to the main thread to [KamelosoLogger.trace] text to the local terminal.
+        Sends a message to the main thread to [KamelosoLogger.trace] text to the local terminal.
      +/
     alias askToTrace = askToOutputImpl!"askToTrace";
     /++
-        Sends a concurrency message to the main thread to [KamelosoLogger.log] text to the local terminal.
+        Sends a message to the main thread to [KamelosoLogger.log] text to the local terminal.
      +/
     alias askToLog = askToOutputImpl!"askToLog";
     /++
-        Sends a concurrency message to the main thread to [KamelosoLogger.info] text to the local terminal.
+        Sends a message to the main thread to [KamelosoLogger.info] text to the local terminal.
      +/
     alias askToInfo = askToOutputImpl!"askToInfo";
     /++
-        Sends a concurrency message to the main thread to [KamelosoLogger.warning] text to the local terminal.
+        Sends a message to the main thread to [KamelosoLogger.warning] text to the local terminal.
      +/
     alias askToWarn = askToOutputImpl!"askToWarn";
     /++
@@ -1160,19 +1160,19 @@ else
      +/
     alias askToWarning = askToWarn;
     /++
-        Sends a concurrency message to the main thread to [KamelosoLogger.error] text to the local terminal.
+        Sends a message to the main thread to [KamelosoLogger.error] text to the local terminal.
      +/
     alias askToError = askToOutputImpl!"askToError";
     /++
-        Sends a concurrency message to the main thread to [KamelosoLogger.critical] text to the local terminal.
+        Sends a message to the main thread to [KamelosoLogger.critical] text to the local terminal.
      +/
     alias askToCritical = askToOutputImpl!"askToCritical";
     /++
-        Sends a concurrency message to the main thread to [KamelosoLogger.fatal] text to the local terminal.
+        Sends a message to the main thread to [KamelosoLogger.fatal] text to the local terminal.
      +/
     alias askToFatal = askToOutputImpl!"askToFatal";
     /++
-        Sends a concurrency message to the main thread asking to print text to the local terminal.
+        Sends a message to the main thread asking to print text to the local terminal.
      +/
     alias askToWriteln = askToOutputImpl!"askToWriteln";
 }

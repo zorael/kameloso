@@ -214,8 +214,8 @@ void signalHandler(int sig) nothrow @nogc @system
 
 // messageFiber
 /++
-    A Generator fiber function that checks for concurrency messages and performs
-    action based on what was received.
+    A Generator fiber function that processes messages and performs action based
+    on what was read.
 
     The return value yielded to the caller tells it whether the received action
     means the bot should exit or not.
@@ -914,7 +914,7 @@ auto mainLoop(Kameloso instance)
             instance.abort,
             Timeout.connectionLost));
 
-    // Likewise a Generator to handle concurrency messages
+    // Likewise a Generator to process messages
     auto messenger = new Generator!Next(() => messageFiber(instance));
 
     scope(exit)
@@ -1176,7 +1176,7 @@ auto mainLoop(Kameloso instance)
             }
         }
 
-        // Check concurrency messages to see if we should exit
+        // Check messages to see if we should exit
         next = callMessenger();
         if (*instance.abort) return Next.returnFailure;
         //else if (next != Next.continue_) return next;  // process buffers before passing on Next.retry
@@ -3574,7 +3574,7 @@ auto startBot(Kameloso instance)
 
             if (*instance.abort) return attempt;
 
-            // Check for concurrency messages in case any were sent during plugin initialisation
+            // Check for messages in case any were sent during plugin initialisation
             ShellReturnValue initRetval;
             immutable proceed = checkInitialisationMessages(instance, initRetval);
 
@@ -4576,7 +4576,7 @@ auto run(string[] args)
 
     if (*instance.abort) return ShellReturnValue.failure;
 
-    // Check for concurrency messages in case any were sent during plugin initialisation
+    // Check for messages in case any were sent during plugin initialisation
     ShellReturnValue initRetval;
     immutable proceed = checkInitialisationMessages(instance, initRetval);
     if (!proceed) return initRetval;

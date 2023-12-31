@@ -469,7 +469,7 @@ enum Timeout
     httpGET = 10,
 
     /++
-        Timeout for concurrency message reads (in between socket reads).
+        Timeout for message processing (in between socket reads).
      +/
     messageReadMsecs = 1500,
 }

@@ -217,11 +217,6 @@ public:
         except for values relating to the connection to the server; whether to
         use IPv6, paths to any certificates, and the such.
 
-    * [kameloso.plugins.common.core.IRCPluginState.mainThread|IRCPluginState.mainThread]
-        is the [std.concurrency.Tid|*thread ID*] of the thread running the main loop.
-        We indirectly use it to send strings to the server by way of concurrency
-        messages, but it is usually not something you will have to deal with directly.
-
     * [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
         is an associative array keyed with users' nicknames. The value to that key is an
         [dialect.defs.IRCUser|IRCUser] representing that user in terms of nickname,
@@ -825,10 +820,8 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
     import std.format : format;
 
     /+
-        The bot uses concurrency messages to queue strings to be sent to the
-        server. This has benefits such as that even a multi-threaded program
-        will have synchronous messages sent, and it's overall an easy and
-        convenient way for plugin to send messages up the stack.
+        The bot uses an array of messages to queue strings to be sent to the
+        server.
 
         There are shorthand versions for sending these messages in
         [kameloso.messaging], and additionally this module has mixed in

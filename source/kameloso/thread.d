@@ -1,15 +1,13 @@
 /++
-    Structures and functions related to concurrency message passing, threads and
+    Structures and functions related to message passing, threads and
     [core.thread.fiber.Fiber|Fiber]s.
 
     Example:
     ---
-    import std.concurrency;
-
-    mainThread.send(ThreadMessage.sendline("Message to send to server"));
-    mainThread.send(ThreadMessage.pong("irc.libera.chat"));
-    mainThread.send(ThreadMessage.askToWriteln("writeln this for me please"));
-    mainThread.send(ThreadMessage.busMessage("header", boxed("payload")));
+    plugin.state.messages ~= ThreadMessage.sendline("Message to send to server");
+    plugin.state.priorityMessages ~= ThreadMessage.pong("irc.libera.chat");
+    plugin.state.messages ~= ThreadMessage.askToWriteln("writeln this for me please");
+    plugin.state.messages ~= ThreadMessage.busMessage("header", boxed("payload"));
 
     auto fiber = new CarryingFiber!string(&someDelegate, BufferSize.fiberStack);
     fiber.payload = "This string is carried by the fiber and can be accessed from within it";
@@ -193,8 +191,8 @@ version(Posix)
 // ThreadMessage
 /++
     Collection of static functions used to construct thread messages, for passing
-    information of different kinds yet still as one type, to stop [std.concurrency.send]
-    from requiring so much compilation memory.
+    information of different kinds yet still as one type, to be able to store them
+    in arrays for later processing.
 
     The type of the message is defined as a [ThreadMessage.MessageType|MessageType] in
     [ThreadMessage.MessageType]. Recipients will have to do a (final) switch over that

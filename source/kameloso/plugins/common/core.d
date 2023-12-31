@@ -366,8 +366,7 @@ public:
             elapsed = Time since last tick.
 
         Returns:
-            `true` to signal the main loop to check for new concurrency messages;
-            `false` if not.
+            `true` to signal the main loop to check for messages; `false` if not.
 
         See_Also:
             [kameloso.plugins.common.core.IRCPluginImpl.tick]
@@ -1754,8 +1753,7 @@ mixin template IRCPluginImpl(
             elapsed = Time since last tick.
 
         Returns:
-            `true` to signal the main loop to check for new concurrency messages;
-            `false` if not.
+            `true` to signal the main loop to check for messages; `false` if not.
      +/
     override public bool tick(const Duration elapsed) @system
     {
