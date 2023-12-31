@@ -1618,6 +1618,14 @@ void onBusMessage(
         case "printbytes":
             plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
             return;
+
+        case "fake":
+            import std.typecons : Tuple;
+
+            alias Payload = Tuple!();
+            void emptyDg() {}
+
+            return defer!Payload(plugin, &emptyDg, slice);
     }
 
     case "reexec":

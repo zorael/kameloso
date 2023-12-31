@@ -2186,6 +2186,7 @@ version(WithAdminPlugin)
 {
     version = WantGetSettingHandler;
     version = WantSetSettingHandler;
+    version = WantFakeEventHandler;
 }
 
 version(WithHelpPlugin)
@@ -2203,6 +2204,10 @@ version(WithOnelinerPlugin)
     version = WantPeekCommandsHandler;
 }
 
+version(WithPipelinePlugin)
+{
+    version = WantFakeEventHandler;
+}
 
 // processDeferredActions
 /++
@@ -2402,8 +2407,24 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
             }
         }
 
-        // If we're here, nothing matched
-        logger.error("Unhandled deferred action type: <l>" ~ typeof(action).stringof);
+        version(WantFakeEventHandler)
+        {
+            alias FakeEventPayload = Tuple!();
+
+            if (auto fiber = cast(CarryingFiber!(FakeEventPayload))(action.fiber))
+            {
+                import std.datetime.systime : Clock;
+                // Ignore the fiber, it's just of a placeholder dummy delegate
+                processLineFromServer(instance, action.context, Clock.currTime.toUnixTime());
+                continue;
+            }
+        }
+
+        /+
+            If we're here, nothing matched.
+            Don't output an error though; it might just mean that the corresponding
+            plugins were not compiled in.
+         +/
     }
 
     if (plugin.state.deferredActions.length)

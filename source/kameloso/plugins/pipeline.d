@@ -412,7 +412,8 @@ auto isFIFO(const string filename)
         plugin = The current [PipelinePlugin].
 
     Returns:
-        `true` if something was read and concurrency messages were sent; `false` if not.
+        `true` if concurrency messages were sent and should be read by other
+        parts of the program; `false` if not.
  +/
 auto readFIFO(PipelinePlugin plugin)
 {
@@ -426,32 +427,50 @@ auto readFIFO(PipelinePlugin plugin)
     if (bytesRead <= 0) return false;   // 0 or -1
 
     string slice = cast(string)buf[0..bytesRead].idup;  // mutable immutable
-    bool sentSomething;
+    bool shouldCheckMessages;
 
-    foreach (/*immutable*/ line; slice.splitter("\n"))
+    foreach (immutable originalLine; slice.splitter("\n"))
     {
-        import kameloso.messaging : raw, quit;
+        import kameloso.messaging : raw;
         import kameloso.thread : ThreadMessage, boxed;
-        import lu.string : splitInto, strippedLeft;
-        import std.algorithm.comparison : equal;
+        import lu.string : strippedLeft;
         import std.algorithm.searching : startsWith;
-        import std.concurrency : send;
-        import std.uni : asLowerCase;
+        import std.concurrency : prioritySend, send;
+        import std.uni : toLower;
 
-        line = line.strippedLeft;
-        if (!line.length) continue;  // skip empty lines
+        string line = originalLine.strippedLeft;  // mutable
+        if (!line.length) continue;
 
         if (line[0] == ':')
         {
-            line = line[1..$];  // skip the colon
-            string header;  // mutable
-            line.splitInto(header);
+            import lu.string : advancePast;
 
+            line = line[1..$];  // skip the colon
+            immutable header = line.advancePast(' ', Yes.inherit);
             if (!header.length) continue;
+
             plugin.state.mainThread.send(ThreadMessage.busMessage(header, boxed(line)));
+            shouldCheckMessages = true;
+            continue;
         }
-        else if (line.asLowerCase.startsWith("quit"))
+        else if (line[0] == '>')
         {
+            import std.typecons : Tuple;
+
+            alias Payload = Tuple!();
+            void emptyDg() {}
+
+            defer!Payload(plugin, &emptyDg, line[1..$]);
+            // No need to set shouldCheckMessages, deferred actions are always checked
+            continue;
+        }
+
+        immutable lowerLine = line.toLower;
+
+        if (lowerLine.startsWith("quit"))
+        {
+            import kameloso.messaging : quit;
+
             if ((line.length > 6) && (line[4..6] == " :"))
             {
                 quit(plugin.state, line[6..$]);
@@ -460,22 +479,19 @@ auto readFIFO(PipelinePlugin plugin)
             {
                 quit(plugin.state);  // Default reason
             }
-            return true;
+            return true;  // no need to continue looping
         }
-        else if (line.asLowerCase.equal("reconnect"))
+        else if (lowerLine == "reconnect")
         {
-            plugin.state.mainThread.send(ThreadMessage.reconnect);
-            return true;
-        }
-        else
-        {
-            raw(plugin.state, line.strippedLeft);
+            plugin.state.mainThread.prioritySend(ThreadMessage.reconnect);
+            return true;  // as above
         }
 
-        sentSomething = true;
+        raw(plugin.state, line.strippedLeft);
+        shouldCheckMessages = true;
     }
 
-    return sentSomething;
+    return shouldCheckMessages;
 }
 
 
