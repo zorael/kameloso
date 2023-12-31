@@ -836,23 +836,29 @@ void interruptibleSleep(const Duration dur, const Flag!"abort"* abort) @system
 }
 
 
-// exhaustMessages
+// getQuitMessage
 /++
-    Exhausts the concurrency message mailbox.
+    Iterates the [kameloso.plugins.common.core.IRCPluginState.messages|messages] and
+    [kameloso.plugins.common.core.IRCPluginState.priorityMessages|priorityMessages] arrays
+    of each plugin.
 
-    This is done between connection attempts to get a fresh start.
-
-    If a [kameloso.thread.ThreadMessage.MessageType.quit|quit] message is received,
+    If a [kameloso.thread.ThreadMessage.MessageType.quit|quit] message is found,
     its content is returned.
 
+    Note: The message arrays are not nulled out in this function.
+
+    Params:
+        plugins = Array of plugins to iterate.
+
     Returns:
-        The content of a [kameloso.thread.ThreadMessage.MessageType.quit|quit] message,
+        The `content` of a [kameloso.thread.ThreadMessage.MessageType.quit|quit] message,
         if one was received, otherwise an empty string.
  +/
-auto exhaustMessages(IRCPlugin[] plugins)
+auto getQuitMessage(IRCPlugin[] plugins)
 {
     string quitMessage;  // mutable
 
+    top:
     foreach (plugin; plugins)
     {
         foreach (message; plugin.state.priorityMessages)
@@ -860,11 +866,18 @@ auto exhaustMessages(IRCPlugin[] plugins)
             if (message.type == ThreadMessage.MessageType.quit)
             {
                 quitMessage = message.content;
+                break top;
             }
         }
 
-        plugin.state.priorityMessages = null;
-        plugin.state.messages = null;
+        foreach (message; plugin.state.priorityMessages)
+        {
+            if (message.type == ThreadMessage.MessageType.quit)
+            {
+                quitMessage = message.content;
+                break top;
+            }
+        }
     }
 
     return quitMessage;

@@ -3357,7 +3357,7 @@ auto startBot(Kameloso instance)
         if (!attempt.firstConnect)
         {
             import kameloso.constants : Timeout;
-            import kameloso.thread : exhaustMessages, interruptibleSleep;
+            import kameloso.thread : getQuitMessage, interruptibleSleep;
             import core.time : seconds;
 
             version(TwitchSupport)
@@ -3447,7 +3447,7 @@ auto startBot(Kameloso instance)
             //instance.parser = IRCParser(backupClient, instance.parser.server);  // done below
 
             // Exhaust leftover queued messages
-            exhaustMessages(instance.plugins);
+            getQuitMessage(instance.plugins);
 
             // Clear outgoing messages
             instance.outbuffer.clear();
@@ -4595,9 +4595,9 @@ auto run(string[] args)
             !instance.settings.headless &&
             !instance.settings.hideOutgoing)
         {
-            import kameloso.thread : exhaustMessages;
+            import kameloso.thread : getQuitMessage;
 
-            immutable quitMessage = exhaustMessages(instance.plugins);
+            immutable quitMessage = getQuitMessage(instance.plugins);
             reason = quitMessage.length ?
                 quitMessage :
                 instance.bot.quitReason;
