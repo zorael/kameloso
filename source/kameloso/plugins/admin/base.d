@@ -1005,7 +1005,7 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
-    plugin.state.deferredActions ~= defer!Payload(&setSettingDg, event.content);
+    defer!Payload(plugin, &setSettingDg, event.content);
 }
 
 
@@ -1075,7 +1075,7 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    plugin.state.deferredActions ~= defer!Payload(&getSettingDg, event.content);
+    defer!Payload(plugin, &getSettingDg, event.content);
 }
 
 
@@ -1648,8 +1648,7 @@ void onBusMessage(
             }
         }
 
-        plugin.state.deferredActions ~= defer!Payload(&setSettingBusDg, slice);
-        return;
+        return defer!Payload(plugin, &setSettingBusDg, slice);
 
     case "save":
         import kameloso.thread : ThreadMessage;
