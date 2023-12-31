@@ -3496,18 +3496,8 @@ public:
     /++
         Fiber embedded into the action.
      +/
-    Fiber fiber();
+    Fiber fiber() @system;
 }
-
-
-// DeferredAction
-/++
-    Compatibility alias to [DeferredAction].
-
-    This will be removed in a future release.
- +/
-deprecated("Use `DeferredAction` instead")
-alias SpecialRequest = DeferredAction;
 
 
 // DeferredActionImpl
@@ -3625,100 +3615,53 @@ public:
 // defer
 /++
     Instantiates a [DeferredActionImpl] in the guise of a [DeferredAction]
-    with the implicit type `T` as payload.
+    with the implicit type `T` as payload and appends it to the passed [IRCPlugin]'s
+    [IRCPluginState.deferredActions|deferredActions] array.
+
+    Overload that takes a [kameloso.thread.CarryingFiber|CarryingFiber].
 
     Params:
         T = Type to instantiate [DeferredActionImpl] with.
+        plugin = [IRCPlugin] whose [IRCPluginState.deferredActions|deferredActions]
+            array the action will be appended to.
         fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the action.
         context = String context of the action.
         creator = Name of the function that created this action.
-
-    Returns:
-        A new [DeferredAction] that is in actually a [DeferredActionImpl].
  +/
-DeferredAction defer(T)
-    (CarryingFiber!T fiber,
-    const string context = string.init,
-    const string creator = __FUNCTION__) pure @safe nothrow
-{
-    return new DeferredActionImpl!T(fiber, context, creator);
-}
-
-
-// defer
-/++
-    Instantiates a [DeferredActionImpl] in the guise of a [DeferredAction]
-    with the implicit type `T` as payload.
-
-    Deprecated overload; use the one taking a `CarryingFiber!T` before a string `context` instead.
-    This will be removed in a future release.
-
-    Params:
-        T = Type to instantiate [DeferredActionImpl] with.
-        context = String context of the action.
-        fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the action.
-        creator = Name of the function that created this action.
-
-    Returns:
-        A new [DeferredAction] that is in actually a [DeferredActionImpl].
- +/
-deprecated("Use overload taking a `CarryingFiber!T` before an optional string `context`")
-DeferredAction defer(T)
-    (const string context,
+void defer(T)
+    (IRCPlugin plugin,
     CarryingFiber!T fiber,
+    const string context = string.init,
     const string creator = __FUNCTION__) pure @safe nothrow
 {
-    return new DeferredActionImpl!T(fiber, context, creator);
+    plugin.state.deferredActions ~= new DeferredActionImpl!T(fiber, context, creator);
 }
 
 
 // defer
 /++
     Instantiates a [DeferredActionImpl] in the guise of a [DeferredAction]
-    with the explicit type `T` as payload.
+    with the implicit type `T` as payload and appends it to the passed [IRCPlugin]'s
+    [IRCPluginState.deferredActions|deferredActions] array.
+
+    Overload that takes a `void delegate()` delegate, which [DeferredActionImpl]'s
+    constructor will create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
 
     Params:
         T = Type to instantiate [DeferredActionImpl] with.
+        plugin = [IRCPlugin] whose [IRCPluginState.deferredActions|deferredActions]
+            array the action will be appended to.
         dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
         context = String context of the action.
         creator = Name of the function that created this action.
-
-    Returns:
-        A new [DeferredAction] that is in actually a [DeferredActionImpl].
  +/
-DeferredAction defer(T)
-    (void delegate() dg,
+void defer(T)
+    (IRCPlugin plugin,
+    void delegate() dg,
     const string context = string.init,
     const string creator = __FUNCTION__) /*pure @safe*/ nothrow
 {
-    return new DeferredActionImpl!T(dg, context, creator);
-}
-
-
-// defer
-/++
-    Instantiates a [DeferredActionImpl] in the guise of a [DeferredAction]
-    with the explicit type `T` as payload.
-
-    Deprecated overload; use the one taking a `void delegate()` before a string `context` instead.
-    This will be removed in a future release.
-
-    Params:
-        T = Type to instantiate [DeferredActionImpl] with.
-        context = String context of the action.
-        dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
-        creator = Name of the function that created this action.
-
-    Returns:
-        A new [DeferredAction] that is in actually a [DeferredActionImpl].
- +/
-deprecated("Use overload taking a `void delegate()` before an optional string `context`")
-DeferredAction defer(T)
-    (const string context,
-    void delegate() dg,
-    const string creator = __FUNCTION__) /*pure @safe*/ nothrow
-{
-    return new DeferredActionImpl!T(dg, context, creator);
+    plugin.state.deferredActions ~= new DeferredActionImpl!T(dg, context, creator);
 }
 
 
