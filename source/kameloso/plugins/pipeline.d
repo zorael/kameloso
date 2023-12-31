@@ -486,6 +486,11 @@ auto readFIFO(PipelinePlugin plugin)
             plugin.state.mainThread.prioritySend(ThreadMessage.reconnect);
             return true;  // as above
         }
+        else if (lowerLine == "reexec")
+        {
+            plugin.state.mainThread.prioritySend(ThreadMessage.reconnect(string.init, boxed(true)));
+            return true;  // ditto
+        }
 
         raw(plugin.state, line.strippedLeft);
         shouldCheckMessages = true;
