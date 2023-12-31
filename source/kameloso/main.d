@@ -2277,7 +2277,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                 }
 
                 fiber.payload[0] = commandAA;
-                fiber.call();
+                fiber.call(action.creator);
                 continue;
             }
         }
@@ -2319,7 +2319,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                             fiber.payload[0] = pluginName;
                             fiber.payload[1] = setting;
                             fiber.payload[2] = value;
-                            fiber.call();
+                            fiber.call(action.creator);
                             return;
                         }
                     }
@@ -2338,7 +2338,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                         fiber.payload[0] = pluginName;
                         //fiber.payload[1] = string.init;
                         fiber.payload[2] = allSettings.to!string;
-                        fiber.call();
+                        fiber.call(action.creator);
                         allSettings = null;
                         return;
                     }
@@ -2347,7 +2347,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                     fiber.payload[0] = pluginName;
                     //fiber.payload[1] = string.init;
                     //fiber.payload[2] = string.init;
-                    fiber.call();
+                    fiber.call(action.creator);
                     return;
                 }
 
@@ -2380,7 +2380,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                     //fiber.payload[0] = string.init;
                     //fiber.payload[1] = string.init;
                     //fiber.payload[2] = string.init;
-                    fiber.call();
+                    fiber.call(action.creator);
                     break;
                 }
                 continue;
@@ -2403,7 +2403,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                     [ expression ]);
 
                 fiber.payload[0] = success;
-                fiber.call();
+                fiber.call(action.creator);
                 continue;
             }
         }
