@@ -412,7 +412,11 @@ void persistentQuerier(
 
     Example:
     ---
-    immutable QueryResponse = sendHTTPRequest(plugin, "https://id.twitch.tv/oauth2/validate", __FUNCTION__, "OAuth 30letteroauthstring");
+    immutable response = sendHTTPRequest(
+        plugin,
+        "https://id.twitch.tv/oauth2/validate",
+        __FUNCTION__,
+        "OAuth 30letteroauthstring");
     ---
 
     Params:

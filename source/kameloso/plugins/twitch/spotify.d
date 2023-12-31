@@ -517,15 +517,9 @@ package JSONValue addTrackToSpotifyPlaylist(
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a fiber")
 {
-    import kameloso.plugins.twitch.api : reserveUniqueBucketID, waitForQueryResponse;
-    import kameloso.plugins.common.delayawait : delay;
-    import kameloso.thread : ThreadMessage;
-    import arsd.http2 : HttpVerb;
+    import kameloso.plugins.twitch.api : reserveUniqueBucketID;
     import std.algorithm.searching : endsWith;
-    import std.concurrency : send;
     import std.format : format;
-    import std.json : JSONType, parseJSON;
-    import core.time : msecs;
 
     // https://api.spotify.com/v1/playlists/0nqAHNphIb3Qhh5CmD7fg5/tracks?uris=spotify:track:594WPgqPOOy0PqLvScovNO
 
@@ -554,6 +548,14 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
     {
         try
         {
+            import kameloso.plugins.twitch.api : waitForQueryResponse;
+            import kameloso.plugins.common.delayawait : delay;
+            import kameloso.thread : ThreadMessage;
+            import arsd.http2 : HttpVerb;
+            import std.concurrency : send;
+            import std.json : JSONType, parseJSON;
+            import core.time : msecs;
+
             plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
             plugin.transient.persistentWorkerTid.send(
                 id,
