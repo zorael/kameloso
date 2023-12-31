@@ -441,7 +441,7 @@ auto readFIFO(PipelinePlugin plugin)
         string line = originalLine.strippedLeft;  // mutable
         if (!line.length) continue;
 
-        if (line[0] == ':')
+        if (line[0] == '#')
         {
             import lu.string : advancePast;
 
