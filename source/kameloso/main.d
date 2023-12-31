@@ -2182,12 +2182,6 @@ void processPendingReplays(Kameloso instance, IRCPlugin plugin)
     should be supported in [processDeferredActions].
 
  +/
-version(WantGetSetSettingHandlers)
-{
-    version = WantGetSettingHandler;
-    version = WantSetSettingHandler;
-}
-
 version(WithAdminPlugin)
 {
     version = WantGetSettingHandler;
