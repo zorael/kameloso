@@ -754,13 +754,13 @@ void reportStreamTime(
     import lu.json : JSONStorage;
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
-    import core.time : msecs;
+    import core.time : Duration;
 
     if (room.stream.live)
     {
         // Remove fractional seconds from the current timestamp
         auto now = Clock.currTime;
-        now.fracSecs = 0.msecs;
+        now.fracSecs = Duration.zero;
         immutable delta = (now - room.stream.startTime);
         immutable timestring = timeSince!(7, 1)(delta);
 

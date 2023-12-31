@@ -818,17 +818,15 @@ void interruptibleSleep(const Duration dur, const Flag!"abort"* abort) @system
     import core.thread : Thread, msecs;
 
     static immutable step = 100.msecs;
-    static immutable nothing = 0.msecs;
-
     Duration left = dur;
 
-    while (left > nothing)
+    while (left > Duration.zero)
     {
         if (*abort) return;
 
         immutable nextStep = (left > step) ? step : left;
 
-        if (nextStep <= nothing) break;
+        if (nextStep <= Duration.zero) break;
 
         Thread.sleep(nextStep);
         left -= step;

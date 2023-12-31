@@ -3918,7 +3918,6 @@ void printSummary(const Kameloso instance) @safe
         import std.datetime.systime : SysTime;
         import std.format : format;
         import std.stdio : writefln;
-        import core.time : hnsecs;
 
         if (!entry.bytesReceived) continue;
 
@@ -3951,8 +3950,8 @@ void printSummary(const Kameloso instance) @safe
                 stop.minute,
                 stop.second);
 
-        start.fracSecs = 0.hnsecs;
-        stop.fracSecs = 0.hnsecs;
+        start.fracSecs = Duration.zero;
+        stop.fracSecs = Duration.zero;
         immutable duration = (stop - start);
         totalTime += duration;
         totalBytesReceived += entry.bytesReceived;
