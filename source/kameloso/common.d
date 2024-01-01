@@ -22,6 +22,7 @@ import kameloso.pods : CoreSettings;
 import kameloso.logger : KamelosoLogger;
 import dialect.defs : IRCClient;
 import std.range.primitives : isOutputRange;
+import std.traits : isIntegral;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -912,6 +913,67 @@ expected:"%s"
                     arrow);
             assert(0, message);
         }
+    }
+}
+
+
+// uniqueKey
+/++
+    Returns a unique key for the passed associative array.
+    Reserves the key by assigning it a value.
+
+    Params:
+        aa = Associative array to get a unique key for.
+        min = Optional minimum key value; defaults to `1``.
+        max = Optional maximum key value; defaults to `K.max`, where `K` is the
+            key type of the passed associative array.
+        value = Optional value to assign to the key; defaults to `V.init`, where
+            `V` is the value type of the passed associative array.
+
+    Returns:
+        A unique key for the passed associative array.
+ +/
+auto uniqueKey(AA : V[K], V, K)
+    (auto ref AA aa,
+    K min = 1,
+    K max = K.max,
+    V value = V.init)
+if (isIntegral!K)
+{
+    import std.random : uniform;
+
+    auto id = uniform(min, max);  // mutable
+    while (id in aa) id = uniform(min, max);
+
+    aa[id] = value;  // reserve it
+    return id;
+}
+
+///
+unittest
+{
+    import std.conv : to;
+
+    {
+        string[int] aa;
+        immutable key = aa.uniqueKey;
+        assert(key in aa);
+    }
+    {
+        long[long] aa;
+        immutable key = aa.uniqueKey;
+        assert(key in aa);
+    }
+    {
+        shared bool[int] aa;
+        immutable key = aa.uniqueKey;
+        assert(key in aa);
+    }
+    {
+        int[int] aa;
+        immutable key = aa.uniqueKey(5, 6, 42);
+        assert(key == 5);
+        assert((aa[5] == 42), aa[5].to!string);
     }
 }
 
