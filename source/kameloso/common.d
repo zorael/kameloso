@@ -978,6 +978,870 @@ unittest
 }
 
 
+// MutexedAA
+/++
+    An associative array and a [core.sync.mutex.Mutex|Mutex]. Wraps associative
+    array operations in mutex locks.
+
+    Example:
+    ---
+    MutexedAA!(string[int]) aa;
+    aa.setup();  // important!
+
+    aa[1] = "one";
+    aa[2] = "two";
+    aa[3] = "three";
+
+    auto hasOne = aa.has(1);
+    assert(hasOne);
+    assert(aa[1] == "one");
+
+    assert(aa[2] == "two");
+
+    auto three = aa.get(3);
+    assert(three == "three");
+
+    auto four = aa.get(4, "four");
+    assert(four == "four");
+
+    auto five = aa.require(5, "five");
+    assert(five == "five");
+    assert(aa[5] == "five");
+
+    auto keys = aa.keys;
+    assert(keys.canFind(1));
+    assert(keys.canFind(5));
+    assert(!keys.canFind(6));
+
+    auto values = aa.values;
+    assert(values.canFind("one"));
+    assert(values.canFind("four"));
+    assert(!values.canFind("six"));
+
+    aa.rehash();
+    ---
+
+    Params:
+        AA = Associative array type.
+        V = Value type.
+        K = Key type.
+ +/
+struct MutexedAA(AA : V[K], V, K)
+{
+private:
+    import std.range.primitives : ElementEncodingType;
+    import core.sync.mutex : Mutex;
+
+    /++
+        [core.sync.mutex.Mutex|Mutex] to lock the associative array with.
+     +/
+    shared Mutex mutex;
+
+public:
+    /++
+        The internal associative array.
+     +/
+    shared AA aa;
+
+    /++
+        Sets up this instance. Does nothing if it has already been set up.
+
+        Instantiates the [mutex] and minimally initialises the associative array
+        by assigning and removing a dummy value.
+     +/
+    void setup() nothrow
+    {
+        if (mutex) return;
+
+        mutex = new shared Mutex;
+        mutex.lock_nothrow();
+
+        if (K.init !in cast(AA)aa)
+        {
+            (cast(AA)aa)[K.init] = V.init;
+            (cast(AA)aa).remove(K.init);
+        }
+
+        mutex.unlock_nothrow();
+    }
+
+    /++
+        Returns whether or not this instance has been set up.
+
+        Returns:
+            Whether or not the [mutex] was instantiated, and thus whether this
+            instance has been set up.
+     +/
+    auto isReady()
+    {
+        return (mutex !is null);
+    }
+
+    /++
+        `aa[key] = value` array assign operation, wrapped in a mutex lock.
+
+        Example:
+        ---
+        MutexedAA!(string[int]) aa;
+        aa.setup();  // important!
+
+        aa[1] = "one";
+        aa[2] = "two";
+        ---
+
+        Params:
+            value = Value.
+            key = Key.
+
+        Returns:
+            The value assigned.
+     +/
+    auto opIndexAssign(V value, K key)
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        (cast(AA)aa)[key] = value;
+        mutex.unlock_nothrow();
+        return value;
+    }
+
+    /++
+        `aa[key]` array retrieve operation, wrapped in a mutex lock.
+
+        Example:
+        ---
+        MutexedAA!(string[int]) aa;
+        aa.setup();  // important!
+
+        // ...
+
+        string one = aa[1];
+        writeln(aa[2]);
+        ---
+
+        Params:
+            key = Key.
+
+        Returns:
+            The value assigned.
+     +/
+    auto opIndex(K key)
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        auto value = (cast(AA)aa)[key];
+        mutex.unlock_nothrow();
+        return value;
+    }
+
+    /++
+        Returns whether or not the passed key is in the associative array.
+
+        Example:
+        ---
+        MutexedAA!(string[int]) aa;
+        aa.setup();  // important!
+
+        aa[1] = "one";
+        assert(aa.has(1));
+        ---
+
+        Params:
+            key = Key.
+
+        Returns:
+            `true` if the key is in the associative array; `false` if not.
+     +/
+    auto has(K key)
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        auto exists = (key in cast(AA)aa) !is null;
+        mutex.unlock_nothrow();
+        return exists;
+    }
+
+    /++
+        `aa.remove(key)` array operation, wrapped in a mutex lock.
+
+        Example:
+        ---
+        MutexedAA!(string[int]) aa;
+        aa.setup();  // important!
+
+        aa[1] = "one";
+        assert(aa.has(1));
+
+        aa.remove(1);
+        assert(!aa.has(1));
+        ---
+
+        Params:
+            key = Key.
+
+        Returns:
+            Whatever `aa.remove(key)` returns.
+     +/
+    auto remove(K key)
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        auto value = (cast(AA)aa).remove(key);
+        mutex.unlock_nothrow();
+        return value;
+    }
+
+    /++
+        Reserves a unique key in the associative array.
+
+        Note: The key type must be an integral type.
+
+        Example:
+        ---
+        MutexedAA!(string[int]) aa;
+        aa.setup();  // important!
+
+        int i = aa.uniqueKey;
+        assert(i > 0);
+        assert(aa.has(i));
+        assert(aa[i] == string.init);
+        ---
+
+        Params:
+            min = Optional minimum key value; defaults to `1``.
+            max = Optional maximum key value; defaults to `K.max`, where `K` is
+                the key type of the passed associative array.
+            value = Optional value to assign to the key; defaults to `V.init`,
+                where `V` is the value type of the passed associative array.
+
+        Returns:
+            A unique key for the passed associative array, for which there is now
+            a value of `value`.`
+
+        See_Also:
+            [uniqueKey]
+     +/
+    auto uniqueKey()
+        (K min = 1,
+        K max = K.max,
+        V value = V.init)
+    if (isIntegral!K)
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        auto key = .uniqueKey(cast(AA)aa, min, max, value);
+        mutex.unlock_nothrow();
+        return key;
+    }
+
+    /++
+        Implements `opEquals` for this type, comparing the internal associative
+        array with that of another `MutexedAA`.
+
+        Example:
+        ---
+        MutexedAA!(string[int]) aa1;
+        aa1.setup();  // important!
+        aa1[1] = "one";
+
+        MutexedAA!(string[int]) aa2;
+        aa2.setup();  // as above
+        aa2[1] = "one";
+        assert(aa1 == aa2);
+
+        aa2[2] = "two";
+        assert(aa1 != aa2);
+
+        aa1[2] = "two";
+        assert(aa1 == aa2);
+        ---
+
+        Params:
+            other = Other `MutexedAA` whose internal associative array to compare
+                with the one of this instance.
+
+        Returns:
+            `true` if the internal associative arrays are equal; `false` if not.
+     +/
+    auto opEquals(typeof(this) other)
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        auto isEqual = (cast(AA)aa == cast(AA)(other.aa));
+        mutex.unlock_nothrow();
+        return isEqual;
+    }
+
+    /++
+        Implements `opEquals` for this type, comparing the internal associative
+        array with a different one.
+
+        Example:
+        ---
+        MutexedAA!(string[int]) aa1;
+        aa1.setup();  // important!
+        aa1[1] = "one";
+        aa1[2] = "two";
+
+        string[int] aa2;
+        aa2[1] = "one";
+
+        assert(aa1 != aa2);
+
+        aa2[2] = "two";
+        assert(aa1 == aa2);
+        ---
+
+        Params:
+            other = Other associative array to compare the internal one with.
+
+        Returns:
+            `true` if the internal associative arrays are equal; `false` if not.
+     +/
+    auto opEquals(AA other)
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        auto isEqual = (cast(AA)aa == other);
+        mutex.unlock_nothrow();
+        return isEqual;
+    }
+
+    /++
+        Rehashes the internal associative array.
+
+        Example:
+        ---
+        MutexedAA!(string[int]) aa;
+        aa.setup();  // important!
+
+        aa[1] = "one";
+        aa[2] = "two";
+        aa.rehash();
+        ---
+
+        Returns:
+            A reference to the rehashed internal array.
+     +/
+    auto rehash()
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        auto rehashed = (cast(AA)aa).rehash();
+        mutex.unlock_nothrow();
+        return rehashed;
+    }
+
+    /++
+        Clears the internal associative array.
+
+        Example:
+        ---
+        MutexedAA!(string[int]) aa;
+        aa.setup();  // important!
+
+        aa[1] = "one";
+        aa[2] = "two";
+        assert(aa.has(1));
+
+        aa.clear();
+        assert(!aa.has(2));
+        ---
+     +/
+    void clear()
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        (cast(AA)aa).clear();
+        mutex.unlock_nothrow();
+    }
+
+    /++
+        Returns the length of the internal associative array.
+
+        Example:
+        ---
+        MutexedAA!(string[int]) aa;
+        aa.setup();  // important!
+
+        assert(aa.length == 0);
+        aa[1] = "one";
+        aa[2] = "two";
+        assert(aa.length == 2);
+        ---
+
+        Returns:
+            The length of the internal associative array.
+     +/
+    auto length()
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        auto length = (cast(AA)aa).length;
+        mutex.unlock_nothrow();
+        return length;
+    }
+
+    /++
+        Returns the value for the key `key`, inserting `value` lazily if it is not present.
+
+        Example:
+        ---
+        MutexedAA!(string[int]) aa;
+        aa.setup();  // important!
+
+        assert(!aa.has(42));
+        string hello = aa.require(42, "hello");
+        assert(hello == "hello");
+        assert(aa[42] == "hello");
+        ---
+
+        Params:
+            key = Key.
+            value = Lazy value.
+
+        Returns:
+            The value for the key `key`, or `value` if there was no value there.
+     +/
+    auto require(K key, lazy V value)
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        V retval;
+
+        mutex.lock_nothrow();
+        if (auto existing = key in cast(AA)aa)
+        {
+            retval = *existing;
+        }
+        else
+        {
+            (cast(AA)aa)[key] = value;
+            retval = value;
+        }
+
+        mutex.unlock_nothrow();
+        return retval;
+    }
+
+    /++
+        Returns a new dynamic array of all the keys in the internal associative array.
+
+        Example:
+        ---
+        MutexedAA!(int[int]) aa;
+        aa.setup();  // important!
+        aa[1] = 42;
+        aa[2] = 99;
+
+        auto keys = aa.keys;
+        assert(keys.canFind(1));
+        assert(keys.canFind(2));
+        assert(!keys.canFind(3));
+        ---
+
+        Returns:
+            A new `K[]` of all the AA keys.
+     +/
+    auto keys()
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        auto keys = (cast(AA)aa).keys;  // allocates a new array
+        mutex.unlock_nothrow();
+        return keys;
+    }
+
+    /++
+        Returns a new dynamic array of all the values in the internal associative array.
+
+        Example:
+        ---
+        MutexedAA!(int[int]) aa;
+        aa.setup();  // important!
+        aa[1] = 42;
+        aa[2] = 99;
+
+        auto values = aa.values;
+        assert(values.canFind(42));
+        assert(values.canFind(99));
+        assert(!values.canFind(0));
+        ---
+
+        Returns:
+            A new `V[]` of all the AA values.
+     +/
+    auto values()
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        auto values = (cast(AA)aa).values;  // as above
+        mutex.unlock_nothrow();
+        return values;
+    }
+
+    /++
+        Retrieves the value for the key `key`, or returns the default `value`
+        if there was none.
+
+        Example:
+        ---
+        MutexedAA!(int[int]) aa;
+        aa.setup();  // important!
+        aa[1] = 42;
+        aa[2] = 99;
+
+        assert(aa.get(1, 0) == 42);
+        assert(aa.get(2, 0) == 99);
+        assert(aa.get(0, 0) == 0);
+        assert(aa.get(3, 999) == 999);
+
+        assert(!aa.has(0));
+        assert(!aa.has(3));
+        ---
+
+        Params:
+            key = Key.
+            value = Lazy default value.
+
+        Returns:
+            The value for the key `key`, or `value` if there was no value there.
+     +/
+    auto get(K key, lazy V value)
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        auto existing = key in cast(AA)aa;
+        auto retval = existing ? *existing : value;
+        mutex.unlock_nothrow();
+        return retval;
+    }
+
+    /++
+        Updates the value for the key `key` in the internal associative array,
+        invoking the first of the passed delegate to insert a new value if it
+        doesn't exist, or the second selegate to modify it in place if it does.
+
+        Note: Doesn't compile with compilers earlier than version 2.088.
+
+        Example:
+        ---
+        MutexedAA!(int[int]) aa;
+        aa.setup();  // important!
+
+        assert(!aa.has(1));
+
+        aa.update(1,
+            () => 42,
+            (int i) => i + 1);
+        assert(aa[1] == 42);
+
+        aa.update(1,
+            () => 42,
+            (int i) => i + 1);
+        assert(aa[1] == 43);
+        ---
+
+        Params:
+            key = Key.
+            createDg = Delegate to invoke to create a new value if it doesn't exist.
+            updateDg = Delegate to invoke to update an existing value.
+     +/
+    static if (__VERSION__ >= 2088L)
+    void update(U)
+        (K key,
+        scope V delegate() createDg,
+        scope U delegate(K) updateDg)
+    if (is(U == V) || is(U == void))
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        .object.update((*(cast(AA*)&aa)), key, createDg, updateDg);
+        mutex.unlock_nothrow();
+    }
+
+    /++
+        Implements unary operations by mixin strings.
+
+        Example:
+        ---
+        MutexedAA!(int[int]) aa;
+        aa.setup();  // important!
+
+        aa[1] = 42;
+        assert(-aa[1] == -42);
+        ---
+
+        Params:
+            op = Operation, here a unary operator.
+            key = Key.
+
+        Returns:
+            The result of the operation.
+     +/
+    auto opIndexUnary(string op)(K key)
+    //if (isIntegral!V)
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        mixin("auto value = " ~ op ~ "(cast(AA)aa)[key];");
+        mutex.unlock_nothrow();
+        return value;
+    }
+
+    /++
+        Implements index assign operations by mixin strings.
+
+        Example:
+        ---
+        MutexedAA!(int[int]) aa;
+        aa.setup();  // important!
+
+        aa[1] = 42;
+        aa[1] += 1;
+        assert(aa[1] == 43);
+
+        aa[1] *= 2;
+        assert(aa[1] == 86);
+        ---
+
+        Params:
+            op = Operation, here an index assign operator.
+            value = Value.
+            key = Key.
+     +/
+    void opIndexOpAssign(string op, U)(U value, K key)
+    if (is(U == V) || is(U == ElementEncodingType!V))
+    in (mutex, typeof(this).stringof ~ " has null Mutex")
+    {
+        mutex.lock_nothrow();
+        mixin("(*(cast(AA*)&aa))[key] " ~ op ~ "= value;");
+        mutex.unlock_nothrow();
+    }
+}
+
+///
+unittest
+{
+    {
+        MutexedAA!(string[int]) aa1;
+        assert(!aa1.isReady);
+        aa1.setup();
+        assert(aa1.isReady);
+        aa1.setup();  // extra setups ignored
+
+        MutexedAA!(string[int]) aa2;
+        aa2.setup();
+
+        aa1[42] = "hello";
+        aa2[42] = "world";
+        assert(aa1 != aa2);
+
+        aa1[42] = "world";
+        assert(aa1 == aa2);
+
+        aa2[99] = "goodbye";
+        assert(aa1 != aa2);
+    }
+    {
+        MutexedAA!(string[int]) aa;
+        aa.setup();
+
+        assert(!aa.has(42));
+        aa.require(42, "hello");
+        assert((aa[42] == "hello"), aa[42]);
+
+        bool set1;
+        assert(!aa.has(99));
+        string world1 = aa.require(99, { set1 = true; return "world"; }());
+        assert(set1);
+        assert((world1 == "world"), world1);
+        assert((aa[99] == "world"), aa[99]);
+
+        bool set2;
+        string world2 = aa.require(99, { set2 = true; return "goodbye"; }());
+        assert(!set2);
+        assert((world2 != "goodbye"), world2);
+        assert((aa[99] != "goodbye"), aa[99]);
+    }
+    {
+        import std.concurrency : Tid, send, spawn;
+        import std.conv : to;
+        import core.time : MonoTime, seconds;
+
+        static immutable timeout = 1.seconds;
+
+        static void workerFn(MutexedAA!(string[int]) aa)
+        {
+            static void _assert(
+                lazy bool condition,
+                const string message = "unittest failure",
+                const string file = __FILE__,
+                const uint line = __LINE__)
+            {
+                if (!condition)
+                {
+                    import std.format : format;
+                    import std.stdio : writeln;
+
+                    enum pattern = "core.exception.AssertError@%s(%d): %s";
+                    immutable assertMessage = pattern.format(file, line, message);
+                    writeln(assertMessage);
+                    assert(0, assertMessage);
+                }
+            }
+
+            _assert(aa.isReady, "MutexedAA passed to worker was not set up properly");
+
+            bool halt;
+
+            while (!halt)
+            {
+                import std.concurrency : OwnerTerminated, receiveTimeout;
+                import std.variant : Variant;
+
+                immutable receivedSomething = receiveTimeout(timeout,
+                    (bool _)
+                    {
+                        halt = true;
+                    },
+                    (int i)
+                    {
+                        _assert((aa.length == i-1), "Incorrect MutexedAA length before insert");
+                        aa[i] = i.to!string;
+                        _assert((aa.length == i), "Incorrect MutexedAA length after insert");
+                    },
+                    (OwnerTerminated _)
+                    {
+                        halt = true;
+                    },
+                    (Variant v)
+                    {
+                        import std.stdio : writeln;
+                        writeln("MutexedAA unit test worker received unknown message: ", v);
+                        halt = true;
+                    }
+                );
+
+                if (!receivedSomething) return;
+            }
+        }
+
+        MutexedAA!(string[int]) aa;
+        aa.setup();
+
+        auto worker = spawn(&workerFn, aa);
+        immutable start = MonoTime.currTime;
+
+        foreach (/*immutable*/ i; 1..10)  // start at 1 to enable length checks in worker
+        {
+            worker.send(i);
+            aa.setup();
+            auto present = aa.has(i);
+
+            while (!present && (MonoTime.currTime - start) < timeout)
+            {
+                import core.thread : Thread;
+                import core.time : msecs;
+
+                static immutable briefWait = 2.msecs;
+                Thread.sleep(briefWait);
+                present = aa.has(i);
+            }
+
+            assert(present, "MutexedAA unit test worker timed out responding to " ~ i.to!string);
+            assert((aa[i] == i.to!string), aa[i]);
+        }
+
+        worker.send(true);  // halt
+    }
+    {
+        import std.algorithm.searching : canFind;
+
+        MutexedAA!(int[int]) aa;
+        aa.setup();
+
+        aa[1] = 42;
+        aa[2] = 99;
+        assert(aa.length == 2);
+
+        auto keys = aa.keys;
+        assert(keys.canFind(1));
+        assert(keys.canFind(2));
+        assert(!keys.canFind(3));
+
+        auto values = aa.values;
+        assert(values.canFind(42));
+        assert(values.canFind(99));
+        assert(!values.canFind(0));
+
+        assert(aa.get(1, 0) == 42);
+        assert(aa.get(2, 0) == 99);
+        assert(aa.get(0, 0) == 0);
+        assert(aa.get(3, 999) == 999);
+    }
+    {
+        MutexedAA!(int[int]) aa1;
+        aa1.setup();
+
+        aa1[1] = 42;
+        aa1[2] = 99;
+
+        int[int] aa2;
+
+        aa2[1] = 42;
+        assert(aa1 != aa2);
+
+        aa2[2] = 99;
+        assert(aa1 == aa2);
+
+        ++aa2[2];
+        assert(aa2[2] == 100);
+
+        aa2[1] += 1;
+        assert(aa2[1] == 43);
+
+        aa2[1] -= 1;
+        assert(aa2[1] == 42);
+
+        aa2[1] *= 2;
+        assert(aa2[1] == 84);
+
+        int i = -aa2[1];
+        assert(i == -84);
+    }
+    {
+        MutexedAA!(char[][int]) aa;
+        aa.setup();
+
+        aa[1] ~= 'a';
+        aa[1] ~= 'b';
+        aa[1] ~= 'c';
+        assert(aa[1] == "abc".dup);
+
+        aa[1] ~= [ 'd', 'e', 'f' ];
+        assert(aa[1] == "abcdef".dup);
+    }
+    static if (__VERSION__ >= 2088L)
+    {
+        MutexedAA!(int[int]) aa;
+        aa.setup();
+
+        assert(!aa.has(1));
+
+        aa.update(1,
+            () => 42,
+            (int i) => i + 1);
+        assert(aa.has(1));
+        assert(aa[1] == 42);
+
+        aa.update(1,
+            () => 42,
+            (int i) => i + 1);
+        assert(aa[1] == 43);
+    }
+}
+
+
 // Next
 /++
     Enum of flags carrying the meaning of "what to do next".
