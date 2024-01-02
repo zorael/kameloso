@@ -372,16 +372,13 @@ public:
     {
         import std.random : uniform;
 
-        synchronized //()
-        {
-            immutable previous = _connectionID;
+        immutable previous = _connectionID;
 
-            do
-            {
-                _connectionID = uniform(1, uint.max);
-            }
-            while (_connectionID == previous);
+        do
+        {
+            _connectionID = uniform(1, uint.max);
         }
+        while (_connectionID == previous);
     }
 
     // throttleline
