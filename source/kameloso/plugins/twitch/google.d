@@ -24,7 +24,6 @@ import kameloso.plugins.twitch.common;
 
 import kameloso.common : logger;
 import arsd.http2 : HttpClient;
-import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
@@ -371,14 +370,13 @@ then finally <i>Allow</>.`;
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-package JSONValue addVideoToYouTubePlaylist(
+package auto addVideoToYouTubePlaylist(
     TwitchPlugin plugin,
     ref Credentials creds,
     const string videoID,
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a fiber")
 {
-    import kameloso.plugins.twitch.api : reserveUniqueBucketID;
     import std.algorithm.searching : endsWith;
     import std.format : format;
     import std.string : representation;
@@ -411,8 +409,7 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
 }`;
 
     immutable data = pattern.format(creds.youtubePlaylistID, videoID).representation;
-    // Making immutable bumps compilation memory +44mb
-    /*immutable*/ int id = reserveUniqueBucketID(plugin.responseBucket);
+    /*immutable*/ int id = plugin.responseBucket.uniqueKey;  // normal int needed for concurrency message
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {

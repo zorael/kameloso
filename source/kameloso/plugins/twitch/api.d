@@ -24,6 +24,7 @@ private:
 import kameloso.plugins.twitch.base;
 import kameloso.plugins.twitch.common;
 
+import kameloso.common : MutexedAA;
 import arsd.http2 : HttpVerb;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -37,9 +38,6 @@ package:
 /++
     Embodies a response from a query to the Twitch servers. A string paired with
     a millisecond count of how long the query took, and some metadata about the request.
-
-    This is used instead of a [std.typecons.Tuple] because it doesn't apparently
-    work with `shared`.
  +/
 struct QueryResponse
 {
@@ -283,12 +281,12 @@ void printRetryDelegateException(/*const*/ Exception base)
     ---
 
     Params:
-        responseBucket = The shared associative array to put the results in,
+        responseBucket = The associative array to put the results in,
             response values keyed by a unique numerical ID.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
 void persistentQuerier(
-    shared QueryResponse[int] responseBucket,
+    MutexedAA!(QueryResponse[int]) responseBucket,
     const string caBundleFile)
 {
     import kameloso.thread : ThreadMessage;
@@ -325,9 +323,13 @@ void persistentQuerier(
             cast(ubyte[])body_,
             contentType);
 
-        synchronized //()
+        if (response.str.length)
         {
-            responseBucket[id] = response;  // empty str if code >= 400
+            responseBucket[id] = response;
+        }
+        else
+        {
+            responseBucket.remove(id);
         }
 
         version(BenchmarkHTTPRequests)
@@ -372,12 +374,7 @@ void persistentQuerier(
             string.init);
     }
 
-    void onMessage(bool) scope
-    {
-        halt = true;
-    }
-
-    void onOwnerTerminated(OwnerTerminated _) scope
+    void onQuitMessage(bool) scope
     {
         halt = true;
     }
@@ -387,8 +384,7 @@ void persistentQuerier(
         receive(
             &sendWithBody,
             &sendWithoutBody,
-            &onMessage,
-            &onOwnerTerminated,
+            &onQuitMessage,
             (Variant v) scope
             {
                 import std.stdio : stdout, writeln;
@@ -475,7 +471,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
 
     immutable pre = MonoTime.currTime;
-    if (!id) id = reserveUniqueBucketID(plugin.responseBucket);
+    if (!id) id = plugin.responseBucket.uniqueKey;
 
     plugin.transient.persistentWorkerTid.send(
         id,
@@ -487,16 +483,6 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
     delay(plugin, plugin.transient.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id);
-
-    scope(exit)
-    {
-        synchronized //()
-        {
-            // Always remove, otherwise there'll be stale entries
-            plugin.responseBucket.remove(id);
-        }
-    }
-
     immutable post = MonoTime.currTime;
     immutable diff = (post - pre);
     immutable msecs_ = diff.total!"msecs";
@@ -662,17 +648,17 @@ auto sendHTTPRequestImpl(
     /*const*/ ubyte[] body_ = null,
     /*const*/ string contentType = string.init)
 {
-    import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, Uri;
     import std.algorithm.comparison : among;
-    import core.time : MonoTime, seconds;
+    import core.time : MonoTime;
 
     static HttpClient client;
     static string[] headers;
 
     if (!client)
     {
-        import kameloso.constants : KamelosoInfo;
+        import kameloso.constants : KamelosoInfo, Timeout;
+        import core.time : seconds;
 
         client = new HttpClient;
         client.useHttp11 = true;
@@ -1249,13 +1235,14 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 
     Example:
     ---
-    immutable id = reserveUniqueBucketID(plugin.responseBucket);
+    immutable id = plugin.responseBucket.uniqueKey;
     immutable url = "https://api.twitch.tv/helix/users?login=zorael";
     plugin.transient.persistentWorkerTid.send(id, url, plugin.transient.authorizationBearer);
 
     delay(plugin, plugin.transient.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id, url);
     // response.str is the response body
+    assert(id !in plugin.responseBucket);
     ---
 
     Params:
@@ -1268,10 +1255,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 auto waitForQueryResponse(TwitchPlugin plugin, const int id)
 in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber")
 {
-    import kameloso.constants : Timeout;
-    import kameloso.plugins.common.delayawait : delay;
     import std.datetime.systime : Clock;
-    import core.time : msecs;
 
     version(BenchmarkHTTPRequests)
     {
@@ -1280,21 +1264,33 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
     }
 
     immutable startTimeInUnix = Clock.currTime.toUnixTime();
-    shared QueryResponse* response;
     double accumulatingTime = plugin.transient.approximateQueryTime;
 
     while (true)
     {
-        response = id in plugin.responseBucket;
+        immutable hasResponse = plugin.responseBucket.has(id);
 
-        if (!response || (*response == QueryResponse.init))
+        if (!hasResponse)
         {
+            // Querier errored or otherwise gave up
+            // No need to remove the id, it's not there
+            return QueryResponse.init;
+        }
+
+        auto response = plugin.responseBucket[id];
+
+        if (response == QueryResponse.init)
+        {
+            import kameloso.constants : Timeout;
+            import kameloso.plugins.common.delayawait : delay;
+            import core.time : msecs;
+
             immutable nowInUnix = Clock.currTime.toUnixTime();
 
             if ((nowInUnix - startTimeInUnix) >= Timeout.httpGET)
             {
-                response = new shared QueryResponse;
-                return *response;
+                plugin.responseBucket.remove(id);
+                return QueryResponse.init;
             }
 
             version(BenchmarkHTTPRequests)
@@ -1324,19 +1320,21 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
             delay(plugin, briefWait.msecs, Yes.yield);
             continue;
         }
-
-        version(BenchmarkHTTPRequests)
+        else
         {
-            enum pattern = "HIT! elapsed: %s | response: %s | misses: %d";
-            immutable nowInUnix = Clock.currTime.toUnixTime();
-            immutable delta = (nowInUnix - startTimeInUnix);
-            writefln(pattern, delta, response.msecs, misses);
-        }
+            version(BenchmarkHTTPRequests)
+            {
+                enum pattern = "HIT! elapsed: %s | response: %s | misses: %d";
+                immutable nowInUnix = Clock.currTime.toUnixTime();
+                immutable delta = (nowInUnix - startTimeInUnix);
+                writefln(pattern, delta, response.msecs, misses);
+            }
 
-        // Make the new approximate query time a weighted average
-        averageApproximateQueryTime(plugin, response.msecs);
-        plugin.responseBucket.remove(id);
-        return *response;
+            // Make the new approximate query time a weighted average
+            averageApproximateQueryTime(plugin, response.msecs);
+            plugin.responseBucket.remove(id);
+            return response;
+        }
     }
 }
 
@@ -1480,37 +1478,6 @@ in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor ga
     }
 
     return retryDelegate(plugin, &getTwitchGameDg);
-}
-
-
-// reserveUniqueBucketID
-/++
-    Generates a unique numerical ID for use as key in the passed associative array bucket.
-    Reservates the ID in the responseBucket by assigning it to an empty [QueryResponse].
-
-    Params:
-        responseBucket = Shared associative array of responses from async HTTP queries.
-
-    Returns:
-        A unique integer for use as `responseBucket` key.
- +/
-auto reserveUniqueBucketID(shared QueryResponse[int] responseBucket)
-{
-    import std.random : uniform;
-
-    int id = uniform(1, int.max);
-
-    synchronized //()
-    {
-        while (id in responseBucket)
-        {
-            id = uniform(1, int.max);
-        }
-
-        responseBucket[id] = QueryResponse.init;  // reserve it
-    }
-
-    return id;
 }
 
 

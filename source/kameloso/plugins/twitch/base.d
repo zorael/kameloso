@@ -197,7 +197,7 @@ import dialect.postprocessors.twitch;  // To trigger the module ctor
 
 import kameloso.plugins;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
-import kameloso.common : RehashingAA, logger;
+import kameloso.common : MutexedAA, RehashingAA, logger;
 import kameloso.messaging;
 import kameloso.thread : Sendable;
 import dialect.defs;
@@ -2131,10 +2131,6 @@ void onEndOfMOTD(TwitchPlugin plugin)
         plugin.state.bot.pass;
     plugin.transient.authorizationBearer = "Bearer " ~ pass;
 
-    // Initialise the bucket, just so that it isn't null
-    plugin.responseBucket[0] = QueryResponse.init;
-    plugin.responseBucket.remove(0);
-
     // Spawn the persistent worker.
     plugin.transient.persistentWorkerTid = spawn(
         &persistentQuerier,
@@ -3420,6 +3416,17 @@ unittest
 }
 
 
+// setup
+/++
+    Initialises the response bucket, else its internal [core.sync.mutex.Mutex|Mutex]
+    will be null and cause a segfault when trying to lock it.
+ +/
+void setup(TwitchPlugin plugin)
+{
+    plugin.responseBucket.setup();
+}
+
+
 // teardown
 /++
     De-initialises the plugin. Shuts down any persistent worker threads.
@@ -4408,7 +4415,7 @@ package:
     /++
         Associative array of responses from async HTTP queries.
      +/
-    shared QueryResponse[int] responseBucket;
+    MutexedAA!(QueryResponse[int]) responseBucket;
 
     @Resource("twitch")
     {

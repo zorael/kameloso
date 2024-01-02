@@ -26,7 +26,6 @@ import kameloso.plugins.twitch.common;
 
 import kameloso.common : logger;
 import arsd.http2 : HttpClient;
-import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
@@ -510,14 +509,13 @@ auto getSpotifyBase64Authorization(const Credentials creds)
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-package JSONValue addTrackToSpotifyPlaylist(
+package auto addTrackToSpotifyPlaylist(
     TwitchPlugin plugin,
     ref Credentials creds,
     const string trackID,
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a fiber")
 {
-    import kameloso.plugins.twitch.api : reserveUniqueBucketID;
     import std.algorithm.searching : endsWith;
     import std.format : format;
 
@@ -541,8 +539,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
     }
 
     immutable ubyte[] data;
-    // Making immutable bumps compilation memory +44mb
-    /*immutable*/ int id = reserveUniqueBucketID(plugin.responseBucket);
+    /*immutable*/ int id = plugin.responseBucket.uniqueKey;  // normal int needed for concurrency message
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
