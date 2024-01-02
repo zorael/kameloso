@@ -2786,7 +2786,6 @@ public:
     /++
         Thread ID to the main thread.
      +/
-    deprecated("Use `IRCPluginState.{messages,priorityMessages,outgoingMessages,deferredActions}` instead}")
     Tid mainThread;
 
     // users
