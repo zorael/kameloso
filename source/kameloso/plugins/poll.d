@@ -101,7 +101,7 @@ public:
     /++
         Individual votes, keyed by nicknames of the people who placed them.
      +/
-    RehashingAA!(string, string) votes;
+    RehashingAA!(string[string]) votes;
 
     /++
         Unique identifier to help fibers know if the poll they belong to is stale

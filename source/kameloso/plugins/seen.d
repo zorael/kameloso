@@ -324,7 +324,7 @@ private:  // Module-level private.
         writeln("Seconds since we last saw joe: ", (nowInUnix - seenUsers["joe"]));
         ---
      +/
-    RehashingAA!(string, long) seenUsers;
+    RehashingAA!(long[string]) seenUsers;
 
 
     // seenFile
@@ -993,7 +993,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
 
 // loadSeen
 /++
-    Given a filename, read the contents and load it into a `RehashingAA!(string, long)`
+    Given a filename, read the contents and load it into a `RehashingAA!(long[string])`
     associative array, then returns it. If there was no file there to read,
     return an empty array for a fresh start.
 

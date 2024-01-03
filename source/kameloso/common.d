@@ -516,16 +516,17 @@ static immutable string[134] errnoStrings =
     automatically rehash as entries are added.
 
     Params:
-        K = Key type.
+        AA = Associative array type.
         V = Value type.
+        K = Key type.
  +/
-struct RehashingAA(K, V)
+struct RehashingAA(AA : V[K], V, K)
 {
 private:
     /++
         Internal associative array.
      +/
-    V[K] aa;
+    AA aa;
 
     /++
         The number of times this instance has rehashed itself. Private value.
@@ -604,7 +605,7 @@ public:
         Returns:
             The internal associative array.
      +/
-    auto opCast(T : V[K])() inout
+    auto opCast(T : AA)() inout
     {
         return aa;
     }
@@ -616,7 +617,7 @@ public:
         Returns:
             The internal associative array.
      +/
-    inout(V[K]) aaOf() inout
+    auto aaOf() inout
     {
         return aa;
     }
@@ -697,7 +698,7 @@ public:
         Returns:
             The number of times this instance has rehashed itself.
      +/
-    auto numRehashes() const
+    auto numRehashes() const inout
     {
         return _numRehashes;
     }
@@ -738,7 +739,7 @@ public:
         Returns:
             The length of the internal associative array.
      +/
-    auto length() const
+    auto length() const inout
     {
         return aa.length;
     }
@@ -764,7 +765,7 @@ public:
         Params:
             aa = Associative arary to inherit. Taken by reference for now.
      +/
-    this(V[K] aa) pure @safe nothrow @nogc
+    this(AA aa) pure @safe nothrow @nogc
     {
         this.aa = aa;
     }
@@ -781,7 +782,7 @@ unittest
 {
     import std.conv : to;
 
-    RehashingAA!(string, int) aa;
+    RehashingAA!(int[string]) aa;
     aa.minimumNeededForRehash = 2;
 
     aa["abc"] = 123;
@@ -797,6 +798,8 @@ unittest
     auto realAA = cast(int[string])aa;
     assert("abc" in realAA);
     assert("def" in realAA);
+
+    auto alsoRealAA = aa.aaOf;
     assert("ghi" in realAA);
     assert("jkl" !in realAA);
 

@@ -476,7 +476,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 
             if (!channelcount)
             {
-                plugin.ecount[event.channel] = RehashingAA!(string, long).init;
+                plugin.ecount[event.channel] = RehashingAA!(long[string]).init;
                 plugin.ecount[event.channel][string.init] = 0L;
                 channelcount = event.channel in plugin.ecount;
                 (*channelcount).remove(string.init);
@@ -3660,7 +3660,7 @@ void initResources(TwitchPlugin plugin)
         aa = The associative array to convert into JSON and save.
         filename = Filename of the file to write to.
  +/
-void saveResourceToDisk(/*const*/ RehashingAA!(string, long)[string] aa, const string filename)
+void saveResourceToDisk(/*const*/ RehashingAA!(long[string])[string] aa, const string filename)
 {
     import std.json : JSONValue;
     import std.stdio : File;
@@ -3721,7 +3721,7 @@ void loadResources(TwitchPlugin plugin)
 
     foreach (immutable channelName, channelCounts; tempEcount)
     {
-        plugin.ecount[channelName] = RehashingAA!(string, long)(channelCounts);
+        plugin.ecount[channelName] = RehashingAA!(long[string])(channelCounts);
     }
 
     JSONStorage viewersJSON;
@@ -3732,7 +3732,7 @@ void loadResources(TwitchPlugin plugin)
 
     foreach (immutable channelName, channelViewers; tempViewers)
     {
-        plugin.viewerTimesByChannel[channelName] = RehashingAA!(string, long)(channelViewers);
+        plugin.viewerTimesByChannel[channelName] = RehashingAA!(long[string])(channelViewers);
     }
 
     JSONStorage secretsJSON;
@@ -3947,12 +3947,12 @@ package:
             /++
                 Users seen in the channel.
              +/
-            RehashingAA!(string, bool) chattersSeen;
+            RehashingAA!(bool[string]) chattersSeen;
 
             /++
                 Hashmap of active viewers (who have shown activity).
              +/
-            RehashingAA!(string, bool) activeViewers;
+            RehashingAA!(bool[string]) activeViewers;
 
             /++
                 Accessor to [_id].
@@ -4405,7 +4405,7 @@ package:
     /++
         Associative array of viewer times; seconds keyed by nickname keyed by channel.
      +/
-    RehashingAA!(string, long)[string] viewerTimesByChannel;
+    RehashingAA!(long[string])[string] viewerTimesByChannel;
 
     /++
         API keys and tokens, keyed by channel.
@@ -4443,7 +4443,7 @@ package:
     /++
         Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
      +/
-    RehashingAA!(string, long)[string] ecount;
+    RehashingAA!(long[string])[string] ecount;
 
     /++
         Buffer of messages to send as whispers.
