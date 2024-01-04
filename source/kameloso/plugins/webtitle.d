@@ -920,7 +920,9 @@ void teardown(WebtitlePlugin plugin)
 {
     foreach (workerTid; plugin.transient.workerTids)
     {
-        import std.concurrency : send;
+        import std.concurrency : Tid, send;
+
+        if (workerTid == Tid.init) continue;
         workerTid.send(true);
     }
 }
