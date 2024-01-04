@@ -337,7 +337,6 @@ Pid exec(
 {
     import kameloso.common : logger;
     import std.algorithm.comparison : among;
-    import std.array : join;
     import std.conv : text;
 
     if (args.length > 1)
@@ -399,7 +398,11 @@ Pid exec(
 
     // Add the reexec count and channel override arguments
     args ~= text("--internal-num-reexecs=", numReexecs+1);
-    if (channels.length) args ~= text("--internal-channel-override='", channels.join(','), '\'');
+
+    foreach (immutable channelName; channels)
+    {
+        args ~= text("--internal-channel-override=", channelName);
+    }
 
     version(Posix)
     {
@@ -420,7 +423,7 @@ Pid exec(
         import std.process : ProcessException, spawnProcess;
 
         Appender!(char[]) sink;
-        sink.reserve(128);
+        sink.reserve(256);
 
         string arg0 = args[0];  // mutable
         args = args[1..$];  // pop it
@@ -439,25 +442,34 @@ Pid exec(
             arg0 = "./" ~ arg0;
         }
 
+        static auto applyPlaceholders(const string input)
+        {
+            import kameloso.constants : KamelosoDefaultChars;
+            import std.array : replace;
+
+            return input
+                .replace('"', cast(char)KamelosoDefaultChars.doublequotePlaceholder)
+                .replace('#', cast(char)KamelosoDefaultChars.octothorpePlaceholder);
+        }
+
         for (size_t i; i<args.length; ++i)
         {
+            import std.algorithm.searching : startsWith;
+
             if (sink.data.length) sink.put(' ');
 
-            if ((args.length >= i+1) &&
-                args[i].among!(
-                    "-H",
-                    "-C",
-                    "--homeChannels",
-                    "--guestChannels",
-                    "--set"))
-                    //"--internal-channel-override"))  // No need, we add the quotes above
+            if (args[i].startsWith("-H") ||
+                args[i].startsWith("-C") ||
+                args[i].startsWith("--homeChannels") ||
+                args[i].startsWith("--guestChannels") ||
+                args[i].startsWith("--set") ||
+                args[i].startsWith("--internal-channel-override"))
             {
-                import kameloso.constants : KamelosoDefaultChars;
-                import std.array : replace;
                 import std.format : formattedWrite;
+                import std.string : indexOf;
 
                 /+
-                    Parameters to the program are passed to powershell
+                    Arguments to the program are passed to powershell
                     as a single string. We have to rely on quotes to separate
                     each argument, as well as to escape some things like octothorpes.
 
@@ -470,10 +482,30 @@ Pid exec(
                     KamelosoDefaultChars.doublequotePlaceholder, and undo the
                     change early before getopt.
                  +/
-                immutable quotesReplaced = args[i+1]
-                    .replace('"', cast(char)KamelosoDefaultChars.doublequotePlaceholder);
-                sink.formattedWrite(`%s "%s"`, args[i], quotesReplaced);
-                ++i;
+
+                if (args[i].indexOf('=') != -1)
+                {
+                    import lu.string : advancePast;
+
+                    // --homeChannels="#abc,#def"
+                    // -H="zorael"
+                    auto slice = args[i];  // mutable
+                    immutable flag = slice.advancePast('=');
+                    sink.formattedWrite(`%s "%s"`, flag, applyPlaceholders(slice));
+                }
+                else if (args[i][1].among('H', 'C') && (args[i].length > 2))
+                {
+                    // -C"#abc,#def"
+                    immutable flagPart = args[i][0..2];
+                    immutable channelPart = args[i][2..$];
+                    sink.formattedWrite(`%s "%s"`, flagPart, applyPlaceholders(channelPart));
+                }
+                else if (args.length >= i+1)
+                {
+                    // --set connect.sendAfterConnect="abc def"
+                    sink.formattedWrite(`%s "%s"`, args[i], applyPlaceholders(args[i+1]));
+                    ++i;  // Skip next argument
+                }
             }
             else
             {

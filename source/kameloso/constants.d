@@ -235,6 +235,11 @@ enum KamelosoDefaultChars
         Placeholder for quote characters, used when re-executing on Windows.
      +/
     doublequotePlaceholder = '\1',
+
+    /++
+        Placeholder for octothorpe characters, used when re-executing on Windows.
+     +/
+    octothorpePlaceholder = '\2',
 }
 
 

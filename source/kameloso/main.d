@@ -4304,10 +4304,11 @@ auto run(string[] args)
     version(Windows)
     {
         /+
-            Work around not being able to have arguments with double quotes in
-            them carry over re-executions with powershell, by replacing them with
-            KamelosoDefaultChars.doublequotePlaceholder before forking
-            (and now back to quotes before getopt).
+            Work around not being able to have arguments carry over re-executions
+            with Powershell if they contain double quotes and/or octothorpes,
+            by replacing such with KamelosoDefaultChars.doublequotePlaceholder and
+            KamelosoDefaultChars.octothorpePlaceholder before forking
+            (and now back before getopt).
 
             See comments in kameloso.platform.exec for more information.
          +/
@@ -4318,7 +4319,10 @@ auto run(string[] args)
             {
                 import kameloso.constants : KamelosoDefaultChars;
                 import std.array : replace;
-                args[i] = args[i].replace(cast(char)KamelosoDefaultChars.doublequotePlaceholder, '"');
+
+                args[i] = args[i]
+                    .replace(cast(char)KamelosoDefaultChars.doublequotePlaceholder, '"')
+                    .replace(cast(char)KamelosoDefaultChars.octothorpePlaceholder, '#');
             }
         }
     }
