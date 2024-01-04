@@ -73,6 +73,11 @@ public:
     bool exitOnSASLFailure = false;
 
     /++
+        In what way channels should be rejoined upon reconnecting, or upon re-execution.
+     +/
+    ChannelRejoinBehaviour rejoinBehaviour = ChannelRejoinBehaviour.merge;
+
+    /++
         Lines to send after successfully connecting and registering.
      +/
     //@Separator(";;")
@@ -83,6 +88,47 @@ public:
      +/
     @Unserialisable int maxPingPeriodAllowed = 660;
 }
+
+
+/++
+    Manners in which ways channels should be rejoined upon reconnecting,
+    or upon re-execution.
+
+    Its name is intentionally kept short to improve the visuals of calling the
+    program with `--settings`.
+ +/
+enum Rejoin
+{
+    /++
+        Home channels and guest channels are merged with channels carried from
+        previous connections/executions, and all of them are joined.
+     +/
+    merge,
+
+    /++
+        Home channels are merged with channels carried from previous
+        connections/executions, and all of them are joined. Guest channels are excluded.
+     +/
+    mergeHomes,
+
+    /++
+        Home channels and guest channels are joined, but channels carried from
+        previous connections/executions are ignored.
+     +/
+    original,
+
+    /++
+        Channels carried from previous connections/executions are joined, but
+        home and guest channels as defined in the configuration file are ignored.
+     +/
+    carryPrevious,
+}
+
+
+/++
+    More descriptive name for [Rejoin].
+ +/
+alias ChannelRejoinBehaviour = Rejoin;
 
 
 /++
@@ -128,21 +174,26 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
 
 // joinChannels
 /++
-    Joins all channels listed as home channels *and* guest channels in the arrays in
-    [kameloso.pods.IRCBot|IRCBot] of the current [ConnectService]'s
-    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
+    Joins all channels that should be joined, as per the [ConnectSettings.rejoinBehaviour]
+    setting.
+
+    * If [Rejoin.merge|ChannelRejoinBehaviour.merge], it will join all home channels
+      all guest channels *and* any channels carried over from previous connections
+      (or executions).
+    * If [Rejoin.mergeHomes|ChannelRejoinBehaviour.mergeHomes|, it wil join all
+      channels carried over from previous connections *and* all home channels as
+      defined in the configuration file, but ignore guest channels.
+    * If [Rejoin.original|ChannelRejoinBehaviour.original], it will join all home
+      channels and all guest channels, but ignore any carried channels.
+    * If [Rejoin.carryPrevious|ChannelRejoinBehaviour.carryPrevious], it will join
+      all carried channels and ignore home and guest channels.
 
     Params:
         service = The current [ConnectService].
  +/
 void joinChannels(ConnectService service)
 {
-    import kameloso.messaging : Message;
     import lu.string : plurality;
-    import std.algorithm.iteration : filter, uniq;
-    import std.array : array;
-    import std.range : walkLength;
-    static import kameloso.messaging;
 
     scope(exit) service.transient.joinedChannels = true;
 
@@ -151,75 +202,187 @@ void joinChannels(ConnectService service)
         logger.warning("No channels, no purpose...");
     }
 
-    void printEmptyChannelText()
-    {
-        enum message = "An empty channel set was passed from a previous connection.";
-        logger.info(message);
-    }
-
-    auto filterSortUniq(string[] array_)
+    /+
+        Filters out empty strings and the empty array marker, sorts the array
+        and removes duplicates.
+     +/
+    static auto filterSortUniq(string[] array_)
     {
         import kameloso.constants : MagicStrings;
+        import std.algorithm.iteration : filter, uniq;
         import std.algorithm.sorting : sort;
-        import std.array : join;
+        import std.array : array;
+
+        alias pred = (string channelName) =>
+            (channelName != "-") &&
+            (channelName != MagicStrings.emptyArrayMarker);
 
         return array_
-            .filter!(channelName =>
-                (channelName != "-") && (channelName != MagicStrings.emptyArrayMarker))
+            .filter!pred
             .array
             .sort
-            .uniq;
+            .uniq
+            .array;
     }
 
-    void joinList(string[] array_)
+    /+
+        Joins the channels in the (keys of the) passed associative array.
+     +/
+    void joinArray(const string[] channelList)
     {
+        import kameloso.messaging : Message;
         import std.array : join;
+        static import kameloso.messaging;
 
-        if (!array_.length) return;
+        if (!channelList.length) return;
 
         enum properties = Message.Property.quiet;
         kameloso.messaging.join(
             service.state,
-            array_.join(','),
+            channelList.join(','),
             string.init,
             properties);
     }
 
-    if (service.state.bot.channelOverride.length)
+    /+
+        Removes entries from the first ref array that are also in the second const array.
+     +/
+    void removeArrayEntriesAlsoIn(
+        ref string[] first,
+        const string[] second)
     {
-        auto overrideList = filterSortUniq(service.state.bot.channelOverride);
-        immutable overrideListLength = overrideList.walkLength();
-
-        if (!overrideListLength)
+        foreach (immutable channelName; second)
         {
-            printEmptyChannelText();
+            import std.algorithm.searching : countUntil;
+
+            immutable firstPos = first.countUntil(channelName);
+
+            if (firstPos != -1)
+            {
+                import std.algorithm.mutation : SwapStrategy, remove;
+                first = first.remove!(SwapStrategy.unstable)(firstPos);
+            }
+        }
+    }
+
+    const homeArray = filterSortUniq(service.state.bot.homeChannels);
+    auto guestArray = filterSortUniq(service.state.bot.guestChannels);
+    auto overrideArray = filterSortUniq(service.state.bot.channelOverride);
+
+    removeArrayEntriesAlsoIn(guestArray, homeArray);
+    removeArrayEntriesAlsoIn(overrideArray, homeArray);
+    removeArrayEntriesAlsoIn(overrideArray, guestArray);
+
+    version(TwitchSupport)
+    {
+        import std.range : chain;
+        /+
+            Collect all channels we're supposed to join into a single array,
+            to be able to check later (down below) if we actually joined them all.
+         +/
+        string[] allChannels;
+    }
+
+    /+
+        Prints a message about joining channels, and how many of them were
+        carried over from a previous connection.
+     +/
+    void printJoiningMessage(
+        const size_t numChans,
+        const size_t carried)
+    {
+        if (carried > 0)
+        {
+            enum pattern = "Joining <i>%d</> %s (of which <i>%d</> %s " ~
+                "carried over from the previous connection)...";
+            logger.logf(
+                pattern,
+                numChans,
+                numChans.plurality("channel", "channels"),
+                overrideArray.length,
+                overrideArray.length.plurality("was", "were"));
+        }
+        else
+        {
+            enum pattern = "Joining <i>%d</> %s...";
+            logger.logf(
+                pattern,
+                numChans,
+                numChans.plurality("channel", "channels"));
+        }
+    }
+
+    with (ChannelRejoinBehaviour)
+    final switch (service.connectSettings.rejoinBehaviour)
+    {
+    case merge:
+        /+
+            Merge home, guest and override channels into a single list, and
+            join them all.
+         +/
+        immutable numChans = (homeArray.length + guestArray.length + overrideArray.length);
+        if (!numChans) return printDefeat();
+
+        printJoiningMessage(numChans, overrideArray.length);
+        joinArray(homeArray);
+        joinArray(guestArray);
+        joinArray(overrideArray);
+
+        version(TwitchSupport) allChannels = homeArray ~ guestArray ~ overrideArray;
+        break;
+
+    case mergeHomes:
+        /+
+            Merge home and override channels into a single list, and join them
+            all. (Skip the guest channel list.)
+         +/
+        immutable numChans = (homeArray.length + overrideArray.length);
+        if (!numChans) return printDefeat();
+
+        printJoiningMessage(numChans, overrideArray.length);
+        joinArray(homeArray);
+        //joinArray(guestArray);
+        joinArray(overrideArray);
+
+        version(TwitchSupport) allChannels = homeArray ~ /*guestArray ~*/ overrideArray;
+        break;
+
+    case original:
+        /+
+            Join the home and guest channels, and ignore the override list.
+         +/
+        immutable numChans = (homeArray.length + guestArray.length);
+        if (!numChans) return printDefeat();
+
+        printJoiningMessage(numChans, overrideArray.length);
+        joinArray(homeArray);
+        joinArray(guestArray);
+        //joinArray(overrideArray);
+
+        version(TwitchSupport) allChannels = homeArray ~ guestArray; // ~ overrideArray;
+        break;
+
+    case carryPrevious:
+        /+
+            Join the override list, and ignore the home and guest channels.
+         +/
+        if (!overrideArray.length)
+        {
+            enum emptyMessage = "An empty channel set was passed from a previous connection.";
+            enum changeMessage = "Consider changing the <l>connect</>.<l>rejoinBehaviour</> configuration setting.";
+            logger.warning(emptyMessage);
+            logger.warning(changeMessage);
             return printDefeat();
         }
 
-        enum pattern = "Joining <i>%d</> %s (carried from previous connection)...";
-        logger.logf(
-            pattern,
-            overrideListLength,
-            overrideListLength.plurality("channel", "channels"));
+        printJoiningMessage(overrideArray.length, overrideArray.length);
+        //joinArray(homeArray);
+        //joinArray(guestArray);
+        joinArray(overrideArray);
 
-        return joinList(overrideList.array);
+        version(TwitchSupport) allChannels = /*homeArray ~ guestArray ~*/ overrideArray;
+        break;
     }
-
-    if (!service.state.bot.homeChannels.length && !service.state.bot.guestChannels.length)
-    {
-        return printDefeat();
-    }
-
-    auto homeList = filterSortUniq(service.state.bot.homeChannels);
-    auto guestList = filterSortUniq(service.state.bot.guestChannels);
-    immutable numChans = homeList.walkLength() + guestList.walkLength();
-
-    enum pattern = "Joining <i>%d</> %s...";
-    logger.logf(pattern, numChans, numChans.plurality("channel", "channels"));
-
-    // Join in two steps so home channels don't get shoved away by guest channels
-    joinList(homeList.array);
-    joinList(guestList.array);
 
     version(TwitchSupport)
     {
@@ -238,18 +401,14 @@ void joinChannels(ConnectService service)
 
         void delayedChannelCheckDg()
         {
-            import std.range : chain;
-
-            // See if we actually managed to join all channels
-            auto allChannels = chain(service.state.bot.homeChannels, service.state.bot.guestChannels);
             string[] missingChannels;  // mutable
 
-            foreach (immutable channel; allChannels)
+            foreach (immutable channelName; allChannels)
             {
-                if (channel !in service.currentActualChannels)
+                if (channelName !in service.currentActualChannels)
                 {
                     // We failed to join a channel for some reason. No such user?
-                    missingChannels ~= channel;
+                    missingChannels ~= channelName;
                 }
             }
 
