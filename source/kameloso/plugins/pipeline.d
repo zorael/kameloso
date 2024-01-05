@@ -454,13 +454,8 @@ auto readFIFO(PipelinePlugin plugin)
         }
         else if (line[0] == '>')
         {
-            import std.typecons : Tuple;
-
-            alias Payload = Tuple!();
-            void emptyDg() {}
-
-            defer!Payload(plugin, &emptyDg, line[1..$]);
-            // No need to set shouldCheckMessages, deferred actions are always checked
+            plugin.state.messages ~= ThreadMessage.fakeEvent(line[1..$]);
+            shouldCheckMessages = true;
             continue;
         }
 

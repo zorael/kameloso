@@ -457,6 +457,11 @@ void messageFiber(Kameloso instance)
                 if (instance.settings.flush) stdout.flush();
                 break;
 
+            case fakeEvent:
+                import std.datetime.systime : Clock;
+                processLineFromServer(instance, message.content, Clock.currTime.toUnixTime());
+                break;
+
             case teardown:
                 import lu.conv : Enum;
                 enum pattern = "onThreadMessage received unexpected message type: <l>%s";
@@ -2275,7 +2280,6 @@ version(WithAdminPlugin)
 {
     version = WantGetSettingHandler;
     version = WantSetSettingHandler;
-    version = WantFakeEventHandler;
 }
 
 version(WithHelpPlugin)
@@ -2291,11 +2295,6 @@ version(WithCounterPlugin)
 version(WithOnelinerPlugin)
 {
     version = WantPeekCommandsHandler;
-}
-
-version(WithPipelinePlugin)
-{
-    version = WantFakeEventHandler;
 }
 
 // processDeferredActions
@@ -2492,19 +2491,6 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
 
                 fiber.payload[0] = success;
                 fiber.call(action.creator);
-                continue;
-            }
-        }
-
-        version(WantFakeEventHandler)
-        {
-            alias FakeEventPayload = Tuple!();
-
-            if (auto fiber = cast(CarryingFiber!(FakeEventPayload))(action.fiber))
-            {
-                import std.datetime.systime : Clock;
-                // Ignore the fiber, it's just of a placeholder dummy delegate
-                processLineFromServer(instance, action.context, Clock.currTime.toUnixTime());
                 continue;
             }
         }

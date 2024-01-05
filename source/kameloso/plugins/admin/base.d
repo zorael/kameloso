@@ -1618,12 +1618,9 @@ void onBusMessage(
             return;
 
         case "fake":
-            import std.typecons : Tuple;
-
-            alias Payload = Tuple!();
-            void emptyDg() {}
-
-            return defer!Payload(plugin, &emptyDg, slice);
+            import kameloso.thread : ThreadMessage;
+            plugin.state.messages ~= ThreadMessage.fakeEvent(slice);
+            return;
     }
 
     case "reexec":

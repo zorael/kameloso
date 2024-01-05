@@ -335,6 +335,11 @@ struct ThreadMessage
             Request to print a message using [std.stdio.writeln|writeln].
          +/
         askToWriteln,
+
+        /++
+            Request to fake a string as having been received from the server.
+         +/
+        fakeEvent,
     }
 
     /++
