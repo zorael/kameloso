@@ -24,9 +24,9 @@ private:
 
 import kameloso.plugins;
 import kameloso.plugins.common.core;
-import kameloso.common : MutexedAA;
 import dialect.defs;
 import arsd.http2 : HttpResponse;
+import lu.container : MutexedAA;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
@@ -205,9 +205,10 @@ void lookupURLs(
     /*const*/ string[] urls)
 {
     import kameloso.plugins.common.delayawait : delay;
-    import kameloso.common : logger, uniqueKey;
+    import kameloso.common : logger;
     import kameloso.constants : BufferSize;
     import kameloso.thread : ThreadMessage;
+    import lu.array: uniqueKey;
     import lu.string : advancePast;
     import std.concurrency : send, spawn;
     import core.time : Duration;

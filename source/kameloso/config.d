@@ -563,10 +563,11 @@ public:
  +/
 auto handleGetopt(Kameloso instance) @system
 {
-    import kameloso.common : Next, printVersionInfo, settings;
+    import kameloso.common : printVersionInfo, settings;
     import kameloso.configreader : readConfigInto;
     import kameloso.logger : KamelosoLogger;
     import kameloso.terminal : applyTerminalOverrides;
+    import lu.common : Next;
     import lu.objmanip : replaceMembers;
     static import kameloso.common;
     static import std.getopt;

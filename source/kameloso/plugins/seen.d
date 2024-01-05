@@ -54,14 +54,17 @@ private import kameloso.plugins.common.core;
 // Awareness mixins, for plumbing.
 private import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 
+// [kameloso.common] for the global logger instance.
+private import kameloso.common : logger;
+
 // Some thread boxing helpers.
 private import kameloso.thread : Sendable;
 
 // [dialect.defs], for the definitions of an IRC event.
 private import dialect.defs;
 
-// [kameloso.common] for the global logger instance and the rehashing AA.
-private import kameloso.common : RehashingAA, logger;
+// [lu.container] for the rehashing associative array wrapper.
+private import lu.container : RehashingAA;
 
 // [std.datetime.systime] for the [std.datetime.systime.Clock|Clock], to update times with.
 private import std.datetime.systime : Clock;

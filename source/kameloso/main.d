@@ -225,11 +225,12 @@ void signalHandler(int sig) nothrow @nogc @system
  +/
 void messageFiber(Kameloso instance)
 {
-    import kameloso.common : Next, OutgoingLine;
+    import kameloso.common : OutgoingLine;
     import kameloso.constants : Timeout;
     import kameloso.messaging : Message;
     import kameloso.string : replaceTokens;
     import kameloso.thread : ThreadMessage;
+    import lu.common : Next;
     import std.concurrency : yield;
     import core.time : Duration, MonoTime, msecs;
 
@@ -900,9 +901,9 @@ void messageFiber(Kameloso instance)
  +/
 auto mainLoop(Kameloso instance)
 {
-    import kameloso.common : Next;
     import kameloso.constants : Timeout;
     import kameloso.net : ListenAttempt, SocketSendException, listenFiber;
+    import lu.common : Next;
     import std.concurrency : Generator;
     import std.datetime.systime : Clock, SysTime;
     import core.thread : Fiber;
@@ -1324,7 +1325,7 @@ auto sendLines(Kameloso instance)
  +/
 auto listenAttemptToNext(Kameloso instance, const ListenAttempt attempt)
 {
-    import kameloso.common : Next;
+    import lu.common : Next;
 
     // Handle the attempt; switch on its state
     with (ListenAttempt.ListenState)
@@ -2583,11 +2584,10 @@ void resetSignals() nothrow @nogc
 auto tryGetopt(Kameloso instance)
 {
     import kameloso.plugins.common.misc : IRCPluginSettingsException;
-    import kameloso.common : Next;
     import kameloso.config : handleGetopt;
     import kameloso.configreader : ConfigurationFileReadFailureException;
     import kameloso.string : doublyBackslashed;
-    import lu.common : FileTypeMismatchException;
+    import lu.common : FileTypeMismatchException, Next;
     import lu.serialisation : DeserialisationException;
     import std.conv : ConvException;
     import std.getopt : GetOptException;
@@ -2669,7 +2669,6 @@ auto tryGetopt(Kameloso instance)
  +/
 auto tryConnect(Kameloso instance)
 {
-    import kameloso.common : Next;
     import kameloso.constants :
         ConnectionDefaultFloats,
         ConnectionDefaultIntegers,
@@ -2677,6 +2676,7 @@ auto tryConnect(Kameloso instance)
         Timeout;
     import kameloso.net : ConnectionAttempt, connectFiber;
     import kameloso.thread : interruptibleSleep;
+    import lu.common : Next;
     import std.concurrency : Generator;
 
     auto connector = new Generator!ConnectionAttempt(() =>
@@ -2974,9 +2974,9 @@ auto tryConnect(Kameloso instance)
  +/
 auto tryResolve(Kameloso instance, const Flag!"firstConnect" firstConnect)
 {
-    import kameloso.common : Next;
     import kameloso.constants : Timeout;
     import kameloso.net : ResolveAttempt, resolveFiber;
+    import lu.common : Next;
     import std.concurrency : Generator;
 
     auto resolver = new Generator!ResolveAttempt(() =>
@@ -3153,7 +3153,7 @@ void setDefaultDirectories(ref CoreSettings settings) @safe
  +/
 auto verifySettings(Kameloso instance)
 {
-    import kameloso.common : Next;
+    import lu.common : Next;
 
     if (!instance.settings.force)
     {
@@ -3333,11 +3333,11 @@ auto startBot(Kameloso instance)
         IRCPluginInitialisationException,
         pluginNameOfFilename,
         pluginFileBaseName;
-    import kameloso.common : Next;
     import kameloso.constants : ShellReturnValue;
     import kameloso.string : doublyBackslashed;
     import kameloso.terminal : TerminalToken, isTerminal;
     import dialect.parsing : IRCParser;
+    import lu.common : Next;
     import std.algorithm.comparison : among;
 
     // Save a backup snapshot of the client, for restoring upon reconnections
@@ -3981,7 +3981,7 @@ void printSummary(const Kameloso instance) @safe
 struct RunState
 {
 private:
-    import kameloso.common : Next;
+    import lu.common : Next;
 
 public:
     /++
@@ -4292,10 +4292,10 @@ public:
 auto run(string[] args)
 {
     import kameloso.plugins.common.misc : IRCPluginInitialisationException, IRCPluginSettingsException;
-    import kameloso.common : Next;
     import kameloso.constants : ShellReturnValue;
     import kameloso.logger : KamelosoLogger;
     import kameloso.string : doublyBackslashed, replaceTokens;
+    import lu.common : Next;
     import std.algorithm.comparison : among;
     import std.conv : ConvException;
     import std.exception : ErrnoException;

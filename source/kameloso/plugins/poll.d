@@ -68,7 +68,7 @@ import std.typecons : Flag, No, Yes;
 struct Poll
 {
 private:
-    import kameloso.common : RehashingAA;
+    import lu.container : RehashingAA;
     import std.datetime.systime : SysTime;
     import std.json : JSONValue;
 

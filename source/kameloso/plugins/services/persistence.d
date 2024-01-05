@@ -959,8 +959,8 @@ public:
 final class PersistenceService : IRCPlugin
 {
 private:
-    import kameloso.common : RehashingAA;
     import kameloso.constants : KamelosoFilenames;
+    import lu.container : RehashingAA;
 
     /++
         Placeholder values.

@@ -24,9 +24,9 @@ private:
 import kameloso.plugins.twitch.base;
 import kameloso.plugins.twitch.common;
 
-import kameloso.common : MutexedAA;
-import arsd.http2 : HttpVerb;
 import dialect.defs;
+import arsd.http2 : HttpVerb;
+import lu.container : MutexedAA;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 import core.time : Duration, seconds;
