@@ -323,7 +323,7 @@ void persistentQuerier(
             cast(ubyte[])body_,
             contentType);
 
-        if (response.str.length)
+        if (response.code > 0)  // can't go by response.str.length, as it can be empty
         {
             responseBucket[id] = response;
         }
@@ -496,7 +496,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
             response.error,
             response.code);
     }
-    else if (response.code == 0) //(!response.str.length)
+    else if (response.code == 0) // can't go by response.str.length, as it can be empty
     {
         throw new EmptyResponseException("Empty response");
     }
@@ -3068,7 +3068,7 @@ in (userID, "Tried to send a whisper with an empty recipient ID string")
                 cast(ubyte[])body_,
                 "application/json");
 
-            responseJSON = parseJSON(response.str);
+            responseJSON = parseJSON(response.str);  // body should be empty, but in case it isn't
             responseCode = response.code;
         }
         catch (ErrorJSONException e)
