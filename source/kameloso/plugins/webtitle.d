@@ -547,8 +547,9 @@ void persistentQuerier(
             &onQuitMessage,
             (Variant v)
             {
-                import std.stdio : writeln;
-                writeln("persistentQuerier: received ", v);
+                import std.stdio : stdout, writeln;
+                writeln("Webtitle worker received unknown Variant: ", v);
+                stdout.flush();
             }
         );
     }
@@ -952,7 +953,7 @@ private:
     static struct TransientState
     {
         /++
-            The thread ID of the persistent worker thread.
+            The thread IDs of the persistent worker threads.
          +/
         Tid[] workerTids;
 
