@@ -357,9 +357,9 @@ Pid exec(
 
                 if (slice.startsWith("twitch."))
                 {
-                    immutable setting = slice.advancePast('=', Yes.inherit);
+                    immutable flag = slice.advancePast('=', Yes.inherit);
 
-                    if (setting.among!(
+                    if (flag.among!(
                         "twitch.keygen",
                         "twitch.superKeygen",
                         "twitch.googleKeygen",
@@ -375,9 +375,9 @@ Pid exec(
             else
             {
                 string slice = args[i];  // mutable
-                immutable setting = slice.advancePast('=', Yes.inherit);
+                immutable flag = slice.advancePast('=', Yes.inherit);
 
-                if (setting.among!(
+                if (flag.among!(
                     //"--setup-twitch",  // this only does the keygen, then exits
                     "--get-cacert",
                     "--get-openssl",
@@ -396,12 +396,22 @@ Pid exec(
         }
     }
 
+    static auto applyPlaceholders(const string input)
+    {
+        import kameloso.constants : KamelosoDefaultChars;
+        import std.array : replace;
+
+        return input
+            .replace('"', cast(char)KamelosoDefaultChars.doublequotePlaceholder)
+            .replace('#', cast(char)KamelosoDefaultChars.octothorpePlaceholder);
+    }
+
     // Add the reexec count and channel override arguments
     args ~= text("--internal-num-reexecs=", numReexecs+1);
 
     foreach (immutable channelName; channels)
     {
-        args ~= text("--internal-channel-override=", channelName);
+        args ~= text("--internal-channel-override=\"", applyPlaceholders(channelName), '"');
     }
 
     version(Posix)
@@ -419,7 +429,6 @@ Pid exec(
     {
         import std.algorithm.searching : startsWith;
         import std.array : Appender;
-        import std.exception : assumeUnique;
         import std.process : ProcessException, spawnProcess;
 
         Appender!(char[]) sink;
@@ -442,19 +451,11 @@ Pid exec(
             arg0 = "./" ~ arg0;
         }
 
-        static auto applyPlaceholders(const string input)
-        {
-            import kameloso.constants : KamelosoDefaultChars;
-            import std.array : replace;
-
-            return input
-                .replace('"', cast(char)KamelosoDefaultChars.doublequotePlaceholder)
-                .replace('#', cast(char)KamelosoDefaultChars.octothorpePlaceholder);
-        }
-
         for (size_t i; i<args.length; ++i)
         {
             import std.algorithm.searching : startsWith;
+
+            debug writeln(i, ":", args[i]);
 
             if (sink.data.length) sink.put(' ');
 
@@ -462,8 +463,7 @@ Pid exec(
                 args[i].startsWith("-C") ||
                 args[i].startsWith("--homeChannels") ||
                 args[i].startsWith("--guestChannels") ||
-                args[i].startsWith("--set") ||
-                args[i].startsWith("--internal-channel-override"))
+                args[i].startsWith("--set"))
             {
                 import std.format : formattedWrite;
                 import std.string : indexOf;
@@ -483,22 +483,22 @@ Pid exec(
                     change early before getopt.
                  +/
 
-                if (args[i].indexOf('=') != -1)
+                if (args[i][1].among('H', 'C') && (args[i].length > 2))
+                {
+                    // -C"#abc,#def"
+                    immutable flag = args[i][0..2];
+                    auto channelName = args[i][2..$];
+                    if ((channelName.length > 1) && (channelName[0] == '=')) channelName = channelName[1..$];
+                    sink.formattedWrite(`%s="%s"`, flag, applyPlaceholders(channelName));
+                }
+                else if (args[i].indexOf('=') != -1)
                 {
                     import lu.string : advancePast;
-
                     // --homeChannels="#abc,#def"
                     // -H="zorael"
                     auto slice = args[i];  // mutable
                     immutable flag = slice.advancePast('=');
-                    sink.formattedWrite(`%s "%s"`, flag, applyPlaceholders(slice));
-                }
-                else if (args[i][1].among('H', 'C') && (args[i].length > 2))
-                {
-                    // -C"#abc,#def"
-                    immutable flagPart = args[i][0..2];
-                    immutable channelPart = args[i][2..$];
-                    sink.formattedWrite(`%s "%s"`, flagPart, applyPlaceholders(channelPart));
+                    sink.formattedWrite(`%s="%s"`, flag, applyPlaceholders(slice));
                 }
                 else if (args.length >= i+1)
                 {
@@ -507,9 +507,13 @@ Pid exec(
                     ++i;  // Skip next argument
                 }
             }
-            else
+            else if (args[i].startsWith("--internal-"))
             {
                 sink.put(args[i]);
+            }
+            else
+            {
+                sink.put(applyPlaceholders(args[i]));
             }
         }
 
@@ -521,7 +525,7 @@ Pid exec(
             "/min",
             "powershell",
             "-c"
-        ] ~ arg0 ~ sink.data.assumeUnique();
+        ] ~ arg0 ~ sink.data.idup;
         return spawnProcess(commandLine[]);
     }
     else
