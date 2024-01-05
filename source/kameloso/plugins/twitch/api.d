@@ -290,7 +290,7 @@ void persistentQuerier(
     const string caBundleFile)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : OwnerTerminated, receive;
+    import std.concurrency : receive;
     import std.variant : Variant;
 
     version(Posix)
@@ -473,7 +473,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     immutable pre = MonoTime.currTime;
     if (!id) id = plugin.responseBucket.uniqueKey;
 
-    plugin.transient.persistentWorkerTid.send(
+    plugin.getNextWorkerTid().send(
         id,
         url,
         authorisationHeader,
@@ -1237,7 +1237,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     ---
     immutable id = plugin.responseBucket.uniqueKey;
     immutable url = "https://api.twitch.tv/helix/users?login=zorael";
-    plugin.transient.persistentWorkerTid.send(id, url, plugin.transient.authorizationBearer);
+    plugin.transient.getNextWorkerTid().send(id, url, plugin.transient.authorizationBearer);
 
     delay(plugin, plugin.transient.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id, url);

@@ -554,7 +554,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
             import core.time : msecs;
 
             plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
-            plugin.transient.persistentWorkerTid.send(
+            plugin.getNextWorkerTid().send(
                 id,
                 url,
                 authorizationBearer,

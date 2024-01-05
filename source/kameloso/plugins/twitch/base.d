@@ -106,6 +106,11 @@ public:
      +/
     bool promoteVIPs = true;
 
+    /++
+        How many worker threads to use, to offload the HTTP requests to.
+     +/
+    uint workerThreads = 3;
+
     @Unserialisable
     {
         /++
@@ -2122,6 +2127,7 @@ void onCommandNuke(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onEndOfMOTD(TwitchPlugin plugin)
 {
+    import std.algorithm.comparison : max;
     import std.algorithm.searching : startsWith;
     import std.concurrency : spawn;
 
@@ -2132,11 +2138,21 @@ void onEndOfMOTD(TwitchPlugin plugin)
         plugin.state.bot.pass;
     plugin.transient.authorizationBearer = "Bearer " ~ pass;
 
-    // Spawn the persistent worker.
-    plugin.transient.persistentWorkerTid = spawn(
-        &persistentQuerier,
-        plugin.responseBucket,
-        plugin.state.connSettings.caBundleFile);
+    // Use a minimum of one worker thread, regardless of setting
+    plugin.transient.workerTids.length =
+        max(plugin.twitchSettings.workerThreads, 1);
+
+    foreach (ref workerTid; plugin.transient.workerTids)
+    {
+        import std.concurrency : Tid, spawn;
+
+        if (workerTid != Tid.init) continue;  // to be safe
+
+        workerTid = spawn(
+            &persistentQuerier,
+            plugin.responseBucket,
+            plugin.state.connSettings.caBundleFile);
+    }
 
     startValidator(plugin);
     startSaver(plugin);
@@ -3436,10 +3452,12 @@ void teardown(TwitchPlugin plugin)
 {
     import std.concurrency : Tid, send;
 
-    if (plugin.transient.persistentWorkerTid != Tid.init)
+    foreach (workerTid; plugin.transient.workerTids)
     {
-        // It may not have been started if we're aborting very early.
-        plugin.transient.persistentWorkerTid.send(true);
+        import std.concurrency : Tid, send;
+
+        if (workerTid == Tid.init) continue;
+        workerTid.send(true);
     }
 
     if (plugin.twitchSettings.ecount && plugin.ecount.length)
@@ -4157,9 +4175,14 @@ package:
 
     public:
         /++
-            The thread ID of the persistent worker thread.
+            The thread IDs of the persistent worker threads.
          +/
-        Tid persistentWorkerTid;
+        Tid[] workerTids;
+
+        /++
+            The index of the next worker thread to use.
+         +/
+        size_t currentWorkerTidIndex;
 
         /++
             Authorisation token for the "Authorization: Bearer <token>".
@@ -4450,6 +4473,20 @@ package:
         Buffer of messages to send as whispers.
      +/
     Buffer!(Message, No.dynamic, BufferSize.outbuffer) whisperBuffer;
+
+    /++
+        Returns the next worker thread ID to use, cycling through them.
+     +/
+    auto getNextWorkerTid()
+    in (transient.workerTids.length, "Tried to get a worker Tid when there were none")
+    {
+        if (transient.currentWorkerTidIndex >= transient.workerTids.length)
+        {
+            transient.currentWorkerTidIndex = 0;
+        }
+
+        return transient.workerTids[transient.currentWorkerTidIndex++];
+    }
 
     // isEnabled
     /++
