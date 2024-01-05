@@ -172,7 +172,7 @@ public:
         poll.start = SysTime.fromUnixTime(json["start"].integer);
         poll.end = SysTime.fromUnixTime(json["end"].integer);
         poll.uniqueID = cast(uint)json["uniqueID"].integer;
-        poll.votes = poll.votes.rehash();
+        poll.votes.rehash();
         return poll;
     }
 }

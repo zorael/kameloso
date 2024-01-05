@@ -3767,7 +3767,7 @@ void loadResources(TwitchPlugin plugin)
         plugin.secretsByChannel[channelName] = Credentials.fromJSON(credsJSON);
     }
 
-    plugin.secretsByChannel = plugin.secretsByChannel.rehash();
+    plugin.secretsByChannel.rehash();
 }
 
 

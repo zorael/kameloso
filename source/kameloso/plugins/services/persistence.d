@@ -569,7 +569,7 @@ void onWhoReply(PersistenceService service, const ref IRCEvent event)
  +/
 void reload(PersistenceService service)
 {
-    service.users = service.users.rehash();
+    service.users.rehash();
     reloadAccountClassifiersFromDisk(service);
     if (service.state.settings.preferHostmasks) reloadHostmasksFromDisk(service);
 }
