@@ -1480,8 +1480,12 @@ mixin template IRCPluginImpl(
         static if (__traits(compiles, { alias _ = .initResources; }))
         {
             import lu.traits : TakesParams;
+            import core.memory : GC;
 
             if (!this.isEnabled) return;
+
+            GC.disable();
+            scope(exit) GC.enable();
 
             static if (
                 is(typeof(.initResources)) &&
