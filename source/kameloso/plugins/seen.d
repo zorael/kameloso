@@ -1008,6 +1008,10 @@ void loadSeen(SeenPlugin plugin)
     import kameloso.string : doublyBackslashed;
     import std.file : exists, isFile, readText;
     import std.json : JSONException, parseJSON;
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
 
     if (!plugin.seenFile.exists || !plugin.seenFile.isFile)
     {

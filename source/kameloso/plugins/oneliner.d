@@ -1006,6 +1006,10 @@ void reload(OnelinerPlugin plugin)
 void loadOneliners(OnelinerPlugin plugin)
 {
     import lu.json : JSONStorage;
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
 
     JSONStorage allOnelinersJSON;
     allOnelinersJSON.load(plugin.onelinerFile);

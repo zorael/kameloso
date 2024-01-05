@@ -528,6 +528,10 @@ void reload(AutomodePlugin plugin)
 void loadAutomodes(AutomodePlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
 
     JSONStorage automodesJSON;
     automodesJSON.load(plugin.automodeFile);

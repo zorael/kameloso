@@ -3731,6 +3731,10 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
 void loadResources(TwitchPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
 
     JSONStorage ecountJSON;
     long[string][string] tempEcount;

@@ -808,6 +808,10 @@ void saveCounters(CounterPlugin plugin)
 void loadCounters(CounterPlugin plugin)
 {
     import lu.json : JSONStorage;
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
 
     JSONStorage json;
     json.load(plugin.countersFile);

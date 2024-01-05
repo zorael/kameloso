@@ -1338,6 +1338,10 @@ void initResources(TimerPlugin plugin)
 void loadTimers(TimerPlugin plugin)
 {
     import lu.json : JSONStorage;
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
 
     JSONStorage allTimersJSON;
     allTimersJSON.load(plugin.timerFile);

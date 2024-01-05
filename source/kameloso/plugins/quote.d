@@ -1273,6 +1273,10 @@ void loadQuotes(QuotePlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
 
     JSONStorage json;
 
