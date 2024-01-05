@@ -838,6 +838,8 @@ void messageFiber(Kameloso instance)
                     break normalMessageTop;
                 }
             }
+
+            plugin.state.messages = null;
         }
 
         if (!shouldContinue || !stillOnTime)
