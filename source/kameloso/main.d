@@ -801,8 +801,7 @@ void messageFiber(Kameloso instance)
                 else if (!stillOnTime)
                 {
                     // Ran out of time. Pop until where we are corrently
-                    auto copy = plugin.state.priorityMessages;
-                    plugin.state.priorityMessages = copy[i+1..$];
+                    plugin.state.priorityMessages = plugin.state.priorityMessages[i+1..$];
                     break priorityMessageTop;
                 }
             }
@@ -835,8 +834,7 @@ void messageFiber(Kameloso instance)
                 else if (!stillOnTime)
                 {
                     // As above
-                    auto copy = plugin.state.messages;
-                    plugin.state.messages = copy[i+1..$];
+                    plugin.state.messages = plugin.state.messages[i+1..$];
                     break normalMessageTop;
                 }
             }
@@ -867,8 +865,7 @@ void messageFiber(Kameloso instance)
                 else if (!stillOnTime)
                 {
                     // As above
-                    auto copy = plugin.state.outgoingMessages;
-                    plugin.state.outgoingMessages = copy[i+1..$];
+                    plugin.state.outgoingMessages = plugin.state.outgoingMessages[i+1..$];
                     break outgoingMessageTop;
                 }
             }
