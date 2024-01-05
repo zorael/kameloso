@@ -455,8 +455,6 @@ Pid exec(
         {
             import std.algorithm.searching : startsWith;
 
-            debug writeln(i, ":", args[i]);
-
             if (sink.data.length) sink.put(' ');
 
             if (args[i].startsWith("-H") ||
