@@ -760,13 +760,13 @@ void messageFiber(Kameloso instance)
             lines = null;
         }
 
-        /++
+        /+
             Timestamp of when the loop started.
          +/
         immutable loopStartTime = MonoTime.currTime;
         static immutable maxReceiveTime = Timeout.messageReadMsecs.msecs;
 
-        /++
+        /+
             Still time enough to act on messages?
          +/
         auto stillOnTime()
@@ -774,7 +774,7 @@ void messageFiber(Kameloso instance)
             return ((MonoTime.currTime - loopStartTime) <= maxReceiveTime);
         }
 
-        /++
+        /+
             Whether or not to continue the loop.
          +/
         auto shouldContinue()
@@ -782,7 +782,7 @@ void messageFiber(Kameloso instance)
             return (next == Next.continue_) && !*instance.abort;
         }
 
-        /++
+        /+
             Priority messages. Process these before normal messages.
          +/
         priorityMessageTop:
@@ -815,7 +815,7 @@ void messageFiber(Kameloso instance)
             continue;
         }
 
-        /++
+        /+
             Normal-priority messages.
          +/
         normalMessageTop:
@@ -848,7 +848,7 @@ void messageFiber(Kameloso instance)
             continue;
         }
 
-        /++
+        /+
             Outgoing messages.
          +/
         outgoingMessageTop:
@@ -873,6 +873,41 @@ void messageFiber(Kameloso instance)
             }
 
             plugin.state.outgoingMessages = null;
+        }
+
+        /+
+            If a plugin wants to be able to send concurrency messages to the
+            main loop, to output messages to the screen and/or send messages to
+            the server, declare version `WantConcurrencyMessageLoop` to enable
+            this block.
+         +/
+        version(WantConcurrencyMessageLoop)
+        {
+            if (!shouldContinue || !stillOnTime)
+            {
+                yield(next);
+                continue;
+            }
+
+            /+
+                Concurrency messages, dead last.
+            +/
+            while (true)
+            {
+                import std.concurrency : receiveTimeout;
+                import std.variant : Variant;
+
+                immutable receivedSomething = receiveTimeout(Duration.zero,
+                    &onThreadMessage,
+                    &eventToServer,
+                    (Variant v) scope
+                    {
+                        logger.error("messageFiber received unexpected Variant: <l>", v);
+                    }
+                );
+
+                if (!receivedSomething || !shouldContinue || !stillOnTime) break;
+            }
         }
 
         yield(next);
@@ -3786,6 +3821,21 @@ auto startBot(Kameloso instance)
             }
 
             scope(exit) if (instance.callgrindRunning) dumpCallgrind();
+        }
+
+        version(WantConcurrencyMessageLoop)
+        {
+            import std.concurrency : thisTid;
+
+            /+
+                If version `WantConcurrencyMessageLoop` is declared, the message
+                fiber will try to receive concurrency messages (after first
+                prioritising other messages). To have the program not assert at
+                the first read, we have to either spawn a new thread using
+                std.concurrency.spawn, *or* call thisTid at some point prior.
+                So just call it and discard the value.
+             +/
+            cast(void)thisTid;
         }
 
         // Start the main loop

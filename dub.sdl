@@ -90,6 +90,7 @@ versions \
     "BenchmarkHTTPRequests" \
     "ThreadedSSLFree" \
     "TraceFibersAndDelegates" \
+    "WantConcurrencyMessageLoop" \
     "Callgrind"
 */
 
@@ -136,6 +137,7 @@ configuration "dev" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "WantConcurrencyMessageLoop" \
         "IncludeHeavyStuff"
         //"Callgrind" \
         //"TwitchPromoteEverywhere" \
@@ -160,6 +162,7 @@ configuration "dev-lowmem" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "WantConcurrencyMessageLoop" \
         "IncludeHeavyStuff"
         //"Callgrind" \
         //"TwitchPromoteEverywhere" \
