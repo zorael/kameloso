@@ -41,15 +41,12 @@ import dialect.defs;
      +/
     @Enabler bool enabled = true;
 
-    version(TwitchSupport)
-    {
-        /++
-            Send oneliners as Twitch replies to the triggering message.
+    /++
+        Send oneliners as Twitch replies to the triggering message.
 
-            Only affects Twitch connections.
-         +/
-        bool onelinersAsReplies = false;
-    }
+        Only affects Twitch connections.
+     +/
+    bool onelinersAsTwitchReplies = false;
 }
 
 
@@ -1043,7 +1040,7 @@ void loadOneliners(OnelinerPlugin plugin)
     Sends a oneliner reply.
 
     If connected to a Twitch server and with version `TwitchSupport` set and
-    [OnelinerSettings.onelinersAsReplies] true, sends the message as a
+    [OnelinerSettings.onelinersAsTwitchReplies] true, sends the message as a
     Twitch [kameloso.messaging.reply|reply].
 
     Params:
@@ -1058,8 +1055,8 @@ void sendOneliner(
 {
     version(TwitchSupport)
     {
-        if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-            (plugin.onelinerSettings.onelinersAsReplies))
+        if ((plugin.onelinerSettings.onelinersAsTwitchReplies) &&
+            (plugin.state.server.daemon == IRCServer.Daemon.twitch))
         {
             return reply(plugin.state, event, message);
         }
