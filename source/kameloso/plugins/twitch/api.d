@@ -1277,7 +1277,8 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
             return QueryResponse.init;
         }
 
-        auto response = plugin.responseBucket[id];
+        //auto response = plugin.responseBucket[id];  // potential range error due to TOCTTOU
+        auto response = plugin.responseBucket.get(id, QueryResponse.init);
 
         if (response == QueryResponse.init)
         {
