@@ -1533,7 +1533,7 @@ void onBusMessage(
     const string header,
     shared Sendable content)
 {
-    import kameloso.thread : Boxed;
+    import kameloso.thread : Boxed, ThreadMessage, boxed;
     import lu.string : advancePast, strippedRight;
 
     // Don't return if disabled, as it blocks us from re-enabling with verb set
@@ -1618,15 +1618,23 @@ void onBusMessage(
             return;
 
         case "fake":
-            import kameloso.thread : ThreadMessage;
             plugin.state.messages ~= ThreadMessage.fakeEvent(slice);
             return;
     }
 
+    case "reconnect":
+        plugin.state.priorityMessages ~= ThreadMessage.reconnect;
+        return;
+
     case "reexec":
-        import kameloso.thread : ThreadMessage, boxed;
         plugin.state.priorityMessages ~= ThreadMessage.reconnect(string.init, boxed(true));
         return;
+
+    case "quit":
+        import kameloso.messaging : quit;
+        return slice.length ?
+            quit(plugin.state, slice) :
+            quit(plugin.state);
 
     case "set":
         import kameloso.thread : CarryingFiber;
@@ -1654,15 +1662,11 @@ void onBusMessage(
         return defer!Payload(plugin, &setSettingBusDg, slice);
 
     case "save":
-        import kameloso.thread : ThreadMessage;
-
         logger.log("Saving configuration to disk.");
         plugin.state.messages ~= ThreadMessage.save;
         return;
 
     case "reload":
-        import kameloso.thread : ThreadMessage;
-
         if (slice.length)
         {
             enum pattern = `Reloading plugin "<i>%s</>".`;
