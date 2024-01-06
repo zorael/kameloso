@@ -1797,7 +1797,6 @@ mixin template IRCPluginImpl(
         Returns:
             The module name of the mixing-in class.
      +/
-    pragma(inline, true)
     override public string name() const pure nothrow @nogc
     {
         static immutable ctfeName = ()
