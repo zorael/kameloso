@@ -58,6 +58,16 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
         wroteSomething = true;
     }
 
+    if (plugin.adminSettings.printEvents)
+    {
+        import kameloso.printing : printObject;
+
+        printObject(event);
+        if (event.sender != IRCUser.init) printObject(event.sender);
+        if (event.target != IRCUser.init) printObject(event.target);
+        wroteSomething = true;
+    }
+
     if (plugin.adminSettings.printBytes)
     {
         import std.string : representation;
@@ -182,6 +192,28 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const ref IRCEvent event)
 
     enum pattern = "Printing bytes: <b>%s<b>";
     immutable message = pattern.format(plugin.adminSettings.printBytes);
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+}
+
+
+// onCommandPrintEventsImpl
+/++
+    Toggles a flag to prettyprint all incoming events, using
+    [kameloso.printing.printObject|printObject].
+
+    This is for debugging purposes.
+ +/
+void onCommandPrintEventsImpl(AdminPlugin plugin, const ref IRCEvent event)
+{
+    import std.conv : text;
+    import std.format : format;
+
+    if (plugin.state.settings.headless) return;
+
+    plugin.adminSettings.printEvents = !plugin.adminSettings.printEvents;
+
+    enum pattern = "Printing events: <b>%s<b>";
+    immutable message = pattern.format(plugin.adminSettings.printEvents);
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 

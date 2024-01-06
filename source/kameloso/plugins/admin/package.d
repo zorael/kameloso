@@ -84,6 +84,12 @@ public:
             of events or not.
          +/
         bool printBytes;
+
+        /++
+            Toggles whether [onAnyEvent] prettyprints each incoming events, using
+            [kameloso.printing.printObject|printObject].
+         +/
+        bool printEvents;
     }
 }
 
@@ -895,6 +901,32 @@ void onCommandPrintBytes(AdminPlugin plugin, const ref IRCEvent event)
 }
 
 
+// onCommandPrintEvents
+/++
+    Toggles a flag to prettyprint all incoming events, using
+    [kameloso.printing.printObject|printObject].
+
+    This is for debugging purposes.
+ +/
+version(Debug)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.admin)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("printevents")
+            .policy(PrefixPolicy.nickname)
+            .description("[debug] Toggles a flag to prettyprint all incoming events.")
+    )
+)
+void onCommandPrintEvents(AdminPlugin plugin, const ref IRCEvent event)
+{
+    onCommandPrintEventsImpl(plugin, event);
+}
+
+
 // onCommandJoin
 /++
     Joins a supplied channel temporarily, without recording as neither a home nor
@@ -1644,6 +1676,12 @@ void onBusMessage(
             plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
             enum pattern = "Printing bytes: <l>%s";
             logger.infof(pattern, plugin.adminSettings.printBytes);
+            return;
+
+        case "printevents":
+            plugin.adminSettings.printEvents = !plugin.adminSettings.printEvents;
+            enum pattern = "Printing events: <l>%s";
+            logger.infof(pattern, plugin.adminSettings.printEvents);
             return;
 
         case "fake":
