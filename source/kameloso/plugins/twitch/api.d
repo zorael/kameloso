@@ -2,7 +2,7 @@
     Functions for accessing the Twitch API. For internal use.
 
     See_Also:
-        [kameloso.plugins.twitch.base],
+        [kameloso.plugins.twitch],
         [kameloso.plugins.twitch.keygen],
         [kameloso.plugins.twitch.common],
         [kameloso.plugins.common.core],
@@ -21,7 +21,7 @@ version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitch.base;
+import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
 
 import dialect.defs;
@@ -67,11 +67,11 @@ struct QueryResponse
 /++
     Retries a passed delegate until it no longer throws or until the hardcoded
     number of retries
-    ([kameloso.plugins.twitch.base.TwitchPlugin.delegateRetries|TwitchPlugin.delegateRetries])
+    ([kameloso.plugins.twitch.TwitchPlugin.delegateRetries|TwitchPlugin.delegateRetries])
     is reached, or forever if `endlessly` is passed.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         dg = Delegate to call.
         async = Whether or not the delegate should be called asynchronously,
             scheduling attempts using [kameloso.plugins.common.delayawait.delay|delay].
@@ -416,7 +416,7 @@ void persistentQuerier(
     ---
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         url = The URL to query.
         caller = Name of the calling function.
         authorisationHeader = Authorisation HTTP header to pass.
@@ -429,7 +429,7 @@ void persistentQuerier(
 
     Returns:
         The [QueryResponse] that was discovered while monitoring the
-        [kameloso.plugins.twitch.base.TwitchPlugin.responseBucket|TwitchPlugin.responseBucket]
+        [kameloso.plugins.twitch.TwitchPlugin.responseBucket|TwitchPlugin.responseBucket]
         as having been received from the server.
 
     Throws:
@@ -708,7 +708,7 @@ auto sendHTTPRequestImpl(
     By following a passed URL, queries Twitch servers for an entity (user or channel).
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         url = The URL to follow.
         caller = Name of the calling function.
 
@@ -796,7 +796,7 @@ in (Fiber.getThis(), "Tried to call `getTwitchData` from outside a fiber")
     It is not updated in realtime, so it doesn't make sense to call this often.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         broadcaster = The broadcaster to look up chatters for.
         caller = Name of the calling function.
 
@@ -884,7 +884,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         authToken = Authorisation token to validate.
         async = Whether or not the validation should be done asynchronously, using fibers.
         caller = Name of the calling function.
@@ -1053,12 +1053,12 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 // getFollowers
 /++
     Fetches a list of all followers of the passed channel and caches them in
-    the channel's entry in [kameloso.plugins.twitch.base.TwitchPlugin.rooms|TwitchPlugin.rooms].
+    the channel's entry in [kameloso.plugins.twitch.TwitchPlugin.rooms|TwitchPlugin.rooms].
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         id = The numerical identifier for the channel.
 
     Returns:
@@ -1108,7 +1108,7 @@ in (id, "Tried to get followers with an unset ID")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         url = The URL to follow.
         caller = Name of the calling function.
 
@@ -1181,13 +1181,13 @@ in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber
     the weighted averages of the old value and said new measurement.
 
     The old value is given a weight of
-    [kameloso.plugins.twitch.base.TwitchPlugin.QueryConstants.averagingWeight|averagingWeight]
+    [kameloso.plugins.twitch.TwitchPlugin.QueryConstants.averagingWeight|averagingWeight]
     and the new measurement a weight of 1. Additionally the measurement is padded by
-    [kameloso.plugins.twitch.base.TwitchPlugin.QueryConstants.measurementPadding|measurementPadding]
+    [kameloso.plugins.twitch.TwitchPlugin.QueryConstants.measurementPadding|measurementPadding]
     to be on the safe side.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         responseMsecs = The new measurement of how many milliseconds the last
             query took to complete.
  +/
@@ -1225,7 +1225,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     Common code to wait for a query response.
 
     Merely spins and monitors the shared
-    [kameloso.plugins.twitch.base.TwitchPlugin.responseBucket|TwitchPlugin.responseBucket]
+    [kameloso.plugins.twitch.TwitchPlugin.responseBucket|TwitchPlugin.responseBucket]
     associative array for when a response has arrived, and then returns it.
 
     Times out after a hardcoded [kameloso.constants.Timeout.httpGET|Timeout.httpGET]
@@ -1246,7 +1246,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     ---
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         id = Numerical ID to use as key when storing the response in the bucket AA.
 
     Returns:
@@ -1347,7 +1347,7 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         givenName = Name of user to look up.
         id = Optional numeric ID of user to look up, if no `givenName` given.
         searchByDisplayName = Whether or not to also attempt to look up `givenName`
@@ -1436,7 +1436,7 @@ in ((givenName.length || id),
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         name = Name of game to look up.
         id = Numerical ID of game to look up.
 
@@ -1488,7 +1488,7 @@ in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor ga
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to modify.
         title = Optional channel title to set.
         caller = Name of the calling function.
@@ -1512,7 +1512,7 @@ in (channelName.length, "Tried to change a the channel title with an empty chann
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to modify.
         gameID = Optional game ID to set the channel as playing.
         caller = Name of the calling function.
@@ -1536,7 +1536,7 @@ in (gameID, "Tried to set the channel game with an empty channel name string")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to modify.
         title = Optional channel title to set.
         gameID = Optional game ID to set the channel as playing.
@@ -1607,7 +1607,7 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to fetch information about.
  +/
 auto getChannel(
@@ -1676,7 +1676,7 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
     where such exist.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to return token for.
 
     Returns:
@@ -1713,7 +1713,7 @@ out (token; token.length, "`getBroadcasterAuthorisation` returned an empty strin
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to run commercials for.
         lengthString = Length to play the commercial for, as a string.
         caller = Name of the calling function.
@@ -2062,7 +2062,7 @@ public:
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to fetch polls for.
         pollIDString = ID of a specific poll to get.
         caller = Name of the calling function.
@@ -2173,7 +2173,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to create the poll in.
         title = Poll title.
         durationString = How long the poll should run for in seconds (as a string).
@@ -2288,7 +2288,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel whose poll to end.
         pollID = ID of the specific poll to end.
         terminate = If set, ends the poll by putting it in a `"TERMINATED"` state.
@@ -2382,7 +2382,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
     counting chatters.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         caller = String name of calling function.
 
     Returns:
@@ -2485,11 +2485,11 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
     Fetches information about an ongoing stream.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         loginName = Account name of user whose stream to fetch information of.
 
     Returns:
-        A [kameloso.plugins.twitch.base.TwitchPlugin.Room.Stream|Room.Stream]
+        A [kameloso.plugins.twitch.TwitchPlugin.Room.Stream|Room.Stream]
         populated with all (relevant) information.
  +/
 auto getStream(TwitchPlugin plugin, const string loginName)
@@ -2593,7 +2593,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to fetch subscribers of.
         totalOnly = Whether or not to return all subscribers or only one stub
             entry with the total number of subscribers in its `.total` member.
@@ -2762,7 +2762,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         login = Login name of other streamer to prepare a shoutout for.
 
     Returns:
@@ -2844,7 +2844,7 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
     Doesn't require broadcaster-level authorisation; the normal bot token is enough.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to delete message(s) in.
         messageID = ID of message to delete. Pass an empty string to delete all messages.
         caller = Name of the calling function.
@@ -2896,7 +2896,7 @@ in (channelName.length, "Tried to delete a message without providing a channel n
     Times out a user in a channel.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to timeout a user in.
         userID = Twitch ID of user to timeout.
         durationSeconds = Duration of timeout in seconds.
@@ -3015,7 +3015,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         userID = Twitch ID of user to send whisper to.
         unescapedMessage = Message to send.
         caller = Name of the calling function.

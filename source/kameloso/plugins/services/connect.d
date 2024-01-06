@@ -1424,7 +1424,7 @@ void onWelcome(ConnectService service)
 
 // onSelfnickSuccessOrFailure
 /++
-    Resets [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin] squelching upon a
+    Resets [kameloso.plugins.printer.PrinterPlugin|PrinterPlugin] squelching upon a
     successful or failed nick change. This so as to be squelching as little as possible.
  +/
 version(WithPrinterPlugin)

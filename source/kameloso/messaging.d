@@ -182,7 +182,7 @@ unittest
 
     If an [dialect.defs.IRCEvent|IRCEvent] of type [dialect.defs.IRCEvent.Type.QUERY|QUERY]
     is passed *and* we're connected to a Twitch server *and* the
-    [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin] is compiled in,
+    [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin] is compiled in,
     it will send a bus message to have the reply be sent as a whisper instead.
 
     Params:

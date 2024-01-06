@@ -162,7 +162,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
     If we're connected to Twitch, we use [kameloso.messaging.reply] instead to
     (possibly) send the message as a whisper, provided the
-    [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin] is compiled in.
+    [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin] is compiled in.
 
     Params:
         plugin = The current [HelpPlugin].

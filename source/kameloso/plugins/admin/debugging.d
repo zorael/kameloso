@@ -3,11 +3,11 @@
     For internal use.
 
     The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
-    as the [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin], but these implementation
+    as the [kameloso.plugins.admin.AdminPlugin|AdminPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
 
     See_Also:
-        [kameloso.plugins.admin.base]
+        [kameloso.plugins.admin]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -23,7 +23,7 @@ version(Debug):
 
 private:
 
-import kameloso.plugins.admin.base : AdminPlugin;
+import kameloso.plugins.admin : AdminPlugin;
 
 import kameloso.messaging;
 import dialect.defs;
@@ -37,11 +37,11 @@ package:
     Prints incoming events to the local terminal, in forms depending on
     which flags have been set with bot commands.
 
-    If [kameloso.plugins.admin.base.AdminPlugin.printRaw|AdminPlugin.printRaw] is set by way of
-    invoking [kameloso.plugins.admin.base.onCommandPrintRaw|onCommandPrintRaw], prints all incoming server strings.
+    If [kameloso.plugins.admin.AdminPlugin.printRaw|AdminPlugin.printRaw] is set by way of
+    invoking [kameloso.plugins.admin.onCommandPrintRaw|onCommandPrintRaw], prints all incoming server strings.
 
-    If [kameloso.plugins.admin.base.AdminPlugin.printBytes|AdminPlugin.printBytes] is set by way of
-    invoking [kameloso.plugins.admin.base.onCommandPrintBytes|onCommandPrintBytes], prints all incoming server strings byte by byte.
+    If [kameloso.plugins.admin.AdminPlugin.printBytes|AdminPlugin.printBytes] is set by way of
+    invoking [kameloso.plugins.admin.onCommandPrintBytes|onCommandPrintBytes], prints all incoming server strings byte by byte.
  +/
 void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
@@ -111,7 +111,7 @@ void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandShowUsersImpl
 /++
-    Prints out the current `users` array of the [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin]'s
+    Prints out the current `users` array of the [kameloso.plugins.admin.AdminPlugin|AdminPlugin]'s
     [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] to the local terminal.
  +/
 void onCommandShowUsersImpl(AdminPlugin plugin)

@@ -2,7 +2,7 @@
     Bits and bobs to get Google API credentials for YouTube playlist management.
 
     See_Also:
-        [kameloso.plugins.twitch.base],
+        [kameloso.plugins.twitch],
         [kameloso.plugins.twitch.keygen],
         [kameloso.plugins.twitch.api]
 
@@ -19,7 +19,7 @@ version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitch.base;
+import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
 
 import kameloso.common : logger;
@@ -34,7 +34,7 @@ import core.thread : Fiber;
     to obtain an access key and a refresh OAuth key.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
 
     Throws:
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
@@ -350,13 +350,14 @@ then finally <i>Allow</>.`;
 
 // addVideoToYouTubePlaylist
 /++
-    Adds a video to the YouTube playlist whose ID is stored in the passed [Credentials].
+    Adds a video to the YouTube playlist whose ID is stored in the passed
+    [kameloso.plugins.twitch.Credentials|Credentials].
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        creds = [Credentials] aggregate.
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
+        creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
         videoID = YouTube video ID of the video to add.
         recursing = Whether or not the function is recursing into itself.
 
@@ -552,7 +553,7 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = [Credentials] aggregate.
+        creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
         code = Google authorisation code.
 
     Throws:
@@ -614,7 +615,7 @@ void getGoogleTokens(HttpClient client, ref Credentials creds, const string code
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = [Credentials] aggregate.
+        creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
 
     Throws:
         [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
@@ -670,7 +671,7 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = [Credentials] aggregate.
+        creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
 
     Returns:
         The server [std.json.JSONValue|JSONValue] response.

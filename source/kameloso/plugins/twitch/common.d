@@ -2,7 +2,7 @@
     Helper functions for song request modules.
 
     See_Also:
-        [kameloso.plugins.twitch.base],
+        [kameloso.plugins.twitch],
         [kameloso.plugins.twitch.api],
         [kameloso.plugins.twitch.google],
         [kameloso.plugins.twitch.spotify]
@@ -20,7 +20,7 @@ version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitch.base : TwitchPlugin;
+import kameloso.plugins.twitch : TwitchPlugin;
 import kameloso.common : logger;
 import std.datetime.systime : SysTime;
 import std.typecons : Flag, No, Yes;

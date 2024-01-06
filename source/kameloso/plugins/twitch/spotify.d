@@ -2,7 +2,7 @@
     Bits and bobs to get Spotify API credentials for playlist management.
 
     See_Also:
-        [kameloso.plugins.twitch.base],
+        [kameloso.plugins.twitch],
         [kameloso.plugins.twitch.keygen],
         [kameloso.plugins.twitch.api],
         [kameloso.plugins.common.core],
@@ -21,7 +21,7 @@ version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitch.base;
+import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
 
 import kameloso.common : logger;
@@ -36,7 +36,7 @@ import core.thread : Fiber;
     to obtain an access key and a refresh OAuth key.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
 
     Throws:
         [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
@@ -324,7 +324,7 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = [Credentials] aggregate.
+        creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
         code = Spotify authorisation code.
 
     Throws:
@@ -400,7 +400,7 @@ void getSpotifyTokens(HttpClient client, ref Credentials creds, const string cod
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = [Credentials] aggregate.
+        creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
 
     Throws:
         [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
@@ -472,7 +472,7 @@ void refreshSpotifyToken(HttpClient client, ref Credentials creds)
     and client secret.
 
     Params:
-        creds = [Credentials] aggregate.
+        creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
 
     Returns:
         A string to be used as a `Basic` authorisation token.
@@ -489,13 +489,14 @@ auto getSpotifyBase64Authorization(const Credentials creds)
 
 // addTrackToSpotifyPlaylist
 /++
-    Adds a track to the Spotify playlist whose ID is stored in the passed [Credentials].
+    Adds a track to the Spotify playlist whose ID is stored in the passed
+    [kameloso.plugins.twitch.Credentials|Credentials].
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        creds = [Credentials] aggregate.
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
+        creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
         trackID = Spotify track ID of the track to add.
         recursing = Whether or not the function is recursing into itself.
 
@@ -629,7 +630,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
     Fetches information about a Spotify track by its ID and returns the JSON response.
 
     Params:
-        creds = [Credentials] aggregate.
+        creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
         trackID = Spotify track ID string.
 
     Returns:
@@ -697,7 +698,7 @@ package auto getSpotifyTrackByID(const Credentials creds, const string trackID)
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = [Credentials] aggregate.
+        creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
 
     Returns:
         The server [std.json.JSONValue|JSONValue] response.

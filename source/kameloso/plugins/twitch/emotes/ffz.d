@@ -17,7 +17,7 @@ version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitch.base : TwitchPlugin;
+import kameloso.plugins.twitch : TwitchPlugin;
 import core.thread : Fiber;
 
 package:
@@ -28,7 +28,7 @@ package:
     Fetches FrankerFaceZ emotes for a given channel.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
         id = Numeric Twitch user/channel ID.
@@ -207,7 +207,7 @@ in (id, "Tried to get FFZ emotes with an unset ID")
     Fetches global FrankerFaceZ emotes.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
         _ = Unused, for signature compatibility with [getFFZEmotes].
