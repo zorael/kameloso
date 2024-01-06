@@ -644,7 +644,7 @@ private:
     version(TwitchSupport)
     override public bool isEnabled() const pure nothrow @nogc
     {
-        return (state.server.daemon != IRCServer.Daemon.twitch) && automodeSettings.enabled;
+        return automodeSettings.enabled && (state.server.daemon != IRCServer.Daemon.twitch);
     }
 
     mixin IRCPluginImpl;

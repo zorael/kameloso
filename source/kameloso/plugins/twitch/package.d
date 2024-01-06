@@ -4500,20 +4500,25 @@ package:
         and inject a server check, so this plugin only works on Twitch, in addition
         to doing nothing when [TwitchSettings.enabled] is false.
 
+        If a keygen is requested, this overrides all other checks.
+
         Returns:
             `true` if this plugin should react to events; `false` if not.
      +/
     override public bool isEnabled() const pure nothrow @nogc
     {
+        immutable wantKeygen =
+            (twitchSettings.keygen ||
+            twitchSettings.superKeygen ||
+            twitchSettings.googleKeygen ||
+            twitchSettings.youtubeKeygen ||
+            twitchSettings.spotifyKeygen);
+
         return (
-            (state.server.daemon == IRCServer.Daemon.twitch) ||
-            (state.server.daemon == IRCServer.Daemon.unset)) &&
-            (twitchSettings.enabled ||
-                twitchSettings.keygen ||
-                twitchSettings.superKeygen ||
-                twitchSettings.googleKeygen ||
-                twitchSettings.youtubeKeygen ||
-                twitchSettings.spotifyKeygen);
+            wantKeygen ||  // Always enabled if we want to generate keys
+            (twitchSettings.enabled &&
+                (state.server.daemon == IRCServer.Daemon.twitch) ||
+                (state.server.daemon == IRCServer.Daemon.unset)));
     }
 
     mixin IRCPluginImpl;
