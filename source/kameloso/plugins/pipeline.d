@@ -447,7 +447,7 @@ auto readFIFO(PipelinePlugin plugin)
 
             plugin.state.messages ~= ThreadMessage.busMessage(header, boxed(line));
         }
-        else if (line[0] == '>')
+        else if (line[0] == '<')
         {
             plugin.state.messages ~= ThreadMessage.fakeEvent(line[1..$]);
         }
