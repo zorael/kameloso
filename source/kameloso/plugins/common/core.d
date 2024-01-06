@@ -1800,27 +1800,32 @@ mixin template IRCPluginImpl(
     pragma(inline, true)
     override public string name() const pure nothrow @nogc
     {
-        import std.algorithm.searching : startsWith;
-
-        enum modulePrefix = "kameloso.plugins.";
-
-        static if (module_.startsWith(modulePrefix))
+        static immutable ctfeName = ()
         {
-            import std.string : indexOf;
+            import std.algorithm.searching : startsWith;
 
-            string slice = module_[modulePrefix.length..$];  // mutable
-            immutable dotPos = slice.indexOf('.');
-            if (dotPos == -1) return slice;
-            return (slice[dotPos+1..$] == "base") ? slice[0..dotPos] : slice[dotPos+1..$];
-        }
-        else
-        {
-            import std.format : format;
+            enum modulePrefix = "kameloso.plugins.";
 
-            enum pattern = "Plugin module `%s` is not under `kameloso.plugins`";
-            enum message = pattern.format(module_);
-            static assert(0, message);
-        }
+            static if (module_.startsWith(modulePrefix))
+            {
+                import std.string : indexOf;
+
+                string slice = module_[modulePrefix.length..$];  // mutable
+                immutable dotPos = slice.indexOf('.');
+                if (dotPos == -1) return slice;
+                return (slice[dotPos+1..$] == "base") ? slice[0..dotPos] : slice[dotPos+1..$];
+            }
+            else
+            {
+                import std.format : format;
+
+                enum pattern = "Plugin module `%s` is not under `kameloso.plugins`";
+                enum message = pattern.format(module_);
+                static assert(0, message);
+            }
+        }();
+
+        return ctfeName;
     }
 
     // channelSpecificCommands
