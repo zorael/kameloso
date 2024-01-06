@@ -159,7 +159,7 @@ void onCommandPrintRawImpl(AdminPlugin plugin, const ref IRCEvent event)
 
     plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
 
-    enum pattern = "Printing all: <b>%s<b>";
+    enum pattern = "Printing raw: <b>%s<b>";
     immutable message = pattern.format(plugin.adminSettings.printRaw);
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }

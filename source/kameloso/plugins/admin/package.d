@@ -1636,14 +1636,19 @@ void onBusMessage(
 
         case "printraw":
             plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
+            enum pattern = "Printing raw: <l>%s";
+            logger.infof(pattern, plugin.adminSettings.printRaw);
             return;
 
         case "printbytes":
             plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
+            enum pattern = "Printing bytes: <l>%s";
+            logger.infof(pattern, plugin.adminSettings.printBytes);
             return;
 
         case "fake":
             plugin.state.messages ~= ThreadMessage.fakeEvent(slice);
+            logger.info("Faking event.");
             return;
     }
 
@@ -1687,7 +1692,7 @@ void onBusMessage(
         return defer!Payload(plugin, &setSettingBusDg, slice);
 
     case "save":
-        logger.log("Saving configuration to disk.");
+        logger.info("Saving configuration to disk.");
         plugin.state.messages ~= ThreadMessage.save;
         return;
 
@@ -1695,11 +1700,11 @@ void onBusMessage(
         if (slice.length)
         {
             enum pattern = `Reloading plugin "<i>%s</>".`;
-            logger.logf(pattern, slice);
+            logger.infof(pattern, slice);
         }
         else
         {
-            logger.log("Reloading plugins.");
+            logger.info("Reloading plugins.");
         }
 
         plugin.state.messages ~= ThreadMessage.reload(slice);
