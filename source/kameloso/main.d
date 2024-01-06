@@ -16,6 +16,8 @@
  +/
 module kameloso.main;
 
+debug version = Debug;
+
 private:
 
 import kameloso.common : logger;
@@ -458,8 +460,11 @@ void messageFiber(Kameloso instance)
                 break;
 
             case fakeEvent:
-                import std.datetime.systime : Clock;
-                processLineFromServer(instance, message.content, Clock.currTime.toUnixTime());
+                version(Debug)
+                {
+                    import std.datetime.systime : Clock;
+                    processLineFromServer(instance, message.content, Clock.currTime.toUnixTime());
+                }
                 break;
 
             case teardown:
