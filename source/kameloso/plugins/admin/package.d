@@ -1442,8 +1442,9 @@ void onCommandReconnect(AdminPlugin plugin, const ref IRCEvent event)
     import lu.string : stripped;
 
     logger.warning("Reconnecting upon administrator request.");
-    plugin.state.priorityMessages ~=
-        ThreadMessage.reconnect(event.content.stripped, boxed(false));
+    auto message = ThreadMessage.reconnect(event.content.stripped, boxed(false));
+    plugin.state.priorityMessages ~= message;
+
 }
 
 
@@ -1470,8 +1471,8 @@ void onCommandReexec(AdminPlugin plugin, const ref IRCEvent event)
     import kameloso.thread : ThreadMessage, boxed;
     import lu.string : stripped;
 
-    plugin.state.priorityMessages ~=
-        ThreadMessage.reconnect(event.content.stripped, boxed(true));
+    auto message = ThreadMessage.reconnect(event.content.stripped, boxed(true));
+    plugin.state.priorityMessages ~= message;
 }
 
 

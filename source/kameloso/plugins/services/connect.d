@@ -1406,8 +1406,9 @@ void onWelcome(ConnectService service)
                 version(WithPrinterPlugin)
                 {
                     import kameloso.thread : ThreadMessage, boxed;
-                    service.state.messages ~=
-                        ThreadMessage.busMessage("printer", boxed(squelchVerb));
+                    auto threadMessage = ThreadMessage.busMessage("printer", boxed(squelchVerb));
+                    service.state.messages ~= threadMessage;
+
                 }
 
                 enum properties = (Message.Property.quiet | Message.Property.background);
@@ -1435,8 +1436,9 @@ version(WithPrinterPlugin)
 void onSelfnickSuccessOrFailure(ConnectService service)
 {
     import kameloso.thread : ThreadMessage, boxed;
-    service.state.messages ~=
-        ThreadMessage.busMessage("printer", boxed("unsquelch " ~ service.state.client.origNickname));
+    auto message = ThreadMessage.busMessage("printer", boxed("unsquelch " ~ service.state.client.origNickname));
+    service.state.messages ~= message;
+
 }
 
 
