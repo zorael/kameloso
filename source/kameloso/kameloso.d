@@ -855,8 +855,10 @@ public:
             }
         }
 
-        return channels.keys.length ?
-            channels.keys :
+        auto keys = channel.keys;
+
+        return keys.length ?
+            keys :
             [ cast(string)MagicStrings.emptyArrayMarker ];
     }
 
