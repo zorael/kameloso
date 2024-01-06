@@ -162,7 +162,7 @@ unittest
             Also those annotated [lu.uda.Hidden|Hidden].
         things = Variadic list of aggregate objects to enumerate.
  +/
-void printObjects(Flag!"all" all = No.all, Things...)(auto ref Things things)
+void printObjects(Flag!"all" all = No.all, Things...)(const auto ref Things things)
 {
     import kameloso.constants : BufferSize;
     import std.array : Appender;
@@ -296,7 +296,7 @@ void formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
     (auto ref Sink sink,
     const Flag!"brightTerminal" bright,
-    auto ref Things things)
+    const auto ref Things things)
 {
     import std.meta : allSatisfy;
     import std.traits : isAggregateType;
@@ -998,7 +998,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Thing)
     (auto ref Sink sink,
     const Flag!"brightTerminal" bright,
-    auto ref Thing thing,
+    const auto ref Thing thing,
     const uint typewidth,
     const uint namewidth)
 {
@@ -1185,8 +1185,8 @@ private void formatObjectImpl(Flag!"all" all = No.all,
 
                 static if (is(Thing == struct) && is(T == struct))
                 {
-                    immutable isInit = (__traits(getMember, thing, memberstring) ==
-                        __traits(getMember, Thing.init, memberstring));
+                    const constTemporary = __traits(getMember, Thing.init, memberstring);
+                    immutable isInit = (__traits(getMember, thing, memberstring) == constTemporary);
                     args.initText = isInit ?
                         " (init)" :
                         string.init;
@@ -1509,9 +1509,9 @@ private void formatObjectImpl(Flag!"all" all = No.all,
     Returns:
         String with the object formatted, as per the passed arguments.
  +/
-string formatObjects(Flag!"all" all = No.all,
-    Flag!"coloured" coloured = Yes.coloured, Things...)
-    (const Flag!"brightTerminal" bright, auto ref Things things) pure
+string formatObjects(Flag!"all" all = No.all, Flag!"coloured" coloured = Yes.coloured, Things...)
+    (const Flag!"brightTerminal" bright,
+    const auto ref Things things) pure
 if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))  // must be a constraint
 {
     import kameloso.constants : BufferSize;
