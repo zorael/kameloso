@@ -1162,6 +1162,30 @@ void onCommandSummary(AdminPlugin plugin)
 }
 
 
+// onCommandFake
+/++
+    Fakes a string as having been sent by the server.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.admin)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("fake")
+            .policy(PrefixPolicy.nickname)
+            .description("Fakes a string as having been sent by the server.")
+    )
+)
+version(Debug)
+void onCommandFake(AdminPlugin plugin, const ref IRCEvent event)
+{
+    import kameloso.thread : ThreadMessage;
+    plugin.state.messages ~= ThreadMessage.fakeEvent(event.content);
+}
+
+
 // onCommandCycle
 /++
     Cycles (parts and immediately rejoins) a channel.
