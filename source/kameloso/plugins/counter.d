@@ -342,14 +342,14 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 
         void addCounterDg()
         {
-            auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
-            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+            auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+            assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
             IRCPlugin.CommandMetadata[string][string] aa = thisFiber.payload[0];
             if (triggerConflicts(aa)) return;
 
             // Get channel AAs
-            plugin.state.specialRequests ~= specialRequest(event.channel, thisFiber);
+            defer(plugin, thisFiber, event.channel);
             Fiber.yield();
 
             IRCPlugin.CommandMetadata[string][string] channelSpecificAA = thisFiber.payload[0];
@@ -364,7 +364,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
             chan(plugin.state, event.channel, message);
         }
 
-        plugin.state.specialRequests ~= specialRequest!Payload(string.init, &addCounterDg);
+        defer!Payload(plugin, &addCounterDg);
         break;
 
     case "remove":
@@ -712,10 +712,8 @@ auto formatMessage(
     const long step = long.init)
 {
     import kameloso.plugins.common.misc : nameOf;
-    import kameloso.string : replaceRandom;
+    import kameloso.string : replaceFromAA, replaceRandom;
     import std.conv : to;
-    import std.array : replace;
-    import std.math : abs;
 
     auto signedStep()
     {
@@ -725,29 +723,37 @@ auto formatMessage(
             step.to!string;
     }
 
-    string toReturn = pattern  // mutable
-        .replace("$step", abs(step).to!string)
-        .replace("$signedstep", signedStep())
-        .replace("$count", counter.count.to!string)
-        .replace("$word", counter.word)
-        .replace("$channel", event.channel)
-        .replace("$senderNickname", event.sender.nickname)
-        .replace("$sender", nameOf(event.sender))
-        .replace("$botNickname", plugin.state.client.nickname)
-        .replace("$bot", nameOf(plugin, plugin.state.client.nickname))
-        .replaceRandom();
+    static @safe string delegate()[string] aa;
 
-    version(TwitchSupport)
+    if (!aa.length)
     {
+        import std.math : abs;
+
+        aa =
+        [
+            "$step"        : () => abs(step).to!string,
+            "$signedstep"  : () => signedStep(),
+            "$count"       : () => counter.count.to!string,
+            "$word"        : () => counter.word,
+            "$channel"     : () => event.channel,
+            "$senderNickname" : () => event.sender.nickname,
+            "$sender"      : () => nameOf(event.sender),
+            "$botNickname" : () => plugin.state.client.nickname,
+            "$bot"         : () => nameOf(plugin, plugin.state.client.nickname),
+        ];
+
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            toReturn = toReturn
-                .replace("$streamerNickname", event.channel[1..$])
-                .replace("$streamer", nameOf(plugin, event.channel[1..$]));
+            aa["$streamerNickname"] = () => event.channel[1..$];
+            aa["$streamer"] = () => nameOf(plugin, event.channel[1..$]);
         }
+
+        aa.rehash();
     }
 
-    return toReturn;
+    return pattern
+        .replaceFromAA(aa)
+        .replaceRandom();
 }
 
 
@@ -802,6 +808,10 @@ void saveCounters(CounterPlugin plugin)
 void loadCounters(CounterPlugin plugin)
 {
     import lu.json : JSONStorage;
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
 
     JSONStorage json;
     json.load(plugin.countersFile);

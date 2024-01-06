@@ -34,7 +34,7 @@ package:
 
 // LogLineBuffer
 /++
-    A struct containing lines to write to a log file when next committing such.
+    A struct containing lines to write to a log file when next flushing such.
 
     This is only relevant if
     [kameloso.plugins.printer.base.PrinterSettings.bufferedWrites|PrinterSettings.bufferedWrites]
@@ -74,6 +74,11 @@ public:
     }
 
     /++
+        When this buffer was created.
+     +/
+    SysTime creationTime;
+
+    /++
         Constructor taking a [std.datetime.systime.SysTime|SysTime], to save as the date
         the buffer was created.
      +/
@@ -89,6 +94,7 @@ public:
         }
 
         this.dir = dir;
+        this.creationTime = now;
         this.file = buildNormalizedPath(this.dir, yyyyMMOf(now) ~ ".log");
     }
 
@@ -119,12 +125,33 @@ public:
     populating arrays of lines to be written in bulk, once in a while.
 
     See_Also:
-        [commitAllLogsImpl]
+        [flushAllLogsImpl]
  +/
 void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.printer.formatting : formatMessageMonochrome;
+    import std.algorithm.searching : canFind;
     import std.typecons : Flag, No, Yes;
+
+    /++
+        Ensures a directory exists, creating it if it doesn't and return success.
+     +/
+    static auto ensureDir(const string dir)
+    {
+        import std.file : exists, isDir, mkdirRecurse;
+
+        if (!dir.exists)
+        {
+            mkdirRecurse(dir);
+            return true;
+        }
+        else if (!dir.isDir)
+        {
+            // Something is in the way of the log's directory
+            return false;
+        }
+        return true;
+    }
 
     /++
         Write buffered lines.
@@ -134,12 +161,16 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         const ref IRCEvent event,
         const string key,
         const string givenPath = string.init,
-        const Flag!"extendPath" extendPath = Yes.extendPath,
+        const Flag!"intoSubdir" intoSubdir = Yes.intoSubdir,
         const Flag!"raw" raw = No.raw,
         const Flag!"errors" errors = No.errors)
     {
         import std.exception : ErrnoException;
         import std.file : FileException;
+        import std.stdio : File;
+
+        enum separator80cLF = "/////////////////////////////////////" ~
+            "///////////////////////////////////////////\n";
 
         immutable path = givenPath.length ? givenPath.escapedPath : key.escapedPath;
 
@@ -150,40 +181,51 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
              +/
             static void insertDatestamp(const LogLineBuffer* buffer)
             {
+                import std.file : exists;
+
                 assert(buffer, "Tried to add datestamp to null buffer");
                 assert((buffer.file.length && buffer.dir.length),
                     "Tried to add datestamp to uninitialised buffer");
 
-                import std.file : exists, isDir, mkdirRecurse;
-                import std.stdio : File;
-
-                if (!buffer.dir.exists)
-                {
-                    mkdirRecurse(buffer.dir);
-                }
-                else if (!buffer.dir.isDir)
-                {
-                    // Something is in the way of the log's directory
-                    return;
-                }
+                if (!ensureDir(buffer.dir)) return;
 
                 // Insert an empty space if the file exists, to separate old content from new
                 // Cache .exists, because opening the file creates it
                 // (and thus a non-existing file would still get the spacing writeln)
                 immutable fileExists = buffer.file.exists;
-                File file = File(buffer.file, "a");
+                auto file = File(buffer.file, "a");
                 if (fileExists) file.writeln();
                 file.writeln(datestamp);
-                //file.flush();
+            }
+
+            /++
+                Returns a simple representation of a user.
+
+                Only necessary outside of version IncludeHeavyStuff.
+             +/
+            version(IncludeHeavyStuff) {}
+            else
+            static auto getSimpleUserLine(const IRCUser user)
+            {
+                import lu.conv : Enum;
+                import std.conv : text;
+
+                return text(
+                    user.nickname, '!',
+                    user.ident, '@',
+                    user.address, ':',
+                    user.account, " -- ",
+                    Enum!(IRCUser.Class).toString(user.class_));//, "\n\n");
             }
 
             if (!errors)
             {
+                // Normal event
                 auto buffer = key in plugin.buffers;
 
                 if (!buffer)
                 {
-                    if (extendPath)
+                    if (intoSubdir)
                     {
                         import std.datetime.systime : Clock;
                         import std.path : buildNormalizedPath;
@@ -200,67 +242,48 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     if (!raw) insertDatestamp(buffer);  // New buffer, new "day", except if raw
                 }
 
+                if (!ensureDir(buffer.dir)) return;
+
                 if (!raw)
                 {
                     // Normal buffers
+                    scope(exit)plugin.linebuffer.clear();
+
+                    formatMessageMonochrome(
+                        plugin,
+                        plugin.linebuffer,
+                        event,
+                        No.bellOnMention,
+                        No.bellOnError);
+
                     if (plugin.printerSettings.bufferedWrites)
                     {
-                        // Normal log
-                        formatMessageMonochrome(
-                            plugin,
-                            plugin.linebuffer,
-                            event,
-                            No.bellOnMention,
-                            No.bellOnError);
-                        buffer.lines ~= plugin.linebuffer.data.idup;
+                        buffer.lines.put(plugin.linebuffer.data.idup);
                         plugin.linebuffer.clear();
                     }
                     else
                     {
-                        import std.file : exists, isDir, mkdirRecurse;
-                        import std.stdio : File;
-
-                        if (!buffer.dir.exists)
-                        {
-                            mkdirRecurse(buffer.dir);
-                        }
-                        else if (!buffer.dir.isDir)
-                        {
-                            // Something is in the way of the log's directory
-                            return;
-                        }
-
-                        formatMessageMonochrome(
-                            plugin,
-                            plugin.linebuffer,
-                            event,
-                            No.bellOnMention,
-                            No.bellOnError);
-                        scope(exit) plugin.linebuffer.clear();
-
                         auto file = File(buffer.file, "a");
-                        file.writeln(plugin.linebuffer);
+                        file.writeln(plugin.linebuffer.data);
                     }
                 }
-                else
+                else /*if (raw)*/
                 {
                     // Raw log
                     if (plugin.printerSettings.bufferedWrites)
                     {
-                        buffer.lines ~= event.raw;
+                        buffer.lines.put(event.raw);
                     }
                     else
                     {
-                        import std.stdio : File;
-
                         auto file = File(buffer.file, "a");
                         file.writeln(event.raw);
-                        //file.flush();
                     }
                 }
             }
-            else
+            else /*if (errors)*/
             {
+                // Error event
                 auto errBuffer = key in plugin.buffers;
 
                 if (!errBuffer)
@@ -270,71 +293,86 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     insertDatestamp(errBuffer);  // New buffer, new "day"
                 }
 
+                if (!ensureDir(errBuffer.dir)) return;
+
                 if (plugin.printerSettings.bufferedWrites)
                 {
                     version(IncludeHeavyStuff)
                     {
                         import kameloso.printing : formatObjects;
 
+                        /+
+                            Use the plugin's linebuffer as a scratch buffer to
+                            construct the errors in.
+
+                            Ideally we wouldn't use the linebuffer here and
+                            instead keep an errlinebuffer around, but this works.
+                        +/
+
+                        scope(failure) plugin.linebuffer.clear();
+
                         // Adds some 220 mb to compilation memory usage
-                        errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
-                            (No.brightTerminal, event);
+                        formatObjects!(Yes.all, No.coloured)
+                            (plugin.linebuffer,
+                            No.brightTerminal,
+                            event);
+
+                        errBuffer.lines.put(plugin.linebuffer.data.idup);
 
                         if (event.sender.nickname.length || event.sender.address.length)
                         {
-                            errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
-                                (No.brightTerminal, event.sender);
+                            plugin.linebuffer.clear();
+
+                            formatObjects!(Yes.all, No.coloured)
+                                (plugin.linebuffer,
+                                No.brightTerminal,
+                                event.sender);
+
+                            errBuffer.lines.put(plugin.linebuffer.data.idup);
                         }
 
                         if (event.target.nickname.length || event.target.address.length)
                         {
-                            errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
-                                (No.brightTerminal, event.target);
+                            plugin.linebuffer.clear();
+
+                            formatObjects!(Yes.all, No.coloured)
+                                (plugin.linebuffer,
+                                No.brightTerminal,
+                                event.target);
+
+                            errBuffer.lines.put(plugin.linebuffer.data.idup);
                         }
                     }
-                    else
+                    else /*version (!IncludeHeavyStuff)*/
                     {
-                        import lu.conv : Enum;
                         import std.conv : text;
 
-                        errBuffer.lines ~= text('@', event.tags, ' ', event.raw);
+                        errBuffer.lines.put(text('@', event.tags, ' ', event.raw));
 
                         if (event.sender.nickname.length || event.sender.address.length)
                         {
-                            errBuffer.lines ~= text(
-                                event.sender.nickname, '!',
-                                event.sender.ident, '@',
-                                event.sender.address, ':',
-                                event.sender.account, " -- ",
-                                Enum!(IRCUser.Class).toString(event.sender.class_), "\n\n");
+                            errBuffer.lines.put(getSimpleUserLine(event.sender));
                         }
 
                         if (event.target.nickname.length || event.target.address.length)
                         {
-                            errBuffer.lines ~= text(
-                                event.target.nickname, '!',
-                                event.target.ident, '@',
-                                event.target.address, ':',
-                                event.target.account, " -- ",
-                                Enum!(IRCUser.Class).toString(event.target.class_), "\n\n");
+                            errBuffer.lines.put(getSimpleUserLine(event.target));
                         }
                     }
 
-                    errBuffer.lines ~= "/////////////////////////////////////" ~
-                        "///////////////////////////////////////////\n";  // 80c
+                    errBuffer.lines.put(separator80cLF);
                 }
-                else
+                else /*if (plugin.printerSettings.bufferedWrites)*/
                 {
-                    import std.stdio : File;
-
                     auto errFile = File(errBuffer.file, "a");
-
-                    // This is an abuse of plugin.linebuffer and is pretty much
-                    // guaranteed to grow it, but what do?
 
                     version(IncludeHeavyStuff)
                     {
                         import kameloso.printing : formatObjects;
+
+                        /+
+                            See notes above.
+                         +/
 
                         scope(failure) plugin.linebuffer.clear();
 
@@ -342,67 +380,56 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                             (plugin.linebuffer,
                             No.brightTerminal,
                             event);
+
                         errFile.writeln(plugin.linebuffer.data);
-                        plugin.linebuffer.clear();
 
                         if (event.sender.nickname.length || event.sender.address.length)
                         {
+                            plugin.linebuffer.clear();
+
                             formatObjects!(Yes.all, No.coloured)
                                 (plugin.linebuffer,
                                 No.brightTerminal,
                                 event.sender);
+
                             errFile.writeln(plugin.linebuffer.data);
-                            plugin.linebuffer.clear();
                         }
 
                         if (event.target.nickname.length || event.target.address.length)
                         {
+                            plugin.linebuffer.clear();
+
                             formatObjects!(Yes.all, No.coloured)
                                 (plugin.linebuffer,
                                 No.brightTerminal,
                                 event.target);
+
                             errFile.writeln(plugin.linebuffer.data);
-                            plugin.linebuffer.clear();
                         }
                     }
-                    else
+                    else /*version (!IncludeHeavyStuff)*/
                     {
-                        import lu.conv : Enum;
-                        import std.conv : text;
-
                         errFile.writeln('@', event.tags, ' ', event.raw);
 
                         if (event.sender.nickname.length || event.sender.address.length)
                         {
-                            errFile.writeln(
-                                event.sender.nickname, '!',
-                                event.sender.ident, '@',
-                                event.sender.address, ':',
-                                event.sender.account, " -- ",
-                                Enum!(IRCUser.Class).toString(event.sender.class_), "\n\n");
+                            errFile.writeln(getSimpleUserLine(event.sender));
                         }
 
                         if (event.target.nickname.length || event.target.address.length)
                         {
-                            errFile.writeln(
-                                event.target.nickname, '!',
-                                event.target.ident, '@',
-                                event.target.address, ':',
-                                event.target.account, " -- ",
-                                Enum!(IRCUser.Class).toString(event.target.class_), "\n\n");
+                            errFile.writeln(getSimpleUserLine(event.target));
                         }
                     }
 
-                    errFile.writeln("/////////////////////////////////////" ~
-                        "///////////////////////////////////////////\n");  // 80c
-                    //errFile.flush();
+                    errFile.writeln(separator80cLF);
                 }
             }
         }
         catch (FileException e)
         {
-            enum pattern = "File exception caught when writing to log: <t>%s";
-            logger.warningf(pattern, e.msg);
+            enum pattern = "File exception caught when writing to log (<l>%s</>): <t>%s%s";
+            logger.warningf(pattern, key, e.msg, plugin.transient.bell);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (ErrnoException e)
@@ -412,15 +439,15 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 import kameloso.common : errnoStrings;
                 import core.stdc.errno : errno;
 
-                enum pattern = "ErrnoException (<l>%s</>) caught when writing to log: <t>%s";
-                logger.warningf(pattern, errnoStrings[errno], e.msg);
+                enum pattern = "ErrnoException (<l>%s</>) caught when writing to log (<l>%s</>): <t>%s%s";
+                logger.warningf(pattern, errnoStrings[errno], key, e.msg, plugin.transient.bell);
             }
             else version(Windows)
             {
                 import core.stdc.errno : errno;
 
-                enum pattern = "ErrnoException (<l>%d</>) caught when writing to log: <t>%s";
-                logger.warningf(pattern, errno, e.msg);
+                enum pattern = "ErrnoException (<l>%d</>) caught when writing to log (<l>%s</>): <t>%s%s";
+                logger.warningf(pattern, errno, key, e.msg, plugin.transient.bell);
             }
             else
             {
@@ -431,38 +458,45 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         }
         catch (Exception e)
         {
-            enum pattern = "Unhandles exception caught when writing to log: <t>%s";
-            logger.warningf(pattern, e.msg);
+            enum pattern = "Unhandles exception caught when writing to log (<l>%s</>): <t>%s%s";
+            logger.warningf(pattern, key, e.msg, plugin.transient.bell);
             version(PrintStacktraces) logger.trace(e);
         }
     }
 
-    // Write raw (if we should) before exiting early due to not a home (if we should)
+    enum rawMarker = "<raw>";
+    enum errorMarker = "<error>";
+
+    // Write raw (if we should) early, before everything else
     if (plugin.printerSettings.logRaw)
     {
         writeEventToFile(
             plugin,
             event,
-            "<raw>",
+            rawMarker,
             "raw.log",
-            No.extendPath,
+            No.intoSubdir,
             Yes.raw);
     }
 
     if (event.errors.length && plugin.printerSettings.logErrors)
     {
-        // This logs errors in guest channels. Consider making configurable.
+        // This logs errors in guest channels. Consider making it configurable.
         writeEventToFile(
             plugin,
             event,
-            "<error>",
+            errorMarker,
             "error.log",
-            No.extendPath,
+            No.intoSubdir,
             No.raw,
             Yes.errors);
-    }
 
-    import std.algorithm.searching : canFind;
+        if (plugin.printerSettings.bufferedWrites)
+        {
+            // Flush error buffer immediately
+            flushLog(plugin, plugin.buffers[errorMarker]);
+        }
+    }
 
     if (!plugin.printerSettings.logGuestChannels &&
         event.channel.length &&
@@ -477,7 +511,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     {
     case PING:
     case SELFMODE:
-        // Not of formatted loggable interest (raw will have been logged above)
+        // Not of loggable interest as formatted (raw will have been logged above)
         return;
 
     case QUIT:
@@ -499,15 +533,27 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
             if (event.sender.nickname in foreachChannel.users)
             {
-                // Channel message
+                // Log it to channel
                 writeEventToFile(plugin, event, channelName);
             }
         }
 
-        if (event.sender.nickname.length && event.sender.nickname in plugin.buffers)
+        if (event.sender.nickname.length)
         {
-            // There is an open query buffer; write to it too
-            writeEventToFile(plugin, event, event.sender.nickname);
+            if (auto senderBuffer = event.sender.nickname in plugin.buffers)
+            {
+                // There is an open query buffer; write to it too
+                writeEventToFile(plugin, event, event.sender.nickname);
+
+                if (event.type == QUIT)
+                {
+                    // Flush the buffer if the user quit
+                    flushLog(plugin, *senderBuffer);
+
+                    // This would cause extra datestamps on relogins
+                    //plugin.buffers.remove(event.sender.nickname);
+                }
+            }
         }
         break;
 
@@ -528,11 +574,13 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         case USERSTATE:
         case GLOBALUSERSTATE:
             // Always on Twitch, no need to check plugin.state.server.daemon
+            // Also just noise as formatted
             return;
     }
 
     default:
-        if (event.channel.length && (event.sender.nickname.length || (event.type == MODE)))
+        if (event.channel.length &&
+            (event.sender.nickname.length || (event.type == MODE)))
         {
             // Channel message, or specialcased server-sent MODEs
             writeEventToFile(plugin, event, event.channel);
@@ -545,25 +593,26 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 writeEventToFile(plugin, event, event.sender.nickname);
             }
         }
-        else if (plugin.printerSettings.logServer &&
+        else if (
+            plugin.printerSettings.logServer &&
             !event.sender.nickname.length &&
             event.sender.address.length)
         {
-            // Server
+            // Server message
             writeEventToFile(
                 plugin,
                 event,
                 plugin.state.server.address,
                 "server.log",
-                No.extendPath);
+                No.intoSubdir);
         }
         else
         {
             // logServer is probably false and event shouldn't be logged
-            // OR we don't know how to deal with this event type
+            // OR we simply don't know how to deal with this event type
+
             /*import kameloso.printing : printObject;
             printObject(event);*/
-            return;
         }
         break;
     }
@@ -621,44 +670,45 @@ auto establishLogLocation(const string logLocation, ref bool naggedAboutDir)
 }
 
 
-// commitAllLogsImpl
+// flushAllLogsImpl
 /++
     Writes all buffered log lines to disk.
 
-    Merely wraps [commitLog] by iterating over all buffers and invoking it.
+    Merely wraps [flushLog] by iterating over all buffers and invoking it.
 
     Params:
         plugin = The current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
 
     See_Also:
-        [commitLog]
+        [flushLog]
  +/
-void commitAllLogsImpl(PrinterPlugin plugin)
+void flushAllLogsImpl(PrinterPlugin plugin)
 {
     if (!plugin.printerSettings.logs || !plugin.printerSettings.bufferedWrites) return;
 
     foreach (ref buffer; plugin.buffers)
     {
-        commitLog(buffer);
+        flushLog(plugin, buffer);
     }
 }
 
 
-// commitLog
+// flushLog
 /++
     Writes a single log buffer to disk.
 
-    This is a way of queuing writes so that they can be committed seldom and
+    This is a way of queuing writes so that they can be flushed seldom and
     in bulk, supposedly being nicer to the hardware at the cost of the risk of
-    losing uncommitted lines in a catastrophical crash.
+    losing unflushed lines in a catastrophical crash.
 
     Params:
-        buffer = [LogLineBuffer] whose lines to commit to disk.
+        plugin = The current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
+        buffer = [LogLineBuffer] whose lines to flush to disk.
 
     See_Also:
-        [commitAllLogsImpl]
+        [flushAllLogsImpl]
  +/
-void commitLog(ref LogLineBuffer buffer)
+void flushLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
     import kameloso.string : doublyBackslashed;
     import std.exception : ErrnoException;
@@ -682,29 +732,27 @@ void commitLog(ref LogLineBuffer buffer)
         else if (!buffer.dir.isDir)
         {
             // Something is in the way of the log's directory
-            // Discard accumulated lines
-            buffer.lines.clear();
+            // Leave lines in place, to be flushed next time or eventually
+            // discarded at a midnight update later
             return;
         }
 
         // Write all in one go
-        const lines = buffer.lines.data
+        immutable lines = buffer.lines.data
             .map!sanitize
             .join("\n");
 
-        {
-            File file = File(buffer.file, "a");
-            file.writeln(lines);
-        }
+        auto file = File(buffer.file, "a");
+        file.writeln(lines);
 
         // If we're here, no exceptions were thrown
         // Only clear if we managed to write everything, otherwise accumulate
-        buffer.lines.clear();
+        buffer.clear();
     }
     catch (FileException e)
     {
-        enum pattern = "File exception caught when committing log <l>%s</>: <t>%s%s";
-        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, PrinterPlugin.bell);
+        enum pattern = "File exception caught when flushing log to <l>%s</>: <t>%s%s";
+        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, plugin.transient.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
@@ -712,13 +760,22 @@ void commitLog(ref LogLineBuffer buffer)
         version(Posix)
         {
             import kameloso.common : errnoStrings;
-            enum pattern = "ErrnoException <l>%s</> caught when committing log to <l>%s</>: <t>%s%s";
-            logger.warningf(pattern, errnoStrings[e.errno], buffer.file.doublyBackslashed, e.msg, PrinterPlugin.bell);
+            enum pattern = "ErrnoException <l>%s</> caught when flushing log to <l>%s</>: <t>%s%s";
+            logger.warningf(
+                pattern,
+                errnoStrings[e.errno],
+                buffer.file.doublyBackslashed,
+                e.msg,
+                plugin.transient.bell);
         }
         else version(Windows)
         {
-            enum pattern = "ErrnoException <l>%d</> caught when committing log to <l>%s</>: <t>%s%s";
-            logger.warningf(pattern, e.errno, buffer.file.doublyBackslashed, e.msg, PrinterPlugin.bell);
+            enum pattern = "ErrnoException <l>%d</> caught when flushing log to <l>%s</>: <t>%s%s";
+            logger.warningf(pattern,
+                e.errno,
+                buffer.file.doublyBackslashed,
+                e.msg,
+                plugin.transient.bell);
         }
         else
         {
@@ -729,8 +786,8 @@ void commitLog(ref LogLineBuffer buffer)
     }
     catch (Exception e)
     {
-        enum pattern = "Unexpected exception caught when committing log <l>%s</>: <t>%s%s";
-        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, PrinterPlugin.bell);
+        enum pattern = "Unexpected exception caught when flusing log <l>%s</>: <t>%s%s";
+        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, plugin.transient.bell);
         version(PrintStacktraces) logger.trace(e);
     }
 }

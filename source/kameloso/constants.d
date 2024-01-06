@@ -225,6 +225,24 @@ enum KamelosoDefaultIntegers
 }
 
 
+// KamelosoDefaultChars
+/++
+    Kameloso defaults, character version.
+ +/
+enum KamelosoDefaultChars
+{
+    /++
+        Placeholder for quote characters, used when re-executing on Windows.
+     +/
+    doublequotePlaceholder = '\1',
+
+    /++
+        Placeholder for octothorpe characters, used when re-executing on Windows.
+     +/
+    octothorpePlaceholder = '\2',
+}
+
+
 // KamelosoFilenames
 /++
     Kameloso filenames.
@@ -456,7 +474,7 @@ enum Timeout
     httpGET = 10,
 
     /++
-        Timeout for concurrency message reads (in between socket reads).
+        Timeout for message processing (in between socket reads).
      +/
     messageReadMsecs = 1500,
 }

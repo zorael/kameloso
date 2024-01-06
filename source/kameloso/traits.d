@@ -531,6 +531,7 @@ if (Things.length > 0)  // may as well be a constraint
  +/
 enum udaIndexOf(alias symbol, T) = ()
 {
+    /// silence dscanner
     ptrdiff_t index = -1;
 
     foreach (immutable i, uda; __traits(getAttributes, symbol))

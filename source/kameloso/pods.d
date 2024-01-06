@@ -234,7 +234,7 @@ public:
     {
         // receiveTimeout
         /++
-            Socket receive timeout in milliseconds (how often to check for concurrency messages).
+            Socket receive timeout in milliseconds (how often to check for other messages).
          +/
         uint receiveTimeout = Timeout.receiveMsecs;
 

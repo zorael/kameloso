@@ -100,8 +100,8 @@ void onWelcome(PipelinePlugin plugin)
 
     void initRoutine()
     {
-        plugin.fifoFilename = initialiseFIFO(plugin);
-        plugin.fd = openFIFO(plugin.fifoFilename);
+        plugin.transient.fifoFilename = initialiseFIFO(plugin);
+        plugin.transient.fd = openFIFO(plugin.transient.fifoFilename);
         printUsageText(plugin, No.reinit);
     }
 
@@ -126,9 +126,9 @@ void onWelcome(PipelinePlugin plugin)
     {
         import std.file : exists;
 
-        if (!plugin.fifoFilename.exists || !plugin.fifoFilename.isFIFO)
+        if (!plugin.transient.fifoFilename.exists || !plugin.transient.fifoFilename.isFIFO)
         {
-            if (plugin.fd != -1) closeFD(plugin.fd);
+            if (plugin.transient.fd != -1) closeFD(plugin.transient.fd);
 
             try
             {
@@ -162,7 +162,7 @@ void printUsageText(PipelinePlugin plugin, const Flag!"reinit" reinit)
     }
 
     enum pattern = "Pipe text to the <i>%s</> file to send raw commands to the server.";
-    logger.logf(pattern, plugin.fifoFilename);
+    logger.logf(pattern, plugin.transient.fifoFilename);
 }
 
 
@@ -404,7 +404,7 @@ auto isFIFO(const string filename)
 
 // readFIFO
 /++
-    Reads from the FIFO and sends concurrency messages based upon what was read.
+    Reads from the FIFO and sends messages to the main thread based upon what was read.
     If something was indeed read, `true` is returned to signal to the caller that
     it should check for new messages.
 
@@ -412,46 +412,59 @@ auto isFIFO(const string filename)
         plugin = The current [PipelinePlugin].
 
     Returns:
-        `true` if something was read and concurrency messages were sent; `false` if not.
+        `true` if messages were sent and should be read by other parts of the
+        program; `false` if not.
  +/
 auto readFIFO(PipelinePlugin plugin)
 {
     import std.algorithm.iteration : splitter;
     import core.sys.posix.unistd : read;
 
-    enum bufferSize = 1024;  // Should be enough? An IRC line is 512 bytes
+    enum bufferSize = 4096;
     ubyte[bufferSize] buf;
 
-    immutable ptrdiff_t bytesRead = read(plugin.fd, buf.ptr, buf.length);
+    immutable ptrdiff_t bytesRead = read(plugin.transient.fd, buf.ptr, buf.length);
     if (bytesRead <= 0) return false;   // 0 or -1
 
     string slice = cast(string)buf[0..bytesRead].idup;  // mutable immutable
-    bool sentSomething;
+    bool shouldCheckMessages;
 
-    foreach (/*immutable*/ line; slice.splitter("\n"))
+    foreach (immutable originalLine; slice.splitter("\n"))
     {
-        import kameloso.messaging : raw, quit;
+        import kameloso.messaging : raw;
         import kameloso.thread : ThreadMessage, boxed;
-        import lu.string : splitInto, strippedLeft;
-        import std.algorithm.comparison : equal;
+        import lu.string : strippedLeft;
         import std.algorithm.searching : startsWith;
-        import std.concurrency : send;
-        import std.uni : asLowerCase;
+        import std.uni : toLower;
 
-        line = line.strippedLeft;
-        if (!line.length) continue;  // skip empty lines
+        string line = originalLine.strippedLeft;  // mutable
+        if (!line.length) continue;
 
-        if (line[0] == ':')
+        if (line[0] == '#')
         {
+            import lu.string : advancePast;
+
             line = line[1..$];  // skip the colon
-            string header;  // mutable
-            line.splitInto(header);
-
+            immutable header = line.advancePast(' ', Yes.inherit);
             if (!header.length) continue;
-            plugin.state.mainThread.send(ThreadMessage.busMessage(header, boxed(line)));
+
+            plugin.state.messages ~= ThreadMessage.busMessage(header, boxed(line));
+            shouldCheckMessages = true;
+            continue;
         }
-        else if (line.asLowerCase.startsWith("quit"))
+        else if (line[0] == '>')
         {
+            plugin.state.messages ~= ThreadMessage.fakeEvent(line[1..$]);
+            shouldCheckMessages = true;
+            continue;
+        }
+
+        immutable lowerLine = line.toLower;
+
+        if (lowerLine.startsWith("quit"))
+        {
+            import kameloso.messaging : quit;
+
             if ((line.length > 6) && (line[4..6] == " :"))
             {
                 quit(plugin.state, line[6..$]);
@@ -460,22 +473,24 @@ auto readFIFO(PipelinePlugin plugin)
             {
                 quit(plugin.state);  // Default reason
             }
-            return true;
+            return true;  // no need to continue looping
         }
-        else if (line.asLowerCase.equal("reconnect"))
+        else if (lowerLine == "reconnect")
         {
-            plugin.state.mainThread.send(ThreadMessage.reconnect);
-            return true;
+            plugin.state.priorityMessages ~= ThreadMessage.reconnect;
+            return true;  // as above
         }
-        else
+        else if (lowerLine == "reexec")
         {
-            raw(plugin.state, line.strippedLeft);
+            plugin.state.priorityMessages ~= ThreadMessage.reconnect(string.init, boxed(true));
+            return true;  // ditto
         }
 
-        sentSomething = true;
+        raw(plugin.state, line.strippedLeft);
+        shouldCheckMessages = true;
     }
 
-    return sentSomething;
+    return shouldCheckMessages;
 }
 
 
@@ -491,8 +506,7 @@ auto readFIFO(PipelinePlugin plugin)
         elapsed = How much time has passed since the last tick.
 
     Returns:
-        Whether or not the main loop should check concurrency messages, to catch
-        messages sent to it.
+        Whether or not the main loop should check for messages.
  +/
 auto tick(PipelinePlugin plugin, const Duration elapsed)
 {
@@ -500,7 +514,7 @@ auto tick(PipelinePlugin plugin, const Duration elapsed)
 
     static immutable minimumTimeBetweenReads = 250.msecs;
 
-    if (plugin.fd == -1) return false;  // ?
+    if (plugin.transient.fd == -1) return false;  // ?
 
     if (elapsed < minimumTimeBetweenReads)
     {
@@ -524,15 +538,15 @@ void teardown(PipelinePlugin plugin)
     import std.file : exists;
     import std.file : remove;
 
-    if (plugin.fd == -1)  return;  // teardown before initialisation?
+    if (plugin.transient.fd == -1)  return;  // teardown before initialisation?
 
-    closeFD(plugin.fd);
+    closeFD(plugin.transient.fd);
 
-    if (plugin.fifoFilename.exists && plugin.fifoFilename.isFIFO)
+    if (plugin.transient.fifoFilename.exists && plugin.transient.fifoFilename.isFIFO)
     {
         try
         {
-            remove(plugin.fifoFilename);
+            remove(plugin.transient.fifoFilename);
         }
         catch (Exception _)
         {
@@ -554,22 +568,22 @@ void reload(PipelinePlugin plugin)
     import lu.common : ReturnValueException;
     import std.file : exists;
 
-    if (plugin.fifoFilename.exists && plugin.fifoFilename.isFIFO)
+    if (plugin.transient.fifoFilename.exists && plugin.transient.fifoFilename.isFIFO)
     {
         // Should still be okay.
         return;
     }
 
     // File doesn't exist!
-    if (plugin.fd != -1)
+    if (plugin.transient.fd != -1)
     {
         // ...yet there's an old file descriptor
-        closeFD(plugin.fd);
+        closeFD(plugin.transient.fd);
     }
 
     // Let exceptions fall through
-    plugin.fifoFilename = initialiseFIFO(plugin);
-    plugin.fd = openFIFO(plugin.fifoFilename);
+    plugin.transient.fifoFilename = initialiseFIFO(plugin);
+    plugin.transient.fd = openFIFO(plugin.transient.fifoFilename);
     printUsageText(plugin, Yes.reinit);
 }
 
@@ -586,42 +600,36 @@ public:
  +/
 final class PipelinePlugin : IRCPlugin
 {
-    // TransientState
     /++
         Transient state variables, aggregated in a struct.
      +/
     struct TransientState
     {
-        // timeSinceLast
         /++
             How much time has passed since the last tick.
          +/
         Duration timeSinceLast;
+
+        /++
+            File descriptor of the open FIFO.
+         +/
+        int fd = -1;
+
+        /++
+            Filename of the created FIFO.
+         +/
+        string fifoFilename;
     }
 
-    // pipelineSettings
     /++
         All Pipeline settings gathered.
      +/
     PipelineSettings pipelineSettings;
 
-    // transient
     /++
         Transient state of this [PipelinePlugin] instance.
      +/
     TransientState transient;
-
-    // fifoFilename
-    /++
-        Filename of the created FIFO.
-     +/
-    string fifoFilename;
-
-    // fd
-    /++
-        File descriptor of the open FIFO.
-     +/
-    int fd = -1;
 
     mixin IRCPluginImpl;
 }

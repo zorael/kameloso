@@ -26,7 +26,6 @@ import kameloso.plugins.twitch.common;
 
 import kameloso.common : logger;
 import arsd.http2 : HttpClient;
-import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
@@ -510,22 +509,15 @@ auto getSpotifyBase64Authorization(const Credentials creds)
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-package JSONValue addTrackToSpotifyPlaylist(
+package auto addTrackToSpotifyPlaylist(
     TwitchPlugin plugin,
     ref Credentials creds,
     const string trackID,
     const Flag!"recursing" recursing = No.recursing)
-in (Fiber.getThis, "Tried to call `addTrackToSpotifyPlaylist` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a fiber")
 {
-    import kameloso.plugins.twitch.api : reserveUniqueBucketID, waitForQueryResponse;
-    import kameloso.plugins.common.delayawait : delay;
-    import kameloso.thread : ThreadMessage;
-    import arsd.http2 : HttpVerb;
     import std.algorithm.searching : endsWith;
-    import std.concurrency : prioritySend, send;
     import std.format : format;
-    import std.json : JSONType, parseJSON;
-    import core.time : msecs;
 
     // https://api.spotify.com/v1/playlists/0nqAHNphIb3Qhh5CmD7fg5/tracks?uris=spotify:track:594WPgqPOOy0PqLvScovNO
 
@@ -547,14 +539,22 @@ in (Fiber.getThis, "Tried to call `addTrackToSpotifyPlaylist` from outside a Fib
     }
 
     immutable ubyte[] data;
-    /*immutable*/ int id = reserveUniqueBucketID(plugin.bucket);  // Making immutable bumps compilation memory +44mb
+    /*immutable*/ int id = plugin.responseBucket.uniqueKey;  // normal int needed for concurrency message
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
         try
         {
-            plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
-            plugin.transient.persistentWorkerTid.send(
+            import kameloso.plugins.twitch.api : waitForQueryResponse;
+            import kameloso.plugins.common.delayawait : delay;
+            import kameloso.thread : ThreadMessage;
+            import arsd.http2 : HttpVerb;
+            import std.concurrency : send;
+            import std.json : JSONType, parseJSON;
+            import core.time : msecs;
+
+            plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
+            plugin.getNextWorkerTid().send(
                 id,
                 url,
                 authorizationBearer,

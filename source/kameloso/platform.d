@@ -337,7 +337,6 @@ Pid exec(
 {
     import kameloso.common : logger;
     import std.algorithm.comparison : among;
-    import std.array : join;
     import std.conv : text;
 
     if (args.length > 1)
@@ -358,9 +357,9 @@ Pid exec(
 
                 if (slice.startsWith("twitch."))
                 {
-                    immutable setting = slice.advancePast('=', Yes.inherit);
+                    immutable flag = slice.advancePast('=', Yes.inherit);
 
-                    if (setting.among!(
+                    if (flag.among!(
                         "twitch.keygen",
                         "twitch.superKeygen",
                         "twitch.googleKeygen",
@@ -376,9 +375,9 @@ Pid exec(
             else
             {
                 string slice = args[i];  // mutable
-                immutable setting = slice.advancePast('=', Yes.inherit);
+                immutable flag = slice.advancePast('=', Yes.inherit);
 
-                if (setting.among!(
+                if (flag.among!(
                     //"--setup-twitch",  // this only does the keygen, then exits
                     "--get-cacert",
                     "--get-openssl",
@@ -397,9 +396,23 @@ Pid exec(
         }
     }
 
+    static auto applyPlaceholders(const string input)
+    {
+        import kameloso.constants : KamelosoDefaultChars;
+        import std.array : replace;
+
+        return input
+            .replace('"', cast(char)KamelosoDefaultChars.doublequotePlaceholder)
+            .replace('#', cast(char)KamelosoDefaultChars.octothorpePlaceholder);
+    }
+
     // Add the reexec count and channel override arguments
     args ~= text("--internal-num-reexecs=", numReexecs+1);
-    if (channels.length) args ~= text("--internal-channel-override=", channels.join(','));
+
+    foreach (immutable channelName; channels)
+    {
+        args ~= text("--internal-channel-override=\"", applyPlaceholders(channelName), '"');
+    }
 
     version(Posix)
     {
@@ -416,11 +429,10 @@ Pid exec(
     {
         import std.algorithm.searching : startsWith;
         import std.array : Appender;
-        import std.exception : assumeUnique;
         import std.process : ProcessException, spawnProcess;
 
         Appender!(char[]) sink;
-        sink.reserve(128);
+        sink.reserve(256);
 
         string arg0 = args[0];  // mutable
         args = args[1..$];  // pop it
@@ -441,25 +453,65 @@ Pid exec(
 
         for (size_t i; i<args.length; ++i)
         {
-            import std.format : formattedWrite;
+            import std.algorithm.searching : startsWith;
 
             if (sink.data.length) sink.put(' ');
 
-            if ((args.length >= i+1) &&
-                args[i].among!(
-                    "-H",
-                    "-C",
-                    "--homeChannels",
-                    "--guestChannels",
-                    "--set"))
+            if (args[i].startsWith("-H") ||
+                args[i].startsWith("-C") ||
+                args[i].startsWith("--homeChannels") ||
+                args[i].startsWith("--guestChannels") ||
+                args[i].startsWith("--set"))
             {
-                // Octothorpes must be encased in single quotes
-                sink.formattedWrite("%s '%s'", args[i], args[i+1]);
-                ++i;
+                import std.format : formattedWrite;
+                import std.string : indexOf;
+
+                /+
+                    Arguments to the program are passed to powershell
+                    as a single string. We have to rely on quotes to separate
+                    each argument, as well as to escape some things like octothorpes.
+
+                    This does not work well with arguments that in turn contain
+                    quotes, such as --set connect.sendAfterConnect="abc def".
+                    It can still be made to reexec with some backslashes added,
+                    but the contents will be wrong and subsequent arguments may be skipped.
+
+                    To work around this, change all double quotes into
+                    KamelosoDefaultChars.doublequotePlaceholder, and undo the
+                    change early before getopt.
+                 +/
+
+                if (args[i][1].among('H', 'C') && (args[i].length > 2))
+                {
+                    // -C"#abc,#def"
+                    immutable flag = args[i][0..2];
+                    auto channelName = args[i][2..$];
+                    if ((channelName.length > 1) && (channelName[0] == '=')) channelName = channelName[1..$];
+                    sink.formattedWrite(`%s="%s"`, flag, applyPlaceholders(channelName));
+                }
+                else if (args[i].indexOf('=') != -1)
+                {
+                    import lu.string : advancePast;
+                    // --homeChannels="#abc,#def"
+                    // -H="zorael"
+                    auto slice = args[i];  // mutable
+                    immutable flag = slice.advancePast('=');
+                    sink.formattedWrite(`%s="%s"`, flag, applyPlaceholders(slice));
+                }
+                else if (args.length >= i+1)
+                {
+                    // --set connect.sendAfterConnect="abc def"
+                    sink.formattedWrite(`%s "%s"`, args[i], applyPlaceholders(args[i+1]));
+                    ++i;  // Skip next argument
+                }
+            }
+            else if (args[i].startsWith("--internal-"))
+            {
+                sink.put(args[i]);
             }
             else
             {
-                sink.put(args[i]);
+                sink.put(applyPlaceholders(args[i]));
             }
         }
 
@@ -471,7 +523,7 @@ Pid exec(
             "/min",
             "powershell",
             "-c"
-        ] ~ arg0 ~ sink.data.assumeUnique();
+        ] ~ arg0 ~ sink.data.idup;
         return spawnProcess(commandLine[]);
     }
     else

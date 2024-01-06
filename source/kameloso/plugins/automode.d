@@ -253,29 +253,23 @@ in (account.length, "Tried to apply automodes to an empty account")
 unittest
 {
     import lu.conv : Enum;
-    import std.concurrency;
     import std.format : format;
 
     // Only tests the messenger mode call
 
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     mode(state, "#channel", "+ov", "mydude");
+    immutable m = state.outgoingMessages[0];
 
-    receive(
-        (Message m)
-        {
-            assert((m.event.type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(m.event.type));
-            assert((m.event.channel == "#channel"), m.event.channel);
-            assert((m.event.aux[0] == "+ov"), m.event.aux[0]);
-            assert((m.event.content == "mydude"), m.event.content);
-            assert(m.properties == Message.Property.init);
+    assert((m.event.type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(m.event.type));
+    assert((m.event.channel == "#channel"), m.event.channel);
+    assert((m.event.aux[0] == "+ov"), m.event.aux[0]);
+    assert((m.event.content == "mydude"), m.event.content);
+    assert(m.properties == Message.Property.init);
 
-            immutable line = "MODE %s %s %s".format(m.event.channel, m.event.aux[0], m.event.content);
-            assert((line == "MODE #channel +ov mydude"), line);
-        }
-    );
+    immutable line = "MODE %s %s %s".format(m.event.channel, m.event.aux[0], m.event.content);
+    assert((line == "MODE #channel +ov mydude"), line);
 }
 
 
@@ -534,6 +528,10 @@ void reload(AutomodePlugin plugin)
 void loadAutomodes(AutomodePlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
 
     JSONStorage automodesJSON;
     automodesJSON.load(plugin.automodeFile);

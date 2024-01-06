@@ -4,9 +4,9 @@
     To send a server message some information is needed; like
     message type, message target, perhaps channel, content and such.
     [dialect.defs.IRCEvent|IRCEvent] has all of this, so it lends itself to
-    repurposing it to aggregate and carry them, through concurrency messages.
-    These are caught by the concurrency message-reading parts of the main loop,
-    which reversely parses them into strings and sends them on to the server.
+    repurposing it to aggregate and carry them, through message structs in an array "queue".
+    These are caught by the main loop, which reversely parses them into strings
+    and sends them on to the server.
 
     Example:
     ---
@@ -51,18 +51,12 @@ module kameloso.messaging;
 private:
 
 import kameloso.plugins.common.core : IRCPluginState;
-import kameloso.irccolours : expandIRCTags;
+import kameloso.irccolours : expandIRCTags, stripIRCTags;
 import dialect.defs;
-import std.concurrency : Tid, prioritySend, send;
 import std.typecons : Flag, No, Yes;
 static import kameloso.common;
 
-version(unittest)
-{
-    import lu.conv : Enum;
-    import std.concurrency : receive, receiveOnly, thisTid;
-    import std.conv : to;
-}
+version(unittest) import lu.conv : Enum;
 
 public:
 
@@ -121,7 +115,7 @@ struct Message
         caller = String name of the calling function, or something else that gives context.
  +/
 void chan(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channelName,
     const string content,
     const Message.Property properties = Message.Property.none,
@@ -132,14 +126,18 @@ in (channelName.length, "Tried to send a channel message but no channel was give
 
     m.event.type = IRCEvent.Type.CHAN;
     m.event.channel = channelName;
-    m.event.content = content.expandIRCTags;
     m.properties = properties;
     m.caller = caller;
+
+    bool strippedTags;
 
     version(TwitchSupport)
     {
         if (state.server.daemon == IRCServer.Daemon.twitch)
         {
+            m.event.content = content.stripIRCTags;
+            strippedTags = true;
+
             if (auto channel = channelName in state.channels)
             {
                 if (auto ops = 'o' in channel.mods)
@@ -154,31 +152,26 @@ in (channelName.length, "Tried to send a channel message but no channel was give
         }
     }
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    if (!strippedTags) m.event.content = content.expandIRCTags;
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     enum properties = (Message.Property.quiet | Message.Property.background);
     chan(state, "#channel", "content", properties);
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((content == "content"), content);
-                //assert(m.properties & Message.Property.fast);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
+        assert((channel == "#channel"), channel);
+        assert((content == "content"), content);
+        //assert(m.properties & Message.Property.fast);
+    }
 }
 
 
@@ -186,6 +179,11 @@ unittest
 /++
     Replies to a message in a Twitch channel. Requires version `TwitchSupport`,
     without which it will just pass on to [chan].
+
+    If an [dialect.defs.IRCEvent|IRCEvent] of type [dialect.defs.IRCEvent.Type.QUERY|QUERY]
+    is passed *and* we're connected to a Twitch server *and* the
+    [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin] is compiled in,
+    it will send a bus message to have the reply be sent as a whisper instead.
 
     Params:
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
@@ -197,57 +195,98 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void reply(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const ref IRCEvent event,
     const string content,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 in (event.channel.length, "Tried to reply to a channel message but no channel was given")
 {
-    version(TwitchSupport)
+    /++
+        Just pass it onto [privmsg].
+     +/
+    void sendNormally()
     {
-        if ((state.server.daemon != IRCServer.Daemon.twitch) || !event.id.length)
-        {
-            return chan(
-                state,
-                event.channel,
-                content,
-                properties,
-                caller);
-        }
-
-        Message m;
-
-        m.event.type = IRCEvent.Type.CHAN;
-        m.event.channel = event.channel;
-        m.event.content = content.expandIRCTags;
-        m.event.tags = "reply-parent-msg-id=" ~ event.id;
-        m.properties = properties;
-        m.caller = caller;
-
-        if (auto channel = m.event.channel in state.channels)
-        {
-            if (auto ops = 'o' in channel.mods)
-            {
-                if (state.client.nickname in *ops)
-                {
-                    // We are a moderator and can as such send things fast
-                    m.properties |= Message.Property.fast;
-                }
-            }
-        }
-
-        if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-        else state.mainThread.send(m);
-    }
-    else
-    {
-        return chan(
+        privmsg(
             state,
             event.channel,
+            event.sender.nickname,
             content,
             properties,
             caller);
+    }
+
+    version(TwitchSupport)
+    {
+        import kameloso.common : logger;
+        import lu.conv : Enum;
+
+        if (state.server.daemon != IRCServer.Daemon.twitch) return sendNormally();
+
+        version(WithTwitchPlugin)
+        {
+            if (event.type == IRCEvent.Type.QUERY)
+            {
+                import kameloso.thread : ThreadMessage, boxed;
+
+                // Whisper
+                Message m;
+
+                m.event.type = IRCEvent.Type.QUERY;
+                m.event.content = content.stripIRCTags;
+                m.event.target = event.sender;
+                m.caller = caller;
+
+                auto messageBox = (properties & Message.Property.priority) ?
+                    &state.priorityMessages :
+                    &state.messages;
+
+                *messageBox ~= ThreadMessage.busMessage("twitch", boxed(m));
+                return;
+            }
+        }
+
+        if (event.type == IRCEvent.Type.CHAN)
+        {
+            // Channel reply
+            Message m;
+
+            m.event.type = IRCEvent.Type.CHAN;
+            m.event.channel = event.channel;
+            m.event.content = content.stripIRCTags;
+            m.event.tags = "reply-parent-msg-id=" ~ event.id;
+            m.properties = properties;
+            m.caller = caller;
+
+            if (auto channel = m.event.channel in state.channels)
+            {
+                if (auto ops = 'o' in channel.mods)
+                {
+                    if (state.client.nickname in *ops)
+                    {
+                        // We are a moderator and can as such send things fast
+                        m.properties |= Message.Property.fast;
+                    }
+                }
+            }
+
+            state.outgoingMessages ~= m;
+        }
+        else if (event.type == IRCEvent.Type.QUERY)
+        {
+            // non-version WithTwitchPlugin
+            enum message = "Tried to <l>reply</> in a query but the <l>twitch</> plugin is not compiled in";
+            logger.error(message);
+        }
+        else
+        {
+            enum pattern = "Tried to <l>reply</> to an event of an unsupported type: <l>%s";
+            logger.errorf(pattern, Enum!(IRCEvent.Type).toString(event.type));
+        }
+    }
+    else
+    {
+        sendNormally();
     }
 }
 
@@ -257,9 +296,9 @@ unittest
 {
     IRCPluginState state;
     state.server.daemon = IRCServer.Daemon.twitch;
-    state.mainThread = thisTid;
 
     IRCEvent event;
+    event.type = IRCEvent.Type.CHAN;
     event.sender.nickname = "kameloso";
     event.channel = "#channel";
     event.content = "content";
@@ -267,18 +306,14 @@ unittest
 
     reply(state, event, "reply content");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
-                assert((content == "reply content"), content);
-                assert((tags == "reply-parent-msg-id=some-reply-id"), tags);
-                assert((m.properties == Message.Property.init));
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
+        assert((content == "reply content"), content);
+        assert((tags == "reply-parent-msg-id=some-reply-id"), tags);
+        assert((m.properties == Message.Property.init));
+    }
 }
 
 
@@ -296,7 +331,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void query(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string nickname,
     const string content,
     const Message.Property properties = Message.Property.none,
@@ -307,34 +342,39 @@ in (nickname.length, "Tried to send a private query but no nickname was given")
 
     m.event.type = IRCEvent.Type.QUERY;
     m.event.target.nickname = nickname;
-    m.event.content = content.expandIRCTags;
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    bool strippedTags;
+
+    version(TwitchSupport)
+    {
+        if (state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            m.event.content = content.stripIRCTags;
+            strippedTags = true;
+        }
+    }
+
+    if (!strippedTags) m.event.content = content.expandIRCTags;
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     query(state, "kameloso", "content");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
-                assert((target.nickname == "kameloso"), target.nickname);
-                assert((content == "content"), content);
-                assert((m.properties == Message.Property.init));
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert((content == "content"), content);
+        assert((m.properties == Message.Property.init));
+    }
 }
 
 
@@ -357,7 +397,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void privmsg(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channel,
     const string nickname,
     const string content,
@@ -386,39 +426,35 @@ in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
-    privmsg(state, "#channel", string.init, "content");
+    {
+        privmsg(state, "#channel", string.init, "content");
 
-    receive(
-        (Message m)
+        immutable m = state.outgoingMessages[0];
+        with (m.event)
         {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((content == "content"), content);
-                assert(!target.nickname.length, target.nickname);
-                assert(m.properties == Message.Property.init);
-            }
+            assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
+            assert((channel == "#channel"), channel);
+            assert((content == "content"), content);
+            assert(!target.nickname.length, target.nickname);
+            assert(m.properties == Message.Property.init);
         }
-    );
 
-    privmsg(state, string.init, "kameloso", "content");
+        state.outgoingMessages = null;
+    }
+    {
+        privmsg(state, string.init, "kameloso", "content");
 
-    receive(
-        (Message m)
+        immutable m = state.outgoingMessages[0];
+        with (m.event)
         {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
-                assert(!channel.length, channel);
-                assert((target.nickname == "kameloso"), target.nickname);
-                assert((content == "content"), content);
-                assert(m.properties == Message.Property.init);
-            }
+            assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
+            assert(!channel.length, channel);
+            assert((target.nickname == "kameloso"), target.nickname);
+            assert((content == "content"), content);
+            assert(m.properties == Message.Property.init);
         }
-    );
+    }
 }
 
 
@@ -437,7 +473,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void emote(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string emoteTarget,
     const string content,
     const Message.Property properties = Message.Property.none,
@@ -449,7 +485,6 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
     Message m;
 
     m.event.type = IRCEvent.Type.EMOTE;
-    m.event.content = content.expandIRCTags;
     m.properties = properties;
     m.caller = caller;
 
@@ -462,47 +497,54 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
         m.event.target.nickname = emoteTarget;
     }
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    bool strippedTags;
+
+    version(TwitchSupport)
+    {
+        if (state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            m.event.content = content.stripIRCTags;
+            strippedTags = true;
+        }
+    }
+
+    if (!strippedTags) m.event.content = content.expandIRCTags;
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
-    emote(state, "#channel", "content");
+    {
+        emote(state, "#channel", "content");
 
-    receive(
-        (Message m)
+        immutable m = state.outgoingMessages[0];
+        with (m.event)
         {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((content == "content"), content);
-                assert(!target.nickname.length, target.nickname);
-                assert(m.properties == Message.Property.init);
-            }
+            assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
+            assert((channel == "#channel"), channel);
+            assert((content == "content"), content);
+            assert(!target.nickname.length, target.nickname);
+            assert(m.properties == Message.Property.init);
         }
-    );
 
-    emote(state, "kameloso", "content");
+        state.outgoingMessages = null;
+    }
+    {
+        emote(state, "kameloso", "content");
 
-    receive(
-        (Message m)
+        immutable m = state.outgoingMessages[0];
+        with (m.event)
         {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
-                assert(!channel.length, channel);
-                assert((target.nickname == "kameloso"), target.nickname);
-                assert((content == "content"), content);
-                assert(m.properties == Message.Property.init);
-            }
+            assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
+            assert(!channel.length, channel);
+            assert((target.nickname == "kameloso"), target.nickname);
+            assert((content == "content"), content);
+            assert(m.properties == Message.Property.init);
         }
-    );
+    }
 }
 
 
@@ -523,7 +565,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void mode(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channel,
     const const(char)[] modes,
     const string content = string.init,
@@ -540,31 +582,25 @@ in (channel.length, "Tried to set a mode but no channel was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     mode(state, "#channel", "+o", "content");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((content == "content"), content);
-                assert((aux[0] == "+o"), aux[0]);
-                assert(m.properties == Message.Property.init);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(type));
+        assert((channel == "#channel"), channel);
+        assert((content == "content"), content);
+        assert((aux[0] == "+o"), aux[0]);
+        assert(m.properties == Message.Property.init);
+    }
 }
 
 
@@ -582,7 +618,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void topic(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channel,
     const string content,
     const Message.Property properties = Message.Property.none,
@@ -597,30 +633,24 @@ in (channel.length, "Tried to set a topic but no channel was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     topic(state, "#channel", "content");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.TOPIC), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((content == "content"), content);
-                assert(m.properties == Message.Property.init);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.TOPIC), Enum!(IRCEvent.Type).toString(type));
+        assert((channel == "#channel"), channel);
+        assert((content == "content"), content);
+        assert(m.properties == Message.Property.init);
+    }
 }
 
 
@@ -638,7 +668,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void invite(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channel,
     const string nickname,
     const Message.Property properties = Message.Property.none,
@@ -654,30 +684,24 @@ in (nickname.length, "Tried to send an invite but no nickname was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     invite(state, "#channel", "kameloso");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.INVITE), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((target.nickname == "kameloso"), target.nickname);
-                assert(m.properties == Message.Property.init);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.INVITE), Enum!(IRCEvent.Type).toString(type));
+        assert((channel == "#channel"), channel);
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert(m.properties == Message.Property.init);
+    }
 }
 
 
@@ -695,7 +719,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void join(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channel,
     const string key = string.init,
     const Message.Property properties = Message.Property.none,
@@ -710,29 +734,23 @@ in (channel.length, "Tried to join a channel but no channel was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     join(state, "#channel");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.JOIN), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert(m.properties == Message.Property.init);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.JOIN), Enum!(IRCEvent.Type).toString(type));
+        assert((channel == "#channel"), channel);
+        assert(m.properties == Message.Property.init);
+    }
 }
 
 
@@ -751,7 +769,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void kick(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channel,
     const string nickname,
     const string reason = string.init,
@@ -769,31 +787,25 @@ in (nickname.length, "Tried to kick someone but no nickname was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     kick(state, "#channel", "kameloso", "content");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.KICK), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((content == "content"), content);
-                assert((target.nickname == "kameloso"), target.nickname);
-                assert(m.properties == Message.Property.init);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.KICK), Enum!(IRCEvent.Type).toString(type));
+        assert((channel == "#channel"), channel);
+        assert((content == "content"), content);
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert(m.properties == Message.Property.init);
+    }
 }
 
 
@@ -811,7 +823,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void part(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string channel,
     const string reason = string.init,
     const Message.Property properties = Message.Property.none,
@@ -826,30 +838,24 @@ in (channel.length, "Tried to part a channel but no channel was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     part(state, "#channel", "reason");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.PART), Enum!(IRCEvent.Type).toString(type));
-                assert((channel == "#channel"), channel);
-                assert((content == "reason"), content);
-                assert(m.properties == Message.Property.init);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.PART), Enum!(IRCEvent.Type).toString(type));
+        assert((channel == "#channel"), channel);
+        assert((content == "reason"), content);
+        assert(m.properties == Message.Property.init);
+    }
 }
 
 
@@ -867,7 +873,7 @@ unittest
  +/
 
 void quit(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string reason = string.init,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
@@ -879,31 +885,25 @@ void quit(
     m.caller = caller;
     m.properties = (properties | Message.Property.priority);
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     enum properties = Message.Property.quiet;
     quit(state, "reason", properties);
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.QUIT), Enum!(IRCEvent.Type).toString(type));
-                assert((content == "reason"), content);
-                assert(m.caller.length);
-                assert(m.properties & (Message.Property.forced | Message.Property.priority | Message.Property.quiet));
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.QUIT), Enum!(IRCEvent.Type).toString(type));
+        assert((content == "reason"), content);
+        assert(m.caller.length);
+        assert(m.properties & (Message.Property.forced | Message.Property.priority | Message.Property.quiet));
+    }
 }
 
 
@@ -920,7 +920,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void whois(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string nickname,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
@@ -950,30 +950,24 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
         if (state.settings.flush) stdout.flush();
     }
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     enum properties = Message.Property.forced;
     whois(state, "kameloso", properties);
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.RPL_WHOISACCOUNT), Enum!(IRCEvent.Type).toString(type));
-                assert((target.nickname == "kameloso"), target.nickname);
-                assert(m.properties & Message.Property.forced);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.RPL_WHOISACCOUNT), Enum!(IRCEvent.Type).toString(type));
+        assert((target.nickname == "kameloso"), target.nickname);
+        assert(m.properties & Message.Property.forced);
+    }
 }
 
 
@@ -995,7 +989,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void raw(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string line,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
@@ -1007,29 +1001,23 @@ void raw(
     m.properties = properties;
     m.caller = caller;
 
-    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
-    else state.mainThread.send(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     raw(state, "commands");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
-                assert((content == "commands"), content);
-                assert(m.properties == Message.Property.init);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
+        assert((content == "commands"), content);
+        assert(m.properties == Message.Property.init);
+    }
 }
 
 
@@ -1052,7 +1040,7 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void immediate(
-    IRCPluginState state,
+    ref IRCPluginState state,
     const string line,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
@@ -1064,28 +1052,23 @@ void immediate(
     m.caller = caller;
     m.properties = (properties | Message.Property.immediate);
 
-    state.mainThread.prioritySend(m);
+    state.outgoingMessages ~= m;
 }
 
 ///
 unittest
 {
     IRCPluginState state;
-    state.mainThread = thisTid;
 
     immediate(state, "commands");
 
-    receive(
-        (Message m)
-        {
-            with (m.event)
-            {
-                assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
-                assert((content == "commands"), content);
-                assert(m.properties & Message.Property.immediate);
-            }
-        }
-    );
+    immutable m = state.outgoingMessages[0];
+    with (m.event)
+    {
+        assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
+        assert((content == "commands"), content);
+        assert(m.properties & Message.Property.immediate);
+    }
 }
 
 /++
@@ -1096,21 +1079,20 @@ alias immediateline = immediate;
 
 // askToOutputImpl
 /++
-    Sends a concurrency message asking to print the supplied text to the local
+    Sends a message asking to print the supplied text to the local
     terminal, instead of doing it directly.
 
     Params:
-        logLevel = The [kameloso.logger.LogLevel|LogLevel] at which to log the message.
+        askVerb = An `askToX` string verb where `X` corresponds to the
+            [kameloso.logger.LogLevel|LogLevel] at which to log the message.
         state = Current [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
-            used to send the concurrency message to the main thread.
+            used for its [kameloso.plugins.common.core.IRCPluginState.messages|messages] array.
         line = The text body to ask the main thread to display.
  +/
-void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
+void askToOutputImpl(string askVerb)(IRCPluginState state, const string line)
 {
-    import kameloso.thread : OutputRequest;
-    import std.concurrency : prioritySend;
-
-    mixin("state.mainThread.prioritySend(OutputRequest(OutputRequest.Level.", logLevel, ", line));");
+    import kameloso.thread : ThreadMessage;
+    mixin("state.messages ~= ThreadMessage(ThreadMessage.MessageType." ~ askVerb ~ ", line);");
 }
 
 
@@ -1123,124 +1105,127 @@ void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
  +/
 static if (__VERSION__ >= 2099L)
 {
-    private import kameloso.thread : OutputRequest;
-    private import std.string : capitalize;
-    private import std.traits : EnumMembers;
+    private import std.meta : AliasSeq;
 
-    static foreach (immutable member; EnumMembers!(OutputRequest.Level))
+    private alias askLevels = AliasSeq!(
+        "askToTrace",
+        "askToLog",
+        "askToInfo",
+        "askToWarn",
+        "askToError",
+        "askToCritical",
+        "askToFatal",
+        "askToWriteln",
+    );
+
+    static foreach (immutable askVerb; askLevels)
     {
         mixin(
 `
+        private import kameloso.thread : ThreadMessage;
+
         /++
-            Sends a concurrency message to the main thread to [KamelosoLogger.trace] text to the local terminal.
+            Sends a message to the main thread to print text using
+            the [KamelosoLogger] to the local terminal.
          +/
-        alias askTo` ~ __traits(identifier, member).capitalize ~ ` =
-            askToOutputImpl!"` ~ __traits(identifier, member) ~ `";
+        alias ` ~ askVerb ~ ` = askToOutputImpl!"` ~ askVerb ~ `";
 `);
     }
 
     /++
         Simple alias to [askToWarn], because both spellings are right.
      +/
-    alias askToWarn = askToWarning;
+    alias askToWarning = askToWarn;
 }
 else
 {
     /++
-        Sends a concurrency message to the main thread asking to print text to the local terminal.
+        Sends a message to the main thread to [KamelosoLogger.trace] text to the local terminal.
      +/
-    alias askToWriteln = askToOutputImpl!"writeln";
+    alias askToTrace = askToOutputImpl!"askToTrace";
     /++
-        Sends a concurrency message to the main thread to [KamelosoLogger.trace] text to the local terminal.
+        Sends a message to the main thread to [KamelosoLogger.log] text to the local terminal.
      +/
-    alias askToTrace = askToOutputImpl!"trace";
+    alias askToLog = askToOutputImpl!"askToLog";
     /++
-        Sends a concurrency message to the main thread to [KamelosoLogger.log] text to the local terminal.
+        Sends a message to the main thread to [KamelosoLogger.info] text to the local terminal.
      +/
-    alias askToLog = askToOutputImpl!"log";
+    alias askToInfo = askToOutputImpl!"askToInfo";
     /++
-        Sends a concurrency message to the main thread to [KamelosoLogger.info] text to the local terminal.
+        Sends a message to the main thread to [KamelosoLogger.warning] text to the local terminal.
      +/
-    alias askToInfo = askToOutputImpl!"info";
-    /++
-        Sends a concurrency message to the main thread to [KamelosoLogger.warning] text to the local terminal.
-     +/
-    alias askToWarn = askToOutputImpl!"warning";
+    alias askToWarn = askToOutputImpl!"askToWarn";
     /++
         Simple alias to [askToWarn], because both spellings are right.
      +/
     alias askToWarning = askToWarn;
     /++
-        Sends a concurrency message to the main thread to [KamelosoLogger.error] text to the local terminal.
+        Sends a message to the main thread to [KamelosoLogger.error] text to the local terminal.
      +/
-    alias askToError = askToOutputImpl!"error";
+    alias askToError = askToOutputImpl!"askToError";
     /++
-        Sends a concurrency message to the main thread to [KamelosoLogger.critical] text to the local terminal.
+        Sends a message to the main thread to [KamelosoLogger.critical] text to the local terminal.
      +/
-    alias askToCritical = askToOutputImpl!"critical";
+    alias askToCritical = askToOutputImpl!"askToCritical";
     /++
-        Sends a concurrency message to the main thread to [KamelosoLogger.fatal] text to the local terminal.
+        Sends a message to the main thread to [KamelosoLogger.fatal] text to the local terminal.
      +/
-    alias askToFatal = askToOutputImpl!"fatal";
+    alias askToFatal = askToOutputImpl!"askToFatal";
+    /++
+        Sends a message to the main thread asking to print text to the local terminal.
+     +/
+    alias askToWriteln = askToOutputImpl!"askToWriteln";
 }
 
 unittest
 {
-    import kameloso.thread : OutputRequest;
+    import kameloso.thread : ThreadMessage;
 
     IRCPluginState state;
-    state.mainThread = thisTid;
 
-    state.askToWriteln("writeln");
     state.askToTrace("trace");
     state.askToLog("log");
     state.askToInfo("info");
     state.askToWarn("warning");
     state.askToError("error");
     state.askToCritical("critical");
+    state.askToWriteln("writeln");
 
-    alias T = OutputRequest.Level;
+    alias T = ThreadMessage.MessageType;
 
     static immutable T[7] expectedLevels =
     [
-        T.writeln,
-        T.trace,
-        T.log,
-        T.info,
-        T.warning,
-        T.error,
-        T.critical,
+        T.askToTrace,
+        T.askToLog,
+        T.askToInfo,
+        T.askToWarn,
+        T.askToError,
+        T.askToCritical,
+        //T.askToFatal,
+        T.askToWriteln,
     ];
 
     static immutable string[7] expectedMessages =
     [
-        "writeln",
         "trace",
         "log",
         "info",
         "warning",
         "error",
         "critical",
+        //"fatal",
+        "writeln",
     ];
 
     static assert(expectedLevels.length == expectedMessages.length);
 
     foreach (immutable i; 0..expectedMessages.length)
     {
-        import std.concurrency : receiveTimeout;
-        import std.variant : Variant;
-        import core.time : Duration;
-
-        cast(void)receiveTimeout(Duration.zero,
-            (OutputRequest request)
-            {
-                assert((request.logLevel == expectedLevels[i]), request.logLevel.to!string);
-                assert((request.line == expectedMessages[i]), request.line);
-            },
-            (Variant _)
-            {
-                assert(0, "Receive loop test in `messaging.d` failed.");
-            }
-        );
+        foreach (message; state.messages)
+        {
+            assert((message.type == expectedLevels[i]),
+                Enum!(ThreadMessage.MessageType).toString(message.type));
+            assert((message.content == expectedMessages[i]), message.content);
+        }
     }
 }

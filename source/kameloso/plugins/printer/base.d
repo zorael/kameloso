@@ -270,7 +270,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         if (!squelchstamp)
         {
-            plugin.hasSquelches = (plugin.squelches.length > 0);
+            plugin.transient.hasSquelches = (plugin.squelches.length > 0);
             return false;
         }
         else if ((time - *squelchstamp) <= plugin.squelchTimeout)
@@ -281,7 +281,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         else
         {
             plugin.squelches.remove(key);
-            plugin.hasSquelches = (plugin.squelches.length > 0);
+            plugin.transient.hasSquelches = (plugin.squelches.length > 0);
             return false;
         }
     }
@@ -406,7 +406,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case RPL_WHOISSERVER:
     case RPL_CHARSET:
     case RPL_STATSRLINE:
-        immutable shouldSquelch = plugin.hasSquelches &&
+        immutable shouldSquelch = plugin.transient.hasSquelches &&
             updateSquelchstamp(
                 plugin,
                 event.time,
@@ -512,7 +512,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case ERR_NOSUCHCHANNEL:
         // Error: switch skips declaration of variable shouldSquelch
         {
-            immutable shouldSquelch = plugin.hasSquelches &&
+            immutable shouldSquelch = plugin.transient.hasSquelches &&
                 updateSquelchstamp(
                     plugin,
                     event.time,
@@ -566,7 +566,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     populating arrays of lines to be written in bulk, once in a while.
 
     See_Also:
-        [commitAllLogsImpl]
+        [flushAllLogsImpl]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ANY)
@@ -584,20 +584,20 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 /++
     Writes all buffered log lines to disk on [dialect.defs.IRCEvent.Type.PING|PING].
 
-    Merely wraps [commitAllLogsImpl] by iterating over all buffers and invoking it.
+    Merely wraps [flushAllLogsImpl] by iterating over all buffers and invoking it.
 
     Params:
         plugin = The current [PrinterPlugin].
 
     See_Also:
-        [kameloso.plugins.printer.logging.commitAllLogsImpl|printer.logging.commitAllLogsImpl]
+        [kameloso.plugins.printer.logging.flushAllLogsImpl|printer.logging.flushAllLogsImpl]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
 )
 void onPing(PrinterPlugin plugin)
 {
-    commitAllLogsImpl(plugin);
+    flushAllLogsImpl(plugin);
 }
 
 
@@ -618,7 +618,7 @@ void onISUPPORT(PrinterPlugin plugin)
     import kameloso.common : logger;
     import lu.conv : Enum;
 
-    if (!plugin.transient.printedISUPPORT &&
+    if (plugin.transient.printedISUPPORT ||
         !plugin.state.server.network.length)
     {
         // We already printed this information, or we haven't yet seen NETWORK
@@ -719,7 +719,7 @@ void setup(PrinterPlugin plugin)
     if (!isTerminal)
     {
         // Not a TTY so replace our bell string with an empty one
-        PrinterPlugin.bell = string.init;
+        plugin.transient.bell = string.init;
     }
 
     static auto untilNextMidnight()
@@ -746,8 +746,30 @@ void setup(PrinterPlugin plugin)
 
             if (plugin.printerSettings.logs)
             {
-                commitAllLogsImpl(plugin);
-                plugin.buffers = null;  // Uncommitted lines will be LOST. Not trivial to work around.
+                flushAllLogsImpl(plugin);
+
+                if (plugin.buffers.length)
+                {
+                    import std.datetime.systime : Clock;
+                    import core.time : weeks;
+
+                    // Not all logs were flushed (as they get removed when they are)
+                    // Remove any remaining buffers that are too old
+                    static immutable discardAge = 1.weeks;
+                    immutable now = Clock.currTime;
+                    string[] toRemove;
+
+                    foreach (immutable key, const remainingBuffer; plugin.buffers)
+                    {
+                        immutable age = (now - remainingBuffer.creationTime);
+                        if (age > discardAge) toRemove ~= key;
+                    }
+
+                    foreach (immutable key; toRemove)
+                    {
+                        plugin.buffers.remove(key);
+                    }
+                }
             }
         }
 
@@ -782,14 +804,14 @@ void initResources(PrinterPlugin plugin)
 /++
     De-initialises the plugin.
 
-    If we're buffering writes, commit all queued lines to disk.
+    If we're buffering writes, flush all queued lines to disk.
  +/
 void teardown(PrinterPlugin plugin)
 {
     if (plugin.printerSettings.bufferedWrites)
     {
-        // Commit all logs before exiting
-        commitAllLogsImpl(plugin);
+        // Flush all logs before exiting
+        flushAllLogsImpl(plugin);
     }
 }
 
@@ -827,18 +849,18 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
     case "squelch":
         import std.datetime.systime : Clock;
         plugin.squelches[target] = Clock.currTime.toUnixTime();
-        plugin.hasSquelches = true;
+        plugin.transient.hasSquelches = true;
         break;
 
     case "unsquelch":
         plugin.squelches.remove(target);
-        plugin.hasSquelches = (plugin.squelches.length > 0);
+        plugin.transient.hasSquelches = (plugin.squelches.length > 0);
         break;
 
     case "commit":
-        logger.info("Committing logs to disk.");
-        commitAllLogsImpl(plugin);
-        foreach (ref buffer; plugin.buffers) buffer.clear();  // don't null the array
+    case "flush":
+        logger.info("Flushing logs to disk.");
+        flushAllLogsImpl(plugin);
         break;
 
     default:
@@ -989,6 +1011,16 @@ package:
             [dialect.defs.IRCEvent.Type.ISUPPORT|ISUPPORT] information.
          +/
         bool printedISUPPORT;
+
+        /++
+            Whether or not at least one squelch is active; whether [squelches] is non-empty.
+         +/
+        bool hasSquelches;
+
+        /++
+            Effective bell after [kameloso.terminal.isTerminal] checks.
+         +/
+        string bell = "" ~ cast(char)(TerminalToken.bell);
     }
 
     /++
@@ -1018,11 +1050,6 @@ package:
     long[string] squelches;
 
     /++
-        Whether or not at least one squelch is active; whether [squelches] is non-empty.
-     +/
-    bool hasSquelches;
-
-    /++
         Buffers, to clump log file writes together.
      +/
     LogLineBuffer[string] buffers;
@@ -1036,11 +1063,6 @@ package:
         Where to save logs.
      +/
     @Resource string logDirectory = "logs";
-
-    /++
-        Effective bell after [kameloso.terminal.isTerminal] checks.
-     +/
-    static string bell = "" ~ cast(char)(TerminalToken.bell);
 
     version(Debug)
     {

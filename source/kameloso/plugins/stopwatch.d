@@ -138,7 +138,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
     {
         import kameloso.time : timeSince;
         import std.datetime.systime : SysTime;
-        import core.time : msecs;
+        import core.time : Duration;
 
         auto channelWatches = event.channel in plugin.stopwatches;
         assert(channelWatches, "Tried to access stopwatches from nonexistent channel");
@@ -147,7 +147,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
         assert(watch, "Tried to fetch stopwatch start timestamp for a nonexistent id");
 
         auto now = Clock.currTime;
-        now.fracSecs = 0.msecs;
+        now.fracSecs = Duration.zero;
         immutable diff = now - SysTime.fromUnixTime(*watch);
         return timeSince(diff);
     }

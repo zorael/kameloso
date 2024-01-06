@@ -388,13 +388,21 @@ void writeToDisk(
     {
         import kameloso.constants : KamelosoInfo;
         import std.datetime.systime : Clock;
-        import core.time : msecs;
+        import core.time : Duration;
 
         auto timestamp = Clock.currTime;
-        timestamp.fracSecs = 0.msecs;
+        timestamp.fracSecs = Duration.zero;
 
-        enum pattern = "# kameloso v%s configuration file (%s)\n";
-        file.writefln(pattern, cast(string)KamelosoInfo.version_, timestamp);
+        enum pattern = "# kameloso v%s configuration file (%d-%02d-%02d %02d:%02d:%02d)\n";
+        file.writefln(
+            pattern,
+            cast(string)KamelosoInfo.version_,
+            timestamp.year,
+            timestamp.month,
+            timestamp.day,
+            timestamp.hour,
+            timestamp.minute,
+            timestamp.second);
     }
 
     file.writeln(configurationText);
@@ -555,10 +563,11 @@ public:
  +/
 auto handleGetopt(Kameloso instance) @system
 {
-    import kameloso.common : Next, printVersionInfo, settings;
+    import kameloso.common : printVersionInfo, settings;
     import kameloso.configreader : readConfigInto;
     import kameloso.logger : KamelosoLogger;
     import kameloso.terminal : applyTerminalOverrides;
+    import lu.common : Next;
     import lu.objmanip : replaceMembers;
     static import kameloso.common;
     static import std.getopt;

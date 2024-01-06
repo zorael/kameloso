@@ -62,13 +62,13 @@ private:
     import std.json : JSONValue;
 
 public:
-    // Type
+    // OnelinerType
     /++
         The different kinds of [Oneliner]s. Either one that yields a
-        [Type.random|random] response each time, or one that yields a
-        [Type.ordered|ordered] one.
+        [OnelinerType.random|random] response each time, or one that yields a
+        [OnelinerType.ordered|ordered] one.
      +/
-    enum Type
+    enum OnelinerType
     {
         /++
             Responses should be yielded in a random (technically uniform) order.
@@ -91,7 +91,7 @@ public:
     /++
         What type of [Oneliner] this is.
      +/
-    Type type;
+    OnelinerType type;
 
     // position
     /++
@@ -130,7 +130,7 @@ public:
      +/
     auto getResponse() /*const*/
     {
-        return (type == Type.random) ?
+        return (type == OnelinerType.random) ?
             randomResponse() :
             nextOrderedResponse();
     }
@@ -145,7 +145,7 @@ public:
             string is returned instead.
      +/
     auto nextOrderedResponse() /*const*/
-    in ((type == Type.ordered), "Tried to get an ordered response from a random Oneliner")
+    in ((type == OnelinerType.ordered), "Tried to get an ordered response from a random Oneliner")
     {
         if (!responses.length) return string.init;
 
@@ -169,7 +169,7 @@ public:
             string is returned instead.
      +/
     auto randomResponse() const
-    //in ((type == Type.random), "Tried to get an random response from an ordered Oneliner")
+    //in ((type == OnelinerType.random), "Tried to get an random response from an ordered Oneliner")
     {
         import std.random : uniform;
 
@@ -218,9 +218,9 @@ public:
 
         Oneliner oneliner;
         oneliner.trigger = json["trigger"].str;
-        oneliner.type = (json["type"].integer == cast(int)Type.random) ?
-            Type.random :
-            Type.ordered;
+        oneliner.type = (json["type"].integer == cast(int)OnelinerType.random) ?
+            OnelinerType.random :
+            OnelinerType.ordered;
 
         if (const cooldownJSON = "cooldown" in json)
         {
@@ -252,12 +252,11 @@ public:
 void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
-    import kameloso.string : replaceRandom;
-    import lu.string : advancePast;
+    import kameloso.string : replaceFromAA, replaceRandom;
+    import lu.string : advancePast, splitWithQuotes;
     import std.algorithm.searching : startsWith;
     import std.array : replace;
     import std.conv : text, to;
-    import std.random : uniform;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
 
@@ -278,12 +277,13 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     auto channelOneliners = event.channel in plugin.onelinersByChannel;  // mustn't be const
     if (!channelOneliners) return;
 
-    immutable trigger = slice.advancePast(' ', Yes.inherit).toLower;
+    immutable trigger = slice.advancePast(' ', Yes.inherit);  // mutable
+    immutable triggerLower = trigger.toLower();
 
-    auto oneliner = trigger in *channelOneliners;  // mustn't be const
+    auto oneliner = triggerLower in *channelOneliners;  // mustn't be const
     if (!oneliner) return;
 
-    if (!oneliner.responses.length) return sendEmptyOneliner(trigger);
+    if (!oneliner.responses.length) return sendEmptyOneliner(triggerLower);
 
     if (oneliner.cooldown > 0)
     {
@@ -299,29 +299,59 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
         }
     }
 
-    string line = oneliner.getResponse()  // mutable
-        .replace("$channel", event.channel)
-        .replace("$senderNickname", event.sender.nickname)
-        .replace("$sender", nameOf(event.sender))
-        .replace("$botNickname", plugin.state.client.nickname)
-        .replace("$bot", nameOf(plugin, plugin.state.client.nickname)) // likewise
-        .replaceRandom();
+    immutable args = slice.splitWithQuotes();
+    static @safe string delegate()[string] aa;
 
-    version(TwitchSupport)
+    if (!aa.length)
     {
-        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        aa =
+        [
+            "$channel"  : () => event.channel,
+            "$sender"   : () => nameOf(event.sender),
+            "$bot"      : () => nameOf(plugin, plugin.state.client.nickname),
+            "$senderNickname" : () => event.sender.nickname,
+            "$botNickname" : () => plugin.state.client.nickname,
+            "$args"     : () => slice,
+            "$arg0"     : () => trigger,
+            "$arg1"     : () => (args.length >= 1) ? args[0] : string.init,
+            "$arg2"     : () => (args.length >= 2) ? args[1] : string.init,
+            "$arg3"     : () => (args.length >= 3) ? args[2] : string.init,
+            "$arg4"     : () => (args.length >= 4) ? args[3] : string.init,
+            "$arg5"     : () => (args.length >= 5) ? args[4] : string.init,
+            "$arg6"     : () => (args.length >= 6) ? args[5] : string.init,
+            "$arg7"     : () => (args.length >= 7) ? args[6] : string.init,
+            "$arg8"     : () => (args.length >= 8) ? args[7] : string.init,
+            "$arg9"     : () => (args.length >= 9) ? args[8] : string.init,
+            "$arg1name" : () => (args.length >= 1) ? nameOf(plugin, args[0]) : string.init,
+            "$arg2name" : () => (args.length >= 2) ? nameOf(plugin, args[1]) : string.init,
+            "$arg3name" : () => (args.length >= 3) ? nameOf(plugin, args[2]) : string.init,
+            "$arg4name" : () => (args.length >= 4) ? nameOf(plugin, args[3]) : string.init,
+            "$arg5name" : () => (args.length >= 5) ? nameOf(plugin, args[4]) : string.init,
+            "$arg6name" : () => (args.length >= 6) ? nameOf(plugin, args[5]) : string.init,
+            "$arg7name" : () => (args.length >= 7) ? nameOf(plugin, args[6]) : string.init,
+            "$arg8name" : () => (args.length >= 8) ? nameOf(plugin, args[7]) : string.init,
+            "$arg9name" : () => (args.length >= 9) ? nameOf(plugin, args[8]) : string.init,
+        ];
+
+        version(TwitchSupport)
         {
-            line = line
-                .replace("$streamerNickname", event.channel[1..$])
-                .replace("$streamer", nameOf(plugin, event.channel[1..$]));
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+            {
+                aa["$streamer"] = () => nameOf(plugin, event.channel[1..$]);
+                aa["$streamerNickname"] = () => event.channel[1..$];
+            }
         }
+
+        aa.rehash();
     }
 
+    immutable line = oneliner
+        .getResponse()
+        .replaceFromAA(aa);
     immutable target = slice.startsWith('@') ? slice[1..$] : slice;
     immutable message = target.length ?
         text('@', nameOf(plugin, target), ' ', line) :
         line;
-
     sendOneliner(plugin, event, message);
 }
 
@@ -460,14 +490,14 @@ void handleNewOneliner(
 
     if (!typestring.length) return sendNewUsage();
 
-    Oneliner.Type type;
+    Oneliner.OnelinerType type;
 
     switch (typestring)
     {
     case "random":
     case "rnd":
     case "rng":
-        type = Oneliner.Type.random;
+        type = Oneliner.OnelinerType.random;
         break;
 
     case "ordered":
@@ -475,7 +505,7 @@ void handleNewOneliner(
     case "sequential":
     case "seq":
     case "sequence":
-        type = Oneliner.Type.ordered;
+        type = Oneliner.OnelinerType.ordered;
         break;
 
     default:
@@ -543,14 +573,14 @@ void handleNewOneliner(
 
     void addNewOnelinerDg()
     {
-        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         IRCPlugin.CommandMetadata[string][string] aa = thisFiber.payload[0];
         if (triggerConflicts(aa)) return;
 
         // Get channel AAs
-        plugin.state.specialRequests ~= specialRequest(event.channel, thisFiber);
+        defer(plugin, thisFiber, event.channel);
         Fiber.yield();
 
         IRCPlugin.CommandMetadata[string][string] channelSpecificAA = thisFiber.payload[0];
@@ -571,7 +601,7 @@ void handleNewOneliner(
         chan(plugin.state, event.channel, message);
     }
 
-    plugin.state.specialRequests ~= specialRequest!Payload(string.init, &addNewOnelinerDg);
+    defer!Payload(plugin, &addNewOnelinerDg);
 }
 
 
@@ -700,7 +730,7 @@ void handleAddToOneliner(
 
             oneliner.responses.insertInPlace(pos, line);
 
-            if (oneliner.type == Oneliner.Type.ordered)
+            if (oneliner.type == Oneliner.OnelinerType.ordered)
             {
                 // Reset ordered position to 0 on insertions
                 oneliner.position = 0;
@@ -874,7 +904,7 @@ void handleDelFromOneliner(
             oneliner.responses = oneliner.responses.remove!(SwapStrategy.stable)(pos);
             sendLineRemoved(trigger, pos);
 
-            if (oneliner.type == Oneliner.Type.ordered)
+            if (oneliner.type == Oneliner.OnelinerType.ordered)
             {
                 // Reset ordered position to 0 on removals
                 oneliner.position = 0;
@@ -976,6 +1006,10 @@ void reload(OnelinerPlugin plugin)
 void loadOneliners(OnelinerPlugin plugin)
 {
     import lu.json : JSONStorage;
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
 
     JSONStorage allOnelinersJSON;
     allOnelinersJSON.load(plugin.onelinerFile);

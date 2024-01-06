@@ -42,7 +42,7 @@ mixin PluginRegistration!QuotePlugin;
     /++
         How many units to use when reporting time in quotes.
      +/
-    enum TimePrecision
+    enum Precision
     {
         year,
         month,
@@ -61,7 +61,7 @@ mixin PluginRegistration!QuotePlugin;
     /++
         How many units to use when reporting time in quotes.
      +/
-    TimePrecision timePrecision = TimePrecision.day;
+    Precision timePrecision = Precision.day;
 
     /++
         Whether or not a random result should be picked in case some quote search
@@ -706,21 +706,21 @@ void sendQuoteToChannel(
 
     Params:
         when = The [std.datetime.systime.SysTime|SysTime] to base the string on.
-        precision = The [QuoteSettings.TimePrecision|TimePrecision] to use
+        precision = The [QuoteSettings.Precision|Precision] to use
             (how many units to express the time in).
 
     Returns:
         A string representing the time in the passed precision. If a precision
-        of [QuoteSettings.TimePrecision.none|none] is passed, the string will
+        of [QuoteSettings.Precision.none|none] is passed, the string will
         be empty.
  +/
 auto getTimeStringFromTimestamp(
     const SysTime when,
-    const QuoteSettings.TimePrecision precision)
+    const QuoteSettings.Precision precision)
 {
     import std.format : format;
 
-    with (QuoteSettings.TimePrecision)
+    with (QuoteSettings.Precision)
     final switch (precision)
     {
     case year:
@@ -776,7 +776,7 @@ unittest
     import std.datetime : DateTime;
     import std.datetime.timezone : UTC;
 
-    alias Precision = QuoteSettings.TimePrecision;
+    alias Precision = QuoteSettings.Precision;
     const dateTime = DateTime(2023, 11, 12, 13, 14, 15);
     const when = SysTime(dateTime, UTC());
 
@@ -1273,6 +1273,10 @@ void loadQuotes(QuotePlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
 
     JSONStorage json;
 

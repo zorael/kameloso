@@ -1,23 +1,21 @@
 /++
-    Structures and functions related to concurrency message passing, threads and
+    Structures and functions related to message passing, threads and
     [core.thread.fiber.Fiber|Fiber]s.
 
     Example:
     ---
-    import std.concurrency;
-
-    mainThread.send(ThreadMessage.sendline("Message to send to server"));
-    mainThread.send(ThreadMessage.pong("irc.libera.chat"));
-    mainThread.send(OutputRequest(ThreadMessage.TerminalOutput.writeln, "writeln this for me please"));
-    mainThread.send(ThreadMessage.busMessage("header", boxed("payload")));
+    plugin.state.messages ~= ThreadMessage.sendline("Message to send to server");
+    plugin.state.priorityMessages ~= ThreadMessage.pong("irc.libera.chat");
+    plugin.state.messages ~= ThreadMessage.askToWriteln("writeln this for me please");
+    plugin.state.messages ~= ThreadMessage.busMessage("header", boxed("payload"));
 
     auto fiber = new CarryingFiber!string(&someDelegate, BufferSize.fiberStack);
-    fiber.payload = "This string is carried by the Fiber and can be accessed from within it";
+    fiber.payload = "This string is carried by the fiber and can be accessed from within it";
     fiber.call();
     fiber.payload = "You can change it in between calls to pass information to it";
     fiber.call();
 
-    // As such we can make Fibers act like they're taking new arguments each call
+    // As such we can make fibers act like they're taking new arguments each call
     auto fiber2 = new CarryingFiber!IRCEvent(&otherDelegate, BufferSize.fiberStack);
     fiber2.payload = newIncomingIRCEvent;
     fiber2.call();
@@ -39,6 +37,7 @@ module kameloso.thread;
 
 private:
 
+import kameloso.plugins.common.core : IRCPlugin;
 import std.meta : allSatisfy;
 import std.traits : isNumeric, isSomeFunction;
 import std.typecons : Flag, No, Yes;
@@ -192,11 +191,11 @@ version(Posix)
 // ThreadMessage
 /++
     Collection of static functions used to construct thread messages, for passing
-    information of different kinds yet still as one type, to stop [std.concurrency.send]
-    from requiring so much compilation memory.
+    information of different kinds yet still as one type, to be able to store them
+    in arrays for later processing.
 
-    The type of the message is defined as a [ThreadMessage.Type|Type] in
-    [ThreadMessage.type]. Recipients will have to do a (final) switch over that
+    The type of the message is defined as a [ThreadMessage.MessageType|MessageType] in
+    [ThreadMessage.MessageType]. Recipients will have to do a (final) switch over that
     enum to deal with messages accordingly.
  +/
 struct ThreadMessage
@@ -204,7 +203,7 @@ struct ThreadMessage
     /++
         Different thread message types.
      +/
-    enum Type
+    enum MessageType
     {
         /++
             Request to send a server [dialect.defs.IRCEvent.Type.PONG|PONG] response.
@@ -289,12 +288,70 @@ struct ThreadMessage
             associative array.
          +/
         putUser,
+
+        /++
+            Request to print a message using the [kameloso.logger.KamelosoLogger|KamelosoLogger]
+            at a level of [kameloso.logger.LogLevel.trace|trace].
+         +/
+        askToTrace,
+
+        /++
+            Request to print a message using the [kameloso.logger.KamelosoLogger|KamelosoLogger]
+            at a level of [kameloso.logger.LogLevel.all|all] (log).
+         +/
+        askToLog,
+
+        /++
+            Request to print a message using the [kameloso.logger.KamelosoLogger|KamelosoLogger]
+            at a level of [kameloso.logger.LogLevel.info|info].
+         +/
+        askToInfo,
+
+        /++
+            Request to print a message using the [kameloso.logger.KamelosoLogger|KamelosoLogger]
+            at a level of [kameloso.logger.LogLevel.warning|warning].
+         +/
+        askToWarn,
+
+        /++
+            Request to print a message using the [kameloso.logger.KamelosoLogger|KamelosoLogger]
+            at a level of [kameloso.logger.LogLevel.error|error].
+         +/
+        askToError,
+
+        /++
+            Request to print a message using the [kameloso.logger.KamelosoLogger|KamelosoLogger]
+            at a level of [kameloso.logger.LogLevel.critical|critical].
+         +/
+        askToCritical,
+
+        /++
+            Request to print a message using the [kameloso.logger.KamelosoLogger|KamelosoLogger]
+            at a level of [kameloso.logger.LogLevel.fatal|fatal].
+         +/
+        askToFatal,
+
+        /++
+            Request to print a message using [std.stdio.writeln|writeln].
+         +/
+        askToWriteln,
+
+        /++
+            Request to fake a string as having been received from the server.
+         +/
+        fakeEvent,
     }
 
     /++
-        The [Type] of this thread message.
+        Deprecated alias to [MessageType].
      +/
-    Type type;
+    deprecated("Use `ThreadMessage.MessageType` instead")
+    alias Type = MessageType;
+
+    /++
+        The [MessageType] of this thread message.
+     +/
+    MessageType type;
 
     /++
         String content body of message, where applicable.
@@ -312,14 +369,14 @@ struct ThreadMessage
     bool quiet;
 
     /++
-        An `opDispatch`, constructing one function for each member in [Type].
+        An `opDispatch`, constructing one function for each member in [MessageType].
 
-        What the parameters functionally do is contextual to each [Type].
+        What the parameters functionally do is contextual to each [MessageType].
 
         Params:
-            memberstring = String name of a member of [Type].
+            memberstring = String name of a member of [MessageType].
             content = Optional content string.
-            payload = Optional boxed [Sendable] payloda.
+            payload = Optional boxed [Sendable] payload.
             quiet = Whether or not to pass a flag for the action to be done quietly.
 
         Returns:
@@ -330,49 +387,8 @@ struct ThreadMessage
         shared Sendable payload = null,
         const bool quiet = false)
     {
-        mixin("return ThreadMessage(Type." ~ memberstring ~ ", content, payload, quiet);");
+        mixin("return ThreadMessage(MessageType." ~ memberstring ~ ", content, payload, quiet);");
     }
-}
-
-
-// OutputRequest
-/++
-    Embodies the notion of a request to output something to the local terminal.
-
-    Merely bundles a [OutputRequest.Level|Level] log level and
-    a `string` message line. What log level is picked decides what log level is
-    passed to the [kameloso.logger.KamelosoLogger|KamelosoLogger] instance, and
-    dictates things like what colour to tint the message with (if any).
- +/
-struct OutputRequest
-{
-    /++
-        Output log levels.
-
-        See_Also:
-            [kameloso.logger.LogLevel]
-     +/
-    enum Level
-    {
-        writeln,    /// writeln the line.
-        trace,      /// Log at [kameloso.logger.LogLevel.trace].
-        log,        /// Log at [kameloso.logger.LogLevel.all] (log).
-        info,       /// Log at [kameloso.logger.LogLevel.info].
-        warning,    /// Log at [kameloso.logger.LogLevel.warning].
-        error,      /// Log at [kameloso.logger.LogLevel.error].
-        critical,   /// Log at [kameloso.logger.LogLevel.critical].
-        fatal,      /// Log at [kameloso.logger.LogLevel.fatal].
-    }
-
-    /++
-        Log level of the message.
-     +/
-    Level logLevel;
-
-    /++
-        String line to request to be output to the local terminal.
-     +/
-    string line;
 }
 
 
@@ -402,7 +418,7 @@ final class Boxed(T) : Sendable
         Constructor that adds a passed payload to the internal stored [payload],
         creating a *shared* `Boxed`.
      +/
-    this(T payload) shared pure @safe nothrow @nogc
+    this(T payload) shared pure /*@safe*/ nothrow @nogc
     {
         this.payload = cast(shared)payload;
     }
@@ -472,7 +488,7 @@ unittest
     ---
     void dg()
     {
-        CarryingFiber!bool fiber = cast(CarryingFiber!bool)(Fiber.getThis);
+        auto fiber = cast(CarryingFiber!bool)Fiber.getThis();
         assert(fiber !is null);  // Correct cast
 
         assert(fiber.payload);
@@ -494,7 +510,7 @@ unittest
 final class CarryingFiber(T) : Fiber
 {
     /++
-        Embedded payload value in this Fiber; what distinguishes it from plain
+        Embedded payload value in this fiber; what distinguishes it from plain
         [core.thread.fiber.Fiber|Fiber]s.
      +/
     T payload;
@@ -518,7 +534,7 @@ final class CarryingFiber(T) : Fiber
 
     /++
         Constructor function merely taking a function/delegate pointer, to call
-        when invoking this Fiber (via [CarryingFiber.call|.call()]).
+        when invoking this fiber (via [CarryingFiber.call|.call()]).
 
         Params:
             fnOrDg = Function/delegate pointer to call when invoking this [CarryingFiber].
@@ -539,7 +555,7 @@ final class CarryingFiber(T) : Fiber
     /++
         Constructor function taking a `T` `payload` to assign to its own
         internal [CarryingFiber.payload|this.payload], as well as a function/delegate pointer to call
-        when invoking this Fiber (via [CarryingFiber.call|.call()]).
+        when invoking this fiber (via [CarryingFiber.call|.call()]).
 
         Params:
             fnOrDg = Function/delegate pointer to call when invoking this [CarryingFiber].
@@ -563,7 +579,7 @@ final class CarryingFiber(T) : Fiber
     /++
         Constructor function taking a `T` `payload` to assign to its own
         internal [CarryingFiber.payload|this.payload], as well as a function/delegate pointer to call
-        when invoking this Fiber (via [CarryingFiber.call|.call()]).
+        when invoking this fiber (via [CarryingFiber.call|.call()]).
 
         Deprecated: Use the constructor taking a function/delegate pointer first
             instead. This overload will be removed in a later release.
@@ -607,6 +623,29 @@ final class CarryingFiber(T) : Fiber
         this.caller = caller;
         ++this.called;
         return super.call();
+    }
+
+    /++
+        Hijacks the invocation of the [core.thread.fiber.Fiber|Fiber] and injects
+        the string name of the calling function into the [caller] member before
+        calling the [core.thread.fiber.Fiber|Fiber]'s own `.call()`.
+
+        Overload that takes a `T` `payload` to assign to its own internal
+        [CarryingFiber.payload|this.payload].
+
+        Params:
+            payload = Payload to assign to [CarryingFiber.payload|.payload].
+            caller = String name of the function calling this [CarryingFiber]
+                (via [CarryingFiber.call|.call()]).
+
+        Returns:
+            A [core.object.Throwable|Throwable] if the underlying
+            [core.thread.fiber.Fiber|Fiber] threw one when called; `null` otherwise.
+     +/
+    auto call(T payload, const string caller = __FUNCTION__)
+    {
+        this.payload = payload;
+        return this.call(caller);
     }
 
     /++
@@ -665,8 +704,8 @@ unittest
 
     void dg()
     {
-        auto thisFiber = cast(CarryingFiber!Payload)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         // __FUNCTION__ will be something like "kameloso.thread.__unittest_L577_C1.dg"
         enum expectedFunction = __FUNCTION__[0..$-2] ~ "dg";
@@ -784,17 +823,15 @@ void interruptibleSleep(const Duration dur, const Flag!"abort"* abort) @system
     import core.thread : Thread, msecs;
 
     static immutable step = 100.msecs;
-    static immutable nothing = 0.msecs;
-
     Duration left = dur;
 
-    while (left > nothing)
+    while (left > Duration.zero)
     {
         if (*abort) return;
 
         immutable nextStep = (left > step) ? step : left;
 
-        if (nextStep <= nothing) break;
+        if (nextStep <= Duration.zero) break;
 
         Thread.sleep(nextStep);
         left -= step;
@@ -802,71 +839,49 @@ void interruptibleSleep(const Duration dur, const Flag!"abort"* abort) @system
 }
 
 
-// exhaustMessages
+// getQuitMessage
 /++
-    Exhausts the concurrency message mailbox.
+    Iterates the [kameloso.plugins.common.core.IRCPluginState.messages|messages] and
+    [kameloso.plugins.common.core.IRCPluginState.priorityMessages|priorityMessages] arrays
+    of each plugin.
 
-    This is done between connection attempts to get a fresh start.
-
-    If a [kameloso.thread.ThreadMessage.Type.quit|quit] message is received,
+    If a [kameloso.thread.ThreadMessage.MessageType.quit|quit] message is found,
     its content is returned.
 
+    Note: The message arrays are not nulled out in this function.
+
+    Params:
+        plugins = Array of plugins to iterate.
+
     Returns:
-        The content of a [kameloso.thread.ThreadMessage.Type.quit|quit] message,
+        The `content` of a [kameloso.thread.ThreadMessage.MessageType.quit|quit] message,
         if one was received, otherwise an empty string.
  +/
-auto exhaustMessages()
+auto getQuitMessage(IRCPlugin[] plugins)
 {
-    import std.concurrency : receiveTimeout, thisTid;
-    import std.variant : Variant;
-    import core.time : msecs;
+    string quitMessage;  // mutable
 
-    // core.exception.AssertError@std/concurrency.d(910): Cannot receive a message
-    // until a thread was spawned or thisTid was passed to a running thread.
-    cast(void)thisTid;
-
-    static immutable almostInstant = 10.msecs;
-    bool receivedSomething;  // mutable
-    string quitMessage;  // ditto
-
-    do
+    top:
+    foreach (plugin; plugins)
     {
-        receivedSomething = receiveTimeout(almostInstant,
-            (ThreadMessage message) scope
+        foreach (message; plugin.state.priorityMessages)
+        {
+            if (message.type == ThreadMessage.MessageType.quit)
             {
-                if (message.type == ThreadMessage.Type.quit)
-                {
-                    quitMessage = message.content;
-                }
-            },
-            (Variant _) scope {},
-        );
+                quitMessage = message.content;
+                break top;
+            }
+        }
+
+        foreach (message; plugin.state.priorityMessages)
+        {
+            if (message.type == ThreadMessage.MessageType.quit)
+            {
+                quitMessage = message.content;
+                break top;
+            }
+        }
     }
-    while (receivedSomething);
 
     return quitMessage;
-}
-
-///
-unittest
-{
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : receiveTimeout, send, thisTid;
-    import std.variant : Variant;
-    import core.time : Duration;
-
-    foreach (immutable i; 0..10)
-    {
-        thisTid.send(i);
-    }
-
-    thisTid.send(ThreadMessage.quit("hello"));
-    immutable quitMessage = exhaustMessages();
-
-    immutable receivedSomething = receiveTimeout(Duration.zero,
-        (Variant _) {},
-    );
-
-    assert(!receivedSomething);
-    assert((quitMessage == "hello"), quitMessage);
 }

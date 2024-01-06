@@ -365,38 +365,56 @@ unittest
 
 // ircColourByHash
 /++
-    Returns the passed string coloured with an IRC colour depending on the hash
+    Returns the passed `string` coloured with an IRC colour depending on the hash
     of the string, making for good "random" (uniformly distributed) nick colours
     in IRC messages.
 
     Params:
-        word = String to tint.
+        word = `string` to tint.
         extendedOutgoingColours = Whether or not to use extended colours (16-98).
 
     Returns:
-        The passed string encased within IRC colour coding.
+        The passed `string` encased within IRC colour coding.
  +/
 string ircColourByHash(
     const string word,
     const Flag!"extendedOutgoingColours" extendedOutgoingColours) pure
 in (word.length, "Tried to apply IRC colours by hash to a string but no string was given")
 {
-    import lu.conv : toAlphaInto;
     import std.array : Appender;
 
     if (!word.length) return word;
 
     Appender!(char[]) sink;
-    sink.reserve(word.length + 4);  // colour, index, word, colour
+    ircColourByHashImpl(sink, word, extendedOutgoingColours);
+    return sink.data;
+}
 
-    immutable modulo = extendedOutgoingColours ? ircANSIColourMap.length : 16;
-    immutable colourInteger = (hashOf(word) % modulo);
 
-    sink.put(cast(char)IRCControlCharacter.colour);
-    colourInteger.toAlphaInto!(2, 2)(sink);
-    sink.put(word);
-    sink.put(cast(char)IRCControlCharacter.colour);
+// ircColourByHash
+/++
+    Returns the passed `dstring` coloured with an IRC colour depending on the hash
+    of the string, making for good "random" (uniformly distributed) nick colours
+    in IRC messages.
 
+    Params:
+        word = `dtring`` to tint.
+        extendedOutgoingColours = Whether or not to use extended colours (16-98).
+
+    Returns:
+        The passed `dstring`` encased within IRC colour coding.
+ +/
+dstring ircColourByHash(
+    const dstring word,
+    const Flag!"extendedOutgoingColours" extendedOutgoingColours) pure
+in (word.length, "Tried to apply IRC colours by hash to a dstring but no dstring was given")
+{
+    import std.array : Appender;
+
+    if (!word.length) return word;
+
+    Appender!(dchar[]) sink;
+    ircColourByHashImpl(sink, word, extendedOutgoingColours);
     return sink.data;
 }
 
@@ -427,6 +445,35 @@ unittest
         immutable expected = I.colour ~ "90flerrp" ~ I.colour;
         assert((actual == expected), actual);
     }
+}
+
+
+// ircColourByHashImpl
+/++
+    Implementation function used by [ircColourByHash]. Breaks out common functionality
+    and reuses it.
+
+    Params:
+        sink = Output range sink to fill with the function's output.
+        word = Some type of string to tint.
+        extendedOutgoingColours = Whether or not to use extended colours (16-98).
+ +/
+private void ircColourByHashImpl(Sink, String)
+    (ref Sink sink,
+    const String word,
+    const Flag!"extendedOutgoingColours" extendedOutgoingColours) pure
+{
+    import lu.conv : toAlphaInto;
+
+    sink.reserve(word.length + 4);  // colour, index, word, colour
+
+    immutable modulo = extendedOutgoingColours ? ircANSIColourMap.length : 16;
+    immutable colourInteger = (hashOf(word) % modulo);
+
+    sink.put(cast(char)IRCControlCharacter.colour);
+    colourInteger.toAlphaInto!(2, 2)(sink);
+    sink.put(word);
+    sink.put(cast(char)IRCControlCharacter.colour);
 }
 
 
@@ -1374,9 +1421,9 @@ T expandIRCTags(T)(const T line) @system
         assert((expanded == expected), expanded);
     }
     {
-        immutable line = "hello<1>hello<c>hello";
+        immutable line = "hello<1>HELLO<c>hello";
         immutable expanded = line.expandIRCTags;
-        immutable expected = "hello" ~ I.colour ~ "01hello" ~ I.colour ~ "hello";
+        immutable expected = "hello" ~ I.colour ~ "01HELLO" ~ I.colour ~ "hello";
         assert((expanded == expected), expanded);
     }
     {
@@ -1428,7 +1475,7 @@ T expandIRCTags(T)(const T line) @system
     {
         immutable line = "hello<x>hello<z>";
         immutable expanded = line.expandIRCTags;
-        immutable expected = "hellohello";
+        immutable expected = "hello<x>hello<z>";
         assert((expanded == expected), expanded);
     }
     {
@@ -1440,7 +1487,19 @@ T expandIRCTags(T)(const T line) @system
     {
         immutable line = "hello<h>kameloso";
         immutable expanded = line.expandIRCTags;
-        immutable expected = "hellokameloso";
+        immutable expected = "hello<h>kameloso";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<1,>kameloso";
+        immutable expanded = line.expandIRCTags;
+        immutable expected = "hello<1,>kameloso";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<1,";
+        immutable expanded = line.expandIRCTags;
+        immutable expected = "hello<1,";
         assert((expanded == expected), expanded);
     }
     {
@@ -1560,9 +1619,8 @@ T stripIRCTags(T)(const T line) @system
 private T expandIRCTagsImpl(T)
     (const T line,
     const Flag!"extendedOutgoingColours" extendedOutgoingColours,
-    const Flag!"strip" strip = No.strip) pure
+    const Flag!"strip" strip = No.strip) pure @safe
 {
-    import dialect.common : IRCControlCharacter;
     import std.array : Appender;
     import std.range : ElementEncodingType;
     import std.string : indexOf, representation;
@@ -1570,202 +1628,265 @@ private T expandIRCTagsImpl(T)
 
     alias E = Unqual!(ElementEncodingType!T);
 
-    if (!line.length || line.indexOf('<') == -1) return line;
+    if (!line.length || (line.indexOf('<') == -1)) return line;
 
     Appender!(E[]) sink;
-    bool dirty;
+    size_t lastEnd;
+    bool reserved;
     bool escaping;
 
     immutable asBytes = line.representation;
-    immutable toReserve = (asBytes.length + 16);
+
+    void commitUpTo(const size_t i)
+    {
+        if (!reserved)
+        {
+            sink.reserve(asBytes.length + 16);  // guesstimate
+            reserved = true;
+        }
+        sink.put(asBytes[lastEnd..i]);
+    }
 
     byteloop:
     for (size_t i; i<asBytes.length; ++i)
     {
-        immutable c = asBytes[i];
-
-        switch (c)
+        //charswitch:
+        switch (asBytes[i])
         {
         case '\\':
-            if (escaping)
-            {
-                // Always dirty
-                sink.put('\\');
-            }
-            else
-            {
-                if (!dirty)
-                {
-                    sink.reserve(toReserve);
-                    sink.put(asBytes[0..i]);
-                    dirty = true;
-                }
-            }
-
+            // Start of an escape sequence
+            commitUpTo(i);
+            lastEnd = i+1;
+            if (escaping) sink.put('\\');
             escaping = !escaping;
-            break;
+            continue byteloop;
 
         case '<':
+            static auto isNumeric(uint char_)
+            {
+                return (char_ >= '0') && (char_ <= '9');
+            }
+
             if (escaping)
             {
-                // Always dirty
+                commitUpTo(i);
+                lastEnd = i+1;
                 sink.put('<');
                 escaping = false;
+                continue byteloop;
+            }
+
+            immutable closingBracketPos = (cast(T)asBytes[i..$]).indexOf('>');
+            if (closingBracketPos == -1) continue byteloop;
+
+            if (asBytes.length < i+2)
+            {
+                // Too close to the end to have a meaningful tag
+                // Break and return
+                break byteloop;
+            }
+
+            immutable tag = asBytes[i+1..i+closingBracketPos];
+
+            if (!tag.length)
+            {
+                // Empty tag; "<>"
+                continue byteloop;
+            }
+            else if (tag.length > 5)
+            {
+                // Tag too long; max is "<99,99>"
+                continue byteloop;
+            }
+            else if ((tag.length == 1) && !isNumeric(tag[0]))
+            {
+                import dialect.common : IRCControlCharacter;
+
+                // Single character tag, but not a number
+
+                commitUpTo(i);
+                //lastEnd = i+1;  // set below
+
+                //tagswitch:
+                switch (tag[0])
+                {
+                case 'b':
+                    if (!strip) sink.put(cast(char)IRCControlCharacter.bold);
+                    break;
+
+                case 'c':
+                    if (!strip) sink.put(cast(char)IRCControlCharacter.colour);
+                    break;
+
+                case 'i':
+                    if (!strip) sink.put(cast(char)IRCControlCharacter.italics);
+                    break;
+
+                case 'u':
+                    if (!strip) sink.put(cast(char)IRCControlCharacter.underlined);
+                    break;
+
+                case '/':
+                    if (!strip) sink.put(cast(char)IRCControlCharacter.reset);
+                    break;
+
+                case 'h':
+                    immutable closingHashMarkPos = (cast(T)asBytes[i+3..$]).indexOf("<h>");
+                    if (closingHashMarkPos == -1) goto default;
+
+                    i += 3;  // Advance past <h>
+
+                    if (!strip)
+                    {
+                        sink.put(ircColourByHash(
+                            line[i..i+closingHashMarkPos],
+                            extendedOutgoingColours));
+                    }
+                    else
+                    {
+                        sink.put(line[i..i+closingHashMarkPos]);
+                    }
+
+                    // Don't advance the full "<h>".length 3
+                    // because the for-loop ++i will advance one ahead
+                    i += closingHashMarkPos+2;
+                    lastEnd = i+1;
+                    continue;  // don't break
+
+                default:
+                    // Invalid control character, just ignore
+                    // set lastEnd but otherwise skip ahead past the tag
+                    lastEnd = i;
+                    i += tag.length+1;
+                    continue byteloop;
+                }
+
+                // The character tag cases drop down to here
+                i += tag.length+1;
+                lastEnd = i+1;
+                continue byteloop;
             }
             else
             {
-                immutable ptrdiff_t closingBracketPos = (cast(T)asBytes[i..$]).indexOf('>');
+                import lu.conv : toAlphaInto;
+                import std.algorithm.searching : countUntil;
 
-                if ((closingBracketPos == -1) || (closingBracketPos > 6))
+                // Tag is a number, or a comma-separated pair of numbers
+
+                static auto getColourNumbers(
+                    const typeof(asBytes) input,
+                    out uint code)
                 {
-                    if (dirty)
+                    Unqual!(typeof(asBytes)) slice = input;
+
+                    if (!slice.length || (slice.length > 2))
                     {
-                        sink.put(c);
+                        // bad tag
+                        return false;
+                    }
+
+                    while (slice.length)
+                    {
+                        if ((slice[0] < '0') || (slice[0] > '9'))
+                        {
+                            // bad tag
+                            return false;
+                        }
+
+                        code *= 10;
+                        code += slice[0] - '0';
+                        slice = slice[1..$];  // pop
+                    }
+                    return true;
+                }
+
+                if (strip)
+                {
+                    commitUpTo(i);
+                    i += tag.length+1;
+                    lastEnd = i+1;
+                    continue byteloop;
+                }
+
+                uint fg;
+                uint bg;
+                bool hasBg;
+                immutable commaPos = (cast(T)tag).indexOf(',');
+
+                if (commaPos > 2)
+                {
+                    // bad tag; comma in wrong position
+                    i += tag.length+1;
+                    continue byteloop;
+                }
+
+                if (commaPos != -1)
+                {
+                    // comma found, so two numbers
+                    immutable fgSlice = tag[0..commaPos];
+                    immutable fgSuccess = getColourNumbers(fgSlice, fg);
+
+                    if (!fgSuccess)
+                    {
+                        // bad tag
+                        i += tag.length+1;
+                        continue byteloop;
+                    }
+
+                    immutable bgSlice = tag[commaPos+1..$];
+                    hasBg = getColourNumbers(bgSlice, bg);
+
+                    if (!hasBg)
+                    {
+                        // bad tag
+                        i += tag.length+1;
+                        continue byteloop;
                     }
                 }
                 else
                 {
-                    // Valid; dirties now if not already dirty
+                    // No comma, only a single number (probably)
+                    immutable fgSuccess = getColourNumbers(tag, fg);
 
-                    if (asBytes.length < i+2)
+                    if (!fgSuccess)
                     {
-                        // Too close to the end to have a meaningful tag
-                        // Break and return
-
-                        if (dirty)
-                        {
-                            // Add rest first
-                            sink.put(asBytes[i..$]);
-                        }
-
-                        break byteloop;
+                        // bad tag
+                        i += tag.length+1;
+                        continue byteloop;
                     }
-
-                    if (!dirty)
-                    {
-                        sink.reserve(toReserve);
-                        sink.put(asBytes[0..i]);
-                        dirty = true;
-                    }
-
-                    immutable slice = asBytes[i+1..i+closingBracketPos];  // mutable
-
-                    if ((slice[0] >= '0') && (slice[0] <= '9'))
-                    {
-                        if (!strip)
-                        {
-                            static auto getColourChars(S)(S slice)
-                            {
-                                static struct Result
-                                {
-                                    immutable S fg;
-                                    immutable S bg;
-                                }
-
-                                immutable commaPos = (cast(T)slice).indexOf(',');
-
-                                if (commaPos != -1)
-                                {
-                                    return Result(slice[0..commaPos], slice[commaPos+1..$]);
-                                }
-                                else
-                                {
-                                    return Result(slice);
-                                }
-                            }
-
-                            immutable colours = getColourChars(slice);
-
-                            sink.put(cast(char)IRCControlCharacter.colour);
-                            if (colours.fg.length == 1) sink.put('0');
-                            sink.put(colours.fg);
-
-                            if (colours.bg.length)
-                            {
-                                sink.put(',');
-                                if (colours.bg.length == 1) sink.put('0');
-                                sink.put(colours.bg);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (slice.length != 1) break;
-
-                        switch (slice[0])
-                        {
-                        case 'b':
-                            if (!strip) sink.put(cast(char)IRCControlCharacter.bold);
-                            break;
-
-                        case 'c':
-                            if (!strip) sink.put(cast(char)IRCControlCharacter.colour);
-                            break;
-
-                        case 'i':
-                            if (!strip) sink.put(cast(char)IRCControlCharacter.italics);
-                            break;
-
-                        case 'u':
-                            if (!strip) sink.put(cast(char)IRCControlCharacter.underlined);
-                            break;
-
-                        case '/':
-                            if (!strip) sink.put(cast(char)IRCControlCharacter.reset);
-                            break;
-
-                        case 'h':
-                            i += 3;  // advance past "<h>".length
-                            immutable closingHashMarkPos = (cast(T)asBytes[i..$]).indexOf("<h>");
-
-                            if (closingHashMarkPos == -1)
-                            {
-                                // Revert advance
-                                i -= 3;
-                                goto default;
-                            }
-                            else
-                            {
-                                if (!strip)
-                                {
-                                    sink.put(ircColourByHash(
-                                        cast(string)asBytes[i..i+closingHashMarkPos],
-                                        extendedOutgoingColours));
-                                }
-                                else
-                                {
-                                    sink.put(cast(string)asBytes[i..i+closingHashMarkPos]);
-                                }
-
-                                // Don't advance the full "<h>".length 3
-                                // because the for-loop ++i will advance one ahead
-                                i += (closingHashMarkPos+2);
-                                continue;  // Not break
-                            }
-
-                        default:
-                            // Invalid control character, just ignore
-                            break;
-                        }
-                    }
-
-                    i += closingBracketPos;
                 }
-            }
-            break;
 
-        default:
-            if (dirty)
-            {
-                sink.put(c);
+                commitUpTo(i);
+
+                sink.put(cast(char)IRCControlCharacter.colour);
+                if (fg < 10) sink.put('0');
+                fg.toAlphaInto(sink);
+
+                if (hasBg)
+                {
+                    sink.put(',');
+                    if (bg < 10) sink.put('0');
+                    bg.toAlphaInto(sink);
+                }
+
+                i += tag.length+1;
+                lastEnd = i+1;
             }
-            break;
+            continue byteloop;
+
+        default:  // charswitch
+            if (escaping)
+            {
+                // Cancel escape if we're not escaping a tag
+                escaping = false;
+            }
+            continue byteloop;
         }
     }
 
-    return () @trusted
-    {
-        import std.exception : assumeUnique;
-        return dirty ? sink.data.assumeUnique() : line;
-    }();
+    // Return the line as-is if it didn't contain any tags
+    if (!sink.data.length) return line;
+
+    sink.put(asBytes[lastEnd..$]);
+    return sink.data;
 }

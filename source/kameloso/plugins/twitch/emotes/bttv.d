@@ -20,7 +20,7 @@ private:
 import kameloso.plugins.twitch.base : TwitchPlugin;
 import core.thread : Fiber;
 
-public:
+package:
 
 
 // getBTTVEmotes
@@ -31,7 +31,7 @@ public:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
-        idString = Twitch user/channel ID in string form.
+        id = Numeric Twitch user/channel ID.
         caller = Name of the calling function.
 
     See_Also:
@@ -40,10 +40,10 @@ public:
 void getBTTVEmotes(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
-    const string idString,
+    const uint id,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
-in (idString.length, "Tried to get BTTV emotes with an empty ID string")
+in (Fiber.getThis(), "Tried to call `getBTTVEmotes` from outside a fiber")
+in (id, "Tried to get BTTV emotes with an unset ID")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
     import kameloso.plugins.twitch.common : ErrorJSONException, UnexpectedJSONException;
@@ -53,7 +53,7 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
 
     try
     {
-        immutable url = "https://api.betterttv.net/3/cached/users/twitch/" ~ idString;
+        immutable url = "https://api.betterttv.net/3/cached/users/twitch/" ~ id.to!string;
         immutable response = sendHTTPRequest(plugin, url, caller);
         immutable responseJSON = parseJSON(response.str);
 
@@ -174,7 +174,7 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
-        _ = Unused, for compatibility with [getBTTVEmotes].
+        _ = Unused, for signature compatibility with [getBTTVEmotes].
         caller = Name of the calling function.
 
     See_Also:
@@ -183,9 +183,9 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
 void getBTTVEmotesGlobal(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
-    const string _ = string.init,
+    const uint _ = 0,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getBTTVEmotesGlobal` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
     import std.json : JSONType, parseJSON;

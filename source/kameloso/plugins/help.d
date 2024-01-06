@@ -24,7 +24,7 @@ import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : logger;
-import kameloso.messaging;
+import kameloso.messaging : Message;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -96,15 +96,13 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         import std.algorithm.searching : startsWith;
         import std.string : indexOf;
 
-        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         IRCPlugin.CommandMetadata[string][string] allPluginCommands = thisFiber.payload[0];
 
         IRCEvent mutEvent = event;  // mutable
         mutEvent.content = mutEvent.content.stripped;
-
-        if (plugin.helpSettings.repliesInQuery) mutEvent.channel = string.init;
 
         if (!mutEvent.content.length)
         {
@@ -142,7 +140,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
                 immutable pluginName = slice.advancePast(' ');
                 enum pattern = "Invalid <b>%s<b> plugin command name: <b>%s<b>";
                 immutable message = pattern.format(pluginName, slice);
-                privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
+                sendMessage(plugin, mutEvent, message);
             }
         }
         else
@@ -152,7 +150,63 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    plugin.state.specialRequests ~= specialRequest!Payload(string.init, &sendHelpDg);
+    defer!Payload(plugin, &sendHelpDg);
+}
+
+
+// sendMessage
+/++
+    Sends a message to the channel or user that triggered the event.
+    If [kameloso.plugins.help.HelpSettings.repliesInQuery|HelpSettings.repliesInQuery]
+    is set, we send the message as a query; otherwise we send it to the channel.
+
+    If we're connected to Twitch, we use [kameloso.messaging.reply] instead to
+    (possibly) send the message as a whisper, provided the
+    [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin] is compiled in.
+
+    Params:
+        plugin = The current [HelpPlugin].
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
+        content = Message body content to send.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
+        caller = String name of the calling function, or something else that gives context.
+ +/
+void sendMessage(
+    HelpPlugin plugin,
+    /*const*/ /*ref*/ IRCEvent event,
+    const string content,
+    const Message.Property properties = Message.Property.none,
+    const string caller = __FUNCTION__)
+{
+    import kameloso.messaging : privmsg;
+
+    version(WithTwitchPlugin)
+    {
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            import kameloso.messaging : reply;
+
+            event.type = plugin.helpSettings.repliesInQuery ?
+                IRCEvent.Type.QUERY :
+                IRCEvent.Type.CHAN;
+
+            return reply(
+                plugin.state,
+                event,
+                content,
+                properties,
+                caller);
+        }
+    }
+
+    privmsg(
+        plugin.state,
+        (plugin.helpSettings.repliesInQuery ? string.init : event.channel),
+        event.sender.nickname,
+        content,
+        properties,
+        caller);
 }
 
 
@@ -177,26 +231,37 @@ void sendCommandHelpImpl(
     const IRCPlugin.CommandMetadata command)
 {
     import std.algorithm.searching : startsWith;
-    import std.array : replace;
-    import std.conv : text;
     import std.format : format;
 
     auto getHumanlyReadable(const string syntax)
     {
+        import kameloso.string : replaceFromAA;
         import lu.string : strippedLeft;
 
+        static @safe string delegate()[string] aa;
+
+        if (!aa.length)
+        {
+            aa =
+            [
+                "$command"  : () => commandString,
+                "$bot"      : () => plugin.state.client.nickname,
+                "$prefix"   : () => plugin.state.settings.prefix,
+                "$nickname" : () => event.sender.nickname,
+                "$header"   : () => string.init,
+            ];
+
+            aa.rehash();
+        }
+
         return syntax
-            .replace("$command", commandString)
-            .replace("$bot", plugin.state.client.nickname)
-            .replace("$prefix", plugin.state.settings.prefix)
-            .replace("$nickname", event.sender.nickname)
-            .replace("$header", string.init)
+            .replaceFromAA(aa)
             .strippedLeft;
     }
 
     enum pattern = "[<b>%s<b>] <b>%s<b>: %s";
     immutable message = pattern.format(otherPluginName, commandString, command.description);
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    sendMessage(plugin, event, message);
 
     foreach (immutable syntax; command.syntaxes)
     {
@@ -225,7 +290,7 @@ void sendCommandHelpImpl(
         immutable usage = (command.syntaxes.length == 1) ?
             "<b>Usage<b>: " ~ contentLine :
             "* " ~ contentLine;
-        privmsg(plugin.state, event.channel, event.sender.nickname, usage);
+        sendMessage(plugin, event, usage);
     }
 }
 
@@ -254,8 +319,8 @@ void sendFullPluginListing(
         cast(string)KamelosoInfo.built;
     enum availableMessage = "Available bot commands per plugin:";
 
-    privmsg(plugin.state, event.channel, event.sender.nickname, banner);
-    privmsg(plugin.state, event.channel, event.sender.nickname, availableMessage);
+    sendMessage(plugin, event, banner);
+    sendMessage(plugin, event, availableMessage);
 
     foreach (immutable pluginName, pluginCommands; allPluginCommands)
     {
@@ -272,13 +337,13 @@ void sendFullPluginListing(
         }
 
         immutable message = pattern.format(width, pluginName, keys);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        sendMessage(plugin, event, message);
     }
 
     enum pattern = "Use <b>%s%s<b> [<b>plugin<b>] [<b>command<b>] " ~
         "for information about a command.";
     immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    sendMessage(plugin, event, message);
 }
 
 
@@ -305,7 +370,7 @@ void sendSpecificPluginListing(
     void sendNoCommandOfPlugin(const string specifiedPlugin)
     {
         immutable message = "No commands available for plugin <b>" ~ specifiedPlugin ~ "<b>";
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        sendMessage(plugin, event, message);
     }
 
     // Just one word; print a specified plugin's commands
@@ -329,12 +394,12 @@ void sendSpecificPluginListing(
         }
 
         immutable message = pattern.format(width, specifiedPlugin, keys);
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        sendMessage(plugin, event, message);
     }
     else
     {
         immutable message = "No such plugin: <b>" ~ event.content ~ "<b>";
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        sendMessage(plugin, event, message);
     }
 }
 
@@ -365,7 +430,7 @@ void sendPluginCommandHelp(
     {
         enum pattern = "No help available for command <b>%s<b> of plugin <b>%s<b>";
         immutable message = pattern.format(specifiedCommand, specifiedPlugin);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        sendMessage(plugin, event, message);
     }
 
     string slice = event.content.stripped;
@@ -391,7 +456,7 @@ void sendPluginCommandHelp(
     else
     {
         immutable message = "No such plugin: <b>" ~ specifiedPlugin ~ "<b>";
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        sendMessage(plugin, event, message);
     }
 }
 
@@ -416,7 +481,7 @@ void sendOnlyCommandHelp(
     void sendNoCommandSpecified()
     {
         enum message = "No command specified.";
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        sendMessage(plugin, event, message);
     }
 
     immutable specifiedCommand = stripPrefix(plugin, event.content);
@@ -442,7 +507,7 @@ void sendOnlyCommandHelp(
 
     // If we're here there were no command matches
     immutable message = "No such command found: <b>" ~ specifiedCommand ~ "<b>";
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    sendMessage(plugin, event, message);
 }
 
 

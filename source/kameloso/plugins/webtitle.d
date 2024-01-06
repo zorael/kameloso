@@ -24,28 +24,18 @@ private:
 
 import kameloso.plugins;
 import kameloso.plugins.common.core;
-import kameloso.plugins.common.awareness : MinimalAuthentication;
-import kameloso.messaging;
-import kameloso.thread : Sendable;
 import dialect.defs;
+import arsd.http2 : HttpResponse;
+import lu.container : MutexedAA;
 import std.typecons : Flag, No, Yes;
+import core.thread : Fiber;
 
-
-// descriptionExemptions
-/++
-    Hostnames explicitly exempt from having their descriptions included after the titles.
-
-    Must be in lowercase.
- +/
-static immutable descriptionExemptions =
-[
-    "imgur.com",
-];
+public:
 
 
 // WebtitleSettings
 /++
-    All Webtitles settings, gathered in a struct.
+    All Webtitle settings, gathered in a struct.
  +/
 @Settings struct WebtitleSettings
 {
@@ -55,13 +45,18 @@ static immutable descriptionExemptions =
     @Enabler bool enabled = true;
 
     /++
-        Toggles whether or not meta descriptions should be reported next to titles.
+        Minimum user class required for the plugin to scan messages for URLs.
      +/
-    bool descriptions = true;
+    IRCUser.Class minimumPermissionsNeeded = IRCUser.Class.anyone;
+
+    /++
+        How many worker threads to use, to offload the HTTP requests to.
+     +/
+    uint workerThreads = 3;
 }
 
 
-// TitleLookupResults
+// TitleLookupResult
 /++
     A record of a URL lookup.
 
@@ -69,10 +64,10 @@ static immutable descriptionExemptions =
     add hysteresis to lookups, so we don't look the same one up over and over
     if they were pasted over and over.
  +/
-struct TitleLookupResults
+struct TitleLookupResult
 {
     /++
-        Looked up web page title.
+        Web page title, or YouTube video title.
      +/
     string title;
 
@@ -87,59 +82,52 @@ struct TitleLookupResults
     string domain;
 
     /++
-        YouTube video title, if such a YouTube link.
-     +/
-    string youtubeTitle;
-
-    /++
         YouTube video author, if such a YouTube link.
      +/
     string youtubeAuthor;
 
     /++
-        The UNIX timestamp of when the title was looked up.
-     +/
-    long when;
-}
-
-
-// TitleLookupRequest
-/++
-    A record of a URL lookup request.
-
-    This is used to aggregate information about a lookup request, making it
-    easier to pass it in between functions. It serves no greater purpose.
- +/
-struct TitleLookupRequest
-{
-    /++
-        The context state of the requesting plugin instance.
-     +/
-    IRCPluginState state;
-
-    /++
-        The [dialect.defs.IRCEvent|IRCEvent] that instigated the lookup.
-     +/
-    IRCEvent event;
-
-    /++
-        URL to look up.
+        URL that was looked up.
      +/
     string url;
 
     /++
-        Results of the title lookup.
+        HTTP response status code.
      +/
-    TitleLookupResults results;
+    uint code;
+
+    /++
+        HTTP response status code text.
+     +/
+    string codeText;
+
+    /++
+        Message text if an exception was thrown during the lookup.
+     +/
+    string exceptionText;
 }
+
+
+// descriptionExemptions
+/++
+    Hostnames explicitly exempt from having their descriptions included after the titles.
+
+    Must be in lowercase.
+ +/
+static immutable descriptionExemptions =
+[
+    "imgur.com",
+];
 
 
 // onMessage
 /++
     Parses a message to see if the message contains one or more URLs.
 
-    It uses a simple state machine in [kameloso.common.findURLs|findURLs] to
-    exhaustively try to look up every URL returned by it.
+    Merely passes the event on to [onMessageImpl].
+
+    See_Also:
+        [onMessageImpl]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -148,13 +136,36 @@ struct TitleLookupRequest
 )
 void onMessage(WebtitlePlugin plugin, const ref IRCEvent event)
 {
+    if (event.sender.class_ < plugin.webtitleSettings.minimumPermissionsNeeded) return;
+    onMessageImpl(plugin, event);
+}
+
+
+// onMessageImpl
+/++
+    Parses a message to see if the message contains one or more URLs.
+    Implementation function.
+
+    It uses a simple state machine in [kameloso.common.findURLs|findURLs] to
+    exhaustively try to look up every URL returned by it.
+
+    Params:
+        plugin = The current [WebtitlePlugin].
+        event = The [dialect.defs.IRCEvent|IRCEvent] that instigated the lookup.
+ +/
+void onMessageImpl(WebtitlePlugin plugin, const ref IRCEvent event)
+{
     import kameloso.common : findURLs;
     import lu.string : strippedLeft;
     import std.algorithm.searching : startsWith;
 
     immutable content = event.content.strippedLeft;  // mutable
 
-    if (!content.length || content.startsWith(plugin.state.settings.prefix)) return;
+    if (!content.length ||
+        (plugin.state.settings.prefix.length && content.startsWith(plugin.state.settings.prefix)))
+    {
+        return;
+    }
 
     if (content.startsWith(plugin.state.client.nickname))
     {
@@ -165,12 +176,16 @@ void onMessage(WebtitlePlugin plugin, const ref IRCEvent event)
         immutable nicknameStripped = content.stripSeparatedPrefix(
             plugin.state.client.nickname,
             Yes.demandSeparatingChars);
+
         if (nicknameStripped != content) return;
     }
 
-    auto urls = findURLs(event.content);  // mutable so advancePast works
-    if (!urls.length) return;
-    lookupURLs(plugin, event, urls);
+    auto urls = findURLs(event.content);  // mutable so advancePast in lookupURLs works
+
+    if (urls.length)
+    {
+        lookupURLs(plugin, event, urls);
+    }
 }
 
 
@@ -179,19 +194,24 @@ void onMessage(WebtitlePlugin plugin, const ref IRCEvent event)
     Looks up the URLs in the passed `string[]` `urls` by spawning a worker
     thread to do all the work.
 
-    It accesses the cache of already looked up addresses to speed things up.
-
     Params:
         plugin = The current [WebtitlePlugin].
         event = The [dialect.defs.IRCEvent|IRCEvent] that instigated the lookup.
         urls = `string[]` of URLs to look up.
  +/
-void lookupURLs(WebtitlePlugin plugin, const /*ref*/ IRCEvent event, string[] urls)
+void lookupURLs(
+    WebtitlePlugin plugin,
+    const /*ref*/ IRCEvent event,
+    /*const*/ string[] urls)
 {
+    import kameloso.plugins.common.delayawait : delay;
     import kameloso.common : logger;
+    import kameloso.constants : BufferSize;
     import kameloso.thread : ThreadMessage;
+    import lu.array: uniqueKey;
     import lu.string : advancePast;
-    import std.concurrency : prioritySend, spawn;
+    import std.concurrency : send, spawn;
+    import core.time : Duration;
 
     bool[string] uniques;
 
@@ -201,313 +221,420 @@ void lookupURLs(WebtitlePlugin plugin, const /*ref*/ IRCEvent event, string[] ur
         // https://www.google.com/index.html#this%20bit
         // then strip that.
         url = url.advancePast('#', Yes.inherit);
-
-        while (url[$-1] == '/')
-        {
-            url = url[0..$-1];
-        }
+        while (url[$-1] == '/') url = url[0..$-1];
 
         if (url in uniques) continue;
-
         uniques[url] = true;
+    }
 
-        enum pattern = "Caught URL: <l>%s";
-        logger.infof(pattern, url);
-
-        TitleLookupRequest request;
-        request.state = plugin.state;
-        request.event = event;
-        request.url = url;
-
-        if (plugin.cache.length) prune(plugin.cache, plugin.expireSeconds);
-
-        TitleLookupResults cachedResult;
-
-        synchronized //()
+    void lookupURLsDg()
+    {
+        foreach (immutable url, _; uniques)
         {
-            if (const cachedResultPointer = url in plugin.cache)
+            import kameloso.messaging : reply;
+            import std.format : format;
+
+            enum caughtPattern = "Caught URL: <l>%s";
+            logger.infof(caughtPattern, url);
+
+            auto result = sendHTTPRequest(plugin, url);
+
+            if (result.exceptionText.length)
             {
-                cachedResult = *cachedResultPointer;
+                logger.warning("HTTP exception: <l>", result.exceptionText);
+                continue;
             }
-        }
 
-        if (cachedResult != TitleLookupResults.init)
-        {
-            logger.log("Found cached lookup.");
-            request.results = cachedResult;
-
-            if (request.results.youtubeTitle.length)
+            if ((result.code == 0) ||
+                (result.code == 2) ||
+                (result.code >= 400))
             {
-                reportYouTubeTitle(request);
+                enum pattern = "HTTP status <l>%03d</> <t>(%s)</> fetching <l>%s";
+                logger.warningf(pattern, result.code, result.codeText, result.url);
+                continue;
+            }
+
+            if (!result.title.length)
+            {
+                enum pattern = "No title found <t>(%s)";
+                logger.infof(pattern, url);
+                continue;
+            }
+
+            if (result.youtubeAuthor.length)
+            {
+                enum pattern = "[<b>youtube.com<b>] %s (uploaded by <h>%s<h>)";
+                immutable message = pattern.format(result.title, result.youtubeAuthor);
+                reply(plugin.state, event, message);
             }
             else
             {
-                reportTitle(request);
-            }
-            continue;
-        }
+                enum pattern = "[<b>%s<b>] %s%s";
+                immutable maybeDescription = result.description.length ?
+                    " | "  ~ result.description :
+                    string.init;
 
-        cast(void)spawn(
-            &worker,
-            cast(shared)request,
-            plugin.cache,
-            (i * plugin.delayMsecs),
-            cast(Flag!"descriptions")plugin.webtitleSettings.descriptions,
-            plugin.state.connSettings.caBundleFile);
+                string line = pattern.format(
+                    result.domain,
+                    result.title,
+                    maybeDescription);  // mutable
+
+                // "PRIVMSG #12345678901234567890123456789012345678901234567890 :".length == 61
+                enum maxLen = (512-2-61);
+
+                if (line.length > maxLen)
+                {
+                    enum endingEllipsis = " [...]";
+                    line = line[0..(maxLen-endingEllipsis.length)] ~ endingEllipsis;
+                }
+
+                reply(plugin.state, event, line);
+            }
+        }
     }
 
-    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
+    auto lookupURLsFiber = new Fiber(&lookupURLsDg, BufferSize.fiberStack);
+    delay(plugin, lookupURLsFiber, Duration.zero);
+
+    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
 }
 
 
-// worker
+// waitForLookupResults
 /++
-    Looks up and reports the title of a URL.
+    Given an `int` id, monitors the [WebtitlePlugin.lookupBucket|lookupBucket]
+    until a value with that key becomes available, delaying itself in between checks.
 
-    Additionally reports YouTube titles and authors if settings say to do such.
-
-    Worker to be run in its own thread.
+    If it resolves, it returns that value. If it doesn't resolve within
+    [kameloso.constants.Timeout.httpGET|Timeout.httpGET]*2 seconds, it signals
+    failure by instead returning an empty [TitleLookupResult|TitleLookupResult.init].
 
     Params:
-        sRequest = Shared [TitleLookupRequest] aggregate with all the state and
-            context needed to look up a URL and report the results to the local terminal.
-        cache = Shared cache of previous [TitleLookupRequest]s.
-        delayMsecs = Milliseconds to delay before doing the lookup, to allow for
-            parallel lookups without bursting all of them at once.
-        descriptions = Whether or not to look up meta descriptions.
-        caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
+        plugin = The current [WebtitlePlugin].
+        id = `int` id key to [WebtitlePlugin.lookupBucket].
+
+    Returns:
+        A [TitleLookupResult] as discovered in the [WebtitlePlugin.lookupBucket|lookupBucket],
+        or a [TitleLookupResult|TitleLookupResult.init] if there were none to be
+        found within [kameloso.constants.Timeout.httpGET|Timeout.httpGET] seconds.
  +/
-void worker(
-    shared TitleLookupRequest sRequest,
-    shared TitleLookupResults[string] cache,
-    const ulong delayMsecs,
-    const Flag!"descriptions" descriptions,
-    const string caBundleFile)
+auto waitForLookupResults(WebtitlePlugin plugin, const int id)
+in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber")
 {
-    import lu.string : advancePast;
-    import std.algorithm.searching : startsWith;
     import std.datetime.systime : Clock;
-    import std.format : format;
-    import std.range : only;
-    import std.string : indexOf;
-    import std.typecons : No, Yes;
-    import core.exception : UnicodeException;
-    static import kameloso.common;
 
-    version(Posix)
+    immutable startTimeInUnix = Clock.currTime.toUnixTime();
+    enum timeoutMultiplier = 2;
+
+    while (true)
     {
-        import kameloso.thread : setThreadName;
-        setThreadName("webtitle");
-    }
+        immutable hasResult = plugin.lookupBucket.has(id);
 
-    // Set the global settings so messaging functions don't segfault us
-    kameloso.common.settings = (cast()sRequest).state.settings;
-
-    if (delayMsecs > 0)
-    {
-        import core.thread : Thread;
-        import core.time : msecs;
-        Thread.sleep(delayMsecs.msecs);
-    }
-
-    TitleLookupRequest request = cast()sRequest;
-    immutable nowInUnix = Clock.currTime.toUnixTime();
-
-    if (request.url.indexOf("://i.imgur.com/") != -1)
-    {
-        // imgur direct links naturally have no titles, but the normal pages do.
-        // Rewrite and look those up instead.
-        request.url = rewriteDirectImgurURL(request.url);
-    }
-    else if (
-        (request.url.indexOf("youtube.com/watch?v=") != -1) ||
-        (request.url.indexOf("youtu.be/") != -1))
-    {
-        // Do our own slicing instead of using regexes, because footprint.
-        string slice = request.url;
-
-        slice.advancePast("http");
-        if (slice[0] == 's') slice = slice[1..$];
-        slice = slice[3..$];  // ://
-
-        if (slice.startsWith("www.")) slice = slice[4..$];
-
-        if (slice.startsWith("youtube.com/watch?v=") ||
-            slice.startsWith("youtu.be/"))
+        if (!hasResult)
         {
-            import std.json : JSONException;
+            // Querier errored or otherwise gave up
+            // No need to remove the id, it's not there
+            return TitleLookupResult.init;
+        }
 
-            try
+        auto result = plugin.lookupBucket[id];
+
+        if (result == TitleLookupResult.init)
+        {
+            import kameloso.plugins.common.delayawait : delay;
+            import kameloso.constants : Timeout;
+            import core.time : msecs;
+
+            immutable nowInUnix = Clock.currTime.toUnixTime();
+
+            if ((nowInUnix - startTimeInUnix) >= (Timeout.httpGET * timeoutMultiplier))
             {
-                immutable infoJSON = getYouTubeInfoJSON(request.url, caBundleFile);
-
-                // Let's assume all YouTube clips have titles and authors
-                request.results.youtubeTitle = decodeEntities(infoJSON["title"].str);
-                request.results.youtubeAuthor = decodeEntities(infoJSON["author_name"].str);
-                request.results.when = nowInUnix;
-                reportYouTubeTitle(request);
-
-                synchronized //()
-                {
-                    cache[request.url] = cast(shared)request.results;
-                }
-                return;
+                plugin.lookupBucket.remove(id);
+                return TitleLookupResult.init;
             }
-            catch (TitleFetchException e)
-            {
-                if (e.code == 2)
-                {
-                    import kameloso.constants : MagicErrorStrings;
 
-                    if (e.msg == MagicErrorStrings.sslLibraryNotFound)
-                    {
-                        enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
-                        enum message = "Error fetching YouTube title: <l>" ~
-                            MagicErrorStrings.sslLibraryNotFoundRewritten ~
-                            "</> <t>(is OpenSSL installed?)";
-                        request.state.askToError(message);
-                        request.state.askToError(wikiMessage);
-
-                        version(Windows)
-                        {
-                            enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                            request.state.askToError(getoptMessage);
-                        }
-                    }
-                    else
-                    {
-                        enum pattern = "Error fetching YouTube title: <l>%s";
-                        immutable message = pattern.format(e.msg);
-                        request.state.askToError(message);
-                    }
-                    return;
-                }
-                else if (e.code >= 400)
-                {
-                    // Simply failed to fetch
-                    enum pattern = "Webtitle YouTube worker saw HTTP <l>%d</>: <t>%s";
-                    immutable message = pattern.format(e.code, e.msg);
-                    request.state.askToError(message);
-                }
-                else
-                {
-                    request.state.askToError("Error fetching YouTube video information: <l>" ~ e.msg);
-                    //version(PrintStacktraces) request.state.askToTrace(e.info);
-                    // Drop down
-                }
-            }
-            catch (JSONException e)
-            {
-                request.state.askToError("Failed to parse YouTube video information: <l>" ~ e.msg);
-                //version(PrintStacktraces) request.state.askToTrace(e.info);
-                // Drop down
-            }
-            catch (Exception e)
-            {
-                request.state.askToError("Unexpected exception fetching YouTube video information: <l>" ~ e.msg);
-                version(PrintStacktraces) request.state.askToTrace(e.toString);
-                // Drop down
-            }
+            // Wait a bit before checking again
+            static immutable checkDelay = 200.msecs;
+            delay(plugin, checkDelay, Yes.yield);
+            continue;
         }
         else
         {
-            // Unsure what this is really. Drop down and treat like normal link
+            // Got a result; remove it from the bucket and return it
+            plugin.lookupBucket.remove(id);
+            return result;
         }
-    }
-
-    foreach (immutable firstTime; only(true, false))
-    {
-        try
-        {
-            request.results = lookupTitle(request.url, descriptions, caBundleFile);
-            request.results.when = nowInUnix;
-            reportTitle(request);
-
-            synchronized //()
-            {
-                cache[request.url] = cast(shared)request.results;
-            }
-        }
-        catch (TitleFetchException e)
-        {
-            if (e.code == 2)
-            {
-                import kameloso.constants : MagicErrorStrings;
-
-                if (e.msg == MagicErrorStrings.sslLibraryNotFound)
-                {
-                    enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
-                    enum message = "Error fetching webpage title: <l>" ~
-                        MagicErrorStrings.sslLibraryNotFoundRewritten ~
-                        "</> <t>(is OpenSSL installed?)";
-                    request.state.askToError(message);
-                    request.state.askToError(wikiMessage);
-
-                    version(Windows)
-                    {
-                        enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                        request.state.askToError(getoptMessage);
-                    }
-                }
-                else
-                {
-                    enum pattern = "Error fetching webpage title: <l>%s";
-                    immutable message = pattern.format(e.msg);
-                    request.state.askToError(message);
-                }
-                return;
-            }
-            else if (e.code >= 400)
-            {
-                // Simply failed to fetch
-                enum pattern = "Webtitle worker saw HTTP <l>%d</>: <l>%s";
-                immutable message = pattern.format(e.code, e.msg);
-                request.state.askToWarn(message);
-            }
-            else
-            {
-                // No title tag found
-                enum pattern = "No title tag found: <l>%s";
-                immutable message = pattern.format(e.msg);
-                request.state.askToWarn(message);
-            }
-
-            if (firstTime)
-            {
-                request.state.askToLog("Rewriting URL and retrying...");
-
-                if (request.url[$-1] == '/')
-                {
-                    request.url = request.url[0..$-1];
-                }
-                else
-                {
-                    request.url ~= '/';
-                }
-                continue;
-            }
-        }
-        catch (UnicodeException e)
-        {
-            enum pattern = "Webtitle worker Unicode exception: <l>%s</> " ~
-                "(link is probably to an image or similar)";
-            immutable message = pattern.format(e.msg);
-            request.state.askToError(message);
-            //version(PrintStacktraces) request.state.askToTrace(e.info);
-        }
-        catch (Exception e)
-        {
-            request.state.askToWarn("Webtitle saw unexpected exception: <l>" ~ e.msg);
-            version(PrintStacktraces) request.state.askToTrace(e.toString);
-        }
-
-        // Dropped down; end foreach by returning
-        return;
     }
 }
 
 
-// getResponse
+// onEndOfMotd
+/++
+    Starts the persistent querier worker thread on end of MOTD.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
+    .onEvent(IRCEvent.Type.ERR_NOMOTD)
+)
+void onEndOfMotd(WebtitlePlugin plugin, const ref IRCEvent event)
+{
+    import std.algorithm.comparison : max;
+
+    // Use a minimum of one worker thread, regardless of setting
+    plugin.transient.workerTids.length =
+        max(plugin.webtitleSettings.workerThreads, 1);
+
+    foreach (ref workerTid; plugin.transient.workerTids)
+    {
+        import std.concurrency : Tid, spawn;
+
+        if (workerTid != Tid.init) continue;  // to be safe
+
+        workerTid = spawn(
+            &persistentQuerier,
+            plugin.lookupBucket,
+            plugin.state.connSettings.caBundleFile);
+    }
+}
+
+
+// persistentQuerier
+/++
+    Persistent querier worker thread function.
+
+    Params:
+        lookupBucket = Associative array to fill with [TitleLookupResult]s.
+        caBundleFile = Path to `cacert.pem` file, or an empty string if none
+            should be needed.
+ +/
+void persistentQuerier(
+    MutexedAA!(TitleLookupResult[int]) lookupBucket,
+    const string caBundleFile)
+{
+    version(Posix)
+    {
+        import kameloso.thread : setThreadName;
+        setThreadName("webworker");
+    }
+
+    void onTitleRequest(string url, int id) scope
+    {
+        import lu.string : advancePast;
+        import std.algorithm.searching : startsWith;
+        import std.string : indexOf;
+
+        TitleLookupResult result;
+
+        if (url.indexOf("://i.imgur.com/") != -1)
+        {
+            // imgur direct links naturally have no titles, but the normal pages do.
+            // Rewrite and look those up instead.
+            url = rewriteDirectImgurURL(url);
+        }
+        else if (
+            (url.indexOf("youtube.com/watch?v=") != -1) ||
+            (url.indexOf("youtu.be/") != -1))
+        {
+            // Start the try-catch here to include advancePast calls
+            try
+            {
+                // Do our own slicing instead of using regexes, because footprint.
+                string slice = url;  // mutable
+
+                slice.advancePast("http");
+                if (slice[0] == 's') slice = slice[1..$];
+                slice = slice["://".length..$];
+
+                if (slice.startsWith("www.")) slice = slice[4..$];
+
+                if (slice.startsWith("youtube.com/watch?v=") ||
+                    slice.startsWith("youtu.be/"))
+                {
+                    immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
+                    const response = sendHTTPRequestImpl(youtubeURL, caBundleFile);
+
+                    // Manually fill in the blannks that parseResponseIntoTitleLookupResults would have done
+                    result.code = response.code;
+                    result.codeText = response.codeText;
+                    result.url = url;
+
+                    if (!response.code || (response.code == 2) || (response.code >= 400))
+                    {
+                        // Not sure when this can happen; drop down to the normal lookup
+                    }
+                    else
+                    {
+                        import std.json : parseJSON;
+                        immutable youtubeJSON = parseJSON(response.contentText);
+                        result.title = decodeEntities(youtubeJSON["title"].str);
+                        result.youtubeAuthor = decodeEntities(youtubeJSON["author_name"].str);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                // Unknown what can cause this, but don't crash the worker
+                result.exceptionText = e.msg;
+            }
+        }
+
+        if (!result.title.length)
+        {
+            static immutable bool[2] trueThenFalse = [ true, false ];
+
+            foreach (immutable firstTime; trueThenFalse[])
+            {
+                const response = sendHTTPRequestImpl(url, caBundleFile);
+                result = parseResponseIntoTitleLookupResult(url, response);
+
+                if (!response.code || (response.code == 2))
+                {
+                    // SSL error?
+                    // Don't include >= 400; we might get a hit later by rewriting the url
+                    break;  // drop down
+                }
+                else if (result.title.length && (response.code < 400))
+                {
+                    // Title found
+                    break;  // as above
+                }
+                else if (result.exceptionText.length)
+                {
+                    // UnicodeException probably
+                    break;  // ditto
+                }
+                else if (firstTime)
+                {
+                    // Still the first iteration, try rewriting the URL
+                    if (url[$-1] == '/')
+                    {
+                        url = url[0..$-1];
+                    }
+                    else
+                    {
+                        url ~= '/';
+                    }
+                }
+            }
+        }
+
+        if (result != TitleLookupResult.init)
+        {
+            // Modified in some way; store it
+            lookupBucket[id] = result;
+        }
+        else
+        {
+            // Signal failure by removing the key
+            lookupBucket.remove(id);
+        }
+    }
+
+    bool halt;
+
+    void onQuitMessage(bool) scope
+    {
+        halt = true;
+    }
+
+    while (!halt)
+    {
+        import std.concurrency : receive;
+        import std.variant : Variant;
+
+        receive(
+            &onTitleRequest,
+            &onQuitMessage,
+            (Variant v)
+            {
+                import std.stdio : stdout, writeln;
+                writeln("Webtitle worker received unknown Variant: ", v);
+                stdout.flush();
+            }
+        );
+    }
+}
+
+
+// sendHTTPRequest
+/++
+    Issues an HTTP request by sending the details to the persistent querier thread,
+    then returns the results after they become available in the shared associative array.
+
+    Params:
+        plugin = The current [WebtitlePlugin].
+        url = URL string to fetch.
+        recursing = Whether or not this is a recursive call.
+        id = Optional `int` id key to [WebtitlePlugin.lookupBucket].
+        caller = Name of the calling function.
+
+    Returns:
+        A [TitleLookupResult] with contents based on what was read from the URL.
+ +/
+TitleLookupResult sendHTTPRequest(
+    WebtitlePlugin plugin,
+    const string url,
+    const Flag!"recursing" recursing = No.recursing,
+    /*const*/ int id = 0,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
+in (url.length, "Tried to send an HTTP request without a URL")
+{
+    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.thread : ThreadMessage;
+    import arsd.http2 : HttpVerb;
+    import std.concurrency : send;
+    import core.time : msecs;
+
+    if (plugin.state.settings.trace)
+    {
+        import kameloso.common : logger;
+        import lu.conv : Enum;
+
+        enum pattern = "GET: <i>%s<t> (%s)";
+        logger.tracef(
+            pattern,
+            url,
+            caller);
+    }
+
+    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
+
+    if (!id) id = plugin.lookupBucket.uniqueKey;
+    plugin.getNextWorkerTid().send(url, id);
+
+    static immutable initialDelay = 500.msecs;
+    delay(plugin, initialDelay, Yes.yield);
+
+    immutable result = waitForLookupResults(plugin, id);
+
+    if (result.code == 2)
+    {
+        // ?
+    }
+    else if (result.code == 0) //(!result.title.length)
+    {
+        // ?
+    }
+    else if ((result.code >= 500) && !recursing)
+    {
+        return sendHTTPRequest(
+            plugin,
+            url,
+            Yes.recursing,
+            id,
+            caller);
+    }
+    else if (result.code >= 400)
+    {
+        // ?
+    }
+
+    return result;
+}
+
+
+// sendHTTPRequestImpl
 /++
     Fetches the contents of a URL and returns it as an [arsd.http2.HTTPResponse|HTTPResponse].
 
@@ -521,22 +648,28 @@ void worker(
     Throws:
         [TitleFetchException] if the URL could not be fetched.
  +/
-auto getResponse(
+auto sendHTTPRequestImpl(
     const string url,
     const string caBundleFile)
 {
-    import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, Uri;
     import std.algorithm.comparison : among;
-    import core.time : seconds;
 
-    auto client = new HttpClient;
-    client.useHttp11 = true;
-    client.keepAlive = false;
-    client.acceptGzip = false;
-    client.defaultTimeout = Timeout.httpGET.seconds;  // FIXME
-    client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
-    if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
+    static HttpClient client;
+
+    if (!client)
+    {
+        import kameloso.constants : KamelosoInfo, Timeout;
+        import core.time : seconds;
+
+        client = new HttpClient;
+        client.useHttp11 = true;
+        client.keepAlive = false;
+        client.acceptGzip = false;
+        client.defaultTimeout = Timeout.httpGET.seconds;
+        client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+        if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
+    }
 
     auto req = client.request(Uri(url));
     auto res = req.waitForCompletion();
@@ -552,75 +685,56 @@ auto getResponse(
         }
     }
 
-    if ((res.code == 2) || (res.code >= 400) || !res.contentText.length)
-    {
-        // res.codeText among Bad Request, probably Not Found, ...
-        throw new TitleFetchException(
-            res.codeText,
-            url,
-            res.code,
-            __FILE__,
-            __LINE__);
-    }
-
     return res;
 }
 
 
-// lookupTitle
+// parseResponseIntoTitleLookupResult
 /++
-    Given a URL, tries to look up the web page title of it.
+    Parses an [arsd.http2.HTTPResponse|HTTPResponse] into a [TitleLookupResult].
 
     Params:
-        url = URL string to look up.
-        descriptions = Whether or not to look up meta descriptions.
-        caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
+        url = URL string that was fetched.
+        res = [arsd.http2.HTTPResponse|HTTPResponse] to parse.
 
     Returns:
-        A finished [TitleLookupResults].
-
-    Throws:
-        [TitleFetchException] if URL could not be fetched, or if no title
-        could be divined from it.
+        A [TitleLookupResult] with contents based on what was read from the URL.
  +/
-auto lookupTitle(
+auto parseResponseIntoTitleLookupResult(
     const string url,
-    const Flag!"descriptions" descriptions,
-    const string caBundleFile)
+    const HttpResponse res)
 {
     import lu.string : advancePast;
     import arsd.dom : Document;
-    import std.algorithm.searching : startsWith;
+    import std.algorithm.searching : canFind, startsWith;
     import std.uni : toLower;
+    import core.exception : UnicodeException;
 
-    const res = getResponse(url, caBundleFile);
-    auto doc = new Document;
-    doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
-    doc.parseGarbage(res.responseText);
+    TitleLookupResult result;
+    result.code = res.code;
+    result.codeText = res.codeText;
+    result.url = url;
 
-    if (!doc.title.length)
+    if (!result.code || (result.code == 2) || (result.code >= 400))
     {
-        enum message = "No title tag found";
-        throw new TitleFetchException(
-            message,
-            url,
-            res.code,
-            __FILE__,
-            __LINE__);
+        // Invalid address, SSL error, 404, etc; no need to continue
+        return result;
     }
 
-    string slice = url;  // mutable
-    slice.advancePast("//");
-    string host = slice.advancePast('/', Yes.inherit).toLower;
-    if (host.startsWith("www.")) host = host[4..$];
-
-    TitleLookupResults results;
-    results.title = decodeEntities(doc.title);
-    results.domain = host;
-
-    if (descriptions)
+    try
     {
-        import std.algorithm.searching : canFind;
+        auto doc = new Document;
+        doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
+        doc.parseGarbage(res.contentText);
+        if (!doc.title.length) return result;
+
+        string slice = url;  // mutable
+        slice.advancePast("//");
+        string host = slice.advancePast('/', Yes.inherit).toLower;
+        if (host.startsWith("www.")) host = host[4..$];
+
+        result.title = decodeEntities(doc.title);
+        result.domain = host;
 
         if (!descriptionExemptions.canFind(host))
         {
@@ -630,65 +744,18 @@ auto lookupTitle(
             {
                 if (tag.name == "description")
                 {
-                    results.description = decodeEntities(tag.content);
+                    result.description = decodeEntities(tag.content);
                     break;
                 }
             }
         }
     }
-
-    return results;
-}
-
-
-// reportTitle
-/++
-    Echoes the result of a web title lookup to a channel.
-
-    Params:
-        request = A [TitleLookupRequest] containing the results of the lookup.
- +/
-void reportTitle(TitleLookupRequest request)
-{
-    import std.format : format;
-
-    enum pattern = "[<b>%s<b>] %s%s";
-    immutable maybeDescription = request.results.description.length ?
-        " | "  ~ request.results.description :
-        string.init;
-
-    /*immutable*/ string line = pattern.format(
-        request.results.domain,
-        request.results.title,
-        maybeDescription);
-
-    // "PRIVMSG #12345678901234567890123456789012345678901234567890 :".length == 61
-    enum maxLen = (510 - 61);
-
-    if (line.length > maxLen)
+    catch (Exception e) //(UnicodeException e)
     {
-        enum endingEllipsis = " [...]";
-        line = line[0..(maxLen-endingEllipsis.length)] ~ endingEllipsis;
+        result.exceptionText = e.msg;
     }
 
-    chan(request.state, request.event.channel, line);
-}
-
-
-// reportYouTubeTitle
-/++
-    Echoes the result of a YouTube lookup to a channel.
-
-    Params:
-        request = A [TitleLookupRequest] containing the results of the lookup.
- +/
-void reportYouTubeTitle(TitleLookupRequest request)
-{
-    import std.format : format;
-
-    enum pattern = "[<b>youtube.com<b>] %s (uploaded by <h>%s<h>)";
-    immutable message = pattern.format(request.results.youtubeTitle, request.results.youtubeAuthor);
-    chan(request.state, request.event.channel, message);
+    return result;
 }
 
 
@@ -741,37 +808,52 @@ unittest
 }
 
 
-// getYouTubeInfoJSON
+// decodeEntities
 /++
-    Fetches the JSON description of a YouTube video link, allowing us to report
-    it the page's title without having to actually fetch the video page.
-
-    Example:
-    ---
-    auto infoJSON = getYouTubeInfoJSON("https://www.youtube.com/watch?v=s-mOy8VUEBk");
-    writeln(infoJSON["title"].str);
-    writeln(infoJSON["author"].str);
-    ---
+    Removes unwanted characters from a string, and decodes HTML entities in it
+    (like `&mdash;` and `&nbsp;`).
 
     Params:
-        url = A YouTube video link string.
-        caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
+        line = String to decode entities and remove tags from.
 
     Returns:
-        A [std.json.JSONValue|JSONValue] with fields describing the looked-up video.
-
-    Throws:
-        [TitleFetchException] if the YouTube ID was invalid and could not be queried.
-
-        [std.json.JSONException|JSONException] if the JSON response could not be parsed.
+        A modified string, with unwanted bits stripped out and/or decoded.
  +/
-auto getYouTubeInfoJSON(const string url, const string caBundleFile)
+auto decodeEntities(const string line)
 {
-    import std.json : parseJSON;
+    import lu.string : stripped;
+    import arsd.dom : htmlEntitiesDecode;
+    import std.array : replace;
 
-    immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
-    const res = getResponse(youtubeURL, caBundleFile);
-    return parseJSON(res.contentText);
+    return line
+        .replace("\r", string.init)
+        .replace('\n', ' ')
+        .stripped
+        .htmlEntitiesDecode();
+}
+
+///
+unittest
+{
+    immutable t1 = "&quot;Hello&nbsp;world!&quot;";
+    immutable t1p = decodeEntities(t1);
+    assert((t1p == "\"Hello\u00A0world!\""), t1p);  // not a normal space
+
+    immutable t2 = "&lt;/title&gt;";
+    immutable t2p = decodeEntities(t2);
+    assert((t2p == "</title>"), t2p);
+
+    immutable t3 = "&mdash;&micro;&acute;&yen;&euro;";
+    immutable t3p = decodeEntities(t3);
+    assert((t3p == "—µ´¥€"), t3p);  // not a normal dash
+
+    immutable t4 = "&quot;Se&ntilde;or &THORN;&quot; &copy;2017";
+    immutable t4p = decodeEntities(t4);
+    assert((t4p == `"Señor Þ" ©2017`), t4p);
+
+    immutable t5 = "\n        Nyheter - NSD.se        \n";
+    immutable t5p = decodeEntities(t5);
+    assert(t5p == "Nyheter - NSD.se");
 }
 
 
@@ -821,128 +903,33 @@ final class TitleFetchException : Exception
 }
 
 
-// decodeEntities
+// setup
 /++
-    Removes unwanted characters from a string, and decodes HTML entities in it
-    (like `&mdash;` and `&nbsp;`).
-
-    Params:
-        title = Title string to decode entities and remove tags from.
-
-    Returns:
-        A modified string, with unwanted bits stripped out and/or decoded.
+    Initialises the lookup bucket, else its internal [core.sync.mutex.Mutex|Mutex]
+    will be null and cause a segfault when trying to lock it.
  +/
-auto decodeEntities(const string line)
+void setup(WebtitlePlugin plugin)
 {
-    import lu.string : stripped;
-    import arsd.dom : htmlEntitiesDecode;
-    import std.array : replace;
-
-    return line
-        .replace("\r", string.init)
-        .replace('\n', ' ')
-        .stripped
-        .htmlEntitiesDecode();
-}
-
-///
-unittest
-{
-    immutable t1 = "&quot;Hello&nbsp;world!&quot;";
-    immutable t1p = decodeEntities(t1);
-    assert((t1p == "\"Hello\u00A0world!\""), t1p);  // not a normal space
-
-    immutable t2 = "&lt;/title&gt;";
-    immutable t2p = decodeEntities(t2);
-    assert((t2p == "</title>"), t2p);
-
-    immutable t3 = "&mdash;&micro;&acute;&yen;&euro;";
-    immutable t3p = decodeEntities(t3);
-    assert((t3p == "—µ´¥€"), t3p);  // not a normal dash
-
-    immutable t4 = "&quot;Se&ntilde;or &THORN;&quot; &copy;2017";
-    immutable t4p = decodeEntities(t4);
-    assert((t4p == `"Señor Þ" ©2017`), t4p);
-
-    immutable t5 = "\n        Nyheter - NSD.se        \n";
-    immutable t5p = decodeEntities(t5);
-    assert(t5p == "Nyheter - NSD.se");
+    plugin.lookupBucket.setup();
 }
 
 
-// prune
+// teardown
 /++
-    Garbage-collects old entries in a `TitleLookupResults[string]` lookup cache.
-
-    Params:
-        cache = Cache of previous [TitleLookupResults], `shared` so that it can
-            be reused in further lookup (other threads).
-        expireSeconds = After how many seconds a cached entry is considered to
-            have expired and should no longer be used as a valid entry.
+    Stops the persistent querier worker thread.
  +/
-void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
+void teardown(WebtitlePlugin plugin)
 {
-    import lu.objmanip : pruneAA;
-    import std.datetime.systime : Clock;
-
-    if (!cache.length) return;
-
-    immutable nowInUnix = Clock.currTime.toUnixTime();
-
-    synchronized //()
+    foreach (workerTid; plugin.transient.workerTids)
     {
-        pruneAA!((entry) => (nowInUnix - entry.when) > expireSeconds)(cache);
+        import std.concurrency : Tid, send;
+
+        if (workerTid == Tid.init) continue;
+        workerTid.send(true);
     }
 }
 
 
-// onBusMessage
-/++
-    Catch a bus message carrying a boxed [dialect.defs.IRCEvent|IRCEvent] and
-    treat it as if this plugin caught it itself.
-
-    Versioned out until we need it, such as for selective Twitch link blocks.
-
-    Params:
-        plugin = The current [WebtitlePlugin].
-        header = String header describing the passed content payload.
-        content = The boxed content of the message.
- +/
-version(none)
-void onBusMessage(
-    WebtitlePlugin plugin,
-    const string header,
-    shared Sendable content)
-{
-    import kameloso.thread : Boxed;
-
-    // Don't return if disabled?
-    // Do we want to be able to serve other plugins anyway?
-    if (header != "webtitle") return;
-
-    auto message = cast(Boxed!IRCEvent)content;
-    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
-
-    onMessage(plugin, message.payload);
-}
-
-
-// setup
-/++
-    Initialises the shared cache, else it won't retain changes.
-
-    Just assign an entry and remove it.
- +/
-void setup(WebtitlePlugin plugin)
-{
-    // No need to synchronise this; no worker threads are running
-    //plugin.cache = new TitleLookupResults[string];  // segfaults
-    plugin.cache[string.init] = TitleLookupResults.init;
-    plugin.cache.remove(string.init);
-}
-
-
-mixin MinimalAuthentication;
 mixin PluginRegistration!WebtitlePlugin;
 
 public:
@@ -957,32 +944,53 @@ public:
 final class WebtitlePlugin : IRCPlugin
 {
 private:
+    import std.concurrency : Tid;
+    import core.time : msecs;
+
+    /++
+        Transient state variables, aggregated in a struct.
+     +/
+    static struct TransientState
+    {
+        /++
+            The thread IDs of the persistent worker threads.
+         +/
+        Tid[] workerTids;
+
+        /++
+            The index of the next worker thread to use.
+         +/
+        size_t currentWorkerTidIndex;
+    }
+
     /++
         All Webtitle options gathered.
      +/
     WebtitleSettings webtitleSettings;
 
     /++
-        Cache of recently looked-up web titles.
+        Transient state of this [WebtitlePlugin] instance.
      +/
-    shared TitleLookupResults[string] cache;
+    TransientState transient;
 
     /++
-        How long before a cached title lookup expires and its address has to be
-        looked up anew.
+        Lookup bucket.
      +/
-    enum expireSeconds = 600;
+    MutexedAA!(TitleLookupResult[int]) lookupBucket;
 
     /++
-        In the case of chained URL lookups, how many milliseconds to delay each lookup by.
+        Returns the next worker thread ID to use, cycling through them.
      +/
-    enum delayMsecs = 100;
+    auto getNextWorkerTid()
+    in (transient.workerTids.length, "Tried to get a worker Tid when there were none")
+    {
+        if (transient.currentWorkerTidIndex >= transient.workerTids.length)
+        {
+            transient.currentWorkerTidIndex = 0;
+        }
 
-    /++
-        How big a buffer to initially allocate when downloading web pages to get
-        their titles.
-     +/
-    enum lookupBufferSize = 8192;
+        return transient.workerTids[transient.currentWorkerTidIndex++];
+    }
 
     mixin IRCPluginImpl;
 }

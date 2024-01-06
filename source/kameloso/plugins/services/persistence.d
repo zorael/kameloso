@@ -569,7 +569,7 @@ void onWhoReply(PersistenceService service, const ref IRCEvent event)
  +/
 void reload(PersistenceService service)
 {
-    service.users = service.users.rehash();
+    service.users.rehash();
     reloadAccountClassifiersFromDisk(service);
     if (service.state.settings.preferHostmasks) reloadHostmasksFromDisk(service);
 }
@@ -803,9 +803,7 @@ void initAccountResources(PersistenceService service)
         assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.to!string);
     }+/
 
-    //import std.range : only;
-
-    static immutable listTypes =
+    static immutable string[5] listTypes =
     [
         "staff",
         "operator",
@@ -814,7 +812,7 @@ void initAccountResources(PersistenceService service)
         "blacklist",
     ];
 
-    foreach (liststring; listTypes)
+    foreach (liststring; listTypes[])
     {
         alias examplePlaceholderKey = PersistenceService.Placeholder.channel;
         auto listJSON = liststring in json;
@@ -961,8 +959,8 @@ public:
 final class PersistenceService : IRCPlugin
 {
 private:
-    import kameloso.common : RehashingAA;
     import kameloso.constants : KamelosoFilenames;
+    import lu.container : RehashingAA;
 
     /++
         Placeholder values.
@@ -1008,7 +1006,7 @@ private:
     /++
         Associative array of permanent user classifications, per account and channel name.
      +/
-    RehashingAA!(string, IRCUser.Class)[string] channelUsers;
+    RehashingAA!(IRCUser.Class[string])[string] channelUsers;
 
     /++
         Hostmask definitions as read from file. Should be considered read-only.
@@ -1018,18 +1016,18 @@ private:
     /++
         Cached nicknames matched to defined hostmasks.
      +/
-    RehashingAA!(string, string) hostmaskNicknameAccountCache;
+    RehashingAA!(string[string]) hostmaskNicknameAccountCache;
 
     /++
         Associative array of which channel the latest class lookup for an account related to.
      +/
-    RehashingAA!(string, string) userClassChannelCache;
+    RehashingAA!(string[string]) userClassChannelCache;
 
     /++
         Associative array of users. Replaces
         [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users].
      +/
-    RehashingAA!(string, IRCUser) users;
+    RehashingAA!(IRCUser[string]) users;
 
     mixin IRCPluginImpl;
 }

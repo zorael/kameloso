@@ -14,8 +14,8 @@ dflags "-linkonce-templates" "-disable-verify" platform="ldc"
 #dflags "-ftime-trace" "-ftime-trace-file=trace.json" platform="ldc"
 #postBuildCommands "tracy-import-chrome ./trace.json ./trace.tracy" platform="ldc"
 
-dependency "lu" version="~>2.0.0"
-dependency "dialect" version="~>2.0.4"
+dependency "lu" version="~>2.1.0"
+dependency "dialect" version="~>2.1.0"
 dependency "arsd-official:dom" version="~>10.9.0"
 dependency "arsd-official:http" version="~>10.9.0"
 dependency "requests" version="~>2.1.2"
@@ -90,6 +90,7 @@ versions \
     "BenchmarkHTTPRequests" \
     "ThreadedSSLFree" \
     "TraceFibersAndDelegates" \
+    "WantConcurrencyMessageLoop" \
     "Callgrind"
 */
 
@@ -136,6 +137,7 @@ configuration "dev" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "WantConcurrencyMessageLoop" \
         "IncludeHeavyStuff"
         //"Callgrind" \
         //"TwitchPromoteEverywhere" \
@@ -160,6 +162,7 @@ configuration "dev-lowmem" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "WantConcurrencyMessageLoop" \
         "IncludeHeavyStuff"
         //"Callgrind" \
         //"TwitchPromoteEverywhere" \

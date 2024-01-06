@@ -233,15 +233,15 @@ public:
         ///
         unittest
         {
-            import std.range : only;
-
-            auto range = only(
+            static immutable LogLevel[4] logLevels =
+            [
                 LogLevel.all,
                 LogLevel.info,
                 LogLevel.warning,
-                LogLevel.fatal);
+                LogLevel.fatal,
+            ];
 
-            foreach (immutable logLevel; range)
+            foreach (immutable logLevel; logLevels[])
             {
                 import std.format : format;
 

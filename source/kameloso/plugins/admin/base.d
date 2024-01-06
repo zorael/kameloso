@@ -36,7 +36,6 @@ import kameloso.common : logger;
 import kameloso.messaging;
 import kameloso.thread : Sendable;
 import dialect.defs;
-import std.concurrency : send;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 import core.time : Duration;
@@ -214,7 +213,7 @@ void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
 
     enum message = "Saving configuration to disk.";
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
-    plugin.state.mainThread.send(ThreadMessage.save);
+    plugin.state.messages ~= ThreadMessage.save;
 }
 
 
@@ -440,7 +439,7 @@ void addChannel(
     const /*ref*/ IRCEvent event,
     const string rawChannel,
     const Flag!"home" addAsHome)
-in (Fiber.getThis, "Tried to call `addChannel` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `addChannel` from outside a fiber")
 in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
     import kameloso.plugins.common.delayawait : await, unawait;
@@ -546,8 +545,8 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         inner:
         while (true)
         {
-            thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+            thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+            assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
             assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
             if (thisFiber.payload.channel == channelName) break inner;
@@ -842,7 +841,7 @@ void onCommandReload(AdminPlugin plugin, const ref IRCEvent event)
         text("Reloading plugin \"<b>", event.content, "<b>\".") :
         "Reloading plugins.";
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
-    plugin.state.mainThread.send(ThreadMessage.reload(event.content));
+    plugin.state.messages ~= ThreadMessage.reload(event.content);
 }
 
 
@@ -996,8 +995,8 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     void setSettingDg()
     {
-        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         immutable message = thisFiber.payload[0] ?
             "Setting changed." :
@@ -1005,7 +1004,7 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
-    plugin.state.specialRequests ~= specialRequest!Payload(event.content, &setSettingDg);
+    defer!Payload(plugin, &setSettingDg, event.content);
 }
 
 
@@ -1041,8 +1040,8 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     void getSettingDg()
     {
-        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         immutable pluginName = thisFiber.payload[0];
         immutable setting = thisFiber.payload[1];
@@ -1075,7 +1074,7 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    plugin.state.specialRequests ~= specialRequest!Payload(event.content, &getSettingDg);
+    defer!Payload(plugin, &getSettingDg, event.content);
 }
 
 
@@ -1101,14 +1100,13 @@ version(WithConnectService)
 void onCommandAuth(AdminPlugin plugin)
 {
     import kameloso.thread : ThreadMessage, boxed;
-    import std.concurrency : send;
 
     version(TwitchSupport)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch) return;
     }
 
-    plugin.state.mainThread.send(ThreadMessage.busMessage("connect", boxed("auth")));
+    plugin.state.messages ~= ThreadMessage.busMessage("connect", boxed("auth"));
 }
 
 
@@ -1160,7 +1158,7 @@ void onCommandSummary(AdminPlugin plugin)
     import kameloso.thread : ThreadMessage;
 
     if (plugin.state.settings.headless) return;
-    plugin.state.mainThread.send(ThreadMessage.wantLiveSummary);
+    plugin.state.messages ~= ThreadMessage.wantLiveSummary;
 }
 
 
@@ -1242,7 +1240,7 @@ void cycle(
     const string channelName,
     const Duration delay_ = Duration.zero,
     const string key = string.init)
-in (Fiber.getThis, "Tried to call `cycle` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `cycle` from outside a fiber")
 {
     import kameloso.plugins.common.delayawait : await, delay, unawait;
     import kameloso.thread : CarryingFiber;
@@ -1254,8 +1252,8 @@ in (Fiber.getThis, "Tried to call `cycle` from outside a Fiber")
 
     while (true)
     {
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+        auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
         assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
         const partEvent = thisFiber.payload;
@@ -1442,10 +1440,10 @@ void onCommandReconnect(AdminPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.thread : ThreadMessage, boxed;
     import lu.string : stripped;
-    import std.concurrency : prioritySend;
 
     logger.warning("Reconnecting upon administrator request.");
-    plugin.state.mainThread.send(ThreadMessage.reconnect(event.content.stripped, boxed(false)));
+    plugin.state.priorityMessages ~=
+        ThreadMessage.reconnect(event.content.stripped, boxed(false));
 }
 
 
@@ -1471,9 +1469,9 @@ void onCommandReexec(AdminPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.thread : ThreadMessage, boxed;
     import lu.string : stripped;
-    import std.concurrency : prioritySend;
 
-    plugin.state.mainThread.prioritySend(ThreadMessage.reconnect(event.content.stripped, boxed(true)));
+    plugin.state.priorityMessages ~=
+        ThreadMessage.reconnect(event.content.stripped, boxed(true));
 }
 
 
@@ -1618,12 +1616,17 @@ void onBusMessage(
         case "printbytes":
             plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
             return;
+
+        case "fake":
+            import kameloso.thread : ThreadMessage;
+            plugin.state.messages ~= ThreadMessage.fakeEvent(slice);
+            return;
     }
 
     case "reexec":
         import kameloso.thread : ThreadMessage, boxed;
-        import std.concurrency : prioritySend;
-        return plugin.state.mainThread.prioritySend(ThreadMessage.reconnect(string.init, boxed(true)));
+        plugin.state.priorityMessages ~= ThreadMessage.reconnect(string.init, boxed(true));
+        return;
 
     case "set":
         import kameloso.thread : CarryingFiber;
@@ -1633,8 +1636,8 @@ void onBusMessage(
 
         void setSettingBusDg()
         {
-            auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
-            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+            auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+            assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
             immutable success = thisFiber.payload[0];
 
@@ -1648,14 +1651,14 @@ void onBusMessage(
             }
         }
 
-        plugin.state.specialRequests ~= specialRequest!Payload(slice, &setSettingBusDg);
-        return;
+        return defer!Payload(plugin, &setSettingBusDg, slice);
 
     case "save":
         import kameloso.thread : ThreadMessage;
 
         logger.log("Saving configuration to disk.");
-        return plugin.state.mainThread.send(ThreadMessage.save);
+        plugin.state.messages ~= ThreadMessage.save;
+        return;
 
     case "reload":
         import kameloso.thread : ThreadMessage;
@@ -1670,7 +1673,8 @@ void onBusMessage(
             logger.log("Reloading plugins.");
         }
 
-        return plugin.state.mainThread.send(ThreadMessage.reload(slice));
+        plugin.state.messages ~= ThreadMessage.reload(slice);
+        return;
 
     case "whitelist":
     case "elevated":
@@ -1743,7 +1747,7 @@ void onBusMessage(
             {
                 enum invalidSyntaxMessage = "Invalid bus message syntax; " ~
                     "expected <l>hostmask add [account] [hostmask]";
-                return logger.warning(message);
+                return logger.warning(invalidSyntaxMessage);
             }
 
             IRCEvent lvalueEvent;
@@ -1755,7 +1759,7 @@ void onBusMessage(
             {
                 enum invalidSyntaxMessage = "Invalid bus message syntax; " ~
                     "expected <l>hostmask del [hostmask]";
-                return logger.warning(message);
+                return logger.warning(invalidSyntaxMessage);
             }
 
             IRCEvent lvalueEvent;

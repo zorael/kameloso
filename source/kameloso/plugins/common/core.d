@@ -366,8 +366,7 @@ public:
             elapsed = Time since last tick.
 
         Returns:
-            `true` to signal the main loop to check for new concurrency messages;
-            `false` if not.
+            `true` to signal the main loop to check for messages; `false` if not.
 
         See_Also:
             [kameloso.plugins.common.core.IRCPluginImpl.tick]
@@ -578,7 +577,7 @@ mixin template IRCPluginImpl(
     private FilterResult allow(const ref IRCEvent event, const Permissions permissionsRequired) @system
     {
         import kameloso.plugins.common.core : allowImpl;
-        return allowImpl(this, event, permissionsRequired);
+        return allowImpl!(cast(bool)debug_)(this, event, permissionsRequired);
     }
 
     // onEvent
@@ -752,7 +751,7 @@ mixin template IRCPluginImpl(
             }
 
             immutable origContent = event.content;
-            auto origAux = event.aux;  // copy
+            const origAux = event.aux;  // copy
             bool auxDirty;
 
             scope(exit)
@@ -1349,6 +1348,7 @@ mixin template IRCPluginImpl(
 
         // Inherit select members of state by zeroing out what we don't want
         this.state = state;
+        this.state.deferredActions = null;
         this.state.awaitingFibers = null;
         this.state.awaitingFibers.length = numEventTypes;
         this.state.awaitingDelegates = null;
@@ -1480,8 +1480,12 @@ mixin template IRCPluginImpl(
         static if (__traits(compiles, { alias _ = .initResources; }))
         {
             import lu.traits : TakesParams;
+            import core.memory : GC;
 
             if (!this.isEnabled) return;
+
+            GC.disable();
+            scope(exit) GC.enable();
 
             static if (
                 is(typeof(.initResources)) &&
@@ -1753,8 +1757,7 @@ mixin template IRCPluginImpl(
             elapsed = Time since last tick.
 
         Returns:
-            `true` to signal the main loop to check for new concurrency messages;
-            `false` if not.
+            `true` to signal the main loop to check for messages; `false` if not.
      +/
     override public bool tick(const Duration elapsed) @system
     {
@@ -2173,6 +2176,7 @@ auto prefixPolicyMatches(bool verbose)
     This requires the Persistence service to be active to work.
 
     Params:
+        verbose = Whether or not to output verbose debug information to the local terminal.
         event = [dialect.defs.IRCEvent|IRCEvent] to filter.
         permissionsRequired = The [Permissions] context in which this user should be filtered.
         preferHostmasks = Whether to rely on hostmasks for user identification,
@@ -2186,14 +2190,41 @@ auto prefixPolicyMatches(bool verbose)
     Also_See:
         [filterSenderImpl]
  +/
-auto filterSender(
-    const ref IRCEvent event,
+auto filterSender(bool verbose = false)
+    (const ref IRCEvent event,
     const Permissions permissionsRequired,
     const bool preferHostmasks) @safe
 {
     import kameloso.constants : Timeout;
 
-    if (event.sender.class_ == IRCUser.Class.blacklist) return FilterResult.fail;
+    static if (verbose)
+    {
+        import lu.conv : Enum;
+        import std.stdio : writeln;
+
+        writeln("filterSender of ", event.sender.nickname);
+        writeln("...permissions:", Enum!Permissions.toString(permissionsRequired));
+        writeln("...account:", event.sender.account);
+        writeln("...class:", Enum!(IRCUser.Class).toString(event.sender.class_));
+    }
+
+    if (permissionsRequired == Permissions.ignore)
+    {
+        static if (verbose)
+        {
+            writeln("...immediate pass (the call to filterSender could have been skipped)");
+        }
+        return FilterResult.pass;
+    }
+
+    if (event.sender.class_ == IRCUser.Class.blacklist)
+    {
+        static if (verbose)
+        {
+            writeln("...immediate fail (blacklist)");
+        }
+        return FilterResult.fail;
+    }
 
     immutable timediff = (event.time - event.sender.updated);
 
@@ -2201,13 +2232,31 @@ auto filterSender(
     // event will have the hostmask embedded in it, always.
     immutable whoisExpired = !preferHostmasks && (timediff > Timeout.whoisRetry);
 
+    static if (verbose)
+    {
+        writeln("...timediff:", timediff);
+        writeln("...whoisExpired:", whoisExpired);
+    }
+
     if (event.sender.account.length)
     {
-        return filterSenderImpl(permissionsRequired, event.sender.class_, whoisExpired);
+        immutable verdict = filterSenderImpl(
+            permissionsRequired,
+            event.sender.class_,
+            whoisExpired);
+
+        static if (verbose)
+        {
+            writeln("...filterSenderImpl verdict:", Enum!FilterResult.toString(verdict));
+        }
+
+        return verdict;
     }
     else
     {
         immutable isLogoutEvent = (event.type == IRCEvent.Type.ACCOUNT);
+
+        static if (verbose) writeln("...isLogoutEvent:", isLogoutEvent);
 
         with (Permissions)
         final switch (permissionsRequired)
@@ -2219,16 +2268,23 @@ auto filterSender(
         case whitelist:
         case registered:
             // Unknown sender; WHOIS if old result expired, otherwise fail
-            return (whoisExpired && !isLogoutEvent) ? FilterResult.whois : FilterResult.fail;
+            immutable verdict = (whoisExpired && !isLogoutEvent) ?
+                FilterResult.whois :
+                FilterResult.fail;
+            static if (verbose) writeln(Enum!FilterResult.toString(verdict));
+            return verdict;
 
         case anyone:
             // Unknown sender; WHOIS if old result expired in mere curiosity, else just pass
-            return (whoisExpired && !isLogoutEvent) ? FilterResult.whois : FilterResult.pass;
+            immutable verdict = (whoisExpired && !isLogoutEvent) ?
+                FilterResult.whois :
+                FilterResult.pass;
+            static if (verbose) writeln(Enum!FilterResult.toString(verdict));
+            return verdict;
 
         case ignore:
-            /*assert(0, "`filterSender` saw a `Permissions.ignore` and the call " ~
-                "to it could have been skipped");*/
-            return FilterResult.pass;
+            // Will have already returned earlier
+            assert(0, "Unreachable");
         }
     }
 }
@@ -2335,10 +2391,10 @@ auto filterSenderImpl(
         [filterSender]
         [filterSenderImpl]
  +/
-auto allowImpl(
-    IRCPlugin plugin,
+auto allowImpl(bool verbose = false)
+    (IRCPlugin plugin,
     const ref IRCEvent event,
-    const Permissions permissionsRequired) pure @safe
+    const Permissions permissionsRequired) @safe
 {
     if (permissionsRequired == Permissions.ignore) return FilterResult.pass;
 
@@ -2359,7 +2415,10 @@ auto allowImpl(
     }
 
     // Permissions.ignore always passes, even for Class.blacklist.
-    return filterSender(event, permissionsRequired, plugin.state.settings.preferHostmasks);
+    return filterSender!verbose
+        (event,
+        permissionsRequired,
+        plugin.state.settings.preferHostmasks);
 }
 
 
@@ -2373,7 +2432,6 @@ auto allowImpl(
 void sanitiseEvent(ref IRCEvent event)
 {
     import std.encoding : sanitize;
-    import std.range : only;
 
     event.raw = sanitize(event.raw);
     event.channel = sanitize(event.channel);
@@ -2388,7 +2446,13 @@ void sanitiseEvent(ref IRCEvent event)
         auxN = sanitize(auxN);
     }
 
-    foreach (user; only(&event.sender, &event.target))
+    IRCUser*[2] bothUsers =
+    [
+        &event.sender,
+        &event.target,
+    ];
+
+    foreach (user; bothUsers[])
     {
         user.nickname = sanitize(user.nickname);
         user.ident = sanitize(user.ident);
@@ -2645,7 +2709,8 @@ struct IRCPluginState
 {
 private:
     import kameloso.pods : ConnectionSettings, CoreSettings, IRCBot;
-    import kameloso.thread : ScheduledDelegate, ScheduledFiber;
+    import kameloso.messaging : Message;
+    import kameloso.thread : ScheduledDelegate, ScheduledFiber, ThreadMessage;
     import std.concurrency : Tid;
     import core.thread : Fiber;
 
@@ -2808,6 +2873,8 @@ public:
 
         foreach (const scheduledFiber; scheduledFibers)
         {
+            if (!scheduledFiber.fiber) continue;  // undelayed
+
             if (scheduledFiber.timestamp < nextScheduledTimestamp)
             {
                 nextScheduledTimestamp = scheduledFiber.timestamp;
@@ -2816,6 +2883,8 @@ public:
 
         foreach (const scheduledDg; scheduledDelegates)
         {
+            if (!scheduledDg.dg) continue;  // ditto
+
             if (scheduledDg.timestamp < nextScheduledTimestamp)
             {
                 nextScheduledTimestamp = scheduledDg.timestamp;
@@ -2877,11 +2946,29 @@ public:
         this._connectionID = connectionID;
     }
 
-    // specialRequests
+    // deferredActions
     /++
-        This plugin's array of [SpecialRequest]s.
+        This plugin's array of [DeferredAction]s.
      +/
-    SpecialRequest[] specialRequests;
+    DeferredAction[] deferredActions;
+
+    // messages
+    /++
+        Messages for the main thread to take action on.
+     +/
+    ThreadMessage[] messages;
+
+    // priorityMessages
+    /++
+        Messages for the main thread to take action on with a higher priority.
+     +/
+    ThreadMessage[] priorityMessages;
+
+    // outgoingMessages
+    /++
+        Events to send to the IRC server.
+     +/
+    Message[] outgoingMessages;
 }
 
 
@@ -2924,6 +3011,12 @@ struct Replay
 
     /++
         Creates a new [Replay] with a timestamp of the current time.
+
+        Params:
+            dg = Delegate to call with a prepared [Replay] as argument.
+            event = [dialect.defs.IRCEvent|IRCEvent] to stored for later replay.
+            permissionsRequired = [Permissions] required by the function to replay.
+            caller = Name of the caller function or similar context.
      +/
     this(
         void delegate(Replay) dg,
@@ -3399,11 +3492,11 @@ public:
 }
 
 
-// SpecialRequest
+// DeferredAction
 /++
-    Embodies the notion of a special request a plugin issues to the main thread.
+    Embodies the notion of an action a plugin defers to the main thread.
  +/
-interface SpecialRequest
+interface DeferredAction
 {
 private:
     import core.thread : Fiber;
@@ -3411,27 +3504,27 @@ private:
 public:
     // context
     /++
-        String context of the request.
+        String context of the action.
      +/
     string context() const pure @safe nothrow @nogc;
 
     // creator
     /++
-        Name of the function that created this request.
+        Name of the function that created this action.
      +/
     string creator() const pure @safe nothrow @nogc;
 
     // fiber
     /++
-        Fiber embedded into the request.
+        Fiber embedded into the action.
      +/
-    Fiber fiber();
+    Fiber fiber() @system;
 }
 
 
-// SpecialRequestImpl
+// DeferredActionImpl
 /++
-    Concrete implementation of a [SpecialRequest].
+    Concrete implementation of a [DeferredAction].
 
     The template parameter `T` defines that kind of
     [kameloso.thread.CarryingFiber|CarryingFiber] is embedded into it.
@@ -3439,7 +3532,7 @@ public:
     Params:
         T = Type to instantiate the [kameloso.thread.CarryingFiber|CarryingFiber] with.
  +/
-final class SpecialRequestImpl(T) : SpecialRequest
+private final class DeferredActionImpl(T) : DeferredAction
 {
 private:
     import kameloso.thread : CarryingFiber;
@@ -3466,13 +3559,13 @@ public:
         Constructor.
 
         Params:
-            context = String context of the request.
-            fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
-            creator = Name of the function that created this request.
+            fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the action.
+            context = String context of the action.
+            creator = Name of the function that created this action.
      +/
     this(
-        string context,
         CarryingFiber!T fiber,
+        string context,
         const string creator) pure @safe nothrow @nogc
     {
         this._context = context;
@@ -3485,13 +3578,13 @@ public:
         Constructor.
 
         Params:
-            context = String context of the request.
             dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
-            creator = Name of the function that created this request.
+            context = String context of the action.
+            creator = Name of the function that created this action.
      +/
     this(
-        string context,
         void delegate() dg,
+        string context,
         const string creator) /*pure @safe @nogc*/ nothrow
     {
         import kameloso.constants : BufferSize;
@@ -3504,7 +3597,7 @@ public:
 
     // context
     /++
-        String context of the request. May be anything; highly request-specific.
+        String context of the action. May be anything; highly action-specific.
 
         Returns:
             A string.
@@ -3516,7 +3609,7 @@ public:
 
     // creator
     /++
-        Name of the function that created this request.
+        Name of the function that created this action.
 
         Returns:
             A string.
@@ -3528,7 +3621,7 @@ public:
 
     // fiber
     /++
-        [kameloso.thread.CarryingFiber|CarryingFiber] embedded into the request.
+        [kameloso.thread.CarryingFiber|CarryingFiber] embedded into the action.
 
         Returns:
             A [kameloso.thread.CarryingFiber|CarryingFiber] in the guise of a
@@ -3541,49 +3634,56 @@ public:
 }
 
 
-// specialRequest
+// defer
 /++
-    Instantiates a [SpecialRequestImpl] in the guise of a [SpecialRequest]
-    with the implicit type `T` as payload.
+    Instantiates a [DeferredActionImpl] in the guise of a [DeferredAction]
+    with the implicit type `T` as payload and appends it to the passed [IRCPlugin]'s
+    [IRCPluginState.deferredActions|deferredActions] array.
+
+    Overload that takes a [kameloso.thread.CarryingFiber|CarryingFiber].
 
     Params:
-        T = Type to instantiate [SpecialRequestImpl] with.
-        context = String context of the request.
-        fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
-        creator = Name of the function that created this request.
-
-    Returns:
-        A new [SpecialRequest] that is in actually a [SpecialRequestImpl].
+        T = Type to instantiate [DeferredActionImpl] with.
+        plugin = [IRCPlugin] whose [IRCPluginState.deferredActions|deferredActions]
+            array the action will be appended to.
+        fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the action.
+        context = String context of the action.
+        creator = Name of the function that created this action.
  +/
-SpecialRequest specialRequest(T)
-    (const string context,
+void defer(T)
+    (IRCPlugin plugin,
     CarryingFiber!T fiber,
+    const string context = string.init,
     const string creator = __FUNCTION__) pure @safe nothrow
 {
-    return new SpecialRequestImpl!T(context, fiber, creator);
+    plugin.state.deferredActions ~= new DeferredActionImpl!T(fiber, context, creator);
 }
 
 
-// specialRequest
+// defer
 /++
-    Instantiates a [SpecialRequestImpl] in the guise of a [SpecialRequest]
-    with the explicit type `T` as payload.
+    Instantiates a [DeferredActionImpl] in the guise of a [DeferredAction]
+    with the implicit type `T` as payload and appends it to the passed [IRCPlugin]'s
+    [IRCPluginState.deferredActions|deferredActions] array.
+
+    Overload that takes a `void delegate()` delegate, which [DeferredActionImpl]'s
+    constructor will create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
 
     Params:
-        T = Type to instantiate [SpecialRequestImpl] with.
-        context = String context of the request.
+        T = Type to instantiate [DeferredActionImpl] with.
+        plugin = [IRCPlugin] whose [IRCPluginState.deferredActions|deferredActions]
+            array the action will be appended to.
         dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
-        creator = Name of the function that created this request.
-
-    Returns:
-        A new [SpecialRequest] that is in actually a [SpecialRequestImpl].
+        context = String context of the action.
+        creator = Name of the function that created this action.
  +/
-SpecialRequest specialRequest(T)
-    (const string context,
+void defer(T)
+    (IRCPlugin plugin,
     void delegate() dg,
+    const string context = string.init,
     const string creator = __FUNCTION__) /*pure @safe*/ nothrow
 {
-    return new SpecialRequestImpl!T(context, dg, creator);
+    plugin.state.deferredActions ~= new DeferredActionImpl!T(dg, context, creator);
 }
 
 

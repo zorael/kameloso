@@ -402,8 +402,6 @@ public:
 
         version(ThreadedSSLFree)
         {
-            import std.concurrency : spawn;
-
             static void freeSSL(shared SSL* sslInstance, shared SSL_CTX* sslContext)
             {
                 if (sslInstance) openssl.SSL_free(cast(SSL*)sslInstance);
@@ -413,6 +411,7 @@ public:
             // Casting to and from shared is not @safe. Hopefully history will forgive me for this.
             () @trusted
             {
+                import std.concurrency : spawn;
                 cast(void)spawn(&freeSSL, cast(shared)this.sslInstance, cast(shared)this.sslContext);
             }();
         }
@@ -432,10 +431,15 @@ public:
      +/
     void teardown()
     {
-        import std.range : only;
         import std.socket : SocketShutdown;
 
-        foreach (thisSocket; only(socket4, socket6))
+        Socket[2] bothSockets =
+        [
+            socket4,
+            socket6,
+        ];
+
+        foreach (thisSocket; bothSockets[])
         {
             if (!thisSocket) continue;
 
@@ -564,7 +568,7 @@ struct ListenAttempt
     /++
         The various states a listening attempt may be in.
      +/
-    enum State
+    enum ListenState
     {
         unset,      /// Init value.
         noop,       /// Nothing.
@@ -577,9 +581,15 @@ struct ListenAttempt
     }
 
     /++
+        Deprecated alias to [ListenState].
+     +/
+    deprecated("Use `ListenAttempt.ListenState` instead")
+    alias State = ListenState;
+
+    /++
         The current state of the attempt.
      +/
-    State state;
+    ListenState state;
 
     /++
         The last read line of text sent by the server.
@@ -611,7 +621,7 @@ struct ListenAttempt
     It maintains its own buffer into which it receives from the server, though
     not necessarily full lines. It thus keeps filling the buffer until it
     finds a newline character, yields [ListenAttempt]s back to the caller of
-    the Fiber, checks for more lines to yield, and if none yields an attempt
+    the fiber, checks for more lines to yield, and if none yields an attempt
     with a [ListenAttempt.State] denoting that nothing was read and that a new
     attempt should be made later.
 
@@ -693,7 +703,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
     long timeLastReceived = Clock.currTime.toUnixTime();
     size_t start;
 
-    alias State = ListenAttempt.State;
+    alias State = ListenAttempt.ListenState;
     yield(ListenAttempt(State.noop));
 
     /// How many consecutive warnings to allow before yielding an error.
@@ -927,7 +937,7 @@ public:
     /++
         The various states a connection attempt may be in.
      +/
-    enum State
+    enum ConnectState
     {
         unset,                   /// Init value.
         noop,                    /// Nothing.
@@ -945,9 +955,15 @@ public:
     }
 
     /++
+        Deprecated alias to [ConnectState].
+     +/
+    deprecated("Use `ConnectionAttempt.ConnectState` instead")
+    alias State = ConnectState;
+
+    /++
         The current state of the attempt.
      +/
-    State state;
+    ConnectState state;
 
     /++
         The IP that the attempt is trying to connect to.
@@ -1042,7 +1058,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 
     if (*abort) return;
 
-    alias State = ConnectionAttempt.State;
+    alias State = ConnectionAttempt.ConnectState;
     yield(ConnectionAttempt(State.noop));
 
     scope(exit) conn.teardown();
@@ -1281,7 +1297,7 @@ struct ResolveAttempt
     /++
         The various states an address resolution attempt may be in.
      +/
-    enum State
+    enum ResolveState
     {
         unset,          /// Init value.
         noop,           /// Do nothing.
@@ -1292,9 +1308,15 @@ struct ResolveAttempt
     }
 
     /++
+        Deprecated alias to [ResolveState].
+     +/
+    deprecated("Use `ResolveAttempt.ResolveState` instead")
+    alias State = ResolveState;
+
+    /++
         The current state of the attempt.
      +/
-    State state;
+    ResolveState state;
 
     /++
         The error message as thrown by an exception.
@@ -1390,7 +1412,7 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 
     if (*abort) return;
 
-    alias State = ResolveAttempt.State;
+    alias State = ResolveAttempt.ResolveState;
     yield(ResolveAttempt(State.noop));
 
     for (uint i; (i >= 0); ++i)

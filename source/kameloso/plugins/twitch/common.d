@@ -175,10 +175,17 @@ auto readChannelName(
             logger.trace();
             benignAbort = Yes.benignAbort;
         }
-
         return string.init;
     }
-    else if (input[0] != '#')
+    else if (
+        (input.length >= 4+1) &&  // 4 as minimum length, +1 for the octothorpe
+        (input[0] == '#') &&
+        input[1..$].isValidTwitchUsername)
+    {
+        // Seems correct
+        return input;
+    }
+    else
     {
         enum invalidChannelNameMessage = "Channels are Twitch lowercase account names, " ~
             "prepended with a '<l>#</>' sign.";
@@ -186,8 +193,6 @@ auto readChannelName(
         numEmptyLinesEntered = 0;
         return string.init;
     }
-
-    return input;
 }
 
 
@@ -806,4 +811,73 @@ void generateExpiryReminders(
     else if (trueExpiry >= 1.days) warnOnDaysDg();
     else if (trueExpiry >= 1.hours) warnOnHoursDg();
     else /*if (trueExpiry >= 1.minutes)*/ warnOnMinutesDg();
+}
+
+
+// isValidTwitchUsername
+/++
+    Checks if a string is a valid Twitch username.
+
+    They must be 4 to 25 characters and may only contain letters, numbers and underscores.
+
+    Params:
+        username = The string to check.
+
+    Returns:
+        `true` if the string is a valid Twitch username; `false` if not.
+ +/
+auto isValidTwitchUsername(const string username)
+{
+    import std.algorithm.searching : all;
+    import std.ascii : isAlphaNum;
+
+    return (
+        (username.length >= 4) &&
+        (username.length <= 25) &&
+        username.all!(c => isAlphaNum(c) || (c == '_')));
+}
+
+///
+unittest
+{
+    {
+        enum username = "zorael";
+        assert(username.isValidTwitchUsername);
+    }
+    {
+        enum username = "zårael";
+        assert(!username.isValidTwitchUsername);
+    }
+    {
+        enum username = "zorael_";
+        assert(username.isValidTwitchUsername);
+    }
+    {
+        enum username = "zorael-";
+        assert(!username.isValidTwitchUsername);
+    }
+    {
+        enum username = "z0rael";
+        assert(username.isValidTwitchUsername);
+    }
+    {
+        enum username = "z0r";
+        assert(!username.isValidTwitchUsername);
+    }
+    {
+        enum username = string.init;
+        assert(!username.isValidTwitchUsername);
+    }
+    {
+        enum username = "1234567890123456789012345";
+        assert(username.isValidTwitchUsername);
+    }
+    {
+        enum username = "12345678901234567890123456";
+        assert(!username.isValidTwitchUsername);
+    }
+    {
+        enum username = "#zorael";
+        assert(!username.isValidTwitchUsername);
+    }
 }

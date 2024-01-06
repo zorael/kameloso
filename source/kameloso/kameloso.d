@@ -372,16 +372,13 @@ public:
     {
         import std.random : uniform;
 
-        synchronized //()
-        {
-            immutable previous = _connectionID;
+        immutable previous = _connectionID;
 
-            do
-            {
-                _connectionID = uniform(1, uint.max);
-            }
-            while (_connectionID == previous);
+        do
+        {
+            _connectionID = uniform(1, uint.max);
         }
+        while (_connectionID == previous);
     }
 
     // throttleline
@@ -521,7 +518,6 @@ public:
         state.client = this.parser.client;
         state.server = this.parser.server;
         state.bot = this.bot;
-        state.mainThread = thisTid;
         state.settings = *this.settings;
         state.connSettings = this.connSettings;
         state.abort = this.abort;
@@ -664,7 +660,7 @@ public:
 
                 foreach (ref scheduledFiber; plugin.state.scheduledFibers)
                 {
-                    // All Fibers should be at HOLD state but be conservative
+                    // All fibers should be at HOLD state but be conservative
                     if (scheduledFiber.fiber.state != Fiber.State.EXEC)
                     {
                         destroy(scheduledFiber.fiber);

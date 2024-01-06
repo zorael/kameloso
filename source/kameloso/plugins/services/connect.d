@@ -73,6 +73,11 @@ public:
     bool exitOnSASLFailure = false;
 
     /++
+        In what way channels should be rejoined upon reconnecting, or upon re-execution.
+     +/
+    ChannelRejoinBehaviour rejoinBehaviour = ChannelRejoinBehaviour.merge;
+
+    /++
         Lines to send after successfully connecting and registering.
      +/
     //@Separator(";;")
@@ -83,6 +88,47 @@ public:
      +/
     @Unserialisable int maxPingPeriodAllowed = 660;
 }
+
+
+/++
+    Manners in which ways channels should be rejoined upon reconnecting,
+    or upon re-execution.
+
+    Its name is intentionally kept short to improve the visuals of calling the
+    program with `--settings`.
+ +/
+enum Rejoin
+{
+    /++
+        Home channels and guest channels are merged with channels carried from
+        previous connections/executions, and all of them are joined.
+     +/
+    merge,
+
+    /++
+        Home channels are merged with channels carried from previous
+        connections/executions, and all of them are joined. Guest channels are excluded.
+     +/
+    mergeHomes,
+
+    /++
+        Home channels and guest channels are joined, but channels carried from
+        previous connections/executions are ignored.
+     +/
+    original,
+
+    /++
+        Channels carried from previous connections/executions are joined, but
+        home and guest channels as defined in the configuration file are ignored.
+     +/
+    carryPrevious,
+}
+
+
+/++
+    More descriptive name for [Rejoin].
+ +/
+alias ChannelRejoinBehaviour = Rejoin;
 
 
 /++
@@ -128,98 +174,215 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
 
 // joinChannels
 /++
-    Joins all channels listed as home channels *and* guest channels in the arrays in
-    [kameloso.pods.IRCBot|IRCBot] of the current [ConnectService]'s
-    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
+    Joins all channels that should be joined, as per the [ConnectSettings.rejoinBehaviour]
+    setting.
+
+    * If [Rejoin.merge|ChannelRejoinBehaviour.merge], it will join all home channels
+      all guest channels *and* any channels carried over from previous connections
+      (or executions).
+    * If [Rejoin.mergeHomes|ChannelRejoinBehaviour.mergeHomes|, it wil join all
+      channels carried over from previous connections *and* all home channels as
+      defined in the configuration file, but ignore guest channels.
+    * If [Rejoin.original|ChannelRejoinBehaviour.original], it will join all home
+      channels and all guest channels, but ignore any carried channels.
+    * If [Rejoin.carryPrevious|ChannelRejoinBehaviour.carryPrevious], it will join
+      all carried channels and ignore home and guest channels.
 
     Params:
         service = The current [ConnectService].
  +/
 void joinChannels(ConnectService service)
 {
-    import kameloso.messaging : Message;
     import lu.string : plurality;
-    import std.algorithm.iteration : filter, uniq;
-    import std.array : array;
-    import std.range : walkLength;
-    static import kameloso.messaging;
 
-    scope(exit) service.joinedChannels = true;
+    scope(exit) service.transient.joinedChannels = true;
 
     void printDefeat()
     {
         logger.warning("No channels, no purpose...");
     }
 
-    void printEmptyChannelText()
-    {
-        enum message = "An empty channel set was passed from a previous connection.";
-        logger.info(message);
-    }
-
-    auto filterSortUniq(string[] array_)
+    /+
+        Filters out empty strings and the empty array marker, sorts the array
+        and removes duplicates.
+     +/
+    static auto filterSortUniq(string[] array_)
     {
         import kameloso.constants : MagicStrings;
+        import std.algorithm.iteration : filter, uniq;
         import std.algorithm.sorting : sort;
-        import std.array : join;
+        import std.array : array;
+
+        alias pred = (string channelName) =>
+            (channelName != "-") &&
+            (channelName != MagicStrings.emptyArrayMarker);
 
         return array_
-            .filter!(channelName =>
-                (channelName != "-") && (channelName != MagicStrings.emptyArrayMarker))
+            .filter!pred
             .array
             .sort
-            .uniq;
+            .uniq
+            .array;
     }
 
-    void joinList(string[] array_)
+    /+
+        Joins the channels in the (keys of the) passed associative array.
+     +/
+    void joinArray(const string[] channelList)
     {
+        import kameloso.messaging : Message;
         import std.array : join;
+        static import kameloso.messaging;
 
-        if (!array_.length) return;
+        if (!channelList.length) return;
 
         enum properties = Message.Property.quiet;
         kameloso.messaging.join(
             service.state,
-            array_.join(','),
+            channelList.join(','),
             string.init,
             properties);
     }
 
-    if (service.state.bot.channelOverride.length)
+    /+
+        Removes entries from the first ref array that are also in the second const array.
+     +/
+    void removeArrayEntriesAlsoIn(
+        ref string[] first,
+        const string[] second)
     {
-        auto overrideList = filterSortUniq(service.state.bot.channelOverride);
-        immutable overrideListLength = overrideList.walkLength();
-
-        if (!overrideListLength)
+        foreach (immutable channelName; second)
         {
-            printEmptyChannelText();
+            import std.algorithm.searching : countUntil;
+
+            immutable firstPos = first.countUntil(channelName);
+
+            if (firstPos != -1)
+            {
+                import std.algorithm.mutation : SwapStrategy, remove;
+                first = first.remove!(SwapStrategy.unstable)(firstPos);
+            }
+        }
+    }
+
+    const homeArray = filterSortUniq(service.state.bot.homeChannels);
+    auto guestArray = filterSortUniq(service.state.bot.guestChannels);
+    auto overrideArray = filterSortUniq(service.state.bot.channelOverride);
+
+    removeArrayEntriesAlsoIn(guestArray, homeArray);
+    removeArrayEntriesAlsoIn(overrideArray, homeArray);
+    removeArrayEntriesAlsoIn(overrideArray, guestArray);
+
+    version(TwitchSupport)
+    {
+        import std.range : chain;
+        /+
+            Collect all channels we're supposed to join into a single array,
+            to be able to check later (down below) if we actually joined them all.
+         +/
+        string[] allChannels;
+    }
+
+    /+
+        Prints a message about joining channels, and how many of them were
+        carried over from a previous connection.
+     +/
+    void printJoiningMessage(
+        const size_t numChans,
+        const size_t carried)
+    {
+        if (carried > 0)
+        {
+            enum pattern = "Joining <i>%d</> %s (of which <i>%d</> %s " ~
+                "carried over from the previous connection)...";
+            logger.logf(
+                pattern,
+                numChans,
+                numChans.plurality("channel", "channels"),
+                overrideArray.length,
+                overrideArray.length.plurality("was", "were"));
+        }
+        else
+        {
+            enum pattern = "Joining <i>%d</> %s...";
+            logger.logf(
+                pattern,
+                numChans,
+                numChans.plurality("channel", "channels"));
+        }
+    }
+
+    with (ChannelRejoinBehaviour)
+    final switch (service.connectSettings.rejoinBehaviour)
+    {
+    case merge:
+        /+
+            Merge home, guest and override channels into a single list, and
+            join them all.
+         +/
+        immutable numChans = (homeArray.length + guestArray.length + overrideArray.length);
+        if (!numChans) return printDefeat();
+
+        printJoiningMessage(numChans, overrideArray.length);
+        joinArray(homeArray);
+        joinArray(guestArray);
+        joinArray(overrideArray);
+
+        version(TwitchSupport) allChannels = homeArray ~ guestArray ~ overrideArray;
+        break;
+
+    case mergeHomes:
+        /+
+            Merge home and override channels into a single list, and join them
+            all. (Skip the guest channel list.)
+         +/
+        immutable numChans = (homeArray.length + overrideArray.length);
+        if (!numChans) return printDefeat();
+
+        printJoiningMessage(numChans, overrideArray.length);
+        joinArray(homeArray);
+        //joinArray(guestArray);
+        joinArray(overrideArray);
+
+        version(TwitchSupport) allChannels = homeArray ~ /*guestArray ~*/ overrideArray;
+        break;
+
+    case original:
+        /+
+            Join the home and guest channels, and ignore the override list.
+         +/
+        immutable numChans = (homeArray.length + guestArray.length);
+        if (!numChans) return printDefeat();
+
+        printJoiningMessage(numChans, overrideArray.length);
+        joinArray(homeArray);
+        joinArray(guestArray);
+        //joinArray(overrideArray);
+
+        version(TwitchSupport) allChannels = homeArray ~ guestArray; // ~ overrideArray;
+        break;
+
+    case carryPrevious:
+        /+
+            Join the override list, and ignore the home and guest channels.
+         +/
+        if (!overrideArray.length)
+        {
+            enum emptyMessage = "An empty channel set was passed from a previous connection.";
+            enum changeMessage = "Consider changing the <l>connect</>.<l>rejoinBehaviour</> configuration setting.";
+            logger.warning(emptyMessage);
+            logger.warning(changeMessage);
             return printDefeat();
         }
 
-        enum pattern = "Joining <i>%d</> %s (carried from previous connection)...";
-        logger.logf(
-            pattern,
-            overrideListLength,
-            overrideListLength.plurality("channel", "channels"));
+        printJoiningMessage(overrideArray.length, overrideArray.length);
+        //joinArray(homeArray);
+        //joinArray(guestArray);
+        joinArray(overrideArray);
 
-        return joinList(overrideList.array);
+        version(TwitchSupport) allChannels = /*homeArray ~ guestArray ~*/ overrideArray;
+        break;
     }
-
-    if (!service.state.bot.homeChannels.length && !service.state.bot.guestChannels.length)
-    {
-        return printDefeat();
-    }
-
-    auto homeList = filterSortUniq(service.state.bot.homeChannels);
-    auto guestList = filterSortUniq(service.state.bot.guestChannels);
-    immutable numChans = homeList.walkLength() + guestList.walkLength();
-
-    enum pattern = "Joining <i>%d</> %s...";
-    logger.logf(pattern, numChans, numChans.plurality("channel", "channels"));
-
-    // Join in two steps so home channels don't get shoved away by guest channels
-    joinList(homeList.array);
-    joinList(guestList.array);
 
     version(TwitchSupport)
     {
@@ -238,18 +401,14 @@ void joinChannels(ConnectService service)
 
         void delayedChannelCheckDg()
         {
-            import std.range : chain;
-
-            // See if we actually managed to join all channels
-            auto allChannels = chain(service.state.bot.homeChannels, service.state.bot.guestChannels);
             string[] missingChannels;  // mutable
 
-            foreach (immutable channel; allChannels)
+            foreach (immutable channelName; allChannels)
             {
-                if (channel !in service.currentActualChannels)
+                if (channelName !in service.currentActualChannels)
                 {
                     // We failed to join a channel for some reason. No such user?
-                    missingChannels ~= channel;
+                    missingChannels ~= channelName;
                 }
             }
 
@@ -260,7 +419,7 @@ void joinChannels(ConnectService service)
             }
         }
 
-        delay(service, &delayedChannelCheckDg, service.timing.channelCheckDelay);
+        delay(service, &delayedChannelCheckDg, ConnectService.Timings.channelCheckDelay);
     }
 }
 
@@ -321,10 +480,8 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
 void onPing(ConnectService service, const ref IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : prioritySend;
-
     immutable target = event.content.length ? event.content : event.sender.address;
-    service.state.mainThread.prioritySend(ThreadMessage.pong(target));
+    service.state.priorityMessages ~= ThreadMessage.pong(target);
 }
 
 
@@ -362,7 +519,7 @@ void tryAuth(ConnectService service)
     case "EFNet":
     case "WNet1":
         // No registration available
-        service.progress.authentication = Progress.finished;
+        service.transient.progress.authentication = Progress.finished;
         return;
 
     case "QuakeNet":
@@ -374,7 +531,7 @@ void tryAuth(ConnectService service)
         break;
     }
 
-    service.progress.authentication = Progress.inProgress;
+    service.transient.progress.authentication = Progress.inProgress;
 
     with (IRCServer.Daemon)
     switch (service.state.server.daemon)
@@ -395,7 +552,7 @@ void tryAuth(ConnectService service)
                 service.state.client.nickname,
                 service.state.client.origNickname);
 
-            service.progress.authentication = Progress.finished;
+            service.transient.progress.authentication = Progress.finished;
             return;
         }
 
@@ -461,7 +618,7 @@ void tryAuth(ConnectService service)
     {
         case twitch:
             // No registration available
-            service.progress.authentication = Progress.finished;
+            service.transient.progress.authentication = Progress.finished;
             return;
     }
 
@@ -485,19 +642,19 @@ void tryAuth(ConnectService service)
     {
         // If we're still authenticating after n seconds, abort and join channels.
 
-        if (service.progress.authentication == Progress.inProgress)
+        if (service.transient.progress.authentication == Progress.inProgress)
         {
             logger.warning("Authentication timed out.");
-            service.progress.authentication = Progress.finished;
+            service.transient.progress.authentication = Progress.finished;
         }
 
-        if (!service.joinedChannels)
+        if (!service.transient.joinedChannels)
         {
             joinChannels(service);
         }
     }
 
-    delay(service, &delayedJoinDg, service.timing.authenticationGracePeriod);
+    delay(service, &delayedJoinDg, ConnectService.Timings.authenticationGracePeriod);
 }
 
 
@@ -514,11 +671,11 @@ void tryAuth(ConnectService service)
 )
 void onAuthEnd(ConnectService service, const ref IRCEvent event)
 {
-    service.progress.authentication = Progress.finished;
+    service.transient.progress.authentication = Progress.finished;
 
-    if (service.progress.registration == Progress.finished)
+    if (service.transient.progress.registration == Progress.finished)
     {
-        if (!service.joinedChannels)
+        if (!service.transient.joinedChannels)
         {
             joinChannels(service);
         }
@@ -623,17 +780,17 @@ void onNickInUse(ConnectService service)
     import std.conv : to;
     import std.random : uniform;
 
-    if (service.progress.registration == Progress.inProgress)
+    if (service.transient.progress.registration == Progress.inProgress)
     {
-        if (!service.renameDuringRegistration.length)
+        if (!service.transient.renameDuringRegistration.length)
         {
             import kameloso.constants : KamelosoDefaults;
-            service.renameDuringRegistration = service.state.client.nickname ~
+            service.transient.renameDuringRegistration = service.state.client.nickname ~
                 KamelosoDefaults.altNickSeparator;
         }
 
-        service.renameDuringRegistration ~= uniform(0, 10).to!string;
-        immutable message = "NICK " ~ service.renameDuringRegistration;
+        service.transient.renameDuringRegistration ~= uniform(0, 10).to!string;
+        immutable message = "NICK " ~ service.transient.renameDuringRegistration;
         immediate(service.state, message);
     }
 }
@@ -649,11 +806,11 @@ void onNickInUse(ConnectService service)
 )
 void onBadNick(ConnectService service)
 {
-    if (service.progress.registration == Progress.inProgress)
+    if (service.transient.progress.registration == Progress.inProgress)
     {
         // Mid-registration and invalid nickname; abort
 
-        if (service.renameDuringRegistration.length)
+        if (service.transient.renameDuringRegistration.length)
         {
             logger.error("Your nickname was taken and an alternative nickname " ~
                 "could not be successfully generated.");
@@ -697,7 +854,7 @@ void onBanned(ConnectService service)
 )
 void onPassMismatch(ConnectService service)
 {
-    if (service.progress.registration != Progress.inProgress)
+    if (service.transient.progress.registration != Progress.inProgress)
     {
         // Unsure if this ever happens, but don't quit if we're actually registered
         return;
@@ -746,14 +903,14 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
     // http://ircv3.net/irc
     // https://blog.irccloud.com/ircv3
 
-    if (service.progress.registration == Progress.finished)
+    if (service.transient.progress.registration == Progress.finished)
     {
         // It's possible to call CAP LS after registration, and that would start
         // this whole process anew. So stop if we have registered.
         return;
     }
 
-    service.progress.capabilityNegotiation = Progress.inProgress;
+    service.transient.progress.capabilityNegotiation = Progress.inProgress;
 
     switch (event.content)
     {
@@ -850,7 +1007,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 // znc SELFCHAN/SELFQUERY events
 
                 capsToReq ~= cap;
-                ++service.requestedCapabilitiesRemaining;
+                ++service.transient.requestedCapabilitiesRemaining;
                 break;
 
             default:
@@ -891,7 +1048,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 
             default:
                 //logger.warning("Unhandled capability ACK: ", cap);
-                --service.requestedCapabilitiesRemaining;
+                --service.transient.requestedCapabilitiesRemaining;
                 break;
             }
         }
@@ -916,7 +1073,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 
             default:
                 //logger.warning("Unhandled capability NAK: ", cap);
-                --service.requestedCapabilitiesRemaining;
+                --service.transient.requestedCapabilitiesRemaining;
                 break;
             }
         }
@@ -927,15 +1084,15 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         break;
     }
 
-    if (!service.requestedCapabilitiesRemaining &&
-        (service.progress.capabilityNegotiation == Progress.inProgress))
+    if (!service.transient.requestedCapabilitiesRemaining &&
+        (service.transient.progress.capabilityNegotiation == Progress.inProgress))
     {
-        service.progress.capabilityNegotiation = Progress.finished;
+        service.transient.progress.capabilityNegotiation = Progress.finished;
         enum properties = Message.Property.quiet;
         enum message = "CAP END";
         immediate(service.state, message, properties);
 
-        if (!service.issuedNICK)
+        if (!service.transient.issuedNICK)
         {
             negotiateNick(service);
         }
@@ -953,15 +1110,15 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 )
 void onSASLAuthenticate(ConnectService service)
 {
-    service.progress.authentication = Progress.inProgress;
+    service.transient.progress.authentication = Progress.inProgress;
 
     immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
         service.state.connSettings.certFile.length);
 
     if (service.state.connSettings.ssl && hasKey &&
-        (service.progress.saslExternal == Progress.notStarted))
+        (service.transient.progress.saslExternal == Progress.notStarted))
     {
-        service.progress.saslExternal = Progress.inProgress;
+        service.transient.progress.saslExternal = Progress.inProgress;
         enum message = "AUTHENTICATE +";
         return immediate(service.state, message);
     }
@@ -1046,7 +1203,7 @@ auto trySASLPlain(ConnectService service)
 )
 void onSASLSuccess(ConnectService service)
 {
-    service.progress.authentication = Progress.finished;
+    service.transient.progress.authentication = Progress.finished;
 
     /++
         The END subcommand signals to the server that capability negotiation
@@ -1062,15 +1219,16 @@ void onSASLSuccess(ConnectService service)
         Notes: Some servers don't ignore post-registration CAP.
      +/
 
-    if (!--service.requestedCapabilitiesRemaining &&
-        (service.progress.capabilityNegotiation == Progress.inProgress))
+    if (!--service.transient.requestedCapabilitiesRemaining &&
+        (service.transient.progress.capabilityNegotiation == Progress.inProgress))
     {
-        service.progress.capabilityNegotiation = Progress.finished;
+        service.transient.progress.capabilityNegotiation = Progress.finished;
         enum properties = Message.Property.quiet;
         enum message = "CAP END";
         immediate(service.state, message, properties);
 
-        if ((service.progress.registration == Progress.inProgress) && !service.issuedNICK)
+        if ((service.transient.progress.registration == Progress.inProgress) &&
+            !service.transient.issuedNICK)
         {
             negotiateNick(service);
         }
@@ -1091,10 +1249,11 @@ void onSASLSuccess(ConnectService service)
 )
 void onSASLFailure(ConnectService service)
 {
-    if ((service.progress.saslExternal == Progress.inProgress) && service.state.bot.password.length)
+    if ((service.transient.progress.saslExternal == Progress.inProgress) &&
+        service.state.bot.password.length)
     {
         // Fall back to PLAIN
-        service.progress.saslExternal = Progress.finished;
+        service.transient.progress.saslExternal = Progress.finished;
         enum properties = Message.Property.quiet;
         enum message = "AUTHENTICATE PLAIN";
         return immediate(service.state, message, properties);
@@ -1108,17 +1267,18 @@ void onSASLFailure(ConnectService service)
 
     // Auth failed and will fail even if we try NickServ, so flag as
     // finished auth and invoke `CAP END`
-    service.progress.authentication = Progress.finished;
+    service.transient.progress.authentication = Progress.finished;
 
-    if (!--service.requestedCapabilitiesRemaining &&
-        (service.progress.capabilityNegotiation == Progress.inProgress))
+    if (!--service.transient.requestedCapabilitiesRemaining &&
+        (service.transient.progress.capabilityNegotiation == Progress.inProgress))
     {
-        service.progress.capabilityNegotiation = Progress.finished;
+        service.transient.progress.capabilityNegotiation = Progress.finished;
         enum properties = Message.Property.quiet;
         enum message = "CAP END";
         immediate(service.state, message, properties);
 
-        if ((service.progress.registration == Progress.inProgress) && !service.issuedNICK)
+        if ((service.transient.progress.registration == Progress.inProgress) &&
+            !service.transient.issuedNICK)
         {
             negotiateNick(service);
         }
@@ -1143,8 +1303,8 @@ void onWelcome(ConnectService service)
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : endsWith;
 
-    service.progress.registration = Progress.finished;
-    service.renameDuringRegistration = string.init;
+    service.transient.progress.registration = Progress.finished;
+    service.transient.renameDuringRegistration = string.init;
 
     version(WithPingMonitor) startPingMonitor(service);
 
@@ -1234,7 +1394,7 @@ void onWelcome(ConnectService service)
         {
             import kameloso.plugins.common.delayawait : delay;
 
-            delay(service, service.timing.nickRegainPeriodicity, Yes.yield);
+            delay(service, ConnectService.Timings.nickRegainPeriodicity, Yes.yield);
 
             // Concatenate the verb once
             immutable squelchVerb = "squelch " ~ service.state.client.origNickname;
@@ -1246,15 +1406,14 @@ void onWelcome(ConnectService service)
                 version(WithPrinterPlugin)
                 {
                     import kameloso.thread : ThreadMessage, boxed;
-                    import std.concurrency : send;
-                    service.state.mainThread.send(
-                        ThreadMessage.busMessage("printer", boxed(squelchVerb)));
+                    service.state.messages ~=
+                        ThreadMessage.busMessage("printer", boxed(squelchVerb));
                 }
 
                 enum properties = (Message.Property.quiet | Message.Property.background);
                 immutable message = "NICK " ~ service.state.client.origNickname;
                 raw(service.state, message, properties);
-                delay(service, service.timing.nickRegainPeriodicity, Yes.yield);
+                delay(service, ConnectService.Timings.nickRegainPeriodicity, Yes.yield);
             }
 
             // All done
@@ -1276,9 +1435,8 @@ version(WithPrinterPlugin)
 void onSelfnickSuccessOrFailure(ConnectService service)
 {
     import kameloso.thread : ThreadMessage, boxed;
-    import std.concurrency : send;
-    service.state.mainThread.send(
-        ThreadMessage.busMessage("printer", boxed("unsquelch " ~ service.state.client.origNickname)));
+    service.state.messages ~=
+        ThreadMessage.busMessage("printer", boxed("unsquelch " ~ service.state.client.origNickname));
 }
 
 
@@ -1295,7 +1453,7 @@ void onQuit(ConnectService service, const ref IRCEvent event)
         service.connectSettings.regainNickname &&
         (event.sender.nickname == service.state.client.origNickname))
     {
-        // The regain Fiber will end itself when it is next triggered
+        // The regain fiber will end itself when it is next triggered
         enum pattern = "Attempting to regain nickname <l>%s</>...";
         logger.infof(pattern, service.state.client.origNickname);
         immutable message = "NICK " ~ service.state.client.origNickname;
@@ -1332,24 +1490,24 @@ void onEndOfMotd(ConnectService service)
     {
         if (service.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            service.serverSupportsWHOIS = false;
+            service.transient.serverSupportsWHOIS = false;
         }
     }
 
     if (service.state.server.network.length &&
         service.state.bot.password.length &&
-        (service.progress.authentication == Progress.notStarted) &&
+        (service.transient.progress.authentication == Progress.notStarted) &&
         (service.state.server.daemon != IRCServer.Daemon.twitch))
     {
         tryAuth(service);
     }
-    else if (((service.progress.authentication == Progress.finished) ||
+    else if (((service.transient.progress.authentication == Progress.finished) ||
         !service.state.bot.password.length ||
         (service.state.server.daemon == IRCServer.Daemon.twitch)) &&
-        !service.joinedChannels)
+        !service.transient.joinedChannels)
     {
         // tryAuth finished early with an unsuccessful login, else
-        // `service.progress.authentication` would be set much later.
+        // `service.transient.progress.authentication` would be set much later.
         // Twitch servers can't auth so join immediately
         // but don't do anything if we already joined channels.
         joinChannels(service);
@@ -1412,10 +1570,8 @@ version(TwitchSupport)
 void onReconnect(ConnectService service)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : send;
-
     logger.info("Reconnecting upon server request.");
-    service.state.mainThread.send(ThreadMessage.reconnect);
+    service.state.priorityMessages ~= ThreadMessage.reconnect;
 }
 
 
@@ -1429,13 +1585,15 @@ void onReconnect(ConnectService service)
 )
 void onUnknownCommand(ConnectService service, const ref IRCEvent event)
 {
-    if (service.serverSupportsWHOIS && !service.state.settings.preferHostmasks && (event.aux[0] == "WHOIS"))
+    if (service.transient.serverSupportsWHOIS &&
+        !service.state.settings.preferHostmasks &&
+        (event.aux[0] == "WHOIS"))
     {
         logger.error("Error: This server does not seem to support user accounts.");
         enum message = "Consider enabling <l>Core</>.<l>preferHostmasks</>.";
         logger.error(message);
         logger.error("As it is, functionality will be greatly limited.");
-        service.serverSupportsWHOIS = false;
+        service.transient.serverSupportsWHOIS = false;
     }
 }
 
@@ -1452,7 +1610,7 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
         service = The current [ConnectService].
  +/
 void startPingMonitor(ConnectService service)
-in (Fiber.getThis, "Tried to call `startPingMonitor` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
 {
     import kameloso.plugins.common.delayawait : await, delay, unawait, undelay;
     import kameloso.thread : CarryingFiber;
@@ -1486,8 +1644,8 @@ in (Fiber.getThis, "Tried to call `startPingMonitor` from outside a Fiber")
 
     while (true)
     {
-        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+        auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
         immutable thisEvent = thisFiber.payload;
 
         with (IRCEvent.Type)
@@ -1502,7 +1660,6 @@ in (Fiber.getThis, "Tried to call `startPingMonitor` from outside a Fiber")
             if ((nowInUnix - lastPongTimestamp) >= service.connectSettings.maxPingPeriodAllowed)
             {
                 import kameloso.thread : ThreadMessage;
-                import std.concurrency : prioritySend;
 
                 /+
                     Skip first two strikes; helps when resuming from suspend and similar,
@@ -1524,7 +1681,7 @@ in (Fiber.getThis, "Tried to call `startPingMonitor` from outside a Fiber")
                 {
                     // Timeout. Send a preemptive ping
                     logger.warning("Sending preemptive ping.");
-                    service.state.mainThread.prioritySend(ThreadMessage.ping(service.state.server.resolvedAddress));
+                    service.state.priorityMessages ~= ThreadMessage.ping(service.state.server.resolvedAddress);
                     delay(service, timeToAllowForPingResponse, Yes.yield);
                     continue;
                 }
@@ -1532,7 +1689,7 @@ in (Fiber.getThis, "Tried to call `startPingMonitor` from outside a Fiber")
                 {
                     // All failed, reconnect
                     logger.warning("No response from server. Reconnecting.");
-                    service.state.mainThread.prioritySend(ThreadMessage.reconnect);
+                    service.state.priorityMessages ~= ThreadMessage.reconnect;
                     return;
                 }
             }
@@ -1577,7 +1734,7 @@ void register(ConnectService service)
     import std.algorithm.searching : canFind, endsWith, startsWith;
     import std.uni : toLower;
 
-    service.progress.registration = Progress.inProgress;
+    service.transient.progress.registration = Progress.inProgress;
 
     // Server networks we know to support capabilities
     static immutable capabilityServerWhitelistPrefix =
@@ -1732,14 +1889,14 @@ void register(ConnectService service)
         // Unsure, so monitor CAP progress
         void capMonitorDg()
         {
-            if (service.progress.capabilityNegotiation == Progress.notStarted)
+            if (service.transient.progress.capabilityNegotiation == Progress.notStarted)
             {
                 logger.warning("CAP timeout. Does the server not support capabilities?");
                 negotiateNick(service);
             }
         }
 
-        delay(service, &capMonitorDg, service.timing.capLSTimeout);
+        delay(service, &capMonitorDg, ConnectService.Timings.capLSTimeout);
     }
 }
 
@@ -1794,7 +1951,7 @@ void negotiateNick(ConnectService service)
         Message.Property.none;
     immutable message = "NICK " ~ service.state.client.nickname;
     immediate(service.state, message, properties);
-    service.issuedNICK = true;
+    service.transient.issuedNICK = true;
 }
 
 
@@ -1865,29 +2022,70 @@ final class ConnectService : IRCPlugin
 {
 private:
     /++
-        All [Progress]es gathered.
+        Transient state variables, aggregated in a struct.
      +/
-    static struct Progresses
+    static struct TransientState
     {
         /++
-            At what step we're currently at with regards to authentication.
-         +/
-        Progress authentication;
+            All [Progress]es gathered.
+        +/
+        static struct Progresses
+        {
+            /++
+                At what step we're currently at with regards to authentication.
+             +/
+            Progress authentication;
+
+            /++
+                At what step we're currently at with regards to SASL EXTERNAL authentication.
+             +/
+            Progress saslExternal;
+
+            /++
+                At what step we're currently at with regards to registration.
+             +/
+            Progress registration;
+
+            /++
+                At what step we're currently at with regards to capabilities.
+             +/
+            Progress capabilityNegotiation;
+        }
 
         /++
-            At what step we're currently at with regards to SASL EXTERNAL authentication.
+            All [Progress]es gathered.
          +/
-        Progress saslExternal;
+        Progresses progress;
 
         /++
-            At what step we're currently at with regards to registration.
+            Whether or not we have issued a NICK command during registration.
          +/
-        Progress registration;
+        bool issuedNICK;
 
         /++
-            At what step we're currently at with regards to capabilities.
+            Temporary: the nickname that we had to rename to, to successfully
+            register on the server.
+
+            This is to avoid modifying [dialect.defs.IRCClient.nickname|IRCClient.nickname]
+            before the nickname is actually changed, yet still carry information about the
+            incremental rename throughout calls of [onNickInUse].
          +/
-        Progress capabilityNegotiation;
+        string renameDuringRegistration;
+
+        /++
+            Whether or not the bot has joined its channels at least once.
+         +/
+        bool joinedChannels;
+
+        /++
+            Whether or not the server seems to be supporting WHOIS queries.
+         +/
+        bool serverSupportsWHOIS = true;
+
+        /++
+           Number of capabilities requested but still not awarded.
+         +/
+        uint requestedCapabilitiesRemaining;
     }
 
     /++
@@ -1928,34 +2126,9 @@ private:
     ConnectSettings connectSettings;
 
     /++
-        All [Progress]es gathered.
+        Transient state of this [ConnectService] instance.
      +/
-    Progresses progress;
-
-    /++
-        All timings gathered.
-     +/
-    Timings timing;
-
-    /++
-        Whether or not we have issued a NICK command during registration.
-     +/
-    bool issuedNICK;
-
-    /++
-        Temporary: the nickname that we had to rename to, to successfully
-        register on the server.
-
-        This is to avoid modifying [dialect.defs.IRCClient.nickname|IRCClient.nickname]
-        before the nickname is actually changed, yet still carry information about the
-        incremental rename throughout calls of [onNickInUse].
-     +/
-    string renameDuringRegistration;
-
-    /++
-        Whether or not the bot has joined its channels at least once.
-     +/
-    bool joinedChannels;
+    TransientState transient;
 
     version(TwitchSupport)
     {
@@ -1965,16 +2138,6 @@ private:
          +/
         bool[string] currentActualChannels;
     }
-
-    /++
-        Whether or not the server seems to be supporting WHOIS queries.
-     +/
-    bool serverSupportsWHOIS = true;
-
-    /++
-        Number of capabilities requested but still not awarded.
-     +/
-    uint requestedCapabilitiesRemaining;
 
     mixin IRCPluginImpl;
 }

@@ -94,7 +94,7 @@ Grab a prebuilt Windows or Linux binary from under [**Releases**](https://github
 
 The program can be built using the [**D**](https://dlang.org) reference compiler [**dmd**](https://dlang.org/download.html), with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases) and with the GCC-based [**gdc**](https://gdcproject.org/downloads). **dmd** compiles very fast, while **ldc** and **gdc** are slower at compiling but produce faster code. Additionally, the latter two support more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
-You will need a compiler based on D version **2.086** or later (May 2019). For **ldc** this is version **1.16**, while for **gdc** you broadly need release series **12**.
+You will need a compiler based on D version **2.086** or later (May 2019). For **ldc** you require a minimum of version **1.18**, while for **gdc** you broadly need release series **12**.
 
 If your repositories (or other software sources) don't have compilers recent enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice. (**gdc** is not available via this script.)
 
@@ -127,7 +127,7 @@ There are two major configurations in which the bot may be built.
 * `application`: base configuration; everything needed for an IRC bot
 * `twitch`: additionally includes Twitch chat support and the Twitch bot plugin
 
-Both configurations come in `-lowmem` variants; `application-lowmem` and `twitch-lowmem`; that lower compilation memory required at the cost of increasing compilation time. This may help on memory-constrained systems, such as the Raspberry Pi.
+Both configurations come in `-lowmem` variants; `application-lowmem` and `twitch-lowmem`; that lower compilation memory required at the cost of increased compilation time. This may help on memory-constrained systems, such as the Raspberry Pi.
 
 List configurations with `dub --annotate --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 

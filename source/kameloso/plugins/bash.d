@@ -64,9 +64,9 @@ mixin PluginRegistration!BashPlugin;
 void onCommandBash(BashPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : prioritySend, spawn;
+    import std.concurrency : spawn;
 
-    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
+    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
 
     // Defer all work to the worker thread
     cast(void)spawn(&worker, cast(shared)plugin.state, event);

@@ -80,13 +80,12 @@ void startChannelQueries(ChanQueryService service)
 {
     import kameloso.thread : CarryingFiber, ThreadMessage, boxed;
     import kameloso.messaging : Message, mode, raw;
-    import std.concurrency : send;
     import std.datetime.systime : Clock;
     import std.string : representation;
     import core.thread : Fiber;
     import core.time : seconds;
 
-    if (service.querying) return;  // Try again next PING
+    if (service.transient.querying) return;  // Try again next PING
 
     string[] querylist;
     foreach (immutable channelName, ref state; service.channelStates)
@@ -104,13 +103,14 @@ void startChannelQueries(ChanQueryService service)
     // Continue anyway if eagerLookups
     if (!querylist.length && !service.state.settings.eagerLookups) return;
 
-    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-    service.querying = true;  // "Lock"
+    auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+    assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+    service.transient.querying = true;  // "Lock"
 
     scope(exit)
     {
-        service.queriedAtLeastOnce = true;
-        service.querying = false;  // "Unlock"
+        service.transient.queriedAtLeastOnce = true;
+        service.transient.querying = false;  // "Unlock"
     }
 
     chanloop:
@@ -141,8 +141,8 @@ void startChannelQueries(ChanQueryService service)
 
             version(WithPrinterPlugin)
             {
-                service.state.mainThread.send(
-                    ThreadMessage.busMessage("printer", boxed(squelchMessage)));
+                service.state.messages ~=
+                    ThreadMessage.busMessage("printer", boxed(squelchMessage));
             }
 
             enum properties = (Message.Property.quiet | Message.Property.background);
@@ -190,8 +190,8 @@ void startChannelQueries(ChanQueryService service)
                 // channels for specific modes.
                 // [chanoprivsneeded] [#d] sinisalo.freenode.net: "You're not a channel operator" (#482)
                 // Ask the Printer to squelch those messages too.
-                service.state.mainThread.send(
-                    ThreadMessage.busMessage("printer", boxed(squelchMessage)));
+                service.state.messages ~=
+                    ThreadMessage.busMessage("printer", boxed(squelchMessage));
             }
 
             enum properties = (Message.Property.quiet | Message.Property.background);
@@ -212,7 +212,7 @@ void startChannelQueries(ChanQueryService service)
     }
 
     // Stop here if we can't or are not interested in going further
-    if (!service.serverSupportsWHOIS || !service.state.settings.eagerLookups) return;
+    if (!service.transient.serverSupportsWHOIS || !service.state.settings.eagerLookups) return;
 
     immutable nowInUnix = Clock.currTime.toUnixTime();
     bool[string] uniqueUsers;
@@ -236,7 +236,7 @@ void startChannelQueries(ChanQueryService service)
 
     if (!uniqueUsers.length) return;  // Early exit
 
-    uniqueUsers = uniqueUsers.rehash();
+    uniqueUsers.rehash();
 
     /++
         Event types that signal the end of a WHOIS response.
@@ -255,8 +255,8 @@ void startChannelQueries(ChanQueryService service)
 
         version(WithPrinterPlugin)
         {
-            service.state.mainThread.send(
-                ThreadMessage.busMessage("printer", boxed("unsquelch")));
+            service.state.messages ~=
+                ThreadMessage.busMessage("printer", boxed("unsquelch"));
         }
     }
 
@@ -291,8 +291,8 @@ void startChannelQueries(ChanQueryService service)
 
         version(WithPrinterPlugin)
         {
-            service.state.mainThread.send(
-                ThreadMessage.busMessage("printer", boxed("squelch " ~ nickname)));
+            service.state.messages ~=
+                ThreadMessage.busMessage("printer", boxed("squelch " ~ nickname));
         }
 
         enum properties = (Message.Property.quiet | Message.Property.background);
@@ -339,7 +339,7 @@ void startChannelQueries(ChanQueryService service)
                         enum message2 = "Consider enabling <l>core</>.<l>preferHostmasks</>.";
                         logger.error(message1);
                         logger.error(message2);
-                        service.serverSupportsWHOIS = false;
+                        service.transient.serverSupportsWHOIS = false;
                         return;
                     }
                 }
@@ -347,7 +347,7 @@ void startChannelQueries(ChanQueryService service)
                 {
                     // Cannot WHOIS on this server
                     // Connect will display an error, so don't do it here again
-                    service.serverSupportsWHOIS = false;
+                    service.transient.serverSupportsWHOIS = false;
                     return;
                 }
                 else
@@ -361,13 +361,13 @@ void startChannelQueries(ChanQueryService service)
 
             default:
                 import lu.conv : Enum;
-                immutable message = "Unexpected event type triggered query Fiber: " ~
+                immutable message = "Unexpected event type triggered query fiber: " ~
                     "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(thisFiber.payload.type) ~ '`';
                 assert(0, message);
             }
         }
 
-        assert(0, "Escaped `while (true)` loop in query Fiber delegate");
+        assert(0, "Escaped `while (true)` loop in query fiber delegate");
     }
 }
 
@@ -432,7 +432,7 @@ void onTopic(ChanQueryService service, const ref IRCEvent event)
 )
 void onEndOfNames(ChanQueryService service)
 {
-    if (!service.querying && service.queriedAtLeastOnce)
+    if (!service.transient.querying && service.transient.queriedAtLeastOnce)
     {
         startChannelQueries(service);
     }
@@ -497,6 +497,32 @@ private:
     import core.time : seconds;
 
     /++
+        Transient state variables, aggregated in a struct.
+     +/
+    static struct TransientState
+    {
+        /++
+            Whether or not a channel query fiber is running.
+         +/
+        bool querying;
+
+        /++
+            Whether or not at least one channel query has been made.
+         +/
+        bool queriedAtLeastOnce;
+
+        /++
+            Whether or not the server is known to support WHOIS queries. (Defaults to true.)
+         +/
+        bool serverSupportsWHOIS = true;
+    }
+
+    /++
+        Transient state of this [ChanQueryService] instance.
+     +/
+    TransientState transient;
+
+    /++
         Extra delay between channel mode/user queries. Not delaying may
         cause kicks and disconnects if results are returned quickly.
      +/
@@ -512,22 +538,6 @@ private:
         they are in.
      +/
     ubyte[string] channelStates;
-
-    /++
-        Whether or not a channel query Fiber is running.
-     +/
-    bool querying;
-
-    /++
-        Whether or not at least one channel query has been made.
-     +/
-    bool queriedAtLeastOnce;
-
-    /++
-        Whether or not the server is known to support WHOIS queries. (Defaults to true.)
-     +/
-    bool serverSupportsWHOIS = true;
-
 
     // isEnabled
     /++

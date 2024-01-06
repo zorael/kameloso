@@ -54,14 +54,17 @@ private import kameloso.plugins.common.core;
 // Awareness mixins, for plumbing.
 private import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 
+// [kameloso.common] for the global logger instance.
+private import kameloso.common : logger;
+
 // Some thread boxing helpers.
 private import kameloso.thread : Sendable;
 
 // [dialect.defs], for the definitions of an IRC event.
 private import dialect.defs;
 
-// [kameloso.common] for the global logger instance and the rehashing AA.
-private import kameloso.common : RehashingAA, logger;
+// [lu.container] for the rehashing associative array wrapper.
+private import lu.container : RehashingAA;
 
 // [std.datetime.systime] for the [std.datetime.systime.Clock|Clock], to update times with.
 private import std.datetime.systime : Clock;
@@ -217,11 +220,6 @@ public:
         except for values relating to the connection to the server; whether to
         use IPv6, paths to any certificates, and the such.
 
-    * [kameloso.plugins.common.core.IRCPluginState.mainThread|IRCPluginState.mainThread]
-        is the [std.concurrency.Tid|*thread ID*] of the thread running the main loop.
-        We indirectly use it to send strings to the server by way of concurrency
-        messages, but it is usually not something you will have to deal with directly.
-
     * [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
         is an associative array keyed with users' nicknames. The value to that key is an
         [dialect.defs.IRCUser|IRCUser] representing that user in terms of nickname,
@@ -262,7 +260,7 @@ public:
     * [kameloso.plugins.common.core.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
         is an array of [core.thread.fiber.Fiber|Fiber]s indexed by [dialect.defs.IRCEvent.Type]s'
         numeric values. Fibers in the array of a particular event type will be
-        executed the next time such an event is incoming. Think of it as Fiber callbacks.
+        executed the next time such an event is incoming. Think of it as fiber callbacks.
 
     * [kameloso.plugins.common.core.IRCPluginState.awaitingDelegates|IRCPluginState.awaitingDelegates]
         is literally an array of callback delegates, to be triggered when an event
@@ -329,7 +327,7 @@ private:  // Module-level private.
         writeln("Seconds since we last saw joe: ", (nowInUnix - seenUsers["joe"]));
         ---
      +/
-    RehashingAA!(string, long) seenUsers;
+    RehashingAA!(long[string]) seenUsers;
 
 
     // seenFile
@@ -825,10 +823,8 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
     import std.format : format;
 
     /+
-        The bot uses concurrency messages to queue strings to be sent to the
-        server. This has benefits such as that even a multi-threaded program
-        will have synchronous messages sent, and it's overall an easy and
-        convenient way for plugin to send messages up the stack.
+        The bot uses an array of messages to queue strings to be sent to the
+        server.
 
         There are shorthand versions for sending these messages in
         [kameloso.messaging], and additionally this module has mixed in
@@ -1000,7 +996,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
 
 // loadSeen
 /++
-    Given a filename, read the contents and load it into a `RehashingAA!(string, long)`
+    Given a filename, read the contents and load it into a `RehashingAA!(long[string])`
     associative array, then returns it. If there was no file there to read,
     return an empty array for a fresh start.
 
@@ -1012,6 +1008,10 @@ void loadSeen(SeenPlugin plugin)
     import kameloso.string : doublyBackslashed;
     import std.file : exists, isFile, readText;
     import std.json : JSONException, parseJSON;
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
 
     if (!plugin.seenFile.exists || !plugin.seenFile.isFile)
     {
@@ -1071,7 +1071,7 @@ void saveSeen(SeenPlugin plugin)
 // onWelcome
 /++
     After we have registered on the server and seen the welcome messages, load
-    our seen users from file. Additionally set up a Fiber that periodically
+    our seen users from file. Additionally set up a fiber that periodically
     saves seen users to disk once every [SeenPlugin.timeBetweenSaves|timeBetweenSaves]
     seconds.
 

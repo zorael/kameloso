@@ -24,10 +24,12 @@ private:
 import kameloso.plugins.twitch.base;
 import kameloso.plugins.twitch.common;
 
-import arsd.http2 : HttpVerb;
 import dialect.defs;
+import arsd.http2 : HttpVerb;
+import lu.container : MutexedAA;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
+import core.time : Duration, seconds;
 
 package:
 
@@ -36,9 +38,6 @@ package:
 /++
     Embodies a response from a query to the Twitch servers. A string paired with
     a millisecond count of how long the query took, and some metadata about the request.
-
-    This is used instead of a [std.typecons.Tuple] because it doesn't apparently
-    work with `shared`.
  +/
 struct QueryResponse
 {
@@ -72,35 +71,27 @@ struct QueryResponse
     is reached, or forever if `endlessly` is passed.
 
     Params:
-        endlessly = Whether or not to endlessly retry.
-        delayMsecs = How many milliseconds to wait between retries.
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         dg = Delegate to call.
         async = Whether or not the delegate should be called asynchronously,
             scheduling attempts using [kameloso.plugins.common.delayawait.delay|delay].
+        endlessly = Whether or not to endlessly retry.
+        retryDelay = How long to wait between retries.
 
     Returns:
         Whatever the passed delegate returns.
-
-    Throws:
-        [MissingBroadcasterTokenException] if the delegate throws it.
-        [InvalidCredentialsException] likewise.
-        [Exception] if the delegate throws it and `endlessly` is not passed.
  +/
-auto retryDelegate(Flag!"endlessly" endlessly = No.endlessly, uint delayMsecs = 4000, Dg)
+auto retryDelegate(Dg)
     (TwitchPlugin plugin,
     Dg dg,
-    const Flag!"async" async = Yes.async)
-in ((!async || Fiber.getThis), "Tried to call async `retryDelegate` from outside a Fiber")
+    const Flag!"async" async = Yes.async,
+    const Flag!"endlessly" endlessly = No.endlessly,
+    const Duration retryDelay = 4.seconds)
+in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outside a fiber")
 {
-    static if (endlessly)
-    {
-        enum retries = size_t.max;
-    }
-    else
-    {
-        alias retries = TwitchPlugin.delegateRetries;
-    }
+    immutable retries = endlessly ?
+        size_t.max :
+        TwitchPlugin.delegateRetries;
 
     foreach (immutable i; 0..retries)
     {
@@ -108,9 +99,6 @@ in ((!async || Fiber.getThis), "Tried to call async `retryDelegate` from outside
         {
             if (i > 0)
             {
-                import core.time : msecs;
-                static immutable retryDelay = delayMsecs.msecs;
-
                 if (async)
                 {
                     import kameloso.plugins.common.delayawait : delay;
@@ -124,67 +112,107 @@ in ((!async || Fiber.getThis), "Tried to call async `retryDelegate` from outside
             }
             return dg();
         }
-        catch (MissingBroadcasterTokenException e)
-        {
-            // This is never a transient error
-            throw e;
-        }
-        catch (InvalidCredentialsException e)
-        {
-            // Neither is this
-            throw e;
-        }
-        catch (EmptyDataJSONException e)
-        {
-            // Should be transient?
-            throw e;
-        }
         catch (Exception e)
         {
-            if (auto errorException = cast(ErrorJSONException)e)
-            {
-                const statusJSON = "status" in errorException.json;
-                if ((statusJSON.integer >= 400) && (statusJSON.integer < 500))
-                {
-                    // Also never transient
-                    throw errorException;
-                }
-            }
-
-            static if (endlessly)
-            {
-                // Unconditionally continue, but print the exception once if it's erroring
-                version(PrintStacktraces)
-                {
-                    if (!plugin.state.settings.headless)
-                    {
-                        alias printExceptionAfterNFailures = TwitchPlugin.delegateRetries;
-
-                        if (i == printExceptionAfterNFailures)
-                        {
-                            printRetryDelegateException(e);
-                        }
-                    }
-                }
-                continue;
-            }
-            else
-            {
-                // Retry until we reach the retry limit, then print if we should, before rethrowing
-                if (i < TwitchPlugin.delegateRetries-1) continue;
-
-                version(PrintStacktraces)
-                {
-                    if (!plugin.state.settings.headless)
-                    {
-                        printRetryDelegateException(e);
-                    }
-                }
-                throw e;
-            }
+            handleRetryDelegateException(
+                e,
+                i,
+                endlessly,
+                cast(Flag!"headless")plugin.state.settings.headless);
+            continue;  // If we're here the above didn't throw; continue
         }
     }
 
+    assert(0, "Unreachable");
+}
+
+
+// handleRetryDelegateException
+/++
+    Handles exceptions thrown by [retryDelegate].
+
+    Params:
+        base = The exception to handle.
+        i = The current retry count.
+        endlessly = Whether or not to endlessly retry.
+        headless = Whether or not we are running headlessly, in which case all
+            terminal output will be skipped.
+
+    Throws:
+        [MissingBroadcasterTokenException] if the delegate throws it.
+        [InvalidCredentialsException] likewise.
+        [EmptyDataJSONException] also.
+        [ErrorJSONException] if the delegate throws it and the JSON embedded
+            contains an error code in the 400-499 range.
+        [Exception] if the delegate throws it and `endlessly` is not passed.
+ +/
+private auto handleRetryDelegateException(
+    Exception base,
+    const size_t i,
+    const Flag!"endlessly" endlessly,
+    const Flag!"headless" headless)
+{
+    if (auto e = cast(MissingBroadcasterTokenException)base)
+    {
+        // This is never a transient error
+        throw e;
+    }
+    else if (auto e = cast(InvalidCredentialsException)base)
+    {
+        // Neither is this
+        throw e;
+    }
+    else if (auto e = cast(EmptyDataJSONException)base)
+    {
+        // Should never be transient?
+        throw e;
+    }
+    else if (auto e = cast(ErrorJSONException)base)
+    {
+        const statusJSON = "status" in e.json;
+        if ((statusJSON.integer >= 400) && (statusJSON.integer < 500))
+        {
+            // Also never transient
+            throw e;
+        }
+        return;  //continue;
+    }
+    else
+    {
+        if (endlessly)
+        {
+            // Unconditionally continue, but print the exception once if it's erroring
+            version(PrintStacktraces)
+            {
+                if (!headless)
+                {
+                    alias printExceptionAfterNFailures = TwitchPlugin.delegateRetries;
+
+                    if (i == printExceptionAfterNFailures)
+                    {
+                        printRetryDelegateException(base);
+                    }
+                }
+            }
+            return;  //continue;
+        }
+        else
+        {
+            // Retry until we reach the retry limit, then print if we should, before rethrowing
+            if (i < TwitchPlugin.delegateRetries-1) return;  //continue;
+
+            version(PrintStacktraces)
+            {
+                if (!headless)
+                {
+                    printRetryDelegateException(base);
+                }
+            }
+            throw base;
+        }
+    }
+
+    // We can logically never get here
     assert(0, "Unreachable");
 }
 
@@ -249,20 +277,20 @@ void printRetryDelegateException(/*const*/ Exception base)
 
     Example:
     ---
-    spawn(&persistentQuerier, plugin.bucket, caBundleFile);
+    spawn(&persistentQuerier, plugin.responseBucket, caBundleFile);
     ---
 
     Params:
-        bucket = The shared associative array to put the results in, response
-            values keyed by a unique numerical ID.
+        responseBucket = The associative array to put the results in,
+            response values keyed by a unique numerical ID.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
 void persistentQuerier(
-    shared QueryResponse[int] bucket,
+    MutexedAA!(QueryResponse[int]) responseBucket,
     const string caBundleFile)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : OwnerTerminated, receive;
+    import std.concurrency : receive;
     import std.variant : Variant;
 
     version(Posix)
@@ -295,9 +323,13 @@ void persistentQuerier(
             cast(ubyte[])body_,
             contentType);
 
-        synchronized //()
+        if (response.code > 0)  // can't go by response.str.length, as it can be empty
         {
-            bucket[id] = response;  // empty str if code >= 400
+            responseBucket[id] = response;
+        }
+        else
+        {
+            responseBucket.remove(id);
         }
 
         version(BenchmarkHTTPRequests)
@@ -342,12 +374,7 @@ void persistentQuerier(
             string.init);
     }
 
-    void onMessage(ThreadMessage message) scope
-    {
-        halt = (message.type == ThreadMessage.Type.teardown);
-    }
-
-    void onOwnerTerminated(OwnerTerminated _) scope
+    void onQuitMessage(bool) scope
     {
         halt = true;
     }
@@ -357,8 +384,7 @@ void persistentQuerier(
         receive(
             &sendWithBody,
             &sendWithoutBody,
-            &onMessage,
-            &onOwnerTerminated,
+            &onQuitMessage,
             (Variant v) scope
             {
                 import std.stdio : stdout, writeln;
@@ -382,7 +408,11 @@ void persistentQuerier(
 
     Example:
     ---
-    immutable QueryResponse = sendHTTPRequest(plugin, "https://id.twitch.tv/oauth2/validate", __FUNCTION__, "OAuth 30letteroauthstring");
+    immutable response = sendHTTPRequest(
+        plugin,
+        "https://id.twitch.tv/oauth2/validate",
+        __FUNCTION__,
+        "OAuth 30letteroauthstring");
     ---
 
     Params:
@@ -398,11 +428,14 @@ void persistentQuerier(
             not be attempted.
 
     Returns:
-        The [QueryResponse] that was discovered while monitoring the `bucket`
+        The [QueryResponse] that was discovered while monitoring the
+        [kameloso.plugins.twitch.base.TwitchPlugin.responseBucket|TwitchPlugin.responseBucket]
         as having been received from the server.
 
     Throws:
-        [TwitchQueryException] if there were unrecoverable errors.
+        [EmptyResponseException] if the response body was empty.
+        [ErrorJSONException] if the response body was JSON but contained an `"error"` key.
+        [TwitchQueryException] if there were other unrecoverable errors.
  +/
 QueryResponse sendHTTPRequest(
     TwitchPlugin plugin,
@@ -414,12 +447,12 @@ QueryResponse sendHTTPRequest(
     const string contentType = string.init,
     int id = 0,
     const Flag!"recursing" recursing = No.recursing)
-in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : prioritySend, send;
+    import std.concurrency : send;
     import core.time : MonoTime, msecs;
 
     if (plugin.state.settings.trace)
@@ -435,12 +468,12 @@ in (url.length, "Tried to send an HTTP request without a URL")
             caller);
     }
 
-    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
+    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
 
     immutable pre = MonoTime.currTime;
-    if (!id) id = reserveUniqueBucketID(plugin.bucket);
+    if (!id) id = plugin.responseBucket.uniqueKey;
 
-    plugin.transient.persistentWorkerTid.send(
+    plugin.getNextWorkerTid().send(
         id,
         url,
         authorisationHeader,
@@ -450,16 +483,6 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
     delay(plugin, plugin.transient.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id);
-
-    scope(exit)
-    {
-        synchronized //()
-        {
-            // Always remove, otherwise there'll be stale entries
-            plugin.bucket.remove(id);
-        }
-    }
-
     immutable post = MonoTime.currTime;
     immutable diff = (post - pre);
     immutable msecs_ = diff.total!"msecs";
@@ -473,7 +496,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
             response.error,
             response.code);
     }
-    else if (response.code == 0) //(!response.str.length)
+    else if (response.code == 0) // can't go by response.str.length, as it can be empty
     {
         throw new EmptyResponseException("Empty response");
     }
@@ -625,17 +648,17 @@ auto sendHTTPRequestImpl(
     /*const*/ ubyte[] body_ = null,
     /*const*/ string contentType = string.init)
 {
-    import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, Uri;
     import std.algorithm.comparison : among;
-    import core.time : MonoTime, seconds;
+    import core.time : MonoTime;
 
     static HttpClient client;
     static string[] headers;
 
     if (!client)
     {
-        import kameloso.constants : KamelosoInfo;
+        import kameloso.constants : KamelosoInfo, Timeout;
+        import core.time : seconds;
 
         client = new HttpClient;
         client.useHttp11 = true;
@@ -695,16 +718,14 @@ auto sendHTTPRequestImpl(
 
     Throws:
         [EmptyDataJSONException] if the `"data"` field is empty for some reason.
-
         [UnexpectedJSONException] on unexpected JSON.
-
         [TwitchQueryException] on other JSON errors.
  +/
 auto getTwitchData(
     TwitchPlugin plugin,
     const string url,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getTwitchData` from outside a fiber")
 {
     import std.json : JSONException, JSONType, parseJSON;
 
@@ -741,8 +762,9 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
         }
         else if (!dataJSON.array.length)
         {
+            // data exists but is empty
             enum message = "`getTwitchData` response has unexpected JSON " ~
-                `(empty "data" array)`;
+                `(zero-length "data")`;
             throw new EmptyDataJSONException(message, responseJSON);
         }
         else
@@ -789,7 +811,7 @@ auto getChatters(
     TwitchPlugin plugin,
     const string broadcaster,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getChatters` from outside a fiber")
 in (broadcaster.length, "Tried to get chatters with an empty broadcaster string")
 {
     import std.conv : text;
@@ -864,7 +886,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         authToken = Authorisation token to validate.
-        async = Whether or not the validation should be done asynchronously, using Fibers.
+        async = Whether or not the validation should be done asynchronously, using fibers.
         caller = Name of the calling function.
 
     Returns:
@@ -873,7 +895,6 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON received.
-
         [TwitchQueryException] on other failure.
  +/
 auto getValidation(
@@ -881,7 +902,7 @@ auto getValidation(
     /*const*/ string authToken,
     const Flag!"async" async,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getValidation` from outside a fiber")
 in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
     import std.algorithm.searching : startsWith;
@@ -1025,8 +1046,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         return validationJSON;
     }
 
-    enum validationRetryDelayMsecs = 5_000;
-    return retryDelegate!(Yes.endlessly, validationRetryDelayMsecs)(plugin, &getValidationDg);
+    return retryDelegate(plugin, &getValidationDg, Yes.async, Yes.endlessly);
 }
 
 
@@ -1039,17 +1059,19 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        id = The string identifier for the channel.
+        id = The numerical identifier for the channel.
 
     Returns:
         An associative array of [std.json.JSONValue|JSONValue]s keyed by nickname string,
         containing followers.
  +/
-auto getFollowers(TwitchPlugin plugin, const string id)
-in (Fiber.getThis, "Tried to call `getFollowers` from outside a Fiber")
-in (id.length, "Tried to get followers with an empty ID string")
+auto getFollowers(TwitchPlugin plugin, const uint id)
+in (Fiber.getThis(), "Tried to call `getFollowers` from outside a fiber")
+in (id, "Tried to get followers with an unset ID")
 {
-    immutable url = "https://api.twitch.tv/helix/channels/followers?first=100&broadcaster_id=" ~ id;
+    import std.conv : to;
+
+    immutable url = "https://api.twitch.tv/helix/channels/followers?first=100&broadcaster_id=" ~ id.to!string;
 
     auto getFollowersDg()
     {
@@ -1093,12 +1115,15 @@ in (id.length, "Tried to get followers with an empty ID string")
     Returns:
         A [std.json.JSONValue|JSONValue] of type `array` containing all returned
         entities, over all paginated queries.
+
+    Throws:
+        [UnexpectedJSONException] on unexpected JSON received.
  +/
 auto getMultipleTwitchData(
     TwitchPlugin plugin,
     const string url,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber")
 {
     import std.conv : text;
     import std.json : JSONValue, parseJSON;
@@ -1107,6 +1132,7 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
     allEntitiesJSON = null;
     allEntitiesJSON.array = null;
     string after;
+    uint retry;
 
     do
     {
@@ -1123,10 +1149,14 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
 
         if (!dataJSON)
         {
+            // Invalid response in some way, retry until we reach the limit
+            if (++retry < TwitchPlugin.delegateRetries) continue;
             enum message = "`getMultipleTwitchData` response has unexpected JSON " ~
                 `(no "data" key)`;
             throw new UnexpectedJSONException(message, responseJSON);
         }
+
+        retry = 0;
 
         foreach (thisResponseJSON; dataJSON.array)
         {
@@ -1194,8 +1224,9 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 /++
     Common code to wait for a query response.
 
-    Merely spins and monitors the shared `bucket` associative array for when a
-    response has arrived, and then returns it.
+    Merely spins and monitors the shared
+    [kameloso.plugins.twitch.base.TwitchPlugin.responseBucket|TwitchPlugin.responseBucket]
+    associative array for when a response has arrived, and then returns it.
 
     Times out after a hardcoded [kameloso.constants.Timeout.httpGET|Timeout.httpGET]
     if nothing was received.
@@ -1204,13 +1235,14 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 
     Example:
     ---
-    immutable id = reserveUniqueBucketID(plugin.bucket);
+    immutable id = plugin.responseBucket.uniqueKey;
     immutable url = "https://api.twitch.tv/helix/users?login=zorael";
-    plugin.transient.persistentWorkerTid.send(id, url, plugin.transient.authorizationBearer);
+    plugin.transient.getNextWorkerTid().send(id, url, plugin.transient.authorizationBearer);
 
     delay(plugin, plugin.transient.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id, url);
     // response.str is the response body
+    assert(id !in plugin.responseBucket);
     ---
 
     Params:
@@ -1221,12 +1253,9 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
         A [QueryResponse] as constructed by other parts of the program.
  +/
 auto waitForQueryResponse(TwitchPlugin plugin, const int id)
-in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber")
 {
-    import kameloso.constants : Timeout;
-    import kameloso.plugins.common.delayawait : delay;
     import std.datetime.systime : Clock;
-    import core.time : msecs;
 
     version(BenchmarkHTTPRequests)
     {
@@ -1235,21 +1264,33 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
     }
 
     immutable startTimeInUnix = Clock.currTime.toUnixTime();
-    shared QueryResponse* response;
     double accumulatingTime = plugin.transient.approximateQueryTime;
 
     while (true)
     {
-        response = id in plugin.bucket;
+        immutable hasResponse = plugin.responseBucket.has(id);
 
-        if (!response || (*response == QueryResponse.init))
+        if (!hasResponse)
         {
+            // Querier errored or otherwise gave up
+            // No need to remove the id, it's not there
+            return QueryResponse.init;
+        }
+
+        auto response = plugin.responseBucket[id];
+
+        if (response == QueryResponse.init)
+        {
+            import kameloso.constants : Timeout;
+            import kameloso.plugins.common.delayawait : delay;
+            import core.time : msecs;
+
             immutable nowInUnix = Clock.currTime.toUnixTime();
 
             if ((nowInUnix - startTimeInUnix) >= Timeout.httpGET)
             {
-                response = new shared QueryResponse;
-                return *response;
+                plugin.responseBucket.remove(id);
+                return QueryResponse.init;
             }
 
             version(BenchmarkHTTPRequests)
@@ -1279,19 +1320,21 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
             delay(plugin, briefWait.msecs, Yes.yield);
             continue;
         }
-
-        version(BenchmarkHTTPRequests)
+        else
         {
-            enum pattern = "HIT! elapsed: %s | response: %s | misses: %d";
-            immutable nowInUnix = Clock.currTime.toUnixTime();
-            immutable delta = (nowInUnix - startTimeInUnix);
-            writefln(pattern, delta, response.msecs, misses);
-        }
+            version(BenchmarkHTTPRequests)
+            {
+                enum pattern = "HIT! elapsed: %s | response: %s | misses: %d";
+                immutable nowInUnix = Clock.currTime.toUnixTime();
+                immutable delta = (nowInUnix - startTimeInUnix);
+                writefln(pattern, delta, response.msecs, misses);
+            }
 
-        // Make the new approximate query time a weighted average
-        averageApproximateQueryTime(plugin, response.msecs);
-        plugin.bucket.remove(id);
-        return *response;
+            // Make the new approximate query time a weighted average
+            averageApproximateQueryTime(plugin, response.msecs);
+            plugin.responseBucket.remove(id);
+            return response;
+        }
     }
 }
 
@@ -1299,27 +1342,27 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 // getTwitchUser
 /++
     Fetches information about a Twitch user and returns it in the form of a
-    Voldemort struct with nickname, display name and account ID (as string) members.
+    Voldemort struct with nickname, display name and account ID members.
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         givenName = Name of user to look up.
-        givenIDString = ID of user to look up, if no `givenName` given.
+        id = Optional numeric ID of user to look up, if no `givenName` given.
         searchByDisplayName = Whether or not to also attempt to look up `givenName`
             as a display name.
 
     Returns:
-        Voldemort aggregate struct with `nickname`, `displayName` and `idString` members.
+        Voldemort aggregate struct with `nickname`, `displayName` and `id` members.
  +/
 auto getTwitchUser(
     TwitchPlugin plugin,
     const string givenName,
-    const string givenIDString,
+    const uint id = 0,
     const Flag!"searchByDisplayName" searchByDisplayName = No.searchByDisplayName)
-in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
-in ((givenName.length || givenIDString.length),
+in (Fiber.getThis(), "Tried to call `getTwitchUser` from outside a fiber")
+in ((givenName.length || id),
     "Tried to get Twitch user without supplying a name nor an ID")
 {
     import std.conv : to;
@@ -1327,9 +1370,9 @@ in ((givenName.length || givenIDString.length),
 
     static struct User
     {
-        string idString;
         string nickname;
         string displayName;
+        uint id;
     }
 
     User user;
@@ -1337,9 +1380,9 @@ in ((givenName.length || givenIDString.length),
     if (const stored = givenName in plugin.state.users)
     {
         // Stored user
-        user.idString = stored.id.to!string;
         user.nickname = stored.nickname;
         user.displayName = stored.displayName;
+        user.id = stored.id;
         return user;
     }
 
@@ -1351,18 +1394,18 @@ in ((givenName.length || givenIDString.length),
             if (stored.displayName == givenName)
             {
                 // Found user by displayName
-                user.idString = stored.id.to!string;
                 user.nickname = stored.nickname;
                 user.displayName = stored.displayName;
+                user.id = stored.id;
                 return user;
             }
         }
     }
 
     // None on record, look up
-    immutable userURL = givenName ?
+    immutable userURL = givenName.length ?
         "https://api.twitch.tv/helix/users?login=" ~ givenName :
-        "https://api.twitch.tv/helix/users?id=" ~ givenIDString;
+        "https://api.twitch.tv/helix/users?id=" ~ id.to!string;
 
     auto getTwitchUserDg()
     {
@@ -1374,9 +1417,9 @@ in ((givenName.length || givenIDString.length),
             return user; //User.init;
         }
 
-        user.idString = userJSON["id"].str;
         user.nickname = userJSON["login"].str;
         user.displayName = userJSON["display_name"].str;
+        user.id = userJSON["id"].str.to!uint;
         return user;
     }
 
@@ -1395,23 +1438,28 @@ in ((givenName.length || givenIDString.length),
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         name = Name of game to look up.
-        id = ID of game to look up.
+        id = Numerical ID of game to look up.
 
     Returns:
         Voldemort aggregate struct with `id` and `name` members.
  +/
-auto getTwitchGame(TwitchPlugin plugin, const string name, const string id)
-in (Fiber.getThis, "Tried to call `getTwitchGame` from outside a Fiber")
-in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name nor game ID")
+auto getTwitchGame(
+    TwitchPlugin plugin,
+    const string name,
+    const uint id = 0)
+in (Fiber.getThis(), "Tried to call `getTwitchGame` from outside a fiber")
+in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor game ID")
 {
+    import std.conv : to;
+
     static struct Game
     {
-        string id;
+        uint id;
         string name;
     }
 
-    immutable gameURL = id.length ?
-        "https://api.twitch.tv/helix/games?id=" ~ id :
+    immutable gameURL = id ?
+        "https://api.twitch.tv/helix/games?id=" ~ id.to!string :
         "https://api.twitch.tv/helix/games?name=" ~ name;
 
     auto getTwitchGameDg()
@@ -1426,47 +1474,64 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
         }
         */
 
-        return Game(gameJSON["id"].str, gameJSON["name"].str);
+        return Game(gameJSON["id"].str.to!uint, gameJSON["name"].str);
     }
 
     return retryDelegate(plugin, &getTwitchGameDg);
 }
 
 
-// reserveUniqueBucketID
+// setChannelTitle
 /++
-    Generates a unique numerical ID for use as key in the passed associative array bucket.
-    Reservates the ID in the bucket by assigning it to an empty [QueryResponse].
+    Changes the title of a channel.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        bucket = Shared associative array of responses from async HTTP queries.
-
-    Returns:
-        A unique integer for use as bucket key.
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        channelName = Name of channel to modify.
+        title = Optional channel title to set.
+        caller = Name of the calling function.
  +/
-auto reserveUniqueBucketID(shared QueryResponse[int] bucket)
+void setChannelTitle(
+    TwitchPlugin plugin,
+    const string channelName,
+    const string title,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis(), "Tried to call `setChannelTitle` from outside a fiber")
+in (channelName.length, "Tried to change a the channel title with an empty channel name string")
 {
-    import std.random : uniform;
-
-    int id = uniform(1, int.max);
-
-    synchronized //()
-    {
-        while (id in bucket)
-        {
-            id = uniform(1, int.max);
-        }
-
-        bucket[id] = QueryResponse.init;  // reserve it
-    }
-
-    return id;
+    modifyChannelImpl(plugin, channelName, title, 0, caller);
 }
 
 
-// modifyChannel
+// setChannelGame
 /++
-    Modifies a channel's title or currently played game.
+    Changes the currently streamed game of a channel.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        channelName = Name of channel to modify.
+        gameID = Optional game ID to set the channel as playing.
+        caller = Name of the calling function.
+ +/
+void setChannelGame(
+    TwitchPlugin plugin,
+    const string channelName,
+    const uint gameID,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis(), "Tried to call `setChannelGame` from outside a fiber")
+in (gameID, "Tried to set the channel game with an empty channel name string")
+{
+    modifyChannelImpl(plugin, channelName, string.init, gameID, caller);
+}
+
+
+// modifyChannelImpl
+/++
+    Modifies a channel's title or currently played game. Implementation function.
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
@@ -1477,23 +1542,24 @@ auto reserveUniqueBucketID(shared QueryResponse[int] bucket)
         gameID = Optional game ID to set the channel as playing.
         caller = Name of the calling function.
  +/
-void modifyChannel(
+private void modifyChannelImpl(
     TwitchPlugin plugin,
     const string channelName,
     const string title,
-    const string gameID,
+    const uint gameID,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `modifyChannel` from outside a fiber")
 in (channelName.length, "Tried to modify a channel with an empty channel name string")
-in ((title.length || gameID.length), "Tried to modify a channel with no title nor game ID supplied")
+in ((title.length || gameID), "Tried to modify a channel with no title nor game ID supplied")
 {
     import std.array : Appender;
+    import std.conv : to;
 
     const room = channelName in plugin.rooms;
     assert(room, "Tried to modify a channel for which there existed no room");
 
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ room.id;
+    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ room.id.to!string;
 
     Appender!(char[]) sink;
     sink.reserve(128);
@@ -1505,13 +1571,13 @@ in ((title.length || gameID.length), "Tried to modify a channel with no title no
         sink.put(`"title":"`);
         sink.put(title);
         sink.put('"');
-        if (gameID.length) sink.put(',');
+        if (gameID) sink.put(',');
     }
 
-    if (gameID.length)
+    if (gameID)
     {
         sink.put(`"game_id":"`);
-        sink.put(gameID);
+        sink.put(gameID.to!string);
         sink.put('"');
     }
 
@@ -1529,7 +1595,7 @@ in ((title.length || gameID.length), "Tried to modify a channel with no title no
             "application/json");
     }
 
-    return retryDelegate(plugin, &modifyChannelDg);
+    retryDelegate(plugin, &modifyChannelDg);
 }
 
 
@@ -1547,21 +1613,22 @@ in ((title.length || gameID.length), "Tried to modify a channel with no title no
 auto getChannel(
     TwitchPlugin plugin,
     const string channelName)
-in (Fiber.getThis, "Tried to call `getChannel` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getChannel` from outside a fiber")
 in (channelName.length, "Tried to fetch a channel with an empty channel name string")
 {
     import std.algorithm.iteration : map;
     import std.array : array;
+    import std.conv : to;
     import std.json : parseJSON;
 
     const room = channelName in plugin.rooms;
     assert(room, "Tried to look up a channel for which there existed no room");
 
-    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ room.id;
+    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ room.id.to!string;
 
     static struct Channel
     {
-        string gameIDString;
+        uint gameID;
         string gameName;
         string[] tags;
         string title;
@@ -1590,7 +1657,7 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
          +/
 
         Channel channel;
-        channel.gameIDString = gameDataJSON["game_id"].str;
+        channel.gameID = gameDataJSON["game_id"].str.to!uint;
         channel.gameName = gameDataJSON["game_name"].str;
         channel.tags = gameDataJSON["tags"].array
             .map!(tagJSON => tagJSON.str)
@@ -1620,7 +1687,7 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
         for the supplied channel in the secrets storage.
  +/
 auto getBroadcasterAuthorisation(TwitchPlugin plugin, const string channelName)
-in (Fiber.getThis, "Tried to call `getBroadcasterAuthorisation` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getBroadcasterAuthorisation` from outside a fiber")
 in (channelName.length, "Tried to get broadcaster authorisation with an empty channel name string")
 out (token; token.length, "`getBroadcasterAuthorisation` returned an empty string")
 {
@@ -1656,7 +1723,7 @@ void startCommercial(
     const string channelName,
     const string lengthString,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `startCommercial` from outside a fiber")
 in (channelName.length, "Tried to start a commercial with an empty channel name string")
 {
     import std.format : format;
@@ -1665,13 +1732,13 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
     assert(room, "Tried to look up start commercial in a channel for which there existed no room");
 
     enum url = "https://api.twitch.tv/helix/channels/commercial";
-    enum pattern = `
+    enum bodyPattern = `
 {
-    "broadcaster_id": "%s",
+    "broadcaster_id": "%d",
     "length": %s
 }`;
 
-    immutable body_ = pattern.format(room.id, lengthString);
+    immutable body_ = bodyPattern.format(room.id, lengthString);
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
     void startCommercialDg()
@@ -1690,224 +1757,164 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
 }
 
 
-// getPolls
+// TwitchPoll
 /++
-    Fetches information about polls in the specified channel. If an ID string is
-    supplied, it will be included in the query, otherwise all `"ACTIVE"` polls
-    are included in the returned JSON.
-
-    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        channelName = Name of channel to fetch polls for.
-        idString = ID of a specific poll to get.
-        caller = Name of the calling function.
-
-    Returns:
-        An arary of [std.json.JSONValue|JSONValue]s with all the matched polls.
+    Represents a Twitch native poll (not a poll of the Poll plugin).
  +/
-auto getPolls(
-    TwitchPlugin plugin,
-    const string channelName,
-    const string idString = string.init,
-    const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
-in (channelName.length, "Tried to get polls with an empty channel name string")
+private struct TwitchPoll
 {
-    import std.conv : text;
-    import std.json : JSONType, JSONValue, parseJSON;
+private:
+    import std.datetime.systime : SysTime;
+    import std.json : JSONValue;
 
-    const room = channelName in plugin.rooms;
-    assert(room, "Tried to get polls of a channel for which there existed no room");
-
-    enum baseURL = "https://api.twitch.tv/helix/polls?broadcaster_id=";
-    string url = baseURL ~ room.id;  // mutable;
-    if (idString.length) url ~= "&id=" ~ idString;
-
-    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-
-    auto getPollsDg()
+public:
+    /++
+        An option to vote for in the poll.
+     +/
+    static struct Choice
     {
-        JSONValue allPollsJSON;
-        allPollsJSON = null;
-        allPollsJSON.array = null;
+        /++
+            Unique choice ID string.
+         +/
+        string id;
 
-        string after;
-        uint retry;
+        /++
+            The name of the choice, e.g. "heads".
+         +/
+        string title;
 
-        do
-        {
-            immutable paginatedURL = after.length ?
-                text(url, "&after=", after) :
-                url;
-            immutable response = sendHTTPRequest(
-                plugin,
-                paginatedURL,
-                caller,
-                authorizationBearer,
-                HttpVerb.GET,
-                cast(ubyte[])null,
-                "application/json");
-            immutable responseJSON = parseJSON(response.str);
+        /++
+            How many votes were placed on this choice.
+         +/
+        uint votes;
 
-            if (responseJSON.type != JSONType.object)
-            {
-                enum message = "`getPolls` response has unexpected JSON " ~
-                    "(wrong JSON type)";
-                throw new UnexpectedJSONException(message, responseJSON);
-            }
-
-            immutable dataJSON = "data" in responseJSON;
-
-            if (!dataJSON)
-            {
-                // For some reason we received an object that didn't contain data
-                enum message = "`getPolls` response has unexpected JSON " ~
-                    `(no "data" key)`;
-                throw new UnexpectedJSONException(message, responseJSON);
-            }
-
-            retry = 0;
-
-            /*
-            {
-                "data": [
-                    {
-                    "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-                    "broadcaster_id": "55696719",
-                    "broadcaster_name": "TwitchDev",
-                    "broadcaster_login": "twitchdev",
-                    "title": "Heads or Tails?",
-                    "choices": [
-                        {
-                        "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                        "title": "Heads",
-                        "votes": 0,
-                        "channel_points_votes": 0,
-                        "bits_votes": 0
-                        },
-                        {
-                        "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                        "title": "Tails",
-                        "votes": 0,
-                        "channel_points_votes": 0,
-                        "bits_votes": 0
-                        }
-                    ],
-                    "bits_voting_enabled": false,
-                    "bits_per_vote": 0,
-                    "channel_points_voting_enabled": false,
-                    "channel_points_per_vote": 0,
-                    "status": "ACTIVE",
-                    "duration": 1800,
-                    "started_at": "2021-03-19T06:08:33.871278372Z"
-                    }
-                ],
-                "pagination": {}
-            }
-            */
-
-            foreach (const pollJSON; dataJSON.array)
-            {
-                if (pollJSON["status"].str != "ACTIVE") continue;
-                allPollsJSON.array ~= pollJSON;
-            }
-
-            after = responseJSON["after"].str;
-        }
-        while (after.length);
-
-        return allPollsJSON.array;
+        /++
+            How many votes were placed with channel points on this choice.
+         +/
+        uint channelPointsVotes;
     }
 
-    return retryDelegate(plugin, &getPollsDg);
-}
-
-
-// createPoll
-/++
-    Creates a Twitch poll in the specified channel.
-
-    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        channelName = Name of channel to create the poll in.
-        title = Poll title.
-        durationString = How long the poll should run for in seconds (as a string).
-        choices = A string array of poll choices.
-        caller = Name of the calling function.
-
-    Returns:
-        An array of [std.json.JSONValue|JSONValue]s with
-        the response returned when creating the poll. On failure, an empty
-        [std.json.JSONValue|JSONValue] is instead returned.
-
-    Throws:
-        [UnexpectedJSONException] on unexpected JSON.
- +/
-auto createPoll(
-    TwitchPlugin plugin,
-    const string channelName,
-    const string title,
-    const string durationString,
-    const string[] choices,
-    const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
-in (channelName.length, "Tried to create a poll with an empty channel name string")
-{
-    import std.array : Appender, replace;
-    import std.format : format;
-    import std.json : JSONType, parseJSON;
-
-    const room = channelName in plugin.rooms;
-    assert(room, "Tried to create a poll in a channel for which there existed no room");
-
-    enum url = "https://api.twitch.tv/helix/polls";
-    enum pattern = `
-{
-    "broadcaster_id": "%s",
-    "title": "%s",
-    "choices":[
-%s
-    ],
-    "duration": %s
-}`;
-
-    Appender!(char[]) sink;
-    sink.reserve(256);
-
-    foreach (immutable i, immutable choice; choices)
+    /++
+        The current state of the poll.
+     +/
+    enum PollStatus
     {
-        if (i > 0) sink.put(',');
-        sink.put(`{"title":"`);
-        sink.put(choice.replace(`"`, `\"`));
-        sink.put(`"}`);
+        /++
+            Initial state.
+         +/
+        unset,
+
+        /++
+            The poll is running.
+         +/
+        active,
+
+        /++
+            The poll ended on schedule.
+         +/
+        completed,
+
+        /++
+            The poll was terminated before its scheduled end.
+         +/
+        terminated,
+
+        /++
+            The poll has been archived and is no longer visible on the channel.
+         +/
+        archived,
+
+        /++
+            The poll was deleted.
+         +/
+        moderated,
+
+        /++
+            Something went wrong while determining the state.
+         +/
+        invalid,
     }
 
-    immutable escapedTitle = title.replace(`"`, `\"`);
-    immutable body_ = pattern.format(room.id, escapedTitle, sink.data, durationString);
-    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+    /++
+        Unique poll ID string.
+     +/
+    string pollID;
 
-    auto createPollDg()
+    /++
+        The current state of the poll.
+     +/
+    PollStatus status;
+
+    /++
+        Title of the poll, e.g. "heads or tails?".
+     +/
+    string title;
+
+    /++
+        Array of the [Choice]s that you can vote for in this poll.
+     +/
+    Choice[] choices;
+
+    /++
+        Twitch numeric ID of the broadcaster in whose channel the poll is held.
+     +/
+    uint broadcasterID;
+
+    /++
+        Twitch username of broadcaster.
+     +/
+    string broadcasterLogin;
+
+    /++
+        Twitch display name of broadcaster.
+     +/
+    string broadcasterDisplayName;
+
+    /++
+        Whether voting with channel points is enabled.
+     +/
+    bool channelPointsVotingEnabled;
+
+    /++
+        How many channel points you have to pay for one vote.
+     +/
+    uint channelPointsPerVote;
+
+    /++
+        How many seconds the poll was meant to run.
+     +/
+    uint duration;
+
+    /++
+        Timestamp of when the poll started.
+     +/
+    SysTime startedAt;
+
+    /++
+        Timestamp of when the poll ended, if applicable.
+     +/
+    SysTime endedAt;
+
+    /++
+        Constructs a new [TwitchPoll] from a passed [std.json.JSONValue|JSONValue]
+        as received from API calls.
+
+        Params:
+            json = JSON to parse.
+
+        Returns:
+            A new [TwitchPoll] with values derived from the passed `json`.
+     +/
+    static auto fromJSON(const JSONValue json)
     {
-        immutable response = sendHTTPRequest(
-            plugin,
-            url,
-            caller,
-            authorizationBearer,
-            HttpVerb.POST,
-            cast(ubyte[])body_,
-            "application/json");
-        immutable responseJSON = parseJSON(response.str);
+        import std.conv : to;
 
         /*
         {
             "data": [
                 {
                 "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-                "broadcaster_id": "141981764",
+                "broadcaster_id": "55696719",
                 "broadcaster_name": "TwitchDev",
                 "broadcaster_login": "twitchdev",
                 "title": "Heads or Tails?",
@@ -1929,100 +1936,16 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
                 ],
                 "bits_voting_enabled": false,
                 "bits_per_vote": 0,
-                "channel_points_voting_enabled": true,
-                "channel_points_per_vote": 100,
+                "channel_points_voting_enabled": false,
+                "channel_points_per_vote": 0,
                 "status": "ACTIVE",
                 "duration": 1800,
                 "started_at": "2021-03-19T06:08:33.871278372Z"
                 }
-            ]
+            ],
+            "pagination": {}
         }
-        */
-
-        if (responseJSON.type != JSONType.object)
-        {
-            // Invalid response in some way
-            enum message = "`createPoll` response has unexpected JSON " ~
-                "(wrong JSON type)";
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        immutable dataJSON = "data" in responseJSON;
-
-        if (!dataJSON)
-        {
-            // For some reason we received an object that didn't contain data
-            enum message = "`createPoll` response has unexpected JSON " ~
-                `(no "data" key)`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        return dataJSON.array;
-    }
-
-    return retryDelegate(plugin, &createPollDg);
-}
-
-
-// endPoll
-/++
-    Ends a Twitch poll, putting it in either a `"TERMINATED"` or `"ARCHIVED"` state.
-
-    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        channelName = Name of channel whose poll to end.
-        voteID = ID of the specific vote to end.
-        terminate = If set, ends the poll by putting it in a `"TERMINATED"` state.
-            If unset, ends it in an `"ARCHIVED"` way.
-        caller = Name of the calling function.
-
-    Returns:
-        The [std.json.JSONValue|JSONValue] of the first response returned when ending the poll.
-
-    Throws:
-        [UnexpectedJSONException] on unexpected JSON.
- +/
-auto endPoll(
-    TwitchPlugin plugin,
-    const string channelName,
-    const string voteID,
-    const Flag!"terminate" terminate,
-    const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
-in (channelName.length, "Tried to end a poll with an empty channel name string")
-{
-    import std.format : format;
-    import std.json : JSONType, parseJSON;
-
-    const room = channelName in plugin.rooms;
-    assert(room, "Tried to end a poll in a channel for which there existed no room");
-
-    enum url = "https://api.twitch.tv/helix/polls";
-    enum pattern = `
-{
-    "broadcaster_id": "%s",
-    "id": "%s",
-    "status": "%s"
-}`;
-
-    immutable status = terminate ? "TERMINATED" : "ARCHIVED";
-    immutable body_ = pattern.format(room.id, voteID, status);
-    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-
-    auto endPollDg()
-    {
-        immutable response = sendHTTPRequest(
-            plugin,
-            url,
-            caller,
-            authorizationBearer,
-            HttpVerb.PATCH,
-            cast(ubyte[])body_,
-            "application/json");
-        immutable responseJSON = parseJSON(response.str);
-
+         */
         /*
         {
             "data": [
@@ -2059,7 +1982,364 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
                 }
             ]
         }
-        */
+         */
+
+        TwitchPoll poll;
+        poll.pollID = json["id"].str;
+        poll.title = json["title"].str;
+        poll.broadcasterID = json["broadcaster_id"].str.to!uint;
+        poll.broadcasterLogin = json["broadcaster_login"].str;
+        poll.broadcasterDisplayName = json["broadcaster_name"].str;
+        poll.channelPointsVotingEnabled = json["channel_points_voting_enabled"].boolean;
+        poll.channelPointsPerVote = json["channel_points_per_vote"].str.to!uint;
+        poll.duration = cast(uint)json["duration"].integer;
+        poll.startedAt = SysTime.fromISOExtString(json["started_at"].str);
+
+        if (const endedAtJSON = "ended_at" in json)
+        {
+            import std.json : JSONType;
+
+            if (endedAtJSON.type == JSONType.string)
+            {
+                poll.endedAt = SysTime.fromISOExtString(endedAtJSON.str);
+            }
+            else
+            {
+                // "If status is ACTIVE, this field is set to null."
+            }
+        }
+
+        with (TwitchPoll.PollStatus)
+        switch (json["status"].str)
+        {
+        case "ACTIVE":
+            poll.status = active;
+            break;
+
+        case "COMPLETED":
+            poll.status = completed;
+            break;
+
+        case "TERMINATED":
+            poll.status = terminated;
+            break;
+
+        case "ARCHIVED":
+            poll.status = archived;
+            break;
+
+        case "MODERATED":
+            poll.status = moderated;
+            break;
+
+        //case "INVALID":
+        default:
+            poll.status = invalid;
+            break;
+        }
+
+        foreach (const choiceJSON; json["choices"].array)
+        {
+            TwitchPoll.Choice choice;
+            choice.id = choiceJSON["id"].str;
+            choice.title = choiceJSON["title"].str;
+            choice.votes = choiceJSON["votes"].str.to!uint;
+            choice.channelPointsVotes = choiceJSON["channel_points_votes"].str.to!uint;
+            poll.choices ~= choice;
+        }
+
+        return poll;
+    }
+}
+
+
+// getPolls
+/++
+    Fetches information about polls in the specified channel. If an ID string is
+    supplied, it will be included in the query, otherwise all `"ACTIVE"` polls
+    are included in the returned JSON.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        channelName = Name of channel to fetch polls for.
+        pollIDString = ID of a specific poll to get.
+        caller = Name of the calling function.
+
+    Returns:
+        An arary of Voldemort `TwitchPoll` structs.
+
+    Throws:
+        [UnexpectedJSONException] on unexpected JSON.
+        [EmptyDataJSONException] if the JSON has a `"data"` key but it is empty.
+ +/
+auto getPolls(
+    TwitchPlugin plugin,
+    const string channelName,
+    const string pollIDString = string.init,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis(), "Tried to call `getPolls` from outside a fiber")
+in (channelName.length, "Tried to get polls with an empty channel name string")
+{
+    import std.conv : text;
+    import std.json : JSONType, parseJSON;
+    import std.datetime.systime : SysTime;
+
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to get polls of a channel for which there existed no room");
+
+    enum baseURL = "https://api.twitch.tv/helix/polls?broadcaster_id=";
+    immutable idPart = pollIDString.length ?
+        "&id=" ~ pollIDString :
+        string.init;
+    immutable url = text(baseURL, room.id, idPart);
+
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+
+    auto getPollsDg()
+    {
+        TwitchPoll[] polls;
+        string after;
+        uint retry;
+
+        do
+        {
+            immutable paginatedURL = after.length ?
+                text(url, "&after=", after) :
+                url;
+            immutable response = sendHTTPRequest(
+                plugin,
+                paginatedURL,
+                caller,
+                authorizationBearer,
+                HttpVerb.GET,
+                cast(ubyte[])null,
+                "application/json");
+            immutable responseJSON = parseJSON(response.str);
+
+            if (responseJSON.type != JSONType.object)
+            {
+                // Invalid response in some way, retry until we reach the limit
+                if (++retry < TwitchPlugin.delegateRetries) continue;
+                enum message = "`getPolls` response has unexpected JSON " ~
+                    "(wrong JSON type)";
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
+
+            immutable dataJSON = "data" in responseJSON;
+
+            if (!dataJSON)
+            {
+                // For some reason we received an object that didn't contain data
+                // Retry as above
+                if (++retry < TwitchPlugin.delegateRetries) continue;
+                enum message = "`getPolls` response has unexpected JSON " ~
+                    `(no "data" key)`;
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
+
+            if (!dataJSON.array.length)
+            {
+                // data exists but is empty
+                enum message = "`getPolls` response has unexpected JSON " ~
+                    `(zero-length "data")`;
+                throw new EmptyDataJSONException(message, responseJSON);
+            }
+
+            // See TwitchPoll.fromJSON for response layout
+            retry = 0;
+
+            foreach (const pollJSON; dataJSON.array)
+            {
+                polls ~= TwitchPoll.fromJSON(pollJSON);
+            }
+
+            after = responseJSON["after"].str;
+        }
+        while (after.length);
+
+        return polls;
+    }
+
+    return retryDelegate(plugin, &getPollsDg);
+}
+
+
+// createPoll
+/++
+    Creates a Twitch poll in the specified channel.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        channelName = Name of channel to create the poll in.
+        title = Poll title.
+        durationString = How long the poll should run for in seconds (as a string).
+        choices = A string array of poll choices.
+        caller = Name of the calling function.
+
+    Returns:
+        An array of [std.json.JSONValue|JSONValue]s with
+        the response returned when creating the poll. On failure, an empty
+        [std.json.JSONValue|JSONValue] is instead returned.
+
+    Throws:
+        [UnexpectedJSONException] on unexpected JSON.
+        [EmptyDataJSONException] if the JSON has a `"data"` key but it is empty.
+ +/
+auto createPoll(
+    TwitchPlugin plugin,
+    const string channelName,
+    const string title,
+    const string durationString,
+    const string[] choices,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis(), "Tried to call `createPoll` from outside a fiber")
+in (channelName.length, "Tried to create a poll with an empty channel name string")
+{
+    import std.array : Appender, replace;
+    import std.format : format;
+    import std.json : JSONType, parseJSON;
+
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to create a poll in a channel for which there existed no room");
+
+    enum url = "https://api.twitch.tv/helix/polls";
+    enum bodyPattern = `
+{
+    "broadcaster_id": "%d",
+    "title": "%s",
+    "choices":[
+%s
+    ],
+    "duration": %s
+}`;
+
+    Appender!(char[]) sink;
+    sink.reserve(256);
+
+    foreach (immutable i, immutable choice; choices)
+    {
+        if (i > 0) sink.put(',');
+        sink.put(`{"title":"`);
+        sink.put(choice.replace(`"`, `\"`));
+        sink.put(`"}`);
+    }
+
+    immutable escapedTitle = title.replace(`"`, `\"`);
+    immutable body_ = bodyPattern.format(
+        room.id,
+        escapedTitle,
+        sink.data,
+        durationString);
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+
+    auto createPollDg()
+    {
+        immutable response = sendHTTPRequest(
+            plugin,
+            url,
+            caller,
+            authorizationBearer,
+            HttpVerb.POST,
+            cast(ubyte[])body_,
+            "application/json");
+        immutable responseJSON = parseJSON(response.str);
+
+        if (responseJSON.type != JSONType.object)
+        {
+            // Invalid response in some way
+            enum message = "`createPoll` response has unexpected JSON " ~
+                "(wrong JSON type)";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        immutable dataJSON = "data" in responseJSON;
+
+        if (!dataJSON)
+        {
+            // For some reason we received an object that didn't contain data
+            enum message = "`createPoll` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        if (!dataJSON.array.length)
+        {
+            // data exists but is empty
+            enum message = "`createPoll` response has unexpected JSON " ~
+                `(zero-length "data")`;
+            throw new EmptyDataJSONException(message, responseJSON);
+        }
+
+        return TwitchPoll.fromJSON(dataJSON.array[0]);
+    }
+
+    return retryDelegate(plugin, &createPollDg);
+}
+
+
+// endPoll
+/++
+    Ends a Twitch poll, putting it in either a `"TERMINATED"` or `"ARCHIVED"` state.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        channelName = Name of channel whose poll to end.
+        pollID = ID of the specific poll to end.
+        terminate = If set, ends the poll by putting it in a `"TERMINATED"` state.
+            If unset, ends it in an `"ARCHIVED"` way.
+        caller = Name of the calling function.
+
+    Returns:
+        The [std.json.JSONValue|JSONValue] of the first response returned when ending the poll.
+
+    Throws:
+        [UnexpectedJSONException] on unexpected JSON.
+        [EmptyDataJSONException] if the JSON has a `"data"` key but it is empty.
+ +/
+auto endPoll(
+    TwitchPlugin plugin,
+    const string channelName,
+    const string pollID,
+    const Flag!"terminate" terminate,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis(), "Tried to call `endPoll` from outside a fiber")
+in (channelName.length, "Tried to end a poll with an empty channel name string")
+{
+    import std.format : format;
+    import std.json : JSONType, parseJSON;
+
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to end a poll in a channel for which there existed no room");
+
+    enum url = "https://api.twitch.tv/helix/polls";
+    enum bodyPattern = `
+{
+    "broadcaster_id": "%d",
+    "id": "%s",
+    "status": "%s"
+}`;
+
+    immutable status = terminate ? "TERMINATED" : "ARCHIVED";
+    immutable body_ = bodyPattern.format(room.id, pollID, status);
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+
+    auto endPollDg()
+    {
+        immutable response = sendHTTPRequest(
+            plugin,
+            url,
+            caller,
+            authorizationBearer,
+            HttpVerb.PATCH,
+            cast(ubyte[])body_,
+            "application/json");
+        immutable responseJSON = parseJSON(response.str);
 
         if (responseJSON.type != JSONType.object)
         {
@@ -2081,12 +2361,13 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
 
         if (!dataJSON.array.length)
         {
+            // data exists but is empty
             enum message = "`endPoll` response has unexpected JSON " ~
-                `(empty "data" array)`;
-            throw new UnexpectedJSONException(message, responseJSON);
+                `(zero-length "data")`;
+            throw new EmptyDataJSONException(message, responseJSON);
         }
 
-        return dataJSON.array[0];
+        return TwitchPoll.fromJSON(dataJSON.array[0]);
     }
 
     return retryDelegate(plugin, &endPollDg);
@@ -2212,11 +2493,12 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
         populated with all (relevant) information.
  +/
 auto getStream(TwitchPlugin plugin, const string loginName)
-in (Fiber.getThis, "Tried to call `getStream` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getStream` from outside a fiber")
 in (loginName.length, "Tried to get a stream with an empty login name string")
 {
     import std.algorithm.iteration : map;
     import std.array : array;
+    import std.conv : to;
     import std.datetime.systime : SysTime;
 
     immutable streamURL = "https://api.twitch.tv/helix/streams?user_login=" ~ loginName;
@@ -2272,12 +2554,12 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             }
             */
 
-            auto stream = TwitchPlugin.Room.Stream(streamJSON["id"].str);
+            auto stream = TwitchPlugin.Room.Stream(streamJSON["id"].str.to!uint);
             stream.live = true;
-            stream.userIDString = streamJSON["user_id"].str;
+            stream.userID = streamJSON["user_id"].str.to!uint;
             stream.userLogin = streamJSON["user_login"].str;
             stream.userDisplayName = streamJSON["user_name"].str;
-            stream.gameIDString = streamJSON["game_id"].str;
+            stream.gameID = streamJSON["game_id"].str.to!uint;
             stream.gameName = streamJSON["game_name"].str;
             stream.title = streamJSON["title"].str;
             stream.startTime = SysTime.fromISOExtString(streamJSON["started_at"].str);
@@ -2319,16 +2601,20 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
 
     Returns:
         An array of Voldemort subscribers.
+
+    Throws:
+        [UnexpectedJSONException] on unexpected JSON.
  +/
 auto getSubscribers(
     TwitchPlugin plugin,
     const string channelName,
     const Flag!"totalOnly" totalOnly,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `getSubscribers` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getSubscribers` from outside a fiber")
 in (channelName.length, "Tried to get subscribers with an empty channel name string")
 {
     import std.array : Appender;
+    import std.conv : to;
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
@@ -2341,9 +2627,9 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
     {
         static struct User
         {
-            string id;
             string name;
             string displayName;
+            uint id;
         }
 
         static struct Subscription
@@ -2360,7 +2646,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
         uint number;
         uint retry;
 
-        immutable firstURL = "https://api.twitch.tv/helix/subscriptions?broadcaster_id=" ~ room.id;
+        immutable firstURL = "https://api.twitch.tv/helix/subscriptions?broadcaster_id=" ~ room.id.to!string;
         immutable subsequentURL = totalOnly ?
             firstURL ~ "&first=1&after=" :
             firstURL ~ "&after=";
@@ -2440,11 +2726,11 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             foreach (immutable subJSON; dataJSON.array)
             {
                 Subscription sub;
-                sub.user.id = subJSON["user_id"].str;
+                sub.user.id = subJSON["user_id"].str.to!uint;
                 sub.user.name = subJSON["user_login"].str;
                 sub.user.displayName = subJSON["user_name"].str;
                 sub.wasGift = subJSON["is_gift"].boolean;
-                sub.gifter.id = subJSON["gifter_id"].str;
+                sub.gifter.id = subJSON["gifter_id"].str.to!uint;
                 sub.gifter.name = subJSON["gifter_login"].str;
                 sub.gifter.displayName = subJSON["gifter_name"].str;
                 if (number == 0) sub.total = total;
@@ -2485,14 +2771,14 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
 auto createShoutout(
     TwitchPlugin plugin,
     const string login)
-in (Fiber.getThis, "Tried to call `createShoutout` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `createShoutout` from outside a fiber")
 in (login.length, "Tried to create a shoutout with an empty login name string")
 {
     import std.json : JSONType;
 
     static struct Shoutout
     {
-        enum State
+        enum ShoutoutState
         {
             success,
             noSuchUser,
@@ -2500,7 +2786,7 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
             otherError,
         }
 
-        State state;
+        ShoutoutState state;
         string displayName;
         string gameName;
     }
@@ -2518,7 +2804,7 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
             immutable channelURL = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ id;
             immutable channelJSON = getTwitchData(plugin, channelURL);
 
-            shoutout.state = Shoutout.State.success;
+            shoutout.state = Shoutout.ShoutoutState.success;
             shoutout.displayName = channelJSON["broadcaster_name"].str;
             shoutout.gameName = channelJSON["game_name"].str;
             return shoutout;
@@ -2529,16 +2815,16 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
                 (e.json["error"].str == "Bad Request") &&
                 (e.json["message"].str == "Invalid username(s), email(s), or ID(s). Bad Identifiers."))
             {
-                shoutout.state = Shoutout.State.noSuchUser;
+                shoutout.state = Shoutout.ShoutoutState.noSuchUser;
                 return shoutout;
             }
 
-            shoutout.state = Shoutout.State.otherError;
+            shoutout.state = Shoutout.ShoutoutState.otherError;
             return shoutout;
         }
         catch (EmptyDataJSONException _)
         {
-            shoutout.state = Shoutout.State.noSuchUser;
+            shoutout.state = Shoutout.ShoutoutState.noSuchUser;
             return shoutout;
         }
         catch (Exception e)
@@ -2559,7 +2845,7 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        roomID = ID of room to delete message in.
+        channelName = Name of channel to delete message(s) in.
         messageID = ID of message to delete. Pass an empty string to delete all messages.
         caller = Name of the calling function.
 
@@ -2568,22 +2854,27 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
  +/
 auto deleteMessage(
     TwitchPlugin plugin,
-    const string roomID,
+    const string channelName,
     const string messageID,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `deleteMessage` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `deleteMessage` from outside a fiber")
+in (channelName.length, "Tried to delete a message without providing a channel name")
 {
     import std.algorithm.searching : startsWith;
     import std.format : format;
+    import core.time : msecs;
+
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to delete a message in a nonexistent room");
 
     immutable urlPattern =
         "https://api.twitch.tv/helix/moderation/chat" ~
-        "?broadcaster_id=%s" ~
-        "&moderator_id=%s" ~
+        "?broadcaster_id=%d" ~
+        "&moderator_id=%d" ~
         (messageID.length ?
             "&message_id=%s" :
             "%s");
-    immutable url = urlPattern.format(roomID, plugin.transient.botUserIDString, messageID);
+    immutable url = urlPattern.format(room.id, plugin.transient.botID, messageID);
 
     auto deleteDg()
     {
@@ -2595,8 +2886,8 @@ in (Fiber.getThis, "Tried to call `deleteMessage` from outside a Fiber")
             HttpVerb.DELETE);
     }
 
-    enum failedDeleteRetryMsecs = 100;
-    return retryDelegate!(Yes.endlessly, failedDeleteRetryMsecs)(plugin, &deleteDg);
+    static immutable failedDeleteRetry = 100.msecs;
+    return retryDelegate(plugin, &deleteDg, Yes.async, Yes.endlessly, failedDeleteRetry);
 }
 
 
@@ -2606,7 +2897,7 @@ in (Fiber.getThis, "Tried to call `deleteMessage` from outside a Fiber")
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        roomID = Twitch ID of room (broadcaster user) to timeout user in.
+        channelName = Name of channel to timeout a user in.
         userID = Twitch ID of user to timeout.
         durationSeconds = Duration of timeout in seconds.
         reason = Timeout reason.
@@ -2615,28 +2906,35 @@ in (Fiber.getThis, "Tried to call `deleteMessage` from outside a Fiber")
     Returns:
         A Voldemort struct with information about the timeout action.
 
+    Throws:
+        [UnexpectedJSONException] on unexpected JSON.
+
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#create-a-banned-event
  +/
 auto timeoutUser(
     TwitchPlugin plugin,
-    const string roomID,
+    const string channelName,
     const uint userID,
     const uint durationSeconds,
     const string reason = string.init,
     const string caller = __FUNCTION__)
-in (Fiber.getThis, "Tried to call `timeoutUser` from outside a Fiber")
-in (roomID.length, "Tried to timeout a user with an empty room ID string")
-in ((userID > 0), "Tried to timeout a user with an empty user ID string")
+in (Fiber.getThis(), "Tried to call `timeoutUser` from outside a fiber")
+in (channelName.length, "Tried to timeout a user without providing a channel")
+in (userID, "Tried to timeout a user with an unset user ID")
 {
     import std.algorithm.comparison : min;
+    import std.conv : to;
     import std.format : format;
+
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to timeout a user in a nonexistent room");
 
     static struct Timeout
     {
-        string broadcasterID;
-        string moderatorID;
-        string userID;
+        uint broadcasterID;
+        uint moderatorID;
+        uint userID;
         string createdAt;
         string endTime;
         uint code;
@@ -2645,8 +2943,8 @@ in ((userID > 0), "Tried to timeout a user with an empty user ID string")
     enum maxDurationSeconds = 1_209_600;  // 14 days
 
     enum urlPattern = "https://api.twitch.tv/helix/moderation/bans" ~
-        "?broadcaster_id=%s" ~
-        "&moderator_id=%s";
+        "?broadcaster_id=%d" ~
+        "&moderator_id=%d";
 
     enum bodyPattern =
 `{
@@ -2657,7 +2955,7 @@ in ((userID > 0), "Tried to timeout a user with an empty user ID string")
     }
 }`;
 
-    immutable url = urlPattern.format(roomID, plugin.transient.botUserIDString);
+    immutable url = urlPattern.format(room.id, plugin.transient.botID);
     immutable body_ = bodyPattern.format(
         userID,
         min(durationSeconds, maxDurationSeconds),
@@ -2675,7 +2973,6 @@ in ((userID > 0), "Tried to timeout a user with an empty user ID string")
             HttpVerb.POST,
             cast(ubyte[])body_,
             "application/json");
-
         immutable responseJSON = parseJSON(response.str);
 
         if (responseJSON.type != JSONType.object)
@@ -2695,9 +2992,9 @@ in ((userID > 0), "Tried to timeout a user with an empty user ID string")
         }
 
         Timeout timeout;
-        timeout.broadcasterID = (*dataJSON)["broadcaster_id"].str;
-        timeout.moderatorID = (*dataJSON)["moderator_id"].str;
-        timeout.userID = (*dataJSON)["user_id"].str;
+        timeout.broadcasterID = (*dataJSON)["broadcaster_id"].str.to!uint;
+        timeout.moderatorID = (*dataJSON)["moderator_id"].str.to!uint;
+        timeout.userID = (*dataJSON)["user_id"].str.to!uint;
         timeout.createdAt = (*dataJSON)["created_at"].str;
         timeout.endTime = (*dataJSON)["end_time"].str;
         timeout.code = response.code;
@@ -2705,4 +3002,147 @@ in ((userID > 0), "Tried to timeout a user with an empty user ID string")
     }
 
     return retryDelegate(plugin, &timeoutDg);
+}
+
+
+// sendWhisper
+/++
+    Sends a whisper to a user.
+
+    The bot user sending the whisper must have a verified phone number or the
+    action will fail with a `401` response code.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        userID = Twitch ID of user to send whisper to.
+        unescapedMessage = Message to send.
+        caller = Name of the calling function.
+
+    Returns:
+        The HTTP response code received.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#send-whisper
+ +/
+auto sendWhisper(
+    TwitchPlugin plugin,
+    const uint userID,
+    const string unescapedMessage,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
+in (userID, "Tried to send a whisper with an empty recipient ID string")
+{
+    import std.array : replace;
+    import std.format : format;
+
+    enum urlPattern = "https://api.twitch.tv/helix/whispers" ~
+        "?from_user_id=%d" ~
+        "&to_user_id=%d";
+
+    enum bodyPattern =
+`{
+    "message": "%s"
+}`;
+
+    immutable url = urlPattern.format(plugin.transient.botID, userID);
+    immutable message = unescapedMessage.replace(`"`, `\"`);  // won't work with already escaped quotes
+    immutable body_ = bodyPattern.format(message);
+
+    auto sendWhisperDg()
+    {
+        import std.json : JSONValue, parseJSON;
+        import std.stdio : writeln;
+
+        JSONValue responseJSON;
+        uint responseCode;
+
+        try
+        {
+            immutable response = sendHTTPRequest(
+                plugin,
+                url,caller,
+                plugin.transient.authorizationBearer,
+                HttpVerb.POST,
+                cast(ubyte[])body_,
+                "application/json");
+
+            responseJSON = parseJSON(response.str);  // body should be empty, but in case it isn't
+            responseCode = response.code;
+        }
+        catch (ErrorJSONException e)
+        {
+            responseJSON = e.json;
+            responseCode = cast(uint)e.json["status"].integer;
+        }
+
+        switch (responseCode)
+        {
+        case 204:
+            // 204 No Content
+            // Successfully sent the whisper message or the message was silently dropped.
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                The ID in the from_user_id and to_user_id query parameters must be different.
+                The message field must not contain an empty string.
+                The user that you're sending the whisper to doesn't allow whisper messages
+                (see the Block Whispers from Strangers setting in your Security and Privacy settings).
+                Whisper messages may not be sent to suspended users.
+                The ID in the from_user_id query parameter is not valid.
+                The ID in the to_user_id query parameter is not valid.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The user in the from_user_id query parameter must have a verified phone number.
+                The Authorization header is required and must contain a user access token.
+                The user access token must include the user:manage:whispers scope.
+                The access token is not valid.
+                This ID in from_user_id must match the user ID in the user access token.
+                The client ID specified in the Client-Id header does not match the
+                client ID specified in the access token.
+             +/
+            goto default;
+
+        case 403:
+            // 403 Forbidden
+            /+
+                Suspended users may not send whisper messages.
+                The account that's sending the message doesn't allow sending whispers.
+             +/
+        case 404:
+            // 404 Not Found
+            /+
+                The ID in to_user_id was not found.
+             +/
+            goto default;
+
+        case 429:
+            // 429 Too Many Requests
+            /+
+                The sending user exceeded the number of whisper requests that they may make.
+
+                Rate Limits: You may whisper to a maximum of 40 unique recipients per day.
+                Within the per day limit, you may whisper a maximum of 3 whispers
+                per second and a maximum of 100 whispers per minute.
+             +/
+            goto default;
+
+        default:
+            import kameloso.common : logger;
+            enum pattern = "Failed to send whisper: <l>%s";
+            logger.errorf(pattern, responseJSON["message"].str);
+            break;
+        }
+
+        return responseCode;
+    }
+
+    return retryDelegate(plugin, &sendWhisperDg);
 }

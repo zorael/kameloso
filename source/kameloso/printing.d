@@ -47,6 +47,27 @@ private:
 import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
+
+// minimumTypeWidth
+/++
+    The minimum width of the type column, in characters.
+
+    The current sweet spot is enough to accommodate
+    [kameloso.plugins.quote.QuoteSettings.Precision|QuoteSettings.Precision].
+ +/
+enum minimumTypeWidth = 12;  //
+
+
+// minimumNameWidth
+/++
+    The minimum width of the type column, in characters.
+
+    The current sweet spot is enough to accommodate
+    [kameloso.plugins.counter.CounterSettings.minimumPermissionsNeeded|CounterSettings.minimumPermissionsNeeded].
+ +/
+enum minimumNameWidth = 24;
+
+
 public:
 
 
@@ -64,9 +85,6 @@ private template Widths(Flag!"all" all, Things...)
 {
 private:
     import std.algorithm.comparison : max;
-
-    enum minimumTypeWidth = 8;  // Current sweet spot, accommodates well for `string[]`
-    enum minimumNameWidth = 24;  // Current minimum 22, TwitchSettings' "caseSensitiveTriggers"
 
     static if (all)
     {
@@ -94,9 +112,6 @@ private:
 unittest
 {
     import std.algorithm.comparison : max;
-
-    enum minimumTypeWidth = 8;  // Current sweet spot, accommodates well for `string[]`
-    enum minimumNameWidth = 24;  // Current minimum 22, TwitchSettings' "caseSensitiveTriggers"
 
     struct S1
     {
@@ -1251,19 +1266,19 @@ private void formatObjectImpl(Flag!"all" all = No.all,
 
         enum structNameSerialised =
 `-- StructName
-     Struct struct_                    <struct> (init)
-        int i                           12345
-     string s                          ` ~ theMoon ~ ` ... (198)
-     string p                          "!"(1)
-     string p2                          ""(0)
-       bool b                           true
-      float f                           3.14
-     double d                           99.9
-     char[] c                          ['a', 'b', 'c'](3)
-     char[] emptyC                      [](0)
-   string[] dynA                       ["foo", "bar", "baz"](3)
-      int[] iA                         [1, 2, 3, 4](4)
- char[char] cC                         ['k':'v', 'K':'V'](2)
+       Struct struct_                    <struct> (init)
+          int i                           12345
+       string s                          ` ~ theMoon ~ ` ... (198)
+       string p                          "!"(1)
+       string p2                          ""(0)
+         bool b                           true
+        float f                           3.14
+       double d                           99.9
+       char[] c                          ['a', 'b', 'c'](3)
+       char[] emptyC                      [](0)
+     string[] dynA                       ["foo", "bar", "baz"](3)
+        int[] iA                         [1, 2, 3, 4](4)
+   char[char] cC                         ['k':'v', 'K':'V'](2)
 `;
 
         sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
@@ -1343,12 +1358,12 @@ private void formatObjectImpl(Flag!"all" all = No.all,
 
         enum st1st2Formatted =
 `-- Struct1
-   string members                    "harbl"(5)
-      int asdf                        42
+       string members                    "harbl"(5)
+          int asdf                        42
 
 -- Struct2
-   string mumburs                    "hirrs"(5)
-      int fdsa                        -1
+       string mumburs                    "hirrs"(5)
+          int fdsa                        -1
 `;
 
         sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, st1, st2);
@@ -1406,9 +1421,9 @@ private void formatObjectImpl(Flag!"all" all = No.all,
 
         enum cFormatted =
 `-- C
-   string a                          "abc"(3)
-     bool b                           true
-      int i                           42
+       string a                          "abc"(3)
+         bool b                           true
+          int i                           42
 `;
 
         sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c2);
@@ -1441,14 +1456,14 @@ private void formatObjectImpl(Flag!"all" all = No.all,
 
         enum c4Formatted =
 `-- C4
-       I3 i3                         <interface> (null)
-       C3 c3                         <class>
-      int i                           42
+           I3 i3                         <interface> (null)
+           C3 c3                         <class>
+          int i                           42
 
 -- I3
 
 -- C3
-      int i                           -1
+          int i                           -1
 `;
 
         sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c4, c4.i3, c4.c3);
@@ -1528,8 +1543,8 @@ unittest
 
         enum expected =
 `-- Struct
-   string members                    "foo"(3)
-      int asdf                        42
+       string members                    "foo"(3)
+          int asdf                        42
 `;
 
         immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
@@ -1556,11 +1571,11 @@ unittest
 
         enum expected =
 `-- Class
-   string s                          "arb"(3)
-      int i                           2
-   string someLongConfiguration      "acdc adcadcad acacdadc"(22)
-    int[] arrMatey                   [1, 2, 3, 42](4)
-   Nested nest                       <class> (null)
+       string s                          "arb"(3)
+          int i                           2
+       string someLongConfiguration      "acdc adcadcad acacdadc"(22)
+        int[] arrMatey                   [1, 2, 3, 42](4)
+       Nested nest                       <class> (null)
 `;
 
         immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
@@ -1569,11 +1584,11 @@ unittest
         c.nest = new Nested;
         enum expected2 =
 `-- Class
-   string s                          "arb"(3)
-      int i                           2
-   string someLongConfiguration      "acdc adcadcad acacdadc"(22)
-    int[] arrMatey                   [1, 2, 3, 42](4)
-   Nested nest                       <class>
+       string s                          "arb"(3)
+          int i                           2
+       string someLongConfiguration      "acdc adcadcad acacdadc"(22)
+        int[] arrMatey                   [1, 2, 3, 42](4)
+       Nested nest                       <class>
 `;
 
         immutable actual2 = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
@@ -1596,10 +1611,10 @@ unittest
 
         enum expected =
 `-- State
-    Client client                     <struct> (init)
-    Server server                     <struct> (init)
- Reparse[] reparses                    [](0)
-      bool hasReplays                  false
+       Client client                     <struct> (init)
+       Server server                     <struct> (init)
+    Reparse[] reparses                    [](0)
+         bool hasReplays                  false
 `;
 
         immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, state);

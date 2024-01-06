@@ -39,7 +39,6 @@ void requestTwitchKey(TwitchPlugin plugin)
 {
     import kameloso.logger : LogLevel;
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : send;
     import std.datetime.systime : Clock;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : stdout, writeln;
@@ -111,6 +110,7 @@ your <w>BOT</> account.
         //"user:read:follows",
         //"user:read:subscriptions"
         //"user:edit:broadcast",    // removed/undocumented? implied user:read:broadcast
+        "user:manage:whispers",
 
         // Twitch APIv5
         // --------------------------
@@ -195,7 +195,7 @@ your <w>BOT</> account.
     logger.trace();
 
     plugin.state.updates |= typeof(plugin.state.updates).bot;
-    plugin.state.mainThread.send(ThreadMessage.save);
+    plugin.state.messages ~= ThreadMessage.save;
 }
 
 
@@ -522,7 +522,7 @@ private auto buildAuthNodeURL(const string authNode, const string[] scopes)
         A [std.datetime.systime.SysTime|SysTime] of when the passed token expires.
  +/
 auto getTokenExpiry(TwitchPlugin plugin, const string authToken)
-in (Fiber.getThis, "Tried to call `getTokenExpiry` from outside a Fiber")
+in (Fiber.getThis(), "Tried to call `getTokenExpiry` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : getValidation;
     import std.datetime.systime : Clock, SysTime;

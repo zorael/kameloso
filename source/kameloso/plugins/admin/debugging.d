@@ -238,7 +238,6 @@ void onCommandBusImpl(
 {
     import kameloso.common : logger;
     import kameloso.thread : ThreadMessage, boxed;
-    import std.concurrency : send;
     import std.stdio : stdout, writeln;
 
     if (!plugin.state.settings.headless)
@@ -250,5 +249,5 @@ void onCommandBusImpl(
         if (plugin.state.settings.flush) stdout.flush();
     }
 
-    plugin.state.mainThread.send(ThreadMessage.busMessage(header, boxed(content)));
+    plugin.state.messages ~= ThreadMessage.busMessage(header, boxed(content));
 }
