@@ -774,17 +774,21 @@ void messageFiber(Kameloso instance)
         /+
             Still time enough to act on messages?
          +/
-        auto stillOnTime()
+        auto isStillOnTime()
         {
-            return ((MonoTime.currTime - loopStartTime) <= maxReceiveTime);
+            immutable onTime = ((MonoTime.currTime - loopStartTime) <= maxReceiveTime);
+            //debug if (!onTime) logger.warning("Messenger loop ran out of time");
+            return onTime;
         }
 
         /+
             Whether or not to continue the loop.
          +/
-        auto shouldContinue()
+        auto shouldStillContinue()
         {
-            return (next == Next.continue_) && !*instance.abort;
+            immutable shouldContinue = ((next == Next.continue_) && !*instance.abort);
+            //debug if (!shouldContinue) logger.warning("Messenger loop shouldn't continue");
+            return shouldContinue;
         }
 
         /+
@@ -793,17 +797,17 @@ void messageFiber(Kameloso instance)
         priorityMessageTop:
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.isEnabled || !plugin.state.priorityMessages.length) continue;
+            if (!plugin.isEnabled || !plugin.state.priorityMessages.length) continue priorityMessageTop;
 
-            foreach (immutable i, message; plugin.state.priorityMessages)
+            for (size_t i; i < plugin.state.priorityMessages.length; ++i)
             {
-                onThreadMessage(message);
+                onThreadMessage(plugin.state.priorityMessages[i]);
 
-                if (!shouldContinue)
+                if (!shouldStillContinue)
                 {
                     break priorityMessageTop;
                 }
-                else if (!stillOnTime)
+                else if (!isStillOnTime)
                 {
                     // Ran out of time. Pop until where we are corrently
                     plugin.state.priorityMessages = plugin.state.priorityMessages[i+1..$];
@@ -814,7 +818,7 @@ void messageFiber(Kameloso instance)
             plugin.state.priorityMessages = null;
         }
 
-        if (!shouldContinue || !stillOnTime)
+        if (!shouldStillContinue || !isStillOnTime)
         {
             yield(next);
             continue;
@@ -826,17 +830,17 @@ void messageFiber(Kameloso instance)
         normalMessageTop:
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.isEnabled || !plugin.state.messages.length) continue;
+            if (!plugin.isEnabled || !plugin.state.messages.length) continue normalMessageTop;
 
-            foreach (immutable i, message; plugin.state.messages)
+            for (size_t i; i < plugin.state.messages.length; ++i)
             {
-                onThreadMessage(message);
+                onThreadMessage(plugin.state.messages[i]);
 
-                if (!shouldContinue)
+                if (!shouldStillContinue)
                 {
                     break normalMessageTop;
                 }
-                else if (!stillOnTime)
+                else if (!isStillOnTime)
                 {
                     // As above
                     plugin.state.messages = plugin.state.messages[i+1..$];
@@ -847,7 +851,7 @@ void messageFiber(Kameloso instance)
             plugin.state.messages = null;
         }
 
-        if (!shouldContinue || !stillOnTime)
+        if (!shouldStillContinue || !isStillOnTime)
         {
             yield(next);
             continue;
@@ -859,17 +863,17 @@ void messageFiber(Kameloso instance)
         outgoingMessageTop:
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.isEnabled || !plugin.state.outgoingMessages.length) continue;
+            if (!plugin.isEnabled || !plugin.state.outgoingMessages.length) continue outgoingMessageTop;
 
             foreach (immutable i, message; plugin.state.outgoingMessages)
             {
                 eventToServer(message);
 
-                if (!shouldContinue)
+                if (!shouldStillContinue)
                 {
                     break outgoingMessageTop;
                 }
-                else if (!stillOnTime)
+                else if (!isStillOnTime)
                 {
                     // As above
                     plugin.state.outgoingMessages = plugin.state.outgoingMessages[i+1..$];
@@ -888,7 +892,7 @@ void messageFiber(Kameloso instance)
          +/
         version(WantConcurrencyMessageLoop)
         {
-            if (!shouldContinue || !stillOnTime)
+            if (!shouldStillContinue || !isStillOnTime)
             {
                 yield(next);
                 continue;
@@ -911,7 +915,7 @@ void messageFiber(Kameloso instance)
                     }
                 );
 
-                if (!receivedSomething || !shouldContinue || !stillOnTime) break;
+                if (!receivedSomething || !shouldStillContinue || !isStillOnTime) break;
             }
         }
 
