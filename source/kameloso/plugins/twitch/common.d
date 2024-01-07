@@ -28,35 +28,6 @@ import std.typecons : Flag, No, Yes;
 package:
 
 
-// getHTTPClient
-/++
-    Returns a static [arsd.http2.HttpClient|HttpClient] for reuse across function calls.
-
-    Returns:
-        A static [arsd.http2.HttpClient|HttpClient].
- +/
-auto getHTTPClient()
-{
-    import kameloso.constants : KamelosoInfo, Timeout;
-    import arsd.http2 : HttpClient;
-    import core.time : seconds;
-
-    static HttpClient client;
-
-    if (!client)
-    {
-        client = new HttpClient;
-        client.useHttp11 = true;
-        client.keepAlive = true;
-        client.acceptGzip = false;
-        client.defaultTimeout = Timeout.httpGET.seconds;
-        client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
-    }
-
-    return client;
-}
-
-
 // readNamedString
 /++
     Prompts the user to enter a string.

@@ -2794,7 +2794,7 @@ auto tryConnect(Kameloso instance)
                     ----------------
                     ??:? pure @safe bool std.exception.enforce!(bool).enforce(bool, lazy object.Throwable) [0x2cf5f0]
                     ??:? const @trusted immutable(char)[] std.socket.Address.toHostString(bool) [0x4b2d7c6]
-                    */
+                     */
                     // Just let the string be empty
                 }
 

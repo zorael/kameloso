@@ -23,7 +23,6 @@ import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
 
 import kameloso.common : logger;
-import arsd.http2 : HttpClient;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
@@ -307,13 +306,12 @@ then finally <i>Allow</>.`;
     }
 
     // All done, fetch
-    auto client = getHTTPClient();
-    getGoogleTokens(client, creds, code);
+    getGoogleTokens(creds, code, plugin.state.connSettings.caBundleFile);
 
     writeln();
     logger.info("Validating...");
 
-    immutable validationJSON = validateGoogleToken(client, creds);
+    immutable validationJSON = validateGoogleToken(creds, plugin.state.connSettings.caBundleFile);
     if (*plugin.state.abort) return;
 
     scope(failure)
@@ -378,9 +376,11 @@ package auto addVideoToYouTubePlaylist(
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a fiber")
 {
+    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.common : HTTPVerb;
     import std.algorithm.searching : endsWith;
     import std.format : format;
-    import std.string : representation;
+    import std.json : JSONType, parseJSON;
 
     enum url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet";
 
@@ -398,7 +398,7 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
         authorizationBearer = "Bearer " ~ creds.googleAccessToken;
     }
 
-    enum pattern =
+    enum dataPattern =
 `{
   "snippet": {
     "playlistId": "%s",
@@ -409,141 +409,108 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
   }
 }`;
 
-    immutable data = pattern.format(creds.youtubePlaylistID, videoID).representation;
-    /*immutable*/ int id = plugin.responseBucket.uniqueKey;  // normal int needed for concurrency message
+    auto data = cast(ubyte[])dataPattern.format(creds.youtubePlaylistID, videoID);
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    immutable response = sendHTTPRequest(
+        plugin,
+        url,
+        __FUNCTION__,
+        authorizationBearer,
+        HTTPVerb.post,
+        data,
+        "application/json");
+    immutable json = parseJSON(response.str);
+
+    /*
     {
-        try
-        {
-            import kameloso.plugins.twitch.api : waitForQueryResponse;
-            import kameloso.plugins.common.delayawait : delay;
-            import kameloso.thread : ThreadMessage;
-            import arsd.http2 : HttpVerb;
-            import std.concurrency : send;
-            import std.json : JSONType, parseJSON;
-            import core.time : msecs;
+        "kind": "youtube#playlistItem",
+        "etag": "QG1leAsBIlxoG2Y4MxMsV_zIaD8",
+        "id": "UExNNnd5dmt2ME9GTVVfc0IwRUZyWDdUd0pZUHdkMUYwRi4xMkVGQjNCMUM1N0RFNEUx",
+        "snippet": {
+            "publishedAt": "2022-05-24T22:03:44Z",
+            "channelId": "UC_iiOE42xes48ZXeQ4FkKAw",
+            "title": "How Do Sinkholes Form?",
+            "description": "CAN CONTAIN NEWLINES",
+            "thumbnails": {
+                "default": {
+                    "url": "https://i.ytimg.com/vi/e-DVIQPqS8E/default.jpg",
+                    "width": 120,
+                    "height": 90
+                },
+            },
+            "channelTitle": "zorael",
+            "playlistId": "PLM6wyvkv0OFMU_sB0EFrX7TwJYPwd1F0F",
+            "position": 5,
+            "resourceId": {
+                "kind": "youtube#video",
+                "videoId": "e-DVIQPqS8E"
+            },
+            "videoOwnerChannelTitle": "Practical Engineering",
+            "videoOwnerChannelId": "UCMOqf8ab-42UUQIdVoKwjlQ"
+        }
+    }
+     */
 
-            plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
-            plugin.getNextWorkerTid().send(
-                id,
-                url,
-                authorizationBearer,
-                HttpVerb.POST,
-                data,
-                "application/json");
-
-            static immutable guesstimatePeriodToWaitForCompletion = 600.msecs;
-            delay(plugin, guesstimatePeriodToWaitForCompletion, Yes.yield);
-            immutable response = waitForQueryResponse(plugin, id);
-
-            /*
-            {
-                "kind": "youtube#playlistItem",
-                "etag": "QG1leAsBIlxoG2Y4MxMsV_zIaD8",
-                "id": "UExNNnd5dmt2ME9GTVVfc0IwRUZyWDdUd0pZUHdkMUYwRi4xMkVGQjNCMUM1N0RFNEUx",
-                "snippet": {
-                    "publishedAt": "2022-05-24T22:03:44Z",
-                    "channelId": "UC_iiOE42xes48ZXeQ4FkKAw",
-                    "title": "How Do Sinkholes Form?",
-                    "description": "CAN CONTAIN NEWLINES",
-                    "thumbnails": {
-                        "default": {
-                            "url": "https://i.ytimg.com/vi/e-DVIQPqS8E/default.jpg",
-                            "width": 120,
-                            "height": 90
-                        },
-                    },
-                    "channelTitle": "zorael",
-                    "playlistId": "PLM6wyvkv0OFMU_sB0EFrX7TwJYPwd1F0F",
-                    "position": 5,
-                    "resourceId": {
-                        "kind": "youtube#video",
-                        "videoId": "e-DVIQPqS8E"
-                    },
-                    "videoOwnerChannelTitle": "Practical Engineering",
-                    "videoOwnerChannelId": "UCMOqf8ab-42UUQIdVoKwjlQ"
-                }
-            }
-            */
-
-            /*
-            {
-                "error": {
-                    "code": 401,
-                    "message": "Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.",
-                    "errors": [
-                        {
-                            "message": "Invalid Credentials",
-                            "domain": "global",
-                            "reason": "authError",
-                            "location": "Authorization",
-                            "locationType": "header"
-                        }
-                    ],
-                    "status": "UNAUTHENTICATED"
-                }
-            }
-            */
-
-            immutable json = parseJSON(response.str);
-
-            if (json.type != JSONType.object)
-            {
-                enum message = "Wrong JSON type in playlist append response";
-                throw new UnexpectedJSONException(message, json);
-            }
-
-            immutable errorJSON = "error" in json;
-            if (!errorJSON) return json;  // Success
-
-            if (immutable statusJSON = "status" in *errorJSON)
-            {
-                if (statusJSON.str == "UNAUTHENTICATED")
+    /*
+    {
+        "error": {
+            "code": 401,
+            "message": "Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.",
+            "errors": [
                 {
-                    if (recursing)
-                    {
-                        immutable errorAAJSON = "errors" in *errorJSON;
+                    "message": "Invalid Credentials",
+                    "domain": "global",
+                    "reason": "authError",
+                    "location": "Authorization",
+                    "locationType": "header"
+                }
+            ],
+            "status": "UNAUTHENTICATED"
+        }
+    }
+     */
 
-                        if (errorAAJSON &&
-                            (errorAAJSON.type == JSONType.array) &&
-                            (errorAAJSON.array.length > 0))
-                        {
-                            immutable message = errorAAJSON.array[0].object["message"].str;
-                            throw new InvalidCredentialsException(message, *errorJSON);
-                        }
-                        else
-                        {
-                            enum message = "A non-specific error occurred.";
-                            throw new ErrorJSONException(message, *errorJSON);
-                        }
-                    }
-                    else
-                    {
-                        refreshGoogleToken(getHTTPClient(), creds);
-                        saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-                        return addVideoToYouTubePlaylist(plugin, creds, videoID, Yes.recursing);
-                    }
+    if (json.type != JSONType.object)
+    {
+        enum message = "Wrong JSON type in playlist append response";
+        throw new UnexpectedJSONException(message, json);
+    }
+
+    immutable errorJSON = "error" in json;
+    if (!errorJSON) return json;  // Success
+
+    if (immutable statusJSON = "status" in *errorJSON)
+    {
+        if (statusJSON.str == "UNAUTHENTICATED")
+        {
+            if (recursing)
+            {
+                immutable errorAAJSON = "errors" in *errorJSON;
+
+                if (errorAAJSON &&
+                    (errorAAJSON.type == JSONType.array) &&
+                    (errorAAJSON.array.length > 0))
+                {
+                    immutable message = errorAAJSON.array[0].object["message"].str;
+                    throw new InvalidCredentialsException(message, *errorJSON);
+                }
+                else
+                {
+                    enum message = "A non-specific error occurred.";
+                    throw new ErrorJSONException(message, *errorJSON);
                 }
             }
-
-            // If we're here, the above didn't match
-            throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
-        }
-        catch (InvalidCredentialsException e)
-        {
-            // Immediately rethrow
-            throw e;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
+            else
+            {
+                refreshGoogleToken(plugin, creds);
+                saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+                return addVideoToYouTubePlaylist(plugin, creds, videoID, Yes.recursing);
+            }
         }
     }
 
-    assert(0, "Unreachable");
+    // If we're here, the above didn't match
+    throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
 }
 
 
@@ -552,9 +519,9 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
     Request OAuth API tokens from Google.
 
     Params:
-        client = [arsd.http2.HttpClient|HttpClient] to use.
         creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
         code = Google authorisation code.
+        caBundleFile = Path to a `cacert.pem` bundle file.
 
     Throws:
         [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
@@ -563,24 +530,33 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-void getGoogleTokens(HttpClient client, ref Credentials creds, const string code)
+void getGoogleTokens(
+    ref Credentials creds,
+    const string code,
+    const string caBundleFile)
 {
-    import arsd.http2 : HttpVerb, Uri;
+    import kameloso.plugins.twitch.api : sendHTTPRequestImpl;
+    import kameloso.common : HTTPVerb;
     import std.format : format;
     import std.json : JSONType, parseJSON;
-    import std.string : indexOf;
 
-    enum pattern = "https://oauth2.googleapis.com/token" ~
+    enum urlPattern = "https://oauth2.googleapis.com/token" ~
         "?client_id=%s" ~
         "&client_secret=%s" ~
         "&code=%s" ~
         "&grant_type=authorization_code" ~
         "&redirect_uri=http://localhost";
 
-    immutable url = pattern.format(creds.googleClientID, creds.googleClientSecret, code);
+    immutable url = urlPattern.format(creds.googleClientID, creds.googleClientSecret, code);
     enum data = cast(ubyte[])"{}";
-    auto req = client.request(Uri(url), HttpVerb.POST, data);
-    auto res = req.waitForCompletion();
+
+    immutable res = sendHTTPRequestImpl(
+        url,
+        string.init,  // authHeader
+        caBundleFile,
+        HTTPVerb.post,
+        data);
+    immutable json = parseJSON(res.str);
 
     /*
     {
@@ -590,9 +566,8 @@ void getGoogleTokens(HttpClient client, ref Credentials creds, const string code
         "scope": "https://www.googleapis.com/auth/youtube",
         "token_type": "Bearer"
     }
-    */
+     */
 
-    immutable json = parseJSON(res.contentText);
 
     if (json.type != JSONType.object)
     {
@@ -614,7 +589,7 @@ void getGoogleTokens(HttpClient client, ref Credentials creds, const string code
     Refreshes the OAuth API token in the passed Google credentials.
 
     Params:
-        client = [arsd.http2.HttpClient|HttpClient] to use.
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
 
     Throws:
@@ -624,23 +599,34 @@ void getGoogleTokens(HttpClient client, ref Credentials creds, const string code
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-void refreshGoogleToken(HttpClient client, ref Credentials creds)
+void refreshGoogleToken(TwitchPlugin plugin, ref Credentials creds)
+in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
 {
-    import arsd.http2 : HttpVerb, Uri;
+    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.common : HTTPVerb;
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
-    enum pattern = "https://oauth2.googleapis.com/token" ~
+    enum urlPattern = "https://oauth2.googleapis.com/token" ~
         "?client_id=%s" ~
         "&client_secret=%s" ~
         "&refresh_token=%s" ~
         "&grant_type=refresh_token";
 
-    immutable url = pattern.format(creds.googleClientID, creds.googleClientSecret, creds.googleRefreshToken);
+    immutable url = urlPattern.format(
+        creds.googleClientID,
+        creds.googleClientSecret,
+        creds.googleRefreshToken);
     enum data = cast(ubyte[])"{}";
-    auto req = client.request(Uri(url), HttpVerb.POST, data);
-    auto res = req.waitForCompletion();
-    immutable json = parseJSON(res.contentText);
+
+    immutable res = sendHTTPRequest(
+        plugin,
+        url,
+        __FUNCTION__,
+        string.init,  // authHeader
+        HTTPVerb.post,
+        data);
+    immutable json = parseJSON(res.str);
 
     if (json.type != JSONType.object)
     {
@@ -670,8 +656,8 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
     Validates a Google OAuth token, returning the JSON received from the server.
 
     Params:
-        client = [arsd.http2.HttpClient|HttpClient] to use.
         creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
+        caBundleFile = Path to a `cacert.pem` bundle file.
 
     Returns:
         The server [std.json.JSONValue|JSONValue] response.
@@ -683,23 +669,28 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-auto validateGoogleToken(HttpClient client, const Credentials creds)
+auto validateGoogleToken(const Credentials creds, const string caBundleFile)
 {
-    import arsd.http2 : Uri;
+    import kameloso.plugins.twitch.api : sendHTTPRequestImpl;
+    import kameloso.common : HTTPVerb;
     import std.json : JSONType, parseJSON;
 
     enum urlHead = "https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=";
     immutable url = urlHead ~ creds.googleAccessToken;
-    auto req = client.request(Uri(url));
-    auto res = req.waitForCompletion();
-    immutable json = parseJSON(res.contentText);
+
+    immutable res = sendHTTPRequestImpl(
+        url,
+        string.init,  // authHeader
+        caBundleFile,
+        HTTPVerb.get);
+    immutable json = parseJSON(res.str);
 
     /*
     {
         "error": "invalid_token",
         "error_description": "Invalid Value"
     }
-    */
+     */
     /*
     {
         "access_type": "offline",
@@ -709,7 +700,7 @@ auto validateGoogleToken(HttpClient client, const Credentials creds)
         "expires_in": "3599",
         "scope": "https:\/\/www.googleapis.com\/auth\/youtube"
     }
-    */
+     */
 
     if (json.type != JSONType.object)
     {

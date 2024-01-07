@@ -1650,34 +1650,39 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             return sendInvalidURL();
         }
 
-        try
+        void addYouTubeVideoDg()
         {
-            import kameloso.plugins.twitch.google : addVideoToYouTubePlaylist;
-            import std.json : JSONType;
-
-            immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
-
-            if ((json.type != JSONType.object) || ("snippet" !in json))
+            try
             {
-                logger.error("Unexpected JSON in YouTube response.");
-                logger.trace(json.toPrettyString);
-                return;
-            }
+                import kameloso.plugins.twitch.google : addVideoToYouTubePlaylist;
+                import std.json : JSONType;
 
-            immutable title = json["snippet"]["title"].str;
-            //immutable position = json["snippet"]["position"].integer;
-            room.songrequestHistory[event.sender.nickname] = event.time;
-            return sendAddedToYouTubePlaylist(title);
+                immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
+
+                if ((json.type != JSONType.object) || ("snippet" !in json))
+                {
+                    logger.error("Unexpected JSON in YouTube response.");
+                    logger.trace(json.toPrettyString);
+                    return;
+                }
+
+                immutable title = json["snippet"]["title"].str;
+                //immutable position = json["snippet"]["position"].integer;
+                room.songrequestHistory[event.sender.nickname] = event.time;
+                return sendAddedToYouTubePlaylist(title);
+            }
+            catch (InvalidCredentialsException _)
+            {
+                return sendInvalidCredentials();
+            }
+            catch (ErrorJSONException _)
+            {
+                return sendNonspecificError();
+            }
+            // Let other exceptions fall through
         }
-        catch (InvalidCredentialsException _)
-        {
-            return sendInvalidCredentials();
-        }
-        catch (ErrorJSONException _)
-        {
-            return sendNonspecificError();
-        }
-        // Let other exceptions fall through
+
+        retryDelegate(plugin, &addYouTubeVideoDg);
     }
     else if (plugin.twitchSettings.songrequestMode == SongRequestMode.spotify)
     {
@@ -1737,7 +1742,10 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
                 return;
             }
 
-            const trackJSON = getSpotifyTrackByID(*creds, trackID);
+            const trackJSON = getSpotifyTrackByID(
+                plugin,
+                *creds,
+                trackID);
             immutable artist = trackJSON["artists"].array[0].object["name"].str;
             immutable track = trackJSON["name"].str;
             room.songrequestHistory[event.sender.nickname] = event.time;

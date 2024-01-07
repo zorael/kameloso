@@ -24,8 +24,8 @@ private:
 import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
 
+import kameloso.common : HTTPVerb;
 import dialect.defs;
-import arsd.http2 : HttpVerb;
 import lu.container : MutexedAA;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
@@ -305,7 +305,7 @@ void persistentQuerier(
         const int id,
         const string url,
         const string authToken,
-        /*const*/ HttpVerb verb,
+        /*const*/ HTTPVerb verb,
         immutable(ubyte)[] body_,
         const string contentType) scope
     {
@@ -346,7 +346,7 @@ void persistentQuerier(
         int id,
         string url,
         string authToken,
-        HttpVerb verb,
+        HTTPVerb verb,
         immutable(ubyte)[] body_,
         string contentType) scope
     {
@@ -369,7 +369,7 @@ void persistentQuerier(
             id,
             url,
             authToken,
-            HttpVerb.GET,
+            HTTPVerb.get,
             cast(immutable(ubyte)[])null,
             string.init);
     }
@@ -420,7 +420,7 @@ void persistentQuerier(
         url = The URL to query.
         caller = Name of the calling function.
         authorisationHeader = Authorisation HTTP header to pass.
-        verb = What [arsd.http2.HttpVerb|HttpVerb] to use in the request.
+        verb = What [kameloso.common.HTTPVerb|HTTPVerb] to use in the request.
         body_ = Request body to send in case of verbs like `POST` and `PATCH`.
         contentType = "Content-Type" HTTP header to pass.
         id = Numerical ID to use instead of generating a new one.
@@ -442,7 +442,7 @@ QueryResponse sendHTTPRequest(
     const string url,
     const string caller = __FUNCTION__,
     const string authorisationHeader = string.init,
-    /*const*/ HttpVerb verb = HttpVerb.GET,
+    /*const*/ HTTPVerb verb = HTTPVerb.get,
     /*const*/ ubyte[] body_ = null,
     const string contentType = string.init,
     int id = 0,
@@ -463,7 +463,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         enum pattern = "%s: <i>%s<t> (%s)";
         logger.tracef(
             pattern,
-            Enum!HttpVerb.toString(verb),
+            Enum!HTTPVerb.toString(verb),
             url,
             caller);
     }
@@ -633,7 +633,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         url = URL address to look up.
         authHeader = Authorisation token HTTP header to pass.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
-        verb = What [arsd.http2.HttpVerb|HttpVerb] to use in the request.
+        verb = What [kameloso.common.HTTPVerb|HTTPVerb] to use in the request.
         body_ = Request body to send in case of verbs like `POST` and `PATCH`.
         contentType = "Content-Type" HTTP header to use.
 
@@ -644,61 +644,74 @@ auto sendHTTPRequestImpl(
     const string url,
     const string authHeader,
     const string caBundleFile,
-    /*const*/ HttpVerb verb = HttpVerb.GET,
+    /*const*/ HTTPVerb verb = HTTPVerb.get,
     /*const*/ ubyte[] body_ = null,
     /*const*/ string contentType = string.init)
 {
-    import arsd.http2 : HttpClient, Uri;
-    import std.algorithm.comparison : among;
-    import core.time : MonoTime;
+    import kameloso.constants : KamelosoInfo, Timeout;
+    import requests.base : Response;
+    import requests.request : Request;
+    import core.time : seconds;
 
-    static HttpClient client;
-    static string[] headers;
+    static string[string] headers;
 
-    if (!client)
+    if (!headers.length)
     {
-        import kameloso.constants : KamelosoInfo, Timeout;
-        import core.time : seconds;
-
-        client = new HttpClient;
-        client.useHttp11 = true;
-        client.keepAlive = true;
-        client.acceptGzip = false;
-        client.defaultTimeout = Timeout.httpGET.seconds;
-        client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
-        headers = [ "Client-ID: " ~ TwitchPlugin.clientID ];
-        if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
+        headers =
+        [
+            "Client-ID" : TwitchPlugin.clientID,
+            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
+            "Authorization" : string.init,
+        ];
     }
 
-    client.authorization = authHeader;
+    auto authorizationHeader = "Authorization" in headers;
+    if (*authorizationHeader != authHeader) *authorizationHeader = authHeader;
+
+    auto req = Request();
+    //req.verbosity = 1;
+    req.keepAlive = true;
+    req.timeout = Timeout.httpGET.seconds;
+    req.addHeaders(headers);
+    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
+
+    Response res;
+
+    with (HTTPVerb)
+    final switch (verb)
+    {
+    case get:
+        res = req.get(url);
+        break;
+
+    case post:
+        res = req.post(url, body_, contentType);
+        break;
+
+    case put:
+        res = req.put(url, body_, contentType);
+        break;
+
+    case patch:
+        res = req.patch(url, body_, contentType);
+        break;
+
+    case delete_:
+        res = req.execute("DELETE", url);
+        break;
+
+    case unset:
+    case unsupported:
+        assert(0, "Unset or unsupported HTTP verb passed to sendHTTPRequestImpl");
+    }
 
     QueryResponse response;
-    auto pre = MonoTime.currTime;
-    auto req = client.request(Uri(url), verb, body_, contentType);
-    // The Twitch Client-ID header leaks into Google and Spotify requests. Worth dealing with?
-    req.requestParameters.headers = headers;
-    auto res = req.waitForCompletion();
-
-    if (res.code.among!(301, 302, 307, 308) && res.location.length)
-    {
-        // Moved
-        foreach (immutable i; 0..5)
-        {
-            pre = MonoTime.currTime;
-            req = client.request(Uri(res.location), verb, body_, contentType);
-            req.requestParameters.headers = headers;
-            res = req.waitForCompletion();
-
-            if (!res.code.among!(301, 302, 307, 308) || !res.location.length) break;
-        }
-    }
-
     response.code = res.code;
-    response.error = res.codeText;
-    response.str = res.contentText;
-    immutable post = MonoTime.currTime;
-    immutable delta = (post - pre);
-    response.msecs = delta.total!"msecs";
+    response.str = cast(string)res.responseBody;  //.idup?
+
+    auto stats = res.getStats();
+    immutable totalMsecs = stats.connectTime + stats.recvTime + stats.sendTime;
+    response.msecs = totalMsecs.total!"msecs";
     return response;
 }
 
@@ -850,7 +863,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
                 ]
             }
         }
-        */
+         */
 
         if (responseJSON.type != JSONType.object)
         {
@@ -1005,7 +1018,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
                         "message": "Client ID and OAuth token do not match",
                         "status": 401
                     }
-                    */
+                     */
                     immutable errorJSON = parseJSON(response.str);
                     enum pattern = "%3d %s: %s";
 
@@ -1473,7 +1486,7 @@ in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor ga
             "name": "Elden Ring",
             "box_art_url": "https://static-cdn.jtvnw.net/ttv-boxart/512953_IGDB-{width}x{height}.jpg"
         }
-        */
+         */
 
         return Game(gameJSON["id"].str.to!uint, gameJSON["name"].str);
     }
@@ -1591,7 +1604,7 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
             url,
             caller,
             authorizationBearer,
-            HttpVerb.PATCH,
+            HTTPVerb.patch,
             cast(ubyte[])sink.data,
             "application/json");
     }
@@ -1749,7 +1762,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             url,
             caller,
             authorizationBearer,
-            HttpVerb.POST,
+            HTTPVerb.post,
             cast(ubyte[])body_,
             "application/json");
     }
@@ -2114,7 +2127,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 paginatedURL,
                 caller,
                 authorizationBearer,
-                HttpVerb.GET,
+                HTTPVerb.get,
                 cast(ubyte[])null,
                 "application/json");
             immutable responseJSON = parseJSON(response.str);
@@ -2244,7 +2257,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             url,
             caller,
             authorizationBearer,
-            HttpVerb.POST,
+            HTTPVerb.post,
             cast(ubyte[])body_,
             "application/json");
         immutable responseJSON = parseJSON(response.str);
@@ -2337,7 +2350,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             url,
             caller,
             authorizationBearer,
-            HttpVerb.PATCH,
+            HTTPVerb.patch,
             cast(ubyte[])body_,
             "application/json");
         immutable responseJSON = parseJSON(response.str);
@@ -2433,7 +2446,7 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
                 ]
             ]
         }
-        */
+         */
 
         if (responseJSON.type != JSONType.object)
         {
@@ -2463,7 +2476,7 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
                 55158,
                 1664543800
             ]
-            */
+             */
 
             immutable botAccountName = botEntryJSON.array[0].str;
 
@@ -2547,13 +2560,13 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
                     "cursor": "eyJiIjp7IkN1cnNvciI6ImV5SnpJam95TXpReExqUTBOelV3T1RZMk9URXdORFFzSW1RaU9tWmhiSE5sTENKMElqcDBjblZsZlE9PSJ9LCJhIjp7IkN1cnNvciI6IiJ9fQ"
                 }
             }
-            */
+             */
             /*
             {
                 "data": [],
                 "pagination": {}
             }
-            */
+             */
 
             auto stream = TwitchPlugin.Room.Stream(streamJSON["id"].str.to!uint);
             stream.live = true;
@@ -2688,7 +2701,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 "total": 13,
                 "points": 13
             }
-            */
+             */
 
             if (responseJSON.type != JSONType.object)
             {
@@ -2884,7 +2897,7 @@ in (channelName.length, "Tried to delete a message without providing a channel n
             url,
             caller,
             plugin.transient.authorizationBearer,
-            HttpVerb.DELETE);
+            HTTPVerb.delete_);
     }
 
     static immutable failedDeleteRetry = 100.msecs;
@@ -2971,7 +2984,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
             url,
             caller,
             plugin.transient.authorizationBearer,
-            HttpVerb.POST,
+            HTTPVerb.post,
             cast(ubyte[])body_,
             "application/json");
         immutable responseJSON = parseJSON(response.str);
@@ -3065,7 +3078,7 @@ in (userID, "Tried to send a whisper with an empty recipient ID string")
                 plugin,
                 url,caller,
                 plugin.transient.authorizationBearer,
-                HttpVerb.POST,
+                HTTPVerb.post,
                 cast(ubyte[])body_,
                 "application/json");
 

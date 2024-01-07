@@ -24,8 +24,8 @@ private:
 
 import kameloso.plugins;
 import kameloso.plugins.common.core;
+import requests.base : Response;
 import dialect.defs;
-import arsd.http2 : HttpResponse;
 import lu.container : MutexedAA;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
@@ -99,6 +99,7 @@ struct TitleLookupResult
     /++
         HTTP response status code text.
      +/
+    version(none)
     string codeText;
 
     /++
@@ -249,8 +250,8 @@ void lookupURLs(
                 (result.code == 2) ||
                 (result.code >= 400))
             {
-                enum pattern = "HTTP status <l>%03d</> <t>(%s)</> fetching <l>%s";
-                logger.warningf(pattern, result.code, result.codeText, result.url);
+                enum pattern = "HTTP status <l>%03d</> fetching <l>%s";
+                logger.warningf(pattern, result.code, result.url);
                 continue;
             }
 
@@ -452,11 +453,11 @@ void persistentQuerier(
                     slice.startsWith("youtu.be/"))
                 {
                     immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
-                    const response = sendHTTPRequestImpl(youtubeURL, caBundleFile);
+                    auto response = sendHTTPRequestImpl(youtubeURL, caBundleFile);
 
                     // Manually fill in the blannks that parseResponseIntoTitleLookupResults would have done
                     result.code = response.code;
-                    result.codeText = response.codeText;
+                    //result.codeText = response.codeText;
                     result.url = url;
 
                     if (!response.code || (response.code == 2) || (response.code >= 400))
@@ -466,7 +467,7 @@ void persistentQuerier(
                     else
                     {
                         import std.json : parseJSON;
-                        immutable youtubeJSON = parseJSON(response.contentText);
+                        immutable youtubeJSON = parseJSON(cast(string)response.responseBody);
                         result.title = decodeEntities(youtubeJSON["title"].str);
                         result.youtubeAuthor = decodeEntities(youtubeJSON["author_name"].str);
                     }
@@ -485,7 +486,7 @@ void persistentQuerier(
 
             foreach (immutable firstTime; trueThenFalse[])
             {
-                const response = sendHTTPRequestImpl(url, caBundleFile);
+                auto response = sendHTTPRequestImpl(url, caBundleFile);
                 result = parseResponseIntoTitleLookupResult(url, response);
 
                 if (!response.code || (response.code == 2))
@@ -583,7 +584,6 @@ in (url.length, "Tried to send an HTTP request without a URL")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
-    import arsd.http2 : HttpVerb;
     import std.concurrency : send;
     import core.time : msecs;
 
@@ -637,14 +637,14 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
 // sendHTTPRequestImpl
 /++
-    Fetches the contents of a URL and returns it as an [arsd.http2.HTTPResponse|HTTPResponse].
+    Fetches the contents of a URL and returns it as an [requests] `Response`.
 
     Params:
         url = URL string to fetch.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
 
     Returns:
-        An [arsd.http2.HTTPResponse|HTTPResponse] with the contents of the URL.
+        A [requests] `Response` with the contents of the URL.
 
     Throws:
         [TitleFetchException] if the URL could not be fetched.
@@ -653,57 +653,45 @@ auto sendHTTPRequestImpl(
     const string url,
     const string caBundleFile)
 {
-    import arsd.http2 : HttpClient, Uri;
-    import std.algorithm.comparison : among;
+    import kameloso.constants : KamelosoInfo, Timeout;
+    import requests.request : Request;
+    import core.time : seconds;
 
-    static HttpClient client;
+    static string[string] headers;
 
-    if (!client)
+    if (!headers.length)
     {
-        import kameloso.constants : KamelosoInfo, Timeout;
-        import core.time : seconds;
-
-        client = new HttpClient;
-        client.useHttp11 = true;
-        client.keepAlive = false;
-        client.acceptGzip = false;
-        client.defaultTimeout = Timeout.httpGET.seconds;
-        client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
-        if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
+        headers =
+        [
+            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
+        ];
     }
 
-    auto req = client.request(Uri(url));
-    auto res = req.waitForCompletion();
+    auto req = Request();
+    //req.verbosity = 1;
+    req.keepAlive = false;
+    req.timeout = Timeout.httpGET.seconds;
+    req.addHeaders(headers);
+    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
 
-    if (res.code.among!(301, 302, 307, 308))
-    {
-        // Moved
-        foreach (immutable i; 0..5)
-        {
-            req = client.request(Uri(res.location));
-            res = req.waitForCompletion();
-            if (!res.code.among!(301, 302, 307, 308) || !res.location.length) break;
-        }
-    }
-
-    return res;
+    return req.get(url);
 }
 
 
 // parseResponseIntoTitleLookupResult
 /++
-    Parses an [arsd.http2.HTTPResponse|HTTPResponse] into a [TitleLookupResult].
+    Parses a [requests] `Response` into a [TitleLookupResult].
 
     Params:
         url = URL string that was fetched.
-        res = [arsd.http2.HTTPResponse|HTTPResponse] to parse.
+        res = [requests] `Response` to parse.
 
     Returns:
         A [TitleLookupResult] with contents based on what was read from the URL.
  +/
 auto parseResponseIntoTitleLookupResult(
     const string url,
-    const HttpResponse res)
+    /*const*/ Response res)
 {
     import lu.string : advancePast;
     import arsd.dom : Document;
@@ -713,7 +701,7 @@ auto parseResponseIntoTitleLookupResult(
 
     TitleLookupResult result;
     result.code = res.code;
-    result.codeText = res.codeText;
+    //result.codeText = res.codeText;
     result.url = url;
 
     if (!result.code || (result.code == 2) || (result.code >= 400))
@@ -726,7 +714,7 @@ auto parseResponseIntoTitleLookupResult(
     {
         auto doc = new Document;
         doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
-        doc.parseGarbage(res.contentText);
+        doc.parseGarbage(cast(string)res.responseBody);
         if (!doc.title.length) return result;
 
         string slice = url;  // mutable

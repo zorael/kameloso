@@ -25,7 +25,6 @@ import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
 
 import kameloso.common : logger;
-import arsd.http2 : HttpClient;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
@@ -275,13 +274,12 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
     }
 
     // All done, fetch
-    auto client = getHTTPClient();
-    getSpotifyTokens(client, creds, code);
+    getSpotifyTokens(creds, code, plugin.state.connSettings.caBundleFile);
 
     writeln();
     logger.info("Validating...");
 
-    immutable validationJSON = validateSpotifyToken(client, creds);
+    immutable validationJSON = validateSpotifyToken(creds, plugin.state.connSettings.caBundleFile);
     if (*plugin.state.abort) return;
 
     scope(failure)
@@ -323,9 +321,9 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
     Request OAuth API tokens from Spotify.
 
     Params:
-        client = [arsd.http2.HttpClient|HttpClient] to use.
         creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
         code = Spotify authorisation code.
+        caBundleFile = Path to a `cacert.pem` bundle file.
 
     Throws:
         [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
@@ -334,12 +332,15 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-void getSpotifyTokens(HttpClient client, ref Credentials creds, const string code)
+void getSpotifyTokens(
+    ref Credentials creds,
+    const string code,
+    const string caBundleFile)
 {
-    import arsd.http2 : FormData, HttpVerb, Uri;
+    import kameloso.plugins.twitch.api : sendHTTPRequestImpl;
+    import kameloso.common : HTTPVerb;
     import std.format : format;
     import std.json : JSONType, parseJSON;
-    import std.string : indexOf;
 
     enum node = "https://accounts.spotify.com/api/token";
     enum urlPattern = node ~
@@ -348,49 +349,37 @@ void getSpotifyTokens(HttpClient client, ref Credentials creds, const string cod
         "&redirect_uri=http://localhost";
     immutable url = urlPattern.format(code);
 
-    if (!client.authorization.length) client.authorization = getSpotifyBase64Authorization(creds);
+    immutable res = sendHTTPRequestImpl(
+        url,
+        getSpotifyBase64Authorization(creds),
+        caBundleFile,
+        HTTPVerb.post,
+        cast(ubyte[])null,
+        "application/x-www-form-urlencoded");
+    immutable json = parseJSON(res.str);
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    /*
     {
-        try
-        {
-            auto req = client.request(Uri(url), HttpVerb.POST);
-            req.requestParameters.contentType = "application/x-www-form-urlencoded";
-            auto res = req.waitForCompletion();
-
-            /*
-            {
-                "access_token": "[redacted]",
-                "token_type": "Bearer",
-                "expires_in": 3600,
-                "refresh_token": "[redacted]",
-                "scope": "playlist-modify-private playlist-modify-public"
-            }
-            */
-
-            immutable json = parseJSON(res.contentText);
-
-            if (json.type != JSONType.object)
-            {
-                throw new UnexpectedJSONException("Wrong JSON type in token request response", json);
-            }
-
-            if (immutable errorJSON = "error" in json)
-            {
-                throw new ErrorJSONException(errorJSON.str, *errorJSON);
-            }
-
-            creds.spotifyAccessToken = json["access_token"].str;
-            creds.spotifyRefreshToken = json["refresh_token"].str;
-            return;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        "access_token": "[redacted]",
+        "token_type": "Bearer",
+        "expires_in": 3600,
+        "refresh_token": "[redacted]",
+        "scope": "playlist-modify-private playlist-modify-public"
     }
+     */
+
+    if (json.type != JSONType.object)
+    {
+        throw new UnexpectedJSONException("Wrong JSON type in token request response", json);
+    }
+
+    if (immutable errorJSON = "error" in json)
+    {
+        throw new ErrorJSONException(errorJSON.str, *errorJSON);
+    }
+
+    creds.spotifyAccessToken = json["access_token"].str;
+    creds.spotifyRefreshToken = json["refresh_token"].str;
 }
 
 
@@ -399,7 +388,7 @@ void getSpotifyTokens(HttpClient client, ref Credentials creds, const string cod
     Refreshes the OAuth API token in the passed Spotify credentials.
 
     Params:
-        client = [arsd.http2.HttpClient|HttpClient] to use.
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
 
     Throws:
@@ -409,9 +398,11 @@ void getSpotifyTokens(HttpClient client, ref Credentials creds, const string cod
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-void refreshSpotifyToken(HttpClient client, ref Credentials creds)
+void refreshSpotifyToken(TwitchPlugin plugin, ref Credentials creds)
+in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
 {
-    import arsd.http2 : HttpVerb, Uri;
+    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.common : HTTPVerb;
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
@@ -421,48 +412,37 @@ void refreshSpotifyToken(HttpClient client, ref Credentials creds)
         "&grant_type=refresh_token";
     immutable url = urlPattern.format(creds.spotifyRefreshToken);
 
-    /*if (!client.authorization.length)*/ client.authorization = getSpotifyBase64Authorization(creds);
+    immutable res = sendHTTPRequest(
+        plugin,
+        url,
+        __FUNCTION__,
+        getSpotifyBase64Authorization(creds),
+        HTTPVerb.post,
+        cast(ubyte[])null,
+        "application/x-www-form-urlencoded");
+    immutable json = parseJSON(res.str);
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    /*
     {
-        try
-        {
-            auto req = client.request(Uri(url), HttpVerb.POST);
-            req.requestParameters.contentType = "application/x-www-form-urlencoded";
-            auto res = req.waitForCompletion();
-
-            /*
-            {
-                "access_token": "[redacted]",
-                "token_type": "Bearer",
-                "expires_in": 3600,
-                "scope": "playlist-modify-private playlist-modify-public"
-            }
-            */
-
-            immutable json = parseJSON(res.contentText);
-
-            if (json.type != JSONType.object)
-            {
-                throw new UnexpectedJSONException("Wrong JSON type in token refresh response", json);
-            }
-
-            if (immutable errorJSON = "error" in json)
-            {
-                throw new ErrorJSONException(errorJSON.str, *errorJSON);
-            }
-
-            creds.spotifyAccessToken = json["access_token"].str;
-            // refreshToken is not present and stays the same as before
-            return;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        "access_token": "[redacted]",
+        "token_type": "Bearer",
+        "expires_in": 3600,
+        "scope": "playlist-modify-private playlist-modify-public"
     }
+     */
+
+    if (json.type != JSONType.object)
+    {
+        throw new UnexpectedJSONException("Wrong JSON type in token refresh response", json);
+    }
+
+    if (immutable errorJSON = "error" in json)
+    {
+        throw new ErrorJSONException(errorJSON.str, *errorJSON);
+    }
+
+    creds.spotifyAccessToken = json["access_token"].str;
+    // refreshToken is not present and stays the same as before
 }
 
 
@@ -517,8 +497,11 @@ package auto addTrackToSpotifyPlaylist(
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a fiber")
 {
+    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.common : HTTPVerb;
     import std.algorithm.searching : endsWith;
     import std.format : format;
+    import std.json : JSONType, parseJSON;
 
     // https://api.spotify.com/v1/playlists/0nqAHNphIb3Qhh5CmD7fg5/tracks?uris=spotify:track:594WPgqPOOy0PqLvScovNO
 
@@ -539,89 +522,59 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
         authorizationBearer = "Bearer " ~ creds.spotifyAccessToken;
     }
 
-    immutable ubyte[] data;
-    /*immutable*/ int id = plugin.responseBucket.uniqueKey;  // normal int needed for concurrency message
+    immutable res = sendHTTPRequest(
+        plugin,
+        url,
+        __FUNCTION__,
+        authorizationBearer,
+        HTTPVerb.post,
+        cast(ubyte[])null,
+        "application/json");
+    immutable json = parseJSON(res.str);
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    /*
     {
-        try
-        {
-            import kameloso.plugins.twitch.api : waitForQueryResponse;
-            import kameloso.plugins.common.delayawait : delay;
-            import kameloso.thread : ThreadMessage;
-            import arsd.http2 : HttpVerb;
-            import std.concurrency : send;
-            import std.json : JSONType, parseJSON;
-            import core.time : msecs;
-
-            plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
-            plugin.getNextWorkerTid().send(
-                id,
-                url,
-                authorizationBearer,
-                HttpVerb.POST,
-                data,
-                string.init);
-
-            static immutable guesstimatePeriodToWaitForCompletion = 300.msecs;
-            delay(plugin, guesstimatePeriodToWaitForCompletion, Yes.yield);
-            immutable response = waitForQueryResponse(plugin, id);
-
-            /*
-            {
-                "snapshot_id" : "[redacted]"
-            }
-            */
-            /*
-            {
-                "error": {
-                    "status": 401,
-                    "message": "The access token expired"
-                }
-            }
-            */
-
-            immutable json = parseJSON(response.str);
-
-            if (json.type != JSONType.object)
-            {
-                throw new UnexpectedJSONException("Wrong JSON type in playlist append response", json);
-            }
-
-            immutable errorJSON = "error" in json;
-            if (!errorJSON) return json;  // Success
-
-            if (immutable messageJSON = "message" in *errorJSON)
-            {
-                if (messageJSON.str == "The access token expired")
-                {
-                    if (recursing)
-                    {
-                        throw new InvalidCredentialsException(messageJSON.str, *errorJSON);
-                    }
-                    else
-                    {
-                        refreshSpotifyToken(getHTTPClient(), creds);
-                        saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-                        return addTrackToSpotifyPlaylist(plugin, creds, trackID, Yes.recursing);
-                    }
-                }
-
-                throw new ErrorJSONException(messageJSON.str, *errorJSON);
-            }
-
-            // If we're here, the above didn't match
-            throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
+        "snapshot_id" : "[redacted]"
+    }
+     */
+    /*
+    {
+        "error": {
+            "status": 401,
+            "message": "The access token expired"
         }
     }
+     */
 
-    assert(0, "Unreachable");
+    if (json.type != JSONType.object)
+    {
+        throw new UnexpectedJSONException("Wrong JSON type in playlist append response", json);
+    }
+
+    immutable errorJSON = "error" in json;
+    if (!errorJSON) return json;  // Success
+
+    if (immutable messageJSON = "message" in *errorJSON)
+    {
+        if (messageJSON.str == "The access token expired")
+        {
+            if (recursing)
+            {
+                throw new InvalidCredentialsException(messageJSON.str, *errorJSON);
+            }
+            else
+            {
+                refreshSpotifyToken(plugin, creds);
+                saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+                return addTrackToSpotifyPlaylist(plugin, creds, trackID, Yes.recursing);
+            }
+        }
+
+        throw new ErrorJSONException(messageJSON.str, *errorJSON);
+    }
+
+    // If we're here, the above didn't match
+    throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
 }
 
 
@@ -630,6 +583,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
     Fetches information about a Spotify track by its ID and returns the JSON response.
 
     Params:
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
         trackID = Spotify track ID string.
 
@@ -643,51 +597,45 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-package auto getSpotifyTrackByID(const Credentials creds, const string trackID)
+package auto getSpotifyTrackByID(
+    TwitchPlugin plugin,
+    const Credentials creds,
+    const string trackID)
+in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
 {
-    import arsd.http2 : Uri;
+    import kameloso.plugins.twitch.api : sendHTTPRequest;
     import std.algorithm.searching : endsWith;
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
+    static string authorizationBearer;
+
+    if (!authorizationBearer.length || !authorizationBearer.endsWith(creds.spotifyAccessToken))
+    {
+        authorizationBearer = "Bearer " ~ creds.spotifyAccessToken;
+    }
+
     enum urlPattern = "https://api.spotify.com/v1/tracks/%s";
     immutable url = urlPattern.format(trackID);
-    auto client = getHTTPClient();
 
-    if (!client.authorization.length || !client.authorization.endsWith(creds.spotifyAccessToken))
+    immutable res = sendHTTPRequest(
+        plugin,
+        url,
+        __FUNCTION__,
+        getSpotifyBase64Authorization(creds));
+    immutable json = parseJSON(res.str);
+
+    if (json.type != JSONType.object)
     {
-        client.authorization = "Bearer " ~ creds.spotifyAccessToken;
+        throw new UnexpectedJSONException("Wrong JSON type in track request response", json);
     }
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    if (const errorJSON = "error" in json)
     {
-        try
-        {
-            auto req = client.request(Uri(url));
-            auto res = req.waitForCompletion();
-            auto json = parseJSON(res.contentText);
-
-            if (json.type != JSONType.object)
-            {
-                throw new UnexpectedJSONException("Wrong JSON type in track request response", json);
-            }
-
-            if (const errorJSON = "error" in json)
-            {
-                throw new ErrorJSONException(errorJSON.str, *errorJSON);
-            }
-
-            return json;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        throw new ErrorJSONException(errorJSON.str, *errorJSON);
     }
 
-    assert(0, "Unreachable");
+    return json;
 }
 
 
@@ -697,8 +645,8 @@ package auto getSpotifyTrackByID(const Credentials creds, const string trackID)
     information, returning the JSON received.
 
     Params:
-        client = [arsd.http2.HttpClient|HttpClient] to use.
         creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
+        caBundleFile = Path to a `cacert.pem` bundle file.
 
     Returns:
         The server [std.json.JSONValue|JSONValue] response.
@@ -710,67 +658,55 @@ package auto getSpotifyTrackByID(const Credentials creds, const string trackID)
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-auto validateSpotifyToken(HttpClient client, ref Credentials creds)
+auto validateSpotifyToken(ref Credentials creds, const string caBundleFile)
 {
-    import arsd.http2 : Uri;
+    import kameloso.plugins.twitch.api : sendHTTPRequestImpl;
     import std.json : JSONType, parseJSON;
 
     enum url = "https://api.spotify.com/v1/me";
-    client.authorization = "Bearer " ~ creds.spotifyAccessToken;
+    immutable authorizationBearer = "Bearer " ~ creds.spotifyAccessToken;
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    immutable res = sendHTTPRequestImpl(
+        url,
+        authorizationBearer,
+        caBundleFile);
+    immutable json = parseJSON(res.str);
+
+    /*
     {
-        try
-        {
-            auto req = client.request(Uri(url));
-            auto res = req.waitForCompletion();
-            immutable json = parseJSON(res.contentText);
-
-            /*
-            {
-                "error": {
-                    "message": "The access token expired",
-                    "status": 401
-                }
-            }
-            */
-            /*
-            {
-                "display_name": "zorael",
-                "external_urls": {
-                    "spotify": "https:\/\/open.spotify.com\/user\/zorael"
-                },
-                "followers": {
-                    "href": null,
-                    "total": 0
-                },
-                "href": "https:\/\/api.spotify.com\/v1\/users\/zorael",
-                "id": "zorael",
-                "images": [],
-                "type": "user",
-                "uri": "spotify:user:zorael"
-            }
-            */
-
-            if (json.type != JSONType.object)
-            {
-                throw new UnexpectedJSONException("Wrong JSON type in token validation response", json);
-            }
-
-            if (immutable errorJSON = "error" in json)
-            {
-                throw new ErrorJSONException(errorJSON.str, *errorJSON);
-            }
-
-            return json;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
+        "error": {
+            "message": "The access token expired",
+            "status": 401
         }
     }
+     */
+    /*
+    {
+        "display_name": "zorael",
+        "external_urls": {
+            "spotify": "https:\/\/open.spotify.com\/user\/zorael"
+        },
+        "followers": {
+            "href": null,
+            "total": 0
+        },
+        "href": "https:\/\/api.spotify.com\/v1\/users\/zorael",
+        "id": "zorael",
+        "images": [],
+        "type": "user",
+        "uri": "spotify:user:zorael"
+    }
+     */
 
-    assert(0, "Unreachable");
+    if (json.type != JSONType.object)
+    {
+        throw new UnexpectedJSONException("Wrong JSON type in token validation response", json);
+    }
+
+    if (immutable errorJSON = "error" in json)
+    {
+        throw new ErrorJSONException(errorJSON.str, *errorJSON);
+    }
+
+    return json;
 }

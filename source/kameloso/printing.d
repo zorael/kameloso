@@ -24,7 +24,7 @@
 -- IRCServer
    string address                "irc.libera.chat"(16)
    ushort port                    6667
-*/
+ */
     ---
 
     Distance between types, member names and member values are deduced automatically
