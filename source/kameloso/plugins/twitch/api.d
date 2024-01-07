@@ -309,6 +309,8 @@ void persistentQuerier(
         immutable(ubyte)[] body_,
         const string contentType) scope
     {
+        scope(failure) responseBucket.remove(id);
+
         version(BenchmarkHTTPRequests)
         {
             import core.time : MonoTime;
