@@ -396,14 +396,17 @@ Pid exec(
         }
     }
 
-    static auto applyPlaceholders(const string input)
+    version(Windows)
     {
-        import kameloso.constants : KamelosoDefaultChars;
-        import std.array : replace;
+        static auto applyPlaceholders(const string input)
+        {
+            import kameloso.constants : KamelosoDefaultChars;
+            import std.array : replace;
 
-        return input
-            .replace('"', cast(char)KamelosoDefaultChars.doublequotePlaceholder)
-            .replace('#', cast(char)KamelosoDefaultChars.octothorpePlaceholder);
+            return input
+                .replace('"', cast(char)KamelosoDefaultChars.doublequotePlaceholder)
+                .replace('#', cast(char)KamelosoDefaultChars.octothorpePlaceholder);
+        }
     }
 
     // Add the reexec count and channel override arguments
@@ -411,7 +414,18 @@ Pid exec(
 
     foreach (immutable channelName; channels)
     {
-        args ~= text("--internal-channel-override=\"", applyPlaceholders(channelName), '"');
+        version(Posix)
+        {
+            args ~= text("--internal-channel-override=", channelName);
+        }
+        else version(Windows)
+        {
+            args ~= text("--internal-channel-override=\"", applyPlaceholders(channelName), '"');
+        }
+        else
+        {
+            static assert(0, "Unsupported platform, please file a bug.");
+        }
     }
 
     version(Posix)
