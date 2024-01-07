@@ -96,6 +96,8 @@ The program can be built using the [**D**](https://dlang.org) reference compiler
 
 You will need a compiler based on D version **2.086** or later (May 2019). For **ldc** you require a minimum of version **1.18**, while for **gdc** you broadly need release series **12**.
 
+Some older compilers exhibit bugs that may cause compilation to fail. If you run into errors when building, try updating to a newer compiler version.
+
 If your repositories (or other software sources) don't have compilers recent enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice. (**gdc** is not available via this script.)
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it is included in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
@@ -180,7 +182,7 @@ Settings not touched will keep their values.
 
 #### Display settings
 
-The bot uses [terminal ANSI colouring](https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit) and text colours are by default set to go well with dark terminal backgrounds. If you instead have a bright background, text may be difficult to read (e.g. white on white), depending on your terminal emulator. If so, try passing the `--bright` argument, or modify the configuration file to enable `brightTerminal` under `[Core]` and make the setting persistent. If only some colours work, try limiting colouring to only those by disabling `extendedColours`, also under `[Core]`. If one or more colours are still too dark or too bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
+The bot uses [terminal ANSI colouring](https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit) and text colours are by default set to go well with dark terminal backgrounds. If you instead have a bright background, text may be difficult to read (e.g. white on white), depending on your terminal emulator. If so, try passing the `--bright` argument, or modify the configuration file to enable `brightTerminal` under `[Core]` to make the setting persistent. If only some colours work, try limiting colouring to only those by disabling `extendedColours`, also under `[Core]`. If one or more colours are still too dark or too bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
 
 An alternative is to disable colours entirely with `--color=never`.
 
@@ -221,13 +223,13 @@ Additionally, see [this section about permissions](#except-nothing-happens) if n
       <you> !seen MrOffline
  <kameloso> I last saw MrOffline 1 hour and 34 minutes ago.
 
- <MrOnline> !note
+ <MsOnline> !note
  <kameloso> Usage: !note [nickname] [note text]
- <MrOnline> !note MrOffline About the thing you mentioned, yeah no
+ <MsOnline> !note MrOffline About the thing you mentioned, yeah no
  <kameloso> Note added.
- MrOnline left #channel
+ MsOnline left #channel
 MrOffline joined #channel
- <kameloso> MrOffline! MrOnline left note 4 hours and 28 minutes ago: About the thing you mentioned, yeah no
+ <kameloso> MrOffline! MsOnline left note 4 hours and 28 minutes ago: About the thing you mentioned, yeah no
 
       <you> !operator add bob
  <kameloso> Added BOB as an operator in #channel.
@@ -398,7 +400,7 @@ It should now start a terminal wizard requesting a new **authorisation token**, 
 
 **Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different **bot user** instead, open up a private/incognito window, log into Twitch normally *with the bot account* there, copy [**this link**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true), then follow it in that browser window instead. After that, refer to the terminal instructions again.
 
-After obtaining a token it will save it to your configuration file and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in your chat in your browser, and it should show in your terminal. If there were errors, snags, or anything simply unintuitive, [please file an issue](https://github.com/zorael/kameloso/issues/new).
+After obtaining a token it will save it to your configuration file and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in your chat in your browser, and it should show in your terminal. If there were errors or snags, or if something was simply unintuitive, [please file an issue](https://github.com/zorael/kameloso/issues/new).
 
 > If you don't like the terminal colours, `--color=never` disables them.
 
@@ -469,7 +471,7 @@ Assuming a prefix of `!`, commands to test are:
 * `!setgame`
 * `!commercial`
 * `!shoutout`
-* `!startpoll`/`!endpoll` (*highly* experimental, need help from affiliate)
+* `!startpoll`/`!endpoll` (*highly* experimental and unlikely to work unwil we can get some live testing, which requires the help of a Twitch affiliate)
 * `!subs`
 
 ...alongside `!oneliner`, `!counter`, `!timer`, `!poll` (chat poll), `!time`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
@@ -531,7 +533,6 @@ If you're doing everything right and you still get permissions errors when attem
 * [`dialect`](https://github.com/zorael/dialect) ([dub](https://code.dlang.org/packages/dialect))
 * [`lu`](https://github.com/zorael/lu) ([dub](https://code.dlang.org/packages/lu))
 * [`requests`](https://github.com/ikod/dlang-requests) ([dub](https://code.dlang.org/packages/requests))
-* [`arsd`](https://github.com/adamdruppe/arsd) ([dub](https://code.dlang.org/packages/arsd-official))
 
 ## License
 
@@ -541,6 +542,5 @@ This project is licensed under the **Boost Software License 1.0** - see the [LIC
 
 * [Kamelåså](https://youtu.be/ykj3Kpm3O0g)
 * [ikod](https://github.com/ikod) for [`dlang-requests`](https://github.com/ikod/dlang-requests)
-* [Adam D. Ruppe](https://github.com/adamdruppe) for [`arsd`](https://github.com/adamdruppe/arsd)
 * [`#d` on Libera.Chat](irc://irc.libera.chat:6697/#d)
 * [IRC Definition Files](http://defs.ircdocs.horse) and [`#ircdocs` on Libera.Chat](irc://irc.libera.chat:6667/#ircdocs)
