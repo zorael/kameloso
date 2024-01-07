@@ -2040,17 +2040,19 @@ void onCommandNuke(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
                 return false;
             }
         }
-        /*catch (ErrorJSONException e)
+        catch (ErrorJSONException e)
         {
+            logger.error(e.msg);
+
             if (e.json["message"].str == "You cannot delete the broadcaster's messages.")
             {
                 // Should never happen as we filter by class_ before calling this...
-                return true;
+                return false;
             }
 
             version(PrintStacktraces) printStacktrace(e);
             return false;
-        }*/
+        }
         catch (Exception e)
         {
             version(PrintStacktraces) printStacktrace(e);
