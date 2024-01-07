@@ -383,17 +383,27 @@ void persistentQuerier(
 
     while (!halt)
     {
-        receive(
-            &sendWithBody,
-            &sendWithoutBody,
-            &onQuitMessage,
-            (Variant v) scope
-            {
-                import std.stdio : stdout, writeln;
-                writeln("Twitch worker received unknown Variant: ", v);
-                stdout.flush();
-            }
-        );
+        import std.stdio : stdout, writeln;
+
+        try
+        {
+            receive(
+                &sendWithBody,
+                &onQuitMessage,
+                (Variant v) scope
+                {
+                    writeln("Twitch worker received unknown Variant: ", v);
+                    stdout.flush();
+                }
+            );
+        }
+        catch (Exception _)
+        {
+            // Probably a requests exception
+            /*writeln("Twitch worker caught exception: ", e.msg);
+            version(PrintStacktraces) writeln(e);
+            stdout.flush();*/
+        }
     }
 }
 
