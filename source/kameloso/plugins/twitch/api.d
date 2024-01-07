@@ -361,21 +361,6 @@ void persistentQuerier(
             contentType);
     }
 
-    void sendWithoutBody(
-        int id,
-        string url,
-        string authToken) scope
-    {
-        // Shorthand
-        invokeSendHTTPRequestImpl(
-            id,
-            url,
-            authToken,
-            HTTPVerb.get,
-            cast(immutable(ubyte)[])null,
-            string.init);
-    }
-
     void onQuitMessage(bool) scope
     {
         halt = true;
@@ -1262,7 +1247,13 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     ---
     immutable id = plugin.responseBucket.uniqueKey;
     immutable url = "https://api.twitch.tv/helix/users?login=zorael";
-    plugin.transient.getNextWorkerTid().send(id, url, plugin.transient.authorizationBearer);
+    plugin.getNextWorkerTid().send(
+        id,
+        url,
+        plugin.transient.authorizationBearer,
+        HTTPVerb.get,
+        cast(ubyte[])null,
+        string.init);
 
     delay(plugin, plugin.transient.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id, url);

@@ -508,7 +508,7 @@ if (isSomeFunction!Fn)
 
     for (size_t i = 0; i < line.length; ++i)
     {
-		if (line[i] == tokenCharacter)
+        if (line[i] == tokenCharacter)
         {
             immutable spacePos = line.indexOf(' ', i);
             immutable end = (spacePos == -1) ? line.length : spacePos;
