@@ -231,6 +231,62 @@ public:
 
         return oneliner;
     }
+
+    // resolveOnelinerTypestring
+    /++
+        Resolves a string to a [OnelinerType].
+
+        Params:
+            input = String to resolve.
+            type = [OnelinerType] to store the resolved type in.
+
+        Returns:
+            Whether or not the string resolved to a [OnelinerType].
+     +/
+    static auto resolveOnelinerTypestring(
+        const string input,
+        out OnelinerType type)
+    {
+        switch (input)
+        {
+        case "random":
+        case "rnd":
+        case "rng":
+            type = OnelinerType.random;
+            return true;
+
+        case "ordered":
+        case "order":
+        case "sequential":
+        case "seq":
+        case "sequence":
+            type = OnelinerType.ordered;
+            return true;
+
+        default:
+            return false;
+        }
+    }
+
+    // stripPrefix
+    /++
+        Strips the prefix from a trigger word.
+
+        Params:
+            trigger = Trigger word to strip the prefix from.
+            prefix = Prefix to strip.
+
+        Returns:
+            The trigger word with the prefix stripped, or the original trigger
+            word if it didn't start with the prefix.
+     +/
+    static auto stripPrefix(const string trigger, const string prefix)
+    {
+        import std.algorithm.searching : startsWith;
+        return trigger.startsWith(prefix) ?
+            trigger[prefix.length..$] :
+            trigger;
+    }
 }
 
 
@@ -409,6 +465,10 @@ void onCommandModifyOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     case "add":
     case "edit":
         return handleAddToOneliner(plugin, event, slice, verb);
+
+    case "modify":
+    case "mod":
+        return handleModifyOneliner(plugin, event, slice);
 
     case "del":
     case "remove":
@@ -599,6 +659,98 @@ void handleNewOneliner(
     }
 
     defer!Payload(plugin, &addNewOnelinerDg);
+}
+
+
+// handleModifyOneliner
+/++
+    Modifies an existing oneliner.
+
+    Params:
+        plugin = The current [OnelinerPlugin].
+        event = The [dialect.defs.IRCEvent|IRCEvent] that requested the modification.
+        slice = Relevant slice of the original request string.
+ +/
+void handleModifyOneliner(
+    OnelinerPlugin plugin,
+    const ref IRCEvent event,
+    /*const*/ string slice)
+{
+    import lu.conv : Enum;
+    import lu.string : SplitResults, splitInto;
+    import std.format : format;
+    import std.uni : toLower;
+
+    void sendNewUsage()
+    {
+        enum pattern = "Usage: <b>%s%s modify<b> [trigger] [type] [optional cooldown]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendMustBeRandomOrOrdered()
+    {
+        enum message = "Oneliner type must be one of <b>random<b> or <b>ordered<b>";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendCooldownMustBeValidPositiveDurationString()
+    {
+        enum message = "Oneliner cooldown must be in the hour-minute-seconds form of <b>*h*m*s<b> " ~
+            "and may not have negative values.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoSuchOneliner(const string trigger)
+    {
+        enum pattern = "No such oneliner: <b>%s%s<b>";
+        immutable message = pattern.format(plugin.state.settings.prefix, trigger);
+        chan(plugin.state, event.channel, message);
+    }
+
+    string trigger;  // mutable
+    string typestring;  // ditto
+    string cooldownString;  // ditto
+    cast(void)slice.splitInto(trigger, typestring, cooldownString);
+
+    if (!typestring.length) return sendNewUsage();
+
+    auto channelOneliners = event.channel in plugin.onelinersByChannel;
+    if (!channelOneliners) return sendNoSuchOneliner(trigger);
+
+    trigger = Oneliner.stripPrefix(trigger, plugin.state.settings.prefix).toLower;
+
+    auto oneliner = trigger in *channelOneliners;
+    if (!oneliner) return sendNoSuchOneliner(trigger);
+
+    Oneliner.OnelinerType type;
+    immutable success = Oneliner.resolveOnelinerTypestring(typestring, type);
+    if (!success) return sendMustBeRandomOrOrdered();
+
+    if (cooldownString.length)
+    {
+        import kameloso.time : DurationStringException, asAbbreviatedDuration;
+
+        try
+        {
+            immutable cooldown = cast(int)cooldownString.asAbbreviatedDuration.total!"seconds";
+            if (cooldown < 0) return sendCooldownMustBeValidPositiveDurationString();
+            oneliner.cooldown = cooldown;
+        }
+        catch (DurationStringException _)
+        {
+            return sendCooldownMustBeValidPositiveDurationString();
+        }
+    }
+
+    oneliner.type = type;
+
+    enum typeChangePattern = "Oneliner <l>%s</> is now type <l>%s</> (cooldown <l>%d</> seconds)";
+    logger.infof(
+        typeChangePattern,
+        trigger,
+        Enum!(Oneliner.OnelinerType).toString(oneliner.type),
+        oneliner.cooldown);
 }
 
 
