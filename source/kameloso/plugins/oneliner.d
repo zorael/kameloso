@@ -305,7 +305,7 @@ public:
 void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
-    import kameloso.string : replaceFromAA, replaceRandom;
+    import kameloso.string : replaceRandom;
     import lu.string : advancePast, splitWithQuotes;
     import std.algorithm.searching : startsWith;
     import std.array : replace;
@@ -353,54 +353,46 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     }
 
     immutable args = slice.splitWithQuotes();
-    static @safe string delegate()[string] aa;
 
-    if (!aa.length)
+    string line = oneliner
+        .getResponse()
+        .replace("$channel", event.channel)
+        .replace("$sender", nameOf(event.sender))
+        .replace("$bot", nameOf(plugin, plugin.state.client.nickname))
+        .replace("$senderNickname", event.sender.nickname)
+        .replace("$botNickname", plugin.state.client.nickname)
+        .replace("$args", slice)
+        .replace("$arg0", trigger)
+        .replace("$arg1name", (args.length >= 1) ? nameOf(plugin, args[0]) : string.init)
+        .replace("$arg2name", (args.length >= 2) ? nameOf(plugin, args[1]) : string.init)
+        .replace("$arg3name", (args.length >= 3) ? nameOf(plugin, args[2]) : string.init)
+        .replace("$arg4name", (args.length >= 4) ? nameOf(plugin, args[3]) : string.init)
+        .replace("$arg5name", (args.length >= 5) ? nameOf(plugin, args[4]) : string.init)
+        .replace("$arg6name", (args.length >= 6) ? nameOf(plugin, args[5]) : string.init)
+        .replace("$arg7name", (args.length >= 7) ? nameOf(plugin, args[6]) : string.init)
+        .replace("$arg8name", (args.length >= 8) ? nameOf(plugin, args[7]) : string.init)
+        .replace("$arg9name", (args.length >= 9) ? nameOf(plugin, args[8]) : string.init)
+        .replace("$arg1", (args.length >= 1) ? args[0] : string.init)
+        .replace("$arg2", (args.length >= 2) ? args[1] : string.init)
+        .replace("$arg3", (args.length >= 3) ? args[2] : string.init)
+        .replace("$arg4", (args.length >= 4) ? args[3] : string.init)
+        .replace("$arg5", (args.length >= 5) ? args[4] : string.init)
+        .replace("$arg6", (args.length >= 6) ? args[5] : string.init)
+        .replace("$arg7", (args.length >= 7) ? args[6] : string.init)
+        .replace("$arg8", (args.length >= 8) ? args[7] : string.init)
+        .replace("$arg9", (args.length >= 9) ? args[8] : string.init)
+        .replaceRandom();
+
+    version(TwitchSupport)
     {
-        aa =
-        [
-            "$channel"  : () => event.channel,
-            "$sender"   : () => nameOf(event.sender),
-            "$bot"      : () => nameOf(plugin, plugin.state.client.nickname),
-            "$senderNickname" : () => event.sender.nickname,
-            "$botNickname" : () => plugin.state.client.nickname,
-            "$args"     : () => slice,
-            "$arg0"     : () => trigger,
-            "$arg1"     : () => (args.length >= 1) ? args[0] : string.init,
-            "$arg2"     : () => (args.length >= 2) ? args[1] : string.init,
-            "$arg3"     : () => (args.length >= 3) ? args[2] : string.init,
-            "$arg4"     : () => (args.length >= 4) ? args[3] : string.init,
-            "$arg5"     : () => (args.length >= 5) ? args[4] : string.init,
-            "$arg6"     : () => (args.length >= 6) ? args[5] : string.init,
-            "$arg7"     : () => (args.length >= 7) ? args[6] : string.init,
-            "$arg8"     : () => (args.length >= 8) ? args[7] : string.init,
-            "$arg9"     : () => (args.length >= 9) ? args[8] : string.init,
-            "$arg1name" : () => (args.length >= 1) ? nameOf(plugin, args[0]) : string.init,
-            "$arg2name" : () => (args.length >= 2) ? nameOf(plugin, args[1]) : string.init,
-            "$arg3name" : () => (args.length >= 3) ? nameOf(plugin, args[2]) : string.init,
-            "$arg4name" : () => (args.length >= 4) ? nameOf(plugin, args[3]) : string.init,
-            "$arg5name" : () => (args.length >= 5) ? nameOf(plugin, args[4]) : string.init,
-            "$arg6name" : () => (args.length >= 6) ? nameOf(plugin, args[5]) : string.init,
-            "$arg7name" : () => (args.length >= 7) ? nameOf(plugin, args[6]) : string.init,
-            "$arg8name" : () => (args.length >= 8) ? nameOf(plugin, args[7]) : string.init,
-            "$arg9name" : () => (args.length >= 9) ? nameOf(plugin, args[8]) : string.init,
-        ];
-
-        version(TwitchSupport)
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
-            {
-                aa["$streamer"] = () => nameOf(plugin, event.channel[1..$]);
-                aa["$streamerAccount"] = () => event.channel[1..$];
-            }
+            line = line
+                .replace("$streamer", nameOf(plugin, event.channel[1..$]))
+                .replace("$streamerAccount", event.channel[1..$]);
         }
-
-        aa.rehash();
     }
 
-    immutable line = oneliner
-        .getResponse()
-        .replaceFromAA(aa);
     immutable target = slice.startsWith('@') ? slice[1..$] : slice;
     immutable message = target.length ?
         text('@', nameOf(plugin, target), ' ', line) :

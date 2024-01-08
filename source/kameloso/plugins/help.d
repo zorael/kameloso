@@ -235,27 +235,15 @@ void sendCommandHelpImpl(
 
     auto getHumanlyReadable(const string syntax)
     {
-        import kameloso.string : replaceFromAA;
         import lu.string : strippedLeft;
-
-        static @safe string delegate()[string] aa;
-
-        if (!aa.length)
-        {
-            aa =
-            [
-                "$command"  : () => commandString,
-                "$bot"      : () => plugin.state.client.nickname,
-                "$prefix"   : () => plugin.state.settings.prefix,
-                "$nickname" : () => event.sender.nickname,
-                "$header"   : () => string.init,
-            ];
-
-            aa.rehash();
-        }
+        import std.array : replace;
 
         return syntax
-            .replaceFromAA(aa)
+            .replace("$command", commandString)
+            .replace("$bot", plugin.state.client.nickname)
+            .replace("$prefix", plugin.state.settings.prefix)
+            .replace("$nickname", event.sender.nickname)
+            .replace("$header", string.init)
             .strippedLeft;
     }
 
