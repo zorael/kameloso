@@ -568,10 +568,10 @@ void handleModifyTimer(
     /*const*/ string slice)
 {
     import lu.string : splitInto;
+    import std.format : format;
 
     void sendModifyUsage()
     {
-        import std.format : format;
         enum pattern = "Usage: <b>%s%s modify<b> [name] [type] [condition] [message count threshold] " ~
             "[time threshold] [stagger message count] [stagger time]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
@@ -600,20 +600,22 @@ void handleModifyTimer(
     {
         import lu.conv : Enum;
 
-        enum pattern = "Timer <l>%s</> modified to " ~
-            "type <l>%s</>, " ~
-            "condition <l>%s</>, " ~
-            "message count threshold <l>%d</>, " ~
-            "time threshold <l>%s</>, " ~
-            "stagger message count <l>%d</>, " ~
-            "stagger time <l>%s";
-        logger.infof(pattern,
+        enum pattern = "Timer <b>%s<b> modified to " ~
+            "type <b>%s<b>, " ~
+            "condition <b>%s<b>, " ~
+            "message count threshold <b>%d<b>, " ~
+            "time threshold <b>%s<b>, " ~
+            "stagger message count <b>%d<b>, " ~
+            "stagger time <b>%s<b>";
+        immutable message = pattern.format(
+            timer.name,
             Enum!(Timer.TimerType).toString(timer.type),
             Enum!(Timer.TimerCondition).toString(timer.condition),
             timer.messageCountThreshold,
             timer.timeThreshold,
             timer.messageCountStagger,
             timer.timeStagger);
+        chan(plugin.state, event.channel, message);
     }
 
     string name;
