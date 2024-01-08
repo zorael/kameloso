@@ -290,16 +290,12 @@ void persistentQuerier(
     const string caBundleFile)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : receive;
-    import std.variant : Variant;
 
     version(Posix)
     {
         import kameloso.thread : setThreadName;
         setThreadName("twitchworker");
     }
-
-    bool halt;
 
     void invokeSendHTTPRequestImpl(
         const int id,
@@ -361,6 +357,8 @@ void persistentQuerier(
             contentType);
     }
 
+    bool halt;
+
     void onQuitMessage(bool) scope
     {
         halt = true;
@@ -368,7 +366,8 @@ void persistentQuerier(
 
     while (!halt)
     {
-        import std.stdio : stdout, writeln;
+        import std.concurrency : receive;
+        import std.variant : Variant;
 
         try
         {
@@ -377,6 +376,7 @@ void persistentQuerier(
                 &onQuitMessage,
                 (Variant v) scope
                 {
+                    import std.stdio : stdout, writeln;
                     writeln("Twitch worker received unknown Variant: ", v);
                     stdout.flush();
                 }
