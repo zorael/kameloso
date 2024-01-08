@@ -416,10 +416,11 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
             .description("Manages oneliners.")
             .addSyntax("$command new [trigger] [type] [optional cooldown]")
             .addSyntax("$command add [trigger] [text]")
+            .addSyntax("$command modify [trigger] [type] [optional cooldown]")
             .addSyntax("$command edit [trigger] [position] [new text]")
             .addSyntax("$command insert [trigger] [position] [text]")
             .addSyntax("$command del [trigger] [optional position]")
-            .addSyntax("$command list")
+            .addSyntax("$command list [optional trigger]")
     )
     .addCommand(
         IRCEventHandler.Command()
@@ -438,7 +439,7 @@ void onCommandModifyOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     {
         import std.format : format;
 
-        enum pattern = "Usage: <b>%s%s<b> [new|insert|add|edit|del|list] ...";
+        enum pattern = "Usage: <b>%s%s<b> [new|insert|add|modify|edit|del|list] ...";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
@@ -1061,19 +1062,51 @@ void onCommandCommands(OnelinerPlugin plugin, const ref IRCEvent event)
  +/
 void listCommands(OnelinerPlugin plugin, const ref IRCEvent event)
 {
+    import lu.string : stripped;
     import std.format : format;
+    import std.uni : toLower;
 
-    auto channelOneliners = event.channel in plugin.onelinersByChannel;
-
-    if (channelOneliners && channelOneliners.length)
+    void sendNoCommandsAvailable()
     {
-        immutable rtPattern = "Available commands: %-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)<b>";
-        immutable message = rtPattern.format(channelOneliners.byKey);
+        enum message = "There are no commands available right now.";
         sendOneliner(plugin, event, message);
+    }
+
+    void sendNoSuchOneliner()
+    {
+        enum message = "There are no such oneliner defined.";
+        sendOneliner(plugin, event, message);
+    }
+
+    void sendOnelinerInfo(const Oneliner oneliner)
+    {
+        import lu.conv : Enum;
+
+        enum pattern = "Oneliner <b>%s%s<b> has %d responses and is of type <b>%s<b>.";
+        immutable message = pattern.format(
+            plugin.state.settings.prefix,
+            oneliner.trigger,
+            oneliner.responses.length,
+            Enum!(Oneliner.OnelinerType).toString(oneliner.type));
+        sendOneliner(plugin, event, message);
+    }
+
+    const channelOneliners = event.channel in plugin.onelinersByChannel;
+    if (!channelOneliners || !channelOneliners.length) return sendNoCommandsAvailable();
+
+    immutable triggerLower = event.content.stripped.toLower;
+
+    if (triggerLower.length)
+    {
+        const oneliner = triggerLower in *channelOneliners;
+        if (!oneliner) return sendNoSuchOneliner();
+
+        sendOnelinerInfo(*oneliner);
     }
     else
     {
-        enum message = "There are no commands available right now.";
+        immutable rtPattern = "Available commands: %-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)<b>";
+        immutable message = rtPattern.format(channelOneliners.byKey);
         sendOneliner(plugin, event, message);
     }
 }
