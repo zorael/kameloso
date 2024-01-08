@@ -504,15 +504,6 @@ void handleNewOneliner(
     import std.uni : toLower;
     import core.thread : Fiber;
 
-    // copy/pasted
-    auto stripPrefix(const string trigger)
-    {
-        import std.algorithm.searching : startsWith;
-        return trigger.startsWith(plugin.state.settings.prefix) ?
-            trigger[plugin.state.settings.prefix.length..$] :
-            trigger;
-    }
-
     void sendNewUsage()
     {
         enum pattern = "Usage: <b>%s%s new<b> [trigger] [type] [optional cooldown]";
@@ -547,35 +538,17 @@ void handleNewOneliner(
 
     if (!typestring.length) return sendNewUsage();
 
-    Oneliner.OnelinerType type;
-
-    switch (typestring)
-    {
-    case "random":
-    case "rnd":
-    case "rng":
-        type = Oneliner.OnelinerType.random;
-        break;
-
-    case "ordered":
-    case "order":
-    case "sequential":
-    case "seq":
-    case "sequence":
-        type = Oneliner.OnelinerType.ordered;
-        break;
-
-    default:
-        return sendMustBeRandomOrOrdered();
-    }
-
-    trigger = stripPrefix(trigger).toLower;
+    trigger = Oneliner.stripPrefix(trigger, plugin.state.settings.prefix).toLower;
 
     const channelTriggers = event.channel in plugin.onelinersByChannel;
     if (channelTriggers && (trigger in *channelTriggers))
     {
         return sendOnelinerAlreadyExists(trigger);
     }
+
+    Oneliner.OnelinerType type;
+    immutable success = Oneliner.resolveOnelinerTypestring(typestring, type);
+    if (!success) return sendMustBeRandomOrOrdered();
 
     int cooldownSeconds = Oneliner.init.cooldown;
 
@@ -836,15 +809,6 @@ void handleAddToOneliner(
         chan(plugin.state, event.channel, message);
     }
 
-    // copy/pasted
-    auto stripPrefix(const string trigger)
-    {
-        import std.algorithm.searching : startsWith;
-        return trigger.startsWith(plugin.state.settings.prefix) ?
-            trigger[plugin.state.settings.prefix.length..$] :
-            trigger;
-    }
-
     enum Action
     {
         insertAtPosition,
@@ -858,7 +822,7 @@ void handleAddToOneliner(
         const Action action,
         const ptrdiff_t pos = 0)
     {
-        trigger = stripPrefix(trigger).toLower;
+        trigger = Oneliner.stripPrefix(trigger, plugin.state.settings.prefix).toLower;
 
         auto channelOneliners = event.channel in plugin.onelinersByChannel;
         if (!channelOneliners) return sendNoSuchOneliner(trigger);
@@ -1016,18 +980,10 @@ void handleDelFromOneliner(
         chan(plugin.state, event.channel, message);
     }
 
-    // copy/pasted
-    auto stripPrefix(const string trigger)
-    {
-        import std.algorithm.searching : startsWith;
-        return trigger.startsWith(plugin.state.settings.prefix) ?
-            trigger[plugin.state.settings.prefix.length..$] :
-            trigger;
-    }
-
     if (!slice.length) return sendDelUsage();
 
-    immutable trigger = stripPrefix(slice.advancePast(' ', Yes.inherit)).toLower;
+    immutable rawTrigger = slice.advancePast(' ', Yes.inherit);
+    immutable trigger = Oneliner.stripPrefix(rawTrigger, plugin.state.settings.prefix).toLower;
 
     auto channelOneliners = event.channel in plugin.onelinersByChannel;
     if (!channelOneliners) return sendNoSuchOneliner(trigger);
