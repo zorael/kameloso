@@ -391,7 +391,7 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
             if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 aa["$streamer"] = () => nameOf(plugin, event.channel[1..$]);
-                aa["$streamerNickname"] = () => event.channel[1..$];
+                aa["$streamerAccount"] = () => event.channel[1..$];
             }
         }
 

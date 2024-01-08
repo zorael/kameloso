@@ -1430,7 +1430,7 @@ auto createTimerFiber(
                 {
                     message = message
                         .replace("$streamer", nameOf(plugin, channelName[1..$]))
-                        .replace("$streamerNickname", channelName[1..$]);
+                        .replace("$streamerAccount", channelName[1..$]);
                 }
             }
 

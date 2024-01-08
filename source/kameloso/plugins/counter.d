@@ -744,7 +744,7 @@ auto formatMessage(
 
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            aa["$streamerNickname"] = () => event.channel[1..$];
+            aa["$streamerAccount"] = () => event.channel[1..$];
             aa["$streamer"] = () => nameOf(plugin, event.channel[1..$]);
         }
 
