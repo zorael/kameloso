@@ -3,7 +3,10 @@
 
     See_Also:
         [kameloso.plugins.twitch],
-        [kameloso.plugins.twitch.api]
+        [kameloso.plugins.twitch.api],
+        [kameloso.plugins.twitch.providers.common],
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -11,7 +14,7 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-module kameloso.plugins.twitch.keygen;
+module kameloso.plugins.twitch.providers.twitch;
 
 version(TwitchSupport):
 version(WithTwitchPlugin):
@@ -20,12 +23,14 @@ private:
 
 import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
+import kameloso.plugins.twitch.providers.common;
+
 import kameloso.common : logger;
 import kameloso.terminal.colours.tags : expandTags;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
-package:
+public:
 
 
 // requestTwitchKey

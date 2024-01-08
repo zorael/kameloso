@@ -21,7 +21,9 @@
         https://github.com/zorael/kameloso/wiki/Current-plugins#twitch,
         [kameloso.plugins.twitch.api],
         [kameloso.plugins.twitch.common],
-        [kameloso.plugins.twitch.keygen],
+        [kameloso.plugins.twitch.providers.twitch],
+        [kameloso.plugins.twitch.providers.google],
+        [kameloso.plugins.twitch.providers.spotify],
         [kameloso.plugins.common.core],
         [kameloso.plugins.common.misc]
 
@@ -1466,8 +1468,8 @@ void onCommandSubs(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     YouTube videos or Spotify tracks) to be added to the streamer's playlist.
 
     See_Also:
-        [kameloso.plugins.twitch.google.addVideoToYouTubePlaylist]
-        [kameloso.plugins.twitch.spotify.addTrackToSpotifyPlaylist]
+        [kameloso.plugins.twitch.providers.google.addVideoToYouTubePlaylist]
+        [kameloso.plugins.twitch.providers.spotify.addTrackToSpotifyPlaylist]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1654,7 +1656,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             try
             {
-                import kameloso.plugins.twitch.google : addVideoToYouTubePlaylist;
+                import kameloso.plugins.twitch.providers.google : addVideoToYouTubePlaylist;
                 import std.json : JSONType;
 
                 immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
@@ -1730,7 +1732,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
         try
         {
-            import kameloso.plugins.twitch.spotify : addTrackToSpotifyPlaylist, getSpotifyTrackByID;
+            import kameloso.plugins.twitch.providers.spotify : addTrackToSpotifyPlaylist, getSpotifyTrackByID;
             import std.json : JSONType;
 
             immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
@@ -2722,7 +2724,7 @@ void initialise(TwitchPlugin plugin)
         if (plugin.twitchSettings.keygen ||
             (!plugin.state.bot.pass.length && !plugin.state.settings.force))
         {
-            import kameloso.plugins.twitch.keygen : requestTwitchKey;
+            import kameloso.plugins.twitch.providers.twitch : requestTwitchKey;
             requestTwitchKey(plugin);
             if (*plugin.state.abort) return;
             plugin.twitchSettings.keygen = false;
@@ -2732,7 +2734,7 @@ void initialise(TwitchPlugin plugin)
 
         if (plugin.twitchSettings.superKeygen)
         {
-            import kameloso.plugins.twitch.keygen : requestTwitchSuperKey;
+            import kameloso.plugins.twitch.providers.twitch : requestTwitchSuperKey;
             if (needSeparator) logger.trace(separator);
             requestTwitchSuperKey(plugin);
             if (*plugin.state.abort) return;
@@ -2744,7 +2746,7 @@ void initialise(TwitchPlugin plugin)
         if (plugin.twitchSettings.googleKeygen ||
             plugin.twitchSettings.youtubeKeygen)
         {
-            import kameloso.plugins.twitch.google : requestGoogleKeys;
+            import kameloso.plugins.twitch.providers.google : requestGoogleKeys;
             if (needSeparator) logger.trace(separator);
             requestGoogleKeys(plugin);
             if (*plugin.state.abort) return;
@@ -2757,7 +2759,7 @@ void initialise(TwitchPlugin plugin)
 
         if (plugin.twitchSettings.spotifyKeygen)
         {
-            import kameloso.plugins.twitch.spotify : requestSpotifyKeys;
+            import kameloso.plugins.twitch.providers.spotify : requestSpotifyKeys;
             if (needSeparator) logger.trace(separator);
             requestSpotifyKeys(plugin);
             if (*plugin.state.abort) return;
@@ -3214,6 +3216,41 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
             expiresWhen,
             "Your Twitch authorisation token",
             &onExpiryDg);
+    }
+}
+
+
+
+// complainAboutMissingTokens
+/++
+    Helper function to complain about missing Twitch authorisation tokens..
+
+    Params:
+        base = The exception to complain about.
+ +/
+void complainAboutMissingTokens(const Exception base)
+{
+    import kameloso.common : logger;
+
+    bool match;  // mutable
+
+    if (const e = cast(MissingBroadcasterTokenException)base)
+    {
+        enum pattern = "Missing broadcaster-level API token for channel <l>%s</>.";
+        logger.errorf(pattern, e.channelName);
+        match = true;
+    }
+    else if (const e = cast(InvalidCredentialsException)base)
+    {
+        enum pattern = "The broadcaster-level API token for channel <l>%s</> has expired.";
+        logger.errorf(pattern, e.channelName);
+        match = true;
+    }
+
+    if (match)
+    {
+        enum superMessage = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
+        logger.error(superMessage);
     }
 }
 

@@ -3,8 +3,8 @@
 
     See_Also:
         [kameloso.plugins.twitch],
-        [kameloso.plugins.twitch.keygen],
         [kameloso.plugins.twitch.api],
+        [kameloso.plugins.twitch.providers.common],
         [kameloso.plugins.common.core],
         [kameloso.plugins.common.misc]
 
@@ -14,7 +14,7 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-module kameloso.plugins.twitch.spotify;
+module kameloso.plugins.twitch.providers.spotify;
 
 version(TwitchSupport):
 version(WithTwitchPlugin):
@@ -23,10 +23,13 @@ private:
 
 import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
+import kameloso.plugins.twitch.providers.common;
 
 import kameloso.common : logger;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
+
+public:
 
 
 // requestSpotifyKeys
@@ -44,7 +47,7 @@ import core.thread : Fiber;
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-package void requestSpotifyKeys(TwitchPlugin plugin)
+void requestSpotifyKeys(TwitchPlugin plugin)
 {
     import kameloso.logger : LogLevel;
     import kameloso.terminal.colours.tags : expandTags;
@@ -332,7 +335,7 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-void getSpotifyTokens(
+private void getSpotifyTokens(
     ref Credentials creds,
     const string code,
     const string caBundleFile)
@@ -398,7 +401,7 @@ void getSpotifyTokens(
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-void refreshSpotifyToken(TwitchPlugin plugin, ref Credentials creds)
+private void refreshSpotifyToken(TwitchPlugin plugin, ref Credentials creds)
 in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
@@ -457,7 +460,7 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
     Returns:
         A string to be used as a `Basic` authorisation token.
  +/
-auto getSpotifyBase64Authorization(const Credentials creds)
+private auto getSpotifyBase64Authorization(const Credentials creds)
 {
     import std.base64 : Base64;
     import std.conv : text;
@@ -490,7 +493,7 @@ auto getSpotifyBase64Authorization(const Credentials creds)
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-package auto addTrackToSpotifyPlaylist(
+auto addTrackToSpotifyPlaylist(
     TwitchPlugin plugin,
     ref Credentials creds,
     const string trackID,
@@ -597,7 +600,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-package auto getSpotifyTrackByID(
+auto getSpotifyTrackByID(
     TwitchPlugin plugin,
     const Credentials creds,
     const string trackID)
@@ -658,7 +661,7 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-auto validateSpotifyToken(ref Credentials creds, const string caBundleFile)
+private auto validateSpotifyToken(ref Credentials creds, const string caBundleFile)
 {
     import kameloso.plugins.twitch.api : sendHTTPRequestImpl;
     import std.json : JSONType, parseJSON;

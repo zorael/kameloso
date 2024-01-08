@@ -3,8 +3,8 @@
 
     See_Also:
         [kameloso.plugins.twitch],
-        [kameloso.plugins.twitch.keygen],
         [kameloso.plugins.twitch.common],
+        [kameloso.plugins.twitch.providers.twitch],
         [kameloso.plugins.common.core],
         [kameloso.plugins.common.misc]
 
