@@ -673,6 +673,18 @@ void handleModifyOneliner(
         chan(plugin.state, event.channel, message);
     }
 
+    void sendNewDescription(const Oneliner oneliner)
+    {
+        enum pattern = "Oneliner \"<b>%s<b>\" modified to " ~
+            "type <b>%s<b>, " ~
+            "cooldown <b>%d<b> seconds";
+        immutable message = pattern.format(
+            oneliner.trigger,
+            Enum!(Oneliner.OnelinerType).toString(oneliner.type),
+            oneliner.cooldown);
+        chan(plugin.state, event.channel, message);
+    }
+
     string trigger;  // mutable
     string typestring;  // ditto
     string cooldownString;  // ditto
@@ -709,13 +721,7 @@ void handleModifyOneliner(
     }
 
     oneliner.type = type;
-
-    enum typeChangePattern = "Oneliner <l>%s</> is now type <l>%s</> (cooldown <l>%d</> seconds)";
-    logger.infof(
-        typeChangePattern,
-        trigger,
-        Enum!(Oneliner.OnelinerType).toString(oneliner.type),
-        oneliner.cooldown);
+    return sendNewDescription(*oneliner);
 }
 
 
