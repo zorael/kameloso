@@ -1408,6 +1408,7 @@ auto createTimerFiber(
         // Main loop
         while (true)
         {
+            import kameloso.plugins.common.misc : nameOf;
             import kameloso.string : replaceRandom;
             import std.array : replace;
 
@@ -1419,7 +1420,7 @@ auto createTimerFiber(
             }
 
             string message = timer.getLine()  // mutable
-                .replace("$bot", plugin.state.client.nickname)
+                .replace("$bot", nameOf(plugin, plugin.state.client.nickname))
                 .replace("$channel", channelName[1..$])
                 .replaceRandom();
 
@@ -1427,8 +1428,9 @@ auto createTimerFiber(
             {
                 if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
                 {
-                    import kameloso.plugins.common.misc : nameOf;
-                    message = message.replace("$streamer", nameOf(plugin, channelName[1..$]));
+                    message = message
+                        .replace("$streamer", nameOf(plugin, channelName[1..$]))
+                        .replace("$streamerNickname", channelName[1..$]);
                 }
             }
 
