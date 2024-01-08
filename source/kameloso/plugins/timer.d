@@ -372,6 +372,10 @@ void onCommandTimer(TimerPlugin plugin, const /*ref*/ IRCEvent event)
     case "new":
         return handleNewTimer(plugin, event, slice);
 
+    case "modify":
+    case "mod":
+        return handleModifyTimer(plugin, event, slice);
+
     case "insert":
         return handleModifyTimerLines(plugin, event, slice, Yes.insert);
 
@@ -546,6 +550,178 @@ void handleNewTimer(
     enum appendPattern = "New timer added! Use <b>%s%s add<b> to add lines.";
     immutable message = appendPattern.format(plugin.state.settings.prefix, event.aux[$-1]);
     chan(plugin.state, event.channel, message);
+}
+
+
+// handleModifyTimer
+/++
+    Modifies an existing timer.
+
+    Params:
+        plugin = The current [TimerPlugin].
+        event = The [dialect.defs.IRCEvent|IRCEvent] that requested the modification.
+        slice = Relevant slice of the original request string.
+ +/
+void handleModifyTimer(
+    TimerPlugin plugin,
+    const ref IRCEvent event,
+    /*const*/ string slice)
+{
+    import lu.string : splitInto;
+
+    void sendModifyUsage()
+    {
+        import std.format : format;
+        enum pattern = "Usage: <b>%s%s modify<b> [name] [type] [condition] [message count threshold] " ~
+            "[time threshold] [stagger message count] [stagger time]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendBadNumerics()
+    {
+        enum message = "Arguments for threshold and stagger values must all be positive numbers.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendZeroedConditions()
+    {
+        enum message = "A timer cannot have a message threshold *and* a time threshold of zero.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoSuchTimer()
+    {
+        enum message = "There is no timer by that name.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNewDescription(const Timer timer)
+    {
+        import lu.conv : Enum;
+
+        enum pattern = "Timer <l>%s</> modified to " ~
+            "type <l>%s</>, " ~
+            "condition <l>%s</>, " ~
+            "message count threshold <l>%d</>, " ~
+            "time threshold <l>%s</>, " ~
+            "stagger message count <l>%d</>, " ~
+            "stagger time <l>%s";
+        logger.infof(pattern,
+            Enum!(Timer.TimerType).toString(timer.type),
+            Enum!(Timer.TimerCondition).toString(timer.condition),
+            timer.messageCountThreshold,
+            timer.timeThreshold,
+            timer.messageCountStagger,
+            timer.timeStagger);
+    }
+
+    string name;
+    string typestring;
+    string conditionString;
+    string messageCountThresholdString;
+    string timeThresholdString;
+    string messageCountStaggerString;
+    string timeStaggerString;
+    cast(void)slice.splitInto(
+        name,
+        typestring,
+        conditionString,
+        messageCountThresholdString,
+        timeThresholdString,
+        messageCountStaggerString,
+        timeStaggerString);
+
+    if (!typestring.length) return sendModifyUsage();
+
+    auto channelTimers = event.channel in plugin.timersByChannel;
+    if (!channelTimers) return sendNoSuchTimer();
+
+    auto timer = name in *channelTimers;
+    if (!timer) return sendNoSuchTimer();
+
+    Timer.TimerType type;
+    Timer.TimerCondition condition;
+    long messageCountThreshold;
+    long timeThreshold;
+    long messageCountStagger;
+    long timeStagger;
+
+    switch (typestring)
+    {
+    case "random":
+        type = Timer.TimerType.random;
+        break;
+
+    case "ordered":
+        type = Timer.TimerType.ordered;
+        break;
+
+    default:
+        enum message = "Type must be one of <b>random<b> or <b>ordered<b>.";
+        return chan(plugin.state, event.channel, message);
+    }
+
+    if (conditionString.length)
+    {
+        switch (conditionString)
+        {
+        case "both":
+            condition = Timer.TimerCondition.both;
+            break;
+
+        case "either":
+            condition = Timer.TimerCondition.either;
+            break;
+
+        default:
+            enum message = "Condition must be one of <b>both<b> or <b>either<b>.";
+            return chan(plugin.state, event.channel, message);
+        }
+    }
+
+    if (messageCountThresholdString.length)
+    {
+        import kameloso.time : DurationStringException, asAbbreviatedDuration;
+        import std.conv : ConvException, to;
+
+        try
+        {
+            messageCountThreshold = messageCountThresholdString.to!long;
+            if (timeThresholdString.length) timeThreshold = timeThresholdString.asAbbreviatedDuration.total!"seconds";
+            if (messageCountStaggerString.length) messageCountStagger = messageCountStaggerString.to!long;
+            if (timeStaggerString.length) timeStagger = timeStaggerString.asAbbreviatedDuration.total!"seconds";
+        }
+        catch (DurationStringException e)
+        {
+            return chan(plugin.state, event.channel, e.msg);
+        }
+        catch (ConvException _)
+        {
+            enum message = "Message count threshold must be a positive number.";
+            return chan(plugin.state, event.channel, message);
+        }
+    }
+
+    if ((messageCountThreshold < 0) ||
+        (timeThreshold < 0) ||
+        (messageCountStagger < 0) ||
+        (timeStagger < 0))
+    {
+        return sendBadNumerics();
+    }
+    else if ((timer.messageCountThreshold == 0) && (timer.timeThreshold == 0))
+    {
+        return sendZeroedConditions();
+    }
+
+    timer.type = type;
+    if (conditionString.length) timer.condition = condition;
+    if (messageCountThresholdString.length) timer.messageCountThreshold = messageCountThreshold;
+    if (timeThresholdString.length) timer.timeThreshold = timeThreshold;
+    if (messageCountStaggerString.length) timer.messageCountStagger = messageCountStagger;
+    if (timeStaggerString.length) timer.timeStagger = timeStagger;
+    return sendNewDescription(*timer);
 }
 
 
