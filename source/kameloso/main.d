@@ -901,21 +901,32 @@ void messageFiber(Kameloso instance)
             /+
                 Concurrency messages, dead last.
             +/
+            readloop:
             while (true)
             {
-                import std.concurrency : receiveTimeout;
-                import std.variant : Variant;
+                bool receivedSomething;
 
-                immutable receivedSomething = receiveTimeout(Duration.zero,
-                    &onThreadMessage,
-                    &eventToServer,
-                    (Variant v) scope
-                    {
-                        logger.error("messageFiber received unexpected Variant: <l>", v);
-                    }
-                );
+                try
+                {
+                    import std.concurrency : receiveTimeout;
+                    import std.variant : Variant;
 
-                if (!receivedSomething || !shouldStillContinue || !isStillOnTime) break;
+                    receivedSomething = receiveTimeout(Duration.zero,
+                        &onThreadMessage,
+                        &eventToServer,
+                        (Variant v) scope
+                        {
+                            logger.error("messageFiber received unexpected Variant: <l>", v);
+                        }
+                    );
+                }
+                catch (Exception e)
+                {
+                    logger.error("messageFiber caught exception: <l>", e.msg);
+                    version(PrintStacktraces) logger.trace(e);
+                }
+
+                if (!receivedSomething || !shouldStillContinue || !isStillOnTime) break readloop;
             }
         }
 
