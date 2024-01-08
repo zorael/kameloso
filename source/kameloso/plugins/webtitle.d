@@ -541,19 +541,29 @@ void persistentQuerier(
 
     while (!halt)
     {
-        import std.concurrency : receive;
-        import std.variant : Variant;
+        try
+        {
+            import std.concurrency : receive;
+            import std.variant : Variant;
 
-        receive(
-            &onTitleRequest,
-            &onQuitMessage,
-            (Variant v)
-            {
-                import std.stdio : stdout, writeln;
-                writeln("Webtitle worker received unknown Variant: ", v);
-                stdout.flush();
-            }
-        );
+            receive(
+                &onTitleRequest,
+                &onQuitMessage,
+                (Variant v)
+                {
+                    import std.stdio : stdout, writeln;
+                    writeln("Webtitle worker received unknown Variant: ", v);
+                    stdout.flush();
+                }
+            );
+        }
+        catch (Exception _)
+        {
+            // Probably a requests exception
+            /*writeln("Webtitle worker caught exception: ", e.msg);
+            version(PrintStacktraces) writeln(e);
+            stdout.flush();*/
+        }
     }
 }
 
