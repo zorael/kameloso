@@ -243,9 +243,8 @@ void lookupURLs(
                 continue;
             }
 
-            if ((result.code == 0) ||
-                (result.code == 2) ||
-                (result.code >= 400))
+            if ((result.code < 200) ||
+                (result.code > 299))
             {
                 enum pattern = "HTTP status <l>%03d</> (%s) fetching <l>%s";
                 logger.warningf(pattern, result.code, result.codeText, result.url);
