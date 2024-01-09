@@ -97,7 +97,6 @@ struct TitleLookupResult
     /++
         HTTP response status code text.
      +/
-    version(none)
     string codeText;
 
     /++
@@ -248,8 +247,8 @@ void lookupURLs(
                 (result.code == 2) ||
                 (result.code >= 400))
             {
-                enum pattern = "HTTP status <l>%03d</> fetching <l>%s";
-                logger.warningf(pattern, result.code, result.url);
+                enum pattern = "HTTP status <l>%03d</> (%s) fetching <l>%s";
+                logger.warningf(pattern, result.code, result.codeText, result.url);
                 continue;
             }
 
@@ -450,12 +449,14 @@ void persistentQuerier(
                 if (slice.startsWith("youtube.com/watch?v=") ||
                     slice.startsWith("youtu.be/"))
                 {
+                    import kameloso.common : getHTTPResponseCodeText;
+
                     immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
                     auto response = sendHTTPRequestImpl(youtubeURL, caBundleFile);
 
                     // Manually fill in the blannks that parseResponseIntoTitleLookupResults would have done
                     result.code = response.code;
-                    //result.codeText = response.codeText;
+                    result.codeText = getHTTPResponseCodeText(response.code);
                     result.url = url;
 
                     if (!response.code || (response.code == 2) || (response.code >= 400))
@@ -701,6 +702,7 @@ auto parseResponseIntoTitleLookupResult(
     const string url,
     /*const*/ Response res)
 {
+    import kameloso.common : getHTTPResponseCodeText;
     import lu.string : advancePast;
     import arsd.dom : Document;
     import std.algorithm.searching : canFind, startsWith;
@@ -709,7 +711,7 @@ auto parseResponseIntoTitleLookupResult(
 
     TitleLookupResult result;
     result.code = res.code;
-    //result.codeText = res.codeText;
+    result.codeText = getHTTPResponseCodeText(res.code);
     result.url = url;
 
     if (!result.code || (result.code == 2) || (result.code >= 400))
