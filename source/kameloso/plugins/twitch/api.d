@@ -706,7 +706,7 @@ auto sendHTTPRequestImpl(
     response.code = res.code;
     response.str = cast(string)res.responseBody;  //.idup?
 
-    auto stats = res.getStats();
+    immutable stats = res.getStats();
     immutable totalMsecs = stats.connectTime + stats.recvTime + stats.sendTime;
     response.msecs = totalMsecs.total!"msecs";
     return response;

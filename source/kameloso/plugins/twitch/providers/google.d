@@ -44,7 +44,7 @@ public:
         [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
-public void requestGoogleKeys(TwitchPlugin plugin)
+void requestGoogleKeys(TwitchPlugin plugin)
 {
     import kameloso.logger : LogLevel;
     import kameloso.terminal.colours.tags : expandTags;

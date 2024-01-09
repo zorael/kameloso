@@ -4287,7 +4287,6 @@ auto checkInitialisationMessages(
             }
         }
 
-        priorityMessageTop:
         foreach (plugin; instance.plugins)
         {
             if (!plugin.state.priorityMessages.length) continue;
@@ -4300,7 +4299,6 @@ auto checkInitialisationMessages(
             plugin.state.priorityMessages = null;
         }
 
-        normalMessageTop:
         foreach (plugin; instance.plugins)
         {
             if (!plugin.state.messages.length) continue;

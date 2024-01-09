@@ -30,8 +30,6 @@ import lu.container : MutexedAA;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
-public:
-
 
 // WebtitleSettings
 /++
