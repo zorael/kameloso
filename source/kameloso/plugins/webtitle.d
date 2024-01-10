@@ -439,72 +439,63 @@ void persistentQuerier(
             (url.indexOf("youtube.com/watch?v=") != -1) ||
             (url.indexOf("youtu.be/") != -1))
         {
-            // Start the try-catch here to include advancePast calls
-            try
+            // Do our own slicing instead of using regexes, because footprint.
+            string slice = url;  // mutable
+
+            slice.advancePast("http");
+            if (slice[0] == 's') slice = slice[1..$];
+            slice = slice["://".length..$];
+
+            if (slice.startsWith("www.")) slice = slice[4..$];
+
+            if (slice.startsWith("youtube.com/watch?v=") ||
+                slice.startsWith("youtu.be/"))
             {
-                // Do our own slicing instead of using regexes, because footprint.
-                string slice = url;  // mutable
+                immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
+                result = sendHTTPRequestImpl(youtubeURL, caBundleFile);
 
-                slice.advancePast("http");
-                if (slice[0] == 's') slice = slice[1..$];
-                slice = slice["://".length..$];
-
-                if (slice.startsWith("www.")) slice = slice[4..$];
-
-                if (slice.startsWith("youtube.com/watch?v=") ||
-                    slice.startsWith("youtu.be/"))
+                if (result.exceptionText.length)
                 {
-                    immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
-                    auto response = sendHTTPRequestImpl(youtubeURL, caBundleFile);
-
-                    // Manually fill in the blannks that parseResponseIntoTitleLookupResults would have done
-                    result.code = response.code;
-                    result.url = url;
-
-                    if (!response.code || (response.code == 2) || (response.code >= 400))
-                    {
-                        // Not sure when this can happen; drop down to the normal lookup
-                    }
-                    else
-                    {
-                        import std.json : parseJSON;
-                        immutable youtubeJSON = parseJSON(cast(string)response.responseBody);
-                        result.title = decodeEntities(youtubeJSON["title"].str);
-                        result.youtubeAuthor = decodeEntities(youtubeJSON["author_name"].str);
-                    }
+                    // Either requests threw an exception or it's something like UnicodeException
+                    // Drop down and try the original URL
                 }
-            }
-            catch (Exception e)
-            {
-                // Unknown what can cause this, but don't crash the worker
-                result.exceptionText = e.msg;
+                else if (!result.code || (result.code < 10) || (result.code >= 400))
+                {
+                    // Not sure when this can happen; drop down to the normal lookup
+                }
+                else
+                {
+                    import std.json : parseJSON;
+                    immutable youtubeJSON = parseJSON(cast(string)result.str);
+                    result.title = decodeEntities(youtubeJSON["title"].str);
+                    result.youtubeAuthor = decodeEntities(youtubeJSON["author_name"].str);
+                }
             }
         }
 
-        if (!result.title.length)
+        if (!result.title.length) // && !result.exceptionText.length)
         {
             static immutable bool[2] trueThenFalse = [ true, false ];
 
             foreach (immutable firstTime; trueThenFalse[])
             {
-                auto response = sendHTTPRequestImpl(url, caBundleFile);
-                result = parseResponseIntoTitleLookupResult(url, response);
+                result = sendHTTPRequestImpl(url, caBundleFile);
 
-                if (!response.code || (response.code == 2))
+                if (result.exceptionText.length)
+                {
+                    // Either requests threw an exception or it's something like UnicodeException
+                    break;  // drop down to abort
+                }
+                else if (!result.code || (result.code < 10))
                 {
                     // SSL error?
                     // Don't include >= 400; we might get a hit later by rewriting the url
-                    break;  // drop down
-                }
-                else if (result.title.length && (response.code < 400))
-                {
-                    // Title found
                     break;  // as above
                 }
-                else if (result.exceptionText.length)
+                else if (result.title.length && (result.code < 400))
                 {
-                    // UnicodeException probably
-                    break;  // ditto
+                    // Title found
+                    break;  // ditty
                 }
                 else if (firstTime)
                 {
@@ -620,11 +611,11 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
     immutable result = waitForLookupResults(plugin, id);
 
-    if (result.code == 2)
+    if (result.code == 0) //(!result.title.length)
     {
         // ?
     }
-    else if (result.code == 0) //(!result.title.length)
+    else if (result.code < 10)
     {
         // ?
     }
@@ -655,7 +646,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
 
     Returns:
-        A [requests] `Response` with the contents of the URL.
+        A [TitleLookupResult] with contents based on what was read from the URL.
 
     Throws:
         [TitleFetchException] if the URL could not be fetched.
@@ -665,6 +656,7 @@ auto sendHTTPRequestImpl(
     const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
+    import requests.base : Response;
     import requests.request : Request;
     import core.time : seconds;
 
@@ -685,7 +677,17 @@ auto sendHTTPRequestImpl(
     req.addHeaders(headers);
     if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
 
-    return req.get(url);
+    try
+    {
+        auto res = req.get(url);
+        return parseResponseIntoTitleLookupResult(url, res);
+    }
+    catch (Exception e)
+    {
+        TitleLookupResult result;
+        result.exceptionText = e.msg;
+        return result;
+    }
 }
 
 
