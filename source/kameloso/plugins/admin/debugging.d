@@ -58,14 +58,18 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
         wroteSomething = true;
     }
 
-    if (plugin.adminSettings.printEvents)
+    if (plugin.adminSettings.printEvents.length)
     {
-        import kameloso.printing : printObject;
+        if (plugin.eventTypesToPrint[event.type] ||
+            plugin.eventTypesToPrint[IRCEvent.Type.ANY])
+        {
+            import kameloso.printing : printObject;
 
-        printObject(event);
-        if (event.sender != IRCUser.init) printObject(event.sender);
-        if (event.target != IRCUser.init) printObject(event.target);
-        wroteSomething = true;
+            printObject(event);
+            if (event.sender != IRCUser.init) printObject(event.sender);
+            if (event.target != IRCUser.init) printObject(event.target);
+            wroteSomething = true;
+        }
     }
 
     if (plugin.adminSettings.printBytes)
@@ -198,23 +202,82 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandPrintEventsImpl
 /++
-    Toggles a flag to prettyprint all incoming events, using
-    [kameloso.printing.printObject|printObject].
+    Changes the contents of the
+    [kameloso.plugins.admin.AdminPlugin.eventTypesToPrint|AdminPlugin.eventTypesToPrint]
+    array, to prettyprint all incoming events of the types with a value of `true`
+    therein, using [kameloso.printing.printObject|printObject].
 
     This is for debugging purposes.
+
+    Params:
+        plugin = The current [kameloso.plugins.admin.AdminPlugin|AdminPlugin].
+        input = A string of event types to print, separated by commas.
+        event = The event that triggered this command, if any. If it was not
+            triggered by an event, it should be [dialect.defs.IRCEvent|IRCEvent.init].
  +/
-void onCommandPrintEventsImpl(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandPrintEventsImpl(
+    AdminPlugin plugin,
+    const string input,
+    const /*ref*/ IRCEvent event)
 {
-    import std.conv : text;
+    import kameloso.plugins.admin : parseTypesFromString;
+    import kameloso.common : logger;
+    import lu.conv : Enum;
+    import std.algorithm.iteration : map;
     import std.format : format;
 
-    if (plugin.state.settings.headless) return;
+    if (plugin.state.settings.headless) return;  // shouldn't output events to terminal
 
-    plugin.adminSettings.printEvents = !plugin.adminSettings.printEvents;
+    if (!input.length)
+    {
+        if (event == IRCEvent.init)
+        {
+            enum message = "Printing event types: <l>(disabled)";
+            logger.info(message);
+        }
+        else
+        {
+            enum message = "Printing event types: <b>(disabled)<b>";
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
 
-    enum pattern = "Printing events: <b>%s<b>";
-    immutable message = pattern.format(plugin.adminSettings.printEvents);
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        plugin.eventTypesToPrint[] = false;
+        plugin.adminSettings.printEvents = string.init;  // for easy detection if something is set
+        return;
+    }
+
+    immutable success = parseTypesFromString(plugin, input);
+
+    if (success)
+    {
+        plugin.adminSettings.printEvents = input;  // as above
+
+        if (event == IRCEvent.init)
+        {
+            enum pattern = "Printing event types: <l>%s";
+            logger.infof(pattern, input);
+        }
+        else
+        {
+            enum pattern = "Printing event types: <b>%s<b>";
+            immutable message = pattern.format(input);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+    }
+    else
+    {
+        if (event == IRCEvent.init)
+        {
+            enum pattern = "Invalid event types: <l>%s";
+            logger.infof(pattern, input);
+        }
+        else
+        {
+            enum pattern = "Invalid event types: <b>%s<b>";
+            immutable message = pattern.format(input);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+    }
 }
 
 

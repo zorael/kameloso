@@ -86,10 +86,10 @@ public:
         bool printBytes;
 
         /++
-            Toggles whether [onAnyEvent] prettyprints each incoming events, using
-            [kameloso.printing.printObject|printObject].
+            A list of what [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to
+            prettyprint, using [kameloso.printing.printObject|printObject].
          +/
-        bool printEvents;
+        string printEvents;
     }
 }
 
@@ -923,7 +923,7 @@ version(Debug)
 )
 void onCommandPrintEvents(AdminPlugin plugin, const ref IRCEvent event)
 {
-    onCommandPrintEventsImpl(plugin, event);
+    onCommandPrintEventsImpl(plugin, event.content, event);
 }
 
 
@@ -1572,6 +1572,70 @@ void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)
 }
 
 
+// parseTypesFromString
+/++
+    Modifies [AdminPlugin.eventTypesToPrint|eventTypesToPrint] based on a string
+    of comma-separated event types.
+
+    Params:
+        plugin = The current [AdminPlugin].
+        definitions = String of comma-separated event types to print.
+ +/
+version(Debug)
+package auto parseTypesFromString(AdminPlugin plugin, const string definitions)
+{
+    import kameloso.common : logger;
+    import lu.conv : Enum;
+    import lu.string : stripped;
+    import std.algorithm.iteration : map, splitter;
+    import std.conv : ConvException;
+    import std.uni : toUpper;
+
+    if (!definitions.length) return true;
+
+    try
+    {
+        auto typenumRange = definitions
+            .toUpper()
+            .splitter(",")
+            .map!(s => Enum!(IRCEvent.Type).fromString(s.stripped));
+
+        foreach (immutable typenum; typenumRange)
+        {
+            plugin.eventTypesToPrint[cast(size_t)typenum] = true;
+        }
+
+        return true;
+    }
+    catch (ConvException e)
+    {
+        enum pattern = `Invalid <l>%s</>.<l>printEvents</> setting: "<l>%s</>" <t>(%s)`;
+        logger.errorf(pattern, plugin.name, definitions, e.msg);
+        return false;
+    }
+}
+
+
+// initialise
+/++
+    Populates the array of what incoming types to prettyprint to the local terminal.
+
+    Do this here instead of in [setup], so it gets done before resolving.
+    Gate it behind version `Debug` to be neat.
+ +/
+version(Debug)
+void initialise(AdminPlugin plugin)
+{
+    plugin.eventTypesToPrint.length = __traits(allMembers, IRCEvent.Type).length;
+
+    immutable success = parseTypesFromString(
+        plugin,
+        plugin.adminSettings.printEvents);
+
+    if (!success) *plugin.state.abort = Yes.abort;
+}
+
+
 // onBusMessage
 /++
     Receives a passed [kameloso.thread.Boxed|Boxed] instance with the "`admin`"
@@ -1679,10 +1743,7 @@ void onBusMessage(
             return;
 
         case "printevents":
-            plugin.adminSettings.printEvents = !plugin.adminSettings.printEvents;
-            enum pattern = "Printing events: <l>%s";
-            logger.infof(pattern, plugin.adminSettings.printEvents);
-            return;
+            return onCommandPrintEventsImpl(plugin, slice, IRCEvent.init);
 
         case "fake":
             plugin.state.messages ~= ThreadMessage.fakeEvent(slice);
@@ -1887,6 +1948,15 @@ package:
         All Admin options gathered.
      +/
     AdminSettings adminSettings;
+
+    version(Debug)
+    {
+        /++
+            Typemap of what incoming [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to
+            print to the terminal.
+         +/
+        bool[] eventTypesToPrint;
+    }
 
     /++
         File with user definitions. Must be the same as in `persistence.d`.
