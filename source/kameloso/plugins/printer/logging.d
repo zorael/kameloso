@@ -307,7 +307,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                             Ideally we wouldn't use the linebuffer here and
                             instead keep an errlinebuffer around, but this works.
-                        +/
+                         +/
 
                         scope(failure) plugin.linebuffer.clear();
 

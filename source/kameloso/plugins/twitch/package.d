@@ -3294,7 +3294,7 @@ in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
         /+
             Only save watchtimes if there's at least one broadcast currently ongoing.
             Since we save at broadcast stop there won't be anything new to save otherwise.
-            +/
+         +/
         if (plugin.twitchSettings.watchtime && plugin.transient.viewerTimesDirty)
         {
             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);

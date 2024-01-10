@@ -110,7 +110,7 @@ in (id, "Tried to get BTTV emotes with an unset ID")
                 }
             ]
         }
-            +/
+         +/
 
         if (responseJSON.type != JSONType.object)
         {
@@ -213,7 +213,7 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
             "userId": "5561169bd6b9d206222a8c19"
         }
     ]
-        +/
+     +/
 
     if (responseJSON.type != JSONType.array)
     {

@@ -146,7 +146,7 @@ in (id, "Tried to get FFZ emotes with an unset ID")
                 }
             }
         }
-            +/
+         +/
 
         if (responseJSON.type != JSONType.object)
         {
@@ -308,7 +308,7 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
                 "1532818": [...]
             }
         }
-            +/
+         +/
 
         if (responseJSON.type != JSONType.object)
         {

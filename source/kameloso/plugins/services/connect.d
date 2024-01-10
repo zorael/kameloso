@@ -1360,7 +1360,7 @@ void onWelcome(ConnectService service)
                 Twitch chat doesn't do colours, so ours would only show up like `00kameloso`.
                 Furthermore, Twitch's own commands are prefixed with a dot `.` and/or a slash `/`,
                 so we can't use that ourselves.
-                +/
+             +/
 
             if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
 
@@ -1667,7 +1667,7 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
                     Skip first two strikes; helps when resuming from suspend and similar,
                     then allow for a PING with `timeToAllowForPingResponse` as timeout.
                     Finally, if all else failed, reconnect.
-                    +/
+                 +/
                 ++strikes;
 
                 if (strikes <= StrikeBreakpoints.wait)
@@ -2030,7 +2030,7 @@ private:
     {
         /++
             All [Progress]es gathered.
-        +/
+         +/
         static struct Progresses
         {
             /++

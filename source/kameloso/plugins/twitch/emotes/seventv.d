@@ -132,7 +132,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
                         "timestamp": 1657657741507
                     },
             [...]
-            +/
+         +/
 
         if (responseJSON.type != JSONType.object)
         {
@@ -173,7 +173,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
             "status": "Not Found",
             "status_code": 404
         }
-            +/
+         +/
 
         if (const errorJSON = "error" in e.json)
         {
@@ -262,7 +262,7 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
             },
         }
     }
-        +/
+     +/
 
     if (responseJSON.type != JSONType.object)
     {

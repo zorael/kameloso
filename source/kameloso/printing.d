@@ -55,7 +55,7 @@ import std.typecons : Flag, No, Yes;
     The current sweet spot is enough to accommodate
     [kameloso.plugins.quote.QuoteSettings.Precision|QuoteSettings.Precision].
  +/
-enum minimumTypeWidth = 12;  //
+enum minimumTypeWidth = 12;
 
 
 // minimumNameWidth
