@@ -905,6 +905,11 @@ private struct FormatOtherMemberArguments
     string memberstring;
 
     /++
+        Value of member, as string.
+     +/
+    string value;
+
+    /++
         Width (length) of longest type name.
      +/
     uint typewidth;
@@ -932,12 +937,10 @@ private struct FormatOtherMemberArguments
         coloured = Whether or no to display terminal colours.
         sink = Output range to store output in.
         args = Argument aggregate for easier passing.
-        content = The value we're describing.
  +/
-private void formatOtherMemberImpl(Flag!"coloured" coloured, T, Sink)
+private void formatOtherMemberImpl(Flag!"coloured" coloured, Sink)
     (auto ref Sink sink,
-    const FormatOtherMemberArguments args,
-    const auto ref T content)
+    const FormatOtherMemberArguments args)
 {
     import std.format : formattedWrite;
 
@@ -960,7 +963,7 @@ private void formatOtherMemberImpl(Flag!"coloured" coloured, T, Sink)
             args.namewidth,
             args.memberstring,
             valueCode.asANSI,
-            content);
+            args.value);
     }
     else
     {
@@ -971,7 +974,7 @@ private void formatOtherMemberImpl(Flag!"coloured" coloured, T, Sink)
             args.typestring,
             args.namewidth,
             args.memberstring,
-            content);
+            args.value);
     }
 }
 
@@ -1209,6 +1212,8 @@ private void formatObjectImpl(Flag!"all" all = No.all,
             }
             else
             {
+                import std.conv : to;
+
                 FormatOtherMemberArguments args;
                 auto content = __traits(getMember, thing, memberstring);
                 args.typestring = T.stringof;
@@ -1216,7 +1221,42 @@ private void formatObjectImpl(Flag!"all" all = No.all,
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
                 args.bright = bright;
-                formatOtherMemberImpl!coloured(sink, args, content);
+
+                static if (isTrulyString!T)
+                {
+                    args.value = content.to!string;
+                }
+                else static if (is(T == enum))
+                {
+                    import lu.conv : Enum;
+                    static if (__traits(compiles, Enum!T.toString(content)))
+                    {
+                        args.value = Enum!T.toString(content);
+                    }
+                    else
+                    {
+                        import std.conv : to;
+                        args.value = content.to!string;
+                    }
+                }
+                else static if (is(T == bool))
+                {
+                    args.value = content ? "true" : "false";
+                }
+                else static if (is(T : long))
+                {
+                    args.value = (cast(long)content).to!string;
+                }
+                else static if (is(T : double))
+                {
+                    args.value = (cast(double)content).to!string;
+                }
+                else
+                {
+                    args.value = content.to!string;
+                }
+
+                formatOtherMemberImpl!coloured(sink, args);
             }
         }
     }
