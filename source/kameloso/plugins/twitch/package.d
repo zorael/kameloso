@@ -2649,7 +2649,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
     catch (TwitchQueryException e)
     {
-        if ((e.code == 400) && (e.error == "Bad Request"))
+        if (e.code == 400) // Bad Request
         {
             chan(plugin.state, event.channel, e.msg);
         }
