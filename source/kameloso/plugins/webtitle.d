@@ -335,7 +335,7 @@ in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber"
         }
 
         //auto result = plugin.lookupBucket[id];  // potential range error due to TOCTTOU
-        auto result = plugin.lookupBucket.get(id, TitleLookupResult.init);
+        immutable result = plugin.lookupBucket.get(id, TitleLookupResult.init);
 
         if (result == TitleLookupResult.init)
         {

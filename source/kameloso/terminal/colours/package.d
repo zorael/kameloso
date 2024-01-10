@@ -104,7 +104,7 @@ void applyANSI(Sink)
         import std.format : format;
 
         enum pattern = "`%s` must be passed an output range of `char[]`";
-        immutable message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
 
@@ -531,7 +531,7 @@ void applyTruecolour(Sink)
         import std.format : format;
 
         enum pattern = "`%s` must be passed an output range of `char[]`";
-        immutable message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
 

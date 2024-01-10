@@ -176,7 +176,7 @@ void printObjects(Flag!"all" all = No.all, Things...)(const auto ref Things thin
         import std.format : format;
 
         enum pattern = "`%s` was not passed anything to print";
-        immutable message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
     else static if (!allSatisfy!(isAggregateType, Things))
@@ -184,7 +184,7 @@ void printObjects(Flag!"all" all = No.all, Things...)(const auto ref Things thin
         import std.format : format;
 
         enum pattern = "`%s` was passed one or more non-aggregate types";
-        immutable message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
 
@@ -307,7 +307,7 @@ void formatObjects(Flag!"all" all = No.all,
         import std.format : format;
 
         enum pattern = "`%s` was not passed anything to print";
-        immutable message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
     else static if (!allSatisfy!(isAggregateType, Things))
@@ -315,7 +315,7 @@ void formatObjects(Flag!"all" all = No.all,
         import std.format : format;
 
         enum pattern = "`%s` was passed one or more non-aggregate types";
-        immutable message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
     else static if (!isOutputRange!(Sink, char[]))
@@ -323,7 +323,7 @@ void formatObjects(Flag!"all" all = No.all,
         import std.format : format;
 
         enum pattern = "`%s` must be passed an output range of `char[]`";
-        immutable message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
 
@@ -1013,7 +1013,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
         import std.format : format;
 
         enum pattern = "`%s` was passed a non-aggregate type `%s`";
-        immutable message = pattern.format(__FUNCTION__, T.stringof);
+        enum message = pattern.format(__FUNCTION__, T.stringof);
         static assert(0, message);
     }
     else static if (!isOutputRange!(Sink, char[]))
@@ -1021,7 +1021,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
         import std.format : format;
 
         enum pattern = "`%s` must be passed an output range of `char[]`";
-        immutable message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
 
