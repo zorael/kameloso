@@ -679,8 +679,9 @@ auto sendHTTPRequestImpl(
 
     try
     {
-        auto res = req.get(url);
-        return parseResponseIntoTitleLookupResult(url, res);
+        return req
+            .get(url)
+            .parseResponseIntoTitleLookupResult();
     }
     catch (Exception e)
     {
@@ -696,26 +697,22 @@ auto sendHTTPRequestImpl(
     Parses a [requests] `Response` into a [TitleLookupResult].
 
     Params:
-        url = URL string that was fetched.
         res = [requests] `Response` to parse.
 
     Returns:
         A [TitleLookupResult] with contents based on what was read from the URL.
  +/
-auto parseResponseIntoTitleLookupResult(
-    const string url,
-    /*const*/ Response res)
+auto parseResponseIntoTitleLookupResult(/*const*/ Response res)
 {
-    import lu.string : advancePast;
     import arsd.dom : Document;
     import std.algorithm.searching : canFind, startsWith;
-    import std.uni : toLower;
-    import core.exception : UnicodeException;
 
     TitleLookupResult result;
     result.code = res.code;
-    result.url = url;
-    result.str = cast(string)res.responseBody;  // idup?
+    result.url = res.uri.uri;
+    result.str = cast(string)res.responseBody;  // .idup?
+
+    enum unnamedPagePlaceholder = "(Unnamed page)";
 
     if (!result.code || (result.code == 2) || (result.code >= 400))
     {
@@ -725,20 +722,18 @@ auto parseResponseIntoTitleLookupResult(
 
     try
     {
+        result.domain = res.finalURI.host.startsWith("www.") ?
+            res.finalURI.host[4..$] :
+            res.finalURI.host;
+
         auto doc = new Document;
-        doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
         doc.parseGarbage(result.str);
-        if (!doc.title.length) return result;
 
-        string slice = url;  // mutable
-        slice.advancePast("//");
-        string host = slice.advancePast('/', Yes.inherit).toLower;
-        if (host.startsWith("www.")) host = host[4..$];
+        result.title = doc.title.length ?
+            decodeEntities(doc.title) :
+            unnamedPagePlaceholder;
 
-        result.title = decodeEntities(doc.title);
-        result.domain = host;
-
-        if (!descriptionExemptions.canFind(host))
+        if (!descriptionExemptions.canFind(result.domain))
         {
             auto metaTags = doc.getElementsByTagName("meta");
 
@@ -752,8 +747,9 @@ auto parseResponseIntoTitleLookupResult(
             }
         }
     }
-    catch (Exception e) //(UnicodeException e)
+    catch (Exception e)
     {
+        // UnicodeException, UriException, ...
         result.exceptionText = e.msg;
     }
 
