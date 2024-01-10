@@ -669,16 +669,16 @@ package auto datestamp()
 version(Debug)
 void initialise(PrinterPlugin plugin)
 {
-    import kameloso.common : logger;
-    import lu.conv : Enum;
-    import lu.string : stripped;
-    import std.algorithm.iteration : map, splitter;
-    import std.array : array;
-    import std.conv : ConvException;
-    import std.uni : toUpper;
-
     auto parseTypes(const string definitions, const string listName)
     {
+        import kameloso.common : logger;
+        import lu.conv : Enum;
+        import lu.string : stripped;
+        import std.algorithm.iteration : map, splitter;
+        import std.array : array;
+        import std.conv : ConvException;
+        import std.uni : toUpper;
+
         if (!definitions.length) return null;
 
         try

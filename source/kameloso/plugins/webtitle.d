@@ -298,8 +298,6 @@ void lookupURLs(
 
     auto lookupURLsFiber = new Fiber(&lookupURLsDg, BufferSize.fiberStack);
     delay(plugin, lookupURLsFiber, Duration.zero);
-
-    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
 }
 
 

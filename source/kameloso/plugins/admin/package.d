@@ -1731,12 +1731,14 @@ void onBusMessage(
             return onCommandShowUsersImpl(plugin);
 
         case "printraw":
+            if (plugin.state.settings.headless) return;
             plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
             enum pattern = "Printing raw: <l>%s";
             logger.infof(pattern, plugin.adminSettings.printRaw);
             return;
 
         case "printbytes":
+            if (plugin.state.settings.headless) return;
             plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
             enum pattern = "Printing bytes: <l>%s";
             logger.infof(pattern, plugin.adminSettings.printBytes);
