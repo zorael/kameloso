@@ -60,6 +60,11 @@ struct QueryResponse
         The message of any exception thrown while querying.
      +/
     string error;
+
+    /++
+        The message text of any exception thrown while querying.
+     +/
+    string exceptionText;
 }
 
 
@@ -485,17 +490,17 @@ in (url.length, "Tried to send an HTTP request without a URL")
     immutable msecs_ = diff.total!"msecs";
     averageApproximateQueryTime(plugin, msecs_);
 
-    if (response.code == 2)
+    if (response.code == 0) // can't go by response.str.length, as it can be empty
+    {
+        throw new EmptyResponseException("Empty response");
+    }
+    else if (response.code < 10)
     {
         throw new TwitchQueryException(
             response.error,
             response.str,
             response.error,
             response.code);
-    }
-    else if (response.code == 0) // can't go by response.str.length, as it can be empty
-    {
-        throw new EmptyResponseException("Empty response");
     }
     else if ((response.code >= 500) && !recursing)
     {
@@ -673,36 +678,44 @@ auto sendHTTPRequestImpl(
     if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
 
     Response res;
+    QueryResponse response;
 
-    with (HTTPVerb)
-    final switch (verb)
+    try
     {
-    case get:
-        res = req.get(url);
-        break;
+        with (HTTPVerb)
+        final switch (verb)
+        {
+        case get:
+            res = req.get(url);
+            break;
 
-    case post:
-        res = req.post(url, body_, contentType);
-        break;
+        case post:
+            res = req.post(url, body_, contentType);
+            break;
 
-    case put:
-        res = req.put(url, body_, contentType);
-        break;
+        case put:
+            res = req.put(url, body_, contentType);
+            break;
 
-    case patch:
-        res = req.patch(url, body_, contentType);
-        break;
+        case patch:
+            res = req.patch(url, body_, contentType);
+            break;
 
-    case delete_:
-        res = req.execute("DELETE", url);
-        break;
+        case delete_:
+            res = req.execute("DELETE", url);
+            break;
 
-    case unset:
-    case unsupported:
-        assert(0, "Unset or unsupported HTTP verb passed to sendHTTPRequestImpl");
+        case unset:
+        case unsupported:
+            assert(0, "Unset or unsupported HTTP verb passed to sendHTTPRequestImpl");
+        }
+    }
+    catch (Exception e)
+    {
+        response.exceptionText = e.msg;
+        return response;
     }
 
-    QueryResponse response;
     response.code = res.code;
     response.str = cast(string)res.responseBody;  //.idup?
 
@@ -981,18 +994,18 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
                 plugin.state.connSettings.caBundleFile);
 
             // Copy/paste error handling...
-            if (response.code == 2)
+            if (response.code == 0) //(!response.str.length)
             {
                 throw new TwitchQueryException(
-                    response.error,
+                    "Empty response",
                     response.str,
                     response.error,
                     response.code);
             }
-            else if (response.code == 0) //(!response.str.length)
+            else if (response.code < 10)
             {
                 throw new TwitchQueryException(
-                    "Empty response",
+                    response.error,
                     response.str,
                     response.error,
                     response.code);
