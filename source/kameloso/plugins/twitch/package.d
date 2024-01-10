@@ -3541,6 +3541,8 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         {
             event.type = IRCEvent.Type.CHAN;
             event.channel = '#' ~ event.sender.nickname;
+            event.aux[0] = string.init;  // Whisper count
+            event.target = IRCUser.init;
         }
     }
     else if (!event.sender.nickname.length || !event.channel.length)
