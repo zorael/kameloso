@@ -777,7 +777,7 @@ void messageFiber(Kameloso instance)
         auto isStillOnTime()
         {
             immutable onTime = ((MonoTime.currTime - loopStartTime) <= maxReceiveTime);
-            //debug if (!onTime) logger.warning("Messenger loop ran out of time");
+            //version(Debug) if (!onTime) logger.warning("Messenger loop ran out of time");
             return onTime;
         }
 
@@ -787,7 +787,7 @@ void messageFiber(Kameloso instance)
         auto shouldStillContinue()
         {
             immutable shouldContinue = ((next == Next.continue_) && !*instance.abort);
-            //debug if (!shouldContinue) logger.warning("Messenger loop shouldn't continue");
+            //version(Debug) if (!shouldContinue) logger.warning("Messenger loop shouldn't continue");
             return shouldContinue;
         }
 
