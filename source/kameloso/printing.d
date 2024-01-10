@@ -368,6 +368,11 @@ private struct FormatStringMemberArguments
     string memberstring;
 
     /++
+        Value of member.
+     +/
+    string value;
+
+    /++
         Width (length) of longest type name.
      +/
     uint typewidth;
@@ -400,12 +405,10 @@ private struct FormatStringMemberArguments
         coloured = Whether or no to display terminal colours.
         sink = Output range to store output in.
         args = Argument aggregate for easier passing.
-        content = The contents of the string member we're describing.
  +/
 private void formatStringMemberImpl(Flag!"coloured" coloured, Sink)
     (auto ref Sink sink,
-    const FormatStringMemberArguments args,
-    const string content)
+    const FormatStringMemberArguments args)
 {
     import std.format : formattedWrite;
 
@@ -414,7 +417,7 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, Sink)
         import kameloso.terminal.colours.defs : F = TerminalForeground;
         import kameloso.terminal.colours : asANSI;
 
-        if (content.length > args.truncateAfter)
+        if (args.value.length > args.truncateAfter)
         {
             enum pattern = `%s%*s %s%-*s %s"%s"%s ... (%d)` ~ '\n';
             immutable memberCode = args.bright ? F.black : F.white;
@@ -430,11 +433,11 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, Sink)
                 memberCode.asANSI,
                 args.namewidth,
                 args.memberstring,
-                //(content.length ? string.init : " "),
+                //(args.value.length ? string.init : " "),
                 valueCode.asANSI,
-                content[0..args.truncateAfter],
+                args.value[0..args.truncateAfter],
                 lengthCode.asANSI,
-                content.length);
+                args.value.length);
         }
         else
         {
@@ -452,16 +455,16 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, Sink)
                 memberCode.asANSI,
                 args.namewidth,
                 args.memberstring,
-                (content.length ? string.init : " "),
+                (args.value.length ? string.init : " "),
                 valueCode.asANSI,
-                content,
+                args.value,
                 lengthCode.asANSI,
-                content.length);
+                args.value.length);
         }
     }
     else
     {
-        if (content.length > args.truncateAfter)
+        if (args.value.length > args.truncateAfter)
         {
             enum pattern = `%*s %-*s "%s" ... (%d)` ~ '\n';
             sink.formattedWrite(
@@ -470,9 +473,9 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, Sink)
                 args.typestring,
                 args.namewidth,
                 args.memberstring,
-                //(content.length ? string.init : " "),
-                content[0..args.truncateAfter],
-                content.length);
+                //(args.value.length ? string.init : " "),
+                args.value[0..args.truncateAfter],
+                args.value.length);
         }
         else
         {
@@ -483,9 +486,9 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, Sink)
                 args.typestring,
                 args.namewidth,
                 args.memberstring,
-                (content.length ? string.init : " "),
-                content,
-                content.length);
+                (args.value.length ? string.init : " "),
+                args.value,
+                args.value.length);
         }
     }
 }
@@ -533,6 +536,11 @@ private struct FormatArrayMemberArguments
     string memberstring;
 
     /++
+        Value of member, as an array of strings.
+     +/
+    string[] value;
+
+    /++
         Width (length) of longest type name.
      +/
     uint typewidth;
@@ -569,12 +577,10 @@ private struct FormatArrayMemberArguments
         coloured = Whether or no to display terminal colours.
         sink = Output range to store output in.
         args = Argument aggregate for easier passing.
-        content = The array we're describing.
  +/
 private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink)
     (auto ref Sink sink,
-    const FormatArrayMemberArguments args,
-    const string[] content)
+    const FormatArrayMemberArguments args)
 {
     import std.format : formattedWrite;
     import std.range.primitives : ElementEncodingType;
@@ -583,7 +589,7 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink)
 
     /// Quote character to enclose elements in
     immutable elemQuote =
-        !content.length ? string.init :
+        !args.value.length ? string.init :
         (args.elemQuoteSign == FormatArrayMemberArguments.QuoteSign.string_) ? `"` :
         (args.elemQuoteSign == FormatArrayMemberArguments.QuoteSign.char_) ? "'" :
         string.init;
@@ -612,7 +618,7 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink)
                 args.namewidth,
                 args.memberstring,
                 valueCode.asANSI,
-                content,
+                args.value,
                 lengthCode.asANSI,
                 args.length);
         }
@@ -629,9 +635,9 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink)
                 memberCode.asANSI,
                 args.namewidth,
                 args.memberstring,
-                (content.length ? string.init : " "),
+                (args.value.length ? string.init : " "),
                 valueCode.asANSI,
-                content,
+                args.value,
                 lengthCode.asANSI,
                 args.length);
         }
@@ -649,7 +655,7 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink)
                 args.typestring,
                 args.namewidth,
                 args.memberstring,
-                content,
+                args.value,
                 args.length);
         }
         else
@@ -663,8 +669,8 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink)
                 args.typestring,
                 args.namewidth,
                 args.memberstring,
-                (content.length ? string.init : " "),
-                content,
+                (args.value.length ? string.init : " "),
+                args.value,
                 args.length);
         }
     }
@@ -1069,6 +1075,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
                 !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable))))
         {
             import lu.traits : isTrulyString;
+            import std.conv : to;
             import std.traits : isAggregateType, isArray, isAssociativeArray;
 
             alias T = Unqual!(typeof(__traits(getMember, Thing, memberstring)));
@@ -1076,14 +1083,15 @@ private void formatObjectImpl(Flag!"all" all = No.all,
             static if (isTrulyString!T)
             {
                 FormatStringMemberArguments args;
-                auto content = __traits(getMember, thing, memberstring);
+                const content = __traits(getMember, thing, memberstring);
                 args.typestring = T.stringof;
                 args.memberstring = memberstring;
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
                 args.bright = bright;
                 args.truncateAfter = all ? uint.max : stringTruncation;
-                formatStringMemberImpl!coloured(sink, args, content);
+                args.value = content.to!string;
+                formatStringMemberImpl!coloured(sink, args);
             }
             else static if (isArray!T || isAssociativeArray!T)
             {
@@ -1132,16 +1140,11 @@ private void formatObjectImpl(Flag!"all" all = No.all,
                     enum truncateAfter = all ? uint.max : arrayTruncation;
                     args.elemQuoteSign = quoteSign!ElemType;
                     args.length = content.length;
-
-                    auto asStringArray = content[]
+                    args.value = content[]
                         .take(truncateAfter)
                         .map!(a => a.to!string)
                         .array;
-
-                    formatArrayMemberImpl!coloured
-                        (sink,
-                        args,
-                        asStringArray);
+                    formatArrayMemberImpl!coloured(sink, args);
                 }
                 else /*static if (isAssociativeArray!T)*/
                 {
@@ -1157,7 +1160,6 @@ private void formatObjectImpl(Flag!"all" all = No.all,
 
                     static if (!is(T : string[string]))
                     {
-                        //pragma(msg, T);
                         string[string] asStringAA;
                         auto range = content
                             .byKeyValue
@@ -1212,8 +1214,6 @@ private void formatObjectImpl(Flag!"all" all = No.all,
             }
             else
             {
-                import std.conv : to;
-
                 FormatOtherMemberArguments args;
                 auto content = __traits(getMember, thing, memberstring);
                 args.typestring = T.stringof;
