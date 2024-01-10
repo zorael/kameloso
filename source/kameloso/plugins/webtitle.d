@@ -595,12 +595,12 @@ in (url.length, "Tried to send an HTTP request without a URL")
     import std.concurrency : send;
     import core.time : msecs;
 
-    if (plugin.state.settings.trace)
+    version(TraceHTTPRequests)
     {
         import kameloso.common : logger;
         import lu.conv : Enum;
 
-        enum pattern = "GET: <i>%s<t> (%s)";
+        enum pattern = "get: <i>%s<t> (%s)";
         logger.tracef(
             pattern,
             url,

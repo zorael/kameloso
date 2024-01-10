@@ -452,14 +452,14 @@ in (url.length, "Tried to send an HTTP request without a URL")
     import std.concurrency : send;
     import core.time : MonoTime, msecs;
 
-    if (plugin.state.settings.trace)
+    version(TraceHTTPRequests)
     {
         import kameloso.common : logger;
         import lu.conv : Enum;
 
-        enum pattern = "%s: <i>%s<t> (%s)";
+        enum tracePattern = "%s: <i>%s<t> (%s)";
         logger.tracef(
-            pattern,
+            tracePattern,
             Enum!HTTPVerb.toString(verb),
             url,
             caller);
@@ -968,11 +968,11 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         }
         else
         {
-            if (plugin.state.settings.trace)
+            version(TraceHTTPRequests)
             {
                 import kameloso.common : logger;
-                enum pattern = "GET: <i>%s<t> (%s)";
-                logger.tracef(pattern, url, __FUNCTION__);
+                enum tracePattern = "get: <i>%s<t> (%s)";
+                logger.tracef(tracePattern, url, __FUNCTION__);
             }
 
             response = sendHTTPRequestImpl(

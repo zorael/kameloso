@@ -171,6 +171,7 @@ configuration "dev-lowmem" {
         //"OSXTMPDIR" \
         //"TraceWhois" \
         //"BenchmarkHTTPRequests" \
+        //"TraceHTTPRequests" \
 }
 
 configuration "unittest" {
@@ -191,6 +192,7 @@ configuration "unittest" {
         "TwitchPromoteEverywhere" \
         "TwitchCustomEmotesEverywhere" \
         "BenchmarkHTTPRequests" \
+        "TraceHTTPRequests" \
         "OSXTMPDIR"
 }
 
@@ -213,5 +215,6 @@ configuration "unittest-lowmem" {
         "TwitchPromoteEverywhere" \
         "TwitchCustomEmotesEverywhere" \
         "BenchmarkHTTPRequests" \
+        "TraceHTTPRequests" \
         "OSXTMPDIR"
 }
