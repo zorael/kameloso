@@ -85,10 +85,10 @@ public:
     IRCUser.Class songrequestPermsNeeded = IRCUser.Class.whitelist;
 
     /++
-        Whether or not to convert queries received by someone whose channel is a
+        Whether or not to interpret whispers received by someone whose channel is a
         home channel into a channel message in that channel.
      +/
-    bool fakeChannelFromQueries = false;
+    bool mapWhispersToChannel = false;
 
     /++
         Whether or not broadcasters are always implicitly class
@@ -3533,9 +3533,9 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
     import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
 
-    if (plugin.twitchSettings.fakeChannelFromQueries && (event.type == IRCEvent.Type.QUERY))
+    if (plugin.twitchSettings.mapWhispersToChannel && (event.type == IRCEvent.Type.QUERY))
     {
-        alias pred = (homeChannelEntry, senderNickname) => (homeChannelEntry[1..$] == senderNickname);
+        alias pred = (channelName, senderNickname) => (senderNickname == channelName[1..$]);
 
         if (plugin.state.bot.homeChannels.canFind!pred(event.sender.nickname))
         {
