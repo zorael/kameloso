@@ -95,6 +95,11 @@ struct TitleLookupResult
     uint code;
 
     /++
+        HTTP response body.
+     +/
+    string str;
+
+    /++
         Message text if an exception was thrown during the lookup.
      +/
     string exceptionText;
@@ -708,6 +713,7 @@ auto parseResponseIntoTitleLookupResult(
     TitleLookupResult result;
     result.code = res.code;
     result.url = url;
+    result.str = cast(string)res.responseBody;  // idup?
 
     if (!result.code || (result.code == 2) || (result.code >= 400))
     {
@@ -719,7 +725,7 @@ auto parseResponseIntoTitleLookupResult(
     {
         auto doc = new Document;
         doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
-        doc.parseGarbage(cast(string)res.responseBody);
+        doc.parseGarbage(result.str);
         if (!doc.title.length) return result;
 
         string slice = url;  // mutable
