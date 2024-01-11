@@ -1387,8 +1387,6 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
                 writefln(pattern, delta, response.msecs, misses);
             }
 
-            // Make the new approximate query time a weighted average
-            averageApproximateQueryTime(plugin, response.msecs);
             plugin.responseBucket.remove(id);
             return response;
         }
