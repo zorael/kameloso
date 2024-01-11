@@ -119,13 +119,13 @@ in (((channelName.length && id) ||
         import std.algorithm.mutation : SwapStrategy, remove;
         import core.memory : GC;
 
-        GC.disable();
-        scope(exit) GC.enable();
-
         size_t[] toRemove;
 
         foreach (immutable i, ref emoteImport; emoteImports)
         {
+            GC.disable();
+            scope(exit) GC.enable();
+
             immutable lengthBefore = customEmotes.length;
 
             try
