@@ -42,6 +42,16 @@ package:
 struct QueryResponse
 {
     /++
+        The URL that was queried.
+     +/
+    string url;
+
+    /++
+        The host that was queried.
+     +/
+    string host;
+
+    /++
         Response body, may be several lines.
      +/
     string str;
@@ -679,6 +689,7 @@ auto sendHTTPRequestImpl(
 
     Response res;
     QueryResponse response;
+    response.url = url;
 
     try
     {
@@ -717,6 +728,7 @@ auto sendHTTPRequestImpl(
     }
 
     response.code = res.code;
+    response.host = res.uri.host;
     response.str = cast(string)res.responseBody;  //.idup?
 
     immutable stats = res.getStats();
