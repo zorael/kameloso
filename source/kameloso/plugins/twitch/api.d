@@ -464,6 +464,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
+    import std.algorithm.searching : endsWith;
     import std.concurrency : send;
     import core.time : MonoTime, msecs;
 
@@ -495,10 +496,24 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
     delay(plugin, plugin.transient.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id);
-    immutable post = MonoTime.currTime;
-    immutable diff = (post - pre);
-    immutable msecs_ = diff.total!"msecs";
-    averageApproximateQueryTime(plugin, msecs_);
+
+    if (response.exceptionText.length)
+    {
+        throw new TwitchQueryException(
+            response.exceptionText,
+            response.str,
+            response.error,
+            response.code);
+    }
+
+    if (response.host.endsWith(".twitch.tv"))
+    {
+        // Only update approximate query time for Twitch queries (skip those of custom emotes)
+        immutable post = MonoTime.currTime;
+        immutable diff = (post - pre);
+        immutable msecs_ = diff.total!"msecs";
+        averageApproximateQueryTime(plugin, msecs_);
+    }
 
     if (response.code == 0) // can't go by response.str.length, as it can be empty
     {
