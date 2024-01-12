@@ -600,13 +600,13 @@ void handleModifyTimer(
     {
         import lu.conv : Enum;
 
-        enum pattern = "Timer <b>%s<b> modified to " ~
+        enum pattern = "Timer \"<b>%s<b>\" modified to " ~
             "type <b>%s<b>, " ~
             "condition <b>%s<b>, " ~
             "message count threshold <b>%d<b>, " ~
-            "time threshold <b>%s<b>, " ~
+            "time threshold <b>%s<b> seconds, " ~
             "stagger message count <b>%d<b>, " ~
-            "stagger time <b>%s<b>";
+            "stagger time <b>%s<b> seconds";
         immutable message = pattern.format(
             timer.name,
             Enum!(Timer.TimerType).toString(timer.type),
