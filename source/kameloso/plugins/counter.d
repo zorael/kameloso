@@ -338,24 +338,18 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
             return false;
         }
 
-        alias Payload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
+        alias Payload = Tuple!
+            (IRCPlugin.CommandMetadata[string][string],
+            IRCPlugin.CommandMetadata[string][string]);
 
         void addCounterDg()
         {
             auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
             assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
-            IRCPlugin.CommandMetadata[string][string] aa = thisFiber.payload[0];
-            if (triggerConflicts(aa)) return;
+            if (triggerConflicts(thisFiber.payload[0])) return;
+            else if (triggerConflicts(thisFiber.payload[1])) return;
 
-            // Get channel AAs
-            defer(plugin, thisFiber, event.channel);
-            Fiber.yield();
-
-            IRCPlugin.CommandMetadata[string][string] channelSpecificAA = thisFiber.payload[0];
-            if (triggerConflicts(channelSpecificAA)) return;
-
-            // If we're here there were no conflicts
             plugin.counters[event.channel][slice] = Counter(slice);
             saveCounters(plugin);
 
@@ -364,7 +358,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
             chan(plugin.state, event.channel, message);
         }
 
-        defer!Payload(plugin, &addCounterDg);
+        defer!Payload(plugin, &addCounterDg, event.channel);
         break;
 
     case "remove":

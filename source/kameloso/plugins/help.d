@@ -88,7 +88,9 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
     import std.typecons : Tuple;
     import core.thread : Fiber;
 
-    alias Payload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
+    alias Payload = Tuple!
+        (IRCPlugin.CommandMetadata[string][string],
+        IRCPlugin.CommandMetadata[string][string]);
 
     void sendHelpDg()
     {
@@ -99,15 +101,13 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
-        IRCPlugin.CommandMetadata[string][string] allPluginCommands = thisFiber.payload[0];
-
         IRCEvent mutEvent = event;  // mutable
         mutEvent.content = mutEvent.content.stripped;
 
         if (!mutEvent.content.length)
         {
             // Nothing supplied, send the big list
-            return sendFullPluginListing(plugin, mutEvent, allPluginCommands);
+            return sendFullPluginListing(plugin, mutEvent, thisFiber.payload[0]);
         }
 
         immutable shorthandNicknamePrefix = plugin.state.client.nickname[0..1] ~ ':';
@@ -119,7 +119,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
             mutEvent.content.startsWith(shorthandNicknamePrefix))
         {
             // Not a plugin, just a prefixed command (probably)
-            sendOnlyCommandHelp(plugin, mutEvent, allPluginCommands);
+            sendOnlyCommandHelp(plugin, mutEvent, thisFiber.payload[0]);
         }
         else if (mutEvent.content.indexOf(' ') != -1)
         {
@@ -128,7 +128,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
             if (mutEvent.content.count(' ') == 1)
             {
                 // Likely a plugin and a command
-                sendPluginCommandHelp(plugin, mutEvent, allPluginCommands);
+                sendPluginCommandHelp(plugin, mutEvent, thisFiber.payload[0]);
             }
             else /*if (mutEvent.content.count(' ') > 1)*/
             {
@@ -146,7 +146,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         else
         {
             // Just one word; print a specified plugin's commands
-            sendSpecificPluginListing(plugin, mutEvent, allPluginCommands);
+            sendSpecificPluginListing(plugin, mutEvent, thisFiber.payload[0]);
         }
     }
 

@@ -2397,27 +2397,32 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
 
         version(WantPeekCommandsHandler)
         {
-            alias PeekCommandsPayload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
+            alias PeekCommandsPayload = Tuple!
+                (IRCPlugin.CommandMetadata[string][string],
+                IRCPlugin.CommandMetadata[string][string]);
 
             if (auto fiber = cast(CarryingFiber!(PeekCommandsPayload))(action.fiber))
             {
                 immutable channelName = action.context;
 
-                IRCPlugin.CommandMetadata[string][string] commandAA;
+                IRCPlugin.CommandMetadata[string][string] globalCommandAA;
+                IRCPlugin.CommandMetadata[string][string] channelCommandAA;
 
                 foreach (thisPlugin; instance.plugins)
                 {
-                    if (channelName.length)
+                    globalCommandAA[thisPlugin.name] = thisPlugin.commands;
+                }
+
+                if (channelName.length)
+                {
+                    foreach (thisPlugin; instance.plugins)
                     {
-                        commandAA[thisPlugin.name] = thisPlugin.channelSpecificCommands(channelName);
-                    }
-                    else
-                    {
-                        commandAA[thisPlugin.name] = thisPlugin.commands;
+                        channelCommandAA[thisPlugin.name] = thisPlugin.channelSpecificCommands(channelName);
                     }
                 }
 
-                fiber.payload[0] = commandAA;
+                fiber.payload[0] = globalCommandAA;
+                fiber.payload[1] = channelCommandAA;
                 fiber.call(action.creator);
                 continue;
             }

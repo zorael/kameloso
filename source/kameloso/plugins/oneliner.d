@@ -653,7 +653,29 @@ void newOnelinerImpl(
     import std.format : format;
     import std.typecons : Tuple;
 
-    alias Payload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
+    auto triggerConflicts(const IRCPlugin.CommandMetadata[string][string] aa)
+    {
+        foreach (immutable pluginName, pluginCommands; aa)
+        {
+            if (!pluginCommands.length || (pluginName == "oneliner"))
+            {
+                continue;
+            }
+
+            if (trigger in pluginCommands)
+            {
+                enum pattern = `Oneliner word "<b>%s<b>" conflicts with a command of the <b>%s<b> plugin.`;
+                immutable message = pattern.format(trigger, pluginName);
+                chan(plugin.state, channelName, message);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    alias Payload = Tuple!
+        (IRCPlugin.CommandMetadata[string][string],
+        IRCPlugin.CommandMetadata[string][string]);
 
     void addNewOnelinerDg()
     {
@@ -663,41 +685,9 @@ void newOnelinerImpl(
         auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
-        auto triggerConflicts(const IRCPlugin.CommandMetadata[string][string] aa)
-        {
-            foreach (immutable pluginName, pluginCommands; aa)
-            {
-                if (!pluginCommands.length || (pluginName == "oneliner"))
-                {
-                    continue;
-                }
+        if (triggerConflicts(thisFiber.payload[0])) return;
+        else if (triggerConflicts(thisFiber.payload[1])) return;
 
-                foreach (immutable word; pluginCommands.byKey)
-                {
-                    if (word == trigger)
-                    {
-                        enum pattern = `Oneliner word "<b>%s<b>" conflicts with a command of the <b>%s<b> plugin.`;
-                        immutable message = pattern.format(trigger, pluginName);
-                        chan(plugin.state, channelName, message);
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        IRCPlugin.CommandMetadata[string][string] aa = thisFiber.payload[0];
-        if (triggerConflicts(aa)) return;
-
-        // Get channel AAs
-        defer(plugin, thisFiber, channelName);
-        Fiber.yield();
-
-        IRCPlugin.CommandMetadata[string][string] channelSpecificAA = thisFiber.payload[0];
-        if (triggerConflicts(channelSpecificAA)) return;
-
-        // If we're here there were no conflicts
         Oneliner oneliner;
         oneliner.trigger = trigger;
         oneliner.alias_ = alias_;  // string.init if unset
@@ -721,7 +711,7 @@ void newOnelinerImpl(
         }
     }
 
-    defer!Payload(plugin, &addNewOnelinerDg);
+    defer!Payload(plugin, &addNewOnelinerDg, channelName);
 }
 
 
