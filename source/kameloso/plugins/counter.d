@@ -508,13 +508,15 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
     void sendCounterModified(const Counter counter, const long step)
     {
+        import std.math.algebraic : abs;
+
         immutable pattern = (step >= 0) ? counter.patternIncrement : counter.patternDecrement;
         immutable message = formatMessage(
             plugin,
             pattern,
             event,
             counter,
-            step);
+            abs(step));
         chan(plugin.state, event.channel, message);
     }
 
