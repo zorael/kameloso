@@ -385,7 +385,7 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
         }
     }
 
-    if (!oneliner.responses.length) return sendEmptyOneliner(trigger);
+    if (!oneliner.responses.length) return sendEmptyOneliner(oneliner.trigger);
 
     if (oneliner.cooldown > 0)
     {
