@@ -355,6 +355,9 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     {
         import std.format : format;
 
+        // Only operators and above can add to oneliners
+        if (event.sender.class_ < IRCUser.Class.operator) return;
+
         enum pattern = "(Empty oneliner; use <b>%soneliner add %s<b> to add lines.)";
         immutable message = pattern.format(plugin.state.settings.prefix, trigger);
         sendOneliner(plugin, event, message);
