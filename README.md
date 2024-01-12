@@ -553,7 +553,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 * ...start a thread under [Discussions](https://github.com/zorael/kameloso/discussions).
 * ...file a [GitHub issue](https://github.com/zorael/kameloso/issues/new).
-* ...send me an [email](mailto:zorael@gmail.com?Subject=kameloso).
+* ...send me an [email](mailto:zorael@gmail.com?subject=Need+help+with+kameloso).
 
 ## Known issues
 
