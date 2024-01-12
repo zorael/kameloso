@@ -1116,7 +1116,7 @@ void handleDelFromOneliner(
 
         string[] toRemove;
 
-        foreach (immutable otherTrigger, otherOneliner; *channelOneliners)
+        foreach (immutable otherTrigger, const otherOneliner; *channelOneliners)
         {
             if (otherOneliner.type == Oneliner.OnelinerType.alias_)
             {
@@ -1200,11 +1200,11 @@ void handleAliasOneliner(
 
     trigger = Oneliner.stripPrefix(trigger, plugin.state.settings.prefix).toLower();
 
-    auto channelTriggers = event.channel in plugin.onelinersByChannel;
+    const channelTriggers = event.channel in plugin.onelinersByChannel;
     if (!channelTriggers) return sendNoSuchOneliner(alias_);
     if (trigger in *channelTriggers) return sendOnelinerAlreadyExists(trigger);
 
-    auto otherOneliner = alias_ in *channelTriggers;
+    const otherOneliner = alias_ in *channelTriggers;
     if (!otherOneliner) return sendNoSuchOneliner(alias_);
     if (otherOneliner.type == Oneliner.OnelinerType.alias_) return sendCannotAliasAlias();
 
