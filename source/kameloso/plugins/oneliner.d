@@ -1185,6 +1185,12 @@ void handleAliasOneliner(
         chan(plugin.state, event.channel, message);
     }
 
+    void sendCannotAliasAlias()
+    {
+        enum message = "Cannot alias an alias oneliner.";
+        chan(plugin.state, event.channel, message);
+    }
+
     string trigger;  // mutable
     string alias_;  // as above
     cast(void)slice.splitInto(trigger, alias_);
@@ -1197,7 +1203,10 @@ void handleAliasOneliner(
     auto channelTriggers = event.channel in plugin.onelinersByChannel;
     if (!channelTriggers) return sendNoSuchOneliner(alias_);
     if (trigger in *channelTriggers) return sendOnelinerAlreadyExists(trigger);
-    if (alias_ !in *channelTriggers) return sendNoSuchOneliner(alias_);
+
+    auto otherOneliner = alias_ in *channelTriggers;
+    if (!otherOneliner) return sendNoSuchOneliner(alias_);
+    if (otherOneliner.type == Oneliner.OnelinerType.alias_) return sendCannotAliasAlias();
 
     newOnelinerImpl(
         plugin,
