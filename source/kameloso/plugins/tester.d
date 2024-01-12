@@ -317,21 +317,29 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
     s.send("home del #harpsteff");
     s.expect("Channel #harpsteff was not listed as a home channel.");
 
+    s.send("guest add #BLIRPBLARP");
+    s.expect("Guest channel added.");
+
+    s.send("guest del #BLIRPBLARP");
+    s.expect("Guest channel removed.");
+
     // ------------ lists
 
     import std.range : only;
 
-    foreach (immutable list; only("staff"))//, "operator", "whitelist", "blacklist"))
+    foreach (immutable list; only("staff"))//, "operator", "elevated", "whitelist", "blacklist"))
     {
         immutable definiteFormSingular =
             (list == "staff") ? "staff" :
             (list == "operator") ? "an operator" :
+            (list == "elevated") ? "an elevated user" :
             (list == "whitelist") ? "a whitelisted user" :
             /*(list == "blacklist") ?*/ "a blacklisted user";
 
         immutable plural =
             (list == "staff") ? "staff" :
             (list == "operator") ? "operators" :
+            (list == "elevated") ? "elevated users" :
             (list == "whitelist") ? "whitelisted users" :
             /*(list == "blacklist") ?*/ "blacklisted users";
 
@@ -406,6 +414,9 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
 
     s.send("get core.prefix");
     s.expect("core.prefix=\"%s\"".format(plugin.state.settings.prefix));
+
+    s.send("sudo PRIVMSG " ~ origEvent.channel ~ " :hello world");
+    s.expect("hello world");
 }
 
 
@@ -615,7 +626,7 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     s.expect("There are no commands available right now.");
 
     s.send("oneliner");
-    s.expect("Usage: %soneliner [new|insert|add|edit|del|list] ...".format(prefix));
+    s.expect("Usage: %soneliner [new|insert|add|alias|modify|edit|del|list] ...".format(prefix));
 
     s.send("oneliner add herp derp dirp darp");
     s.expect("No such oneliner: %sherp".format(prefix));
@@ -624,9 +635,15 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     s.expect("Usage: %soneliner new [trigger] [type] [optional cooldown]".format(prefix));
 
     s.send("oneliner new herp ordered");
-    s.expect("Oneliner %sherp created! Use %1$soneliner add to add lines.".format(prefix));
+    s.expect("Oneliner %sherp created!".format(prefix));
 
     s.sendPrefixed("herp");
+    s.expect("(Empty oneliner; use %soneliner add herp to add lines.)".format(prefix));
+
+    s.send("oneliner alias hirp herp");
+    s.expect("Oneliner %shirp created as an alias of %1$sherp.".format(prefix));
+
+    s.sendPrefixed("hirp");
     s.expect("(Empty oneliner; use %soneliner add herp to add lines.)".format(prefix));
 
     s.send("oneliner add herp 123");
@@ -638,7 +655,7 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     s.sendPrefixed("herp");
     s.expect("123");
 
-    s.sendPrefixed("herp");
+    s.sendPrefixed("hirp");
     s.expect("456");
 
     s.sendPrefixed("herp");
@@ -650,10 +667,13 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     s.sendPrefixed("herp");
     s.expect("000");
 
-    s.sendPrefixed("herp");
+    s.sendPrefixed("hirp");
     s.expect("123");
 
     s.send("oneliner list");
+    s.expect("Available commands: %sherp, %1$shirp*".format(prefix));
+
+    s.sendPrefixed("commands");
     s.expect("Available commands: %sherp".format(prefix));
 
     s.send("oneliner del hurp");
@@ -661,12 +681,13 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
 
     s.send("oneliner del herp");
     s.expect("Oneliner %sherp removed.".format(prefix));
+    s.expect("Oneliner alias %shirp removed.".format(prefix));
 
     s.send("oneliner list");
     s.expect("There are no commands available right now.");
 
     s.send("oneliner new herp random 10");
-    s.expect("Oneliner %sherp created! Use %1$soneliner add to add lines.".format(prefix));
+    s.expect("Oneliner %sherp created!".format(prefix));
 
     s.sendPrefixed("herp");
     s.expect("(Empty oneliner; use %soneliner add herp to add lines.)".format(prefix));
@@ -682,6 +703,24 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     logger.info("wait 10 seconds...");
     delay(plugin, 10.seconds, Yes.yield);
     enforce(!thisFiber.payload.content.length);
+
+    s.sendPrefixed("herp");
+    s.expect("abc");
+
+    s.send("oneliner modify");
+    s.expect("Usage: %soneliner modify [trigger] [type] [optional cooldown]".format(prefix));
+
+    s.send("oneliner modify herp ordered 0");
+    s.expect("Oneliner %sherp modified to type ordered, cooldown 0 seconds".format(prefix));
+
+    s.send("oneliner add herp def");
+    s.expect("Oneliner line added.");
+
+    s.sendPrefixed("herp");
+    s.expect("abc");
+
+    s.sendPrefixed("herp");
+    s.expect("def");
 
     s.sendPrefixed("herp");
     s.expect("abc");
@@ -1076,12 +1115,12 @@ in (origEvent.channel.length, "Tried to test Timer with empty channel in origina
     // ------------ !timer
 
     s.send("timer");
-    s.expect("Usage: %stimer [new|add|del|suspend|resume|list] ..."
+    s.expect("Usage: %stimer [new|modify|add|del|suspend|resume|list] ..."
         .format(plugin.state.settings.prefix));
 
     s.send("timer new");
     s.expect(("Usage: %stimer new [name] [type] [condition] [message count threshold] " ~
-        "[time threshold] [stagger message count] [stagger time]")
+        "[time threshold] [optional stagger message count] [optional stagger time]")
             .format(plugin.state.settings.prefix));
 
     s.send("timer new hirrsteff ordered both 0 10s 0 10s");
@@ -1132,6 +1171,24 @@ in (origEvent.channel.length, "Tried to test Timer with empty channel in origina
 
     s.expect("HARLO");
     logger.info("all ok again");
+
+    s.send("timer modify");
+    s.expect(("Usage: %stimer modify [name] [type] [condition] [message count threshold] " ~
+        "[time threshold] [optional stagger message count] [optional stagger time]")
+            .format(plugin.state.settings.prefix));
+
+    s.send("timer modify hirrsteff random both 1 10s");
+    s.expect("Timer \"hirrsteff\" modified to type random, condition both, " ~
+        "message count threshold 1, time threshold 10 seconds, " ~
+        "stagger message count 0, stagger time 10 seconds");
+
+    logger.info("Wait ~1 cycle, nothing should happen...");
+    delay(plugin, 15.seconds, Yes.yield);
+    enforce(!thisFiber.payload.content.length, thisFiber.payload.content);
+
+    s.send("blep");
+    s.expect("HARLO");
+    logger.info("ok");
 
     s.send("timer del hirrsteff");
     s.expect("Timer removed.");
