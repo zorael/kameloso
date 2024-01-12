@@ -488,7 +488,7 @@ void onCommandModifyOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     {
         import std.format : format;
 
-        enum pattern = "Usage: <b>%s%s<b> [new|insert|add|modify|edit|del|list] ...";
+        enum pattern = "Usage: <b>%s%s<b> [new|insert|add|alias|modify|edit|del|list] ...";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
@@ -705,7 +705,7 @@ void newOnelinerImpl(
 
         if (type == Oneliner.OnelinerType.alias_)
         {
-            enum pattern = "Oneliner <b>%s%s<b> is now an alias of <b>%1$s%3$s<b>.";
+            enum pattern = "Oneliner <b>%s%s<b> created as an alias of <b>%1$s%3$s<b>.";
             immutable message = pattern.format(plugin.state.settings.prefix, trigger, alias_);
             chan(plugin.state, channelName, message);
         }
@@ -769,10 +769,11 @@ void handleModifyOneliner(
 
     void sendNewDescription(const Oneliner oneliner)
     {
-        enum pattern = "Oneliner \"<b>%s<b>\" modified to " ~
+        enum pattern = "Oneliner <b>%s%s<b> modified to " ~
             "type <b>%s<b>, " ~
             "cooldown <b>%d<b> seconds";
         immutable message = pattern.format(
+            plugin.state.settings.prefix,
             oneliner.trigger,
             Enum!(Oneliner.OnelinerType).toString(oneliner.type),
             oneliner.cooldown);
