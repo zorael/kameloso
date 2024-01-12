@@ -342,7 +342,9 @@ unittest
             .policy(PrefixPolicy.prefixed)
             .description("Adds, removes or lists timers.")
             .addSyntax("$command new [name] [type] [condition] [message count threshold] " ~
-                "[time threshold] [stagger message count] [stagger time]")
+                "[time threshold] [optional stagger message count] [optional stagger time]")
+            .addSyntax("$command modify [name] [type] [condition] [message count threshold] " ~
+                "[time threshold] [optional stagger message count] [optional stagger time]")
             .addSyntax("$command add [existing timer name] [new timer line]")
             .addSyntax("$command insert [timer name] [position] [new timer line]")
             .addSyntax("$command edit [timer name] [position] [new timer line]")
