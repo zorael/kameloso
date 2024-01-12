@@ -152,17 +152,17 @@ auto downloadWindowsSSL(
 
                 version(Win64)
                 {
-                    enum head = "Win64OpenSSL_Light-1_";
+                    enum head = "Win64OpenSSL_Light-3_";
                 }
                 else version(Win32)
                 {
-                    enum head = "Win32OpenSSL_Light-1_";
+                    enum head = "Win32OpenSSL_Light-3_";
                 }
-                /*else version(AArch64)
+                else version(AArch64)
                 {
-                    // Only OpenSSL v3.0 available for ARM, and we haven't tested it yet
+                    // Untested, might work?
                     enum head = "Win64ARMOpenSSL_Light-3_";
-                }*/
+                }
                 else
                 {
                     static assert(0, "Unsupported platform, please file a bug.");
@@ -179,7 +179,6 @@ auto downloadWindowsSSL(
 
                     logger.info("Launching <l>OpenSSL</> installer.");
                     cast(void)execute([ exeFile ]);
-
                     return retval;
                 }
             }
