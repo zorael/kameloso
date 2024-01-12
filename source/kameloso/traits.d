@@ -92,7 +92,7 @@ template memberIsVisibleAndNotDeprecated(Thing, string memberstring)
                 __traits(getVisibility) over deprecated __traits(getProtection).
                 __traits(isDeprecated) before __traits(getVisibility) to gag
                 deprecation warnings.
-            +/
+             +/
             static if (
                 !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
                 (__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "private") &&
@@ -110,7 +110,7 @@ template memberIsVisibleAndNotDeprecated(Thing, string memberstring)
             /+
                 __traits(isDeprecated) before __traits(getProtection) to gag
                 deprecation warnings.
-            +/
+             +/
             static if (
                 !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
                 (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "private") &&
@@ -132,7 +132,7 @@ template memberIsVisibleAndNotDeprecated(Thing, string memberstring)
                 This order is not necessary for all versions, but the oldest require
                 it. Additionally we can't avoid the deprecation messages no matter
                 what we do, so just lump the rest here.
-            +/
+             +/
             static if (
                 (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "private") &&
                 (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "package") &&

@@ -3,7 +3,7 @@
     the bot isn't compiled in.
 
     See_Also:
-        [kameloso.plugins.twitch.base]
+        [kameloso.plugins.twitch]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -33,13 +33,13 @@ public:
 final class TwitchPlugin : IRCPlugin
 {
 private:
-    static import kameloso.plugins.twitch.base;
+    static import kameloso.plugins.twitch;
 
 public:
     /++
         All Twitch plugin settings.
      +/
-    kameloso.plugins.twitch.base.TwitchSettings twitchSettings;
+    kameloso.plugins.twitch.TwitchSettings twitchSettings;
 
     mixin IRCPluginImpl;
 }

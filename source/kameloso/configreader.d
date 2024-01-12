@@ -112,7 +112,7 @@ if (allSatisfy!(isStruct, T))  // must be a constraint
  +/
 auto configurationText(const string configFile) @safe
 {
-    import std.file : exists, getAttributes, isFile, readText;
+    import std.file : exists, getAttributes, isFile;
 
     if (!configFile.exists)
     {
@@ -130,37 +130,11 @@ auto configurationText(const string configFile) @safe
 
     try
     {
-        import kameloso.string : replaceFromAA;
+        import std.file : readText;
         import std.string : chomp;
-
-        @safe string delegate()[string] aa =
-        [
-            "[Notes]\n"       : () => "[Note]\n",
-            "[Notes]\r\n"     : () => "[Note]\r\n",
-            "[Votes]\n"       : () => "[Poll]\n",
-            "[Votes]\r\n"     : () => "[Poll]\r\n",
-            "[Quotes]\n"      : () => "[Quote]\n",
-            "[Quotes]\r\n"    : () => "[Quote]\r\n",
-            "[TwitchBot]\n"   : () => "[Twitch]\n",
-            "[TwitchBot]\r\n" : () => "[Twitch]\r\n",
-            "[Oneliners]\n"   : () => "[Oneliner]\n",
-            "[Oneliners]\r\n" : () => "[Oneliner]\r\n",
-            "[Webtitles]\n"   : () => "[Webtitle]\n",
-            "[Webtitles]\r\n" : () => "[Webtitle]\r\n",
-        ];
-
-        /+
-            Ideally we'd rehash here, but that's not possible in @safe code.
-            Bend the rules and cheat a bit; surely history will forgive us.
-         +/
-        () @trusted
-        {
-            aa.rehash();
-        }();
 
         return configFile
             .readText
-            .replaceFromAA!'['(aa)
             .chomp;
     }
     catch (Exception e)

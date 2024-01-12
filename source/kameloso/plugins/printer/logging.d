@@ -3,11 +3,11 @@
     For internal use.
 
     The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
-    as the [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin], but these implementation
+    as the [kameloso.plugins.printer.PrinterPlugin|PrinterPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
 
     See_Also:
-        [kameloso.plugins.printer.base],
+        [kameloso.plugins.printer],
         [kameloso.plugins.printer.formatting]
 
     Copyright: [JR](https://github.com/zorael)
@@ -22,7 +22,7 @@ version(WithPrinterPlugin):
 
 private:
 
-import kameloso.plugins.printer.base;
+import kameloso.plugins.printer;
 
 import kameloso.common : logger;
 import dialect.defs;
@@ -37,7 +37,7 @@ package:
     A struct containing lines to write to a log file when next flushing such.
 
     This is only relevant if
-    [kameloso.plugins.printer.base.PrinterSettings.bufferedWrites|PrinterSettings.bufferedWrites]
+    [kameloso.plugins.printer.PrinterSettings.bufferedWrites|PrinterSettings.bufferedWrites]
     is set.
 
     As a micro-optimisation an [std.array.Appender|Appender] is used to store the lines,
@@ -307,7 +307,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                             Ideally we wouldn't use the linebuffer here and
                             instead keep an errlinebuffer around, but this works.
-                        +/
+                         +/
 
                         scope(failure) plugin.linebuffer.clear();
 
@@ -677,7 +677,7 @@ auto establishLogLocation(const string logLocation, ref bool naggedAboutDir)
     Merely wraps [flushLog] by iterating over all buffers and invoking it.
 
     Params:
-        plugin = The current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
+        plugin = The current [kameloso.plugins.printer.PrinterPlugin|PrinterPlugin].
 
     See_Also:
         [flushLog]
@@ -702,7 +702,7 @@ void flushAllLogsImpl(PrinterPlugin plugin)
     losing unflushed lines in a catastrophical crash.
 
     Params:
-        plugin = The current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
+        plugin = The current [kameloso.plugins.printer.PrinterPlugin|PrinterPlugin].
         buffer = [LogLineBuffer] whose lines to flush to disk.
 
     See_Also:

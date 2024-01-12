@@ -431,11 +431,8 @@ auto readFIFO(PipelinePlugin plugin)
 
     foreach (immutable originalLine; slice.splitter("\n"))
     {
-        import kameloso.messaging : raw;
         import kameloso.thread : ThreadMessage, boxed;
         import lu.string : strippedLeft;
-        import std.algorithm.searching : startsWith;
-        import std.uni : toLower;
 
         string line = originalLine.strippedLeft;  // mutable
         if (!line.length) continue;
@@ -449,44 +446,17 @@ auto readFIFO(PipelinePlugin plugin)
             if (!header.length) continue;
 
             plugin.state.messages ~= ThreadMessage.busMessage(header, boxed(line));
-            shouldCheckMessages = true;
-            continue;
         }
-        else if (line[0] == '>')
+        else if (line[0] == '<')
         {
             plugin.state.messages ~= ThreadMessage.fakeEvent(line[1..$]);
-            shouldCheckMessages = true;
-            continue;
         }
-
-        immutable lowerLine = line.toLower;
-
-        if (lowerLine.startsWith("quit"))
+        else
         {
-            import kameloso.messaging : quit;
-
-            if ((line.length > 6) && (line[4..6] == " :"))
-            {
-                quit(plugin.state, line[6..$]);
-            }
-            else
-            {
-                quit(plugin.state);  // Default reason
-            }
-            return true;  // no need to continue looping
-        }
-        else if (lowerLine == "reconnect")
-        {
-            plugin.state.priorityMessages ~= ThreadMessage.reconnect;
-            return true;  // as above
-        }
-        else if (lowerLine == "reexec")
-        {
-            plugin.state.priorityMessages ~= ThreadMessage.reconnect(string.init, boxed(true));
-            return true;  // ditto
+            import kameloso.messaging : raw;
+            raw(plugin.state, line.strippedLeft);
         }
 
-        raw(plugin.state, line.strippedLeft);
         shouldCheckMessages = true;
     }
 

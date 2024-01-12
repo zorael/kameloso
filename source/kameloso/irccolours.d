@@ -204,7 +204,7 @@ in (line.length, "Tried to apply IRC colours to a string but no string was given
         import std.format : format;
 
         enum pattern = "`%s` must be passed an output range of `char[]`";
-        immutable message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
 

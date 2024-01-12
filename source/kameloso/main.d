@@ -16,6 +16,8 @@
  +/
 module kameloso.main;
 
+debug version = Debug;
+
 private:
 
 import kameloso.common : logger;
@@ -458,8 +460,11 @@ void messageFiber(Kameloso instance)
                 break;
 
             case fakeEvent:
-                import std.datetime.systime : Clock;
-                processLineFromServer(instance, message.content, Clock.currTime.toUnixTime());
+                version(Debug)
+                {
+                    import std.datetime.systime : Clock;
+                    processLineFromServer(instance, message.content, Clock.currTime.toUnixTime());
+                }
                 break;
 
             case teardown:
@@ -769,17 +774,21 @@ void messageFiber(Kameloso instance)
         /+
             Still time enough to act on messages?
          +/
-        auto stillOnTime()
+        auto isStillOnTime()
         {
-            return ((MonoTime.currTime - loopStartTime) <= maxReceiveTime);
+            immutable onTime = ((MonoTime.currTime - loopStartTime) <= maxReceiveTime);
+            //version(Debug) if (!onTime) logger.warning("Messenger loop ran out of time");
+            return onTime;
         }
 
         /+
             Whether or not to continue the loop.
          +/
-        auto shouldContinue()
+        auto shouldStillContinue()
         {
-            return (next == Next.continue_) && !*instance.abort;
+            immutable shouldContinue = ((next == Next.continue_) && !*instance.abort);
+            //version(Debug) if (!shouldContinue) logger.warning("Messenger loop shouldn't continue");
+            return shouldContinue;
         }
 
         /+
@@ -788,17 +797,17 @@ void messageFiber(Kameloso instance)
         priorityMessageTop:
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.isEnabled || !plugin.state.priorityMessages.length) continue;
+            if (!plugin.isEnabled || !plugin.state.priorityMessages.length) continue priorityMessageTop;
 
-            foreach (immutable i, message; plugin.state.priorityMessages)
+            for (size_t i; i < plugin.state.priorityMessages.length; ++i)
             {
-                onThreadMessage(message);
+                onThreadMessage(plugin.state.priorityMessages[i]);
 
-                if (!shouldContinue)
+                if (!shouldStillContinue)
                 {
                     break priorityMessageTop;
                 }
-                else if (!stillOnTime)
+                else if (!isStillOnTime)
                 {
                     // Ran out of time. Pop until where we are corrently
                     plugin.state.priorityMessages = plugin.state.priorityMessages[i+1..$];
@@ -809,7 +818,7 @@ void messageFiber(Kameloso instance)
             plugin.state.priorityMessages = null;
         }
 
-        if (!shouldContinue || !stillOnTime)
+        if (!shouldStillContinue || !isStillOnTime)
         {
             yield(next);
             continue;
@@ -821,17 +830,17 @@ void messageFiber(Kameloso instance)
         normalMessageTop:
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.isEnabled || !plugin.state.messages.length) continue;
+            if (!plugin.isEnabled || !plugin.state.messages.length) continue normalMessageTop;
 
-            foreach (immutable i, message; plugin.state.messages)
+            for (size_t i; i < plugin.state.messages.length; ++i)
             {
-                onThreadMessage(message);
+                onThreadMessage(plugin.state.messages[i]);
 
-                if (!shouldContinue)
+                if (!shouldStillContinue)
                 {
                     break normalMessageTop;
                 }
-                else if (!stillOnTime)
+                else if (!isStillOnTime)
                 {
                     // As above
                     plugin.state.messages = plugin.state.messages[i+1..$];
@@ -842,7 +851,7 @@ void messageFiber(Kameloso instance)
             plugin.state.messages = null;
         }
 
-        if (!shouldContinue || !stillOnTime)
+        if (!shouldStillContinue || !isStillOnTime)
         {
             yield(next);
             continue;
@@ -854,17 +863,17 @@ void messageFiber(Kameloso instance)
         outgoingMessageTop:
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.isEnabled || !plugin.state.outgoingMessages.length) continue;
+            if (!plugin.isEnabled || !plugin.state.outgoingMessages.length) continue outgoingMessageTop;
 
             foreach (immutable i, message; plugin.state.outgoingMessages)
             {
                 eventToServer(message);
 
-                if (!shouldContinue)
+                if (!shouldStillContinue)
                 {
                     break outgoingMessageTop;
                 }
-                else if (!stillOnTime)
+                else if (!isStillOnTime)
                 {
                     // As above
                     plugin.state.outgoingMessages = plugin.state.outgoingMessages[i+1..$];
@@ -883,7 +892,7 @@ void messageFiber(Kameloso instance)
          +/
         version(WantConcurrencyMessageLoop)
         {
-            if (!shouldContinue || !stillOnTime)
+            if (!shouldStillContinue || !isStillOnTime)
             {
                 yield(next);
                 continue;
@@ -891,22 +900,33 @@ void messageFiber(Kameloso instance)
 
             /+
                 Concurrency messages, dead last.
-            +/
+             +/
+            readloop:
             while (true)
             {
-                import std.concurrency : receiveTimeout;
-                import std.variant : Variant;
+                bool receivedSomething;
 
-                immutable receivedSomething = receiveTimeout(Duration.zero,
-                    &onThreadMessage,
-                    &eventToServer,
-                    (Variant v) scope
-                    {
-                        logger.error("messageFiber received unexpected Variant: <l>", v);
-                    }
-                );
+                try
+                {
+                    import std.concurrency : receiveTimeout;
+                    import std.variant : Variant;
 
-                if (!receivedSomething || !shouldContinue || !stillOnTime) break;
+                    receivedSomething = receiveTimeout(Duration.zero,
+                        &onThreadMessage,
+                        &eventToServer,
+                        (Variant v) scope
+                        {
+                            logger.error("messageFiber received unexpected Variant: <l>", v);
+                        }
+                    );
+                }
+                catch (Exception e)
+                {
+                    logger.error("messageFiber caught exception: <l>", e.msg);
+                    version(PrintStacktraces) logger.trace(e);
+                }
+
+                if (!receivedSomething || !shouldStillContinue || !isStillOnTime) break readloop;
             }
         }
 
@@ -2785,7 +2805,7 @@ auto tryConnect(Kameloso instance)
                     ----------------
                     ??:? pure @safe bool std.exception.enforce!(bool).enforce(bool, lazy object.Throwable) [0x2cf5f0]
                     ??:? const @trusted immutable(char)[] std.socket.Address.toHostString(bool) [0x4b2d7c6]
-                    */
+                     */
                     // Just let the string be empty
                 }
 
@@ -4267,7 +4287,6 @@ auto checkInitialisationMessages(
             }
         }
 
-        priorityMessageTop:
         foreach (plugin; instance.plugins)
         {
             if (!plugin.state.priorityMessages.length) continue;
@@ -4280,7 +4299,6 @@ auto checkInitialisationMessages(
             plugin.state.priorityMessages = null;
         }
 
-        normalMessageTop:
         foreach (plugin; instance.plugins)
         {
             if (!plugin.state.messages.length) continue;

@@ -3,11 +3,11 @@
     For internal use.
 
     The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
-    as the [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin], but these implementation
+    as the [kameloso.plugins.admin.AdminPlugin|AdminPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
 
     See_Also:
-        [kameloso.plugins.admin.base]
+        [kameloso.plugins.admin]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -21,7 +21,7 @@ version(WithAdminPlugin):
 
 private:
 
-import kameloso.plugins.admin.base;
+import kameloso.plugins.admin;
 
 import kameloso.plugins.common.misc : nameOf;
 import kameloso.common : logger;
@@ -38,7 +38,7 @@ package:
     Common code for enlisting and delisting nicknames/accounts.
 
     Params:
-        plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
+        plugin = The current [kameloso.plugins.admin.AdminPlugin|AdminPlugin].
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         class_ = User class.
  +/
@@ -93,7 +93,7 @@ void manageClassLists(
     elevated users, staff, or the blacklist to the querying user or channel.
 
     Params:
-        plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
+        plugin = The current [kameloso.plugins.admin.AdminPlugin|AdminPlugin].
         channelName = The channel the list relates to.
         class_ = User class.
         event = Optional [dialect.defs.IRCEvent|IRCEvent] that instigated the listing.
@@ -160,7 +160,7 @@ void listList(
     Passes the `list` parameter to [alterAccountClassifier], for list selection.
 
     Params:
-        plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
+        plugin = The current [kameloso.plugins.admin.AdminPlugin|AdminPlugin].
         specified = The nickname or account to white-/blacklist.
         class_ = User class.
         channelName = Which channel the enlisting relates to.
@@ -475,7 +475,7 @@ auto getNoun(const NounForm form, const string classString)
     Passes the `list` parameter to [alterAccountClassifier], for list selection.
 
     Params:
-        plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
+        plugin = The current [kameloso.plugins.admin.AdminPlugin|AdminPlugin].
         account = The account to delist.
         class_ = User class.
         channelName = Which channel the enlisting relates to.
@@ -590,7 +590,7 @@ enum AlterationResult
     and reloads all plugins to make them read the updated lists.
 
     Params:
-        plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
+        plugin = The current [kameloso.plugins.admin.AdminPlugin|AdminPlugin].
         add = Whether to add to or remove from lists.
         class_ = User class.
         account = Services account name to add or remove.
@@ -692,7 +692,7 @@ auto alterAccountClassifier(
     Adds or removes hostmasks used to identify users on servers that don't employ services.
 
     Params:
-        plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
+        plugin = The current [kameloso.plugins.admin.AdminPlugin|AdminPlugin].
         add = Whether to add or to remove the hostmask.
         account = Account the hostmask will equate to. May be empty if `add` is false.
         mask = String "nickname!ident@address.tld" hostmask.

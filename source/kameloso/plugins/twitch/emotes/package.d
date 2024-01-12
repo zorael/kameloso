@@ -19,7 +19,7 @@ version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitch.base : TwitchPlugin;
+import kameloso.plugins.twitch : TwitchPlugin;
 
 import kameloso.common : logger;
 import std.typecons : Flag, No, Yes;
@@ -119,13 +119,13 @@ in (((channelName.length && id) ||
         import std.algorithm.mutation : SwapStrategy, remove;
         import core.memory : GC;
 
-        GC.disable();
-        scope(exit) GC.enable();
-
         size_t[] toRemove;
 
         foreach (immutable i, ref emoteImport; emoteImports)
         {
+            GC.disable();
+            scope(exit) GC.enable();
+
             immutable lengthBefore = customEmotes.length;
 
             try
@@ -257,7 +257,7 @@ in (((channelName.length && id) ||
 // embedCustomEmotes
 /++
     Embeds custom emotes into the `emotes` string passed by reference,
-    so that the [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin] can
+    so that the [kameloso.plugins.printer.PrinterPlugin|PrinterPlugin] can
     highlight `content` with colours.
 
     This is called in [postprocess].

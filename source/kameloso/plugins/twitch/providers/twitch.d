@@ -2,8 +2,11 @@
     Functions for generating a Twitch API key.
 
     See_Also:
-        [kameloso.plugins.twitch.base],
-        [kameloso.plugins.twitch.api]
+        [kameloso.plugins.twitch],
+        [kameloso.plugins.twitch.api],
+        [kameloso.plugins.twitch.providers.common],
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -11,21 +14,23 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-module kameloso.plugins.twitch.keygen;
+module kameloso.plugins.twitch.providers.twitch;
 
 version(TwitchSupport):
 version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitch.base;
+import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
+import kameloso.plugins.twitch.providers.common;
+
 import kameloso.common : logger;
 import kameloso.terminal.colours.tags : expandTags;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
-package:
+public:
 
 
 // requestTwitchKey
@@ -33,7 +38,7 @@ package:
     Starts the key generation terminal wizard.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
  +/
 void requestTwitchKey(TwitchPlugin plugin)
 {
@@ -204,7 +209,7 @@ your <w>BOT</> account.
     Starts the super-key generation terminal wizard.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
  +/
 void requestTwitchSuperKey(TwitchPlugin plugin)
 {
@@ -403,7 +408,7 @@ your main <w>STREAMER</> account.
     Reads a URL from standard in and parses an OAuth key from it.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         authNode = Authentication node URL, to detect whether the wrong link was pasted.
 
     Returns:
@@ -515,7 +520,7 @@ private auto buildAuthNodeURL(const string authNode, const string[] scopes)
     of when it expires.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         authToken = Authorisation token to validate and check expiry of.
 
     Returns:

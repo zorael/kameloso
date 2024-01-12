@@ -17,7 +17,7 @@ version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitch.base : TwitchPlugin;
+import kameloso.plugins.twitch : TwitchPlugin;
 import core.thread : Fiber;
 
 package:
@@ -28,7 +28,7 @@ package:
     Fetches 7tv emotes for a given channel.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
         id = Numeric Twitch user/channel ID.
@@ -132,7 +132,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
                         "timestamp": 1657657741507
                     },
             [...]
-            +/
+         +/
 
         if (responseJSON.type != JSONType.object)
         {
@@ -173,7 +173,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
             "status": "Not Found",
             "status_code": 404
         }
-            +/
+         +/
 
         if (const errorJSON = "error" in e.json)
         {
@@ -197,7 +197,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
     Fetches global 7tv emotes.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
         _ = Unused, for signature compatibility with [get7tvEmotes].
@@ -262,7 +262,7 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
             },
         }
     }
-        +/
+     +/
 
     if (responseJSON.type != JSONType.object)
     {

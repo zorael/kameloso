@@ -17,7 +17,6 @@ dflags "-linkonce-templates" "-disable-verify" platform="ldc"
 dependency "lu" version="~>2.1.0"
 dependency "dialect" version="~>2.1.0"
 dependency "arsd-official:dom" version="~>10.9.0"
-dependency "arsd-official:http" version="~>10.9.0"
 dependency "requests" version="~>2.1.2"
 
 sourcePaths "source"
@@ -172,6 +171,7 @@ configuration "dev-lowmem" {
         //"OSXTMPDIR" \
         //"TraceWhois" \
         //"BenchmarkHTTPRequests" \
+        //"TraceHTTPRequests" \
 }
 
 configuration "unittest" {
@@ -192,6 +192,7 @@ configuration "unittest" {
         "TwitchPromoteEverywhere" \
         "TwitchCustomEmotesEverywhere" \
         "BenchmarkHTTPRequests" \
+        "TraceHTTPRequests" \
         "OSXTMPDIR"
 }
 
@@ -214,5 +215,6 @@ configuration "unittest-lowmem" {
         "TwitchPromoteEverywhere" \
         "TwitchCustomEmotesEverywhere" \
         "BenchmarkHTTPRequests" \
+        "TraceHTTPRequests" \
         "OSXTMPDIR"
 }

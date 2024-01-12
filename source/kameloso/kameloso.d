@@ -855,7 +855,7 @@ public:
             }
         }
 
-        auto keys = channel.keys;
+        auto keys = channels.keys;
 
         return keys.length ?
             keys :

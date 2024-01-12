@@ -141,8 +141,8 @@ void startChannelQueries(ChanQueryService service)
 
             version(WithPrinterPlugin)
             {
-                service.state.messages ~=
-                    ThreadMessage.busMessage("printer", boxed(squelchMessage));
+                auto threadMessage = ThreadMessage.busMessage("printer", boxed(squelchMessage));
+                service.state.messages ~= threadMessage;
             }
 
             enum properties = (Message.Property.quiet | Message.Property.background);
@@ -190,8 +190,8 @@ void startChannelQueries(ChanQueryService service)
                 // channels for specific modes.
                 // [chanoprivsneeded] [#d] sinisalo.freenode.net: "You're not a channel operator" (#482)
                 // Ask the Printer to squelch those messages too.
-                service.state.messages ~=
-                    ThreadMessage.busMessage("printer", boxed(squelchMessage));
+                auto threadMessage = ThreadMessage.busMessage("printer", boxed(squelchMessage));
+                service.state.messages ~= threadMessage;
             }
 
             enum properties = (Message.Property.quiet | Message.Property.background);
@@ -255,8 +255,9 @@ void startChannelQueries(ChanQueryService service)
 
         version(WithPrinterPlugin)
         {
-            service.state.messages ~=
-                ThreadMessage.busMessage("printer", boxed("unsquelch"));
+            auto threadMessage = ThreadMessage.busMessage("printer", boxed("unsquelch"));
+            service.state.messages ~= threadMessage;
+
         }
     }
 
@@ -291,8 +292,9 @@ void startChannelQueries(ChanQueryService service)
 
         version(WithPrinterPlugin)
         {
-            service.state.messages ~=
-                ThreadMessage.busMessage("printer", boxed("squelch " ~ nickname));
+            auto threadMessage = ThreadMessage.busMessage("printer", boxed("squelch " ~ nickname));
+            service.state.messages ~= threadMessage;
+
         }
 
         enum properties = (Message.Property.quiet | Message.Property.background);

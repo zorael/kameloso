@@ -28,6 +28,7 @@ import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, Us
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
+import std.typecons : Flag, No, Yes;
 
 
 // OnelinerSettings
@@ -41,15 +42,12 @@ import dialect.defs;
      +/
     @Enabler bool enabled = true;
 
-    version(TwitchSupport)
-    {
-        /++
-            Send oneliners as Twitch replies to the triggering message.
+    /++
+        Send oneliners as Twitch replies to the triggering message.
 
-            Only affects Twitch connections.
-         +/
-        bool onelinersAsReplies = false;
-    }
+        Only affects Twitch connections.
+     +/
+    bool onelinersAsTwitchReplies = false;
 }
 
 
@@ -79,6 +77,11 @@ public:
             Responses should be yielded in order, bumping an internal counter.
          +/
         ordered = 1,
+
+        /++
+            Oneliner is an alias and does not have lines itself.
+         +/
+        alias_ = 2,
     }
 
     // trigger
@@ -86,6 +89,12 @@ public:
         Trigger word for this oneliner.
      +/
     string trigger;
+
+    // alias_
+    /++
+        Alias of another oneliner.
+     +/
+    string alias_;
 
     // type
     /++
@@ -192,9 +201,10 @@ public:
         json.object = null;
 
         json["trigger"] = JSONValue(this.trigger);
-        json["type"] = JSONValue(cast(int)this.type);
+        json["type"] = JSONValue(cast(uint)this.type);
         json["responses"] = JSONValue(this.responses);
         json["cooldown"] = JSONValue(this.cooldown);
+        json["alias"] = JSONValue(this.alias_);
 
         return json;
     }
@@ -218,13 +228,30 @@ public:
 
         Oneliner oneliner;
         oneliner.trigger = json["trigger"].str;
-        oneliner.type = (json["type"].integer == cast(int)OnelinerType.random) ?
-            OnelinerType.random :
-            OnelinerType.ordered;
+        oneliner.cooldown = cast(uint)json["cooldown"].integer;
 
-        if (const cooldownJSON = "cooldown" in json)
+        if (const aliasJSON = "alias" in json)
         {
-            oneliner.cooldown = cast(uint)cooldownJSON.integer;
+            oneliner.alias_ = aliasJSON.str;
+        }
+
+        switch (json["type"].integer)
+        {
+        case cast(int)OnelinerType.random:
+            oneliner.type = OnelinerType.random;
+            break;
+
+        case cast(int)OnelinerType.ordered:
+            oneliner.type = OnelinerType.ordered;
+            break;
+
+        case cast(int)OnelinerType.alias_:
+            oneliner.type = OnelinerType.alias_;
+            break;
+
+        default:
+            enum message = "Bad oneliner type number in oneliner JSON file";
+            throw new Exception(message);
         }
 
         foreach (const responseJSON; json["responses"].array)
@@ -233,6 +260,68 @@ public:
         }
 
         return oneliner;
+    }
+
+    // resolveOnelinerTypestring
+    /++
+        Resolves a string to a [OnelinerType].
+
+        Don't resolve [OnelinerType.alias_].
+
+        Params:
+            input = String to resolve.
+            type = [OnelinerType] to store the resolved type in.
+
+        Returns:
+            Whether or not the string resolved to a [OnelinerType].
+     +/
+    static auto resolveOnelinerTypestring(
+        const string input,
+        out OnelinerType type)
+    {
+        switch (input)
+        {
+        case "random":
+        case "rnd":
+        case "rng":
+            type = OnelinerType.random;
+            return true;
+
+        case "ordered":
+        case "order":
+        case "sequential":
+        case "seq":
+        case "sequence":
+            type = OnelinerType.ordered;
+            return true;
+
+        /*case "alias":
+            type = OnelinerType.alias_;
+            return true;*/
+
+        default:
+            return false;
+        }
+    }
+
+    // stripPrefix
+    /++
+        Strips the prefix from a trigger word.
+
+        Params:
+            trigger = Trigger word to strip the prefix from.
+            prefix = Prefix to strip.
+
+        Returns:
+            The trigger word with the prefix stripped, or the original trigger
+            word if it didn't start with the prefix.
+     +/
+    static auto stripPrefix(const string trigger, const string prefix)
+    {
+        import std.algorithm.searching : startsWith;
+        return trigger.startsWith(prefix) ?
+            trigger[prefix.length..$] :
+            trigger;
     }
 }
 
@@ -252,7 +341,7 @@ public:
 void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
-    import kameloso.string : replaceFromAA, replaceRandom;
+    import kameloso.string : replaceRandom;
     import lu.string : advancePast, splitWithQuotes;
     import std.algorithm.searching : startsWith;
     import std.array : replace;
@@ -277,13 +366,26 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     auto channelOneliners = event.channel in plugin.onelinersByChannel;  // mustn't be const
     if (!channelOneliners) return;
 
-    immutable trigger = slice.advancePast(' ', Yes.inherit);  // mutable
-    immutable triggerLower = trigger.toLower();
+    immutable triggerCased = slice.advancePast(' ', Yes.inherit);  // mutable
+    immutable trigger = triggerCased.toLower();
 
-    auto oneliner = triggerLower in *channelOneliners;  // mustn't be const
+    auto oneliner = trigger in *channelOneliners;  // mustn't be const
     if (!oneliner) return;
 
-    if (!oneliner.responses.length) return sendEmptyOneliner(triggerLower);
+    if (oneliner.type == Oneliner.OnelinerType.alias_)
+    {
+        // Alias of a different oneliner
+        oneliner = oneliner.alias_ in *channelOneliners;
+
+        if (!oneliner)
+        {
+            // Dangling alias, should not be
+            (*channelOneliners).remove(trigger);
+            return;
+        }
+    }
+
+    if (!oneliner.responses.length) return sendEmptyOneliner(oneliner.trigger);
 
     if (oneliner.cooldown > 0)
     {
@@ -300,54 +402,46 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     }
 
     immutable args = slice.splitWithQuotes();
-    static @safe string delegate()[string] aa;
 
-    if (!aa.length)
+    string line = oneliner
+        .getResponse()
+        .replace("$channel", event.channel)
+        .replace("$sender", nameOf(event.sender))
+        .replace("$bot", nameOf(plugin, plugin.state.client.nickname))
+        .replace("$senderNickname", event.sender.nickname)
+        .replace("$botNickname", plugin.state.client.nickname)
+        .replace("$args", slice)
+        .replace("$arg0", triggerCased)
+        .replace("$arg1name", (args.length >= 1) ? nameOf(plugin, args[0]) : string.init)
+        .replace("$arg2name", (args.length >= 2) ? nameOf(plugin, args[1]) : string.init)
+        .replace("$arg3name", (args.length >= 3) ? nameOf(plugin, args[2]) : string.init)
+        .replace("$arg4name", (args.length >= 4) ? nameOf(plugin, args[3]) : string.init)
+        .replace("$arg5name", (args.length >= 5) ? nameOf(plugin, args[4]) : string.init)
+        .replace("$arg6name", (args.length >= 6) ? nameOf(plugin, args[5]) : string.init)
+        .replace("$arg7name", (args.length >= 7) ? nameOf(plugin, args[6]) : string.init)
+        .replace("$arg8name", (args.length >= 8) ? nameOf(plugin, args[7]) : string.init)
+        .replace("$arg9name", (args.length >= 9) ? nameOf(plugin, args[8]) : string.init)
+        .replace("$arg1", (args.length >= 1) ? args[0] : string.init)
+        .replace("$arg2", (args.length >= 2) ? args[1] : string.init)
+        .replace("$arg3", (args.length >= 3) ? args[2] : string.init)
+        .replace("$arg4", (args.length >= 4) ? args[3] : string.init)
+        .replace("$arg5", (args.length >= 5) ? args[4] : string.init)
+        .replace("$arg6", (args.length >= 6) ? args[5] : string.init)
+        .replace("$arg7", (args.length >= 7) ? args[6] : string.init)
+        .replace("$arg8", (args.length >= 8) ? args[7] : string.init)
+        .replace("$arg9", (args.length >= 9) ? args[8] : string.init)
+        .replaceRandom();
+
+    version(TwitchSupport)
     {
-        aa =
-        [
-            "$channel"  : () => event.channel,
-            "$sender"   : () => nameOf(event.sender),
-            "$bot"      : () => nameOf(plugin, plugin.state.client.nickname),
-            "$senderNickname" : () => event.sender.nickname,
-            "$botNickname" : () => plugin.state.client.nickname,
-            "$args"     : () => slice,
-            "$arg0"     : () => trigger,
-            "$arg1"     : () => (args.length >= 1) ? args[0] : string.init,
-            "$arg2"     : () => (args.length >= 2) ? args[1] : string.init,
-            "$arg3"     : () => (args.length >= 3) ? args[2] : string.init,
-            "$arg4"     : () => (args.length >= 4) ? args[3] : string.init,
-            "$arg5"     : () => (args.length >= 5) ? args[4] : string.init,
-            "$arg6"     : () => (args.length >= 6) ? args[5] : string.init,
-            "$arg7"     : () => (args.length >= 7) ? args[6] : string.init,
-            "$arg8"     : () => (args.length >= 8) ? args[7] : string.init,
-            "$arg9"     : () => (args.length >= 9) ? args[8] : string.init,
-            "$arg1name" : () => (args.length >= 1) ? nameOf(plugin, args[0]) : string.init,
-            "$arg2name" : () => (args.length >= 2) ? nameOf(plugin, args[1]) : string.init,
-            "$arg3name" : () => (args.length >= 3) ? nameOf(plugin, args[2]) : string.init,
-            "$arg4name" : () => (args.length >= 4) ? nameOf(plugin, args[3]) : string.init,
-            "$arg5name" : () => (args.length >= 5) ? nameOf(plugin, args[4]) : string.init,
-            "$arg6name" : () => (args.length >= 6) ? nameOf(plugin, args[5]) : string.init,
-            "$arg7name" : () => (args.length >= 7) ? nameOf(plugin, args[6]) : string.init,
-            "$arg8name" : () => (args.length >= 8) ? nameOf(plugin, args[7]) : string.init,
-            "$arg9name" : () => (args.length >= 9) ? nameOf(plugin, args[8]) : string.init,
-        ];
-
-        version(TwitchSupport)
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
-            {
-                aa["$streamer"] = () => nameOf(plugin, event.channel[1..$]);
-                aa["$streamerNickname"] = () => event.channel[1..$];
-            }
+            line = line
+                .replace("$streamer", nameOf(plugin, event.channel[1..$]))
+                .replace("$streamerAccount", event.channel[1..$]);
         }
-
-        aa.rehash();
     }
 
-    immutable line = oneliner
-        .getResponse()
-        .replaceFromAA(aa);
     immutable target = slice.startsWith('@') ? slice[1..$] : slice;
     immutable message = target.length ?
         text('@', nameOf(plugin, target), ' ', line) :
@@ -371,10 +465,12 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
             .description("Manages oneliners.")
             .addSyntax("$command new [trigger] [type] [optional cooldown]")
             .addSyntax("$command add [trigger] [text]")
+            .addSyntax("$command alias [trigger] [existing trigger to alias]")
+            .addSyntax("$command modify [trigger] [type] [optional cooldown]")
             .addSyntax("$command edit [trigger] [position] [new text]")
             .addSyntax("$command insert [trigger] [position] [text]")
             .addSyntax("$command del [trigger] [optional position]")
-            .addSyntax("$command list")
+            .addSyntax("$command list [optional trigger]")
     )
     .addCommand(
         IRCEventHandler.Command()
@@ -393,7 +489,7 @@ void onCommandModifyOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     {
         import std.format : format;
 
-        enum pattern = "Usage: <b>%s%s<b> [new|insert|add|edit|del|list] ...";
+        enum pattern = "Usage: <b>%s%s<b> [new|insert|add|alias|modify|edit|del|list] ...";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
@@ -413,12 +509,19 @@ void onCommandModifyOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     case "edit":
         return handleAddToOneliner(plugin, event, slice, verb);
 
+    case "modify":
+    case "mod":
+        return handleModifyOneliner(plugin, event, slice);
+
     case "del":
     case "remove":
         return handleDelFromOneliner(plugin, event, slice);
 
+    case "alias":
+        return handleAliasOneliner(plugin, event, slice);
+
     case "list":
-        return listCommands(plugin, event);
+        return listCommands(plugin, event, Yes.includeAliases, slice);
 
     default:
         return sendUsage();
@@ -446,15 +549,6 @@ void handleNewOneliner(
     import std.typecons : Tuple;
     import std.uni : toLower;
     import core.thread : Fiber;
-
-    // copy/pasted
-    auto stripPrefix(const string trigger)
-    {
-        import std.algorithm.searching : startsWith;
-        return trigger.startsWith(plugin.state.settings.prefix) ?
-            trigger[plugin.state.settings.prefix.length..$] :
-            trigger;
-    }
 
     void sendNewUsage()
     {
@@ -490,35 +584,17 @@ void handleNewOneliner(
 
     if (!typestring.length) return sendNewUsage();
 
-    Oneliner.OnelinerType type;
-
-    switch (typestring)
-    {
-    case "random":
-    case "rnd":
-    case "rng":
-        type = Oneliner.OnelinerType.random;
-        break;
-
-    case "ordered":
-    case "order":
-    case "sequential":
-    case "seq":
-    case "sequence":
-        type = Oneliner.OnelinerType.ordered;
-        break;
-
-    default:
-        return sendMustBeRandomOrOrdered();
-    }
-
-    trigger = stripPrefix(trigger).toLower;
+    trigger = Oneliner.stripPrefix(trigger, plugin.state.settings.prefix).toLower();
 
     const channelTriggers = event.channel in plugin.onelinersByChannel;
     if (channelTriggers && (trigger in *channelTriggers))
     {
         return sendOnelinerAlreadyExists(trigger);
     }
+
+    Oneliner.OnelinerType type;
+    immutable success = Oneliner.resolveOnelinerTypestring(typestring, type);
+    if (!success) return sendMustBeRandomOrOrdered();
 
     int cooldownSeconds = Oneliner.init.cooldown;
 
@@ -537,50 +613,82 @@ void handleNewOneliner(
         }
     }
 
-    /+
-        We need to check both hardcoded and soft channel-specific commands
-        for conflicts.
-     +/
-    auto triggerConflicts(const IRCPlugin.CommandMetadata[string][string] aa)
-    {
-        foreach (immutable pluginName, pluginCommands; aa)
-        {
-            if (!pluginCommands.length ||
-                (pluginName == "oneliner") ||
-                (pluginName == "oneliners"))
-            {
-                continue;
-            }
+    newOnelinerImpl(
+        plugin,
+        event.channel,
+        trigger,
+        type,
+        cooldownSeconds);
+}
 
-            foreach (/*mutable*/ word; pluginCommands.byKey)
-            {
-                word = word.toLower;
 
-                if (word == trigger)
-                {
-                    enum pattern = `Oneliner word "<b>%s<b>" conflicts with a command of the <b>%s<b> plugin.`;
-                    immutable message = pattern.format(trigger, pluginName);
-                    chan(plugin.state, event.channel, message);
-                    return true;
-                }
-            }
-        }
+// newOnelinerImpl
+/++
+    Creates a new and empty oneliner.
 
-        return false;
-    }
+    Uses [kameloso.plugins.common.core.defer|defer] to defer the creation to
+    the main thread, so that it can supply the list of existing commands across
+    all plugins and abort if the new trigger word would conflict with one.
+
+    Params:
+        plugin = The current [OnelinerPlugin].
+        channelName = Name of the channel to create the oneliner in.
+        trigger = Trigger word for the oneliner.
+        type = [Oneliner.OnelinerType|OnelinerType] of the oneliner.
+        cooldownSeconds = Cooldown in seconds for the oneliner.
+        alias_ = Optional alias of another oneliner.
+ +/
+void newOnelinerImpl(
+    OnelinerPlugin plugin,
+    const string channelName,
+    const string trigger,
+    const Oneliner.OnelinerType type,
+    const uint cooldownSeconds,
+    const string alias_ = string.init)
+{
+    import kameloso.plugins.common.core : defer;
+    import std.format : format;
+    import std.typecons : Tuple;
 
     alias Payload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
 
     void addNewOnelinerDg()
     {
+        import kameloso.thread : CarryingFiber;
+        import core.thread : Fiber;
+
         auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+
+        auto triggerConflicts(const IRCPlugin.CommandMetadata[string][string] aa)
+        {
+            foreach (immutable pluginName, pluginCommands; aa)
+            {
+                if (!pluginCommands.length || (pluginName == "oneliner"))
+                {
+                    continue;
+                }
+
+                foreach (immutable word; pluginCommands.byKey)
+                {
+                    if (word == trigger)
+                    {
+                        enum pattern = `Oneliner word "<b>%s<b>" conflicts with a command of the <b>%s<b> plugin.`;
+                        immutable message = pattern.format(trigger, pluginName);
+                        chan(plugin.state, channelName, message);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
 
         IRCPlugin.CommandMetadata[string][string] aa = thisFiber.payload[0];
         if (triggerConflicts(aa)) return;
 
         // Get channel AAs
-        defer(plugin, thisFiber, event.channel);
+        defer(plugin, thisFiber, channelName);
         Fiber.yield();
 
         IRCPlugin.CommandMetadata[string][string] channelSpecificAA = thisFiber.payload[0];
@@ -589,19 +697,127 @@ void handleNewOneliner(
         // If we're here there were no conflicts
         Oneliner oneliner;
         oneliner.trigger = trigger;
+        oneliner.alias_ = alias_;  // string.init if unset
         oneliner.type = type;
         oneliner.cooldown = cooldownSeconds;
-        //oneliner.responses ~= slice;
 
-        plugin.onelinersByChannel[event.channel][trigger] = oneliner;
+        plugin.onelinersByChannel[channelName][trigger] = oneliner;
         saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
-        enum pattern = "Oneliner <b>%s%s<b> created! Use <b>%1$s%3$s add<b> to add lines.";
-        immutable message = pattern.format(plugin.state.settings.prefix, trigger, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        if (type == Oneliner.OnelinerType.alias_)
+        {
+            enum pattern = "Oneliner <b>%s%s<b> created as an alias of <b>%1$s%3$s<b>.";
+            immutable message = pattern.format(plugin.state.settings.prefix, trigger, alias_);
+            chan(plugin.state, channelName, message);
+        }
+        else
+        {
+            enum pattern = "Oneliner <b>%s%s<b> created!";// Use <b>%1$s%3$s add<b> to add lines.";
+            immutable message = pattern.format(plugin.state.settings.prefix, trigger);//, event.aux[$-1]);
+            chan(plugin.state, channelName, message);
+        }
     }
 
     defer!Payload(plugin, &addNewOnelinerDg);
+}
+
+
+// handleModifyOneliner
+/++
+    Modifies an existing oneliner.
+
+    Params:
+        plugin = The current [OnelinerPlugin].
+        event = The [dialect.defs.IRCEvent|IRCEvent] that requested the modification.
+        slice = Relevant slice of the original request string.
+ +/
+void handleModifyOneliner(
+    OnelinerPlugin plugin,
+    const ref IRCEvent event,
+    /*const*/ string slice)
+{
+    import lu.conv : Enum;
+    import lu.string : SplitResults, splitInto;
+    import std.format : format;
+    import std.uni : toLower;
+
+    void sendNewUsage()
+    {
+        enum pattern = "Usage: <b>%s%s modify<b> [trigger] [type] [optional cooldown]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendMustBeRandomOrOrdered()
+    {
+        enum message = "Oneliner type must be one of <b>random<b> or <b>ordered<b>";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendCooldownMustBeValidPositiveDurationString()
+    {
+        enum message = "Oneliner cooldown must be in the hour-minute-seconds form of <b>*h*m*s<b> " ~
+            "and may not have negative values.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoSuchOneliner(const string trigger)
+    {
+        enum pattern = "No such oneliner: <b>%s%s<b>";
+        immutable message = pattern.format(plugin.state.settings.prefix, trigger);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNewDescription(const Oneliner oneliner)
+    {
+        enum pattern = "Oneliner <b>%s%s<b> modified to " ~
+            "type <b>%s<b>, " ~
+            "cooldown <b>%d<b> seconds";
+        immutable message = pattern.format(
+            plugin.state.settings.prefix,
+            oneliner.trigger,
+            Enum!(Oneliner.OnelinerType).toString(oneliner.type),
+            oneliner.cooldown);
+        chan(plugin.state, event.channel, message);
+    }
+
+    string trigger;  // mutable
+    string typestring;  // ditto
+    string cooldownString;  // ditto
+    cast(void)slice.splitInto(trigger, typestring, cooldownString);
+
+    if (!typestring.length) return sendNewUsage();
+
+    auto channelOneliners = event.channel in plugin.onelinersByChannel;
+    if (!channelOneliners) return sendNoSuchOneliner(trigger);
+
+    trigger = Oneliner.stripPrefix(trigger, plugin.state.settings.prefix).toLower;
+
+    auto oneliner = trigger in *channelOneliners;
+    if (!oneliner) return sendNoSuchOneliner(trigger);
+
+    Oneliner.OnelinerType type;
+    immutable success = Oneliner.resolveOnelinerTypestring(typestring, type);
+    if (!success) return sendMustBeRandomOrOrdered();
+
+    if (cooldownString.length)
+    {
+        import kameloso.time : DurationStringException, asAbbreviatedDuration;
+
+        try
+        {
+            immutable cooldown = cast(int)cooldownString.asAbbreviatedDuration.total!"seconds";
+            if (cooldown < 0) return sendCooldownMustBeValidPositiveDurationString();
+            oneliner.cooldown = cooldown;
+        }
+        catch (DurationStringException _)
+        {
+            return sendCooldownMustBeValidPositiveDurationString();
+        }
+    }
+
+    oneliner.type = type;
+    return sendNewDescription(*oneliner);
 }
 
 
@@ -687,15 +903,6 @@ void handleAddToOneliner(
         chan(plugin.state, event.channel, message);
     }
 
-    // copy/pasted
-    auto stripPrefix(const string trigger)
-    {
-        import std.algorithm.searching : startsWith;
-        return trigger.startsWith(plugin.state.settings.prefix) ?
-            trigger[plugin.state.settings.prefix.length..$] :
-            trigger;
-    }
-
     enum Action
     {
         insertAtPosition,
@@ -709,7 +916,7 @@ void handleAddToOneliner(
         const Action action,
         const ptrdiff_t pos = 0)
     {
-        trigger = stripPrefix(trigger).toLower;
+        trigger = Oneliner.stripPrefix(trigger, plugin.state.settings.prefix).toLower;
 
         auto channelOneliners = event.channel in plugin.onelinersByChannel;
         if (!channelOneliners) return sendNoSuchOneliner(trigger);
@@ -867,18 +1074,10 @@ void handleDelFromOneliner(
         chan(plugin.state, event.channel, message);
     }
 
-    // copy/pasted
-    auto stripPrefix(const string trigger)
-    {
-        import std.algorithm.searching : startsWith;
-        return trigger.startsWith(plugin.state.settings.prefix) ?
-            trigger[plugin.state.settings.prefix.length..$] :
-            trigger;
-    }
-
     if (!slice.length) return sendDelUsage();
 
-    immutable trigger = stripPrefix(slice.advancePast(' ', Yes.inherit)).toLower;
+    immutable rawTrigger = slice.advancePast(' ', Yes.inherit);
+    immutable trigger = Oneliner.stripPrefix(rawTrigger, plugin.state.settings.prefix).toLower;
 
     auto channelOneliners = event.channel in plugin.onelinersByChannel;
     if (!channelOneliners) return sendNoSuchOneliner(trigger);
@@ -919,9 +1118,99 @@ void handleDelFromOneliner(
     {
         (*channelOneliners).remove(trigger);
         sendRemoved(trigger);
+
+        string[] toRemove;
+
+        foreach (immutable otherTrigger, otherOneliner; *channelOneliners)
+        {
+            if (otherOneliner.type == Oneliner.OnelinerType.alias_)
+            {
+                if (otherOneliner.alias_ == trigger)
+                {
+                    //(*channelOneliners).remove(alias_);
+                    toRemove ~= otherTrigger;
+                }
+            }
+        }
+
+        foreach (immutable otherTrigger; toRemove)
+        {
+            (*channelOneliners).remove(otherTrigger);
+            sendRemoved(otherTrigger);
+        }
     }
 
     saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
+}
+
+
+// handleAliasOneliner
+/++
+    Creates or deletes an alias of an existing oneliner.
+
+    Params:
+        plugin = The current [OnelinerPlugin].
+        event = The [dialect.defs.IRCEvent|IRCEvent] that requested the aliasing.
+        slice = Relevant slice of the original request string.
+ +/
+void handleAliasOneliner(
+    OnelinerPlugin plugin,
+    const /*ref*/ IRCEvent event,
+    /*const*/ string slice)
+{
+    import lu.string : SplitResults, splitInto;
+    import std.algorithm.comparison : among;
+    import std.format : format;
+    import std.uni : toLower;
+
+    void sendAliasUsage()
+    {
+        enum pattern = "Usage: <b>%s%s alias<b> [trigger] [existing trigger to alias]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendYouMustSupplyAlias()
+    {
+        enum message = "You must supply a oneliner trigger word to make an alias of.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoSuchOneliner(const string trigger)
+    {
+        enum pattern = "No such oneliner: <b>%s%s<b>";
+        immutable message = pattern.format(plugin.state.settings.prefix, trigger);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendOnelinerAlreadyExists(const string trigger)
+    {
+        enum pattern = `A oneliner with the trigger word "<b>%s<b>" already exists.`;
+        immutable message = pattern.format(trigger);
+        chan(plugin.state, event.channel, message);
+    }
+
+    string trigger;  // mutable
+    string alias_;  // as above
+    cast(void)slice.splitInto(trigger, alias_);
+
+    if (!trigger.length) return sendAliasUsage();
+    if (!alias_.length) return sendYouMustSupplyAlias();
+
+    trigger = Oneliner.stripPrefix(trigger, plugin.state.settings.prefix).toLower();
+
+    auto channelTriggers = event.channel in plugin.onelinersByChannel;
+    if (!channelTriggers) return sendNoSuchOneliner(alias_);
+    if (trigger in *channelTriggers) return sendOnelinerAlreadyExists(trigger);
+    if (alias_ !in *channelTriggers) return sendNoSuchOneliner(alias_);
+
+    newOnelinerImpl(
+        plugin,
+        event.channel,
+        trigger,
+        Oneliner.OnelinerType.alias_,
+        0,
+        alias_);
 }
 
 
@@ -944,7 +1233,7 @@ void handleDelFromOneliner(
 )
 void onCommandCommands(OnelinerPlugin plugin, const ref IRCEvent event)
 {
-    listCommands(plugin, event);
+    listCommands(plugin, event, No.includeAliases);
 }
 
 
@@ -955,23 +1244,97 @@ void onCommandCommands(OnelinerPlugin plugin, const ref IRCEvent event)
     Params:
         plugin = The current [OnelinerPlugin].
         event = The querying [dialect.defs.IRCEvent|IRCEvent].
+        includeAliases = Whether to include oneliner aliases in the list.
+        slice = Relevant slice of the original request string.
  +/
-void listCommands(OnelinerPlugin plugin, const ref IRCEvent event)
+void listCommands(
+    OnelinerPlugin plugin,
+    const ref IRCEvent event,
+    const Flag!"includeAliases" includeAliases,
+    /*const*/ string slice = string.init)
 {
+    import lu.string : stripped;
     import std.format : format;
+    import std.uni : toLower;
 
-    auto channelOneliners = event.channel in plugin.onelinersByChannel;
-
-    if (channelOneliners && channelOneliners.length)
-    {
-        immutable rtPattern = "Available commands: %-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)<b>";
-        immutable message = rtPattern.format(channelOneliners.byKey);
-        sendOneliner(plugin, event, message);
-    }
-    else
+    void sendNoCommandsAvailable()
     {
         enum message = "There are no commands available right now.";
         sendOneliner(plugin, event, message);
+    }
+
+    void sendNoSuchOneliner()
+    {
+        enum message = "There is no such oneliner defined.";
+        sendOneliner(plugin, event, message);
+    }
+
+    void sendOnelinerInfo(const Oneliner oneliner)
+    {
+        if (oneliner.type == Oneliner.OnelinerType.alias_)
+        {
+            enum pattern = "Oneliner <b>%s%s<b> is an alias of <b>%1$s%3$s<b>.";
+            immutable message = pattern.format(
+                plugin.state.settings.prefix,
+                oneliner.trigger,
+                oneliner.alias_);
+            sendOneliner(plugin, event, message);
+        }
+        else
+        {
+            import lu.conv : Enum;
+
+            enum pattern = "Oneliner <b>%s%s<b> has %d responses and is of type <b>%s<b>.";
+            immutable message = pattern.format(
+                plugin.state.settings.prefix,
+                oneliner.trigger,
+                oneliner.responses.length,
+                Enum!(Oneliner.OnelinerType).toString(oneliner.type));
+            sendOneliner(plugin, event, message);
+        }
+    }
+
+    const channelOneliners = event.channel in plugin.onelinersByChannel;
+    if (!channelOneliners || !channelOneliners.length) return sendNoCommandsAvailable();
+
+    immutable triggerLower = slice.stripped.toLower;
+
+    if (triggerLower.length)
+    {
+        const oneliner = triggerLower in *channelOneliners;
+        if (!oneliner) return sendNoSuchOneliner();
+
+        sendOnelinerInfo(*oneliner);
+    }
+    else
+    {
+        import std.algorithm.iteration : map;
+
+        immutable rtPattern = "Available commands: %-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)<b>";
+
+        if (includeAliases)
+        {
+            import std.conv : text;
+
+            auto range = channelOneliners
+                .byValue
+                .map!(o => o.alias_.length ? text(o.trigger, '*') : o.trigger);
+
+            immutable message = rtPattern.format(range);
+            sendOneliner(plugin, event, message);
+        }
+        else
+        {
+            import std.algorithm.iteration : filter;
+
+            auto range = channelOneliners
+                .byValue
+                .filter!(o => !o.alias_.length)
+                .map!(o => o.trigger);
+
+            immutable message = rtPattern.format(range);
+            sendOneliner(plugin, event, message);
+        }
     }
 }
 
@@ -1043,7 +1406,7 @@ void loadOneliners(OnelinerPlugin plugin)
     Sends a oneliner reply.
 
     If connected to a Twitch server and with version `TwitchSupport` set and
-    [OnelinerSettings.onelinersAsReplies] true, sends the message as a
+    [OnelinerSettings.onelinersAsTwitchReplies] true, sends the message as a
     Twitch [kameloso.messaging.reply|reply].
 
     Params:
@@ -1058,8 +1421,8 @@ void sendOneliner(
 {
     version(TwitchSupport)
     {
-        if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-            (plugin.onelinerSettings.onelinersAsReplies))
+        if ((plugin.onelinerSettings.onelinersAsTwitchReplies) &&
+            (plugin.state.server.daemon == IRCServer.Daemon.twitch))
         {
             return reply(plugin.state, event, message);
         }

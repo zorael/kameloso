@@ -1360,7 +1360,7 @@ void onWelcome(ConnectService service)
                 Twitch chat doesn't do colours, so ours would only show up like `00kameloso`.
                 Furthermore, Twitch's own commands are prefixed with a dot `.` and/or a slash `/`,
                 so we can't use that ourselves.
-                +/
+             +/
 
             if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
 
@@ -1406,8 +1406,9 @@ void onWelcome(ConnectService service)
                 version(WithPrinterPlugin)
                 {
                     import kameloso.thread : ThreadMessage, boxed;
-                    service.state.messages ~=
-                        ThreadMessage.busMessage("printer", boxed(squelchVerb));
+                    auto threadMessage = ThreadMessage.busMessage("printer", boxed(squelchVerb));
+                    service.state.messages ~= threadMessage;
+
                 }
 
                 enum properties = (Message.Property.quiet | Message.Property.background);
@@ -1424,7 +1425,7 @@ void onWelcome(ConnectService service)
 
 // onSelfnickSuccessOrFailure
 /++
-    Resets [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin] squelching upon a
+    Resets [kameloso.plugins.printer.PrinterPlugin|PrinterPlugin] squelching upon a
     successful or failed nick change. This so as to be squelching as little as possible.
  +/
 version(WithPrinterPlugin)
@@ -1435,8 +1436,9 @@ version(WithPrinterPlugin)
 void onSelfnickSuccessOrFailure(ConnectService service)
 {
     import kameloso.thread : ThreadMessage, boxed;
-    service.state.messages ~=
-        ThreadMessage.busMessage("printer", boxed("unsquelch " ~ service.state.client.origNickname));
+    auto message = ThreadMessage.busMessage("printer", boxed("unsquelch " ~ service.state.client.origNickname));
+    service.state.messages ~= message;
+
 }
 
 
@@ -1665,7 +1667,7 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
                     Skip first two strikes; helps when resuming from suspend and similar,
                     then allow for a PING with `timeToAllowForPingResponse` as timeout.
                     Finally, if all else failed, reconnect.
-                    +/
+                 +/
                 ++strikes;
 
                 if (strikes <= StrikeBreakpoints.wait)
@@ -2028,7 +2030,7 @@ private:
     {
         /++
             All [Progress]es gathered.
-        +/
+         +/
         static struct Progresses
         {
             /++

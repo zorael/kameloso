@@ -2,9 +2,9 @@
     Functions for accessing the Twitch API. For internal use.
 
     See_Also:
-        [kameloso.plugins.twitch.base],
-        [kameloso.plugins.twitch.keygen],
+        [kameloso.plugins.twitch],
         [kameloso.plugins.twitch.common],
+        [kameloso.plugins.twitch.providers.twitch],
         [kameloso.plugins.common.core],
         [kameloso.plugins.common.misc]
 
@@ -21,11 +21,11 @@ version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitch.base;
+import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
 
+import kameloso.common : HTTPVerb;
 import dialect.defs;
-import arsd.http2 : HttpVerb;
 import lu.container : MutexedAA;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
@@ -41,6 +41,16 @@ package:
  +/
 struct QueryResponse
 {
+    /++
+        The URL that was queried.
+     +/
+    string url;
+
+    /++
+        The host that was queried.
+     +/
+    string host;
+
     /++
         Response body, may be several lines.
      +/
@@ -60,6 +70,11 @@ struct QueryResponse
         The message of any exception thrown while querying.
      +/
     string error;
+
+    /++
+        The message text of any exception thrown while querying.
+     +/
+    string exceptionText;
 }
 
 
@@ -67,11 +82,11 @@ struct QueryResponse
 /++
     Retries a passed delegate until it no longer throws or until the hardcoded
     number of retries
-    ([kameloso.plugins.twitch.base.TwitchPlugin.delegateRetries|TwitchPlugin.delegateRetries])
+    ([kameloso.plugins.twitch.TwitchPlugin.delegateRetries|TwitchPlugin.delegateRetries])
     is reached, or forever if `endlessly` is passed.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         dg = Delegate to call.
         async = Whether or not the delegate should be called asynchronously,
             scheduling attempts using [kameloso.plugins.common.delayawait.delay|delay].
@@ -290,8 +305,6 @@ void persistentQuerier(
     const string caBundleFile)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : receive;
-    import std.variant : Variant;
 
     version(Posix)
     {
@@ -299,16 +312,16 @@ void persistentQuerier(
         setThreadName("twitchworker");
     }
 
-    bool halt;
-
     void invokeSendHTTPRequestImpl(
         const int id,
         const string url,
         const string authToken,
-        /*const*/ HttpVerb verb,
+        /*const*/ HTTPVerb verb,
         immutable(ubyte)[] body_,
         const string contentType) scope
     {
+        scope(failure) responseBucket.remove(id);
+
         version(BenchmarkHTTPRequests)
         {
             import core.time : MonoTime;
@@ -346,7 +359,7 @@ void persistentQuerier(
         int id,
         string url,
         string authToken,
-        HttpVerb verb,
+        HTTPVerb verb,
         immutable(ubyte)[] body_,
         string contentType) scope
     {
@@ -359,20 +372,7 @@ void persistentQuerier(
             contentType);
     }
 
-    void sendWithoutBody(
-        int id,
-        string url,
-        string authToken) scope
-    {
-        // Shorthand
-        invokeSendHTTPRequestImpl(
-            id,
-            url,
-            authToken,
-            HttpVerb.GET,
-            cast(immutable(ubyte)[])null,
-            string.init);
-    }
+    bool halt;
 
     void onQuitMessage(bool) scope
     {
@@ -381,17 +381,29 @@ void persistentQuerier(
 
     while (!halt)
     {
-        receive(
-            &sendWithBody,
-            &sendWithoutBody,
-            &onQuitMessage,
-            (Variant v) scope
-            {
-                import std.stdio : stdout, writeln;
-                writeln("Twitch worker received unknown Variant: ", v);
-                stdout.flush();
-            }
-        );
+        import std.concurrency : receive;
+        import std.variant : Variant;
+
+        try
+        {
+            receive(
+                &sendWithBody,
+                &onQuitMessage,
+                (Variant v) scope
+                {
+                    import std.stdio : stdout, writeln;
+                    writeln("Twitch worker received unknown Variant: ", v);
+                    stdout.flush();
+                }
+            );
+        }
+        catch (Exception _)
+        {
+            // Probably a requests exception
+            /*writeln("Twitch worker caught exception: ", e.msg);
+            version(PrintStacktraces) writeln(e);
+            stdout.flush();*/
+        }
     }
 }
 
@@ -416,11 +428,11 @@ void persistentQuerier(
     ---
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         url = The URL to query.
         caller = Name of the calling function.
         authorisationHeader = Authorisation HTTP header to pass.
-        verb = What [arsd.http2.HttpVerb|HttpVerb] to use in the request.
+        verb = What [kameloso.common.HTTPVerb|HTTPVerb] to use in the request.
         body_ = Request body to send in case of verbs like `POST` and `PATCH`.
         contentType = "Content-Type" HTTP header to pass.
         id = Numerical ID to use instead of generating a new one.
@@ -429,7 +441,7 @@ void persistentQuerier(
 
     Returns:
         The [QueryResponse] that was discovered while monitoring the
-        [kameloso.plugins.twitch.base.TwitchPlugin.responseBucket|TwitchPlugin.responseBucket]
+        [kameloso.plugins.twitch.TwitchPlugin.responseBucket|TwitchPlugin.responseBucket]
         as having been received from the server.
 
     Throws:
@@ -442,7 +454,7 @@ QueryResponse sendHTTPRequest(
     const string url,
     const string caller = __FUNCTION__,
     const string authorisationHeader = string.init,
-    /*const*/ HttpVerb verb = HttpVerb.GET,
+    /*const*/ HTTPVerb verb = HTTPVerb.get,
     /*const*/ ubyte[] body_ = null,
     const string contentType = string.init,
     int id = 0,
@@ -452,18 +464,19 @@ in (url.length, "Tried to send an HTTP request without a URL")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
+    import std.algorithm.searching : endsWith;
     import std.concurrency : send;
     import core.time : MonoTime, msecs;
 
-    if (plugin.state.settings.trace)
+    version(TraceHTTPRequests)
     {
         import kameloso.common : logger;
         import lu.conv : Enum;
 
-        enum pattern = "%s: <i>%s<t> (%s)";
+        enum tracePattern = "%s: <i>%s<t> (%s)";
         logger.tracef(
-            pattern,
-            Enum!HttpVerb.toString(verb),
+            tracePattern,
+            Enum!HTTPVerb.toString(verb),
             url,
             caller);
     }
@@ -483,22 +496,36 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
     delay(plugin, plugin.transient.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id);
-    immutable post = MonoTime.currTime;
-    immutable diff = (post - pre);
-    immutable msecs_ = diff.total!"msecs";
-    averageApproximateQueryTime(plugin, msecs_);
 
-    if (response.code == 2)
+    if (response.exceptionText.length)
+    {
+        throw new TwitchQueryException(
+            response.exceptionText,
+            response.str,
+            response.error,
+            response.code);
+    }
+
+    if (response.host.endsWith(".twitch.tv"))
+    {
+        // Only update approximate query time for Twitch queries (skip those of custom emotes)
+        immutable post = MonoTime.currTime;
+        immutable diff = (post - pre);
+        immutable msecs_ = diff.total!"msecs";
+        averageApproximateQueryTime(plugin, msecs_);
+    }
+
+    if (response.code == 0) // can't go by response.str.length, as it can be empty
+    {
+        throw new EmptyResponseException("Empty response");
+    }
+    else if (response.code < 10)
     {
         throw new TwitchQueryException(
             response.error,
             response.str,
             response.error,
             response.code);
-    }
-    else if (response.code == 0) // can't go by response.str.length, as it can be empty
-    {
-        throw new EmptyResponseException("Empty response");
     }
     else if ((response.code >= 500) && !recursing)
     {
@@ -633,7 +660,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         url = URL address to look up.
         authHeader = Authorisation token HTTP header to pass.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
-        verb = What [arsd.http2.HttpVerb|HttpVerb] to use in the request.
+        verb = What [kameloso.common.HTTPVerb|HTTPVerb] to use in the request.
         body_ = Request body to send in case of verbs like `POST` and `PATCH`.
         contentType = "Content-Type" HTTP header to use.
 
@@ -644,61 +671,84 @@ auto sendHTTPRequestImpl(
     const string url,
     const string authHeader,
     const string caBundleFile,
-    /*const*/ HttpVerb verb = HttpVerb.GET,
+    /*const*/ HTTPVerb verb = HTTPVerb.get,
     /*const*/ ubyte[] body_ = null,
     /*const*/ string contentType = string.init)
 {
-    import arsd.http2 : HttpClient, Uri;
-    import std.algorithm.comparison : among;
-    import core.time : MonoTime;
+    import kameloso.constants : KamelosoInfo, Timeout;
+    import requests.base : Response;
+    import requests.request : Request;
+    import core.time : seconds;
 
-    static HttpClient client;
-    static string[] headers;
+    static string[string] headers;
 
-    if (!client)
+    if (!headers.length)
     {
-        import kameloso.constants : KamelosoInfo, Timeout;
-        import core.time : seconds;
-
-        client = new HttpClient;
-        client.useHttp11 = true;
-        client.keepAlive = true;
-        client.acceptGzip = false;
-        client.defaultTimeout = Timeout.httpGET.seconds;
-        client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
-        headers = [ "Client-ID: " ~ TwitchPlugin.clientID ];
-        if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
+        headers =
+        [
+            "Client-ID" : TwitchPlugin.clientID,
+            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
+            "Authorization" : string.init,
+        ];
     }
 
-    client.authorization = authHeader;
+    auto authorizationHeader = "Authorization" in headers;
+    if (*authorizationHeader != authHeader) *authorizationHeader = authHeader;
 
+    auto req = Request();
+    //req.verbosity = 1;
+    req.keepAlive = true;
+    req.timeout = Timeout.httpGET.seconds;
+    req.addHeaders(headers);
+    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
+
+    Response res;
     QueryResponse response;
-    auto pre = MonoTime.currTime;
-    auto req = client.request(Uri(url), verb, body_, contentType);
-    // The Twitch Client-ID header leaks into Google and Spotify requests. Worth dealing with?
-    req.requestParameters.headers = headers;
-    auto res = req.waitForCompletion();
+    response.url = url;
 
-    if (res.code.among!(301, 302, 307, 308) && res.location.length)
+    try
     {
-        // Moved
-        foreach (immutable i; 0..5)
+        with (HTTPVerb)
+        final switch (verb)
         {
-            pre = MonoTime.currTime;
-            req = client.request(Uri(res.location), verb, body_, contentType);
-            req.requestParameters.headers = headers;
-            res = req.waitForCompletion();
+        case get:
+            res = req.get(url);
+            break;
 
-            if (!res.code.among!(301, 302, 307, 308) || !res.location.length) break;
+        case post:
+            res = req.post(url, body_, contentType);
+            break;
+
+        case put:
+            res = req.put(url, body_, contentType);
+            break;
+
+        case patch:
+            res = req.patch(url, body_, contentType);
+            break;
+
+        case delete_:
+            res = req.execute("DELETE", url);
+            break;
+
+        case unset:
+        case unsupported:
+            assert(0, "Unset or unsupported HTTP verb passed to sendHTTPRequestImpl");
         }
+    }
+    catch (Exception e)
+    {
+        response.exceptionText = e.msg;
+        return response;
     }
 
     response.code = res.code;
-    response.error = res.codeText;
-    response.str = res.contentText;
-    immutable post = MonoTime.currTime;
-    immutable delta = (post - pre);
-    response.msecs = delta.total!"msecs";
+    response.host = res.uri.host;
+    response.str = cast(string)res.responseBody;  //.idup?
+
+    immutable stats = res.getStats();
+    immutable totalMsecs = stats.connectTime + stats.recvTime + stats.sendTime;
+    response.msecs = totalMsecs.total!"msecs";
     return response;
 }
 
@@ -708,7 +758,7 @@ auto sendHTTPRequestImpl(
     By following a passed URL, queries Twitch servers for an entity (user or channel).
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         url = The URL to follow.
         caller = Name of the calling function.
 
@@ -796,7 +846,7 @@ in (Fiber.getThis(), "Tried to call `getTwitchData` from outside a fiber")
     It is not updated in realtime, so it doesn't make sense to call this often.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         broadcaster = The broadcaster to look up chatters for.
         caller = Name of the calling function.
 
@@ -850,7 +900,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
                 ]
             }
         }
-        */
+         */
 
         if (responseJSON.type != JSONType.object)
         {
@@ -884,7 +934,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         authToken = Authorisation token to validate.
         async = Whether or not the validation should be done asynchronously, using fibers.
         caller = Name of the calling function.
@@ -958,11 +1008,11 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         }
         else
         {
-            if (plugin.state.settings.trace)
+            version(TraceHTTPRequests)
             {
                 import kameloso.common : logger;
-                enum pattern = "GET: <i>%s<t> (%s)";
-                logger.tracef(pattern, url, __FUNCTION__);
+                enum tracePattern = "get: <i>%s<t> (%s)";
+                logger.tracef(tracePattern, url, __FUNCTION__);
             }
 
             response = sendHTTPRequestImpl(
@@ -971,18 +1021,18 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
                 plugin.state.connSettings.caBundleFile);
 
             // Copy/paste error handling...
-            if (response.code == 2)
+            if (response.code == 0) //(!response.str.length)
             {
                 throw new TwitchQueryException(
-                    response.error,
+                    "Empty response",
                     response.str,
                     response.error,
                     response.code);
             }
-            else if (response.code == 0) //(!response.str.length)
+            else if (response.code < 10)
             {
                 throw new TwitchQueryException(
-                    "Empty response",
+                    response.error,
                     response.str,
                     response.error,
                     response.code);
@@ -1005,7 +1055,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
                         "message": "Client ID and OAuth token do not match",
                         "status": 401
                     }
-                    */
+                     */
                     immutable errorJSON = parseJSON(response.str);
                     enum pattern = "%3d %s: %s";
 
@@ -1053,12 +1103,12 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 // getFollowers
 /++
     Fetches a list of all followers of the passed channel and caches them in
-    the channel's entry in [kameloso.plugins.twitch.base.TwitchPlugin.rooms|TwitchPlugin.rooms].
+    the channel's entry in [kameloso.plugins.twitch.TwitchPlugin.rooms|TwitchPlugin.rooms].
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         id = The numerical identifier for the channel.
 
     Returns:
@@ -1108,7 +1158,7 @@ in (id, "Tried to get followers with an unset ID")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         url = The URL to follow.
         caller = Name of the calling function.
 
@@ -1181,13 +1231,13 @@ in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber
     the weighted averages of the old value and said new measurement.
 
     The old value is given a weight of
-    [kameloso.plugins.twitch.base.TwitchPlugin.QueryConstants.averagingWeight|averagingWeight]
+    [kameloso.plugins.twitch.TwitchPlugin.QueryConstants.averagingWeight|averagingWeight]
     and the new measurement a weight of 1. Additionally the measurement is padded by
-    [kameloso.plugins.twitch.base.TwitchPlugin.QueryConstants.measurementPadding|measurementPadding]
+    [kameloso.plugins.twitch.TwitchPlugin.QueryConstants.measurementPadding|measurementPadding]
     to be on the safe side.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         responseMsecs = The new measurement of how many milliseconds the last
             query took to complete.
  +/
@@ -1225,7 +1275,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     Common code to wait for a query response.
 
     Merely spins and monitors the shared
-    [kameloso.plugins.twitch.base.TwitchPlugin.responseBucket|TwitchPlugin.responseBucket]
+    [kameloso.plugins.twitch.TwitchPlugin.responseBucket|TwitchPlugin.responseBucket]
     associative array for when a response has arrived, and then returns it.
 
     Times out after a hardcoded [kameloso.constants.Timeout.httpGET|Timeout.httpGET]
@@ -1237,7 +1287,13 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     ---
     immutable id = plugin.responseBucket.uniqueKey;
     immutable url = "https://api.twitch.tv/helix/users?login=zorael";
-    plugin.transient.getNextWorkerTid().send(id, url, plugin.transient.authorizationBearer);
+    plugin.getNextWorkerTid().send(
+        id,
+        url,
+        plugin.transient.authorizationBearer,
+        HTTPVerb.get,
+        cast(ubyte[])null,
+        string.init);
 
     delay(plugin, plugin.transient.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id, url);
@@ -1246,7 +1302,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     ---
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         id = Numerical ID to use as key when storing the response in the bucket AA.
 
     Returns:
@@ -1277,7 +1333,8 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
             return QueryResponse.init;
         }
 
-        auto response = plugin.responseBucket[id];
+        //auto response = plugin.responseBucket[id];  // potential range error due to TOCTTOU
+        immutable response = plugin.responseBucket.get(id, QueryResponse.init);
 
         if (response == QueryResponse.init)
         {
@@ -1330,8 +1387,6 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
                 writefln(pattern, delta, response.msecs, misses);
             }
 
-            // Make the new approximate query time a weighted average
-            averageApproximateQueryTime(plugin, response.msecs);
             plugin.responseBucket.remove(id);
             return response;
         }
@@ -1347,7 +1402,7 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         givenName = Name of user to look up.
         id = Optional numeric ID of user to look up, if no `givenName` given.
         searchByDisplayName = Whether or not to also attempt to look up `givenName`
@@ -1436,7 +1491,7 @@ in ((givenName.length || id),
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         name = Name of game to look up.
         id = Numerical ID of game to look up.
 
@@ -1472,7 +1527,7 @@ in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor ga
             "name": "Elden Ring",
             "box_art_url": "https://static-cdn.jtvnw.net/ttv-boxart/512953_IGDB-{width}x{height}.jpg"
         }
-        */
+         */
 
         return Game(gameJSON["id"].str.to!uint, gameJSON["name"].str);
     }
@@ -1488,7 +1543,7 @@ in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor ga
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to modify.
         title = Optional channel title to set.
         caller = Name of the calling function.
@@ -1512,7 +1567,7 @@ in (channelName.length, "Tried to change a the channel title with an empty chann
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to modify.
         gameID = Optional game ID to set the channel as playing.
         caller = Name of the calling function.
@@ -1536,7 +1591,7 @@ in (gameID, "Tried to set the channel game with an empty channel name string")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to modify.
         title = Optional channel title to set.
         gameID = Optional game ID to set the channel as playing.
@@ -1590,7 +1645,7 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
             url,
             caller,
             authorizationBearer,
-            HttpVerb.PATCH,
+            HTTPVerb.patch,
             cast(ubyte[])sink.data,
             "application/json");
     }
@@ -1607,7 +1662,7 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to fetch information about.
  +/
 auto getChannel(
@@ -1676,7 +1731,7 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
     where such exist.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to return token for.
 
     Returns:
@@ -1713,7 +1768,7 @@ out (token; token.length, "`getBroadcasterAuthorisation` returned an empty strin
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to run commercials for.
         lengthString = Length to play the commercial for, as a string.
         caller = Name of the calling function.
@@ -1748,7 +1803,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             url,
             caller,
             authorizationBearer,
-            HttpVerb.POST,
+            HTTPVerb.post,
             cast(ubyte[])body_,
             "application/json");
     }
@@ -2062,7 +2117,7 @@ public:
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to fetch polls for.
         pollIDString = ID of a specific poll to get.
         caller = Name of the calling function.
@@ -2113,7 +2168,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 paginatedURL,
                 caller,
                 authorizationBearer,
-                HttpVerb.GET,
+                HTTPVerb.get,
                 cast(ubyte[])null,
                 "application/json");
             immutable responseJSON = parseJSON(response.str);
@@ -2173,7 +2228,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to create the poll in.
         title = Poll title.
         durationString = How long the poll should run for in seconds (as a string).
@@ -2243,7 +2298,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             url,
             caller,
             authorizationBearer,
-            HttpVerb.POST,
+            HTTPVerb.post,
             cast(ubyte[])body_,
             "application/json");
         immutable responseJSON = parseJSON(response.str);
@@ -2288,7 +2343,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel whose poll to end.
         pollID = ID of the specific poll to end.
         terminate = If set, ends the poll by putting it in a `"TERMINATED"` state.
@@ -2336,7 +2391,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             url,
             caller,
             authorizationBearer,
-            HttpVerb.PATCH,
+            HTTPVerb.patch,
             cast(ubyte[])body_,
             "application/json");
         immutable responseJSON = parseJSON(response.str);
@@ -2382,7 +2437,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
     counting chatters.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         caller = String name of calling function.
 
     Returns:
@@ -2432,7 +2487,7 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
                 ]
             ]
         }
-        */
+         */
 
         if (responseJSON.type != JSONType.object)
         {
@@ -2462,7 +2517,7 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
                 55158,
                 1664543800
             ]
-            */
+             */
 
             immutable botAccountName = botEntryJSON.array[0].str;
 
@@ -2485,11 +2540,11 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
     Fetches information about an ongoing stream.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         loginName = Account name of user whose stream to fetch information of.
 
     Returns:
-        A [kameloso.plugins.twitch.base.TwitchPlugin.Room.Stream|Room.Stream]
+        A [kameloso.plugins.twitch.TwitchPlugin.Room.Stream|Room.Stream]
         populated with all (relevant) information.
  +/
 auto getStream(TwitchPlugin plugin, const string loginName)
@@ -2546,13 +2601,13 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
                     "cursor": "eyJiIjp7IkN1cnNvciI6ImV5SnpJam95TXpReExqUTBOelV3T1RZMk9URXdORFFzSW1RaU9tWmhiSE5sTENKMElqcDBjblZsZlE9PSJ9LCJhIjp7IkN1cnNvciI6IiJ9fQ"
                 }
             }
-            */
+             */
             /*
             {
                 "data": [],
                 "pagination": {}
             }
-            */
+             */
 
             auto stream = TwitchPlugin.Room.Stream(streamJSON["id"].str.to!uint);
             stream.live = true;
@@ -2593,7 +2648,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to fetch subscribers of.
         totalOnly = Whether or not to return all subscribers or only one stub
             entry with the total number of subscribers in its `.total` member.
@@ -2687,7 +2742,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 "total": 13,
                 "points": 13
             }
-            */
+             */
 
             if (responseJSON.type != JSONType.object)
             {
@@ -2762,7 +2817,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         login = Login name of other streamer to prepare a shoutout for.
 
     Returns:
@@ -2844,7 +2899,7 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
     Doesn't require broadcaster-level authorisation; the normal bot token is enough.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to delete message(s) in.
         messageID = ID of message to delete. Pass an empty string to delete all messages.
         caller = Name of the calling function.
@@ -2883,7 +2938,7 @@ in (channelName.length, "Tried to delete a message without providing a channel n
             url,
             caller,
             plugin.transient.authorizationBearer,
-            HttpVerb.DELETE);
+            HTTPVerb.delete_);
     }
 
     static immutable failedDeleteRetry = 100.msecs;
@@ -2896,7 +2951,7 @@ in (channelName.length, "Tried to delete a message without providing a channel n
     Times out a user in a channel.
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to timeout a user in.
         userID = Twitch ID of user to timeout.
         durationSeconds = Duration of timeout in seconds.
@@ -2970,7 +3025,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
             url,
             caller,
             plugin.transient.authorizationBearer,
-            HttpVerb.POST,
+            HTTPVerb.post,
             cast(ubyte[])body_,
             "application/json");
         immutable responseJSON = parseJSON(response.str);
@@ -3015,7 +3070,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         userID = Twitch ID of user to send whisper to.
         unescapedMessage = Message to send.
         caller = Name of the calling function.
@@ -3064,7 +3119,7 @@ in (userID, "Tried to send a whisper with an empty recipient ID string")
                 plugin,
                 url,caller,
                 plugin.transient.authorizationBearer,
-                HttpVerb.POST,
+                HTTPVerb.post,
                 cast(ubyte[])body_,
                 "application/json");
 

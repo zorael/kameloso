@@ -24,13 +24,11 @@ private:
 
 import kameloso.plugins;
 import kameloso.plugins.common.core;
+import requests.base : Response;
 import dialect.defs;
-import arsd.http2 : HttpResponse;
 import lu.container : MutexedAA;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
-
-public:
 
 
 // WebtitleSettings
@@ -97,9 +95,9 @@ struct TitleLookupResult
     uint code;
 
     /++
-        HTTP response status code text.
+        HTTP response body.
      +/
-    string codeText;
+    string str;
 
     /++
         Message text if an exception was thrown during the lookup.
@@ -245,12 +243,17 @@ void lookupURLs(
                 continue;
             }
 
-            if ((result.code == 0) ||
-                (result.code == 2) ||
-                (result.code >= 400))
+            if ((result.code < 200) ||
+                (result.code > 299))
             {
-                enum pattern = "HTTP status <l>%03d</> <t>(%s)</> fetching <l>%s";
-                logger.warningf(pattern, result.code, result.codeText, result.url);
+                import kameloso.common : getHTTPResponseCodeText;
+
+                enum pattern = "HTTP status <l>%03d</> (%s) fetching <l>%s";
+                logger.warningf(
+                    pattern,
+                    result.code,
+                    getHTTPResponseCodeText(result.code),
+                    result.url);
                 continue;
             }
 
@@ -295,8 +298,6 @@ void lookupURLs(
 
     auto lookupURLsFiber = new Fiber(&lookupURLsDg, BufferSize.fiberStack);
     delay(plugin, lookupURLsFiber, Duration.zero);
-
-    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
 }
 
 
@@ -337,7 +338,8 @@ in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber"
             return TitleLookupResult.init;
         }
 
-        auto result = plugin.lookupBucket[id];
+        //auto result = plugin.lookupBucket[id];  // potential range error due to TOCTTOU
+        immutable result = plugin.lookupBucket.get(id, TitleLookupResult.init);
 
         if (result == TitleLookupResult.init)
         {
@@ -435,73 +437,63 @@ void persistentQuerier(
             (url.indexOf("youtube.com/watch?v=") != -1) ||
             (url.indexOf("youtu.be/") != -1))
         {
-            // Start the try-catch here to include advancePast calls
-            try
+            // Do our own slicing instead of using regexes, because footprint.
+            string slice = url;  // mutable
+
+            slice.advancePast("http");
+            if (slice[0] == 's') slice = slice[1..$];
+            slice = slice["://".length..$];
+
+            if (slice.startsWith("www.")) slice = slice[4..$];
+
+            if (slice.startsWith("youtube.com/watch?v=") ||
+                slice.startsWith("youtu.be/"))
             {
-                // Do our own slicing instead of using regexes, because footprint.
-                string slice = url;  // mutable
+                immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
+                result = sendHTTPRequestImpl(youtubeURL, caBundleFile);
 
-                slice.advancePast("http");
-                if (slice[0] == 's') slice = slice[1..$];
-                slice = slice["://".length..$];
-
-                if (slice.startsWith("www.")) slice = slice[4..$];
-
-                if (slice.startsWith("youtube.com/watch?v=") ||
-                    slice.startsWith("youtu.be/"))
+                if (result.exceptionText.length)
                 {
-                    immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
-                    const response = sendHTTPRequestImpl(youtubeURL, caBundleFile);
-
-                    // Manually fill in the blannks that parseResponseIntoTitleLookupResults would have done
-                    result.code = response.code;
-                    result.codeText = response.codeText;
-                    result.url = url;
-
-                    if (!response.code || (response.code == 2) || (response.code >= 400))
-                    {
-                        // Not sure when this can happen; drop down to the normal lookup
-                    }
-                    else
-                    {
-                        import std.json : parseJSON;
-                        immutable youtubeJSON = parseJSON(response.contentText);
-                        result.title = decodeEntities(youtubeJSON["title"].str);
-                        result.youtubeAuthor = decodeEntities(youtubeJSON["author_name"].str);
-                    }
+                    // Either requests threw an exception or it's something like UnicodeException
+                    // Drop down and try the original URL
                 }
-            }
-            catch (Exception e)
-            {
-                // Unknown what can cause this, but don't crash the worker
-                result.exceptionText = e.msg;
+                else if (!result.code || (result.code < 10) || (result.code >= 400))
+                {
+                    // Not sure when this can happen; drop down to the normal lookup
+                }
+                else
+                {
+                    import std.json : parseJSON;
+                    immutable youtubeJSON = parseJSON(cast(string)result.str);
+                    result.title = decodeEntities(youtubeJSON["title"].str);
+                    result.youtubeAuthor = decodeEntities(youtubeJSON["author_name"].str);
+                }
             }
         }
 
-        if (!result.title.length)
+        if (!result.title.length) // && !result.exceptionText.length)
         {
             static immutable bool[2] trueThenFalse = [ true, false ];
 
             foreach (immutable firstTime; trueThenFalse[])
             {
-                const response = sendHTTPRequestImpl(url, caBundleFile);
-                result = parseResponseIntoTitleLookupResult(url, response);
+                result = sendHTTPRequestImpl(url, caBundleFile);
 
-                if (!response.code || (response.code == 2))
+                if (result.exceptionText.length)
+                {
+                    // Either requests threw an exception or it's something like UnicodeException
+                    break;  // drop down to abort
+                }
+                else if (!result.code || (result.code < 10))
                 {
                     // SSL error?
                     // Don't include >= 400; we might get a hit later by rewriting the url
-                    break;  // drop down
-                }
-                else if (result.title.length && (response.code < 400))
-                {
-                    // Title found
                     break;  // as above
                 }
-                else if (result.exceptionText.length)
+                else if (result.title.length && (result.code < 400))
                 {
-                    // UnicodeException probably
-                    break;  // ditto
+                    // Title found
+                    break;  // ditty
                 }
                 else if (firstTime)
                 {
@@ -539,19 +531,29 @@ void persistentQuerier(
 
     while (!halt)
     {
-        import std.concurrency : receive;
-        import std.variant : Variant;
+        try
+        {
+            import std.concurrency : receive;
+            import std.variant : Variant;
 
-        receive(
-            &onTitleRequest,
-            &onQuitMessage,
-            (Variant v)
-            {
-                import std.stdio : stdout, writeln;
-                writeln("Webtitle worker received unknown Variant: ", v);
-                stdout.flush();
-            }
-        );
+            receive(
+                &onTitleRequest,
+                &onQuitMessage,
+                (Variant v)
+                {
+                    import std.stdio : stdout, writeln;
+                    writeln("Webtitle worker received unknown Variant: ", v);
+                    stdout.flush();
+                }
+            );
+        }
+        catch (Exception _)
+        {
+            // Probably a requests exception
+            /*writeln("Webtitle worker caught exception: ", e.msg);
+            version(PrintStacktraces) writeln(e);
+            stdout.flush();*/
+        }
     }
 }
 
@@ -582,16 +584,15 @@ in (url.length, "Tried to send an HTTP request without a URL")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
-    import arsd.http2 : HttpVerb;
     import std.concurrency : send;
     import core.time : msecs;
 
-    if (plugin.state.settings.trace)
+    version(TraceHTTPRequests)
     {
         import kameloso.common : logger;
         import lu.conv : Enum;
 
-        enum pattern = "GET: <i>%s<t> (%s)";
+        enum pattern = "get: <i>%s<t> (%s)";
         logger.tracef(
             pattern,
             url,
@@ -608,11 +609,11 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
     immutable result = waitForLookupResults(plugin, id);
 
-    if (result.code == 2)
+    if (result.code == 0) //(!result.title.length)
     {
         // ?
     }
-    else if (result.code == 0) //(!result.title.length)
+    else if (result.code < 10)
     {
         // ?
     }
@@ -636,14 +637,14 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
 // sendHTTPRequestImpl
 /++
-    Fetches the contents of a URL and returns it as an [arsd.http2.HTTPResponse|HTTPResponse].
+    Fetches the contents of a URL and returns it as an [requests] `Response`.
 
     Params:
         url = URL string to fetch.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
 
     Returns:
-        An [arsd.http2.HTTPResponse|HTTPResponse] with the contents of the URL.
+        A [TitleLookupResult] with contents based on what was read from the URL.
 
     Throws:
         [TitleFetchException] if the URL could not be fetched.
@@ -652,68 +653,64 @@ auto sendHTTPRequestImpl(
     const string url,
     const string caBundleFile)
 {
-    import arsd.http2 : HttpClient, Uri;
-    import std.algorithm.comparison : among;
+    import kameloso.constants : KamelosoInfo, Timeout;
+    import requests.base : Response;
+    import requests.request : Request;
+    import core.time : seconds;
 
-    static HttpClient client;
+    static string[string] headers;
 
-    if (!client)
+    if (!headers.length)
     {
-        import kameloso.constants : KamelosoInfo, Timeout;
-        import core.time : seconds;
-
-        client = new HttpClient;
-        client.useHttp11 = true;
-        client.keepAlive = false;
-        client.acceptGzip = false;
-        client.defaultTimeout = Timeout.httpGET.seconds;
-        client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
-        if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
+        headers =
+        [
+            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
+        ];
     }
 
-    auto req = client.request(Uri(url));
-    auto res = req.waitForCompletion();
+    auto req = Request();
+    //req.verbosity = 1;
+    req.keepAlive = false;
+    req.timeout = Timeout.httpGET.seconds;
+    req.addHeaders(headers);
+    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
 
-    if (res.code.among!(301, 302, 307, 308))
+    try
     {
-        // Moved
-        foreach (immutable i; 0..5)
-        {
-            req = client.request(Uri(res.location));
-            res = req.waitForCompletion();
-            if (!res.code.among!(301, 302, 307, 308) || !res.location.length) break;
-        }
+        return req
+            .get(url)
+            .parseResponseIntoTitleLookupResult();
     }
-
-    return res;
+    catch (Exception e)
+    {
+        TitleLookupResult result;
+        result.exceptionText = e.msg;
+        return result;
+    }
 }
 
 
 // parseResponseIntoTitleLookupResult
 /++
-    Parses an [arsd.http2.HTTPResponse|HTTPResponse] into a [TitleLookupResult].
+    Parses a [requests] `Response` into a [TitleLookupResult].
 
     Params:
-        url = URL string that was fetched.
-        res = [arsd.http2.HTTPResponse|HTTPResponse] to parse.
+        res = [requests] `Response` to parse.
 
     Returns:
         A [TitleLookupResult] with contents based on what was read from the URL.
  +/
-auto parseResponseIntoTitleLookupResult(
-    const string url,
-    const HttpResponse res)
+auto parseResponseIntoTitleLookupResult(/*const*/ Response res)
 {
-    import lu.string : advancePast;
     import arsd.dom : Document;
     import std.algorithm.searching : canFind, startsWith;
-    import std.uni : toLower;
-    import core.exception : UnicodeException;
 
     TitleLookupResult result;
     result.code = res.code;
-    result.codeText = res.codeText;
-    result.url = url;
+    result.url = res.uri.uri;
+    result.str = cast(string)res.responseBody;  // .idup?
+
+    enum unnamedPagePlaceholder = "(Unnamed page)";
 
     if (!result.code || (result.code == 2) || (result.code >= 400))
     {
@@ -723,20 +720,18 @@ auto parseResponseIntoTitleLookupResult(
 
     try
     {
+        result.domain = res.finalURI.host.startsWith("www.") ?
+            res.finalURI.host[4..$] :
+            res.finalURI.host;
+
         auto doc = new Document;
-        doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
-        doc.parseGarbage(res.contentText);
-        if (!doc.title.length) return result;
+        doc.parseGarbage(result.str);
 
-        string slice = url;  // mutable
-        slice.advancePast("//");
-        string host = slice.advancePast('/', Yes.inherit).toLower;
-        if (host.startsWith("www.")) host = host[4..$];
+        result.title = doc.title.length ?
+            decodeEntities(doc.title) :
+            unnamedPagePlaceholder;
 
-        result.title = decodeEntities(doc.title);
-        result.domain = host;
-
-        if (!descriptionExemptions.canFind(host))
+        if (!descriptionExemptions.canFind(result.domain))
         {
             auto metaTags = doc.getElementsByTagName("meta");
 
@@ -750,8 +745,9 @@ auto parseResponseIntoTitleLookupResult(
             }
         }
     }
-    catch (Exception e) //(UnicodeException e)
+    catch (Exception e)
     {
+        // UnicodeException, UriException, ...
         result.exceptionText = e.msg;
     }
 

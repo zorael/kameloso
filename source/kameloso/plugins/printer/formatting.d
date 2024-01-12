@@ -3,11 +3,11 @@
     For internal use.
 
     The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
-    as the [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin],
+    as the [kameloso.plugins.printer.PrinterPlugin|PrinterPlugin],
     but these implementation functions can be offloaded here to limit module size a bit.
 
     See_Also:
-        [kameloso.plugins.printer.base],
+        [kameloso.plugins.printer],
         [kameloso.plugins.printer.logging]
 
     Copyright: [JR](https://github.com/zorael)
@@ -22,7 +22,7 @@ version(WithPrinterPlugin):
 
 private:
 
-import kameloso.plugins.printer.base;
+import kameloso.plugins.printer;
 
 import kameloso.pods : CoreSettings;
 import dialect.defs;
@@ -100,7 +100,7 @@ void put(Flag!"colours" colours = No.colours, Sink, Args...)
         import std.format : format;
 
         enum pattern = "`%s` must be passed an output range of `char[]`";
-        immutable message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
 
@@ -156,7 +156,7 @@ unittest
     the channel or target, the content body, as well as auxiliary information.
 
     Params:
-        plugin = Current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
+        plugin = Current [kameloso.plugins.printer.PrinterPlugin|PrinterPlugin].
         sink = Output range to format the [dialect.defs.IRCEvent|IRCEvent] into.
         event = The [dialect.defs.IRCEvent|IRCEvent] that is to be formatted.
         bellOnMention = Whether or not to emit a terminal bell when the bot's
@@ -185,7 +185,7 @@ void formatMessageMonochrome(Sink)
         import std.format : format;
 
         enum pattern = "`%s` must be passed an output range of `char[]`";
-        immutable message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
 
@@ -644,7 +644,7 @@ void formatMessageMonochrome(Sink)
     information and numbers.
 
     Params:
-        plugin = Current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
+        plugin = Current [kameloso.plugins.printer.PrinterPlugin|PrinterPlugin].
         sink = Output range to format the [dialect.defs.IRCEvent|IRCEvent] into.
         event = The [dialect.defs.IRCEvent|IRCEvent] that is to be formatted.
         bellOnMention = Whether or not to emit a terminal bell when the bot's
@@ -676,7 +676,7 @@ void formatMessageColoured(Sink)
         import std.format : format;
 
         enum pattern = "`%s` must be passed an output range of `char[]`";
-        immutable message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
 
@@ -1443,7 +1443,7 @@ void highlightEmotesImpl(Sink)
         import std.format : format;
 
         enum pattern = "`%s` must be passed an output range of `char[]`";
-        immutable message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
 

@@ -3,11 +3,11 @@
     For internal use.
 
     The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
-    as the [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin], but these implementation
+    as the [kameloso.plugins.admin.AdminPlugin|AdminPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
 
     See_Also:
-        [kameloso.plugins.admin.base]
+        [kameloso.plugins.admin]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -23,7 +23,7 @@ version(Debug):
 
 private:
 
-import kameloso.plugins.admin.base : AdminPlugin;
+import kameloso.plugins.admin : AdminPlugin;
 
 import kameloso.messaging;
 import dialect.defs;
@@ -37,11 +37,11 @@ package:
     Prints incoming events to the local terminal, in forms depending on
     which flags have been set with bot commands.
 
-    If [kameloso.plugins.admin.base.AdminPlugin.printRaw|AdminPlugin.printRaw] is set by way of
-    invoking [kameloso.plugins.admin.base.onCommandPrintRaw|onCommandPrintRaw], prints all incoming server strings.
+    If [kameloso.plugins.admin.AdminPlugin.printRaw|AdminPlugin.printRaw] is set by way of
+    invoking [kameloso.plugins.admin.onCommandPrintRaw|onCommandPrintRaw], prints all incoming server strings.
 
-    If [kameloso.plugins.admin.base.AdminPlugin.printBytes|AdminPlugin.printBytes] is set by way of
-    invoking [kameloso.plugins.admin.base.onCommandPrintBytes|onCommandPrintBytes], prints all incoming server strings byte by byte.
+    If [kameloso.plugins.admin.AdminPlugin.printBytes|AdminPlugin.printBytes] is set by way of
+    invoking [kameloso.plugins.admin.onCommandPrintBytes|onCommandPrintBytes], prints all incoming server strings byte by byte.
  +/
 void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
@@ -56,6 +56,20 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
         if (event.tags.length) write('@', event.tags, ' ');
         writeln(event.raw, '$');
         wroteSomething = true;
+    }
+
+    if (plugin.adminSettings.printEvents.length)
+    {
+        if (plugin.eventTypesToPrint[event.type] ||
+            plugin.eventTypesToPrint[IRCEvent.Type.ANY])
+        {
+            import kameloso.printing : printObject;
+
+            printObject(event);
+            if (event.sender != IRCUser.init) printObject(event.sender);
+            if (event.target != IRCUser.init) printObject(event.target);
+            wroteSomething = true;
+        }
     }
 
     if (plugin.adminSettings.printBytes)
@@ -111,7 +125,7 @@ void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandShowUsersImpl
 /++
-    Prints out the current `users` array of the [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin]'s
+    Prints out the current `users` array of the [kameloso.plugins.admin.AdminPlugin|AdminPlugin]'s
     [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] to the local terminal.
  +/
 void onCommandShowUsersImpl(AdminPlugin plugin)
@@ -159,7 +173,7 @@ void onCommandPrintRawImpl(AdminPlugin plugin, const ref IRCEvent event)
 
     plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
 
-    enum pattern = "Printing all: <b>%s<b>";
+    enum pattern = "Printing raw: <b>%s<b>";
     immutable message = pattern.format(plugin.adminSettings.printRaw);
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
@@ -183,6 +197,87 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const ref IRCEvent event)
     enum pattern = "Printing bytes: <b>%s<b>";
     immutable message = pattern.format(plugin.adminSettings.printBytes);
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
+}
+
+
+// onCommandPrintEventsImpl
+/++
+    Changes the contents of the
+    [kameloso.plugins.admin.AdminPlugin.eventTypesToPrint|AdminPlugin.eventTypesToPrint]
+    array, to prettyprint all incoming events of the types with a value of `true`
+    therein, using [kameloso.printing.printObject|printObject].
+
+    This is for debugging purposes.
+
+    Params:
+        plugin = The current [kameloso.plugins.admin.AdminPlugin|AdminPlugin].
+        input = A string of event types to print, separated by commas.
+        event = The event that triggered this command, if any. If it was not
+            triggered by an event, it should be [dialect.defs.IRCEvent|IRCEvent.init].
+ +/
+void onCommandPrintEventsImpl(
+    AdminPlugin plugin,
+    const string input,
+    const /*ref*/ IRCEvent event)
+{
+    import kameloso.plugins.admin : parseTypesFromString;
+    import kameloso.common : logger;
+    import lu.conv : Enum;
+    import std.algorithm.iteration : map;
+    import std.format : format;
+
+    if (plugin.state.settings.headless) return;  // shouldn't output events to terminal
+
+    if (!input.length)
+    {
+        if (event == IRCEvent.init)
+        {
+            enum message = "Printing event types: <l>(disabled)";
+            logger.info(message);
+        }
+        else
+        {
+            enum message = "Printing event types: <b>(disabled)<b>";
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+
+        plugin.eventTypesToPrint[] = false;
+        plugin.adminSettings.printEvents = string.init;  // for easy detection if something is set
+        return;
+    }
+
+    immutable success = parseTypesFromString(plugin, input);
+
+    if (success)
+    {
+        plugin.adminSettings.printEvents = input;  // as above
+
+        if (event == IRCEvent.init)
+        {
+            enum pattern = "Printing event types: <l>%s";
+            logger.infof(pattern, input);
+        }
+        else
+        {
+            enum pattern = "Printing event types: <b>%s<b>";
+            immutable message = pattern.format(input);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+    }
+    else
+    {
+        if (event == IRCEvent.init)
+        {
+            enum pattern = "Invalid event types: <l>%s";
+            logger.infof(pattern, input);
+        }
+        else
+        {
+            enum pattern = "Invalid event types: <b>%s<b>";
+            immutable message = pattern.format(input);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+    }
 }
 
 

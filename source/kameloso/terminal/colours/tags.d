@@ -85,7 +85,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
         import std.format : format;
 
         enum pattern = "`%s` only works on string types, not `%s`";
-        immutable message = pattern.format(__FUNCTION__, T.stringof);
+        enum message = pattern.format(__FUNCTION__, T.stringof);
         static assert(0, message);
     }
 
@@ -553,7 +553,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel) @safe
         import std.format : format;
 
         enum pattern = "`%s` only works on string types, not `%s`";
-        immutable message = pattern.format(__FUNCTION__, T.stringof);
+        enum message = pattern.format(__FUNCTION__, T.stringof);
         static assert(0, message);
     }
 
@@ -612,7 +612,7 @@ auto stripTags(T)(const T line) @safe
         import std.format : format;
 
         enum pattern = "`%s` only works on string types, not `%s`";
-        immutable message = pattern.format(__FUNCTION__, T.stringof);
+        enum message = pattern.format(__FUNCTION__, T.stringof);
         static assert(0, message);
     }
 
