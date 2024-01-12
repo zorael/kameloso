@@ -361,7 +361,7 @@ void onCommandTimer(TimerPlugin plugin, const /*ref*/ IRCEvent event)
 
     void sendUsage()
     {
-        enum pattern = "Usage: <b>%s%s<b> [new|add|del|suspend|resume|list] ...";
+        enum pattern = "Usage: <b>%s%s<b> [new|modify|add|del|suspend|resume|list] ...";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
@@ -427,7 +427,7 @@ void handleNewTimer(
     void sendNewUsage()
     {
         enum pattern = "Usage: <b>%s%s new<b> [name] [type] [condition] [message count threshold] " ~
-            "[time threshold] [stagger message count] [stagger time]";
+            "[time threshold] [optional stagger message count] [optional stagger time]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
@@ -575,7 +575,7 @@ void handleModifyTimer(
     void sendModifyUsage()
     {
         enum pattern = "Usage: <b>%s%s modify<b> [name] [type] [condition] [message count threshold] " ~
-            "[time threshold] [stagger message count] [stagger time]";
+            "[time threshold] [optional stagger message count] [optional stagger time]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
