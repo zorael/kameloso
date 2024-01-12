@@ -1423,6 +1423,7 @@ auto createTimerFiber(
 
             string message = timer.getLine()  // mutable
                 .replace("$bot", nameOf(plugin, plugin.state.client.nickname))
+                .replace("$botNickname", plugin.state.client.nickname)
                 .replace("$channel", channelName[1..$])
                 .replaceRandom();
 
