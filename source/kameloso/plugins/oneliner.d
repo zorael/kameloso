@@ -1070,9 +1070,11 @@ void handleDelFromOneliner(
         chan(plugin.state, event.channel, message);
     }
 
-    void sendRemoved(const string trigger)
+    void sendRemoved(const string trigger, const bool alias_)
     {
-        enum pattern = "Oneliner <b>%s%s<b> removed.";
+        immutable pattern = alias_ ?
+            "Oneliner alias <b>%s%s<b> removed." :
+            "Oneliner <b>%s%s<b> removed.";
         immutable message = pattern.format(plugin.state.settings.prefix, trigger);
         chan(plugin.state, event.channel, message);
     }
@@ -1120,7 +1122,7 @@ void handleDelFromOneliner(
     else
     {
         (*channelOneliners).remove(trigger);
-        sendRemoved(trigger);
+        sendRemoved(trigger, (oneliner.alias_.length > 0));
 
         string[] toRemove;
 
@@ -1139,7 +1141,7 @@ void handleDelFromOneliner(
         foreach (immutable otherTrigger; toRemove)
         {
             (*channelOneliners).remove(otherTrigger);
-            sendRemoved(otherTrigger);
+            sendRemoved(otherTrigger, true);
         }
     }
 
