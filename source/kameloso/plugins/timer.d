@@ -719,6 +719,13 @@ void handleModifyTimer(
         return sendZeroedConditions();
     }
 
+    if (const channel = event.channel in plugin.channels)
+    {
+        // Reset the message count and timestamp
+        timer.lastMessageCount = channel.messageCount;
+        timer.lastTimestamp = event.time;
+    }
+
     timer.type = type;
     if (conditionString.length) timer.condition = condition;
     if (messageCountThresholdString.length) timer.messageCountThreshold = messageCountThreshold;
