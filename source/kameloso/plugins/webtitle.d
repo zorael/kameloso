@@ -205,7 +205,6 @@ void lookupURLs(
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.common : logger;
     import kameloso.constants : BufferSize;
-    import kameloso.thread : ThreadMessage;
     import lu.array: uniqueKey;
     import lu.string : advancePast;
     import std.concurrency : send, spawn;
@@ -235,7 +234,7 @@ void lookupURLs(
             enum caughtPattern = "Caught URL: <l>%s";
             logger.infof(caughtPattern, url);
 
-            auto result = sendHTTPRequest(plugin, url);
+            const result = sendHTTPRequest(plugin, url);
 
             if (result.exceptionText.length)
             {
@@ -684,6 +683,7 @@ auto sendHTTPRequestImpl(
     catch (Exception e)
     {
         TitleLookupResult result;
+        result.url = url;
         result.exceptionText = e.msg;
         return result;
     }
