@@ -6,8 +6,7 @@
     array of timestamps keyed by nickname. Whenever we see a user do something,
     we will update his or her timestamp to the current time. We'll save this
     array to disk when closing the program and read it from file when starting
-    it, as well as saving occasionally once every few (compile time-configurable)
-    minutes.
+    it, as well as saving occasionally once every few minutes.
 
     We will rely on the
     [kameloso.plugins.services.chanquery.ChanQueryService|ChanQueryService] to query
@@ -21,10 +20,10 @@
     with `UDA`s of IRC event *types*. When an event is incoming it will trigger
     the function(s) annotated with its type.
 
-    Callback delegates and [core.thread.fiber.Fiber|Fiber]s *are* supported but are not
-    the primary way to trigger event handler functions. Such can however
-    be registered to process on incoming events, or scheduled with a reasonably
-    high degree of precision.
+    Callback delegates and [core.thread.fiber.Fiber|Fiber]s *are* supported, however.
+    Event handlers can be annotated to be called from with in a fiber, and other
+    fibers and delegates can be manually registered to process on incoming events,
+    alterntaively scheduled to a point in time with a reasonably high degree of precision.
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#seen,
@@ -39,7 +38,7 @@
  +/
 module kameloso.plugins.seen;
 
-// We only want to compile this if we're compiling specifically this plugin.
+// We only want to compile this file if we want the plugin built.
 version(WithSeenPlugin):
 
 // For when we want to limit some functionality to debug builds.
@@ -66,14 +65,8 @@ private import dialect.defs;
 // [lu.container] for the rehashing associative array wrapper.
 private import lu.container : RehashingAA;
 
-// [std.datetime.systime] for the [std.datetime.systime.Clock|Clock], to update times with.
-private import std.datetime.systime : Clock;
-
 // [std.typecons] for [std.typecons.Flag|Flag] and its friends.
 private import std.typecons : Flag, No, Yes;
-
-// [core.time] for [core.time.hours|hours], with which we can delay some actions.
-private import core.time : hours;
 
 
 version(OmniscientSeen)
@@ -94,7 +87,7 @@ version(OmniscientSeen)
         or [kameloso.plugins.common.core.ChannelPolicy.any|ChannelPolicy.any],
         in which case anywhere goes.
 
-        For events that don't correspond to a channel (such as
+        For events that don't correspond to a channel (such as a private message
         [dialect.defs.IRCEvent.Type.QUERY|QUERY]) the setting doesn't apply and is ignored.
 
         Thus this [omniscientChannelPolicy] enum constant is a compile-time setting
@@ -140,7 +133,7 @@ mixin ChannelAwareness!omniscientChannelPolicy;
 
 /++
     Mixes in a module constructor that registers this module's plugin to be
-    instantiated on program startup/connect.
+    instantiated as part of the program running.
  +/
 mixin PluginRegistration!SeenPlugin;
 
@@ -157,7 +150,7 @@ public:
 
 // SeenPlugin
 /++
-    This is your plugin to the outside world, the only thing publicly visible in the
+    This is your plugin to the outside world, usually the only thing publicly visible in the
     entire module. It only serves as a way of proxying calls to our top-level
     private functions, as well as to house plugin-specific and -private variables that we want
     to keep out of top-level scope for the sake of modularity. If the only state
@@ -169,10 +162,12 @@ public:
     [SeenSettings] and its [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
     The [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] is a struct housing various
-    variables that together make up the plugin's state. This is where
-    information is kept about the bot, the server, and some metathings allowing
-    us to send messages to the server. We don't define it here; we mix it in
-    later with the [kameloso.plugins.common.core.IRCPluginImpl|IRCPluginImpl] mixin.
+    variables that together make up the plugin's state. This is additionally where
+    information is kept about the bot, the server, and some other meta-things
+    about the program.
+
+    We don't declare it here; we will mix it in later with the
+    [kameloso.plugins.common.core.IRCPluginImpl|IRCPluginImpl] mixin.
 
     ---
     struct IRCPluginState
@@ -182,7 +177,6 @@ public:
         IRCBot bot;
         CoreSettings settings;
         ConnectionSettings connSettings;
-        Tid mainThread;
         IRCUser[string] users;
         IRCChannel[string] channels;
         Replay[][string] pendingReplays;
@@ -192,122 +186,135 @@ public:
         void delegate(IRCEvent)[][] awaitingDelegates;
         ScheduledFiber[] scheduledFibers;
         ScheduledDelegate[] scheduledDelegates;
-        long nextScheduledTimestamp;
-        void updateScheule();
+        long[string] previousWhoisTimestamps;
         Update updates;
         bool* abort;
+        DeferredAction[] deferredActions;
+        ThreadMessage[] messages;
+        ThreadMessage[] priorityMessages;
+        Message[] outgoingMessages;
     }
     ---
 
     * [kameloso.plugins.common.core.IRCPluginState.client|IRCPluginState.client]
-        houses information about the client itself, such as your nickname and
-        other things related to an IRC client.
+    houses information about the client itself, such as your nickname and
+    other things related to an IRC client.
 
     * [kameloso.plugins.common.core.IRCPluginState.server|IRCPluginState.server]
-        houses information about the server you're connected to.
+    houses information about the server you're connected to.
 
     * [kameloso.plugins.common.core.IRCPluginState.bot|IRCPluginState.bot] houses
-        information about things that relate to an IRC bot, like which channels
-        to join, which home channels to operate in, the list of administrator accounts, etc.
+    information about things that relate to an IRC bot, like which channels
+    to join, which home channels to operate in, the list of administrator accounts, etc.
 
     * [kameloso.plugins.common.core.IRCPluginState.settings|IRCPluginState.settings]
-        is a copy of the "global" [kameloso.pods.CoreSettings|CoreSettings],
-        which contains information about how the bot should output text, whether
-        or not to always save to disk upon program exit, and some other program-wide settings.
+    is a copy of the "global" [kameloso.pods.CoreSettings|CoreSettings],
+    which contains information about how the bot should output text, whether
+    or not to always save to disk upon program exit, and some other program-wide settings.
 
     * [kameloso.plugins.common.core.IRCPluginState.connSettings|IRCPluginState.connSettings]
-        is like [kameloso.plugins.common.core.IRCPluginState.settings|IRCPluginState.settings],
-        except for values relating to the connection to the server; whether to
-        use IPv6, paths to any certificates, and the such.
+    is like [kameloso.plugins.common.core.IRCPluginState.settings|IRCPluginState.settings],
+    except for values relating to the connection to the server; whether to
+    use IPv6, paths to any certificates, and the such.
 
     * [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
-        is an associative array keyed with users' nicknames. The value to that key is an
-        [dialect.defs.IRCUser|IRCUser] representing that user in terms of nickname,
-        address, ident, services account name, and much more. This is a way to keep track of
-        users by more than merely their name. It is however not saved at the end
-        of the program; as everything else it is merely state and transient.
+    is an associative array keyed with users' nicknames. The value to that key is an
+    [dialect.defs.IRCUser|IRCUser] representing that user in terms of nickname,
+    address, ident, services account name, and much more. This is a way to keep track of
+    users by more than merely their name. It is however not saved at the end
+    of the program; as everything else it is merely state and transient.
 
     * [kameloso.plugins.common.core.IRCPluginState.channels|IRCPluginState.channels]
-        is another associative array, this one with all the known channels keyed
-        by their names. This way we can access detailed information about any
-        known channel, given only their name.
+    is another associative array, this one with all the known channels keyed
+    by their names. This way we can access detailed information about any
+    known channel, given only their name.
 
     * [kameloso.plugins.common.core.IRCPluginState.pendingReplays|IRCPluginState.pendingReplays]
-        is also an associative array into which we place [kameloso.plugins.common.core.Replay|Replay]s.
-        The main loop will pick up on these and call WHOIS on the nickname in the key.
-        A [kameloso.plugins.common.core.Replay|Replay] is otherwise just an
-        [dialect.defs.IRCEvent|IRCEvent] to be played back when the WHOIS results
-        return, as well as a delegate that invokes the function that was originally
-        to be called. Constructing a [kameloso.plugins.common.core.Replay|Replay] is
-        all wrapped in a function [kameloso.plugins.common.misc.enqueue|enqueue], with the
-        queue management handled behind the scenes.
+    is also an associative array into which we place [kameloso.plugins.common.core.Replay|Replay]s.
+    The main loop will pick up on these and call WHOIS on the nickname in the key.
+    A [kameloso.plugins.common.core.Replay|Replay] is otherwise just an
+    [dialect.defs.IRCEvent|IRCEvent] to be played back when the WHOIS results
+    return, as well as a delegate that invokes the function that was originally
+    to be called. Constructing a [kameloso.plugins.common.core.Replay|Replay] is
+    all wrapped in a function [kameloso.plugins.common.misc.enqueue|enqueue], with the
+    queue management handled behind the scenes.
 
     * [kameloso.plugins.common.core.IRCPluginState.hasPendingReplays|IRCPluginState.hasPendingReplays]
-        is merely a bool of whether or not there currently are any
-        [kameloso.plugins.common.core.Replay|Replay]s in
-        [kameloso.plugins.common.core.IRCPluginState.pendingReplays|IRCPluginState.pendingReplays],
-        cached to avoid associative array length lookups.
+    is merely a bool of whether or not there currently are any
+    [kameloso.plugins.common.core.Replay|Replay]s in
+    [kameloso.plugins.common.core.IRCPluginState.pendingReplays|IRCPluginState.pendingReplays],
+    cached to avoid associative array length lookups.
 
     * [kameloso.plugins.common.core.IRCPluginState.readyReplays|IRCPluginState.readyReplays]
-        is an array of [kameloso.plugins.common.core.Replay|Replay]s that have
-        seen their WHOIS request issued and the result received. Moving one from
-        [kameloso.plugins.common.core.IRCPluginState.pendingReplays|IRCPluginState.pendingReplays]
-        to [kameloso.plugins.common.core.IRCPluginState.readyReplays|IRCPluginState.readyReplays]
-        will make the main loop pick it up, *update* the [dialect.defs.IRCEvent|IRCEvent]
-        stored within it with what we now know of the sender and/or target, and
-        then replay the event by invoking its delegate.
+    is an array of [kameloso.plugins.common.core.Replay|Replay]s that have
+    seen their WHOIS request issued and the result received. Moving one from
+    [kameloso.plugins.common.core.IRCPluginState.pendingReplays|IRCPluginState.pendingReplays]
+    to [kameloso.plugins.common.core.IRCPluginState.readyReplays|IRCPluginState.readyReplays]
+    will make the main loop pick it up, *update* the [dialect.defs.IRCEvent|IRCEvent]
+    stored within it with what we now know of the sender and/or target, and
+    then replay the event by invoking its delegate.
 
     * [kameloso.plugins.common.core.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
-        is an array of [core.thread.fiber.Fiber|Fiber]s indexed by [dialect.defs.IRCEvent.Type]s'
-        numeric values. Fibers in the array of a particular event type will be
-        executed the next time such an event is incoming. Think of it as fiber callbacks.
+    is an array of [core.thread.fiber.Fiber|Fiber]s indexed by [dialect.defs.IRCEvent.Type]s'
+    numeric values. Fibers in the array of a particular event type will be
+    executed the next time such an event is incoming. Think of it as fiber callbacks.
 
     * [kameloso.plugins.common.core.IRCPluginState.awaitingDelegates|IRCPluginState.awaitingDelegates]
-        is literally an array of callback delegates, to be triggered when an event
-        of a matching type comes along.
+    is literally an array of callback delegates, to be triggered when an event
+    of a matching type comes along.
 
     * [kameloso.plugins.common.core.IRCPluginState.scheduledFibers|IRCPluginState.scheduledFibers]
-        is also an array of [core.thread.fiber.Fiber|Fiber]s, but not one keyed
-        on or indexed by event types. Instead they are tuples of a
-        [core.thread.fiber.Fiber|Fiber] and a `long` timestamp of when they should be run.
-        Use [kameloso.plugins.common.delayawait.delay|delay] to enqueue.
+    is also an array of [core.thread.fiber.Fiber|Fiber]s, but not one keyed
+    on or indexed by event types. Instead they are tuples of a
+    [core.thread.fiber.Fiber|Fiber] and a `long` timestamp of when they should be run.
+    Use [kameloso.plugins.common.delayawait.delay|delay] to enqueue.
 
     * [kameloso.plugins.common.core.IRCPluginState.scheduledDelegates|IRCPluginState.scheduledDelegates]
-        is likewise an array of delegates, to be triggered at a later point in time.
+    is likewise an array of delegates, to be triggered at a later point in time.
 
-    * [kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp|IRCPluginState.nextScheduledFibers]
-        is also a UNIX timestamp, here of when the next [kameloso.thread.ScheduledFiber|ScheduledFiber]
-        in [kameloso.plugins.common.core.IRCPluginState.scheduledFibers|IRCPluginState.scheduledFibers]
-        *or* the next [kameloso.thread.ScheduledDelegate|ScheduledDelegate] in
-        [kameloso.plugins.common.core.IRCPluginState.scheduledDelegates|IRCPluginState.scheduledDelegates]
-        is due to be processed. Caching it here means we won't have to walk through
-        the arrays to find out as often.
-
-    * [kameloso.plugins.common.core.IRCPluginState.updateSchedule|IRCPluginState.updateSchedule]
-        merely iterates all scheduled fibers and delegates, caching the time at
-        which the next one should trigger in
-        [kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp|IRCPluginState.nextScheduledFibers].
+    * [kameloso.plugins.common.core.IRCPluginState.previousWhoisTimestamps|IRCPluginState.previousWhoisTimestamps]
+    if an associative array of UNIX timestamps keyed by nickname strings.
+    These represent when last a WHOIS was issued for the nickname.
 
     * [kameloso.plugins.common.core.IRCPluginState.updates|IRCPluginState.updates]
-        is a bitfield which represents what aspect of the bot was *changed*
-        during processing or postprocessing. If any of the bits are set, represented
-        by the enum values of [kameloso.plugins.common.core.IRCPluginState.Updates|IRCPluginState.Updates],
-        the main loop will pick up on it and propagate it to other plugins.
-        If these flags are not set, changes will never leave the plugin and may
-        be overwritten by other plugins. It is mostly for internal use.
+    is a bitfield which represents what aspect of the bot was *changed*
+    during processing or postprocessing. If any of the bits are set, represented
+    by the enum values of [kameloso.plugins.common.core.IRCPluginState.Updates|IRCPluginState.Updates],
+    the main loop will pick up on it and propagate it to other plugins.
+    If these flags are not set, changes will never leave the plugin and may
+    be overwritten by other plugins. It is mostly for internal use.
 
     * [kameloso.plugins.common.core.IRCPluginState.abort|IRCPluginState.abort]
-        is a pointer to the global abort bool. When this is set, it signals the
-        rest of the program that we want to terminate cleanly.
+    is a pointer to the global abort flag. When this is set, it signals the
+    rest of the program that we want to terminate cleanly.
+
+    * [kameloso.plugins.common.core.IRCPluginState.deferredActions|IRCPluginState.deferredActions]
+    is an array of [kameloso.plugins.common.core.DeferredAction|DeferredAction]s;
+    a way to defer the execution of a delegate or fiber to the main thread,
+    to be invoked with context only it has, such as knowledge of all plugins.
+
+    * [kameloso.plugins.common.core.IRCPluginState.messages|IRCPluginState.messages]
+    is an array of [kameloso.thread.ThreadMessage|ThreadMessage]s, used by
+    plugins to send messages up the stack to the main thread. These can
+    signal anything from "save configuration to file" to "quit the program".
+
+    * [kameloso.plugins.common.core.IRCPluginState.priorityMessages|IRCPluginState.priorityMessages]
+    is likewise an array of [kameloso.thread.ThreadMessage|ThreadMessage]s, but
+    these will always be processed before those in
+    [kameloso.plugins.common.core.IRCPluginState.messages|IRCPluginState.messages] are.
+
+    * [kameloso.plugins.common.core.IRCPluginState.outgoingMessages|IRCPluginState.outgoingMessages]
+    is an array of [kameloso.messaging.Message|Message]s bound to be sent to the server.
  +/
 final class SeenPlugin : IRCPlugin
 {
 private:  // Module-level private.
+    import core.time : hours;
 
     // seenSettings
     /++
-        An instance of *settings* for the Seen plugin. We will define this
-        later. The members of it will be saved to and loaded from the
+        An instance of *settings* for the Seen plugin. We will define these
+        below. The members of it will be saved to and loaded from the
         configuration file, for use in our module.
      +/
     SeenSettings seenSettings;
@@ -318,6 +325,9 @@ private:  // Module-level private.
         Our associative array (AA) of seen users; a dictionary keyed with
         users' nicknames and with values that are UNIX timestamps, denoting when
         that user was last *seen* online.
+
+        A [lu.container.RehashingAA|RehashingAA] is used instead of a native
+        `long[string]`, merely to be able to ensure a constant level of rehashed-ness.
 
         Example:
         ---
@@ -464,7 +474,7 @@ private:
     [kameloso.plugins.common.core.Permissions.admin|Permissions.admin].
 
     * [kameloso.plugins.common.core.Permissions.ignore|Permissions.ignore] will
-        let precisely anyone trigger it, without looking them up.
+        let precisely anyone trigger it, without looking them up. It just doesn't care.
 
     * [kameloso.plugins.common.core.Permissions.anyone|Permissions.anyone] will
         let anyone trigger it, but only after having looked them up, allowing
@@ -556,7 +566,10 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
 
         This will be automatically called on any and all the kinds of
         [dialect.defs.IRCEvent.Type|IRCEvent.Type]s it is annotated with.
-        Furthermore, it will only trigger if it took place in a home channel.
+
+        Whether it will be triggered is determined by the value of
+        [omniscientChannelPolicy]; in other words, in home channels unless version
+        `OmniscientSeen` was declared.
 
         There's no need to check for whether the sender/target is us, as
         [updateUser] will do it more thoroughly (by stripping any extra modesigns).
@@ -656,10 +669,9 @@ void onQuit(SeenPlugin plugin, const ref IRCEvent event)
 
 // onNick
 /++
-    When someone changes nickname, add a new entry with the current timestamp for
-    the new nickname, and remove the old one.
+    When someone changes nickname, update their entry in the array.
 
-    Bookkeeping; this is to avoid getting ghost entries in the seen array.
+    For now, don't remove old entries. Revisit this decision later.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.NICK)
@@ -692,7 +704,6 @@ void onNick(SeenPlugin plugin, const ref IRCEvent event)
 )
 void onWHOReply(SeenPlugin plugin, const ref IRCEvent event)
 {
-    // Update the user's entry
     updateUser(plugin, event.target.nickname, event.time);
 }
 
@@ -896,6 +907,8 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 
         if (const userTimestamp = requestedUser in seenUsers)
         {
+            import std.datetime.systime : Clock;
+
             enum pattern =  "I last saw <h>%s<h> %s ago.";
 
             immutable timestamp = SysTime.fromUnixTime(*userTimestamp);
@@ -975,6 +988,8 @@ in (signed.length, "Tried to update a user with an empty (signed) nickname")
  +/
 void updateAllObservedUsers(SeenPlugin plugin)
 {
+    import std.datetime.systime : Clock;
+
     bool[string] uniqueUsers;
 
     foreach (immutable channelName, const channel; plugin.state.channels)
@@ -1056,7 +1071,10 @@ void saveSeen(SeenPlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File;
 
-    version(Callgrind) {}
+    version(Callgrind)
+    {
+        // This often takes too long when run under callgrind with a large array
+    }
     else
     {
         if (!plugin.seenUsers.length) return;
@@ -1179,7 +1197,10 @@ void initResources(SeenPlugin plugin)
 
     // Let other Exceptions pass.
 
-    version(Callgrind) {}
+    version(Callgrind)
+    {
+        // To pair with the decision in saveSeen, don't save under callgrind
+    }
     else
     {
         json.save(plugin.seenFile);
@@ -1258,7 +1279,7 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
 }
 
 
-/++
-    This full plugin is ~200 source lines of code. (`dscanner --sloc seen.d`)
+/+
+    This full plugin is ~220 source lines of code. (`dscanner --sloc seen.d`)
     Even at those numbers it is fairly feature-rich.
  +/
