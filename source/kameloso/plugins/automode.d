@@ -260,7 +260,7 @@ unittest
     IRCPluginState state;
 
     mode(state, "#channel", "+ov", "mydude");
-    immutable m = state.outgoingMessages[0];
+    immutable m = state.outgoingMessages.data[0];
 
     assert((m.event.type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(m.event.type));
     assert((m.event.channel == "#channel"), m.event.channel);

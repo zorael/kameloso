@@ -369,6 +369,11 @@ struct ThreadMessage
     bool quiet;
 
     /++
+        Whether or not this message has been processed.
+     +/
+    bool exhausted;
+
+    /++
         An `opDispatch`, constructing one function for each member in [MessageType].
 
         What the parameters functionally do is contextual to each [MessageType].
