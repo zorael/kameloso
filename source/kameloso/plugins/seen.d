@@ -555,6 +555,8 @@ private:
     .onEvent(IRCEvent.Type.TWITCH_CROWDCHANT)
     .onEvent(IRCEvent.Type.TWITCH_ANNOUNCEMENT)
     .onEvent(IRCEvent.Type.TWITCH_DIRECTCHEER)
+    .onEvent(IRCEvent.Type.TWITCH_INTRO)
+    .onEvent(IRCEvent.Type.TWITCH_MILESTONE)
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(omniscientChannelPolicy)
     .chainable(true)
