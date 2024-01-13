@@ -1,5 +1,6 @@
 /++
-    The Bash plugin looks up [bash.org](http://bash.org) quotes and reports them
+    The Bash plugin looks up quotes from `bash.org`
+    (or technically [bashforever.com](https://bashforever.com) and reports them
     to the appropriate nickname or channel.
 
     See_Also:
@@ -22,8 +23,11 @@ private:
 import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
-import kameloso.messaging;
+import requests.base : Response;
 import dialect.defs;
+import lu.container : MutexedAA;
+import std.typecons : Flag, No, Yes;
+import core.thread : Fiber;
 
 mixin MinimalAuthentication;
 mixin PluginRegistration!BashPlugin;
@@ -42,11 +46,42 @@ mixin PluginRegistration!BashPlugin;
 }
 
 
+// BashLookupResult
+/++
+    The result of a [bashforever.com](https://bashforever.com) lookup.
+ +/
+struct BashLookupResult
+{
+    /++
+        The quote ID number, as a string.
+     +/
+    string quoteID;
+
+    /++
+        The quote lines, as an array of strings.
+     +/
+    string[] lines;
+
+    /++
+        The response code of the HTTP query.
+     +/
+    uint code;
+
+    /++
+        The response body of the HTTP query.
+     +/
+    string responseBody;
+
+    /++
+        The exception message of any such that was thrown while fetching the quote.
+     +/
+    string exceptionText;
+}
+
+
 // onCommandBash
 /++
-    Fetch a random or specified `bash.org` quote.
-
-    Defers to the [worker] subthread.
+    Fetch a random or specified [bashforever.com](https://bashforever.com) quote.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -57,155 +92,539 @@ mixin PluginRegistration!BashPlugin;
         IRCEventHandler.Command()
             .word("bash")
             .policy(PrefixPolicy.prefixed)
-            .description("Fetch a random or specified bash.org quote.")
+            .description("Fetch a random or specified bashforever.com quote.")
             .addSyntax("$command [optional bash quote number]")
     )
 )
 void onCommandBash(BashPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : spawn;
-
-    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
-
-    // Defer all work to the worker thread
-    cast(void)spawn(&worker, cast(shared)plugin.state, event);
-}
-
-
-// worker
-/++
-    Looks up a `bash.org` quote and reports it to the appropriate nickname or channel.
-
-    Supposed to be run in its own, short-lived thread.
-
-    Params:
-        sState = A `shared` [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]
-            containing necessary information to pass messages to send messages
-            to the main thread, to send text to the server or display text on
-            the screen.
-        event = The [dialect.defs.IRCEvent|IRCEvent] in flight.
- +/
-void worker(
-    shared IRCPluginState sState,
-    const /*ref*/ IRCEvent event)
-{
-    import kameloso.constants : KamelosoInfo, Timeout;
-    import arsd.dom : Document, htmlEntitiesDecode;
-    import arsd.http2 : HttpClient, Uri;
-    import std.algorithm.iteration : splitter;
     import std.algorithm.searching : startsWith;
-    import std.array : replace;
-    import std.exception : assumeUnique;
-    import std.format : format;
-    import core.time : seconds;
-    static import kameloso.common;
+    import std.string : isNumeric;
 
-    auto state = cast()sState;
-
-    version(Posix)
+    void sendUsage()
     {
-        import kameloso.thread : setThreadName;
-        setThreadName("bashquotes");
+        import kameloso.messaging : privmsg;
+        import std.format : format;
+
+        enum pattern = "Usage: <b>%s%s<b> [optional bash quote number]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
-
-    void sendCouldNotFetchQuote(const string url, const string error)
-    {
-        enum pattern = "Bash plugin could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
-        immutable terminalMessage = pattern.format(url, error);
-        askToWarn(state, terminalMessage);
-
-        enum channelPattern = "Could not fetch <b>bash.org<b> quote: %s";
-        immutable channelMessage = channelPattern.format(error);
-        privmsg(state, event.channel, event.sender.nickname, channelMessage);
-    }
-
-    void sendNoResponseseReceived()
-    {
-        enum message = "No response received from <b>bash.org<b>; is it down?";
-        privmsg(state, event.channel, event.sender.nickname, message);
-    }
-
-    void reportLayoutError()
-    {
-        askToError(state, "Failed to parse <l>bash.org</> page; unexpected layout.");
-    }
-
-    // Set the global settings so messaging functions don't segfault us
-    kameloso.common.settings = state.settings;
 
     immutable quoteID = event.content.startsWith('#') ?
         event.content[1..$] :
         event.content;
-    immutable url = quoteID.length ?
-        ("http://bash.org/?" ~ quoteID) :
-        "http://bash.org/?random";
 
-    // No need to keep a static HttpClient since this will be in a new thread every time
-    auto client = new HttpClient;
-    client.useHttp11 = true;
-    client.keepAlive = false;
-    client.acceptGzip = false;
-    client.defaultTimeout = Timeout.httpGET.seconds;  // FIXME
-    client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
-    immutable caBundleFile = state.connSettings.caBundleFile;
-    if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
+    if (!quoteID.length || !quoteID.isNumeric) return sendUsage();
+
+    lookupQuote(plugin, quoteID, event);
+}
+
+
+// onEndOfMotd
+/++
+    Starts the persistent querier worker thread on end of MOTD.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
+    .onEvent(IRCEvent.Type.ERR_NOMOTD)
+)
+void onEndOfMotd(BashPlugin plugin, const ref IRCEvent event)
+{
+    import std.concurrency : Tid, spawn;
+
+    if (plugin.transient.workerTid == Tid.init)
+    {
+        plugin.transient.workerTid = spawn(
+            &persistentQuerier,
+            plugin.lookupBucket,
+            plugin.state.connSettings.caBundleFile);
+    }
+}
+
+
+// lookupQuote
+/++
+    Looks up a quote from [bashforever.com](https://bashforever.com) and sends it
+    to the appropriate nickname or channel.
+
+    Leverages the worker subthread for the heavy work.
+
+    Params:
+        plugin = The current [BashPlugin].
+        quoteID = The quote ID to look up, or an empty string to look up a random quote.
+        event = The [dialect.defs.IRCEvent|IRCEvent] that triggered this lookup.
+ +/
+void lookupQuote(
+    BashPlugin plugin,
+    const string quoteID,
+    const /*ref*/ IRCEvent event)
+{
+    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.common : logger;
+    import kameloso.constants : BufferSize;
+    import kameloso.messaging : privmsg;
+    import core.time : Duration;
+
+    immutable url = quoteID.length ?
+        "https://bashforever.com/?" ~ quoteID :
+        "https://bashforever.com/?random";
+
+    void lookupQuoteDg()
+    {
+        const result = sendHTTPRequest(plugin, url);
+
+        if (result.exceptionText.length)
+        {
+            logger.warning("HTTP exception: <l>", result.exceptionText);
+
+            version(PrintStacktraces)
+            {
+                if (result.responseBody.length) logger.trace(result.responseBody);
+            }
+            return;
+        }
+
+        if ((result.code < 200) ||
+            (result.code > 299))
+        {
+            import kameloso.common : getHTTPResponseCodeText;
+
+            enum pattern = "HTTP status <l>%03d</> (%s)";
+            logger.warningf(
+                pattern,
+                result.code,
+                getHTTPResponseCodeText(result.code));
+
+            version(PrintStacktraces)
+            {
+                if (result.responseBody.length) logger.trace(result.responseBody);
+            }
+            return;
+        }
+
+        if (!result.quoteID.length)
+        {
+            enum message = "No such <b>bash.org<b> quote found.";
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            return;
+        }
+
+        // Seems okay, send it
+        immutable message = "[<b>bash.org<b>] #" ~ result.quoteID;
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+
+        foreach (const line; result.lines)
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname, line);
+        }
+    }
+
+    auto lookupQuoteFiber = new Fiber(&lookupQuoteDg, BufferSize.fiberStack);
+    delay(plugin, lookupQuoteFiber, Duration.zero);
+}
+
+
+// parseResponseIntoBashLookupResult
+/++
+    Parses the response body of a [requests.base.Response|Response] into a
+    [BashLookupResult].
+
+    Additionally embeds the response code into the result.
+
+    Params:
+        res = The [requests.base.Response|Response] to parse.
+
+    Returns:
+        A [BashLookupResult] with contents based on the [requests.base.Response|Response].
+ +/
+auto parseResponseIntoBashLookupResult(/*const*/ Response res)
+{
+    import arsd.dom : Document, htmlEntitiesDecode;
+    import lu.string : stripped;
+    import std.algorithm.iteration : splitter;
+    import std.algorithm.searching : canFind, startsWith;
+    import std.array : array, replace;
+    import std.string : indexOf;
+
+    BashLookupResult result;
+    result.code = res.code;
+    result.responseBody = cast(string)res.responseBody;  // .idup?
+
+    auto reportLayoutErrorAndReturnResults()
+    {
+        import kameloso.common : getHTTPResponseCodeText, logger;
+
+        enum message = "Bash plugin failed to parse <l>bash.org</> response: " ~
+            "page has unexpected layout";
+        logger.error(message);
+
+        version(PrintStacktraces)
+        {
+            logger.trace("HTTP status <l>%03d</> (%s)",
+                result.code,
+                getHTTPResponseCodeText(result.code));
+
+            if ((result.code != 200) && result.responseBody.length)
+            {
+                import std.stdio : writeln;
+                writeln(result.responseBody);
+            }
+        }
+        return result;
+    }
+
+    if (!result.code || (result.code == 2) || (result.code >= 400))
+    {
+        // Invalid address, SSL error, 404, etc; no need to continue
+        return result;
+    }
+
+    immutable endHeadPos = result.responseBody.indexOf("</head>");
+    if (endHeadPos == -1) return reportLayoutErrorAndReturnResults();
+
+    immutable headlessBody = result.responseBody[endHeadPos+5..$];  // slice away the </head>
+    if (!headlessBody.length) return reportLayoutErrorAndReturnResults();
+
+    auto doc = new Document;
+    doc.parseGarbage(headlessBody);
+
+    auto quotesElements = doc.getElementsByClassName("quotes");
+    if (!quotesElements.length) return reportLayoutErrorAndReturnResults();
+
+    immutable quotesHTML = quotesElements[0].toString();
+    if (!quotesHTML.length) return reportLayoutErrorAndReturnResults();
+
+    doc.parseGarbage(quotesHTML[20..$]);  // slice away the <div class="quotes">
+
+    auto div = doc.getElementsByTagName("div");
+    if (!div.length) return reportLayoutErrorAndReturnResults();
+
+    immutable divString = div[0].toString();
+    if (!divString.length) return reportLayoutErrorAndReturnResults();
+
+    immutable hashPos = divString.indexOf("#");
+    if (hashPos == -1) return reportLayoutErrorAndReturnResults();
+
+    immutable endAPos = divString.indexOf("</a>", hashPos);
+    if (endAPos == -1) return reportLayoutErrorAndReturnResults();
+
+    immutable quoteID = divString[hashPos+1..endAPos];
+    result.quoteID = quoteID;
+
+    auto ps = doc.getElementsByTagName("p");
+    if (!ps.length) return reportLayoutErrorAndReturnResults();
+
+    immutable pString = ps[0].toString();
+    if (!pString.length) return reportLayoutErrorAndReturnResults();
+
+    immutable endDivPos = pString.indexOf("</div>");
+    if (endDivPos == -1) return reportLayoutErrorAndReturnResults();
+
+    immutable endPPos = pString.indexOf("</p>", endDivPos);
+    if (endPPos == -1) return reportLayoutErrorAndReturnResults();
+
+    result.lines = pString[endDivPos+6..endPPos]
+        .htmlEntitiesDecode()
+        .stripped
+        .splitter("<br />")
+        .array;
+
+    return result;
+}
+
+
+// sendHTTPRequestImpl
+/++
+    Fetches the contents of a URL, parses it into a [BashLookupResult] and returns it.
+
+    Params:
+        url = URL string to fetch.
+        caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
+
+    Returns:
+        A [BashLookupResult] with contents based on what was read from the URL.
+ +/
+auto sendHTTPRequestImpl(
+    const string url,
+    const string caBundleFile)
+{
+    import kameloso.constants : KamelosoInfo, Timeout;
+    import requests.base : Response;
+    import requests.request : Request;
+    import core.time : seconds;
+
+    static string[string] headers;
+
+    if (!headers.length)
+    {
+        headers =
+        [
+            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
+        ];
+    }
+
+    auto req = Request();
+    //req.verbosity = 1;
+    req.keepAlive = false;
+    req.timeout = Timeout.httpGET.seconds;
+    req.addHeaders(headers);
+    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
 
     try
     {
-        auto req = client.request(Uri(url));
-        const res = req.waitForCompletion();
-
-        if (res.code == 2)
-        {
-            return sendCouldNotFetchQuote(url, res.codeText);
-        }
-
-        if (!res.responseText.length)
-        {
-            return sendNoResponseseReceived();
-        }
-
-        auto doc = new Document;
-        doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
-        doc.parseGarbage(res.responseText);
-
-        auto numBlock = doc.getElementsByClassName("quote");
-
-        if (!numBlock.length)
-        {
-            return sendCouldNotFetchQuote(url, "No such quote found.");
-        }
-
-        auto p = numBlock[0].getElementsByTagName("p");
-        if (!p.length) return reportLayoutError();  // Page changed layout
-
-        auto b = p[0].getElementsByTagName("b");
-        if (!b.length || (b[0].toString.length < 5)) return reportLayoutError();  // Page changed layout
-
-        auto qt = doc.getElementsByClassName("qt");
-        if (!qt.length) return reportLayoutError();  // Page changed layout
-
-        auto range = qt[0]
-            .toString
-            .replace(`<p class="qt">`, string.init)
-            .replace(`</p>`, string.init)
-            .replace(`<br />`, string.init)
-            .htmlEntitiesDecode
-            .splitter('\n');
-
-        immutable message = "[<b>bash.org<b>] #" ~ b[0].toString[4..$-4];
-        privmsg(state, event.channel, event.sender.nickname, message);
-
-        foreach (const line; range)
-        {
-            privmsg(state, event.channel, event.sender.nickname, line);
-        }
+        return req
+            .get(url)
+            .parseResponseIntoBashLookupResult();
     }
     catch (Exception e)
     {
-        /*return*/ sendCouldNotFetchQuote(url, e.msg);
-        version(PrintStacktraces) askToTrace(state, e.toString);
+        BashLookupResult result;
+        //result.url = url;
+        result.exceptionText = e.msg;
+        return result;
+    }
+}
+
+
+// sendHTTPRequest
+/++
+    Issues an HTTP request by sending the details to the persistent querier thread,
+    then returns the results after they become available in the shared associative array.
+
+    Params:
+        plugin = The current [BashPlugin].
+        url = URL string to fetch.
+        recursing = Whether or not this is a recursive call.
+        id = Optional `int` id key to [BashPlugin.lookupBucket].
+        caller = Optional name of the calling function.
+
+    Returns:
+        A [BashLookupResult] with contents based on what was read from the URL.
+ +/
+BashLookupResult sendHTTPRequest(
+    BashPlugin plugin,
+    const string url,
+    const Flag!"recursing" recursing = No.recursing,
+    /*const*/ int id = 0,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
+in (url.length, "Tried to send an HTTP request without a URL")
+{
+    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : send;
+    import core.time : msecs;
+
+    version(TraceHTTPRequests)
+    {
+        import kameloso.common : logger;
+        import lu.conv : Enum;
+
+        enum pattern = "get: <i>%s<t> (%s)";
+        logger.tracef(
+            pattern,
+            url,
+            caller);
+    }
+
+    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
+
+    if (!id) id = plugin.lookupBucket.uniqueKey;
+    plugin.transient.workerTid.send(url, id);
+
+    static immutable initialDelay = 500.msecs;
+    delay(plugin, initialDelay, Yes.yield);
+
+    auto result = waitForLookupResults(plugin, id);
+
+    if (result.code == 0)
+    {
+        // ?
+    }
+    else if (result.code < 10)
+    {
+        // ?
+    }
+    else if ((result.code >= 500) && !recursing)
+    {
+        return sendHTTPRequest(
+            plugin,
+            url,
+            Yes.recursing,
+            id,
+            caller);
+    }
+    else if (result.code >= 400)
+    {
+        // ?
+    }
+
+    return result;
+}
+
+
+// waitForLookupResults
+/++
+    Given an `int` id, monitors the [BashPlugin.lookupBucket|lookupBucket]
+    until a value with that key becomes available, delaying itself in between checks.
+
+    If it resolves, it returns that value. If it doesn't resolve within
+    [kameloso.constants.Timeout.httpGET|Timeout.httpGET]*2 seconds, it signals
+    failure by instead returning an empty [BashLookupResult|BashLookupResult.init].
+
+    Params:
+        plugin = The current [BashPlugin].
+        id = The `int` id key to monitor [BashPlugin.lookupBucket] for.
+
+    Returns:
+        A [BashLookupResult] as discovered in the [BashPlugin.lookupBucket|lookupBucket],
+        or a [BashLookupResult|BashLookupResult.init] if there were none to be
+        found within [kameloso.constants.Timeout.httpGET|Timeout.httpGET] seconds.
+ +/
+auto waitForLookupResults(BashPlugin plugin, const int id)
+in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber")
+{
+    import std.datetime.systime : Clock;
+
+    immutable startTimeInUnix = Clock.currTime.toUnixTime();
+    enum timeoutMultiplier = 2;
+
+    while (true)
+    {
+        immutable hasResult = plugin.lookupBucket.has(id);
+
+        if (!hasResult)
+        {
+            // Querier errored or otherwise gave up
+            // No need to remove the id, it's not there
+            return BashLookupResult.init;
+        }
+
+        //auto result = plugin.lookupBucket[id];  // potential range error due to TOCTTOU
+        auto result = plugin.lookupBucket.get(id, BashLookupResult.init);
+
+        if (result == BashLookupResult.init)
+        {
+            import kameloso.plugins.common.delayawait : delay;
+            import kameloso.constants : Timeout;
+            import core.time : msecs;
+
+            immutable nowInUnix = Clock.currTime.toUnixTime();
+
+            if ((nowInUnix - startTimeInUnix) >= (Timeout.httpGET * timeoutMultiplier))
+            {
+                plugin.lookupBucket.remove(id);
+                return result;
+            }
+
+            // Wait a bit before checking again
+            static immutable checkDelay = 200.msecs;
+            delay(plugin, checkDelay, Yes.yield);
+            continue;
+        }
+        else
+        {
+            // Got a result; remove it from the bucket and return it
+            plugin.lookupBucket.remove(id);
+            return result;
+        }
+    }
+}
+
+
+// persistentQuerier
+/++
+    Persistent querier worker thread function.
+
+    Params:
+        lookupBucket = A [lu.container.MutexedAA|MutexedAA] to fill with
+            [BashLookupResult|BashLookupResult]s.
+        caBundleFile = Path to a `cacert.pem` SSL certificate bundle, or an
+            empty string if none should be needed.
+ +/
+void persistentQuerier(
+    MutexedAA!(BashLookupResult[int]) lookupBucket,
+    const string caBundleFile)
+{
+    version(Posix)
+    {
+        import kameloso.thread : setThreadName;
+        setThreadName("bashworker");
+    }
+
+    void onBashLookupRequest(string url, int id)
+    {
+        auto result = sendHTTPRequestImpl(url, caBundleFile);
+
+        if (result != BashLookupResult.init)
+        {
+            lookupBucket[id] = result;
+        }
+        else
+        {
+            lookupBucket.remove(id);
+        }
+    }
+
+    bool halt;
+
+    void onQuitMessage(bool) scope
+    {
+        halt = true;
+    }
+
+    while (!halt)
+    {
+        try
+        {
+            import std.concurrency : receive;
+            import std.variant : Variant;
+
+            receive(
+                &onBashLookupRequest,
+                &onQuitMessage,
+                (Variant v)
+                {
+                    import std.stdio : stdout, writeln;
+                    writeln("Bash worker received unknown Variant: ", v);
+                    stdout.flush();
+                }
+            );
+        }
+        catch (Exception _)
+        {
+            // Probably a requests exception
+            /*writeln("Bash worker caught exception: ", e.msg);
+            version(PrintStacktraces) writeln(e);
+            stdout.flush();*/
+        }
+    }
+}
+
+
+// setup
+/++
+    Initialises the lookup bucket, else its internal [core.sync.mutex.Mutex|Mutex]
+    will be null and cause a segfault when trying to lock it.
+ +/
+void setup(BashPlugin plugin)
+{
+    plugin.lookupBucket.setup();
+}
+
+
+// teardown
+/++
+    Stops the persistent querier worker thread.
+ +/
+void teardown(BashPlugin plugin)
+{
+    import std.concurrency : Tid, send;
+
+    if (plugin.transient.workerTid != Tid.init)
+    {
+       plugin.transient.workerTid.send(true);
     }
 }
 
@@ -215,15 +634,40 @@ public:
 
 // BashPlugin
 /++
-    The Bash plugin looks up `bash.org` quotes and reports them to the
-    appropriate nickname or channel.
+    The Bash plugin looks up quotes from `bash.org`
+    (or technically [bashforever.com](https://bashforever.com) and reports them
+    to the appropriate nickname or channel.
  +/
 final class BashPlugin : IRCPlugin
 {
+private:
+    import std.concurrency : Tid;
+
+    /++
+        Transient state variables, aggregated in a struct.
+     +/
+    static struct TransientState
+    {
+        /++
+            The thread ID of the persistent worker thread.
+         +/
+        Tid workerTid;
+    }
+
     /++
         All Bash plugin settings gathered.
      +/
     BashSettings bashSettings;
+
+    /++
+        Transient state of this [BashPlugin] instance.
+     +/
+    TransientState transient;
+
+    /++
+        Lookup bucket.
+     +/
+    MutexedAA!(BashLookupResult[int]) lookupBucket;
 
     mixin IRCPluginImpl;
 }
