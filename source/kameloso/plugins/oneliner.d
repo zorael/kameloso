@@ -1366,9 +1366,9 @@ void reload(OnelinerPlugin plugin)
 }
 
 
-// reload
+// loadOneliners
 /++
-    Reloads oneliners from disk.
+    Loads oneliners from disk.
  +/
 void loadOneliners(OnelinerPlugin plugin)
 {
