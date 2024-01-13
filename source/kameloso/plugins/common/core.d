@@ -2797,7 +2797,10 @@ public:
     // mainThread
     /++
         Thread ID to the main thread.
+
+        Deprecated: Will be removed in a future release.
      +/
+    deprecated("Send to `ownerTid` instead")
     Tid mainThread;
 
     // users
