@@ -682,11 +682,7 @@ void onQuit(SeenPlugin plugin, const ref IRCEvent event)
 )
 void onNick(SeenPlugin plugin, const ref IRCEvent event)
 {
-    if (auto seenTimestamp = event.sender.nickname in plugin.seenUsers)
-    {
-        *seenTimestamp = event.time;
-        //plugin.seenUsers.remove(event.sender.nickname);
-    }
+    updateUser(plugin, event.target.nickname, event.time, Yes.skipModesignStrip);
 }
 
 
