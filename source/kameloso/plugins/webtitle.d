@@ -205,7 +205,6 @@ void lookupURLs(
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.common : logger;
     import kameloso.constants : BufferSize;
-    import kameloso.thread : ThreadMessage;
     import lu.array: uniqueKey;
     import lu.string : advancePast;
     import std.concurrency : send, spawn;
@@ -235,7 +234,7 @@ void lookupURLs(
             enum caughtPattern = "Caught URL: <l>%s";
             logger.infof(caughtPattern, url);
 
-            auto result = sendHTTPRequest(plugin, url);
+            const result = sendHTTPRequest(plugin, url);
 
             if (result.exceptionText.length)
             {
@@ -312,7 +311,7 @@ void lookupURLs(
 
     Params:
         plugin = The current [WebtitlePlugin].
-        id = `int` id key to [WebtitlePlugin.lookupBucket].
+        id = `int` id key to monitor [WebtitlePlugin.lookupBucket] for.
 
     Returns:
         A [TitleLookupResult] as discovered in the [WebtitlePlugin.lookupBucket|lookupBucket],
@@ -352,7 +351,7 @@ in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber"
             if ((nowInUnix - startTimeInUnix) >= (Timeout.httpGET * timeoutMultiplier))
             {
                 plugin.lookupBucket.remove(id);
-                return TitleLookupResult.init;
+                return result;
             }
 
             // Wait a bit before checking again
@@ -568,7 +567,7 @@ void persistentQuerier(
         url = URL string to fetch.
         recursing = Whether or not this is a recursive call.
         id = Optional `int` id key to [WebtitlePlugin.lookupBucket].
-        caller = Name of the calling function.
+        caller = Optional name of the calling function.
 
     Returns:
         A [TitleLookupResult] with contents based on what was read from the URL.
@@ -637,7 +636,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
 // sendHTTPRequestImpl
 /++
-    Fetches the contents of a URL and returns it as an [requests] `Response`.
+    Fetches the contents of a URL, parses it into a [TitleLookupResult] and returns it.
 
     Params:
         url = URL string to fetch.
@@ -645,9 +644,6 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
     Returns:
         A [TitleLookupResult] with contents based on what was read from the URL.
-
-    Throws:
-        [TitleFetchException] if the URL could not be fetched.
  +/
 auto sendHTTPRequestImpl(
     const string url,
@@ -684,6 +680,7 @@ auto sendHTTPRequestImpl(
     catch (Exception e)
     {
         TitleLookupResult result;
+        result.url = url;
         result.exceptionText = e.msg;
         return result;
     }
@@ -912,7 +909,7 @@ void setup(WebtitlePlugin plugin)
 
 // teardown
 /++
-    Stops the persistent querier worker thread.
+    Stops the persistent querier worker threads.
  +/
 void teardown(WebtitlePlugin plugin)
 {
