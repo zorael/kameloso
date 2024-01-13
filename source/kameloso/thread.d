@@ -869,7 +869,7 @@ auto getQuitMessage(IRCPlugin[] plugins)
     top:
     foreach (plugin; plugins)
     {
-        foreach (message; plugin.state.priorityMessages)
+        foreach (const message; plugin.state.priorityMessages.data)
         {
             if (message.type == ThreadMessage.MessageType.quit)
             {
@@ -878,7 +878,7 @@ auto getQuitMessage(IRCPlugin[] plugins)
             }
         }
 
-        foreach (message; plugin.state.priorityMessages)
+        foreach (const message; plugin.state.priorityMessages.data)
         {
             if (message.type == ThreadMessage.MessageType.quit)
             {

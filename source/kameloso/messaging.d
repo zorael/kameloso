@@ -1224,7 +1224,7 @@ unittest
 
     foreach (immutable i; 0..expectedMessages.length)
     {
-        foreach (message; state.messages)
+        foreach (const message; state.messages.data)
         {
             assert((message.type == expectedLevels[i]),
                 Enum!(ThreadMessage.MessageType).toString(message.type));

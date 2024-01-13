@@ -870,7 +870,7 @@ void messageFiber(Kameloso instance)
 
             // No need to iterate with a for loop since the length shouldn't change in the middle of it
             outgoingMessageInner:
-            foreach (immutable i, ref message; plugin.state.outgoingMessages)
+            foreach (immutable i, ref message; plugin.state.outgoingMessages.data)
             {
                 if (message.exhausted) continue outgoingMessageInner;
 
@@ -4296,7 +4296,7 @@ auto checkInitialisationMessages(
         {
             if (!plugin.state.priorityMessages.data.length) continue;
 
-            foreach (immutable i, message; plugin.state.priorityMessages)
+            foreach (immutable i, message; plugin.state.priorityMessages.data)
             {
                 //if (message.exhausted) continue;
                 onThreadMessage(message);
@@ -4309,7 +4309,7 @@ auto checkInitialisationMessages(
         {
             if (!plugin.state.messages.data.length) continue;
 
-            foreach (immutable i, message; plugin.state.messages)
+            foreach (immutable i, message; plugin.state.messages.data)
             {
                 //if (message.exhausted) continue;
                 onThreadMessage(message);
