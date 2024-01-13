@@ -1105,6 +1105,7 @@ void askToOutputImpl(string askVerb)(IRCPluginState state, const string line)
  +/
 static if (__VERSION__ >= 2099L)
 {
+    private import kameloso.thread : ThreadMessage;
     private import std.meta : AliasSeq;
 
     private alias askLevels = AliasSeq!(
@@ -1120,10 +1121,7 @@ static if (__VERSION__ >= 2099L)
 
     static foreach (immutable askVerb; askLevels)
     {
-        mixin(
-`
-        private import kameloso.thread : ThreadMessage;
-
+        mixin(`
         /++
             Sends a message to the main thread to print text using
             the [KamelosoLogger] to the local terminal.
