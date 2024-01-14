@@ -457,9 +457,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 
     if (plugin.twitchSettings.bellOnMessage)
     {
-        import kameloso.terminal : TerminalToken;
         import std.stdio : stdout, write;
-
         write(plugin.transient.bell);
         stdout.flush();
     }
@@ -551,9 +549,6 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.terminal : TerminalToken;
-    import std.stdio : stdout, write;
-
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     // Record viewer as active
@@ -567,6 +562,7 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
 
     if (plugin.twitchSettings.bellOnImportant)
     {
+        import std.stdio : stdout, write;
         write(plugin.transient.bell);
         stdout.flush();
     }

@@ -1387,7 +1387,7 @@ auto expandIRCTags(T)
     Returns:
         The passed `line` but with tags expanded to formatting and colouring.
  +/
-T expandIRCTags(T)(const T line) @system
+auto expandIRCTags(T)(const T line) @system
 {
     static import kameloso.common;
 
@@ -1562,7 +1562,7 @@ T expandIRCTags(T)(const T line) @system
     Returns:
         The passed `line` but with tags removed.
  +/
-T stripIRCTags(T)(const T line) @system
+auto stripIRCTags(T)(const T line) @system
 {
     return expandIRCTags(line, No.extendedOutgoingColours, Yes.strip);
 }
