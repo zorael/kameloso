@@ -222,6 +222,8 @@ version(TwitchSupport)
 )
 void onTwitchChannelEvent(NotePlugin plugin, const ref IRCEvent event)
 {
+    if (event.sender.class_ == IRCUser.Class.blacklist) return;
+
     // No need to check whether we're on Twitch
     playbackNotes(plugin, event);
 }

@@ -1348,7 +1348,10 @@ mixin template IRCPluginImpl(
 
         // Inherit select members of state by zeroing out what we don't want
         this.state = state;
-        this.state.deferredActions = null;
+        this.state.deferredActions = typeof(state.deferredActions).init;
+        this.state.messages = typeof(state.messages).init;
+        this.state.priorityMessages = typeof(state.priorityMessages).init;
+        this.state.outgoingMessages = typeof(state.outgoingMessages).init;
         this.state.awaitingFibers = null;
         this.state.awaitingFibers.length = numEventTypes;
         this.state.awaitingDelegates = null;
@@ -2715,6 +2718,7 @@ private:
     import kameloso.pods : ConnectionSettings, CoreSettings, IRCBot;
     import kameloso.messaging : Message;
     import kameloso.thread : ScheduledDelegate, ScheduledFiber, ThreadMessage;
+    import std.array : Appender;
     import std.concurrency : Tid;
     import core.thread : Fiber;
 
@@ -2789,12 +2793,6 @@ public:
         The current program-wide [kameloso.pods.ConnectionSettings|ConnectionSettings].
      +/
     ConnectionSettings connSettings;
-
-    // mainThread
-    /++
-        Thread ID to the main thread.
-     +/
-    Tid mainThread;
 
     // users
     /++
@@ -2954,25 +2952,25 @@ public:
     /++
         This plugin's array of [DeferredAction]s.
      +/
-    DeferredAction[] deferredActions;
+    Appender!(DeferredAction[]) deferredActions;
 
     // messages
     /++
         Messages for the main thread to take action on.
      +/
-    ThreadMessage[] messages;
+    Appender!(ThreadMessage[]) messages;
 
     // priorityMessages
     /++
         Messages for the main thread to take action on with a higher priority.
      +/
-    ThreadMessage[] priorityMessages;
+    Appender!(ThreadMessage[]) priorityMessages;
 
     // outgoingMessages
     /++
         Events to send to the IRC server.
      +/
-    Message[] outgoingMessages;
+    Appender!(Message[]) outgoingMessages;
 }
 
 
@@ -3660,7 +3658,7 @@ void defer(T)
     const string context = string.init,
     const string creator = __FUNCTION__) pure @safe nothrow
 {
-    plugin.state.deferredActions ~= new DeferredActionImpl!T(fiber, context, creator);
+    plugin.state.deferredActions.put(new DeferredActionImpl!T(fiber, context, creator));
 }
 
 
@@ -3687,7 +3685,7 @@ void defer(T)
     const string context = string.init,
     const string creator = __FUNCTION__) /*pure @safe*/ nothrow
 {
-    plugin.state.deferredActions ~= new DeferredActionImpl!T(dg, context, creator);
+    plugin.state.deferredActions.put(new DeferredActionImpl!T(dg, context, creator));
 }
 
 

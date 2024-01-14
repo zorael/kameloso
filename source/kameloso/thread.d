@@ -369,6 +369,11 @@ struct ThreadMessage
     bool quiet;
 
     /++
+        Whether or not this message has been processed.
+     +/
+    bool exhausted;
+
+    /++
         An `opDispatch`, constructing one function for each member in [MessageType].
 
         What the parameters functionally do is contextual to each [MessageType].
@@ -864,7 +869,7 @@ auto getQuitMessage(IRCPlugin[] plugins)
     top:
     foreach (plugin; plugins)
     {
-        foreach (message; plugin.state.priorityMessages)
+        foreach (const message; plugin.state.priorityMessages.data)
         {
             if (message.type == ThreadMessage.MessageType.quit)
             {
@@ -873,7 +878,7 @@ auto getQuitMessage(IRCPlugin[] plugins)
             }
         }
 
-        foreach (message; plugin.state.priorityMessages)
+        foreach (const message; plugin.state.priorityMessages.data)
         {
             if (message.type == ThreadMessage.MessageType.quit)
             {

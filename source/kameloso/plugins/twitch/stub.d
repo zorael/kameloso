@@ -35,7 +35,6 @@ final class TwitchPlugin : IRCPlugin
 private:
     static import kameloso.plugins.twitch;
 
-public:
     /++
         All Twitch plugin settings.
      +/

@@ -119,6 +119,8 @@ void initResources(AutomodePlugin plugin)
 )
 void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
 {
+    if (event.sender.class_ == IRCUser.Class.blacklist) return;
+
     // In case of self WHOIS results, don't automode ourselves
     // target for WHOIS, sender for ACCOUNT
     if ((event.target.nickname == plugin.state.client.nickname) ||
@@ -260,7 +262,7 @@ unittest
     IRCPluginState state;
 
     mode(state, "#channel", "+ov", "mydude");
-    immutable m = state.outgoingMessages[0];
+    immutable m = state.outgoingMessages.data[0];
 
     assert((m.event.type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(m.event.type));
     assert((m.event.channel == "#channel"), m.event.channel);
@@ -485,6 +487,8 @@ in ((!add || mode.length), "Tried to add an empty automode")
 )
 void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
 {
+    //if (event.sender.class_ == IRCUser.Class.blacklist) return;
+
     if (event.sender.account.length)
     {
         applyAutomodes(plugin, event.channel, event.sender.nickname, event.sender.account);

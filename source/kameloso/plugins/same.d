@@ -108,6 +108,8 @@ version(MatchByStringComparison)
 )
 void onAnyMessage(SamePlugin plugin, const ref IRCEvent event)
 {
+    if (event.sender.class_ == IRCUser.Class.blacklist) return;
+
     // Reply only if we should
     if (event.content == "same")
     {
@@ -137,6 +139,8 @@ version(MatchWithRegex)
 )
 void onAnyMessageRegex(SamePlugin plugin, const ref IRCEvent event)
 {
+    if (event.sender.class_ == IRCUser.Class.blacklist) return;
+
     // Reply always, since the function wouldn't have been called if the message didn't match
     chan(plugin.state, event.channel, event.content);
 }

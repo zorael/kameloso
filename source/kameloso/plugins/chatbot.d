@@ -75,9 +75,32 @@ import std.typecons : Flag, No, Yes;
 )
 void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
 {
-    immutable message = event.content.length ?
-        event.content :
-        "Say what?";
+    string message;  // mutable
+
+    if (event.content.length)
+    {
+        version(TwitchSupport)
+        {
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+            {
+                import std.algorithm.comparison : among;
+
+                if (event.content[0].among!('/', '.'))
+                {
+                    // This has the chance to conflict with a Twitch command,
+                    // so prepend a space to invalidate it
+                    message = ' ' ~ event.content;
+                }
+            }
+        }
+
+        if (!message.length) message = event.content;
+    }
+    else
+    {
+        message = "Say what?";
+    }
+
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 

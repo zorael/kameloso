@@ -44,11 +44,6 @@ import std.typecons : Flag, No, Yes;
         Whether or not replies are always sent in queries.
      +/
     bool repliesInQuery = true;
-
-    /++
-        Whether or not to include prefix in command listing.
-     +/
-    bool includePrefix = true;
 }
 
 
@@ -80,73 +75,112 @@ import std.typecons : Flag, No, Yes;
             .policy(PrefixPolicy.prefixed)
             .description("Shows a list of all available commands.")
             .addSyntax("$command [plugin] [command]")
+            .addSyntax("$command [prefixed command]")
     )
 )
 void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
-    import core.thread : Fiber;
 
-    alias Payload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
+    alias Payload = Tuple!
+        (IRCPlugin.CommandMetadata[string][string],
+        IRCPlugin.CommandMetadata[string][string]);
 
     void sendHelpDg()
     {
-        import lu.string : stripped;
-        import std.algorithm.searching : startsWith;
-        import std.string : indexOf;
+        import kameloso.thread : CarryingFiber;
+        import lu.string : splitInto, stripped;
+        import core.thread : Fiber;
 
         auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
-        IRCPlugin.CommandMetadata[string][string] allPluginCommands = thisFiber.payload[0];
+        string slice = event.content.stripped;  // mutable
 
-        IRCEvent mutEvent = event;  // mutable
-        mutEvent.content = mutEvent.content.stripped;
-
-        if (!mutEvent.content.length)
+        if (!slice.length)
         {
             // Nothing supplied, send the big list
-            return sendFullPluginListing(plugin, mutEvent, allPluginCommands);
+            return sendFullPluginListing(plugin, event, thisFiber.payload[0]);
         }
 
-        immutable shorthandNicknamePrefix = plugin.state.client.nickname[0..1] ~ ':';
-        immutable startsWithPrefix = plugin.state.settings.prefix.length &&
-            mutEvent.content.startsWith(plugin.state.settings.prefix);
+        /+
+            !help plugin
+            !help !command
+            !help b:command
+            !help botname:command
+            !help plugin command
+            !help botname: command
+         +/
 
-        if (startsWithPrefix ||
-            mutEvent.content.startsWith(plugin.state.client.nickname) ||
-            mutEvent.content.startsWith(shorthandNicknamePrefix))
-        {
-            // Not a plugin, just a prefixed command (probably)
-            sendOnlyCommandHelp(plugin, mutEvent, allPluginCommands);
-        }
-        else if (mutEvent.content.indexOf(' ') != -1)
+        string first;  // mutable
+        string second;  // as above
+        cast()slice.splitInto(first, second);
+
+        if (second.length)
         {
             import std.algorithm.searching : count;
 
-            if (mutEvent.content.count(' ') == 1)
+            if (!slice.length)
             {
-                // Likely a plugin and a command
-                sendPluginCommandHelp(plugin, mutEvent, allPluginCommands);
+                /+
+                    !help plugin command
+                    !help botname: command
+                    (no third argument)
+                 +/
+                immutable firstStripped = stripPrefix(plugin, first);
+
+                if (!firstStripped.length)
+                {
+                    /+
+                        !help botname: command
+                        The entirety of the first argument was stripped away.
+                     +/
+                    sendOnlyCommandHelp(plugin, second, event, thisFiber.payload[0]);
+                }
+                else
+                {
+                    sendPluginCommandHelp(plugin, first, second, event, thisFiber.payload[0]);
+                }
             }
-            else /*if (mutEvent.content.count(' ') > 1)*/
+            else /*if (slice.length)*/
             {
-                import lu.string : advancePast;
                 import std.format : format;
 
-                // More than two words; too many
-                string slice = mutEvent.content;  // mutable
-                immutable pluginName = slice.advancePast(' ');
+                /+
+                    !help plugin command tail
+                 +/
                 enum pattern = "Invalid <b>%s<b> plugin command name: <b>%s<b>";
-                immutable message = pattern.format(pluginName, slice);
-                sendMessage(plugin, mutEvent, message);
+                immutable message = pattern.format(first, second);
+                sendMessage(plugin, event, message);
             }
         }
         else
         {
-            // Just one word; print a specified plugin's commands
-            sendSpecificPluginListing(plugin, mutEvent, allPluginCommands);
+            /+
+                !help plugin
+                !help !command
+                !help b:command
+                !help botname:command
+             +/
+
+            immutable firstStripped = stripPrefix(plugin, first);
+
+            if (first == firstStripped)
+            {
+                /+
+                    !help plugin
+                 +/
+                sendSpecificPluginListing(plugin, first, event, thisFiber.payload[0]);
+            }
+            else
+            {
+                /+
+                    !help !command
+                    !help b:command
+                    !help botname:command
+                 +/
+                sendOnlyCommandHelp(plugin, firstStripped, event, thisFiber.payload[0]);
+            }
         }
     }
 
@@ -341,11 +375,13 @@ void sendFullPluginListing(
 
     Params:
         plugin = The current [HelpPlugin].
+        pluginName = The name of the plugin to send the command listing for.
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         allPluginCommands = The metadata of all commands for a particular plugin.
  +/
 void sendSpecificPluginListing(
     HelpPlugin plugin,
+    const string pluginName,
     const ref IRCEvent event,
     /*const*/ IRCPlugin.CommandMetadata[string][string] allPluginCommands)
 {
@@ -353,40 +389,40 @@ void sendSpecificPluginListing(
     import std.algorithm.sorting : sort;
     import std.format : format;
 
-    assert(event.content.length, "`sendSpecificPluginListing` was called incorrectly; event content is empty");
-
-    void sendNoCommandOfPlugin(const string specifiedPlugin)
+    void sendNoCommandOfPlugin(const string thisPluginName)
     {
-        immutable message = "No commands available for plugin <b>" ~ specifiedPlugin ~ "<b>";
+        enum pattern = "No commands available for plugin <b>%s<b>";
+        immutable message = pattern.format(thisPluginName);
         sendMessage(plugin, event, message);
     }
 
-    // Just one word; print a specified plugin's commands
-    immutable specifiedPlugin = event.content.stripped;
-
-    if (auto pluginCommands = specifiedPlugin in allPluginCommands)
+    if (auto pluginCommands = pluginName in allPluginCommands)
     {
         const nonhiddenCommands = filterHiddenCommands(*pluginCommands);
         if (!nonhiddenCommands.length)
         {
-            return sendNoCommandOfPlugin(specifiedPlugin);
+            return sendNoCommandOfPlugin(pluginName);
         }
 
         enum width = 12;
         enum pattern = "* <b>%-*s<b> %-([%s]%| %)";
-        auto keys = nonhiddenCommands.keys.sort.release();
+        auto keys = nonhiddenCommands
+            .keys
+            .sort
+            .release();
 
         foreach (ref key; keys)
         {
             key = addPrefix(plugin, key, nonhiddenCommands[key].policy);
         }
 
-        immutable message = pattern.format(width, specifiedPlugin, keys);
+        immutable message = pattern.format(width, pluginName, keys);
         sendMessage(plugin, event, message);
     }
     else
     {
-        immutable message = "No such plugin: <b>" ~ event.content ~ "<b>";
+        enum pattern = "No such plugin: <b>%s<b>";
+        immutable message = pattern.format(pluginName);
         sendMessage(plugin, event, message);
     }
 }
@@ -398,52 +434,48 @@ void sendSpecificPluginListing(
 
     Params:
         plugin = The current [HelpPlugin].
+        pluginName = The name of the plugin that hosts the command we're to
+            send the help text for.
+        commandName = String of the command we're to send help text for (sans prefix).
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         allPluginCommands = The metadata of all commands for this particular plugin.
  +/
 void sendPluginCommandHelp(
     HelpPlugin plugin,
+    const string pluginName,
+    const string commandName,
     const ref IRCEvent event,
-    /*const*/ IRCPlugin.CommandMetadata[string][string] allPluginCommands)
+    const IRCPlugin.CommandMetadata[string][string] allPluginCommands)
 {
-    import lu.string : advancePast, stripped;
     import std.format : format;
-    import std.string : indexOf;
 
-    assert((event.content.indexOf(' ') != -1),
-        "`sendPluginCommandHelp` was called incorrectly; the content does not " ~
-        "have a space-separated plugin and command");
-
-    void sendNoHelpForCommandOfPlugin(const string specifiedCommand, const string specifiedPlugin)
+    void sendNoHelpForCommandOfPlugin(const string specifiedPlugin, const string specifiedCommand)
     {
         enum pattern = "No help available for command <b>%s<b> of plugin <b>%s<b>";
         immutable message = pattern.format(specifiedCommand, specifiedPlugin);
         sendMessage(plugin, event, message);
     }
 
-    string slice = event.content.stripped;
-    immutable specifiedPlugin = slice.advancePast(' ');
-    immutable specifiedCommand = stripPrefix(plugin, slice);
-
-    if (const pluginCommands = specifiedPlugin in allPluginCommands)
+    if (const pluginCommands = pluginName in allPluginCommands)
     {
-        if (const command = specifiedCommand in *pluginCommands)
+        if (const command = commandName in *pluginCommands)
         {
             sendCommandHelpImpl(
                 plugin,
-                specifiedPlugin,
+                pluginName,
                 event,
-                specifiedCommand,
+                commandName,
                 *command);
         }
         else
         {
-            return sendNoHelpForCommandOfPlugin(specifiedCommand, specifiedPlugin);
+            return sendNoHelpForCommandOfPlugin(pluginName, commandName);
         }
     }
     else
     {
-        immutable message = "No such plugin: <b>" ~ specifiedPlugin ~ "<b>";
+        enum pattern = "No such plugin: <b>%s<b>";
+        immutable message = pattern.format(pluginName);
         sendMessage(plugin, event, message);
     }
 }
@@ -456,13 +488,15 @@ void sendPluginCommandHelp(
 
     Params:
         plugin = The current [HelpPlugin].
+        commandString = The command string to send help text for (sans prefix).
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         allPluginCommands = The metadata of all commands for this particular plugin.
  +/
 void sendOnlyCommandHelp(
     HelpPlugin plugin,
+    const string commandString,
     const ref IRCEvent event,
-    /*const*/ IRCPlugin.CommandMetadata[string][string] allPluginCommands)
+    const IRCPlugin.CommandMetadata[string][string] allPluginCommands)
 {
     import std.algorithm.searching : startsWith;
 
@@ -472,7 +506,7 @@ void sendOnlyCommandHelp(
         sendMessage(plugin, event, message);
     }
 
-    immutable specifiedCommand = stripPrefix(plugin, event.content);
+    immutable specifiedCommand = stripPrefix(plugin, commandString);
 
     if (!specifiedCommand.length)
     {
@@ -545,9 +579,8 @@ auto addPrefix(HelpPlugin plugin, const string word, const PrefixPolicy policy)
         return word;
 
     case prefixed:
-        return plugin.state.settings.prefix.length ?
-            plugin.state.settings.prefix ~ word :
-            plugin.state.client.nickname[0..1] ~ ':' ~ word;
+        if (!plugin.state.settings.prefix.length) goto case nickname;
+        return plugin.state.settings.prefix ~ word;
 
     case nickname:
         return plugin.state.client.nickname[0..1] ~ ':' ~ word;

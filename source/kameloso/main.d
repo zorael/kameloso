@@ -237,6 +237,7 @@ void messageFiber(Kameloso instance)
     import core.time : Duration, MonoTime, msecs;
 
     // Loop forever; we'll just terminate the Generator when we want to quit.
+    wholeMessageLoop:
     while (true)
     {
         auto next = Next.continue_;
@@ -797,31 +798,32 @@ void messageFiber(Kameloso instance)
         priorityMessageTop:
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.isEnabled || !plugin.state.priorityMessages.length) continue priorityMessageTop;
+            if (!plugin.state.priorityMessages.data.length || !plugin.isEnabled) continue priorityMessageTop;
 
-            for (size_t i; i < plugin.state.priorityMessages.length; ++i)
+            priorityMessageInner:
+            for (size_t i; i < plugin.state.priorityMessages.data.length; ++i)
             {
-                onThreadMessage(plugin.state.priorityMessages[i]);
+                if (plugin.state.priorityMessages.data[i].exhausted) continue priorityMessageInner;
 
-                if (!shouldStillContinue)
+                onThreadMessage(plugin.state.priorityMessages.data[i]);
+                plugin.state.priorityMessages.data[i].exhausted = true;
+
+                if (!shouldStillContinue || !isStillOnTime)
                 {
-                    break priorityMessageTop;
-                }
-                else if (!isStillOnTime)
-                {
-                    // Ran out of time. Pop until where we are corrently
-                    plugin.state.priorityMessages = plugin.state.priorityMessages[i+1..$];
-                    break priorityMessageTop;
+                    // Ran out of time or something triggered an abort
+                    yield(next);
+                    continue wholeMessageLoop;
                 }
             }
 
-            plugin.state.priorityMessages = null;
+            // If we're here, we've exhausted all priority messages for this plugin
+            plugin.state.priorityMessages.clear();
         }
 
         if (!shouldStillContinue || !isStillOnTime)
         {
             yield(next);
-            continue;
+            continue wholeMessageLoop;
         }
 
         /+
@@ -830,31 +832,32 @@ void messageFiber(Kameloso instance)
         normalMessageTop:
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.isEnabled || !plugin.state.messages.length) continue normalMessageTop;
+            if (!plugin.state.messages.data.length || !plugin.isEnabled) continue normalMessageTop;
 
-            for (size_t i; i < plugin.state.messages.length; ++i)
+            normalMessageInner:
+            for (size_t i; i < plugin.state.messages.data.length; ++i)
             {
-                onThreadMessage(plugin.state.messages[i]);
+                if (plugin.state.messages.data[i].exhausted) continue normalMessageInner;
 
-                if (!shouldStillContinue)
+                onThreadMessage(plugin.state.messages.data[i]);
+                plugin.state.messages.data[i].exhausted = true;
+
+                if (!shouldStillContinue || !isStillOnTime)
                 {
-                    break normalMessageTop;
-                }
-                else if (!isStillOnTime)
-                {
-                    // As above
-                    plugin.state.messages = plugin.state.messages[i+1..$];
-                    break normalMessageTop;
+                    // Ran out of time or something triggered an abort
+                    yield(next);
+                    continue wholeMessageLoop;
                 }
             }
 
-            plugin.state.messages = null;
+            // if we're here, we've exhausted all normal messages for this plugin
+            plugin.state.messages.clear();
         }
 
         if (!shouldStillContinue || !isStillOnTime)
         {
             yield(next);
-            continue;
+            continue wholeMessageLoop;
         }
 
         /+
@@ -863,25 +866,27 @@ void messageFiber(Kameloso instance)
         outgoingMessageTop:
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.isEnabled || !plugin.state.outgoingMessages.length) continue outgoingMessageTop;
+            if (!plugin.state.outgoingMessages.data.length || !plugin.isEnabled) continue outgoingMessageTop;
 
-            foreach (immutable i, message; plugin.state.outgoingMessages)
+            // No need to iterate with a for loop since the length shouldn't change in the middle of it
+            outgoingMessageInner:
+            foreach (immutable i, ref message; plugin.state.outgoingMessages.data)
             {
-                eventToServer(message);
+                if (message.exhausted) continue outgoingMessageInner;
 
-                if (!shouldStillContinue)
+                eventToServer(message);
+                message.exhausted = true;
+
+                if (!shouldStillContinue || !isStillOnTime)
                 {
-                    break outgoingMessageTop;
-                }
-                else if (!isStillOnTime)
-                {
-                    // As above
-                    plugin.state.outgoingMessages = plugin.state.outgoingMessages[i+1..$];
-                    break outgoingMessageTop;
+                    // Ran out of time or something triggered an abort
+                    yield(next);
+                    continue wholeMessageLoop;
                 }
             }
 
-            plugin.state.outgoingMessages = null;
+            // if we're here, we've exhausted all outgoing messages for this plugin
+            plugin.state.outgoingMessages.clear();
         }
 
         /+
@@ -895,7 +900,7 @@ void messageFiber(Kameloso instance)
             if (!shouldStillContinue || !isStillOnTime)
             {
                 yield(next);
-                continue;
+                continue wholeMessageLoop;
             }
 
             /+
@@ -1108,7 +1113,7 @@ auto mainLoop(Kameloso instance)
             // Tick the plugin, and flag to check for messages if it returns true
             shouldCheckMessages |= plugin.tick(elapsed);
 
-            if (plugin.state.deferredActions.length)
+            if (plugin.state.deferredActions.data.length)
             {
                 try
                 {
@@ -2376,48 +2381,54 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
     import std.typecons : Tuple;
     import core.thread : Fiber;
 
-    auto deferredActionsSnapshot = plugin.state.deferredActions;
-    plugin.state.deferredActions = null;
+    scope(exit) plugin.state.deferredActions.clear();
 
     top:
-    foreach (ref action; deferredActionsSnapshot)
+    for (size_t i = 0; i<plugin.state.deferredActions.data.length; ++i)
     {
         scope(exit)
         {
-            if (action.fiber.state == Fiber.State.TERM)
+            if (plugin.state.deferredActions.data[i].fiber.state == Fiber.State.TERM)
             {
                 // Clean up
-                destroy(action.fiber);
+                destroy(plugin.state.deferredActions.data[i].fiber);
                 //request.fiber = null;  // fiber is an accessor, cannot null it here
             }
 
-            destroy(action);
-            action = null;
+            destroy(plugin.state.deferredActions.data[i]);
+            plugin.state.deferredActions.data[i] = null;
         }
+
+        auto action = plugin.state.deferredActions.data[i];
 
         version(WantPeekCommandsHandler)
         {
-            alias PeekCommandsPayload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
+            alias PeekCommandsPayload = Tuple!
+                (IRCPlugin.CommandMetadata[string][string],
+                IRCPlugin.CommandMetadata[string][string]);
 
             if (auto fiber = cast(CarryingFiber!(PeekCommandsPayload))(action.fiber))
             {
                 immutable channelName = action.context;
 
-                IRCPlugin.CommandMetadata[string][string] commandAA;
+                IRCPlugin.CommandMetadata[string][string] globalCommandAA;
+                IRCPlugin.CommandMetadata[string][string] channelCommandAA;
 
                 foreach (thisPlugin; instance.plugins)
                 {
-                    if (channelName.length)
+                    globalCommandAA[thisPlugin.name] = thisPlugin.commands;
+                }
+
+                if (channelName.length)
+                {
+                    foreach (thisPlugin; instance.plugins)
                     {
-                        commandAA[thisPlugin.name] = thisPlugin.channelSpecificCommands(channelName);
-                    }
-                    else
-                    {
-                        commandAA[thisPlugin.name] = thisPlugin.commands;
+                        channelCommandAA[thisPlugin.name] = thisPlugin.channelSpecificCommands(channelName);
                     }
                 }
 
-                fiber.payload[0] = commandAA;
+                fiber.payload[0] = globalCommandAA;
+                fiber.payload[1] = channelCommandAA;
                 fiber.call(action.creator);
                 continue;
             }
@@ -2554,12 +2565,6 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
             Don't output an error though; it might just mean that the corresponding
             plugins were not compiled in.
          +/
-    }
-
-    if (plugin.state.deferredActions.length)
-    {
-        // One or more new requests were added while processing these ones
-        return processDeferredActions(instance, plugin);
     }
 }
 
@@ -4289,26 +4294,28 @@ auto checkInitialisationMessages(
 
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.state.priorityMessages.length) continue;
+            if (!plugin.state.priorityMessages.data.length) continue;
 
-            foreach (immutable i, message; plugin.state.priorityMessages)
+            foreach (immutable i, message; plugin.state.priorityMessages.data)
             {
+                //if (message.exhausted) continue;
                 onThreadMessage(message);
             }
 
-            plugin.state.priorityMessages = null;
+            plugin.state.priorityMessages.clear();
         }
 
         foreach (plugin; instance.plugins)
         {
-            if (!plugin.state.messages.length) continue;
+            if (!plugin.state.messages.data.length) continue;
 
-            foreach (immutable i, message; plugin.state.messages)
+            foreach (immutable i, message; plugin.state.messages.data)
             {
+                //if (message.exhausted) continue;
                 onThreadMessage(message);
             }
 
-            plugin.state.messages = null;
+            plugin.state.messages.clear();
         }
 
         if (halt)

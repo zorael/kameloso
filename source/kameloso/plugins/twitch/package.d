@@ -453,6 +453,8 @@ mixin PluginRegistration!(TwitchPlugin, -5.priority);
 )
 void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 {
+    if (event.sender.class_ == IRCUser.Class.blacklist) return;
+
     if (plugin.twitchSettings.bellOnMessage)
     {
         import kameloso.terminal : TerminalToken;
@@ -551,6 +553,8 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.terminal : TerminalToken;
     import std.stdio : stdout, write;
+
+    if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     // Record viewer as active
     if (auto room = event.channel in plugin.rooms)
