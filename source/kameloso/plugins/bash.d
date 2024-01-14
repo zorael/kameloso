@@ -1,6 +1,6 @@
 /++
     The Bash plugin looks up quotes from `bash.org`
-    (or technically [bashforever.com](https://bashforever.com) and reports them
+    (or technically [bashforever.com](https://bashforever.com)) and reports them
     to the appropriate nickname or channel.
 
     See_Also:
@@ -645,7 +645,7 @@ public:
 // BashPlugin
 /++
     The Bash plugin looks up quotes from `bash.org`
-    (or technically [bashforever.com](https://bashforever.com) and reports them
+    (or technically [bashforever.com](https://bashforever.com)) and reports them
     to the appropriate nickname or channel.
  +/
 final class BashPlugin : IRCPlugin
