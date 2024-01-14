@@ -121,8 +121,24 @@ static immutable descriptionExemptions =
 // onMessage
 /++
     Parses a message to see if the message contains one or more URLs.
-
     Merely passes the event on to [onMessageImpl].
+
+    This function is annotated with
+    [kameloso.plugins.common.core.Permissions.ignore|Permissions.ignore],
+    but we don't mix in [MinimalAuthentication|MinimalAuthentication]. Ideally
+    we would annotate it [kameloso.plugins.common.core.Permissions.anyone|Permissions.anyone],
+    but then *any* channel message would incur a user lookup, which
+    is a bit much.
+
+    This is imprecise in the sense that a valid request *might* not be caught
+    if the user's class hasn't been looked up yet. But it's a tradeoff between
+    that and the bot having to look up every user showing any channel activity.
+
+    On Libera.Chat this is a non-issue *if* the user joins the channel after the
+    bot does, as account names are broadcast upon joining. Additionally, the act of
+    logging in is also broadcast (with a [dialect.defs.IRCEvent.Type.ACCOUNT|ACCONUT] event).
+
+    Revisit this if it proves to be a problem.
 
     See_Also:
         [onMessageImpl]
