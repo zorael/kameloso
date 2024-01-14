@@ -414,7 +414,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
         if (newPattern == "-")
         {
             // Reset pattern
-            Counter counterInit;
+            const Counter counterInit;
             if      (mod == "?") counter.patternQuery = counterInit.patternQuery;
             else if (mod == "+") counter.patternIncrement = counterInit.patternIncrement;
             else if (mod == "-") counter.patternDecrement = counterInit.patternDecrement;
