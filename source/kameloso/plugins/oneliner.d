@@ -404,10 +404,13 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
         }
     }
 
+    // Gracefully deal with oneliners that have been given empty lines.
+    immutable response = oneliner.getResponse();
+    if (!response.length) return;
+
     immutable args = slice.splitWithQuotes();
 
-    string line = oneliner
-        .getResponse()
+    string line = response  // mutable
         .replace("$channel", event.channel)
         .replace("$sender", nameOf(event.sender))
         .replace("$bot", nameOf(plugin, plugin.state.client.nickname))
@@ -449,6 +452,7 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     immutable message = target.length ?
         text('@', nameOf(plugin, target), ' ', line) :
         line;
+
     sendOneliner(plugin, event, message);
 }
 
@@ -830,7 +834,7 @@ void handleAddToOneliner(
     /*const*/ string slice,
     const string verb)
 {
-    import lu.string : SplitResults, splitInto;
+    import lu.string : SplitResults, splitInto, unquoted;
     import std.conv : ConvException, to;
     import std.format : format;
     import std.uni : toLower;
@@ -983,7 +987,7 @@ void handleAddToOneliner(
             Action.insertAtPosition :
             Action.editExisting;  // verb == "edit"
 
-        insert(trigger, slice, action, pos);
+        insert(trigger, slice.unquoted, action, pos);
     }
     else if (verb == "add")
     {
@@ -995,7 +999,7 @@ void handleAddToOneliner(
             return sendAddUsage();
         }
 
-        insert(trigger, slice, Action.appendToEnd);
+        insert(trigger, slice.unquoted, Action.appendToEnd);
     }
     else
     {
