@@ -223,7 +223,27 @@ void lookupQuote(
 
         foreach (const line; result.lines)
         {
-            privmsg(plugin.state, event.channel, event.sender.nickname, line);
+            if (!line.length) continue;  // Can technically happen
+
+            string correctedLine;  // mutable
+
+            version(TwitchSupport)
+            {
+                if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+                {
+                    import std.algorithm.comparison : among;
+
+                    if (line[0].among!('/', '.'))
+                    {
+                        // This has the chance to conflict with a Twitch command,
+                        // so prepend a space to invalidate it
+                        correctedLine = ' ' ~ line;
+                    }
+                }
+            }
+
+            if (!correctedLine.length) correctedLine = line;
+            privmsg(plugin.state, event.channel, event.sender.nickname, correctedLine);
         }
     }
 
