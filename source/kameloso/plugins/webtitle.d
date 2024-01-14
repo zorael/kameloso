@@ -150,7 +150,9 @@ static immutable descriptionExemptions =
 )
 void onMessage(WebtitlePlugin plugin, const ref IRCEvent event)
 {
+    if (event.sender.class_ == IRCUser.Class.blacklist) return;
     if (event.sender.class_ < plugin.webtitleSettings.minimumPermissionsNeeded) return;
+
     onMessageImpl(plugin, event);
 }
 

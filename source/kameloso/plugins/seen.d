@@ -579,6 +579,8 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
         Don't count non-chatty events if the settings say to ignore them.
      +/
 
+    if (event.sender.class_ == IRCUser.Class.blacklist) return;
+
     bool skipTarget;
 
     with (IRCEvent.Type)
@@ -682,6 +684,8 @@ void onQuit(SeenPlugin plugin, const ref IRCEvent event)
 )
 void onNick(SeenPlugin plugin, const ref IRCEvent event)
 {
+    if (event.sender.class_ == IRCUser.Class.blacklist) return;
+
     updateUser(plugin, event.target.nickname, event.time, Yes.skipModesignStrip);
 }
 

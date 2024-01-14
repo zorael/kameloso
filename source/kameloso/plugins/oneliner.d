@@ -349,6 +349,7 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
 
+    if (event.sender.class_ == IRCUser.Class.blacklist) return;
     if (!event.content.startsWith(plugin.state.settings.prefix)) return;
 
     void sendEmptyOneliner(const string trigger)

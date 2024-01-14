@@ -409,6 +409,8 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
     import lu.string : stripped;
     import std.algorithm.searching : startsWith;
 
+    if (event.sender.class_ == IRCUser.Class.blacklist) return;
+
     immutable stripped_ = event.content.stripped;
     if (!stripped_.length) return;
 

@@ -1147,6 +1147,8 @@ void handleSuspendTimer(
 )
 void onAnyMessage(TimerPlugin plugin, const ref IRCEvent event)
 {
+    if (event.sender.class_ == IRCUser.Class.blacklist) return;
+
     auto channel = event.channel in plugin.channels;
 
     if (!channel)
