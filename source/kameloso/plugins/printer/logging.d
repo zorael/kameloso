@@ -67,10 +67,14 @@ public:
 
     /++
         Clears the buffer of lines.
+
+        Uses [kameloso.common.zero] to zero the buffer instead of merely invoking
+        [std.array.Appender.clear|Appender.clear], to reduce the number of live pointers.
      +/
     void clear() @safe nothrow
     {
-        lines.clear();
+        import kameloso.common : zero;
+        lines.zero();
     }
 
     /++
@@ -719,8 +723,7 @@ void flushLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 
     try
     {
-        import std.algorithm.iteration : map;
-        import std.array : join;
+        import std.algorithm.iteration : joiner, map;
         import std.encoding : sanitize;
         import std.file : exists, isDir, mkdirRecurse;
         import std.stdio : File;
@@ -738,9 +741,9 @@ void flushLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         }
 
         // Write all in one go
-        immutable lines = buffer.lines.data
+        auto lines = buffer.lines.data
             .map!sanitize
-            .join("\n");
+            .joiner("\n");
 
         auto file = File(buffer.file, "a");
         file.writeln(lines);
