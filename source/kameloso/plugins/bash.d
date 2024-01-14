@@ -557,6 +557,16 @@ void persistentQuerier(
     {
         auto result = sendHTTPRequestImpl(url, caBundleFile);
 
+        if (result.code == 400)
+        {
+            // Sometimes it claims 400 Bad Request for no reason. Retry a few times
+            foreach (immutable _; 0..3)
+            {
+                result = sendHTTPRequestImpl(url, caBundleFile);
+                if (result.code != 400) break;
+            }
+        }
+
         if (result != BashLookupResult.init)
         {
             lookupBucket[id] = result;
