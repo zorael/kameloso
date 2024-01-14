@@ -1602,7 +1602,6 @@ final class TimerPlugin : IRCPlugin
 private:
     import core.time : seconds;
 
-public:
     /++
         Contained state of a channel, so that there can be several alongside each other.
      +/
