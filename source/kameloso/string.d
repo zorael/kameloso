@@ -578,11 +578,15 @@ auto doublyBackslashed(const string path)
 
         if (!path.length) return path;
 
-        string slice = path.replace('\\', r"\\");
+        // Duplicate every backslash
+        string slice = path.replace('\\', `\\`);
+        auto quadBackslashPos = slice.indexOf(`\\\\`);
 
-        while (slice.indexOf(r"\\\\") != -1)
+        while (quadBackslashPos != -1)
         {
-            slice = slice.replace(r"\\\\", r"\\");
+            // Halve every quadruple backslash
+            slice = slice.replace(`\\\\`, `\\`);
+            quadBackslashPos = slice.indexOf(`\\\\`, quadBackslashPos);
         }
         return slice;
     }
