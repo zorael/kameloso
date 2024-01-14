@@ -273,9 +273,9 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
-    void sendFormatPatternCleared()
+    void sendFormatPatternReset()
     {
-        enum message = "Format pattern cleared.";
+        enum message = "Format pattern reset.";
         chan(plugin.state, event.channel, message);
     }
 
@@ -413,19 +413,24 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 
         if (newPattern == "-")
         {
-            // Clear pattern
-            if      (mod == "?") counter.patternQuery = string.init;
-            else if (mod == "+") counter.patternIncrement = string.init;
-            else if (mod == "-") counter.patternDecrement = string.init;
-            else if (mod == "=") counter.patternAssign = string.init;
+            // Reset pattern
+            Counter counterInit;
+            if      (mod == "?") counter.patternQuery = counterInit.patternQuery;
+            else if (mod == "+") counter.patternIncrement = counterInit.patternIncrement;
+            else if (mod == "-") counter.patternDecrement = counterInit.patternDecrement;
+            else if (mod == "=") counter.patternAssign = counterInit.patternAssign;
             else assert(0, "Impossible case");
 
             saveCounters(plugin);
-            return sendFormatPatternCleared();
+            return sendFormatPatternReset();
         }
         else if (newPattern.length)
         {
-            // Set pattern
+            import lu.string : unquoted;
+
+            // This allows for the pattern "" to resolve to an empty pattern
+            newPattern = newPattern.unquoted;
+
             if      (mod == "?") counter.patternQuery = newPattern;
             else if (mod == "+") counter.patternIncrement = newPattern;
             else if (mod == "-") counter.patternDecrement = newPattern;
@@ -492,6 +497,8 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
     void sendCurrentCount(const Counter counter)
     {
+        if (!counter.patternQuery.length) return;
+
         immutable message = formatMessage(
             plugin,
             counter.patternQuery,
@@ -505,6 +512,8 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
         import std.math : abs;
 
         immutable pattern = (step >= 0) ? counter.patternIncrement : counter.patternDecrement;
+        if (!pattern.length) return;
+
         immutable message = formatMessage(
             plugin,
             pattern,
@@ -516,6 +525,8 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
     void sendCounterAssigned(const Counter counter, const long step)
     {
+        if (!counter.patternAssign.length) return;
+
         immutable message = formatMessage(
             plugin,
             counter.patternAssign,
@@ -777,7 +788,12 @@ void saveCounters(CounterPlugin plugin)
 
         foreach (immutable word, ref counter; channelCounters)
         {
-            counter.resetEmptyPatterns();
+            if (!counter.word.length)
+            {
+                // Backwards compatibility with old counters files
+                counter.word = word;
+                counter.resetEmptyPatterns();
+            }
             json[channelName][word] = counter.toJSON();
         }
     }
@@ -823,14 +839,12 @@ void loadCounters(CounterPlugin plugin)
             (*channelCounters)[word] = Counter.fromJSON(counterJSON);
             auto counter = word in *channelCounters;
 
-            // Backwards compatibility with old counters files
             if (!counter.word.length)
             {
+                // Backwards compatibility with old counters files
                 counter.word = word;
+                counter.resetEmptyPatterns();
             }
-
-            // ditto
-            counter.resetEmptyPatterns();
         }
 
         (*channelCounters).rehash();
