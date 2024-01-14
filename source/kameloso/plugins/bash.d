@@ -43,6 +43,11 @@ mixin PluginRegistration!BashPlugin;
         Whether or not the Bash plugin should react to events at all.
      +/
     @Enabler bool enabled = true;
+
+    /++
+        Minimum user class required for the plugin to react to events.
+     +/
+    IRCUser.Class minimumPermissionsNeeded = IRCUser.Class.anyone;
 }
 
 
@@ -110,6 +115,8 @@ void onCommandBash(BashPlugin plugin, const /*ref*/ IRCEvent event)
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
+
+    if (event.sender.class_ < plugin.bashSettings.minimumPermissionsNeeded) return;
 
     immutable quoteID = event.content.startsWith('#') ?
         event.content[1..$] :
