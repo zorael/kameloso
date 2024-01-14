@@ -904,8 +904,12 @@ void handleModifyTimerLines(
 
     try
     {
+        import lu.string : unquoted;
+
         immutable linePos = linePosString.to!ptrdiff_t;
         if ((linePos < 0) || (linePos >= timer.lines.length)) return sendOutOfRange(timer.lines.length);
+
+        slice = slice.unquoted;
 
         if (insert)
         {
@@ -950,7 +954,7 @@ void handleAddToTimer(
     const /*ref*/ IRCEvent event,
     /*const*/ string slice)
 {
-    import lu.string : advancePast;
+    import lu.string : advancePast, unquoted;
     import std.format : format;
 
     void sendAddUsage()
@@ -986,7 +990,7 @@ void handleAddToTimer(
         saveTimers(plugin);
     }
 
-    timer.lines ~= slice;
+    timer.lines ~= slice.unquoted;
     destroyUpdateSave();
 
     enum pattern = "Line added to timer <b>%s<b>.";
@@ -1430,23 +1434,28 @@ auto createTimerFiber(
                 continue;
             }
 
-            string message = timer.getLine()  // mutable
-                .replace("$bot", nameOf(plugin, plugin.state.client.nickname))
-                .replace("$botNickname", plugin.state.client.nickname)
-                .replace("$channel", channelName[1..$])
-                .replaceRandom();
+            string message = timer.getLine();  // mutable
 
-            version(TwitchSupport)
+            if (message.length)
             {
-                if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+                message = message
+                    .replace("$bot", nameOf(plugin, plugin.state.client.nickname))
+                    .replace("$botNickname", plugin.state.client.nickname)
+                    .replace("$channel", channelName[1..$])
+                    .replaceRandom();
+
+                version(TwitchSupport)
                 {
-                    message = message
-                        .replace("$streamer", nameOf(plugin, channelName[1..$]))
-                        .replace("$streamerAccount", channelName[1..$]);
+                    if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+                    {
+                        message = message
+                            .replace("$streamer", nameOf(plugin, channelName[1..$]))
+                            .replace("$streamerAccount", channelName[1..$]);
+                    }
                 }
+                chan(plugin.state, channelName, message);
             }
 
-            chan(plugin.state, channelName, message);
             updateTimer();
             Fiber.yield();
             //continue;
