@@ -4095,9 +4095,9 @@ void propagateWhoisTimestamps(Kameloso instance) pure @safe
 
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
-        args = Command-line arguments passed to the program.
+        arg0 = The name of the program, as passed on the command line.
  +/
-void prettyPrintStartScreen(const Kameloso instance, const string[] args)
+void prettyPrintStartScreen(const Kameloso instance, const string arg0)
 {
     import kameloso.common : printVersionInfo;
     import kameloso.printing : printObjects;
@@ -4119,7 +4119,7 @@ void prettyPrintStartScreen(const Kameloso instance, const string[] args)
 
         giveBrightTerminalHint();
         logger.trace();
-        notifyAboutIncompleteConfiguration(instance.settings.configFile, args[0]);
+        notifyAboutIncompleteConfiguration(instance.settings.configFile, arg0);
     }
 }
 
@@ -4410,7 +4410,7 @@ auto run(string[] args)
 
     if (!instance.settings.headless && !instance.transient.numReexecs)
     {
-        prettyPrintStartScreen(instance, args);
+        prettyPrintStartScreen(instance, args[0]);
     }
 
     // Verify that settings are as they should be (nickname exists and not too long, etc)
