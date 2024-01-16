@@ -1030,6 +1030,13 @@ void loadSeen(SeenPlugin plugin)
     import std.json : JSONException, parseJSON;
     import core.memory : GC;
 
+    version(Callgrind)
+    {
+        // Don't load seen users from disk when running under callgrind
+        // Avoid "statement is not reachable" warnings
+        if (plugin) return;
+    }
+
     GC.disable();
     scope(exit) GC.enable();
 
@@ -1175,7 +1182,11 @@ void teardown(SeenPlugin plugin)
 // initResources
 /++
     Read and write the file of seen people to disk, ensuring that it's there.
+
+    Skip this function entirely if version `Callgrind` is declared.
  +/
+version(Callgrind) {}
+else
 void initResources(SeenPlugin plugin)
 {
     import lu.json : JSONStorage;
@@ -1201,15 +1212,7 @@ void initResources(SeenPlugin plugin)
     }
 
     // Let other Exceptions pass.
-
-    version(Callgrind)
-    {
-        // To pair with the decision in saveSeen, don't save under callgrind
-    }
-    else
-    {
-        json.save(plugin.seenFile);
-    }
+    json.save(plugin.seenFile);
 }
 
 
