@@ -795,6 +795,8 @@ auto processMessages(Kameloso instance)
                 &plugin.state.priorityMessages :
                 &plugin.state.messages;
 
+            if (!box.data.length) continue;
+
             messageLoop:
             for (size_t i; i<box.data.length; ++i)
             {
@@ -4202,6 +4204,8 @@ auto checkInitialisationMessages(
             auto box = priority ?
                 &plugin.state.priorityMessages :
                 &plugin.state.messages;
+
+            if (!box.data.length) continue;
 
             for (size_t i; i<box.data.length; ++i)
             {
