@@ -4011,46 +4011,6 @@ public:
 }
 
 
-// syncGuestChannels
-/++
-    Syncs currently joined channels with [IRCBot.guestChannels|guestChannels],
-    adding entries in the latter where the former is missing.
-
-    We can't just check the first plugin at `instance.plugins[0]` since there's
-    no way to be certain it mixes in [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness].
-
-    Used when saving to configuration file, to ensure the current state is saved.
-
-    Params:
-        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
- +/
-void syncGuestChannels(Kameloso instance) pure @safe nothrow
-{
-    foreach (plugin; instance.plugins)
-    {
-        // Skip plugins that don't seem to mix in ChannelAwareness
-        if (!plugin.state.channels.length) continue;
-
-        foreach (immutable channelName; plugin.state.channels.byKey)
-        {
-            import std.algorithm.searching : canFind;
-
-            if (!instance.bot.homeChannels.canFind(channelName) &&
-                !instance.bot.guestChannels.canFind(channelName))
-            {
-                // We're in a channel that isn't tracked as home or guest
-                // We're also saving, so save it as guest
-                instance.bot.guestChannels ~= channelName;
-            }
-        }
-
-        // We only need the channels from one plugin, as we can be reasonably sure
-        // every plugin that have channels have the same channels
-        break;
-    }
-}
-
-
 // echoQuitMessage
 /++
     Echos the quit message to the local terminal, to fake it being sent verbosely
@@ -4626,7 +4586,6 @@ auto run(string[] args)
         try
         {
             import kameloso.config : writeConfigurationFile;
-            syncGuestChannels(instance);
             writeConfigurationFile(instance, instance.settings.configFile);
         }
         catch (Exception e)
