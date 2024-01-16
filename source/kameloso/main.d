@@ -214,731 +214,689 @@ void signalHandler(int sig) nothrow @nogc @system
 }
 
 
-// messageFiber
+// processMessages
 /++
-    A Generator fiber function that processes messages and performs action based
-    on what was read.
+    Processes messages and performs action based on them.
 
-    The return value yielded to the caller tells it whether the received action
-    means the bot should exit or not.
+    The return value signals to the caller whether the received action means the
+    bot should exit or not.
 
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
+
+    Returns:
+        A [lu.common.Next|Next] value, signaling to the caller whether the bot
+        should exit or not.
  +/
-void messageFiber(Kameloso instance)
+auto processMessages(Kameloso instance)
 {
     import kameloso.common : OutgoingLine;
     import kameloso.constants : Timeout;
     import kameloso.messaging : Message;
-    import kameloso.string : replaceTokens;
     import kameloso.thread : ThreadMessage;
     import lu.common : Next;
-    import std.concurrency : yield;
-    import core.time : Duration, MonoTime, msecs;
+    import core.time : MonoTime, msecs;
 
-    // Loop forever; we'll just terminate the Generator when we want to quit.
-    wholeMessageLoop:
-    while (true)
+    auto next = Next.continue_;
+
+    /++
+        Handle [kameloso.thread.ThreadMessage]s based on their
+        [kameloso.thread.ThreadMessage.MessageType|MessageType]s.
+     +/
+    void onThreadMessage(ThreadMessage message)
     {
-        auto next = Next.continue_;
-
-        /++
-            Handle [kameloso.thread.ThreadMessage]s based on their
-            [kameloso.thread.ThreadMessage.MessageType|MessageType]s.
-         +/
-        void onThreadMessage(ThreadMessage message) scope
+        with (ThreadMessage.MessageType)
+        final switch (message.type)
         {
-            with (ThreadMessage.MessageType)
-            final switch (message.type)
+        case pong:
+            /+
+                PONGs literally always have the same content, so micro-optimise
+                this a bit by only allocating the string once and keeping it
+                if the contents don't change.
+             +/
+            enum pongHeader = "PONG :";
+
+            if (!instance.transient.pongline.length ||
+                (instance.transient.pongline[pongHeader.length..$] != message.content))
             {
-            case pong:
-                /+
-                    PONGs literally always have the same content, so micro-optimise
-                    this a bit by only allocating the string once and keeping it
-                    if the contents don't change.
-                 +/
-                enum pongHeader = "PONG :";
+                instance.transient.pongline = pongHeader ~ message.content;
+            }
 
-                if (!instance.transient.pongline.length ||
-                    (instance.transient.pongline[pongHeader.length..$] != message.content))
+            instance.priorityBuffer.put(OutgoingLine(instance.transient.pongline, Yes.quiet));
+            break;
+
+        case ping:
+            // No need to micro-optimise here, PINGs should be very rare
+            immutable pingline = "PING :" ~ message.content;
+            instance.priorityBuffer.put(OutgoingLine(pingline, Yes.quiet));
+            break;
+
+        case shortenReceiveTimeout:
+            instance.transient.wantReceiveTimeoutShortened = true;
+            break;
+
+        case busMessage:
+            foreach (plugin; instance.plugins)
+            {
+                plugin.onBusMessage(message.content, message.payload);
+            }
+            break;
+
+        case quit:
+            import kameloso.string : replaceTokens;
+
+            // This will automatically close the connection.
+            immutable reason = message.content.length ?
+                message.content :
+                instance.bot.quitReason;
+            immutable quitMessage = "QUIT :" ~ reason.replaceTokens(instance.parser.client);
+
+            instance.priorityBuffer.put(OutgoingLine(
+                quitMessage,
+                cast(Flag!"quiet")message.quiet));
+
+            instance.transient.quitMessageSent = true;
+            next = Next.returnSuccess;
+            break;
+
+        case reconnect:
+            import kameloso.thread : Boxed;
+
+            if (auto boxedReexecFlag = cast(Boxed!bool)message.payload)
+            {
+                // Re-exec explicitly requested
+                instance.transient.askedToReexec = boxedReexecFlag.payload;
+            }
+            else
+            {
+                // Normal reconnect
+                instance.transient.askedToReconnect = true;
+            }
+
+            immutable quitMessage = message.content.length ?
+                message.content :
+                "Reconnecting.";
+
+            instance.priorityBuffer.put(OutgoingLine(
+                "QUIT :" ~ quitMessage,
+                Yes.quiet));
+
+            instance.transient.quitMessageSent = true;
+            next = Next.retry;
+            break;
+
+        case wantLiveSummary:
+            instance.transient.wantLiveSummary = true;
+            break;
+
+        case abort:
+            *instance.abort = Yes.abort;
+            break;
+
+        case reload:
+            pluginForeach:
+            foreach (plugin; instance.plugins)
+            {
+                if (!plugin.isEnabled) continue;
+
+                try
                 {
-                    instance.transient.pongline = pongHeader ~ message.content;
+                    if (!message.content.length) plugin.reload();
+                    else if (message.content == plugin.name)
+                    {
+                        plugin.reload();
+                        break pluginForeach;
+                    }
                 }
-
-                instance.priorityBuffer.put(OutgoingLine(instance.transient.pongline, Yes.quiet));
-                break;
-
-            case ping:
-                // No need to micro-optimise here, PINGs should be very rare
-                immutable pingline = "PING :" ~ message.content;
-                instance.priorityBuffer.put(OutgoingLine(pingline, Yes.quiet));
-                break;
-
-            case sendline:
-                instance.outbuffer.put(OutgoingLine(
-                    message.content,
-                    cast(Flag!"quiet")(message.quiet || instance.settings.hideOutgoing)));
-                break;
-
-            case quietline:
-                instance.outbuffer.put(OutgoingLine(
-                    message.content,
-                    Yes.quiet));
-                break;
-
-            case immediateline:
-                instance.immediateBuffer.put(OutgoingLine(
-                    message.content,
-                    cast(Flag!"quiet")(message.quiet || instance.settings.hideOutgoing)));
-                break;
-
-            case shortenReceiveTimeout:
-                instance.transient.wantReceiveTimeoutShortened = true;
-                break;
-
-            case busMessage:
-                foreach (plugin; instance.plugins)
+                catch (Exception e)
                 {
-                    plugin.onBusMessage(message.content, message.payload);
+                    enum pattern = "The <l>%s</> plugin threw an exception when reloading: <t>%s";
+                    logger.errorf(pattern, plugin.name, e.msg);
+                    version(PrintStacktraces) logger.trace(e);
                 }
-                break;
+            }
+            break;
 
-            case quit:
-                // This will automatically close the connection.
-                immutable reason = message.content.length ?
-                    message.content :
-                    instance.bot.quitReason;
-                immutable quitMessage = "QUIT :" ~ reason.replaceTokens(instance.parser.client);
-                instance.priorityBuffer.put(OutgoingLine(
-                    quitMessage,
-                    cast(Flag!"quiet")message.quiet));
-                instance.transient.quitMessageSent = true;
-                next = Next.returnSuccess;
-                break;
+        case save:
+            import kameloso.config : writeConfigurationFile;
+            writeConfigurationFile(instance, instance.settings.configFile);
+            break;
 
-            case reconnect:
-                import kameloso.thread : Boxed;
+        case popCustomSetting:
+            size_t[] toRemove;
 
-                if (auto boxedReexecFlag = cast(Boxed!bool)message.payload)
+            foreach (immutable i, immutable line; instance.customSettings)
+            {
+                import lu.string : advancePast;
+
+                string slice = line;  // mutable
+                immutable setting = slice.advancePast('=', Yes.inherit);
+                if (setting == message.content) toRemove ~= i;
+            }
+
+            foreach_reverse (immutable i; toRemove)
+            {
+                import std.algorithm.mutation : SwapStrategy, remove;
+                instance.customSettings = instance.customSettings
+                    .remove!(SwapStrategy.unstable)(i);
+            }
+
+            toRemove = null;
+            break;
+
+        case putUser:
+            import kameloso.thread : Boxed;
+
+            auto boxedUser = cast(Boxed!IRCUser)message.payload;
+            assert(boxedUser, "Incorrectly cast message payload: " ~ typeof(boxedUser).stringof);
+
+            auto user = boxedUser.payload;
+
+            foreach (plugin; instance.plugins)
+            {
+                if (auto existingUser = user.nickname in plugin.state.users)
                 {
-                    // Re-exec explicitly requested
-                    instance.transient.askedToReexec = boxedReexecFlag.payload;
+                    immutable prevClass = existingUser.class_;
+                    *existingUser = user;
+                    existingUser.class_ = prevClass;
                 }
                 else
                 {
-                    // Normal reconnect
-                    instance.transient.askedToReconnect = true;
+                    plugin.state.users[user.nickname] = user;
                 }
-
-                immutable quitMessage = message.content.length ?
-                    message.content :
-                    "Reconnecting.";
-                instance.priorityBuffer.put(OutgoingLine(
-                    "QUIT :" ~ quitMessage,
-                    Yes.quiet));
-                instance.transient.quitMessageSent = true;
-                next = Next.retry;
-                break;
-
-            case wantLiveSummary:
-                instance.transient.wantLiveSummary = true;
-                break;
-
-            case abort:
-                *instance.abort = Yes.abort;
-                break;
-
-            case reload:
-                pluginForeach:
-                foreach (plugin; instance.plugins)
-                {
-                    if (!plugin.isEnabled) continue;
-
-                    try
-                    {
-                        if (!message.content.length) plugin.reload();
-                        else if (message.content == plugin.name)
-                        {
-                            plugin.reload();
-                            break pluginForeach;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        enum pattern = "The <l>%s</> plugin threw an exception when reloading: <t>%s";
-                        logger.errorf(pattern, plugin.name, e.msg);
-                        version(PrintStacktraces) logger.trace(e);
-                    }
-                }
-                break;
-
-            case save:
-                import kameloso.config : writeConfigurationFile;
-                syncGuestChannels(instance);
-                writeConfigurationFile(instance, instance.settings.configFile);
-                break;
-
-            case popCustomSetting:
-                size_t[] toRemove;
-
-                foreach (immutable i, immutable line; instance.customSettings)
-                {
-                    import lu.string : advancePast;
-
-                    string slice = line;  // mutable
-                    immutable setting = slice.advancePast('=', Yes.inherit);
-                    if (setting == message.content) toRemove ~= i;
-                }
-
-                foreach_reverse (immutable i; toRemove)
-                {
-                    import std.algorithm.mutation : SwapStrategy, remove;
-                    instance.customSettings = instance.customSettings
-                        .remove!(SwapStrategy.unstable)(i);
-                }
-
-                toRemove = null;
-                break;
-
-            case putUser:
-                import kameloso.thread : Boxed;
-
-                auto boxedUser = cast(Boxed!IRCUser)message.payload;
-                assert(boxedUser, "Incorrectly cast message payload: " ~ typeof(boxedUser).stringof);
-
-                auto user = boxedUser.payload;
-
-                foreach (plugin; instance.plugins)
-                {
-                    if (auto existingUser = user.nickname in plugin.state.users)
-                    {
-                        immutable prevClass = existingUser.class_;
-                        *existingUser = user;
-                        existingUser.class_ = prevClass;
-                    }
-                    else
-                    {
-                        plugin.state.users[user.nickname] = user;
-                    }
-                }
-                break;
-
-            case askToTrace:
-                logger.trace(message.content);
-                break;
-
-            case askToLog:
-                logger.log(message.content);
-                break;
-
-            case askToInfo:
-                logger.info(message.content);
-                break;
-
-            case askToWarn:
-                logger.warning(message.content);
-                break;
-
-            case askToError:
-                logger.error(message.content);
-                break;
-
-            case askToCritical:
-                logger.critical(message.content);
-                break;
-
-            case askToFatal:
-                logger.fatal(message.content);
-                break;
-
-            case askToWriteln:
-                import kameloso.logger : LogLevel;
-                import kameloso.terminal.colours.tags : expandTags;
-                import std.stdio : stdout, writeln;
-
-                writeln(message.content.expandTags(LogLevel.off));
-                if (instance.settings.flush) stdout.flush();
-                break;
-
-            case fakeEvent:
-                version(Debug)
-                {
-                    import std.datetime.systime : Clock;
-                    processLineFromServer(instance, message.content, Clock.currTime.toUnixTime());
-                }
-                break;
-
-            case teardown:
-                import lu.conv : Enum;
-                enum pattern = "onThreadMessage received unexpected message type: <l>%s";
-                logger.errorf(pattern, Enum!(ThreadMessage.MessageType).toString(message.type));
-                break;
             }
+            break;
+
+        case askToTrace:
+            logger.trace(message.content);
+            break;
+
+        case askToLog:
+            logger.log(message.content);
+            break;
+
+        case askToInfo:
+            logger.info(message.content);
+            break;
+
+        case askToWarn:
+            logger.warning(message.content);
+            break;
+
+        case askToError:
+            logger.error(message.content);
+            break;
+
+        case askToCritical:
+            logger.critical(message.content);
+            break;
+
+        case askToFatal:
+            logger.fatal(message.content);
+            break;
+
+        case askToWriteln:
+            import kameloso.logger : LogLevel;
+            import kameloso.terminal.colours.tags : expandTags;
+            import std.stdio : stdout, writeln;
+
+            writeln(message.content.expandTags(LogLevel.off));
+            if (instance.settings.flush) stdout.flush();
+            break;
+
+        case fakeEvent:
+            version(Debug)
+            {
+                import std.datetime.systime : Clock;
+                processLineFromServer(instance, message.content, Clock.currTime.toUnixTime());
+            }
+            break;
+
+        case teardown:
+            import lu.conv : Enum;
+            enum pattern = "onThreadMessage received unexpected message type: <l>%s";
+            logger.errorf(pattern, Enum!(ThreadMessage.MessageType).toString(message.type));
+            break;
+        }
+    }
+
+    /++
+        Reverse-formats an event and sends it to the server.
+     +/
+    void onEventMessage(Message m)
+    {
+        import lu.string : splitLineAtPosition;
+        import std.conv : text;
+        import std.format : format;
+
+        enum maxIRCLineLength = 512-2;  // sans CRLF
+
+        version(TwitchSupport)
+        {
+            // The first two checks are probably superfluous
+            immutable fast =
+                (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
+                (m.event.type != IRCEvent.Type.QUERY) &&
+                (m.properties & Message.Property.fast);
         }
 
-        /++
-            Reverse-formats an event and sends it to the server.
-         +/
-        void eventToServer(Message m) scope
-        {
-            import lu.string : splitLineAtPosition;
-            import std.conv : text;
-            import std.format : format;
+        immutable background = (m.properties & Message.Property.background);
+        immutable quietFlag = cast(Flag!"quiet")
+            (instance.settings.hideOutgoing || (m.properties & Message.Property.quiet));
+        immutable force = (m.properties & Message.Property.forced);
+        immutable priority = (m.properties & Message.Property.priority);
+        immutable immediate = (m.properties & Message.Property.immediate);
 
-            enum maxIRCLineLength = 512-2;  // sans CRLF
+        string line;
+        string prelude;
+        string[] lines;
+
+        with (IRCEvent.Type)
+        switch (m.event.type)
+        {
+        case CHAN:
+            enum pattern = "PRIVMSG %s :";
+            prelude = pattern.format(m.event.channel);
+            lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
+            break;
+
+        case QUERY:
+            version(TwitchSupport)
+            {
+                if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
+                {
+                    enum message = "Tried to send a Twitch whisper " ~
+                        "but Twitch now requires them to be made through API calls.";
+                    enum pattern = "--> [<l>%s</>] %s";
+                    logger.error(message);
+                    logger.errorf(pattern, m.event.target.nickname, m.event.content);
+                    return;
+                }
+            }
+
+            enum pattern = "PRIVMSG %s :";
+            if (!prelude.length) prelude = pattern.format(m.event.target.nickname);
+            lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
+            break;
+
+        case EMOTE:
+            immutable emoteTarget = m.event.target.nickname.length ?
+                m.event.target.nickname :
+                m.event.channel;
 
             version(TwitchSupport)
             {
-                // The first two checks are probably superfluous
-                immutable fast =
-                    (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
-                    (m.event.type != IRCEvent.Type.QUERY) &&
-                    (m.properties & Message.Property.fast);
+                if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
+                {
+                    enum pattern = "PRIVMSG %s :/me ";
+                    prelude = pattern.format(emoteTarget);
+                    lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
+                }
             }
 
-            immutable background = (m.properties & Message.Property.background);
-            immutable quietFlag = cast(Flag!"quiet")
-                (instance.settings.hideOutgoing || (m.properties & Message.Property.quiet));
-            immutable force = (m.properties & Message.Property.forced);
-            immutable priority = (m.properties & Message.Property.priority);
-            immutable immediate = (m.properties & Message.Property.immediate);
-
-            string line;
-            string prelude;
-            string[] lines;
-
-            with (IRCEvent.Type)
-            switch (m.event.type)
+            if (!prelude.length)
             {
-            case CHAN:
-                enum pattern = "PRIVMSG %s :";
-                prelude = pattern.format(m.event.channel);
-                lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
-                break;
+                import dialect.common : IRCControlCharacter;
+                enum pattern = "PRIVMSG %s :%cACTION %s%2$c";
+                line = pattern.format(emoteTarget, cast(char)IRCControlCharacter.ctcp, m.event.content);
+            }
+            break;
 
-            case QUERY:
-                version(TwitchSupport)
-                {
-                    if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
-                    {
-                        enum message = "Tried to send a Twitch whisper " ~
-                            "but Twitch now requires them to be made through API calls.";
-                        enum pattern = "--> [<l>%s</>] %s";
-                        logger.error(message);
-                        logger.errorf(pattern, m.event.target.nickname, m.event.content);
-                        return;
-                    }
-                }
+        case MODE:
+            import lu.string : strippedRight;
 
-                enum pattern = "PRIVMSG %s :";
-                if (!prelude.length) prelude = pattern.format(m.event.target.nickname);
-                lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
-                break;
+            enum pattern = "MODE %s %s %s";
+            line = pattern.format(m.event.channel, m.event.aux[0], m.event.content.strippedRight);
+            break;
 
-            case EMOTE:
-                immutable emoteTarget = m.event.target.nickname.length ?
-                    m.event.target.nickname :
-                    m.event.channel;
+        case TOPIC:
+            enum pattern = "TOPIC %s :%s";
+            line = pattern.format(m.event.channel, m.event.content);
+            break;
 
-                version(TwitchSupport)
-                {
-                    if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
-                    {
-                        enum pattern = "PRIVMSG %s :/me ";
-                        prelude = pattern.format(emoteTarget);
-                        lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
-                    }
-                }
+        case INVITE:
+            enum pattern = "INVITE %s %s";
+            line = pattern.format(m.event.channel, m.event.target.nickname);
+            break;
 
-                if (!prelude.length)
-                {
-                    import dialect.common : IRCControlCharacter;
-                    enum pattern = "PRIVMSG %s :%cACTION %s%2$c";
-                    line = pattern.format(emoteTarget, cast(char)IRCControlCharacter.ctcp, m.event.content);
-                }
-                break;
+        case JOIN:
+            if (m.event.aux[0].length)
+            {
+                // Key, assume only one channel
+                line = text("JOIN ", m.event.channel, ' ', m.event.aux[0]);
+            }
+            else
+            {
+                prelude = "JOIN ";
+                lines = m.event.channel.splitLineAtPosition(',', maxIRCLineLength-prelude.length);
+            }
+            break;
 
-            case MODE:
-                import lu.string : strippedRight;
+        case KICK:
+            immutable reason = m.event.content.length ?
+                " :" ~ m.event.content :
+                string.init;
+            enum pattern = "KICK %s %s%s";
+            line = pattern.format(m.event.channel, m.event.target.nickname, reason);
+            break;
 
-                enum pattern = "MODE %s %s %s";
-                line = pattern.format(m.event.channel, m.event.aux[0], m.event.content.strippedRight);
-                break;
+        case PART:
+            if (m.event.content.length)
+            {
+                import kameloso.string : replaceTokens;
 
-            case TOPIC:
-                enum pattern = "TOPIC %s :%s";
-                line = pattern.format(m.event.channel, m.event.content);
-                break;
+                // Reason given, assume only one channel
+                line = text(
+                    "PART ",
+                    m.event.channel,
+                    " :",
+                    m.event.content.replaceTokens(instance.parser.client));
+            }
+            else
+            {
+                prelude = "PART ";
+                lines = m.event.channel.splitLineAtPosition(',', maxIRCLineLength-prelude.length);
+            }
+            break;
 
-            case INVITE:
-                enum pattern = "INVITE %s %s";
-                line = pattern.format(m.event.channel, m.event.target.nickname);
-                break;
+        case NICK:
+            line = "NICK " ~ m.event.target.nickname;
+            break;
 
-            case JOIN:
-                if (m.event.aux[0].length)
-                {
-                    // Key, assume only one channel
-                    line = text("JOIN ", m.event.channel, ' ', m.event.aux[0]);
-                }
+        case PRIVMSG:
+            if (m.event.channel.length)
+            {
+                goto case CHAN;
+            }
+            else
+            {
+                goto case QUERY;
+            }
+
+        case RPL_WHOISACCOUNT:
+            import kameloso.constants : Timeout;
+            import std.datetime.systime : Clock;
+
+            immutable nowInUnix = Clock.currTime.toUnixTime();
+            immutable then = instance.previousWhoisTimestamps.get(m.event.target.nickname, 0);
+            immutable hysteresis = force ? 1 : Timeout.whoisRetry;
+
+            version(TraceWhois)
+            {
+                version(unittest) {}
                 else
                 {
-                    prelude = "JOIN ";
-                    lines = m.event.channel.splitLineAtPosition(',', maxIRCLineLength-prelude.length);
+                    import std.stdio : writef, writefln, writeln;
+
+                    enum pattern = "[TraceWhois] processMessages caught request to " ~
+                        "WHOIS \"%s\" from %s (quiet:%s, background:%s)";
+                    writef(
+                        pattern,
+                        m.event.target.nickname,
+                        m.caller,
+                        cast(bool)quietFlag,
+                        cast(bool)background);
+                    // flush stdout with writeln later below
                 }
-                break;
+            }
 
-            case KICK:
-                immutable reason = m.event.content.length ?
-                    " :" ~ m.event.content :
-                    string.init;
-                enum pattern = "KICK %s %s%s";
-                line = pattern.format(m.event.channel, m.event.target.nickname, reason);
-                break;
+            immutable delta = (nowInUnix - then);
 
-            case PART:
-                if (m.event.content.length)
-                {
-                    // Reason given, assume only one channel
-                    line = text(
-                        "PART ",
-                        m.event.channel,
-                        " :",
-                        m.event.content.replaceTokens(instance.parser.client));
-                }
-                else
-                {
-                    prelude = "PART ";
-                    lines = m.event.channel.splitLineAtPosition(',', maxIRCLineLength-prelude.length);
-                }
-                break;
-
-            case NICK:
-                line = "NICK " ~ m.event.target.nickname;
-                break;
-
-            case PRIVMSG:
-                if (m.event.channel.length)
-                {
-                    goto case CHAN;
-                }
-                else
-                {
-                    goto case QUERY;
-                }
-
-            case RPL_WHOISACCOUNT:
-                import kameloso.constants : Timeout;
-                import std.datetime.systime : Clock;
-
-                immutable nowInUnix = Clock.currTime.toUnixTime();
-                immutable then = instance.previousWhoisTimestamps.get(m.event.target.nickname, 0);
-                immutable hysteresis = force ? 1 : Timeout.whoisRetry;
-
+            if (delta > hysteresis)
+            {
                 version(TraceWhois)
                 {
                     version(unittest) {}
                     else
                     {
-                        import std.stdio : writef, writefln, writeln;
-
-                        enum pattern = "[TraceWhois] messageFiber caught request to " ~
-                            "WHOIS \"%s\" from %s (quiet:%s, background:%s)";
-                        writef(
-                            pattern,
-                            m.event.target.nickname,
-                            m.caller,
-                            cast(bool)quietFlag,
-                            cast(bool)background);
-                        // flush stdout with writeln later below
+                        writeln(" ...and actually issuing.");
                     }
                 }
 
-                immutable delta = (nowInUnix - then);
-
-                if (delta > hysteresis)
-                {
-                    version(TraceWhois)
-                    {
-                        version(unittest) {}
-                        else
-                        {
-                            writeln(" ...and actually issuing.");
-                        }
-                    }
-
-                    line = "WHOIS " ~ m.event.target.nickname;
-                    propagateWhoisTimestamp(instance, m.event.target.nickname, nowInUnix);
-                }
-                else
-                {
-                    version(TraceWhois)
-                    {
-                        version(unittest) {}
-                        else
-                        {
-                            enum alreadyIssuedPattern = " ...but already issued %d seconds ago.";
-                            writefln(alreadyIssuedPattern, (nowInUnix - then));
-                        }
-                    }
-                }
-
+                line = "WHOIS " ~ m.event.target.nickname;
+                propagateWhoisTimestamp(instance, m.event.target.nickname, nowInUnix);
+            }
+            else
+            {
                 version(TraceWhois)
                 {
-                    import std.stdio : stdout;
-                    if (instance.settings.flush) stdout.flush();
-                }
-                break;
-
-            case QUIT:
-                immutable rawReason = m.event.content.length ?
-                    m.event.content :
-                    instance.bot.quitReason;
-                immutable reason = rawReason.replaceTokens(instance.parser.client);
-                line = "QUIT :" ~ reason;
-                instance.transient.quitMessageSent = true;
-                next = Next.returnSuccess;
-                break;
-
-            case UNSET:
-                line = m.event.content;
-                break;
-
-            default:
-                // No need to use Enum!(IRCEvent.Type) here, logger does it internally
-                logger.error("<l>messageFiber</>.<l>eventToServer</> missing case " ~
-                    "for outgoing event type <l>", m.event.type);
-                break;
-            }
-
-            void appropriateline(const string finalLine)
-            {
-                if (immediate)
-                {
-                    return instance.immediateBuffer.put(OutgoingLine(finalLine, quietFlag));
-                }
-
-                version(TwitchSupport)
-                {
-                    if (/*(instance.parser.server.daemon == IRCServer.Daemon.twitch) &&*/ fast)
+                    version(unittest) {}
+                    else
                     {
-                        // Send a line via the fastbuffer, faster than normal sends.
-                        return instance.fastbuffer.put(OutgoingLine(finalLine, quietFlag));
+                        enum alreadyIssuedPattern = " ...but already issued %d seconds ago.";
+                        writefln(alreadyIssuedPattern, (nowInUnix - then));
                     }
                 }
-
-                if (priority)
-                {
-                    instance.priorityBuffer.put(OutgoingLine(finalLine, quietFlag));
-                }
-                else if (background)
-                {
-                    // Send a line via the low-priority background buffer.
-                    instance.backgroundBuffer.put(OutgoingLine(finalLine, quietFlag));
-                }
-                else if (quietFlag)
-                {
-                    instance.outbuffer.put(OutgoingLine(finalLine, Yes.quiet));
-                }
-                else
-                {
-                    instance.outbuffer.put(OutgoingLine(finalLine, cast(Flag!"quiet")instance.settings.hideOutgoing));
-                }
             }
 
-            if (lines.length)
+            version(TraceWhois)
             {
-                foreach (immutable i, immutable splitLine; lines)
-                {
-                    immutable finalLine = m.event.tags.length ?
-                        text('@', m.event.tags, ' ', prelude, splitLine) :
-                        text(prelude, splitLine);
-                    appropriateline(finalLine);
-                    lines[i] = string.init;
-                }
+                import std.stdio : stdout;
+                if (instance.settings.flush) stdout.flush();
             }
-            else if (line.length)
+            break;
+
+        case QUIT:
+            import kameloso.string : replaceTokens;
+
+            immutable rawReason = m.event.content.length ?
+                m.event.content :
+                instance.bot.quitReason;
+            immutable reason = rawReason.replaceTokens(instance.parser.client);
+            line = "QUIT :" ~ reason;
+
+            instance.transient.quitMessageSent = true;
+            next = Next.returnSuccess;
+            break;
+
+        case UNSET:
+            line = m.event.content;
+            break;
+
+        default:
+            // No need to use Enum!(IRCEvent.Type) here, logger does it internally
+            logger.error("<l>processMessages</>.<l>eventToServer</> missing case " ~
+                "for outgoing event type <l>", m.event.type);
+            break;
+        }
+
+        void appropriateline(const string finalLine)
+        {
+            if (immediate)
             {
-                if (m.event.tags.length) line = text('@', m.event.tags, ' ', line);
-                appropriateline(line);
+                return instance.immediateBuffer.put(OutgoingLine(finalLine, quietFlag));
             }
 
-            lines = null;
-        }
-
-        /+
-            Timestamp of when the loop started.
-         +/
-        immutable loopStartTime = MonoTime.currTime;
-        static immutable maxReceiveTime = Timeout.messageReadMsecs.msecs;
-
-        /+
-            Still time enough to act on messages?
-         +/
-        auto isStillOnTime()
-        {
-            immutable onTime = ((MonoTime.currTime - loopStartTime) <= maxReceiveTime);
-            //version(Debug) if (!onTime) logger.warning("Messenger loop ran out of time");
-            return onTime;
-        }
-
-        /+
-            Whether or not to continue the loop.
-         +/
-        auto shouldStillContinue()
-        {
-            immutable shouldContinue = ((next == Next.continue_) && !*instance.abort);
-            //version(Debug) if (!shouldContinue) logger.warning("Messenger loop shouldn't continue");
-            return shouldContinue;
-        }
-
-        /+
-            Priority messages. Process these before normal messages.
-         +/
-        priorityMessageTop:
-        foreach (plugin; instance.plugins)
-        {
-            if (!plugin.state.priorityMessages.data.length || !plugin.isEnabled) continue priorityMessageTop;
-
-            priorityMessageInner:
-            for (size_t i; i < plugin.state.priorityMessages.data.length; ++i)
+            version(TwitchSupport)
             {
-                if (plugin.state.priorityMessages.data[i].exhausted) continue priorityMessageInner;
-
-                onThreadMessage(plugin.state.priorityMessages.data[i]);
-                plugin.state.priorityMessages.data[i].exhausted = true;
-
-                if (!shouldStillContinue || !isStillOnTime)
+                if (/*(instance.parser.server.daemon == IRCServer.Daemon.twitch) &&*/ fast)
                 {
-                    // Ran out of time or something triggered an abort
-                    yield(next);
-                    continue wholeMessageLoop;
+                    // Send a line via the fastbuffer, faster than normal sends.
+                    return instance.fastbuffer.put(OutgoingLine(finalLine, quietFlag));
                 }
             }
 
-            // If we're here, we've exhausted all priority messages for this plugin
-            plugin.state.priorityMessages.clear();
-        }
-
-        if (!shouldStillContinue || !isStillOnTime)
-        {
-            yield(next);
-            continue wholeMessageLoop;
-        }
-
-        /+
-            Normal-priority messages.
-         +/
-        normalMessageTop:
-        foreach (plugin; instance.plugins)
-        {
-            if (!plugin.state.messages.data.length || !plugin.isEnabled) continue normalMessageTop;
-
-            normalMessageInner:
-            for (size_t i; i < plugin.state.messages.data.length; ++i)
+            if (priority)
             {
-                if (plugin.state.messages.data[i].exhausted) continue normalMessageInner;
-
-                onThreadMessage(plugin.state.messages.data[i]);
-                plugin.state.messages.data[i].exhausted = true;
-
-                if (!shouldStillContinue || !isStillOnTime)
-                {
-                    // Ran out of time or something triggered an abort
-                    yield(next);
-                    continue wholeMessageLoop;
-                }
+                instance.priorityBuffer.put(OutgoingLine(finalLine, quietFlag));
             }
-
-            // if we're here, we've exhausted all normal messages for this plugin
-            plugin.state.messages.clear();
-        }
-
-        if (!shouldStillContinue || !isStillOnTime)
-        {
-            yield(next);
-            continue wholeMessageLoop;
-        }
-
-        /+
-            Outgoing messages.
-         +/
-        outgoingMessageTop:
-        foreach (plugin; instance.plugins)
-        {
-            if (!plugin.state.outgoingMessages.data.length || !plugin.isEnabled) continue outgoingMessageTop;
-
-            // No need to iterate with a for loop since the length shouldn't change in the middle of it
-            outgoingMessageInner:
-            foreach (immutable i, ref message; plugin.state.outgoingMessages.data)
+            else if (background)
             {
-                if (message.exhausted) continue outgoingMessageInner;
-
-                eventToServer(message);
-                message.exhausted = true;
-
-                if (!shouldStillContinue || !isStillOnTime)
-                {
-                    // Ran out of time or something triggered an abort
-                    yield(next);
-                    continue wholeMessageLoop;
-                }
+                // Send a line via the low-priority background buffer.
+                instance.backgroundBuffer.put(OutgoingLine(finalLine, quietFlag));
             }
-
-            // if we're here, we've exhausted all outgoing messages for this plugin
-            plugin.state.outgoingMessages.clear();
-        }
-
-        /+
-            If a plugin wants to be able to send concurrency messages to the
-            main loop, to output messages to the screen and/or send messages to
-            the server, declare version `WantConcurrencyMessageLoop` to enable
-            this block.
-         +/
-        version(WantConcurrencyMessageLoop)
-        {
-            if (!shouldStillContinue || !isStillOnTime)
+            else if (quietFlag)
             {
-                yield(next);
-                continue wholeMessageLoop;
+                instance.outbuffer.put(OutgoingLine(finalLine, Yes.quiet));
             }
-
-            /+
-                Concurrency messages, dead last.
-             +/
-            readloop:
-            while (true)
+            else
             {
-                bool receivedSomething;
-
-                try
-                {
-                    import std.concurrency : receiveTimeout;
-                    import std.variant : Variant;
-
-                    receivedSomething = receiveTimeout(Duration.zero,
-                        &onThreadMessage,
-                        &eventToServer,
-                        (Variant v) scope
-                        {
-                            logger.error("messageFiber received unexpected Variant: <l>", v);
-                        }
-                    );
-                }
-                catch (Exception e)
-                {
-                    logger.error("messageFiber caught exception: <l>", e.msg);
-                    version(PrintStacktraces) logger.trace(e);
-                }
-
-                if (!receivedSomething || !shouldStillContinue || !isStillOnTime) break readloop;
+                instance.outbuffer.put(OutgoingLine(finalLine, cast(Flag!"quiet")instance.settings.hideOutgoing));
             }
         }
 
-        yield(next);
+        if (lines.length)
+        {
+            foreach (immutable i, immutable splitLine; lines)
+            {
+                immutable finalLine = m.event.tags.length ?
+                    text('@', m.event.tags, ' ', prelude, splitLine) :
+                    text(prelude, splitLine);
+                appropriateline(finalLine);
+                lines[i] = string.init;
+            }
+        }
+        else if (line.length)
+        {
+            if (m.event.tags.length) line = text('@', m.event.tags, ' ', line);
+            appropriateline(line);
+        }
+
+        lines = null;
     }
 
-    assert(0, "`while (true)` loop break in `messageFiber`");
+    /+
+        Timestamp of when the loop started.
+     +/
+    immutable loopStartTime = MonoTime.currTime;
+    static immutable maxReceiveTime = Timeout.messageReadMsecs.msecs;
+
+    /+
+        Still time enough to act on messages?
+     +/
+    auto isStillOnTime()
+    {
+        immutable onTime = ((MonoTime.currTime - loopStartTime) <= maxReceiveTime);
+        //version(Debug) if (!onTime) logger.warning("Messenger loop ran out of time");
+        return onTime;
+    }
+
+    /+
+        Whether or not to continue the loop.
+     +/
+    auto shouldStillContinue()
+    {
+        immutable shouldContinue = ((next == Next.continue_) && !*instance.abort);
+        //version(Debug) if (!shouldContinue) logger.warning("Messenger loop shouldn't continue");
+        return shouldContinue;
+    }
+
+    static immutable bool[2] trueThenFalse = [ true, false ];
+
+    /+
+        Messages. Process all priority ones over all plugins before processing
+        normal ones.
+     +/
+    foreach (immutable priority; trueThenFalse)
+    {
+        foreach (plugin; instance.plugins)
+        {
+            auto box = priority ?
+                &plugin.state.priorityMessages :
+                &plugin.state.messages;
+
+            messageLoop:
+            for (size_t i; i<box.data.length; ++i)
+            {
+                if (box.data[i].exhausted) continue messageLoop;
+
+                onThreadMessage(box.data[i]);
+                box.data[i].exhausted = true;
+
+                if (!shouldStillContinue || !isStillOnTime)
+                {
+                    // Ran out of time or something triggered an abort
+                    return next;
+                }
+            }
+
+            box.clear();
+        }
+    }
+
+    if (!shouldStillContinue || !isStillOnTime)
+    {
+        return next;
+    }
+
+    /+
+        Outgoing messages.
+     +/
+    outgoingMessageTop:
+    foreach (plugin; instance.plugins)
+    {
+        if (!plugin.state.outgoingMessages.data.length || !plugin.isEnabled) continue outgoingMessageTop;
+
+        // No need to iterate with a for loop since the length shouldn't change in the middle of it
+        outgoingMessageInner:
+        foreach (immutable i, ref message; plugin.state.outgoingMessages.data)
+        {
+            if (message.exhausted) continue outgoingMessageInner;
+
+            onEventMessage(message);
+            message.exhausted = true;
+
+            if (!shouldStillContinue || !isStillOnTime)
+            {
+                // Ran out of time or something triggered an abort
+                return next;
+            }
+        }
+
+        // if we're here, we've exhausted all outgoing messages for this plugin
+        plugin.state.outgoingMessages.clear();
+    }
+
+    /+
+        If a plugin wants to be able to send concurrency messages to the
+        main loop, to output messages to the screen and/or send messages to
+        the server, declare version `WantConcurrencyMessageLoop` to enable
+        this block.
+     +/
+    version(WantConcurrencyMessageLoop)
+    {
+        if (!shouldStillContinue || !isStillOnTime)
+        {
+            return next;
+        }
+
+        /++
+            On compilers 2.092 or later, this prevents a closure from being
+            allocated each time this function is called. On 2.091 and earlier it
+            doesn't, which is unfortunate.
+         +/
+        scope onThreadMessageDg = &onThreadMessage;
+        scope onEventMessageDg = &onEventMessage;
+
+        /+
+            Concurrency messages, dead last.
+         +/
+        readloop:
+        while (true)
+        {
+            bool receivedSomething;
+
+            try
+            {
+                import std.concurrency : receiveTimeout;
+                import core.time : Duration;
+
+                receivedSomething = receiveTimeout(Duration.zero,
+                    onThreadMessageDg,
+                    onEventMessageDg,
+                );
+            }
+            catch (Exception e)
+            {
+                logger.error("processMessages caught exception: <l>", e.msg);
+                version(PrintStacktraces) logger.trace(e);
+            }
+
+            if (!receivedSomething || !shouldStillContinue || !isStillOnTime) break readloop;
+        }
+    }
+
+    return next;
 }
 
 
@@ -979,43 +937,29 @@ auto mainLoop(Kameloso instance)
             instance.abort,
             Timeout.connectionLost));
 
-    // Likewise a Generator to process messages
-    auto messenger = new Generator!Next(() => messageFiber(instance));
-
     scope(exit)
     {
         destroy(listener);
-        destroy(messenger);
         listener = null;
-        messenger = null;
     }
 
     /++
-        Invokes the messenger Generator.
+        Processes messages in a try-catch.
      +/
-    auto callMessenger()
+    auto processMessages()
     {
         try
         {
-            messenger.call();
+            return .processMessages(instance);
         }
         catch (Exception e)
         {
             import kameloso.string : doublyBackslashed;
 
-            enum pattern = "Unhandled messenger exception: <t>%s</> (at <l>%s</>:<l>%d</>)";
+            enum pattern = "Unhandled exception processing messages: " ~
+                "<t>%s</> (at <l>%s</>:<l>%d</>)";
             logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
             version(PrintStacktraces) logger.trace(e);
-            return Next.returnFailure;
-        }
-
-        if (messenger.state == Fiber.State.HOLD)
-        {
-            return messenger.front;
-        }
-        else
-        {
-            logger.error("Internal error, thread messenger fiber ended unexpectedly.");
             return Next.returnFailure;
         }
     }
@@ -1047,7 +991,7 @@ auto mainLoop(Kameloso instance)
     }
 
     /// Variable denoting what we should do next loop.
-    auto next = callMessenger();  // Immediately check for messages, in case starting plugins left some
+    auto next = processMessages();  // Immediately check for messages, in case starting plugins left some
     if (next != Next.continue_) return next;
     else if (*instance.abort) return Next.returnFailure;
 
@@ -1157,7 +1101,7 @@ auto mainLoop(Kameloso instance)
 
         if (shouldCheckMessages)
         {
-            next = callMessenger();
+            next = processMessages();
             if (next != Next.continue_) return next;
             else if (*instance.abort) return Next.returnFailure;
 
@@ -1242,7 +1186,7 @@ auto mainLoop(Kameloso instance)
         }
 
         // Check messages to see if we should exit
-        next = callMessenger();
+        next = processMessages();
         if (*instance.abort) return Next.returnFailure;
         //else if (next != Next.continue_) return next;  // process buffers before passing on Next.retry
 
