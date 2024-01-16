@@ -216,21 +216,6 @@ struct ThreadMessage
         ping,
 
         /++
-            Request to send an outgoing normal line.
-         +/
-        sendline,
-
-        /++
-            Request to send a quiet normal line.
-         +/
-        quietline,
-
-        /++
-            Request to send a line immediately, bypassing queues.
-         +/
-        immediateline,
-
-        /++
             Request to quit the program.
          +/
         quit,
