@@ -4143,97 +4143,77 @@ auto checkInitialisationMessages(
     Kameloso instance,
     out ShellReturnValue retval)
 {
-    while (true)
+    import kameloso.thread : ThreadMessage;
+
+    bool success = true;
+
+    void onThreadMessage(ThreadMessage message)
     {
-        import kameloso.thread : ThreadMessage;
-        import core.time : Duration;
-
-        bool halt;
-
-        void onThreadMessage(ThreadMessage message) scope
+        with (ThreadMessage.MessageType)
+        switch (message.type)
         {
-            with (ThreadMessage.MessageType)
-            switch (message.type)
+        case popCustomSetting:
+            size_t[] toRemove;
+
+            foreach (immutable i, immutable line; instance.customSettings)
             {
-            case popCustomSetting:
-                size_t[] toRemove;
+                import lu.string : advancePast;
 
-                foreach (immutable i, immutable line; instance.customSettings)
-                {
-                    import lu.string : advancePast;
-
-                    string slice = line;  // mutable
-                    immutable setting = slice.advancePast('=', Yes.inherit);
-                    if (setting == message.content) toRemove ~= i;
-                }
-
-                foreach_reverse (immutable i; toRemove)
-                {
-                    import std.algorithm.mutation : SwapStrategy, remove;
-                    instance.customSettings = instance.customSettings
-                        .remove!(SwapStrategy.unstable)(i);
-                }
-
-                toRemove = null;
-                break;
-
-            case save:
-                import kameloso.config : writeConfigurationFile;
-                writeConfigurationFile(instance, instance.settings.configFile);
-                break;
-
-            default:
-                import lu.conv : Enum;
-                import std.stdio : stdout;
-
-                enum pattern = "checkInitialisationMessages.onThreadMessage " ~
-                    "received unexpected message type: <t>%s";
-                logger.errorf(
-                    pattern,
-                    Enum!(ThreadMessage.MessageType).toString(message.type));
-                halt = true;
-                break;
-            }
-        }
-
-        foreach (plugin; instance.plugins)
-        {
-            if (!plugin.state.priorityMessages.data.length) continue;
-
-            foreach (immutable i, message; plugin.state.priorityMessages.data)
-            {
-                //if (message.exhausted) continue;
-                onThreadMessage(message);
+                string slice = line;  // mutable
+                immutable setting = slice.advancePast('=', Yes.inherit);
+                if (setting == message.content) toRemove ~= i;
             }
 
-            plugin.state.priorityMessages.clear();
-        }
-
-        foreach (plugin; instance.plugins)
-        {
-            if (!plugin.state.messages.data.length) continue;
-
-            foreach (immutable i, message; plugin.state.messages.data)
+            foreach_reverse (immutable i; toRemove)
             {
-                //if (message.exhausted) continue;
-                onThreadMessage(message);
+                import std.algorithm.mutation : SwapStrategy, remove;
+                instance.customSettings = instance.customSettings
+                    .remove!(SwapStrategy.unstable)(i);
             }
 
-            plugin.state.messages.clear();
-        }
+            toRemove = null;
+            break;
 
-        if (halt)
-        {
-            retval = ShellReturnValue.pluginInitialisationFailure;
-            return false;
-        }
-        else
-        {
-            return true;
+        case save:
+            import kameloso.config : writeConfigurationFile;
+            writeConfigurationFile(instance, instance.settings.configFile);
+            break;
+
+        default:
+            import lu.conv : Enum;
+            import std.stdio : stdout;
+
+            enum pattern = "checkInitialisationMessages.onThreadMessage " ~
+                "received unexpected message type: <t>%s";
+            logger.errorf(
+                pattern,
+                Enum!(ThreadMessage.MessageType).toString(message.type));
+            success = false;
+            break;
         }
     }
 
-    assert(0, "Unreachable");
+    static immutable bool[2] trueThenFalse = [ true, false ];
+
+    foreach (immutable priority; trueThenFalse)
+    {
+        foreach (plugin; instance.plugins)
+        {
+            auto box = priority ?
+                &plugin.state.priorityMessages :
+                &plugin.state.messages;
+
+            for (size_t i; i<box.data.length; ++i)
+            {
+                onThreadMessage(box.data[i]);
+            }
+
+            box.clear();
+        }
+    }
+
+    if (!success) retval = ShellReturnValue.pluginInitialisationFailure;
+    return success;
 }
 
 
