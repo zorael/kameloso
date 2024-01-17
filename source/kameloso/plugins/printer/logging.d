@@ -440,11 +440,11 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         {
             version(Posix)
             {
-                import kameloso.common : errnoStrings;
+                import kameloso.tables : errnoMap;
                 import core.stdc.errno : errno;
 
                 enum pattern = "ErrnoException (<l>%s</>) caught when writing to log (<l>%s</>): <t>%s%s";
-                logger.warningf(pattern, errnoStrings[errno], key, e.msg, plugin.transient.bell);
+                logger.warningf(pattern, errnoMap[errno], key, e.msg, plugin.transient.bell);
             }
             else version(Windows)
             {
@@ -762,11 +762,11 @@ void flushLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     {
         version(Posix)
         {
-            import kameloso.common : errnoStrings;
+            import kameloso.tables : errnoMap;
             enum pattern = "ErrnoException <l>%s</> caught when flushing log to <l>%s</>: <t>%s%s";
             logger.warningf(
                 pattern,
-                errnoStrings[e.errno],
+                errnoMap[e.errno],
                 buffer.file.doublyBackslashed,
                 e.msg,
                 plugin.transient.bell);

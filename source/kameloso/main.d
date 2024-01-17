@@ -1365,9 +1365,9 @@ auto listenAttemptToNext(Kameloso instance, const ListenAttempt attempt)
 
         version(Posix)
         {
-            import kameloso.common : errnoStrings;
+            import kameloso.tables : errnoMap;
             enum pattern = "Connection error! (<l>%s</>) <t>(%s)";
-            logger.warningf(pattern, attempt.error, errnoStrings[attempt.errno]);
+            logger.warningf(pattern, attempt.error, errnoMap[attempt.errno]);
         }
         else version(Windows)
         {
@@ -1400,9 +1400,9 @@ auto listenAttemptToNext(Kameloso instance, const ListenAttempt attempt)
         {
             version(Posix)
             {
-                import kameloso.common : errnoStrings;
+                import kameloso.tables : errnoMap;
                 enum pattern = "Connection error: invalid server response! (<l>%s</>) <t>(%s)";
-                logger.errorf(pattern, attempt.error, errnoStrings[attempt.errno]);
+                logger.errorf(pattern, attempt.error, errnoMap[attempt.errno]);
             }
             else version(Windows)
             {
@@ -2813,9 +2813,9 @@ auto tryConnect(Kameloso instance)
             {
                 version(Posix)
                 {
-                    import kameloso.common : errnoStrings;
+                    import kameloso.tables : errnoMap;
                     enum pattern = "Connection failed with <l>%s</>: <t>%s";
-                    logger.warningf(pattern, errnoStrings[attempt.errno], errorString);
+                    logger.warningf(pattern, errnoMap[attempt.errno], errorString);
                 }
                 else version(Windows)
                 {
@@ -2845,9 +2845,9 @@ auto tryConnect(Kameloso instance)
         case ipv6Failure:
             version(Posix)
             {
-                import kameloso.common : errnoStrings;
+                import kameloso.tables : errnoMap;
                 enum pattern = "IPv6 connection failed with <l>%s</>: <t>%s";
-                logger.warningf(pattern, errnoStrings[attempt.errno], errorString);
+                logger.warningf(pattern, errnoMap[attempt.errno], errorString);
             }
             else version(Windows)
             {
@@ -2921,9 +2921,9 @@ auto tryConnect(Kameloso instance)
         case error:
             version(Posix)
             {
-                import kameloso.common : errnoStrings;
+                import kameloso.tables : errnoMap;
                 enum pattern = "Connection failed with <l>%s</>: <t>%s";
-                logger.warningf(pattern, errnoStrings[attempt.errno], errorString);
+                logger.warningf(pattern, errnoMap[attempt.errno], errorString);
             }
             else version(Windows)
             {
