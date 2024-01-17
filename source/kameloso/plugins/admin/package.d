@@ -1674,14 +1674,17 @@ void onBusMessage(
         {
             import core.memory : GC;
 
+            version(WantAdminStatePrinter)
+            {
+                case "state":
+                    import kameloso.printing : printObject;
+                    // Adds 350 mb to compilation memory usage
+                    if (plugin.state.settings.headless) return;
+                    return printObject(plugin.state);
+            }
+
             case "status":
                 return onCommandStatusImpl(plugin);
-
-            case "state":
-                import kameloso.printing : printObject;
-                // Adds 350 mb to compilation memory usage
-                if (plugin.state.settings.headless) return;
-                return printObject(plugin.state);
 
             case "gc.collect":
                 import core.time : MonoTime;
