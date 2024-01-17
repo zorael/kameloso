@@ -233,6 +233,7 @@ auto processMessages(Kameloso instance)
     import kameloso.common : OutgoingLine;
     import kameloso.constants : Timeout;
     import kameloso.messaging : Message;
+    import kameloso.tables : trueThenFalse;
     import kameloso.thread : ThreadMessage;
     import lu.common : Next;
     import core.time : MonoTime, msecs;
@@ -781,17 +782,15 @@ auto processMessages(Kameloso instance)
         return shouldContinue;
     }
 
-    static immutable bool[2] trueThenFalse = [ true, false ];
-
     /+
         Messages. Process all priority ones over all plugins before processing
         normal ones.
      +/
-    foreach (immutable priority; trueThenFalse)
+    foreach (immutable isPriority; trueThenFalse[])
     {
         foreach (plugin; instance.plugins)
         {
-            auto box = priority ?
+            auto box = isPriority ?
                 &plugin.state.priorityMessages :
                 &plugin.state.messages;
 
@@ -805,9 +804,14 @@ auto processMessages(Kameloso instance)
                 onThreadMessage(box.data[i]);
                 box.data[i].exhausted = true;
 
-                if (!shouldStillContinue || !isStillOnTime)
+                if (!shouldStillContinue)
                 {
-                    // Ran out of time or something triggered an abort
+                    // Something triggered an abort
+                    return next;
+                }
+                else if (!isPriority && !isStillOnTime)
+                {
+                    // Ran out of time processing a non-priority message
                     return next;
                 }
             }
@@ -4145,6 +4149,7 @@ auto checkInitialisationMessages(
     Kameloso instance,
     out ShellReturnValue retval)
 {
+    import kameloso.tables : trueThenFalse;
     import kameloso.thread : ThreadMessage;
 
     bool success = true;
@@ -4195,13 +4200,11 @@ auto checkInitialisationMessages(
         }
     }
 
-    static immutable bool[2] trueThenFalse = [ true, false ];
-
-    foreach (immutable priority; trueThenFalse)
+    foreach (immutable isPriority; trueThenFalse)
     {
         foreach (plugin; instance.plugins)
         {
-            auto box = priority ?
+            auto box = isPriority ?
                 &plugin.state.priorityMessages :
                 &plugin.state.messages;
 

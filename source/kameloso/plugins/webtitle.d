@@ -490,9 +490,9 @@ void persistentQuerier(
 
         if (!result.title.length) // && !result.exceptionText.length)
         {
-            static immutable bool[2] trueThenFalse = [ true, false ];
+            import kameloso.tables : trueThenFalse;
 
-            foreach (immutable firstTime; trueThenFalse[])
+            foreach (immutable isFirstTime; trueThenFalse[])
             {
                 result = sendHTTPRequestImpl(url, caBundleFile);
 
@@ -512,7 +512,7 @@ void persistentQuerier(
                     // Title found
                     break;  // ditty
                 }
-                else if (firstTime)
+                else if (isFirstTime)
                 {
                     // Still the first iteration, try rewriting the URL
                     if (url[$-1] == '/')
