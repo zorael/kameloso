@@ -175,9 +175,10 @@ void onMessageImpl(WebtitlePlugin plugin, const ref IRCEvent event)
     import lu.string : strippedLeft;
     import std.algorithm.searching : startsWith;
 
+    enum minimumPossibleLinkLength = "http://a.se".length;
     immutable content = event.content.strippedLeft;  // mutable
 
-    if (!content.length ||
+    if ((content.length < minimumPossibleLinkLength) ||  // duplicates check in findURLs, but shrug
         (plugin.state.settings.prefix.length && content.startsWith(plugin.state.settings.prefix)))
     {
         return;
