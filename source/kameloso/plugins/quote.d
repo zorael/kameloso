@@ -957,7 +957,7 @@ auto getRandomQuote(
             __LINE__);
     }
 
-    index = uniform(0, quotes.length);
+    index = uniform(0, cast(uint)quotes.length);
     return quotes[index];
 }
 

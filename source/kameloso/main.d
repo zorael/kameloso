@@ -468,7 +468,6 @@ auto processMessages(Kameloso instance)
     {
         import lu.string : splitLineAtPosition;
         import std.conv : text;
-        import std.format : format;
 
         enum maxIRCLineLength = 512-2;  // sans CRLF
 
@@ -496,8 +495,9 @@ auto processMessages(Kameloso instance)
         switch (m.event.type)
         {
         case CHAN:
-            enum pattern = "PRIVMSG %s :";
-            prelude = pattern.format(m.event.channel);
+            /*enum pattern = "PRIVMSG %s :";
+            prelude = pattern.format(m.event.channel);*/
+            prelude = text("PRIVMSG ", m.event.channel, " :");
             lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
             break;
 
@@ -515,8 +515,9 @@ auto processMessages(Kameloso instance)
                 }
             }
 
-            enum pattern = "PRIVMSG %s :";
-            if (!prelude.length) prelude = pattern.format(m.event.target.nickname);
+            /*enum pattern = "PRIVMSG %s :";
+            prelude = pattern.format(m.event.target.nickname);*/
+            prelude = text("PRIVMSG ", m.event.target.nickname, " :");
             lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
             break;
 
@@ -529,8 +530,9 @@ auto processMessages(Kameloso instance)
             {
                 if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
                 {
-                    enum pattern = "PRIVMSG %s :/me ";
-                    prelude = pattern.format(emoteTarget);
+                    /*enum pattern = "PRIVMSG %s :/me ";
+                    prelude = pattern.format(emoteTarget);*/
+                    prelude = text("PRIVMSG ", emoteTarget, " :/me ");
                     lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
                 }
             }
@@ -538,26 +540,30 @@ auto processMessages(Kameloso instance)
             if (!prelude.length)
             {
                 import dialect.common : IRCControlCharacter;
-                enum pattern = "PRIVMSG %s :%cACTION %s%2$c";
-                line = pattern.format(emoteTarget, cast(char)IRCControlCharacter.ctcp, m.event.content);
+                /*enum pattern = "PRIVMSG %s :%cACTION %s%2$c";
+                line = pattern.format(emoteTarget, cast(char)IRCControlCharacter.ctcp, m.event.content);*/
+                immutable c = cast(char)IRCControlCharacter.ctcp;
+                line = text( "PRIVMSG ", emoteTarget, " :", c, "ACTION ", m.event.content, c);
             }
             break;
 
         case MODE:
             import lu.string : strippedRight;
-
-            enum pattern = "MODE %s %s %s";
-            line = pattern.format(m.event.channel, m.event.aux[0], m.event.content.strippedRight);
+            /*enum pattern = "MODE %s %s %s";
+            line = pattern.format(m.event.channel, m.event.aux[0], m.event.content.strippedRight);*/
+            line = text("MODE ", m.event.channel, ' ', m.event.aux[0], ' ', m.event.content.strippedRight);
             break;
 
         case TOPIC:
-            enum pattern = "TOPIC %s :%s";
-            line = pattern.format(m.event.channel, m.event.content);
+            /*enum pattern = "TOPIC %s :%s";
+            line = pattern.format(m.event.channel, m.event.content);*/
+            line = text("TOPIC ", m.event.channel, " :", m.event.content);
             break;
 
         case INVITE:
-            enum pattern = "INVITE %s %s";
-            line = pattern.format(m.event.channel, m.event.target.nickname);
+            /*enum pattern = "INVITE %s %s";
+            line = pattern.format(m.event.channel, m.event.target.nickname);*/
+            line = text("INVITE ", m.event.channel, ' ', m.event.target.nickname);
             break;
 
         case JOIN:
@@ -577,8 +583,9 @@ auto processMessages(Kameloso instance)
             immutable reason = m.event.content.length ?
                 " :" ~ m.event.content :
                 string.init;
-            enum pattern = "KICK %s %s%s";
-            line = pattern.format(m.event.channel, m.event.target.nickname, reason);
+            /*enum pattern = "KICK %s %s%s";
+            line = pattern.format(m.event.channel, m.event.target.nickname, reason);*/
+            line = text("KICK ", m.event.channel, ' ', m.event.target.nickname, reason);
             break;
 
         case PART:
