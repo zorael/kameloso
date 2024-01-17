@@ -933,10 +933,10 @@ void teardown(WebtitlePlugin plugin)
 {
     foreach (workerTid; plugin.transient.workerTids)
     {
-        import std.concurrency : Tid, send;
+        import std.concurrency : Tid, prioritySend;
 
         if (workerTid == Tid.init) continue;
-        workerTid.send(true);
+        workerTid.prioritySend(true);
     }
 }
 

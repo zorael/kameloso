@@ -658,11 +658,11 @@ void setup(BashPlugin plugin)
  +/
 void teardown(BashPlugin plugin)
 {
-    import std.concurrency : Tid, send;
+    import std.concurrency : Tid, prioritySend;
 
     if (plugin.transient.workerTid != Tid.init)
     {
-       plugin.transient.workerTid.send(true);
+       plugin.transient.workerTid.prioritySend(true);
     }
 }
 
