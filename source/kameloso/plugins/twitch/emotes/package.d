@@ -24,6 +24,7 @@ import kameloso.plugins.twitch : TwitchPlugin;
 import kameloso.common : logger;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
+import core.time : seconds;
 
 public:
 
@@ -62,6 +63,8 @@ in (((channelName.length && id) ||
         string name;
         uint failures;
     }
+
+    scope(exit) if (channelName.length) ++plugin.transient.numCustomEmoteImports;
 
     enum failureReportPeriodicity = 5;
     enum giveUpThreshold = 15;  // multiple of failureReportPeriodicity
@@ -426,3 +429,12 @@ unittest
         assert((emotes == expectedEmotes), emotes);
     }
 }
+
+
+// baseDelayBetweenImports
+/++
+    The base delay between importing custom emotes, in seconds.
+
+    This is used to stagger the imports so that they don't all happen at once.
+ +/
+static immutable baseDelayBetweenImports = 4.seconds;

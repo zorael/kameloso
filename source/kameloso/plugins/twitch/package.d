@@ -1085,10 +1085,10 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (plugin.twitchSettings.customEmotes)
     {
+        import kameloso.plugins.twitch.emotes : baseDelayBetweenImports;
         import kameloso.plugins.common.delayawait : delay;
         import kameloso.constants : BufferSize;
         import std.algorithm.searching : countUntil;
-        import core.time : seconds;
 
         void importEmotesDg()
         {
@@ -1099,10 +1099,9 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         /+
             Stagger imports a bit.
          +/
-        static immutable baseDelay = 10.seconds;
         immutable homeIndex = plugin.state.bot.homeChannels.countUntil(event.channel);
         alias multiplier = homeIndex;
-        immutable delayUntilImport = baseDelay * multiplier;
+        immutable delayUntilImport = baseDelayBetweenImports * multiplier;
 
         Fiber importEmotesFiber = new Fiber(&importEmotesDg, BufferSize.fiberStack);
         delay(plugin, importEmotesFiber, delayUntilImport);
@@ -1153,11 +1152,10 @@ version(TwitchCustomEmotesEverywhere)
 )
 void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import kameloso.plugins.twitch.emotes : baseDelayBetweenImports, importCustomEmotes;
     import kameloso.plugins.common.delayawait : delay;
-    import kameloso.plugins.twitch.emotes : importCustomEmotes;
     import std.algorithm.searching : canFind, countUntil;
     import std.conv : to;
-    import core.time : seconds;
 
     if (!plugin.twitchSettings.customEmotes) return;
 
@@ -1173,12 +1171,25 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     /+
         Stagger imports a bit.
      +/
-    static immutable baseDelay = 10.seconds;
     immutable guestIndex = plugin.state.bot.guestChannels.countUntil(event.channel);
-    immutable multiplier = (guestIndex == -1) ?
+
+    if (guestIndex == -1)
+    {
+        // Channel joined via piped command or admin join command
+        immutable numHomesAndGuest = plugin.state.bot.homeChannels.length + plugin.state.bot.guestChannels.length;
+
+        if (plugin.transient.numCustomEmoteImports >= numHomesAndGuest)
+        {
+            // All home and guest channels have already been imported; import this one immediately
+            return importCustomEmotes(plugin, event.channel, event.aux[0].to!uint);
+        }
+    }
+
+    immutable baseMultiplier = (guestIndex == -1) ?
         (event.channel.hashOf % 5) + 5 :  // randomise a delay for non-guest channels
         guestIndex;
-    immutable delayUntilImport = baseDelay * multiplier;
+    immutable multiplier = plugin.state.bot.homeChannels.length + baseMultiplier;
+    immutable delayUntilImport = baseDelayBetweenImports * multiplier;
 
     delay(plugin, delayUntilImport, Yes.yield);
     importCustomEmotes(plugin, event.channel, event.aux[0].to!uint);
@@ -3856,13 +3867,18 @@ void reload(TwitchPlugin plugin)
     {
         import kameloso.plugins.twitch.emotes : importCustomEmotes;
 
+        plugin.transient.numCustomEmoteImports = 0;
         plugin.customGlobalEmotes = null;
         importCustomEmotes(plugin);
 
         foreach (immutable channelName, const room; plugin.rooms)
         {
+            import kameloso.plugins.common.delayawait : delay;
+            import kameloso.plugins.twitch.emotes : baseDelayBetweenImports;
+
             plugin.customEmotesByChannel.remove(channelName);
             importCustomEmotes(plugin, channelName, room.id);
+            delay(plugin, baseDelayBetweenImports, Yes.yield);
         }
     }
 }
@@ -4299,6 +4315,12 @@ package:
             Whether or not a delegate sending whispers is currently running.
          +/
         bool whispererRunning;
+
+        /++
+            For home many channels custom emotes have been imported, successfully
+            or unsuccessfully.
+         +/
+        uint numCustomEmoteImports;
     }
 
     /++
