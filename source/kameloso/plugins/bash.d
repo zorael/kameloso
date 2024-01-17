@@ -195,7 +195,7 @@ void lookupQuote(
         if ((result.code < 200) ||
             (result.code > 299))
         {
-            import kameloso.common : getHTTPResponseCodeText;
+            import kameloso.tables : getHTTPResponseCodeText;
 
             enum pattern = "HTTP status <l>%03d</> (%s)";
             logger.warningf(
@@ -280,7 +280,8 @@ auto parseResponseIntoBashLookupResult(/*const*/ Response res)
 
     auto reportLayoutErrorAndReturnResults()
     {
-        import kameloso.common : getHTTPResponseCodeText, logger;
+        import kameloso.common : logger;
+        import kameloso.tables : getHTTPResponseCodeText;
 
         enum message = "Bash plugin failed to parse <l>bash.org</> response: " ~
             "page has unexpected layout";

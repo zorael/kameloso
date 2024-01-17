@@ -263,7 +263,7 @@ void lookupURLs(
             if ((result.code < 200) ||
                 (result.code > 299))
             {
-                import kameloso.common : getHTTPResponseCodeText;
+                import kameloso.tables : getHTTPResponseCodeText;
 
                 enum pattern = "HTTP status <l>%03d</> (%s) fetching <l>%s";
                 logger.warningf(
