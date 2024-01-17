@@ -436,7 +436,7 @@ void persistentQuerier(
         setThreadName("webworker");
     }
 
-    void onTitleRequest(string url, int id) scope
+    void onTitleRequest(string url, int id)
     {
         import lu.string : advancePast;
         import std.algorithm.searching : startsWith;
@@ -541,10 +541,14 @@ void persistentQuerier(
 
     bool halt;
 
-    void onQuitMessage(bool) scope
+    void onQuitMessage(bool)
     {
         halt = true;
     }
+
+    // This avoids the GC allocating a closure, which is fine in this case, but do this anyway
+    scope onTitleRequestDg = &onTitleRequest;
+    scope onQuitMessageDg = &onQuitMessage;
 
     while (!halt)
     {
@@ -554,8 +558,8 @@ void persistentQuerier(
             import std.variant : Variant;
 
             receive(
-                &onTitleRequest,
-                &onQuitMessage,
+                onTitleRequestDg,
+                onQuitMessageDg,
                 (Variant v)
                 {
                     import std.stdio : stdout, writeln;

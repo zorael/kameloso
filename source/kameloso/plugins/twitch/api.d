@@ -312,13 +312,13 @@ void persistentQuerier(
         setThreadName("twitchworker");
     }
 
-    void invokeSendHTTPRequestImpl(
-        const int id,
-        const string url,
-        const string authToken,
-        /*const*/ HTTPVerb verb,
+    void onHTTPRequest(
+        int id,
+        string url,
+        string authToken,
+        HTTPVerb verb,
         immutable(ubyte)[] body_,
-        const string contentType) scope
+        string contentType)
     {
         scope(failure) responseBucket.remove(id);
 
@@ -355,29 +355,16 @@ void persistentQuerier(
         }
     }
 
-    void sendWithBody(
-        int id,
-        string url,
-        string authToken,
-        HTTPVerb verb,
-        immutable(ubyte)[] body_,
-        string contentType) scope
-    {
-        invokeSendHTTPRequestImpl(
-            id,
-            url,
-            authToken,
-            verb,
-            body_,
-            contentType);
-    }
-
     bool halt;
 
-    void onQuitMessage(bool) scope
+    void onQuitMessage(bool)
     {
         halt = true;
     }
+
+    // This avoids the GC allocating a closure, which is fine in this case, but do this anyway
+    scope onHTTPRequestDg = &onHTTPRequest;
+    scope onQuitMessageDg = &onQuitMessage;
 
     while (!halt)
     {
@@ -387,9 +374,9 @@ void persistentQuerier(
         try
         {
             receive(
-                &sendWithBody,
-                &onQuitMessage,
-                (Variant v) scope
+                onHTTPRequestDg,
+                onQuitMessageDg,
+                (Variant v)
                 {
                     import std.stdio : stdout, writeln;
                     writeln("Twitch worker received unknown Variant: ", v);

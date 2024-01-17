@@ -607,10 +607,14 @@ void persistentQuerier(
 
     bool halt;
 
-    void onQuitMessage(bool) scope
+    void onQuitMessage(bool)
     {
         halt = true;
     }
+
+    // This avoids the GC allocating a closure, which is fine in this case, but do this anyway
+    scope onBashLookupRequestDg = &onBashLookupRequest;
+    scope onQuitMessageDg = &onQuitMessage;
 
     while (!halt)
     {
@@ -620,8 +624,8 @@ void persistentQuerier(
             import std.variant : Variant;
 
             receive(
-                &onBashLookupRequest,
-                &onQuitMessage,
+                onBashLookupRequestDg,
+                onQuitMessageDg,
                 (Variant v)
                 {
                     import std.stdio : stdout, writeln;
