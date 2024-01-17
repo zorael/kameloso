@@ -341,7 +341,7 @@ private void getSpotifyTokens(
     const string caBundleFile)
 {
     import kameloso.plugins.twitch.api : sendHTTPRequestImpl;
-    import kameloso.common : HTTPVerb;
+    import kameloso.tables : HTTPVerb;
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
@@ -405,7 +405,7 @@ private void refreshSpotifyToken(TwitchPlugin plugin, ref Credentials creds)
 in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
-    import kameloso.common : HTTPVerb;
+    import kameloso.tables : HTTPVerb;
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
@@ -501,7 +501,7 @@ auto addTrackToSpotifyPlaylist(
 in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
-    import kameloso.common : HTTPVerb;
+    import kameloso.tables : HTTPVerb;
     import std.algorithm.searching : endsWith;
     import std.format : format;
     import std.json : JSONType, parseJSON;

@@ -24,7 +24,7 @@ private:
 import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
 
-import kameloso.common : HTTPVerb;
+import kameloso.tables : HTTPVerb;
 import dialect.defs;
 import lu.container : MutexedAA;
 import std.typecons : Flag, No, Yes;
@@ -432,7 +432,7 @@ void persistentQuerier(
         url = The URL to query.
         caller = Name of the calling function.
         authorisationHeader = Authorisation HTTP header to pass.
-        verb = What [kameloso.common.HTTPVerb|HTTPVerb] to use in the request.
+        verb = What [kameloso.tables.HTTPVerb|HTTPVerb] to use in the request.
         body_ = Request body to send in case of verbs like `POST` and `PATCH`.
         contentType = "Content-Type" HTTP header to pass.
         id = Numerical ID to use instead of generating a new one.
@@ -660,7 +660,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         url = URL address to look up.
         authHeader = Authorisation token HTTP header to pass.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
-        verb = What [kameloso.common.HTTPVerb|HTTPVerb] to use in the request.
+        verb = What [kameloso.tables.HTTPVerb|HTTPVerb] to use in the request.
         body_ = Request body to send in case of verbs like `POST` and `PATCH`.
         contentType = "Content-Type" HTTP header to use.
 

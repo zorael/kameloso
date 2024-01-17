@@ -618,49 +618,6 @@ expected:"%s"
 }
 
 
-// HTTPVerb
-/++
-    Enum of HTTP verbs.
- +/
-enum HTTPVerb
-{
-    /++
-        init state.
-     +/
-    unset,
-
-    /++
-        HTTP GET.
-     +/
-    get,
-
-    /++
-        HTTP POST.
-     +/
-    post,
-
-    /++
-        HTTP PUT.
-     +/
-    put,
-
-    /++
-        HTTP PATCH.
-     +/
-    patch,
-
-    /++
-        HTTP DELETE.
-     +/
-    delete_,
-
-    /++
-        Unsupported HTTP verb.
-     +/
-    unsupported,
-}
-
-
 // getHTTPResponseCodeText
 /++
     Returns the text associated with an HTTP response code.
