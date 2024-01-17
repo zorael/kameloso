@@ -1087,7 +1087,8 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         import kameloso.plugins.common.delayawait : delay;
         import kameloso.constants : BufferSize;
-        import core.time : Duration;
+        import std.algorithm.searching : countUntil;
+        import core.time : seconds;
 
         void importEmotesDg()
         {
@@ -1096,11 +1097,15 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
 
         /+
-            Custom emote import may take a long time, so delay it as a fiber to
-            defer invocation and avoid blocking here.
+            Stagger imports a bit.
          +/
+        static immutable baseDelay = 10.seconds;
+        immutable homeIndex = plugin.state.bot.homeChannels.countUntil(event.channel);
+        alias multiplier = homeIndex;
+        immutable delayUntilImport = baseDelay * multiplier;
+
         Fiber importEmotesFiber = new Fiber(&importEmotesDg, BufferSize.fiberStack);
-        delay(plugin, importEmotesFiber, Duration.zero);
+        delay(plugin, importEmotesFiber, delayUntilImport);
     }
 
     auto creds = event.channel in plugin.secretsByChannel;
@@ -1135,23 +1140,30 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
-// onGuestRoomState
+// onNonHomeRoomState
 /++
-    Fetches custom BetterTV, FrankerFaceZ and 7tv emotes for a guest channel iff
+    Fetches custom BetterTV, FrankerFaceZ and 7tv emotes for a any non-home channel iff
     version `TwitchCustomEmotesEverywhere`.
  +/
 version(TwitchCustomEmotesEverywhere)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
-    .channelPolicy(ChannelPolicy.guest)
+    .channelPolicy(ChannelPolicy.any)
     .fiber(true)
 )
-void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import kameloso.plugins.common.delayawait : delay;
     import kameloso.plugins.twitch.emotes : importCustomEmotes;
+    import std.algorithm.searching : canFind, countUntil;
     import std.conv : to;
+    import std.random : uniform;
+    import core.time : seconds;
 
     if (!plugin.twitchSettings.customEmotes) return;
+
+    // Skip home channels, they're handled in onRoomState
+    if (plugin.state.bot.homeChannels.canFind(event.channel)) return;
 
     if (event.channel in plugin.customEmotesByChannel)
     {
@@ -1159,6 +1171,17 @@ void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         return;
     }
 
+    /+
+        Stagger imports a bit.
+     +/
+    static immutable baseDelay = 10.seconds;
+    immutable guestIndex = plugin.state.bot.guestChannels.countUntil(event.channel);
+    immutable multiplier = (guestIndex == -1) ?
+        uniform(5, 10) :  // randomise a delay for non-guest channels
+        guestIndex;
+    immutable delayUntilImport = baseDelay * multiplier;
+
+    delay(plugin, delayUntilImport, Yes.yield);
     importCustomEmotes(plugin, event.channel, event.aux[0].to!uint);
 }
 
