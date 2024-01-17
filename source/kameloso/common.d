@@ -216,15 +216,17 @@ struct OutgoingLine
  +/
 auto findURLs(const string line) @safe pure
 {
-    import lu.string : advancePast, strippedRight;
+    import lu.string : advancePast, stripped, strippedRight;
     import std.string : indexOf;
     import std.typecons : Flag, No, Yes;
 
     enum wordBoundaryTokens = ".,!?:";
+    enum minimumPossibleLinkLength = "http://a.se".length;
+
+    string slice = line.stripped;  // mutable
+    if (slice.length < minimumPossibleLinkLength) return null;
 
     string[] hits;
-    string slice = line;  // mutable
-
     ptrdiff_t httpPos = slice.indexOf("http");
 
     while (httpPos != -1)
@@ -239,7 +241,7 @@ auto findURLs(const string line) @safe pure
 
         slice = slice[httpPos..$];
 
-        if (slice.length < 11)
+        if (slice.length < minimumPossibleLinkLength)
         {
             // Too short, minimum is "http://a.se".length
             break;
@@ -269,7 +271,9 @@ auto findURLs(const string line) @safe pure
 
         // advancePast until the next space if there is one, otherwise just inherit slice
         // Also strip away common punctuation
-        immutable hit = slice.advancePast(' ', Yes.inherit).strippedRight(wordBoundaryTokens);
+        immutable hit = slice
+            .advancePast(' ', Yes.inherit)
+            .strippedRight(wordBoundaryTokens);
         if (hit.indexOf('.') != -1) hits ~= hit;
         httpPos = slice.indexOf("http");
     }
