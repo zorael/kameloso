@@ -638,6 +638,16 @@ in (url.length, "Tried to send an HTTP request without a URL")
         {
             import kameloso.string : doublyBackslashed;
 
+            version(PrintStacktraces)
+            {
+                if (!plugin.state.settings.headless)
+                {
+                    import std.stdio : stdout, writeln;
+                    writeln(response.str);
+                    stdout.flush();
+                }
+            }
+
             throw new TwitchQueryException(
                 e.msg,
                 response.str,
