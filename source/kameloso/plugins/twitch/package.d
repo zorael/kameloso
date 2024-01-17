@@ -1157,7 +1157,6 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import kameloso.plugins.twitch.emotes : importCustomEmotes;
     import std.algorithm.searching : canFind, countUntil;
     import std.conv : to;
-    import std.random : uniform;
     import core.time : seconds;
 
     if (!plugin.twitchSettings.customEmotes) return;
@@ -1177,7 +1176,7 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     static immutable baseDelay = 10.seconds;
     immutable guestIndex = plugin.state.bot.guestChannels.countUntil(event.channel);
     immutable multiplier = (guestIndex == -1) ?
-        uniform(5, 10) :  // randomise a delay for non-guest channels
+        (event.channel.hashOf % 5) + 5 :  // randomise a delay for non-guest channels
         guestIndex;
     immutable delayUntilImport = baseDelay * multiplier;
 
