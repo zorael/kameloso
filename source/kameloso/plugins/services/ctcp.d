@@ -51,7 +51,7 @@ import std.typecons : Flag, No, Yes;
 void onCTCPs(CTCPService service, const ref IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo;
-    import std.format : format;
+    import std.conv : text;
 
     // https://modern.ircdocs.horse/ctcp.html
 
@@ -61,6 +61,7 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
     switch (event.type)
     {
     case CTCP_VERSION:
+        import lu.conv : Enum;
         import std.system : os;
         /*  This metadata query is used to return the name and version of the
             client software in use. There is no specified format for the version
@@ -73,8 +74,15 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
             Response:  VERSION WeeChat 1.5-rc2 (git: v1.5-rc2-1-gc1441b1) (Apr 25 2016)
          */
 
-        enum pattern = "VERSION kameloso %s, built %s, running on %s";
-        line = pattern.format(cast(string)KamelosoInfo.version_, cast(string)KamelosoInfo.built, os);
+        /*enum pattern = "VERSION kameloso %s, built %s, running on %s";
+        line = pattern.format(cast(string)KamelosoInfo.version_, cast(string)KamelosoInfo.built, os);*/
+        line = text(
+            "VERSION kameloso",
+            cast(string)KamelosoInfo.version_,
+            ", built ",
+            cast(string)KamelosoInfo.built,
+            ", running on ",
+            Enum!(typeof(os)).toString(os));
         break;
 
     case CTCP_FINGER:
@@ -157,8 +165,14 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
             Query:     USERINFO
             Response:  USERINFO fred (Fred Foobar)
          */
-        enum pattern = "USERINFO %s (%s)";
-        line = pattern.format(service.state.client.nickname, service.state.client.realName);
+        /*enum pattern = "USERINFO %s (%s)";
+        line = pattern.format(service.state.client.nickname, service.state.client.realName);*/
+        line = text(
+            "USERINFO ",
+            service.state.client.nickname,
+            " (",
+            service.state.client.realName,
+            ')');
         break;
 
     case CTCP_DCC:
@@ -215,10 +229,10 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
         import dialect.common : I = IRCControlCharacter;
 
         enum properties = Message.Property.quiet;
-        enum pattern = "NOTICE %s :%c%s%2$c";
+        //enum pattern = "NOTICE %s :%c%s%2$c";
         immutable target = event.sender.isServer ?
             event.sender.address: event.sender.nickname;
-        immutable message = pattern.format(target, cast(char)I.ctcp, line);
+        immutable message = text("NOTICE ", target, " :", cast(char)I.ctcp, line, cast(char)I.ctcp);
         raw(service.state, message, properties);
     }
 }
