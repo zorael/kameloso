@@ -21,8 +21,6 @@ private:
 
 import kameloso.plugins.twitch : TwitchPlugin;
 
-import kameloso.common : logger;
-import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 import core.time : seconds;
 
@@ -51,6 +49,8 @@ in (((channelName.length && id) ||
     (!channelName.length && !id)),
     "Tried to import custom channel-specific emotes with insufficient arguments")
 {
+    import kameloso.common : logger;
+
     alias GetEmoteFun = void function(
         TwitchPlugin,
         ref bool[dstring],
@@ -219,6 +219,7 @@ in (((channelName.length && id) ||
         if (emoteImports.length)
         {
             import kameloso.plugins.common.delayawait : delay;
+            import std.typecons : Flag, No, Yes;
             import core.time : seconds;
 
             // Still some left; repeat on remaining imports after a delay

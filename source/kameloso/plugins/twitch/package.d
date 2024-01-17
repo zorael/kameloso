@@ -1078,7 +1078,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     plugin.state.messages ~= ThreadMessage.putUser(string.init, boxed(userCopy));
 
     /+
-        Start room monitors for the chanenl. We can assume they have not already
+        Start room monitors for the channel. We can assume they have not already
         been started, as room was either null or room.id was set above.
      +/
     startRoomMonitors(plugin, event.channel);
