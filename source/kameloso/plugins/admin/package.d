@@ -448,7 +448,7 @@ void addChannel(
 in (Fiber.getThis(), "Tried to call `addChannel` from outside a fiber")
 in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
-    import kameloso.plugins.common.delayawait : await, unawait;
+    import kameloso.plugins.common.scheduling : await, unawait;
     import kameloso.thread : CarryingFiber;
     import dialect.common : isValidChannel;
     import lu.string : stripped;
@@ -1298,7 +1298,7 @@ void cycle(
     const string key = string.init)
 in (Fiber.getThis(), "Tried to call `cycle` from outside a fiber")
 {
-    import kameloso.plugins.common.delayawait : await, delay, unawait;
+    import kameloso.plugins.common.scheduling : await, delay, unawait;
     import kameloso.thread : CarryingFiber;
 
     part(plugin.state, channelName, "Cycling");

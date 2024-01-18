@@ -221,7 +221,7 @@ void lookupURLs(
     const /*ref*/ IRCEvent event,
     /*const*/ string[] urls)
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import kameloso.common : logger;
     import kameloso.constants : BufferSize;
     import lu.array: uniqueKey;
@@ -361,7 +361,7 @@ in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber"
 
         if (result == TitleLookupResult.init)
         {
-            import kameloso.plugins.common.delayawait : delay;
+            import kameloso.plugins.common.scheduling : delay;
             import kameloso.constants : Timeout;
             import core.time : msecs;
 
@@ -604,7 +604,7 @@ TitleLookupResult sendHTTPRequest(
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
     import core.time : msecs;

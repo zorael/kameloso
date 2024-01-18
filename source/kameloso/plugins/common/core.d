@@ -41,7 +41,7 @@
     See_Also:
         [kameloso.plugins.common.misc],
         [kameloso.plugins.common.awareness],
-        [kameloso.plugins.common.delayawait],
+        [kameloso.plugins.common.scheduling],
         [kameloso.plugins.common.mixins],
 
     Copyright: [JR](https://github.com/zorael)

@@ -167,7 +167,7 @@ void lookupQuote(
     const string quoteID,
     const /*ref*/ IRCEvent event)
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import kameloso.common : logger;
     import kameloso.constants : BufferSize;
     import kameloso.messaging : privmsg;
@@ -439,7 +439,7 @@ BashLookupResult sendHTTPRequest(
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
     import core.time : msecs;
@@ -534,7 +534,7 @@ in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber"
 
         if (result == BashLookupResult.init)
         {
-            import kameloso.plugins.common.delayawait : delay;
+            import kameloso.plugins.common.scheduling : delay;
             import kameloso.constants : Timeout;
             import core.time : msecs;
 

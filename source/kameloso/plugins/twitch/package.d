@@ -1086,7 +1086,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     if (plugin.twitchSettings.customEmotes)
     {
         import kameloso.plugins.twitch.emotes : baseDelayBetweenImports;
-        import kameloso.plugins.common.delayawait : delay;
+        import kameloso.plugins.common.scheduling : delay;
         import kameloso.constants : BufferSize;
         import std.algorithm.searching : countUntil;
 
@@ -1153,7 +1153,7 @@ version(TwitchCustomEmotesEverywhere)
 void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.plugins.twitch.emotes : baseDelayBetweenImports, importCustomEmotes;
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import std.algorithm.searching : canFind, countUntil;
     import std.conv : to;
 
@@ -2835,7 +2835,7 @@ void onMyInfo(TwitchPlugin plugin)
 void startRoomMonitors(TwitchPlugin plugin, const string channelName)
 in (channelName.length, "Tried to start room monitor with an empty channel name string")
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import kameloso.constants : BufferSize;
     import std.datetime.systime : Clock;
     import core.time : Duration, MonoTime, hours, seconds;
@@ -3105,7 +3105,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
 void startValidator(TwitchPlugin plugin)
 in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import std.conv : to;
     import std.datetime.systime : Clock, SysTime;
     import std.json : JSONValue;
@@ -3304,7 +3304,7 @@ void complainAboutMissingTokens(const Exception base)
 void startSaver(TwitchPlugin plugin)
 in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import core.time : hours;
 
     // How often to save `ecount`s and viewer times, to ward against losing information to crashes.
@@ -3873,8 +3873,8 @@ void reload(TwitchPlugin plugin)
 
         foreach (immutable channelName, const room; plugin.rooms)
         {
-            import kameloso.plugins.common.delayawait : delay;
             import kameloso.plugins.twitch.emotes : baseDelayBetweenImports;
+            import kameloso.plugins.common.scheduling : delay;
 
             plugin.customEmotesByChannel.remove(channelName);
             importCustomEmotes(plugin, channelName, room.id);
@@ -3919,7 +3919,7 @@ void onBusMessage(
 
             void whispererDg()
             {
-                import kameloso.plugins.common.delayawait : delay;
+                import kameloso.plugins.common.scheduling : delay;
 
                 plugin.transient.whispererRunning = true;
                 scope(exit) plugin.transient.whispererRunning = false;
@@ -4452,7 +4452,7 @@ package:
             version(none)
             if (responseCode == 429)
             {
-                import kameloso.plugins.common.delayawait : delay;
+                import kameloso.plugins.common.scheduling : delay;
                 import core.time : seconds;
 
                 // 429 Too Many Requests

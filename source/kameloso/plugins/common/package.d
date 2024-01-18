@@ -4,7 +4,7 @@
     See_Also:
         [kameloso.plugins.common.core],
         [kameloso.plugins.common.misc],
-        [kameloso.plugins.common.delayawait],
+        [kameloso.plugins.common.scheduling],
         [kameloso.plugins.common.mixins],
         [kameloso.plugins.common.awareness]
 
@@ -20,6 +20,6 @@ public:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.misc;
-import kameloso.plugins.common.delayawait;
+import kameloso.plugins.common.scheduling;
 import kameloso.plugins.common.mixins;
 import kameloso.plugins.common.awareness;

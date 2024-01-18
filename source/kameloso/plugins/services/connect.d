@@ -386,7 +386,7 @@ void joinChannels(ConnectService service)
 
     version(TwitchSupport)
     {
-        import kameloso.plugins.common.delayawait : delay;
+        import kameloso.plugins.common.scheduling : delay;
 
         /+
             If, on Twitch, an invalid channel was supplied as a home or a guest
@@ -497,6 +497,7 @@ void onPing(ConnectService service, const ref IRCEvent event)
  +/
 void tryAuth(ConnectService service)
 {
+    import kameloso.plugins.common.scheduling : delay;
     import lu.string : decode64;
     import std.algorithm.searching : startsWith;
 
@@ -635,8 +636,6 @@ void tryAuth(ConnectService service)
             goto case bahamut;
         }
     }
-
-    import kameloso.plugins.common.delayawait : delay;
 
     void delayedJoinDg()
     {
@@ -1329,7 +1328,7 @@ void onWelcome(ConnectService service)
 
     if (service.state.server.address.endsWith(".twitch.tv"))
     {
-        import kameloso.plugins.common.delayawait : await, unawait;
+        import kameloso.plugins.common.scheduling : await, unawait;
 
         if (service.state.settings.preferHostmasks &&
             !service.state.settings.force)
@@ -1392,7 +1391,7 @@ void onWelcome(ConnectService service)
         if (service.connectSettings.regainNickname && !service.state.bot.hasGuestNickname &&
             (service.state.client.nickname != service.state.client.origNickname))
         {
-            import kameloso.plugins.common.delayawait : delay;
+            import kameloso.plugins.common.scheduling : delay;
 
             delay(service, ConnectService.Timings.nickRegainPeriodicity, Yes.yield);
 
@@ -1614,7 +1613,7 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
 void startPingMonitor(ConnectService service)
 in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
 {
-    import kameloso.plugins.common.delayawait : await, delay, unawait, undelay;
+    import kameloso.plugins.common.scheduling : await, delay, unawait, undelay;
     import kameloso.thread : CarryingFiber;
     import core.time : seconds;
 
@@ -1886,7 +1885,7 @@ void register(ConnectService service)
     }
     else
     {
-        import kameloso.plugins.common.delayawait : delay;
+        import kameloso.plugins.common.scheduling : delay;
 
         // Unsure, so monitor CAP progress
         void capMonitorDg()

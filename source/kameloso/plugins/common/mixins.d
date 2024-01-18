@@ -5,7 +5,7 @@
 
     See_Also:
         [kameloso.plugins.common.core],
-        [kameloso.plugins.common.delayawait]
+        [kameloso.plugins.common.scheduling]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -140,7 +140,7 @@ mixin template WHOISFiberDelegate(
      +/
     void whoisFiberDelegate()
     {
-        import kameloso.plugins.common.delayawait : unawait;
+        import kameloso.plugins.common.scheduling : unawait;
         import kameloso.thread : CarryingFiber;
         import dialect.common : opEqualsCaseInsensitive;
         import dialect.defs : IRCEvent, IRCUser;
@@ -323,7 +323,7 @@ mixin template WHOISFiberDelegate(
         const Flag!"issueWhois" issueWhois = Yes.issueWhois,
         const Flag!"background" background = No.background)
     {
-        import kameloso.plugins.common.delayawait : await;
+        import kameloso.plugins.common.scheduling : await;
         import kameloso.constants : BufferSize;
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;

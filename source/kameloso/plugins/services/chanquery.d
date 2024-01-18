@@ -27,7 +27,6 @@ private:
 
 import kameloso.plugins;
 import kameloso.plugins.common.core;
-import kameloso.plugins.common.delayawait;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -78,6 +77,7 @@ enum ChannelState : ubyte
 )
 void startChannelQueries(ChanQueryService service)
 {
+    import kameloso.plugins.common.scheduling : await, delay, unawait, undelay;
     import kameloso.thread : CarryingFiber, ThreadMessage, boxed;
     import kameloso.messaging : Message, mode, raw;
     import std.datetime.systime : Clock;
@@ -451,6 +451,7 @@ void onEndOfNames(ChanQueryService service)
 )
 void onMyInfo(ChanQueryService service)
 {
+    import kameloso.plugins.common.scheduling : delay;
     delay(service, service.timeBeforeInitialQueries, Yes.yield);
     startChannelQueries(service);
 }

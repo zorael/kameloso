@@ -154,7 +154,7 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 
     void danceDg()
     {
-        import kameloso.plugins.common.delayawait : delay;
+        import kameloso.plugins.common.scheduling : delay;
         import kameloso.messaging : emote;
 
         emote(plugin.state, event.channel, "dances :D-<");

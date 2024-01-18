@@ -89,7 +89,7 @@ struct QueryResponse
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         dg = Delegate to call.
         async = Whether or not the delegate should be called asynchronously,
-            scheduling attempts using [kameloso.plugins.common.delayawait.delay|delay].
+            scheduling attempts using [kameloso.plugins.common.scheduling.delay|delay].
         endlessly = Whether or not to endlessly retry.
         retryDelay = How long to wait between retries.
 
@@ -116,7 +116,7 @@ in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outsi
             {
                 if (async)
                 {
-                    import kameloso.plugins.common.delayawait : delay;
+                    import kameloso.plugins.common.scheduling : delay;
                     delay(plugin, retryDelay, Yes.yield);
                 }
                 else
@@ -449,7 +449,7 @@ QueryResponse sendHTTPRequest(
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import kameloso.thread : ThreadMessage;
     import std.algorithm.searching : endsWith;
     import std.concurrency : send;
@@ -1335,8 +1335,8 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
 
         if (response == QueryResponse.init)
         {
+            import kameloso.plugins.common.scheduling : delay;
             import kameloso.constants : Timeout;
-            import kameloso.plugins.common.delayawait : delay;
             import core.time : msecs;
 
             immutable nowInUnix = Clock.currTime.toUnixTime();

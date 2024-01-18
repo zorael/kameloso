@@ -15,7 +15,7 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-module kameloso.plugins.common.delayawait;
+module kameloso.plugins.common.scheduling;
 
 private:
 

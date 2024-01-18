@@ -267,7 +267,7 @@ public:
     is also an array of [core.thread.fiber.Fiber|Fiber]s, but not one keyed
     on or indexed by event types. Instead they are tuples of a
     [core.thread.fiber.Fiber|Fiber] and a `long` timestamp of when they should be run.
-    Use [kameloso.plugins.common.delayawait.delay|delay] to enqueue.
+    Use [kameloso.plugins.common.scheduling.delay|delay] to enqueue.
 
     * [kameloso.plugins.common.core.IRCPluginState.scheduledDelegates|IRCPluginState.scheduledDelegates]
     is likewise an array of delegates, to be triggered at a later point in time.
@@ -1113,7 +1113,7 @@ void saveSeen(SeenPlugin plugin)
 )
 void onWelcome(SeenPlugin plugin)
 {
-    import kameloso.plugins.common.delayawait : await, delay;
+    import kameloso.plugins.common.scheduling : await, delay;
     import kameloso.constants : BufferSize;
     import core.thread : Fiber;
 
@@ -1143,7 +1143,7 @@ void onWelcome(SeenPlugin plugin)
 
     void endOfMotdDg(IRCEvent)
     {
-        import kameloso.plugins.common.delayawait : unawait;
+        import kameloso.plugins.common.scheduling : unawait;
 
         unawait(plugin, &endOfMotdDg, endOfMotdEventTypes[]);
 

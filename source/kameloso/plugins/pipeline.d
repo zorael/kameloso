@@ -94,7 +94,7 @@ public:
 )
 void onWelcome(PipelinePlugin plugin)
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import lu.common : ReturnValueException;
     import core.time : minutes;
 

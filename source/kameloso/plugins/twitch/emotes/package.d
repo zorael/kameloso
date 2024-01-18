@@ -218,7 +218,7 @@ in (((channelName.length && id) ||
 
         if (emoteImports.length)
         {
-            import kameloso.plugins.common.delayawait : delay;
+            import kameloso.plugins.common.scheduling : delay;
             import std.typecons : Flag, No, Yes;
             import core.time : seconds;
 

@@ -1176,7 +1176,7 @@ void onAnyMessage(TimerPlugin plugin, const ref IRCEvent event)
  +/
 void startTimerMonitor(TimerPlugin plugin)
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import kameloso.constants : BufferSize;
 
     immutable oldInstanceID = plugin.monitorInstanceID;

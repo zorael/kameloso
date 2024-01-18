@@ -711,7 +711,7 @@ void initialise(PrinterPlugin plugin)
  +/
 void setup(PrinterPlugin plugin)
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import kameloso.terminal : isTerminal;
 
     plugin.linebuffer.reserve(PrinterPlugin.linebufferInitialSize);

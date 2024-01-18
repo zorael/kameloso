@@ -516,7 +516,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 )
 void onWelcome(SedReplacePlugin plugin)
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import std.datetime.systime : Clock;
 
     while (true)
