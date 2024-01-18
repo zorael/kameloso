@@ -6,7 +6,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#quote,
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -22,7 +22,7 @@ version(WithQuotePlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;

@@ -7,7 +7,7 @@
 
     See_Also:
         [kameloso.net],
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -23,7 +23,7 @@ version(WithConnectService):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.common : logger;
 import kameloso.messaging;
 import kameloso.thread : Sendable;

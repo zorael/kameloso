@@ -11,7 +11,7 @@
     assume it should always react and reply.
 
     See_Also:
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)

@@ -4,7 +4,7 @@
     Example:
     ---
     import kameloso.plugins;
-    import kameloso.plugins.common.core;
+    import kameloso.plugins.common;
 
     final class MyPlugin : IRCPlugin
     {
@@ -34,7 +34,7 @@ module kameloso.plugins;
 
 private:
 
-import kameloso.plugins.common.core : IRCPlugin, IRCPluginState;
+import kameloso.plugins.common : IRCPlugin, IRCPluginState;
 
 
 // PluginRegistrationEntry
@@ -136,7 +136,7 @@ void registerPlugin(
         state = The current plugin state on which to base new plugin instances.
 
     Returns:
-        An array of instantiated [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]s.
+        An array of instantiated [kameloso.plugins.common.IRCPlugin|IRCPlugin]s.
  +/
 auto instantiatePlugins(/*const*/ IRCPluginState state)
 {
@@ -187,7 +187,7 @@ mixin template PluginRegistration(
      +/
     shared static this()
     {
-        import kameloso.plugins.common.core : IRCPluginState;
+        import kameloso.plugins.common : IRCPluginState;
 
         static if (__traits(compiles, new Plugin(IRCPluginState.init)))
         {

@@ -15,7 +15,7 @@
         https://github.com/zorael/kameloso/wiki/Current-plugins#printer,
         [kameloso.plugins.printer.formatting],
         [kameloso.plugins.printer.logging],
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -35,7 +35,7 @@ import kameloso.plugins.printer.formatting;
 import kameloso.plugins.printer.logging;
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import kameloso.thread : Sendable;
 import dialect.defs;
@@ -557,7 +557,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 /++
     Logs an event to disk.
 
-    It is set to [kameloso.plugins.common.core.ChannelPolicy.any|ChannelPolicy.any],
+    It is set to [kameloso.plugins.common.ChannelPolicy.any|ChannelPolicy.any],
     and configuration dictates whether or not non-home events should be logged.
     Likewise whether or not raw events should be logged.
 

@@ -4,7 +4,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#timer,
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -20,7 +20,7 @@ version(WithTimerPlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : MinimalAuthentication, UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;

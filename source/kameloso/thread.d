@@ -37,7 +37,7 @@ module kameloso.thread;
 
 private:
 
-import kameloso.plugins.common.core : IRCPlugin;
+import kameloso.plugins.common : IRCPlugin;
 import std.meta : allSatisfy;
 import std.traits : isNumeric, isSomeFunction;
 import std.typecons : Flag, No, Yes;
@@ -269,7 +269,7 @@ struct ThreadMessage
 
         /++
             Request to put an [dialect.defs.IRCUser|IRCUser] into each plugin's (and service's)
-            [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
+            [kameloso.plugins.common.IRCPluginState.users|IRCPluginState.users]
             associative array.
          +/
         putUser,
@@ -831,8 +831,8 @@ void interruptibleSleep(const Duration dur, const Flag!"abort"* abort) @system
 
 // getQuitMessage
 /++
-    Iterates the [kameloso.plugins.common.core.IRCPluginState.messages|messages] and
-    [kameloso.plugins.common.core.IRCPluginState.priorityMessages|priorityMessages] arrays
+    Iterates the [kameloso.plugins.common.IRCPluginState.messages|messages] and
+    [kameloso.plugins.common.IRCPluginState.priorityMessages|priorityMessages] arrays
     of each plugin.
 
     If a [kameloso.thread.ThreadMessage.MessageType.quit|quit] message is found,

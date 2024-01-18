@@ -5,7 +5,7 @@
         [kameloso.plugins.twitch],
         [kameloso.plugins.twitch.common],
         [kameloso.plugins.twitch.providers.twitch],
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)

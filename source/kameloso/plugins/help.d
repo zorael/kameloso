@@ -5,7 +5,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#help,
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -21,7 +21,7 @@ version(WithHelpPlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : logger;
 import kameloso.messaging : Message;
@@ -53,13 +53,13 @@ import std.typecons : Flag, No, Yes;
 
     Plugins don't know about other plugins; the only thing they know of the
     outside world is the thread ID of the main thread ID (stored in
-    [kameloso.plugins.common.core.IRCPluginState.mainThread|IRCPluginState.mainThread]).
+    [kameloso.plugins.common.IRCPluginState.mainThread|IRCPluginState.mainThread]).
     As such, we can't easily query each plugin for their
-    [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]-annotated
+    [kameloso.plugins.common.IRCEventHandler.Command|IRCEventHandler.Command]-annotated
     functions.
 
     To work around this we construct a delegate that accepts an array of
-    [kameloso.plugins.common.core.IRCPlugin|IRCPlugins], and pass it to the main thread.
+    [kameloso.plugins.common.IRCPlugin|IRCPlugins], and pass it to the main thread.
     It will then invoke the delegate with the client-global `plugins` array as argument.
 
     Once we have the list we format it nicely and send it back to the requester.
@@ -254,7 +254,7 @@ void sendMessage(
             send the help text for.
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         commandString = String of the command we're to send help text for (sans prefix).
-        command = Actual [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|CommandMetadata]
+        command = Actual [kameloso.plugins.common.IRCPlugin.CommandMetadata|CommandMetadata]
             of the command we're to send help text for.
  +/
 void sendCommandHelpImpl(
@@ -558,9 +558,9 @@ auto filterHiddenCommands(IRCPlugin.CommandMetadata[string] aa)
 // addPrefix
 /++
     Adds a prefix to a command word; the command prefix if the passed `policy` is
-    [kameloso.plugins.common.core.PrefixPolicy.prefixed], the bot nickname if it is
-    [kameloso.plugins.common.core.PrefixPolicy.nickname], and as is if it is
-    [kameloso.plugins.common.core.PrefixPolicy.direct].
+    [kameloso.plugins.common.PrefixPolicy.prefixed], the bot nickname if it is
+    [kameloso.plugins.common.PrefixPolicy.nickname], and as is if it is
+    [kameloso.plugins.common.PrefixPolicy.direct].
 
     Params:
         plugin = The current [HelpPlugin].

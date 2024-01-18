@@ -24,7 +24,7 @@ import kameloso.common : logger;
 import kameloso.constants : ShellReturnValue;
 import kameloso.kameloso : Kameloso;
 import kameloso.net : ListenAttempt;
-import kameloso.plugins.common.core : IRCPlugin;
+import kameloso.plugins.common : IRCPlugin;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -1765,13 +1765,13 @@ void processLineFromServer(
 // processAwaitingDelegates
 /++
     Processes the awaiting delegates of an
-    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+    [kameloso.plugins.common.IRCPlugin|IRCPlugin].
 
     Does not remove delegates after calling them. They are expected to remove
     themselves after finishing if they aren't awaiting any further events.
 
     Params:
-        plugin = The [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] whose
+        plugin = The [kameloso.plugins.common.IRCPlugin|IRCPlugin] whose
             [dialect.defs.IRCEvent.Type|IRCEvent.Type]-awaiting delegates to
             iterate and process.
         event = The triggering const [dialect.defs.IRCEvent|IRCEvent].
@@ -1814,12 +1814,12 @@ void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
 // processAwaitingFibers
 /++
     Processes the awaiting [core.thread.fiber.Fiber|Fiber]s of an
-    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+    [kameloso.plugins.common.IRCPlugin|IRCPlugin].
 
     Don't delete [core.thread.fiber.Fiber|Fiber]s, as they can be reset and reused.
 
     Params:
-        plugin = The [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] whose
+        plugin = The [kameloso.plugins.common.IRCPlugin|IRCPlugin] whose
             [dialect.defs.IRCEvent.Type|IRCEvent.Type]-awaiting
             [core.thread.fiber.Fiber|Fiber]s to iterate and process.
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
@@ -1985,10 +1985,10 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
 // processScheduledDelegates
 /++
     Processes the queued [kameloso.thread.ScheduledDelegate|ScheduledDelegate]s of an
-    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+    [kameloso.plugins.common.IRCPlugin|IRCPlugin].
 
     Params:
-        plugin = The [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] whose
+        plugin = The [kameloso.plugins.common.IRCPlugin|IRCPlugin] whose
             queued [kameloso.thread.ScheduledDelegate|ScheduledDelegate]s to
             iterate and process.
         nowInHnsecs = Current timestamp to compare the
@@ -2053,10 +2053,10 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
 // processScheduledFibers
 /++
     Processes the queued [kameloso.thread.ScheduledFiber|ScheduledFiber]s of an
-    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+    [kameloso.plugins.common.IRCPlugin|IRCPlugin].
 
     Params:
-        plugin = The [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] whose
+        plugin = The [kameloso.plugins.common.IRCPlugin|IRCPlugin] whose
             queued [kameloso.thread.ScheduledFiber|ScheduledFiber]s to iterate
             and process.
         nowInHnsecs = Current timestamp to compare the
@@ -2150,7 +2150,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
 
     Params:
         instance = The current bot instance.
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+        plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin].
  +/
 void processReadyReplays(Kameloso instance, IRCPlugin plugin)
 {
@@ -2210,13 +2210,13 @@ void processReadyReplays(Kameloso instance, IRCPlugin plugin)
 
 // processPendingReplay
 /++
-    Takes a queue of pending [kameloso.plugins.common.core.Replay|Replay]
+    Takes a queue of pending [kameloso.plugins.common.Replay|Replay]
     objects and issues WHOIS queries for each one, unless it has already been done
     recently (within [kameloso.constants.Timeout.whoisRetry|Timeout.whoisRetry] seconds).
 
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
-        plugin = The relevant [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+        plugin = The relevant [kameloso.plugins.common.IRCPlugin|IRCPlugin].
  +/
 void processPendingReplays(Kameloso instance, IRCPlugin plugin)
 {
@@ -2315,8 +2315,8 @@ version(WithOnelinerPlugin)
 
 // processDeferredActions
 /++
-    Iterates through a plugin's array of [kameloso.plugins.common.core.DeferredAction|DeferredAction]s.
-    Depending on what their [kameloso.plugins.common.core.DeferredAction.fiber|fiber] member
+    Iterates through a plugin's array of [kameloso.plugins.common.DeferredAction|DeferredAction]s.
+    Depending on what their [kameloso.plugins.common.DeferredAction.fiber|fiber] member
     (which is in actually a [kameloso.thread.CarryingFiber|CarryingFiber]) can be
     cast to, it prepares a payload, assigns it to the
     [kameloso.thread.CarryingFiber|CarryingFiber], and calls it.
@@ -2330,7 +2330,7 @@ version(WithOnelinerPlugin)
 
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
-        plugin = The relevant [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+        plugin = The relevant [kameloso.plugins.common.IRCPlugin|IRCPlugin].
  +/
 void processDeferredActions(Kameloso instance, IRCPlugin plugin)
 {

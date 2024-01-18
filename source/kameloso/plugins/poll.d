@@ -6,7 +6,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#poll,
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -22,7 +22,7 @@ version(WithPollPlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : logger;
 import kameloso.messaging;
@@ -970,7 +970,7 @@ void onWelcome(PollPlugin plugin)
 // onSelfjoin
 /++
     Registers a channel entry in
-    [kameloso.plugins.common.core.IRCPluginState.channels|IRCPluginState.channels]
+    [kameloso.plugins.common.IRCPluginState.channels|IRCPluginState.channels]
     upon joining one.
 
     This would normally be done using
@@ -993,7 +993,7 @@ void onSelfjoin(PollPlugin plugin, const ref IRCEvent event)
 // onSelfpart
 /++
     De-registers a channel entry in
-    [kameloso.plugins.common.core.IRCPluginState.channels|IRCPluginState.channels]
+    [kameloso.plugins.common.IRCPluginState.channels|IRCPluginState.channels]
     upon parting from one.
 
     This would normally be done using

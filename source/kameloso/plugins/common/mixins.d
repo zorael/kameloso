@@ -4,7 +4,7 @@
     This was all in one `plugins/common.d` file that just grew too big.
 
     See_Also:
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.scheduling]
 
     Copyright: [JR](https://github.com/zorael)
@@ -57,7 +57,7 @@ mixin template WHOISFiberDelegate(
     alias onFailure = null,
     Flag!"alwaysLookup" alwaysLookup = No.alwaysLookup)
 {
-    import kameloso.plugins.common.core : IRCPlugin;
+    import kameloso.plugins.common : IRCPlugin;
     import std.traits : ParameterIdentifierTuple, isSomeFunction;
     import std.typecons : Flag, No, Yes;
 
@@ -305,7 +305,7 @@ mixin template WHOISFiberDelegate(
     /++
         Constructs a [kameloso.thread.CarryingFiber|CarryingFiber] carrying a
         [dialect.defs.IRCEvent|IRCEvent] and enqueues it into the
-        [kameloso.plugins.common.core.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
+        [kameloso.plugins.common.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
         associative array, then issues a WHOIS query (unless overridden via
         the `issueWhois` parameter).
 
@@ -528,7 +528,7 @@ mixin template WHOISFiberDelegate(
 mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_)
 {
 private:
-    import kameloso.plugins.common.core : IRCPlugin;
+    import kameloso.plugins.common : IRCPlugin;
     import kameloso.messaging : Message;
     import std.meta : AliasSeq;
     import std.typecons : Flag, No, Yes;
@@ -887,7 +887,7 @@ void askTo" ~ verb ~ "(const string line)
 ///
 unittest
 {
-    import kameloso.plugins.common.core : IRCPlugin, IRCPluginImpl, IRCPluginState;
+    import kameloso.plugins.common : IRCPlugin, IRCPluginImpl, IRCPluginState;
 
     class MyPlugin : IRCPlugin
     {

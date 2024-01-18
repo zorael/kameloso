@@ -24,7 +24,7 @@
         [kameloso.plugins.twitch.providers.twitch],
         [kameloso.plugins.twitch.providers.google],
         [kameloso.plugins.twitch.providers.spotify],
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -191,7 +191,7 @@ private enum SRM
  +/
 alias SongRequestMode = SRM;
 
-private import kameloso.plugins.common.core;
+private import kameloso.plugins.common;
 
 version(TwitchSupport):
 version(WithTwitchPlugin):
@@ -1381,7 +1381,7 @@ void onCommandVanish(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
     catch (ErrorJSONException e)
     {
-        import kameloso.plugins.common : nameOf;
+        import kameloso.plugins.common.misc : nameOf;
         enum pattern = "Failed to vanish <l>%s</> in <l>%s</> <t>(%s)";
         logger.warningf(pattern, nameOf(event.sender), event.channel, e.msg);
     }
@@ -2070,7 +2070,7 @@ void onCommandNuke(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             }
             else
             {
-                import kameloso.plugins.common : nameOf;
+                import kameloso.plugins.common.misc : nameOf;
 
                 enum pattern = "Failed to delete a message from <h>%s</> in <l>%s";
                 logger.warningf(pattern, nameOf(storedEvent.sender), event.channel);
@@ -4590,8 +4590,8 @@ package:
     // isEnabled
     /++
         Override
-        [kameloso.plugins.common.core.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
-        (effectively overriding [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
+        [kameloso.plugins.common.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
+        (effectively overriding [kameloso.plugins.common.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
         and inject a server check, so this plugin only works on Twitch, in addition
         to doing nothing when [TwitchSettings.enabled] is false.
 

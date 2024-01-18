@@ -2,7 +2,7 @@
     Unit test plugin.
 
     See_Also:
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -18,7 +18,7 @@ version(unittest):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.plugins.common.awareness;
 import kameloso.plugins.common.mixins;
 import dialect.defs;

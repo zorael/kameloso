@@ -7,7 +7,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#webtitle,
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -23,7 +23,7 @@ version(WithWebtitlePlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import requests.base : Response;
 import dialect.defs;
 import lu.container : MutexedAA;
@@ -124,9 +124,9 @@ static immutable descriptionExemptions =
     Merely passes the event on to [onMessageImpl].
 
     This function is annotated with
-    [kameloso.plugins.common.core.Permissions.ignore|Permissions.ignore],
+    [kameloso.plugins.common.Permissions.ignore|Permissions.ignore],
     but we don't mix in [MinimalAuthentication|MinimalAuthentication]. Ideally
-    we would annotate it [kameloso.plugins.common.core.Permissions.anyone|Permissions.anyone],
+    we would annotate it [kameloso.plugins.common.Permissions.anyone|Permissions.anyone],
     but then *any* channel message would incur a user lookup, which
     is a bit much.
 

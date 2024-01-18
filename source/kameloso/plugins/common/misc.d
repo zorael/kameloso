@@ -3,7 +3,7 @@
     without which they will *not* function.
 
     See_Also:
-        [kameloso.plugins.common.core]
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -15,7 +15,7 @@ module kameloso.plugins.common.misc;
 
 private:
 
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.common : logger;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
@@ -30,11 +30,11 @@ public:
     setting, in string form.
 
     This merely iterates the passed `plugins` and calls their
-    [kameloso.plugins.common.core.IRCPlugin.setMemberByName|IRCPlugin.setMemberByName]
+    [kameloso.plugins.common.IRCPlugin.setMemberByName|IRCPlugin.setMemberByName]
     methods.
 
     Params:
-        plugins = Array of all [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]s.
+        plugins = Array of all [kameloso.plugins.common.IRCPlugin|IRCPlugin]s.
         customSettings = Array of custom settings to apply to plugins' own
             setting, in the string forms of "`plugin.setting=value`".
 
@@ -304,13 +304,13 @@ final class IRCPluginInitialisationException : Exception
 // catchUser
 /++
     Catch an [dialect.defs.IRCUser|IRCUser], saving it to the
-    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] array.
+    [kameloso.plugins.common.IRCPlugin|IRCPlugin]'s
+    [kameloso.plugins.common.IRCPluginState.users|IRCPluginState.users] array.
 
     If a user already exists, meld the new information into the old one.
 
     Params:
-        plugin = Current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+        plugin = Current [kameloso.plugins.common.IRCPlugin|IRCPlugin].
         newUser = The [dialect.defs.IRCUser|IRCUser] to catch.
  +/
 void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
@@ -332,16 +332,16 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
 // rehashUsers
 /++
     Rehashes a plugin's users, both the ones in the
-    [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
+    [kameloso.plugins.common.IRCPluginState.users|IRCPluginState.users]
     associative array and the ones in each [dialect.defs.IRCChannel.users] associative arrays.
 
     This optimises lookup and should be done every so often.
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+        plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin].
         channelName = Optional name of the channel to rehash for. If none given
             it will rehash the main
-            [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
+            [kameloso.plugins.common.IRCPluginState.users|IRCPluginState.users]
             associative array instead.
  +/
 void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
@@ -418,7 +418,7 @@ unittest
     If not version `TwitchSupport` then it always returns the nickname.
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin], whatever it is.
         specified = The name of a user to look up.
 
     Returns:
@@ -475,7 +475,7 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
     Merely wraps [getUser] with [idOf].
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin], whatever it is.
         nickname = The name of a user to look up.
 
     Returns:
@@ -525,7 +525,7 @@ unittest
     nickname as if it was a display name.
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin], whatever it is.
         specified = The name of a user to look up.
 
     Returns:
