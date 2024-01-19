@@ -87,7 +87,7 @@ public:
 
         /++
             A list of what [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to
-            prettyprint, using [kameloso.printing.printObject|printObject].
+            prettyprint, using [kameloso.prettyprint.prettyprint].
          +/
         string printEvents;
     }
@@ -904,7 +904,7 @@ void onCommandPrintBytes(AdminPlugin plugin, const ref IRCEvent event)
 // onCommandPrintEvents
 /++
     Toggles a flag to prettyprint all incoming events, using
-    [kameloso.printing.printObject|printObject].
+    [kameloso.prettyprint.prettyprint].
 
     This is for debugging purposes.
  +/
@@ -1677,10 +1677,10 @@ void onBusMessage(
             version(WantAdminStatePrinter)
             {
                 case "state":
-                    import kameloso.printing : printObject;
+                    import kameloso.prettyprint : prettyprint;
                     // Adds 350 mb to compilation memory usage
                     if (plugin.state.settings.headless) return;
-                    return printObject(plugin.state);
+                    return prettyprint(plugin.state);
             }
 
             case "status":
@@ -1721,8 +1721,8 @@ void onBusMessage(
 
             if (const user = slice in plugin.state.users)
             {
-                import kameloso.printing : printObject;
-                printObject(*user);
+                import kameloso.prettyprint : prettyprint;
+                prettyprint(*user);
             }
             else
             {

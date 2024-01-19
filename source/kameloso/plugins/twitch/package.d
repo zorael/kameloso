@@ -166,7 +166,8 @@ public:
 /++
     Song requests may be either disabled, or either in YouTube or Spotify mode.
 
-    `SongRequestMode` abbreviated to fit into `printObjects` output formatting.
+    `SongRequestMode` abbreviated to fit into [kameloso.prettyprint.prettyprint]
+    output formatting.
  +/
 private enum SRM
 {

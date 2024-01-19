@@ -1640,10 +1640,10 @@ mixin template IRCPluginImpl(
 
                 static if (hasSettingsUDA)
                 {
-                    import kameloso.printing : printObject;
+                    import kameloso.prettyprint : prettyprint;
                     import std.typecons : No, Yes;
 
-                    printObject!(No.all)(this.tupleof[i]);
+                    prettyprint!(No.all)(this.tupleof[i]);
                     break;
                 }
             }
@@ -3087,8 +3087,8 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 
                 version(IncludeHeavyStuff)
                 {
-                    import kameloso.printing : printObject;
-                    printObject(event);
+                    import kameloso.prettyprint : prettyprint;
+                    prettyprint(event);
                 }
 
                 version(PrintStacktraces)

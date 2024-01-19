@@ -135,11 +135,11 @@ void verboselyWriteConfig(
 
     if (!instance.settings.headless)
     {
-        import kameloso.printing : printObjects;
+        import kameloso.prettyprint : prettyprint;
         import kameloso.string : doublyBackslashed;
         import std.file : exists;
 
-        printObjects(client, instance.bot, server, instance.connSettings, *instance.settings);
+        prettyprint(client, instance.bot, server, instance.connSettings, *instance.settings);
         enum pattern = "Configuration written to <i>%s";
         logger.logf(pattern, instance.settings.configFile.doublyBackslashed);
 
@@ -175,7 +175,7 @@ void printSettings(Kameloso instance) @system
 {
     import kameloso.common : printVersionInfo;
     import kameloso.plugins.common.misc : applyCustomSettings;
-    import kameloso.printing : printObjects;
+    import kameloso.prettyprint : prettyprint;
     import std.stdio : stdout, writeln;
     static import kameloso.common;
 
@@ -188,7 +188,7 @@ void printSettings(Kameloso instance) @system
     printVersionInfo();
     writeln();
 
-    printObjects!(No.all)
+    prettyprint!(No.all)
         (instance.parser.client,
         instance.bot,
         instance.parser.server,

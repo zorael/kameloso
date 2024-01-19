@@ -3166,7 +3166,7 @@ auto verifySettings(Kameloso instance)
 
         if (!instance.parser.client.nickname.isValidNickname(conservativeServer))
         {
-            // No need to print the nickname, visible from printObjects preivously
+            // No need to print the nickname, visible from prettyprint preivously
             logger.error("Invalid nickname!");
             return Next.returnFailure;
         }
@@ -3882,22 +3882,22 @@ void printEventDebugDetails(
     {
         version(IncludeHeavyStuff)
         {
-            import kameloso.printing : printObject;
+            import kameloso.prettyprint : prettyprint;
             import std.typecons : Flag, No, Yes;
 
             // Offending line included in event, in raw
-            printObject!(Yes.all)(event);
+            prettyprint!(Yes.all)(event);
 
             if (event.sender != IRCUser.init)
             {
                 logger.trace("sender:");
-                printObject(event.sender);
+                prettyprint(event.sender);
             }
 
             if (event.target != IRCUser.init)
             {
                 logger.trace("target:");
-                printObject(event.target);
+                prettyprint(event.target);
             }
         }
     }
@@ -4113,7 +4113,7 @@ void propagateWhoisTimestamps(Kameloso instance) pure @safe
 void prettyPrintStartScreen(const Kameloso instance, const string arg0)
 {
     import kameloso.common : printVersionInfo;
-    import kameloso.printing : printObjects;
+    import kameloso.prettyprint : prettyprint;
     import kameloso.string : replaceTokens;
     import std.stdio : stdout, writeln;
 
@@ -4124,7 +4124,7 @@ void prettyPrintStartScreen(const Kameloso instance, const string arg0)
     // Print the current settings to show what's going on.
     IRCClient prettyClient = instance.parser.client;
     prettyClient.realName = replaceTokens(prettyClient.realName);
-    printObjects(prettyClient, instance.bot, instance.parser.server);
+    prettyprint(prettyClient, instance.bot, instance.parser.server);
 
     if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
     {

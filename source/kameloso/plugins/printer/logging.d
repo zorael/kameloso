@@ -303,7 +303,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 {
                     version(IncludeHeavyStuff)
                     {
-                        import kameloso.printing : formatObjects;
+                        import kameloso.prettyprint : prettyformat;
 
                         /+
                             Use the plugin's linebuffer as a scratch buffer to
@@ -316,7 +316,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         scope(failure) plugin.linebuffer.clear();
 
                         // Adds some 220 mb to compilation memory usage
-                        formatObjects!(Yes.all, No.coloured)
+                        prettyformat!(Yes.all, No.coloured)
                             (plugin.linebuffer,
                             No.brightTerminal,
                             event);
@@ -327,7 +327,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         {
                             plugin.linebuffer.clear();
 
-                            formatObjects!(Yes.all, No.coloured)
+                            prettyformat!(Yes.all, No.coloured)
                                 (plugin.linebuffer,
                                 No.brightTerminal,
                                 event.sender);
@@ -339,7 +339,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         {
                             plugin.linebuffer.clear();
 
-                            formatObjects!(Yes.all, No.coloured)
+                            prettyformat!(Yes.all, No.coloured)
                                 (plugin.linebuffer,
                                 No.brightTerminal,
                                 event.target);
@@ -372,7 +372,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                     version(IncludeHeavyStuff)
                     {
-                        import kameloso.printing : formatObjects;
+                        import kameloso.prettyprint : prettyformat;
 
                         /+
                             See notes above.
@@ -380,7 +380,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                         scope(failure) plugin.linebuffer.clear();
 
-                        formatObjects!(Yes.all, No.coloured)
+                        prettyformat!(Yes.all, No.coloured)
                             (plugin.linebuffer,
                             No.brightTerminal,
                             event);
@@ -391,7 +391,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         {
                             plugin.linebuffer.clear();
 
-                            formatObjects!(Yes.all, No.coloured)
+                            prettyformat!(Yes.all, No.coloured)
                                 (plugin.linebuffer,
                                 No.brightTerminal,
                                 event.sender);
@@ -403,7 +403,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         {
                             plugin.linebuffer.clear();
 
-                            formatObjects!(Yes.all, No.coloured)
+                            prettyformat!(Yes.all, No.coloured)
                                 (plugin.linebuffer,
                                 No.brightTerminal,
                                 event.target);
@@ -615,8 +615,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
             // logServer is probably false and event shouldn't be logged
             // OR we simply don't know how to deal with this event type
 
-            /*import kameloso.printing : printObject;
-            printObject(event);*/
+            /*import kameloso.prettyprint : prettyprint;
+            prettyprint(event);*/
         }
         break;
     }
