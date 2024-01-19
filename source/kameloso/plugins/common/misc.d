@@ -3,7 +3,7 @@
     without which they will *not* function.
 
     See_Also:
-        [kameloso.plugins.common.core]
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -15,7 +15,7 @@ module kameloso.plugins.common.misc;
 
 private:
 
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.common : logger;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
@@ -30,11 +30,11 @@ public:
     setting, in string form.
 
     This merely iterates the passed `plugins` and calls their
-    [kameloso.plugins.common.core.IRCPlugin.setMemberByName|IRCPlugin.setMemberByName]
+    [kameloso.plugins.common.IRCPlugin.setMemberByName|IRCPlugin.setMemberByName]
     methods.
 
     Params:
-        plugins = Array of all [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]s.
+        plugins = Array of all [kameloso.plugins.common.IRCPlugin|IRCPlugin]s.
         customSettings = Array of custom settings to apply to plugins' own
             setting, in the string forms of "`plugin.setting=value`".
 
@@ -304,13 +304,13 @@ final class IRCPluginInitialisationException : Exception
 // catchUser
 /++
     Catch an [dialect.defs.IRCUser|IRCUser], saving it to the
-    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] array.
+    [kameloso.plugins.common.IRCPlugin|IRCPlugin]'s
+    [kameloso.plugins.common.IRCPluginState.users|IRCPluginState.users] array.
 
     If a user already exists, meld the new information into the old one.
 
     Params:
-        plugin = Current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+        plugin = Current [kameloso.plugins.common.IRCPlugin|IRCPlugin].
         newUser = The [dialect.defs.IRCUser|IRCUser] to catch.
  +/
 void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
@@ -329,325 +329,19 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
 }
 
 
-// enqueue
-/++
-    Construct and enqueue a function replay in the plugin's queue of such.
-
-    The main loop will catch up on it and issue WHOIS queries as necessary, then
-    replay the event upon receiving the results.
-
-    Params:
-        plugin = Subclass [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] to
-            replay the function pointer `fun` with as first argument.
-        event = [dialect.defs.IRCEvent|IRCEvent] to queue up to replay.
-        permissionsRequired = Permissions level to match the results from the WHOIS query with.
-        inFiber = Whether or not the function should be called from within a Fiber.
-        fun = Function/delegate pointer to call when the results return.
-        caller = String name of the calling function, or something else that gives context.
- +/
-void enqueue(Plugin, Fun)
-    (Plugin plugin,
-    const ref IRCEvent event,
-    const Permissions permissionsRequired,
-    const bool inFiber,
-    Fun fun,
-    const string caller = __FUNCTION__)
-if (is(Plugin : IRCPlugin))
-in ((event != IRCEvent.init), "Tried to `enqueue` with an init IRCEvent")
-in ((fun !is null), "Tried to `enqueue` with a null function pointer")
-{
-    import std.traits : isSomeFunction;
-
-    static assert (isSomeFunction!Fun, "Tried to `enqueue` with a non-function function parameter");
-
-    version(TwitchSupport)
-    {
-        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
-        {
-            version(TwitchWarnings)
-            {
-                import kameloso.common : logger;
-
-                logger.warning(caller, " tried to WHOIS on Twitch");
-
-                version(IncludeHeavyStuff)
-                {
-                    import kameloso.printing : printObject;
-                    printObject(event);
-                }
-
-                version(PrintStacktraces)
-                {
-                    import kameloso.common: printStacktrace;
-                    printStacktrace();
-                }
-            }
-            return;
-        }
-    }
-
-    immutable user = event.sender.isServer ? event.target : event.sender;
-    assert(user.nickname.length, "Bad user derived in `enqueue` (no nickname)");
-
-    version(ExplainReplay)
-    {
-        import std.algorithm.searching : startsWith;
-        immutable callerSlice = caller.startsWith("kameloso.plugins.") ?
-            caller[17..$] :
-            caller;
-    }
-
-    if (const previousWhoisTimestamp = user.nickname in plugin.state.previousWhoisTimestamps)
-    {
-        import kameloso.constants : Timeout;
-        import std.datetime.systime : Clock;
-
-        immutable nowInUnix = Clock.currTime.toUnixTime();
-        immutable delta = (nowInUnix - *previousWhoisTimestamp);
-
-        if ((delta < Timeout.whoisRetry) && (delta > Timeout.whoisGracePeriod))
-        {
-            version(ExplainReplay)
-            {
-                enum pattern = "<i>%s</> plugin <w>NOT</> queueing an event to be replayed " ~
-                    "on behalf of <i>%s</>; delta time <i>%d</> is too small";
-                logger.logf(pattern, plugin.name, callerSlice, delta);
-            }
-            return;
-        }
-    }
-
-    version(ExplainReplay)
-    {
-        enum pattern = "<i>%s</> plugin queueing an event to be replayed on behalf of <i>%s";
-        logger.logf(pattern, plugin.name, callerSlice);
-    }
-
-    plugin.state.pendingReplays[user.nickname] ~=
-        replay(
-            plugin,
-            event,
-            fun,
-            permissionsRequired,
-            inFiber,
-            caller);
-    plugin.state.hasPendingReplays = true;
-}
-
-
-// replay
-/++
-    Convenience function that returns a [kameloso.plugins.common.core.Replay] of
-    the right type, *with* a subclass plugin reference attached.
-
-    Params:
-        plugin = Subclass [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] to
-            call the function pointer `fun` with as first argument, when the
-            WHOIS results return.
-        event = [dialect.defs.IRCEvent|IRCEvent] that instigated the WHOIS lookup.
-        fun = Function/delegate pointer to call upon receiving the results.
-        permissionsRequired = The permissions level policy to apply to the WHOIS results.
-        inFiber = Whether or not the function should be called from within a Fiber.
-        caller = String name of the calling function, or something else that gives context.
-
-    Returns:
-        A [kameloso.plugins.common.core.Replay|Replay] with template parameters
-        inferred from the arguments passed to this function.
-
-    See_Also:
-        [kameloso.plugins.common.core.Replay|Replay]
- +/
-auto replay(Plugin, Fun)
-    (Plugin plugin,
-    const /*ref*/ IRCEvent event,
-    Fun fun,
-    const Permissions permissionsRequired,
-    const bool inFiber,
-    const string caller = __FUNCTION__)
-{
-    void replayDg(Replay replay)
-    {
-        import lu.conv : Enum;
-        import std.algorithm.searching : startsWith;
-
-        version(ExplainReplay)
-        void explainReplay()
-        {
-            immutable caller = replay.caller.startsWith("kameloso.plugins.") ?
-                replay.caller[17..$] :
-                replay.caller;
-
-            enum pattern = "<i>%s</> replaying <i>%s</>-level event (invoking <i>%s</>) " ~
-                "based on WHOIS results; user <i>%s</> is <i>%s</> class";
-            logger.logf(
-                pattern,
-                plugin.name,
-                Enum!Permissions.toString(replay.permissionsRequired),
-                caller,
-                replay.event.sender.nickname,
-                Enum!(IRCUser.Class).toString(replay.event.sender.class_));
-        }
-
-        version(ExplainReplay)
-        void explainRefuse()
-        {
-            immutable caller = replay.caller.startsWith("kameloso.plugins.") ?
-                replay.caller[17..$] :
-                replay.caller;
-
-            enum pattern = "<i>%s</> plugin <w>NOT</> replaying <i>%s</>-level event " ~
-                "(which would have invoked <i>%s</>) " ~
-                "based on WHOIS results: user <i>%s</> is <i>%s</> class";
-            logger.logf(
-                pattern,
-                plugin.name,
-                Enum!Permissions.toString(replay.permissionsRequired),
-                caller,
-                replay.event.sender.nickname,
-                Enum!(IRCUser.Class).toString(replay.event.sender.class_));
-        }
-
-        with (Permissions)
-        final switch (permissionsRequired)
-        {
-        case admin:
-            if (replay.event.sender.class_ >= IRCUser.Class.admin)
-            {
-                goto case ignore;
-            }
-            break;
-
-        case staff:
-            if (replay.event.sender.class_ >= IRCUser.Class.staff)
-            {
-                goto case ignore;
-            }
-            break;
-
-        case operator:
-            if (replay.event.sender.class_ >= IRCUser.Class.operator)
-            {
-                goto case ignore;
-            }
-            break;
-
-        case elevated:
-            if (replay.event.sender.class_ >= IRCUser.Class.elevated)
-            {
-                goto case ignore;
-            }
-            break;
-
-        case whitelist:
-            if (replay.event.sender.class_ >= IRCUser.Class.whitelist)
-            {
-                goto case ignore;
-            }
-            break;
-
-        case registered:
-            if (replay.event.sender.account.length)
-            {
-                goto case ignore;
-            }
-            break;
-
-        case anyone:
-            if (replay.event.sender.class_ >= IRCUser.Class.anyone)
-            {
-                goto case ignore;
-            }
-
-            // event.sender.class_ is Class.blacklist here (or unset)
-            // Do nothing and drop down
-            break;
-
-        case ignore:
-            version(ExplainReplay) explainReplay();
-
-            void call()
-            {
-                import lu.traits : TakesParams;
-                import std.traits : arity;
-
-                static if (
-                    TakesParams!(fun, Plugin, IRCEvent) ||
-                    TakesParams!(fun, IRCPlugin, IRCEvent))
-                {
-                    fun(plugin, replay.event);
-                }
-                else static if (
-                    TakesParams!(fun, Plugin) ||
-                    TakesParams!(fun, IRCPlugin))
-                {
-                    fun(plugin);
-                }
-                else static if (
-                    TakesParams!(fun, IRCEvent))
-                {
-                    fun(replay.event);
-                }
-                else static if (arity!fun == 0)
-                {
-                    fun();
-                }
-                else
-                {
-                    // onEventImpl.call should already have statically asserted all
-                    // event handlers are of the types above
-                    enum message = "Failed to cover event handler function signature " ~ Fun.stringof;
-                    static assert(0, message);
-                }
-            }
-
-            if (inFiber)
-            {
-                import kameloso.constants : BufferSize;
-                import kameloso.thread : carryingFiber;
-                import core.thread : Fiber;
-
-                auto fiber = carryingFiber(
-                    &call,
-                    replay.event,
-                    BufferSize.fiberStack);
-                fiber.creator = caller;
-                fiber.call(caller);
-
-                if (fiber.state == Fiber.State.TERM)
-                {
-                    // Ended immediately, so just destroy
-                    destroy(fiber);
-                    fiber = null;
-                }
-            }
-            else
-            {
-                call();
-            }
-
-            return;
-        }
-
-        version(ExplainReplay) explainRefuse();
-    }
-
-    return Replay(&replayDg, event, permissionsRequired, caller);
-}
-
-
 // rehashUsers
 /++
     Rehashes a plugin's users, both the ones in the
-    [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
+    [kameloso.plugins.common.IRCPluginState.users|IRCPluginState.users]
     associative array and the ones in each [dialect.defs.IRCChannel.users] associative arrays.
 
     This optimises lookup and should be done every so often.
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+        plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin].
         channelName = Optional name of the channel to rehash for. If none given
             it will rehash the main
-            [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
+            [kameloso.plugins.common.IRCPluginState.users|IRCPluginState.users]
             associative array instead.
  +/
 void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
@@ -724,7 +418,7 @@ unittest
     If not version `TwitchSupport` then it always returns the nickname.
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin], whatever it is.
         specified = The name of a user to look up.
 
     Returns:
@@ -781,7 +475,7 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
     Merely wraps [getUser] with [idOf].
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin], whatever it is.
         nickname = The name of a user to look up.
 
     Returns:
@@ -831,7 +525,7 @@ unittest
     nickname as if it was a display name.
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin], whatever it is.
         specified = The name of a user to look up.
 
     Returns:

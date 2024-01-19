@@ -655,7 +655,7 @@ string invert(
     import kameloso.terminal.colours.defs : TerminalFormat, TerminalReset;
     import dialect.common : isValidNicknameCharacter;
     import std.array : Appender;
-    import std.format : format;
+    import std.conv : text;
     import std.string : indexOf;
 
     ptrdiff_t startpos;
@@ -674,13 +674,17 @@ string invert(
     //assert((startpos != -1), "Tried to invert nonexistent text");
     if (startpos == -1) return line;
 
-    enum pattern = "%c[%dm%s%c[%dm";
+    /*enum pattern = "%c[%dm%s%c[%dm";
     immutable inverted = pattern.format(
         TerminalToken.format,
         TerminalFormat.reverse,
         toInvert,
         TerminalToken.format,
-        TerminalReset.invert);
+        TerminalReset.invert);*/
+    immutable tF = cast(char)TerminalToken.format;
+    immutable fR = cast(int)TerminalFormat.reverse;
+    immutable rI = cast(int)TerminalReset.invert;
+    immutable inverted = text(tF, '[', fR, 'm', toInvert, tF, '[', rI, 'm');
 
     Appender!(char[]) sink;
     sink.reserve(line.length + 16);

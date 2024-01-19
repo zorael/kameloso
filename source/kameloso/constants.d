@@ -373,10 +373,10 @@ enum BufferSize
 
     /++
         How many bytes to preallocate a buffer for when printing objects to
-        screen with the [kameloso.printing] templates. This value times the
+        screen with the [kameloso.prettyprint] templates. This value times the
         number of objects to print.
      +/
-    printObjectBufferPerObject = 1024,
+    prettyprintBufferPerObject = 1024,
 
     /++
         How many bytes to allocate for the stdout buffer, when we need to do so explicitly.

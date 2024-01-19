@@ -418,7 +418,7 @@ void generateExpiryReminders(
     const string what,
     void delegate() onExpiryDg)
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import lu.string : plurality;
     import std.datetime.systime : Clock;
     import std.meta : AliasSeq;

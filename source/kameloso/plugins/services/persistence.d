@@ -10,7 +10,7 @@
     It has no commands.
 
     See_Also:
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -26,7 +26,7 @@ version(WithPersistenceService):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.common : logger;
 import kameloso.thread : Sendable;
 import dialect.defs;
@@ -430,7 +430,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 /++
     Removes a user's [dialect.defs.IRCUser|IRCUser] entry from the `users`
     associative array of the current [PersistenceService]'s
-    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] upon them disconnecting.
+    [kameloso.plugins.common.IRCPluginState|IRCPluginState] upon them disconnecting.
 
     Additionally from the nickname-channel cache.
  +/
@@ -454,7 +454,7 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
     Removes old user entries when someone changes nickname. The old nickname
     no longer exists and the storage arrays should reflect that.
 
-    Annotated [kameloso.plugins.common.core.Timing.cleanup|Timing.cleanup] to
+    Annotated [kameloso.plugins.common.Timing.cleanup|Timing.cleanup] to
     delay execution.
  +/
 @(IRCEventHandler()
@@ -1025,7 +1025,7 @@ private:
 
     /++
         Associative array of users. Replaces
-        [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users].
+        [kameloso.plugins.common.IRCPluginState.users|IRCPluginState.users].
      +/
     RehashingAA!(IRCUser[string]) users;
 

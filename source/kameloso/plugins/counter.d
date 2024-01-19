@@ -7,7 +7,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#counter,
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -23,7 +23,7 @@ version(WithCounterPlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
@@ -475,7 +475,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
     Allows users to increment, decrement, and set counters.
 
     This function fakes
-    [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]s by
+    [kameloso.plugins.common.IRCEventHandler.Command|IRCEventHandler.Command]s by
     listening for prefixes (and the bot's nickname), and treating whatever comes
     after it as a command word. If it doesn't match a previously added counter,
     it is ignored.
@@ -926,7 +926,7 @@ private:
 
         Returns:
             An associative array of
-            [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s,
+            [kameloso.plugins.common.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s,
             one for each counter active in the passed channel.
      +/
     override public IRCPlugin.CommandMetadata[string] channelSpecificCommands(const string channelName) @system

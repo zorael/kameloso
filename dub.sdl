@@ -90,6 +90,7 @@ versions \
     "ThreadedSSLFree" \
     "TraceFibersAndDelegates" \
     "WantConcurrencyMessageLoop" \
+    "WantAdminStatePrinter" \
     "Callgrind"
 */
 

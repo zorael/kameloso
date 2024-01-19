@@ -12,7 +12,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#pipeline,
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -28,8 +28,8 @@ version(WithPipelinePlugin):
 
 private:
 
-import kameloso.plugins.common.core;
 import kameloso.plugins;
+import kameloso.plugins.common;
 import kameloso.common : logger;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -94,7 +94,7 @@ public:
 )
 void onWelcome(PipelinePlugin plugin)
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import lu.common : ReturnValueException;
     import core.time : minutes;
 

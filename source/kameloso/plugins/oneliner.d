@@ -7,7 +7,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners,
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -23,7 +23,7 @@ version(WithOnelinerPlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;
@@ -634,7 +634,7 @@ void handleNewOneliner(
 /++
     Creates a new and empty oneliner.
 
-    Uses [kameloso.plugins.common.core.defer|defer] to defer the creation to
+    Uses [kameloso.plugins.common.defer|defer] to defer the creation to
     the main thread, so that it can supply the list of existing commands across
     all plugins and abort if the new trigger word would conflict with one.
 
@@ -654,7 +654,7 @@ void newOnelinerImpl(
     const uint cooldownSeconds,
     const string alias_ = string.init)
 {
-    import kameloso.plugins.common.core : defer;
+    import kameloso.plugins.common : defer;
     import std.format : format;
     import std.typecons : Tuple;
 
@@ -1564,7 +1564,7 @@ private:
 
         Returns:
             An associative array of
-            [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s,
+            [kameloso.plugins.common.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s,
             one for each oneliner active in the passed channel.
      +/
     override public IRCPlugin.CommandMetadata[string] channelSpecificCommands(const string channelName) @system

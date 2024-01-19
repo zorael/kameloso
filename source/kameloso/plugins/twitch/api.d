@@ -5,7 +5,7 @@
         [kameloso.plugins.twitch],
         [kameloso.plugins.twitch.common],
         [kameloso.plugins.twitch.providers.twitch],
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -24,7 +24,7 @@ private:
 import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
 
-import kameloso.common : HTTPVerb;
+import kameloso.tables : HTTPVerb;
 import dialect.defs;
 import lu.container : MutexedAA;
 import std.typecons : Flag, No, Yes;
@@ -89,7 +89,7 @@ struct QueryResponse
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         dg = Delegate to call.
         async = Whether or not the delegate should be called asynchronously,
-            scheduling attempts using [kameloso.plugins.common.delayawait.delay|delay].
+            scheduling attempts using [kameloso.plugins.common.scheduling.delay|delay].
         endlessly = Whether or not to endlessly retry.
         retryDelay = How long to wait between retries.
 
@@ -116,7 +116,7 @@ in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outsi
             {
                 if (async)
                 {
-                    import kameloso.plugins.common.delayawait : delay;
+                    import kameloso.plugins.common.scheduling : delay;
                     delay(plugin, retryDelay, Yes.yield);
                 }
                 else
@@ -312,13 +312,13 @@ void persistentQuerier(
         setThreadName("twitchworker");
     }
 
-    void invokeSendHTTPRequestImpl(
-        const int id,
-        const string url,
-        const string authToken,
-        /*const*/ HTTPVerb verb,
+    void onHTTPRequest(
+        int id,
+        string url,
+        string authToken,
+        HTTPVerb verb,
         immutable(ubyte)[] body_,
-        const string contentType) scope
+        string contentType)
     {
         scope(failure) responseBucket.remove(id);
 
@@ -355,29 +355,16 @@ void persistentQuerier(
         }
     }
 
-    void sendWithBody(
-        int id,
-        string url,
-        string authToken,
-        HTTPVerb verb,
-        immutable(ubyte)[] body_,
-        string contentType) scope
-    {
-        invokeSendHTTPRequestImpl(
-            id,
-            url,
-            authToken,
-            verb,
-            body_,
-            contentType);
-    }
-
     bool halt;
 
-    void onQuitMessage(bool) scope
+    void onQuitMessage(bool)
     {
         halt = true;
     }
+
+    // This avoids the GC allocating a closure, which is fine in this case, but do this anyway
+    scope onHTTPRequestDg = &onHTTPRequest;
+    scope onQuitMessageDg = &onQuitMessage;
 
     while (!halt)
     {
@@ -387,9 +374,9 @@ void persistentQuerier(
         try
         {
             receive(
-                &sendWithBody,
-                &onQuitMessage,
-                (Variant v) scope
+                onHTTPRequestDg,
+                onQuitMessageDg,
+                (Variant v)
                 {
                     import std.stdio : stdout, writeln;
                     writeln("Twitch worker received unknown Variant: ", v);
@@ -432,7 +419,7 @@ void persistentQuerier(
         url = The URL to query.
         caller = Name of the calling function.
         authorisationHeader = Authorisation HTTP header to pass.
-        verb = What [kameloso.common.HTTPVerb|HTTPVerb] to use in the request.
+        verb = What [kameloso.tables.HTTPVerb|HTTPVerb] to use in the request.
         body_ = Request body to send in case of verbs like `POST` and `PATCH`.
         contentType = "Content-Type" HTTP header to pass.
         id = Numerical ID to use instead of generating a new one.
@@ -462,7 +449,7 @@ QueryResponse sendHTTPRequest(
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import kameloso.thread : ThreadMessage;
     import std.algorithm.searching : endsWith;
     import std.concurrency : send;
@@ -638,6 +625,16 @@ in (url.length, "Tried to send an HTTP request without a URL")
         {
             import kameloso.string : doublyBackslashed;
 
+            version(PrintStacktraces)
+            {
+                if (!plugin.state.settings.headless)
+                {
+                    import std.stdio : stdout, writeln;
+                    writeln(response.str);
+                    stdout.flush();
+                }
+            }
+
             throw new TwitchQueryException(
                 e.msg,
                 response.str,
@@ -660,7 +657,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         url = URL address to look up.
         authHeader = Authorisation token HTTP header to pass.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
-        verb = What [kameloso.common.HTTPVerb|HTTPVerb] to use in the request.
+        verb = What [kameloso.tables.HTTPVerb|HTTPVerb] to use in the request.
         body_ = Request body to send in case of verbs like `POST` and `PATCH`.
         contentType = "Content-Type" HTTP header to use.
 
@@ -1338,8 +1335,8 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
 
         if (response == QueryResponse.init)
         {
+            import kameloso.plugins.common.scheduling : delay;
             import kameloso.constants : Timeout;
-            import kameloso.plugins.common.delayawait : delay;
             import core.time : msecs;
 
             immutable nowInUnix = Clock.currTime.toUnixTime();

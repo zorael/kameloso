@@ -29,7 +29,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#sedreplace,
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -45,7 +45,7 @@ version(WithSedReplacePlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
@@ -516,7 +516,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 )
 void onWelcome(SedReplacePlugin plugin)
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import std.datetime.systime : Clock;
 
     while (true)

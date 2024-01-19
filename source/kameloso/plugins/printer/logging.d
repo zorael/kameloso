@@ -67,10 +67,14 @@ public:
 
     /++
         Clears the buffer of lines.
+
+        Uses [kameloso.common.zero] to zero the buffer instead of merely invoking
+        [std.array.Appender.clear|Appender.clear], to reduce the number of live pointers.
      +/
     void clear() @safe nothrow
     {
-        lines.clear();
+        import kameloso.common : zero;
+        lines.zero();
     }
 
     /++
@@ -116,7 +120,7 @@ public:
 /++
     Logs an event to disk.
 
-    It is set to [kameloso.plugins.common.core.ChannelPolicy.any|ChannelPolicy.any],
+    It is set to [kameloso.plugins.common.ChannelPolicy.any|ChannelPolicy.any],
     and configuration dictates whether or not non-home events should be logged.
     Likewise whether or not raw events should be logged.
 
@@ -299,7 +303,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 {
                     version(IncludeHeavyStuff)
                     {
-                        import kameloso.printing : formatObjects;
+                        import kameloso.prettyprint : prettyformat;
 
                         /+
                             Use the plugin's linebuffer as a scratch buffer to
@@ -312,7 +316,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         scope(failure) plugin.linebuffer.clear();
 
                         // Adds some 220 mb to compilation memory usage
-                        formatObjects!(Yes.all, No.coloured)
+                        prettyformat!(Yes.all, No.coloured)
                             (plugin.linebuffer,
                             No.brightTerminal,
                             event);
@@ -323,7 +327,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         {
                             plugin.linebuffer.clear();
 
-                            formatObjects!(Yes.all, No.coloured)
+                            prettyformat!(Yes.all, No.coloured)
                                 (plugin.linebuffer,
                                 No.brightTerminal,
                                 event.sender);
@@ -335,7 +339,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         {
                             plugin.linebuffer.clear();
 
-                            formatObjects!(Yes.all, No.coloured)
+                            prettyformat!(Yes.all, No.coloured)
                                 (plugin.linebuffer,
                                 No.brightTerminal,
                                 event.target);
@@ -368,7 +372,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                     version(IncludeHeavyStuff)
                     {
-                        import kameloso.printing : formatObjects;
+                        import kameloso.prettyprint : prettyformat;
 
                         /+
                             See notes above.
@@ -376,7 +380,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                         scope(failure) plugin.linebuffer.clear();
 
-                        formatObjects!(Yes.all, No.coloured)
+                        prettyformat!(Yes.all, No.coloured)
                             (plugin.linebuffer,
                             No.brightTerminal,
                             event);
@@ -387,7 +391,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         {
                             plugin.linebuffer.clear();
 
-                            formatObjects!(Yes.all, No.coloured)
+                            prettyformat!(Yes.all, No.coloured)
                                 (plugin.linebuffer,
                                 No.brightTerminal,
                                 event.sender);
@@ -399,7 +403,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         {
                             plugin.linebuffer.clear();
 
-                            formatObjects!(Yes.all, No.coloured)
+                            prettyformat!(Yes.all, No.coloured)
                                 (plugin.linebuffer,
                                 No.brightTerminal,
                                 event.target);
@@ -436,11 +440,11 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         {
             version(Posix)
             {
-                import kameloso.common : errnoStrings;
+                import kameloso.tables : errnoMap;
                 import core.stdc.errno : errno;
 
                 enum pattern = "ErrnoException (<l>%s</>) caught when writing to log (<l>%s</>): <t>%s%s";
-                logger.warningf(pattern, errnoStrings[errno], key, e.msg, plugin.transient.bell);
+                logger.warningf(pattern, errnoMap[errno], key, e.msg, plugin.transient.bell);
             }
             else version(Windows)
             {
@@ -611,8 +615,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
             // logServer is probably false and event shouldn't be logged
             // OR we simply don't know how to deal with this event type
 
-            /*import kameloso.printing : printObject;
-            printObject(event);*/
+            /*import kameloso.prettyprint : prettyprint;
+            prettyprint(event);*/
         }
         break;
     }
@@ -719,8 +723,7 @@ void flushLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 
     try
     {
-        import std.algorithm.iteration : map;
-        import std.array : join;
+        import std.algorithm.iteration : joiner, map;
         import std.encoding : sanitize;
         import std.file : exists, isDir, mkdirRecurse;
         import std.stdio : File;
@@ -738,9 +741,9 @@ void flushLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         }
 
         // Write all in one go
-        immutable lines = buffer.lines.data
+        auto lines = buffer.lines.data
             .map!sanitize
-            .join("\n");
+            .joiner("\n");
 
         auto file = File(buffer.file, "a");
         file.writeln(lines);
@@ -759,11 +762,11 @@ void flushLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     {
         version(Posix)
         {
-            import kameloso.common : errnoStrings;
+            import kameloso.tables : errnoMap;
             enum pattern = "ErrnoException <l>%s</> caught when flushing log to <l>%s</>: <t>%s%s";
             logger.warningf(
                 pattern,
-                errnoStrings[e.errno],
+                errnoMap[e.errno],
                 buffer.file.doublyBackslashed,
                 e.msg,
                 plugin.transient.bell);

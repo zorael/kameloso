@@ -24,7 +24,7 @@
         [kameloso.plugins.twitch.providers.twitch],
         [kameloso.plugins.twitch.providers.google],
         [kameloso.plugins.twitch.providers.spotify],
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -166,7 +166,8 @@ public:
 /++
     Song requests may be either disabled, or either in YouTube or Spotify mode.
 
-    `SongRequestMode` abbreviated to fit into `printObjects` output formatting.
+    `SongRequestMode` abbreviated to fit into [kameloso.prettyprint.prettyprint]
+    output formatting.
  +/
 private enum SRM
 {
@@ -191,7 +192,7 @@ private enum SRM
  +/
 alias SongRequestMode = SRM;
 
-private import kameloso.plugins.common.core;
+private import kameloso.plugins.common;
 
 version(TwitchSupport):
 version(WithTwitchPlugin):
@@ -457,9 +458,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 
     if (plugin.twitchSettings.bellOnMessage)
     {
-        import kameloso.terminal : TerminalToken;
         import std.stdio : stdout, write;
-
         write(plugin.transient.bell);
         stdout.flush();
     }
@@ -551,9 +550,6 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.terminal : TerminalToken;
-    import std.stdio : stdout, write;
-
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     // Record viewer as active
@@ -567,6 +563,7 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
 
     if (plugin.twitchSettings.bellOnImportant)
     {
+        import std.stdio : stdout, write;
         write(plugin.transient.bell);
         stdout.flush();
     }
@@ -1082,16 +1079,17 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     plugin.state.messages ~= ThreadMessage.putUser(string.init, boxed(userCopy));
 
     /+
-        Start room monitors for the chanenl. We can assume they have not already
+        Start room monitors for the channel. We can assume they have not already
         been started, as room was either null or room.id was set above.
      +/
     startRoomMonitors(plugin, event.channel);
 
     if (plugin.twitchSettings.customEmotes)
     {
-        import kameloso.plugins.common.delayawait : delay;
+        import kameloso.plugins.twitch.emotes : baseDelayBetweenImports;
+        import kameloso.plugins.common.scheduling : delay;
         import kameloso.constants : BufferSize;
-        import core.time : Duration;
+        import std.algorithm.searching : countUntil;
 
         void importEmotesDg()
         {
@@ -1100,11 +1098,14 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
 
         /+
-            Custom emote import may take a long time, so delay it as a fiber to
-            defer invocation and avoid blocking here.
+            Stagger imports a bit.
          +/
+        immutable homeIndex = plugin.state.bot.homeChannels.countUntil(event.channel);
+        alias multiplier = homeIndex;
+        immutable delayUntilImport = baseDelayBetweenImports * multiplier;
+
         Fiber importEmotesFiber = new Fiber(&importEmotesDg, BufferSize.fiberStack);
-        delay(plugin, importEmotesFiber, Duration.zero);
+        delay(plugin, importEmotesFiber, delayUntilImport);
     }
 
     auto creds = event.channel in plugin.secretsByChannel;
@@ -1139,23 +1140,28 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
-// onGuestRoomState
+// onNonHomeRoomState
 /++
-    Fetches custom BetterTV, FrankerFaceZ and 7tv emotes for a guest channel iff
+    Fetches custom BetterTV, FrankerFaceZ and 7tv emotes for a any non-home channel iff
     version `TwitchCustomEmotesEverywhere`.
  +/
 version(TwitchCustomEmotesEverywhere)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
-    .channelPolicy(ChannelPolicy.guest)
+    .channelPolicy(ChannelPolicy.any)
     .fiber(true)
 )
-void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.plugins.twitch.emotes : importCustomEmotes;
+    import kameloso.plugins.twitch.emotes : baseDelayBetweenImports, importCustomEmotes;
+    import kameloso.plugins.common.scheduling : delay;
+    import std.algorithm.searching : canFind, countUntil;
     import std.conv : to;
 
     if (!plugin.twitchSettings.customEmotes) return;
+
+    // Skip home channels, they're handled in onRoomState
+    if (plugin.state.bot.homeChannels.canFind(event.channel)) return;
 
     if (event.channel in plugin.customEmotesByChannel)
     {
@@ -1163,6 +1169,30 @@ void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         return;
     }
 
+    /+
+        Stagger imports a bit.
+     +/
+    immutable guestIndex = plugin.state.bot.guestChannels.countUntil(event.channel);
+
+    if (guestIndex == -1)
+    {
+        // Channel joined via piped command or admin join command
+        immutable numHomesAndGuest = plugin.state.bot.homeChannels.length + plugin.state.bot.guestChannels.length;
+
+        if (plugin.transient.numCustomEmoteImports >= numHomesAndGuest)
+        {
+            // All home and guest channels have already been imported; import this one immediately
+            return importCustomEmotes(plugin, event.channel, event.aux[0].to!uint);
+        }
+    }
+
+    immutable baseMultiplier = (guestIndex == -1) ?
+        (event.channel.hashOf % 5) + 5 :  // randomise a delay for non-guest channels
+        guestIndex;
+    immutable multiplier = plugin.state.bot.homeChannels.length + baseMultiplier;
+    immutable delayUntilImport = baseDelayBetweenImports * multiplier;
+
+    delay(plugin, delayUntilImport, Yes.yield);
     importCustomEmotes(plugin, event.channel, event.aux[0].to!uint);
 }
 
@@ -1352,7 +1382,7 @@ void onCommandVanish(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
     catch (ErrorJSONException e)
     {
-        import kameloso.plugins.common : nameOf;
+        import kameloso.plugins.common.misc : nameOf;
         enum pattern = "Failed to vanish <l>%s</> in <l>%s</> <t>(%s)";
         logger.warningf(pattern, nameOf(event.sender), event.channel, e.msg);
     }
@@ -2041,7 +2071,7 @@ void onCommandNuke(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             }
             else
             {
-                import kameloso.plugins.common : nameOf;
+                import kameloso.plugins.common.misc : nameOf;
 
                 enum pattern = "Failed to delete a message from <h>%s</> in <l>%s";
                 logger.warningf(pattern, nameOf(storedEvent.sender), event.channel);
@@ -2806,7 +2836,7 @@ void onMyInfo(TwitchPlugin plugin)
 void startRoomMonitors(TwitchPlugin plugin, const string channelName)
 in (channelName.length, "Tried to start room monitor with an empty channel name string")
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import kameloso.constants : BufferSize;
     import std.datetime.systime : Clock;
     import core.time : Duration, MonoTime, hours, seconds;
@@ -3076,7 +3106,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
 void startValidator(TwitchPlugin plugin)
 in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import std.conv : to;
     import std.datetime.systime : Clock, SysTime;
     import std.json : JSONValue;
@@ -3275,7 +3305,7 @@ void complainAboutMissingTokens(const Exception base)
 void startSaver(TwitchPlugin plugin)
 in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import core.time : hours;
 
     // How often to save `ecount`s and viewer times, to ward against losing information to crashes.
@@ -3507,10 +3537,10 @@ void teardown(TwitchPlugin plugin)
 
     foreach (workerTid; plugin.transient.workerTids)
     {
-        import std.concurrency : Tid, send;
+        import std.concurrency : Tid, prioritySend;
 
         if (workerTid == Tid.init) continue;
-        workerTid.send(true);
+        workerTid.prioritySend(true);
     }
 
     if (plugin.twitchSettings.ecount && plugin.ecount.length)
@@ -3838,13 +3868,18 @@ void reload(TwitchPlugin plugin)
     {
         import kameloso.plugins.twitch.emotes : importCustomEmotes;
 
+        plugin.transient.numCustomEmoteImports = 0;
         plugin.customGlobalEmotes = null;
         importCustomEmotes(plugin);
 
         foreach (immutable channelName, const room; plugin.rooms)
         {
+            import kameloso.plugins.twitch.emotes : baseDelayBetweenImports;
+            import kameloso.plugins.common.scheduling : delay;
+
             plugin.customEmotesByChannel.remove(channelName);
             importCustomEmotes(plugin, channelName, room.id);
+            delay(plugin, baseDelayBetweenImports, Yes.yield);
         }
     }
 }
@@ -3885,7 +3920,7 @@ void onBusMessage(
 
             void whispererDg()
             {
-                import kameloso.plugins.common.delayawait : delay;
+                import kameloso.plugins.common.scheduling : delay;
 
                 plugin.transient.whispererRunning = true;
                 scope(exit) plugin.transient.whispererRunning = false;
@@ -4281,6 +4316,12 @@ package:
             Whether or not a delegate sending whispers is currently running.
          +/
         bool whispererRunning;
+
+        /++
+            For home many channels custom emotes have been imported, successfully
+            or unsuccessfully.
+         +/
+        uint numCustomEmoteImports;
     }
 
     /++
@@ -4412,7 +4453,7 @@ package:
             version(none)
             if (responseCode == 429)
             {
-                import kameloso.plugins.common.delayawait : delay;
+                import kameloso.plugins.common.scheduling : delay;
                 import core.time : seconds;
 
                 // 429 Too Many Requests
@@ -4550,8 +4591,8 @@ package:
     // isEnabled
     /++
         Override
-        [kameloso.plugins.common.core.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
-        (effectively overriding [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
+        [kameloso.plugins.common.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
+        (effectively overriding [kameloso.plugins.common.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
         and inject a server check, so this plugin only works on Twitch, in addition
         to doing nothing when [TwitchSettings.enabled] is false.
 

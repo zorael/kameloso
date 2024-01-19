@@ -18,7 +18,7 @@
     topic(state, "#channel", "I thought what I'd do was, I'd pretend I was one of those deaf-mutes.");
     ---
 
-    Having to supply the [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]
+    Having to supply the [kameloso.plugins.common.IRCPluginState|IRCPluginState]
     on every call can be avoided for plugins, by mixing in
     [kameloso.plugins.common.mixins.MessagingProxy|MessagingProxy]
     and placing the messaging function calls inside a `with (plugin)` block.
@@ -50,7 +50,7 @@ module kameloso.messaging;
 
 private:
 
-import kameloso.plugins.common.core : IRCPluginState;
+import kameloso.plugins.common : IRCPluginState;
 import kameloso.irccolours : expandIRCTags, stripIRCTags;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -111,7 +111,7 @@ struct Message
     Sends a channel message.
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channelName = Channel in which to send the message.
         content = Message body content to send.
@@ -191,7 +191,7 @@ unittest
     it will send a bus message to have the reply be sent as a whisper instead.
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         event = Original event, to which we're replying.
         content = Message body content to send.
@@ -327,7 +327,7 @@ unittest
     Sends a private query message to a user.
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         nickname = Nickname of user to which to send the private message.
         content = Message body content to send.
@@ -392,7 +392,7 @@ unittest
     underlying same type; [dialect.defs.IRCEvent.Type.PRIVMSG|PRIVMSG].
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channel = Channel in which to send the message, if applicable.
         nickname = Nickname of user to which to send the message, if applicable.
@@ -468,7 +468,7 @@ unittest
     Sends an `ACTION` "emote" to the supplied target (nickname or channel).
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         emoteTarget = Target of the emote, either a nickname to be sent as a
             private message, or a channel.
@@ -560,7 +560,7 @@ unittest
     This includes modes that pertain to a user in the context of a channel, like bans.
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channel = Channel to change the modes of.
         modes = Mode characters to apply to the channel.
@@ -614,7 +614,7 @@ unittest
     Sets the topic of a channel.
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channel = Channel whose topic to change.
         content = Topic body text.
@@ -664,7 +664,7 @@ unittest
     Invites a user to a channel.
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channel = Channel to which to invite the user.
         nickname = Nickname of user to invite.
@@ -715,7 +715,7 @@ unittest
     Joins a channel.
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channel = Channel to join.
         key = Channel key to join the channel with, if it's locked.
@@ -764,7 +764,7 @@ unittest
     Kicks a user from a channel.
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channel = Channel from which to kick the user.
         nickname = Nickname of user to kick.
@@ -819,7 +819,7 @@ unittest
     Leaves a channel.
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channel = Channel to leave.
         reason = Optionally, reason behind leaving.
@@ -869,7 +869,7 @@ unittest
     Disconnects from the server, optionally with a quit reason.
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         reason = Optionally, the reason for quitting.
         properties = Custom message properties, such as [Message.Property.quiet]
@@ -917,7 +917,7 @@ unittest
     Queries the server for WHOIS information about a user.
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         nickname = String nickname to query for.
         properties = Custom message properties, such as [Message.Property.quiet]
@@ -986,7 +986,7 @@ unittest
         [immediate]
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         line = Raw IRC string to send to the server.
         properties = Custom message properties, such as [Message.Property.quiet]
@@ -1037,7 +1037,7 @@ unittest
         [raw]
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+        state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         line = Raw IRC string to send to the server.
         properties = Custom message properties, such as [Message.Property.quiet]
@@ -1090,8 +1090,8 @@ alias immediateline = immediate;
     Params:
         askVerb = An `askToX` string verb where `X` corresponds to the
             [kameloso.logger.LogLevel|LogLevel] at which to log the message.
-        state = Current [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
-            used for its [kameloso.plugins.common.core.IRCPluginState.messages|messages] array.
+        state = Current [kameloso.plugins.common.IRCPluginState|IRCPluginState],
+            used for its [kameloso.plugins.common.IRCPluginState.messages|messages] array.
         line = The text body to ask the main thread to display.
  +/
 void askToOutputImpl(string askVerb)(IRCPluginState state, const string line)

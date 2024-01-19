@@ -7,7 +7,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#webtitle,
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -23,7 +23,7 @@ version(WithWebtitlePlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import requests.base : Response;
 import dialect.defs;
 import lu.container : MutexedAA;
@@ -124,9 +124,9 @@ static immutable descriptionExemptions =
     Merely passes the event on to [onMessageImpl].
 
     This function is annotated with
-    [kameloso.plugins.common.core.Permissions.ignore|Permissions.ignore],
+    [kameloso.plugins.common.Permissions.ignore|Permissions.ignore],
     but we don't mix in [MinimalAuthentication|MinimalAuthentication]. Ideally
-    we would annotate it [kameloso.plugins.common.core.Permissions.anyone|Permissions.anyone],
+    we would annotate it [kameloso.plugins.common.Permissions.anyone|Permissions.anyone],
     but then *any* channel message would incur a user lookup, which
     is a bit much.
 
@@ -175,9 +175,10 @@ void onMessageImpl(WebtitlePlugin plugin, const ref IRCEvent event)
     import lu.string : strippedLeft;
     import std.algorithm.searching : startsWith;
 
+    enum minimumPossibleLinkLength = "http://a.se".length;
     immutable content = event.content.strippedLeft;  // mutable
 
-    if (!content.length ||
+    if ((content.length < minimumPossibleLinkLength) ||  // duplicates check in findURLs, but shrug
         (plugin.state.settings.prefix.length && content.startsWith(plugin.state.settings.prefix)))
     {
         return;
@@ -220,7 +221,7 @@ void lookupURLs(
     const /*ref*/ IRCEvent event,
     /*const*/ string[] urls)
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import kameloso.common : logger;
     import kameloso.constants : BufferSize;
     import lu.array: uniqueKey;
@@ -263,7 +264,7 @@ void lookupURLs(
             if ((result.code < 200) ||
                 (result.code > 299))
             {
-                import kameloso.common : getHTTPResponseCodeText;
+                import kameloso.tables : getHTTPResponseCodeText;
 
                 enum pattern = "HTTP status <l>%03d</> (%s) fetching <l>%s";
                 logger.warningf(
@@ -360,7 +361,7 @@ in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber"
 
         if (result == TitleLookupResult.init)
         {
-            import kameloso.plugins.common.delayawait : delay;
+            import kameloso.plugins.common.scheduling : delay;
             import kameloso.constants : Timeout;
             import core.time : msecs;
 
@@ -436,7 +437,7 @@ void persistentQuerier(
         setThreadName("webworker");
     }
 
-    void onTitleRequest(string url, int id) scope
+    void onTitleRequest(string url, int id)
     {
         import lu.string : advancePast;
         import std.algorithm.searching : startsWith;
@@ -490,9 +491,9 @@ void persistentQuerier(
 
         if (!result.title.length) // && !result.exceptionText.length)
         {
-            static immutable bool[2] trueThenFalse = [ true, false ];
+            import kameloso.tables : trueThenFalse;
 
-            foreach (immutable firstTime; trueThenFalse[])
+            foreach (immutable isFirstTime; trueThenFalse[])
             {
                 result = sendHTTPRequestImpl(url, caBundleFile);
 
@@ -512,7 +513,7 @@ void persistentQuerier(
                     // Title found
                     break;  // ditty
                 }
-                else if (firstTime)
+                else if (isFirstTime)
                 {
                     // Still the first iteration, try rewriting the URL
                     if (url[$-1] == '/')
@@ -541,10 +542,14 @@ void persistentQuerier(
 
     bool halt;
 
-    void onQuitMessage(bool) scope
+    void onQuitMessage(bool)
     {
         halt = true;
     }
+
+    // This avoids the GC allocating a closure, which is fine in this case, but do this anyway
+    scope onTitleRequestDg = &onTitleRequest;
+    scope onQuitMessageDg = &onQuitMessage;
 
     while (!halt)
     {
@@ -554,8 +559,8 @@ void persistentQuerier(
             import std.variant : Variant;
 
             receive(
-                &onTitleRequest,
-                &onQuitMessage,
+                onTitleRequestDg,
+                onQuitMessageDg,
                 (Variant v)
                 {
                     import std.stdio : stdout, writeln;
@@ -599,7 +604,7 @@ TitleLookupResult sendHTTPRequest(
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
     import core.time : msecs;
@@ -933,10 +938,10 @@ void teardown(WebtitlePlugin plugin)
 {
     foreach (workerTid; plugin.transient.workerTids)
     {
-        import std.concurrency : Tid, send;
+        import std.concurrency : Tid, prioritySend;
 
         if (workerTid == Tid.init) continue;
-        workerTid.send(true);
+        workerTid.prioritySend(true);
     }
 }
 

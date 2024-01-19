@@ -6,7 +6,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#poll,
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -22,7 +22,7 @@ version(WithPollPlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : logger;
 import kameloso.messaging;
@@ -475,7 +475,7 @@ void generatePollFiber(
     const string channelName,
     Poll poll)
 {
-    import kameloso.plugins.common.delayawait : await;
+    import kameloso.plugins.common.scheduling : await;
     import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import std.format : format;
@@ -496,7 +496,7 @@ void generatePollFiber(
     {
         scope(exit)
         {
-            import kameloso.plugins.common.delayawait : unawait;
+            import kameloso.plugins.common.scheduling : unawait;
 
             unawait(plugin, nonTwitchVoteEventTypes[]);
             unawait(plugin, IRCEvent.Type.CHAN);
@@ -838,7 +838,7 @@ void generateVoteReminders(
 
             if (untilReminder > Duration.zero)
             {
-                import kameloso.plugins.common.delayawait : delay;
+                import kameloso.plugins.common.scheduling : delay;
                 delay(plugin, (() => reminderDg(reminderPoint)), untilReminder);
             }
         }
@@ -860,7 +860,7 @@ void generateEndFiber(
     const string channelName,
     const Poll poll)
 {
-    import kameloso.plugins.common.delayawait : await, delay, unawait;
+    import kameloso.plugins.common.scheduling : await, delay, unawait;
     import kameloso.thread : CarryingFiber;
     import kameloso.constants : BufferSize;
     import std.datetime.systime : Clock;
@@ -970,7 +970,7 @@ void onWelcome(PollPlugin plugin)
 // onSelfjoin
 /++
     Registers a channel entry in
-    [kameloso.plugins.common.core.IRCPluginState.channels|IRCPluginState.channels]
+    [kameloso.plugins.common.IRCPluginState.channels|IRCPluginState.channels]
     upon joining one.
 
     This would normally be done using
@@ -993,7 +993,7 @@ void onSelfjoin(PollPlugin plugin, const ref IRCEvent event)
 // onSelfpart
 /++
     De-registers a channel entry in
-    [kameloso.plugins.common.core.IRCPluginState.channels|IRCPluginState.channels]
+    [kameloso.plugins.common.IRCPluginState.channels|IRCPluginState.channels]
     upon parting from one.
 
     This would normally be done using

@@ -22,7 +22,7 @@ private:
     import kameloso.common : OutgoingLine, logger;
     import kameloso.constants : BufferSize;
     import kameloso.net : Connection;
-    import kameloso.plugins.common.core : IRCPlugin;
+    import kameloso.plugins.common : IRCPlugin;
     import kameloso.pods : ConnectionSettings, CoreSettings, IRCBot;
     import dialect.defs : IRCClient, IRCServer;
     import dialect.parsing : IRCParser;
@@ -507,7 +507,7 @@ public:
     void instantiatePlugins() @system
     in (!this.plugins.length, "Tried to instantiate plugins but the array was not empty")
     {
-        import kameloso.plugins.common.core : IRCPluginState;
+        import kameloso.plugins.common : IRCPluginState;
         import kameloso.plugins.common.misc : applyCustomSettings;
         import std.concurrency : thisTid;
         static import kameloso.plugins;
@@ -591,7 +591,7 @@ public:
         Initialises all plugins, calling any module-level `.initialise` functions.
 
         This merely calls
-        [kameloso.plugins.common.core.IRCPlugin.initialise|IRCPlugin.initialise]
+        [kameloso.plugins.common.IRCPlugin.initialise|IRCPlugin.initialise]
         on each plugin.
 
         If any plugin fails to initialise, it will have thrown and something up
@@ -605,7 +605,7 @@ public:
         This happens after connection has been established.
 
         This merely calls
-        [kameloso.plugins.common.core.IRCPlugin.setupIRCPlugin.setup]
+        [kameloso.plugins.common.IRCPlugin.setupIRCPlugin.setup]
         on each plugin.
 
         Don't setup disabled plugins.
@@ -617,7 +617,7 @@ public:
         Initialises all plugins' resource files.
 
         This merely calls
-        [kameloso.plugins.common.core.IRCPlugin.initResources|IRCPlugin.initResources]
+        [kameloso.plugins.common.IRCPlugin.initResources|IRCPlugin.initResources]
         on each plugin.
      +/
     alias initPluginResources = issuePluginCallImpl!"initResources";
@@ -627,7 +627,7 @@ public:
         Reloads all plugins by calling any module-level `reload` functions.
 
         This merely calls
-        [kameloso.plugins.common.core.IRCPlugin.reload|IRCPlugin.reload]
+        [kameloso.plugins.common.IRCPlugin.reload|IRCPlugin.reload]
         on each plugin.
 
         What this actually does is up to the plugins.
@@ -743,7 +743,7 @@ public:
 
         Params:
             plugin = The plugin whose
-                [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]s
+                [kameloso.plugins.common.IRCPluginState|IRCPluginState]s
                 member structs to inspect for updates.
      +/
     void checkPluginForUpdates(IRCPlugin plugin)
@@ -793,7 +793,7 @@ public:
     // propagate
     /++
         Propgates an updated struct, to `this`, [parser], and to each plugins'
-        [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]s, overwriting
+        [kameloso.plugins.common.IRCPluginState|IRCPluginState]s, overwriting
         existing such.
 
         Params:

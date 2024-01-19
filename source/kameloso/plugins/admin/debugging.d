@@ -63,11 +63,11 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
         if (plugin.eventTypesToPrint[event.type] ||
             plugin.eventTypesToPrint[IRCEvent.Type.ANY])
         {
-            import kameloso.printing : printObject;
+            import kameloso.prettyprint : prettyprint;
 
-            printObject(event);
-            if (event.sender != IRCUser.init) printObject(event.sender);
-            if (event.target != IRCUser.init) printObject(event.target);
+            prettyprint(event);
+            if (event.sender != IRCUser.init) prettyprint(event.sender);
+            if (event.target != IRCUser.init) prettyprint(event.target);
             wroteSomething = true;
         }
     }
@@ -100,7 +100,7 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
  +/
 void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.printing : printObject;
+    import kameloso.prettyprint : prettyprint;
     import std.algorithm.iteration : splitter;
 
     if (plugin.state.settings.headless) return;
@@ -109,7 +109,7 @@ void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
     {
         if (const user = username in plugin.state.users)
         {
-            printObject(*user);
+            prettyprint(*user);
         }
         else
         {
@@ -126,11 +126,11 @@ void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
 // onCommandShowUsersImpl
 /++
     Prints out the current `users` array of the [kameloso.plugins.admin.AdminPlugin|AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] to the local terminal.
+    [kameloso.plugins.common.IRCPluginState|IRCPluginState] to the local terminal.
  +/
 void onCommandShowUsersImpl(AdminPlugin plugin)
 {
-    import kameloso.printing : printObject;
+    import kameloso.prettyprint : prettyprint;
     import std.stdio : stdout, writeln;
 
     if (plugin.state.settings.headless) return;
@@ -138,7 +138,7 @@ void onCommandShowUsersImpl(AdminPlugin plugin)
     foreach (immutable name, const user; plugin.state.users)
     {
         writeln(name);
-        printObject(user);
+        prettyprint(user);
     }
 
     writeln(plugin.state.users.length, " users.");
@@ -205,7 +205,7 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const ref IRCEvent event)
     Changes the contents of the
     [kameloso.plugins.admin.AdminPlugin.eventTypesToPrint|AdminPlugin.eventTypesToPrint]
     array, to prettyprint all incoming events of the types with a value of `true`
-    therein, using [kameloso.printing.printObject|printObject].
+    therein, using [kameloso.prettyprint.prettyprint|prettyprint].
 
     This is for debugging purposes.
 
@@ -293,20 +293,20 @@ version(IncludeHeavyStuff)
 void onCommandStatusImpl(AdminPlugin plugin)
 {
     import kameloso.common : logger;
-    import kameloso.printing : printObjects;
+    import kameloso.prettyprint : prettyprint;
     import std.stdio : stdout, writeln;
 
     if (plugin.state.settings.headless) return;
 
     logger.log("Current state:");
-    printObjects!(Yes.all)(plugin.state.client, plugin.state.server);
+    prettyprint!(Yes.all)(plugin.state.client, plugin.state.server);
     writeln();
 
     logger.log("Channels:");
     foreach (immutable channelName, const channel; plugin.state.channels)
     {
         writeln(channelName);
-        printObjects(channel);
+        prettyprint(channel);
     }
     //writeln();
 
@@ -314,7 +314,7 @@ void onCommandStatusImpl(AdminPlugin plugin)
     foreach (immutable nickname, const user; plugin.state.users)
     {
         writeln(nickname);
-        printObject(user);
+        prettyprint(user);
     }*/
 
     if (plugin.state.settings.flush) stdout.flush();

@@ -2,7 +2,7 @@
     Various traits that are too kameloso-specific to be in [lu].
 
     They generally deal with lengths of aggregate member names, used to format
-    output and align columns for [kameloso.printing.printObject].
+    output and align columns for [kameloso.prettyprint.prettyprint].
 
     More of our homebrewn traits were deemed too generic to be in kameloso and
     were moved to [lu.traits] instead.

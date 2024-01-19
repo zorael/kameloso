@@ -5,7 +5,7 @@
 
     Example:
 
-    `printObjects(client, bot, settings);`
+    `prettyprint(client, bot, settings);`
     ---
 /* Output to screen:
 
@@ -40,7 +40,7 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-module kameloso.printing;
+module kameloso.prettyprint;
 
 private:
 
@@ -133,9 +133,9 @@ unittest
 }
 
 
-// printObjects
+// prettyprint
 /++
-    Prints out aggregate objects, with all their printable members with all their
+    Prettyprints out aggregate objects, with all their printable members with all their
     printable values.
 
     This is not only convenient for debugging but also usable to print out
@@ -152,7 +152,7 @@ unittest
     }
 
     Foo foo, bar;
-    printObjects(foo, bar);
+    prettyprint(foo, bar);
     ---
 
     Params:
@@ -162,7 +162,7 @@ unittest
             Also those annotated [lu.uda.Hidden|Hidden].
         things = Variadic list of aggregate objects to enumerate.
  +/
-void printObjects(Flag!"all" all = No.all, Things...)(const auto ref Things things)
+void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things things)
 {
     import kameloso.constants : BufferSize;
     import std.array : Appender;
@@ -204,7 +204,7 @@ void printObjects(Flag!"all" all = No.all, Things...)(const auto ref Things thin
 
     static Appender!(char[]) outbuffer;
     scope(exit) outbuffer.clear();
-    outbuffer.reserve(BufferSize.printObjectBufferPerObject * Things.length);
+    outbuffer.reserve(BufferSize.prettyprintBufferPerObject * Things.length);
 
     foreach (immutable i, ref thing; things)
     {
@@ -214,7 +214,7 @@ void printObjects(Flag!"all" all = No.all, Things...)(const auto ref Things thin
         {
             if (kameloso.common.settings.colours)
             {
-                formatObjectImpl!(all, Yes.coloured)
+                prettyformatImpl!(all, Yes.coloured)
                     (outbuffer,
                     cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal,
                     thing,
@@ -227,7 +227,7 @@ void printObjects(Flag!"all" all = No.all, Things...)(const auto ref Things thin
         if (!put)
         {
             // Brightness setting is irrelevant; pass No
-            formatObjectImpl!(all, No.coloured)
+            prettyformatImpl!(all, No.coloured)
                 (outbuffer,
                 No.brightTerminal,
                 thing,
@@ -255,11 +255,7 @@ void printObjects(Flag!"all" all = No.all, Things...)(const auto ref Things thin
 }
 
 
-/// Ditto
-alias printObject = printObjects;
-
-
-// formatObjects
+// prettyformat
 /++
     Formats an aggregate object, with all its printable members with all their
     printable values. Overload that writes to a passed output range sink.
@@ -277,8 +273,8 @@ alias printObject = printObjects;
     Foo foo, bar;
     Appender!(char[]) sink;
 
-    sink.formatObjects!(Yes.all, Yes.coloured)(foo);
-    sink.formatObjects!(No.all, No.coloured)(bar);
+    sink.prettyformat!(Yes.all, Yes.coloured)(foo);
+    sink.prettyformat!(No.all, No.coloured)(bar);
     writeln(sink.data);
     ---
 
@@ -292,7 +288,7 @@ alias printObject = printObjects;
         bright = Whether or not to format for a bright terminal background.
         things = Variadic list of aggregate objects to enumerate and format.
  +/
-void formatObjects(Flag!"all" all = No.all,
+void prettyformat(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
     (auto ref Sink sink,
     const Flag!"brightTerminal" bright,
@@ -331,7 +327,7 @@ void formatObjects(Flag!"all" all = No.all,
 
     foreach (immutable i, ref thing; things)
     {
-        formatObjectImpl!(all, coloured)
+        prettyformatImpl!(all, coloured)
             (sink,
             bright,
             thing,
@@ -347,13 +343,10 @@ void formatObjects(Flag!"all" all = No.all,
     }
 }
 
-/// Ditto
-alias formatObject = formatObjects;
-
 
 // FormatStringMemberArguments
 /++
-    Argument aggregate for invocations of [formatStringMemberImpl].
+    Argument aggregate for invocations of [prettyformatStringMemberImpl].
  +/
 private struct FormatStringMemberArguments
 {
@@ -394,19 +387,19 @@ private struct FormatStringMemberArguments
 }
 
 
-// formatStringMemberImpl
+// prettyformatStringMemberImpl
 /++
-    Formats the description of a string for insertion into a [formatObjects] listing.
+    Formats the description of a string for insertion into a [prettyformat] listing.
     The full string is passed and the function will truncate it if it's too long.
 
-    Broken out of [formatObjects] to reduce template bloat.
+    Broken out of [prettyformat] to reduce template bloat.
 
     Params:
         coloured = Whether or no to display terminal colours.
         sink = Output range to store output in.
         args = Argument aggregate for easier passing.
  +/
-private void formatStringMemberImpl(Flag!"coloured" coloured, Sink)
+private void prettyformatStringMemberImpl(Flag!"coloured" coloured, Sink)
     (auto ref Sink sink,
     const FormatStringMemberArguments args)
 {
@@ -496,7 +489,7 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, Sink)
 
 // FormatArrayMemberArguments
 /++
-    Argument aggregate for invocations of [formatArrayMemberImpl].
+    Argument aggregate for invocations of [prettyformatArrayMemberImpl].
  +/
 private struct FormatArrayMemberArguments
 {
@@ -567,18 +560,18 @@ private struct FormatArrayMemberArguments
 }
 
 
-// formatArrayMemberImpl
+// prettyformatArrayMemberImpl
 /++
-    Formats the description of an array for insertion into a [formatObjects] listing.
+    Formats the description of an array for insertion into a [prettyformat] listing.
 
-    Broken out of [formatObjects] to reduce template bloat.
+    Broken out of [prettyformat] to reduce template bloat.
 
     Params:
         coloured = Whether or no to display terminal colours.
         sink = Output range to store output in.
         args = Argument aggregate for easier passing.
  +/
-private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink)
+private void prettyformatArrayMemberImpl(Flag!"coloured" coloured, Sink)
     (auto ref Sink sink,
     const FormatArrayMemberArguments args)
 {
@@ -677,12 +670,12 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink)
 }
 
 
-// formatAssociativeArrayMemberImpl
+// prettyformatAssociativeArrayMemberImpl
 /++
     Formats the description of an associative array for insertion into a
-    [formatObjects] listing.
+    [prettyformat] listing.
 
-    Broken out of [formatObjects] to reduce template bloat.
+    Broken out of [prettyformat] to reduce template bloat.
 
     Params:
         coloured = Whether or no to display terminal colours.
@@ -690,7 +683,7 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink)
         args = Argument aggregate for easier passing.
         content = The associative array we're describing.
  +/
-private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Sink)
+private void prettyformatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Sink)
     (auto ref Sink sink,
     const FormatArrayMemberArguments args,
     const string[string] content)
@@ -800,7 +793,7 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Sink)
 
 // FormatAggregateMemberArguments
 /++
-    Argument aggregate for invocations of [formatAggregateMemberImpl].
+    Argument aggregate for invocations of [prettyformatAggregateMemberImpl].
  +/
 private struct FormatAggregateMemberArguments
 {
@@ -841,18 +834,18 @@ private struct FormatAggregateMemberArguments
 }
 
 
-// formatAggregateMemberImpl
+// prettyformatAggregateMemberImpl
 /++
-    Formats the description of an aggregate for insertion into a [formatObjects] listing.
+    Formats the description of an aggregate for insertion into a [prettyformat] listing.
 
-    Broken out of [formatObjects] to reduce template bloat.
+    Broken out of [prettyformat] to reduce template bloat.
 
     Params:
         coloured = Whether or no to display terminal colours.
         sink = Output range to store output in.
         args = Argument aggregate for easier passing.
  +/
-private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
+private void prettyformatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
     (auto ref Sink sink, const FormatAggregateMemberArguments args)
 {
     import std.format : formattedWrite;
@@ -896,7 +889,7 @@ private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
 
 // FormatOtherMemberArguments
 /++
-    Argument aggregate for invocations of [formatOtherMemberImpl].
+    Argument aggregate for invocations of [prettyformatOtherMemberImpl].
  +/
 private struct FormatOtherMemberArguments
 {
@@ -932,19 +925,19 @@ private struct FormatOtherMemberArguments
 }
 
 
-// formatOtherMemberImpl
+// prettyformatOtherMemberImpl
 /++
     Formats the description of a non-string, non-array, non-aggregate value
-    for insertion into a [formatObjects] listing.
+    for insertion into a [prettyformat] listing.
 
-    Broken out of [formatObjects] to reduce template bloat.
+    Broken out of [prettyformat] to reduce template bloat.
 
     Params:
         coloured = Whether or no to display terminal colours.
         sink = Output range to store output in.
         args = Argument aggregate for easier passing.
  +/
-private void formatOtherMemberImpl(Flag!"coloured" coloured, Sink)
+private void prettyformatOtherMemberImpl(Flag!"coloured" coloured, Sink)
     (auto ref Sink sink,
     const FormatOtherMemberArguments args)
 {
@@ -985,11 +978,11 @@ private void formatOtherMemberImpl(Flag!"coloured" coloured, Sink)
 }
 
 
-// formatObjectImpl
+// prettyformatImpl
 /++
     Formats an aggregate object, with all its printable members with all their
     printable values. This is an implementation template and should not be
-    called directly; instead use [printObjects] or [formatObjects].
+    called directly; instead use [prettyprint] or [prettyformat].
 
     Params:
         all = Whether or not to also display members marked as
@@ -1003,7 +996,7 @@ private void formatOtherMemberImpl(Flag!"coloured" coloured, Sink)
         typewidth = The width with which to pad type names, to align properly.
         namewidth = The width with which to pad variable names, to align properly.
  +/
-private void formatObjectImpl(Flag!"all" all = No.all,
+private void prettyformatImpl(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Thing)
     (auto ref Sink sink,
     const Flag!"brightTerminal" bright,
@@ -1091,7 +1084,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
                 args.bright = bright;
                 args.truncateAfter = all ? uint.max : stringTruncation;
                 args.value = content.to!string;
-                formatStringMemberImpl!coloured(sink, args);
+                prettyformatStringMemberImpl!coloured(sink, args);
             }
             else static if (isArray!T || isAssociativeArray!T)
             {
@@ -1144,7 +1137,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
                         .take(truncateAfter)
                         .map!(a => a.to!string)
                         .array;
-                    formatArrayMemberImpl!coloured(sink, args);
+                    prettyformatArrayMemberImpl!coloured(sink, args);
                 }
                 else /*static if (isAssociativeArray!T)*/
                 {
@@ -1175,7 +1168,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
                         alias asStringAA = content;
                     }
 
-                    formatAssociativeArrayMemberImpl!coloured(sink, args, asStringAA);
+                    prettyformatAssociativeArrayMemberImpl!coloured(sink, args, asStringAA);
                 }
             }
             else static if (isAggregateType!T)
@@ -1210,7 +1203,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
                 args.bright = bright;
-                formatAggregateMemberImpl!coloured(sink, args);
+                prettyformatAggregateMemberImpl!coloured(sink, args);
             }
             else
             {
@@ -1256,7 +1249,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
                     args.value = content.to!string;
                 }
 
-                formatOtherMemberImpl!coloured(sink, args);
+                prettyformatOtherMemberImpl!coloured(sink, args);
             }
         }
     }
@@ -1321,7 +1314,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
    char[char] cC                         ['k':'v', 'K':'V'](2)
 `;
 
-        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
+        sink.prettyformat!(No.all, No.coloured)(No.brightTerminal, s);
         sink.data.assertMultilineOpEquals(structNameSerialised);
         sink.clear();
 
@@ -1370,7 +1363,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
  string[string] aa2                        ["foo":"bar", "harbl":"snarbl"](2)
 `;
 
-        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c1);
+        sink.prettyformat!(No.all, No.coloured)(No.brightTerminal, c1);
         sink.data.assertMultilineOpEquals(classNameSerialised);
         sink.clear();
     }
@@ -1406,7 +1399,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
           int fdsa                        -1
 `;
 
-        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, st1, st2);
+        sink.prettyformat!(No.all, No.coloured)(No.brightTerminal, st1, st2);
         sink.data.assertMultilineOpEquals(st1st2Formatted);
         sink.clear();
     }
@@ -1426,7 +1419,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
 
             sink.clear();
             sink.reserve(256);  // ~239
-            sink.formatObjects!(No.all, Yes.coloured)(No.brightTerminal, s2);
+            sink.prettyformat!(No.all, Yes.coloured)(No.brightTerminal, s2);
 
             assert((sink.data.length > 12), "Empty sink after coloured fill");
 
@@ -1466,7 +1459,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
           int i                           42
 `;
 
-        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c2);
+        sink.prettyformat!(No.all, No.coloured)(No.brightTerminal, c2);
         sink.data.assertMultilineOpEquals(cFormatted);
         sink.clear();
     }
@@ -1506,14 +1499,14 @@ private void formatObjectImpl(Flag!"all" all = No.all,
           int i                           -1
 `;
 
-        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c4, c4.i3, c4.c3);
+        sink.prettyformat!(No.all, No.coloured)(No.brightTerminal, c4, c4.i3, c4.c3);
         sink.data.assertMultilineOpEquals(c4Formatted);
         //sink.clear();
     }
 }
 
 
-// formatObjects
+// prettyformat
 /++
     Formats a struct object, with all its printable members with all their
     printable values. A `string`-returning overload that doesn't take an input range.
@@ -1533,8 +1526,8 @@ private void formatObjectImpl(Flag!"all" all = No.all,
 
     Foo foo, bar;
 
-    writeln(formatObjects!(No.all, Yes.coloured)(foo));
-    writeln(formatObjects!(Yes.all, No.coloured)(bar));
+    writeln(prettyformat!(No.all, Yes.coloured)(foo));
+    writeln(prettyformat!(Yes.all, No.coloured)(bar));
     ---
 
     Params:
@@ -1549,7 +1542,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
     Returns:
         String with the object formatted, as per the passed arguments.
  +/
-string formatObjects(Flag!"all" all = No.all, Flag!"coloured" coloured = Yes.coloured, Things...)
+string prettyformat(Flag!"all" all = No.all, Flag!"coloured" coloured = Yes.coloured, Things...)
     (const Flag!"brightTerminal" bright,
     const auto ref Things things) pure
 if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))  // must be a constraint
@@ -1558,9 +1551,9 @@ if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))  // must be a con
     import std.array : Appender;
 
     Appender!(char[]) sink;
-    sink.reserve(BufferSize.printObjectBufferPerObject * Things.length);
+    sink.reserve(BufferSize.prettyprintBufferPerObject * Things.length);
 
-    formatObjects!(all, coloured)(sink, bright, things);
+    prettyformat!(all, coloured)(sink, bright, things);
     return sink.data;
 }
 
@@ -1569,7 +1562,7 @@ unittest
 {
     import kameloso.common : assertMultilineOpEquals;
 
-    // Rely on the main unit tests of the output range version of formatObjects
+    // Rely on the main unit tests of the output range version of prettyformat
     {
         struct Struct
         {
@@ -1587,7 +1580,7 @@ unittest
           int asdf                        42
 `;
 
-        immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
+        immutable actual = prettyformat!(No.all, No.coloured)(No.brightTerminal, s);
         actual.assertMultilineOpEquals(expected);
     }
     {
@@ -1618,7 +1611,7 @@ unittest
        Nested nest                       <class> (null)
 `;
 
-        immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
+        immutable actual = prettyformat!(No.all, No.coloured)(No.brightTerminal, c);
         actual.assertMultilineOpEquals(expected);
 
         c.nest = new Nested;
@@ -1631,7 +1624,7 @@ unittest
        Nested nest                       <class>
 `;
 
-        immutable actual2 = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
+        immutable actual2 = prettyformat!(No.all, No.coloured)(No.brightTerminal, c);
         actual2.assertMultilineOpEquals(expected2);
     }
     {
@@ -1657,7 +1650,7 @@ unittest
          bool hasReplays                  false
 `;
 
-        immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, state);
+        immutable actual = prettyformat!(No.all, No.coloured)(No.brightTerminal, state);
         actual.assertMultilineOpEquals(expected);
     }
 }

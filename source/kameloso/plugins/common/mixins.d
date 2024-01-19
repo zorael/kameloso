@@ -4,8 +4,8 @@
     This was all in one `plugins/common.d` file that just grew too big.
 
     See_Also:
-        [kameloso.plugins.common.core],
-        [kameloso.plugins.common.delayawait]
+        [kameloso.plugins.common],
+        [kameloso.plugins.common.scheduling]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -57,7 +57,7 @@ mixin template WHOISFiberDelegate(
     alias onFailure = null,
     Flag!"alwaysLookup" alwaysLookup = No.alwaysLookup)
 {
-    import kameloso.plugins.common.core : IRCPlugin;
+    import kameloso.plugins.common : IRCPlugin;
     import std.traits : ParameterIdentifierTuple, isSomeFunction;
     import std.typecons : Flag, No, Yes;
 
@@ -140,7 +140,7 @@ mixin template WHOISFiberDelegate(
      +/
     void whoisFiberDelegate()
     {
-        import kameloso.plugins.common.delayawait : unawait;
+        import kameloso.plugins.common.scheduling : unawait;
         import kameloso.thread : CarryingFiber;
         import dialect.common : opEqualsCaseInsensitive;
         import dialect.defs : IRCEvent, IRCUser;
@@ -305,7 +305,7 @@ mixin template WHOISFiberDelegate(
     /++
         Constructs a [kameloso.thread.CarryingFiber|CarryingFiber] carrying a
         [dialect.defs.IRCEvent|IRCEvent] and enqueues it into the
-        [kameloso.plugins.common.core.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
+        [kameloso.plugins.common.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
         associative array, then issues a WHOIS query (unless overridden via
         the `issueWhois` parameter).
 
@@ -323,7 +323,7 @@ mixin template WHOISFiberDelegate(
         const Flag!"issueWhois" issueWhois = Yes.issueWhois,
         const Flag!"background" background = No.background)
     {
-        import kameloso.plugins.common.delayawait : await;
+        import kameloso.plugins.common.scheduling : await;
         import kameloso.constants : BufferSize;
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
@@ -528,7 +528,7 @@ mixin template WHOISFiberDelegate(
 mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_)
 {
 private:
-    import kameloso.plugins.common.core : IRCPlugin;
+    import kameloso.plugins.common : IRCPlugin;
     import kameloso.messaging : Message;
     import std.meta : AliasSeq;
     import std.typecons : Flag, No, Yes;
@@ -887,7 +887,7 @@ void askTo" ~ verb ~ "(const string line)
 ///
 unittest
 {
-    import kameloso.plugins.common.core : IRCPlugin, IRCPluginImpl, IRCPluginState;
+    import kameloso.plugins.common : IRCPlugin, IRCPluginImpl, IRCPluginState;
 
     class MyPlugin : IRCPlugin
     {

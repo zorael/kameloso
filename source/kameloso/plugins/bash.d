@@ -5,7 +5,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#bash,
-        [kameloso.plugins.common.core],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.misc]
 
     Copyright: [JR](https://github.com/zorael)
@@ -21,7 +21,7 @@ version(WithBashPlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.core;
+import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import requests.base : Response;
 import dialect.defs;
@@ -167,7 +167,7 @@ void lookupQuote(
     const string quoteID,
     const /*ref*/ IRCEvent event)
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import kameloso.common : logger;
     import kameloso.constants : BufferSize;
     import kameloso.messaging : privmsg;
@@ -195,7 +195,7 @@ void lookupQuote(
         if ((result.code < 200) ||
             (result.code > 299))
         {
-            import kameloso.common : getHTTPResponseCodeText;
+            import kameloso.tables : getHTTPResponseCodeText;
 
             enum pattern = "HTTP status <l>%03d</> (%s)";
             logger.warningf(
@@ -280,7 +280,8 @@ auto parseResponseIntoBashLookupResult(/*const*/ Response res)
 
     auto reportLayoutErrorAndReturnResults()
     {
-        import kameloso.common : getHTTPResponseCodeText, logger;
+        import kameloso.common : logger;
+        import kameloso.tables : getHTTPResponseCodeText;
 
         enum message = "Bash plugin failed to parse <l>bash.org</> response: " ~
             "page has unexpected layout";
@@ -438,7 +439,7 @@ BashLookupResult sendHTTPRequest(
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
 {
-    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.plugins.common.scheduling : delay;
     import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
     import core.time : msecs;
@@ -533,7 +534,7 @@ in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber"
 
         if (result == BashLookupResult.init)
         {
-            import kameloso.plugins.common.delayawait : delay;
+            import kameloso.plugins.common.scheduling : delay;
             import kameloso.constants : Timeout;
             import core.time : msecs;
 
@@ -606,10 +607,14 @@ void persistentQuerier(
 
     bool halt;
 
-    void onQuitMessage(bool) scope
+    void onQuitMessage(bool)
     {
         halt = true;
     }
+
+    // This avoids the GC allocating a closure, which is fine in this case, but do this anyway
+    scope onBashLookupRequestDg = &onBashLookupRequest;
+    scope onQuitMessageDg = &onQuitMessage;
 
     while (!halt)
     {
@@ -619,8 +624,8 @@ void persistentQuerier(
             import std.variant : Variant;
 
             receive(
-                &onBashLookupRequest,
-                &onQuitMessage,
+                onBashLookupRequestDg,
+                onQuitMessageDg,
                 (Variant v)
                 {
                     import std.stdio : stdout, writeln;
@@ -657,11 +662,11 @@ void setup(BashPlugin plugin)
  +/
 void teardown(BashPlugin plugin)
 {
-    import std.concurrency : Tid, send;
+    import std.concurrency : Tid, prioritySend;
 
     if (plugin.transient.workerTid != Tid.init)
     {
-       plugin.transient.workerTid.send(true);
+       plugin.transient.workerTid.prioritySend(true);
     }
 }
 
