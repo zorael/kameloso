@@ -3830,6 +3830,12 @@ public:
      +/
     string context() const pure @safe nothrow @nogc;
 
+    // subcontext
+    /++
+        String secondary context of the action.
+     +/
+    string subcontext() const pure @safe nothrow @nogc;
+
     // creator
     /++
         Name of the function that created this action.
@@ -3866,6 +3872,11 @@ private:
     string _context;
 
     /++
+        Private secondary context string.
+     +/
+    string _subcontext;
+
+    /++
         Private creator string.
      +/
     string _creator;
@@ -3888,9 +3899,11 @@ public:
     this(
         CarryingFiber!T fiber,
         string context,
+        string subcontext,
         const string creator) pure @safe nothrow @nogc
     {
         this._context = context;
+        this._subcontext = subcontext;
         this._fiber = fiber;
         this._creator = creator;
     }
@@ -3907,11 +3920,13 @@ public:
     this(
         void delegate() dg,
         string context,
+        string subcontext,
         const string creator) /*pure @safe @nogc*/ nothrow
     {
         import kameloso.constants : BufferSize;
 
         this._context = context;
+        this._subcontext = subcontext;
         this._fiber = new CarryingFiber!T(dg, BufferSize.fiberStack);
         this._fiber.creator = creator;
         this._creator = creator;
@@ -3927,6 +3942,18 @@ public:
     string context() const pure @safe nothrow @nogc
     {
         return _context;
+    }
+
+    // subcontext
+    /++
+        String secondsary context of the action. May be anything; highly action-specific.
+
+        Returns:
+            A string.
+     +/
+    string subcontext() const pure @safe nothrow @nogc
+    {
+        return _subcontext;
     }
 
     // creator
@@ -3970,15 +3997,18 @@ public:
             array the action will be appended to.
         fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the action.
         context = String context of the action.
+        subcontext = String secondary context of the action.
         creator = Name of the function that created this action.
  +/
 void defer(T)
     (IRCPlugin plugin,
     CarryingFiber!T fiber,
     const string context = string.init,
+    const string subcontext = string.init,
     const string creator = __FUNCTION__) pure @safe nothrow
 {
-    plugin.state.deferredActions.put(new DeferredActionImpl!T(fiber, context, creator));
+    auto action = new DeferredActionImpl!T(fiber, context, subcontext, creator);
+    plugin.state.deferredActions.put(action);
 }
 
 
@@ -3997,15 +4027,18 @@ void defer(T)
             array the action will be appended to.
         dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
         context = String context of the action.
+        subcontext = String secondary context of the action.
         creator = Name of the function that created this action.
  +/
 void defer(T)
     (IRCPlugin plugin,
     void delegate() dg,
     const string context = string.init,
+    const string subcontext = string.init,
     const string creator = __FUNCTION__) /*pure @safe*/ nothrow
 {
-    plugin.state.deferredActions.put(new DeferredActionImpl!T(dg, context, creator));
+    auto action = new DeferredActionImpl!T(dg, context, subcontext, creator);
+    plugin.state.deferredActions.put(action);
 }
 
 
