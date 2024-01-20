@@ -1572,6 +1572,84 @@ void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)
 }
 
 
+// onCommandSelftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.admin)
+    .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("selftest")
+            .policy(PrefixPolicy.nickname)
+            .description("Performs self-tests against another bot.")
+            .addSyntax("$command [target nickname] [optional plugin name(s)]")
+    )
+)
+void onCommandSelftest(AdminPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    import kameloso.thread : CarryingFiber;
+    import std.format : format;
+    import std.typecons : Tuple;
+
+    alias Payload = Tuple!(string[], string[], string[]);
+
+    void selftestDg()
+    {
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+
+        privmsg(plugin.state, event.channel, event.sender.nickname, "Self-tests complete.");
+
+        if (thisFiber.payload[0].length)
+        {
+            enum successPattern = "Succeeded (<b>%d<b>): %-(<b>%s<b>, %)<b>";
+            immutable successMessage = successPattern.format(
+                thisFiber.payload[0].length,
+                thisFiber.payload[0]);
+            privmsg(plugin.state, event.channel, event.sender.nickname, successMessage);
+        }
+
+        if (thisFiber.payload[1].length)
+        {
+            enum failurePattern = "Failed (<b>%d<b>): %-(<b>%s<b>, %)<b>";
+            immutable failureMessage = failurePattern.format(
+                thisFiber.payload[1].length,
+                thisFiber.payload[1]);
+            privmsg(plugin.state, event.channel, event.sender.nickname, failureMessage);
+        }
+
+        if (thisFiber.payload[2].length)
+        {
+            import lu.string : plurality;
+            enum skippedPattern = "<b>%d<b> %s skipped.";
+            immutable skippedMessage = skippedPattern.format(
+                thisFiber.payload[2].length,
+                thisFiber.payload[2].length.plurality("plugin", "plugins"));
+            privmsg(plugin.state, event.channel, event.sender.nickname, skippedMessage);
+        }
+    }
+
+    if (!event.content.length)
+    {
+        enum pattern = "Usage: %s%s [target nickname] [optional plugin name(s)]";
+        immutable message = pattern.format(
+            plugin.state.settings.prefix,
+            event.aux[0]);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    enum message = "Running self-tests. This may take several minutes.";
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    defer!Payload(plugin, &selftestDg, event.channel, event.content);
+}
+
+
 // parseTypesFromString
 /++
     Modifies [AdminPlugin.eventTypesToPrint|eventTypesToPrint] based on a string
