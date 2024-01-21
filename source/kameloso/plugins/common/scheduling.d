@@ -415,6 +415,7 @@ in ((dg !is null), "Tried to set up a null delegate to await events")
         aa = Associative array to remove entries from.
         type = The kind of [dialect.defs.IRCEvent|IRCEvent] that would trigger the
             passed awaiting thing.
+        fully = Whether or not to unawait all instances of the thing.
 
     See_Also:
         [unawait]
@@ -422,7 +423,8 @@ in ((dg !is null), "Tried to set up a null delegate to await events")
 private void unawaitImpl(Thing, AA)
     (Thing thing,
     ref AA aa,
-    const IRCEvent.Type type)
+    const IRCEvent.Type type,
+    const Flag!"fully" fully)
 in ((thing !is null), "Tried to unlist a null " ~ Thing.stringof ~ " from awaiting events")
 in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
     " from awaiting `IRCEvent.Type.UNSET`")
@@ -431,12 +433,22 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
 
     void removeForType(const IRCEvent.Type type)
     {
+        size_t[] toRemove;
+
         foreach (immutable i, awaitingThing; aa[type])
         {
             if (awaitingThing is thing)
             {
+                toRemove ~= i;
+                if (!fully) break;
+            }
+        }
+
+        if (toRemove.length)
+        {
+            foreach_reverse (immutable i; toRemove)
+            {
                 aa[type] = aa[type].remove!(SwapStrategy.unstable)(i);
-                break;
             }
         }
     }
@@ -447,12 +459,12 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
 
         foreach (immutable thisType; EnumMembers!(IRCEvent.Type))
         {
-            removeForType(thisType);
+            if (aa[thisType].length) removeForType(thisType);
         }
     }
     else
     {
-        removeForType(type);
+        if (aa[type].length) removeForType(type);
     }
 }
 
@@ -469,6 +481,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
             when the next [dialect.defs.IRCEvent|IRCEvent] of type `type` comes along.
         type = The kind of [dialect.defs.IRCEvent|IRCEvent] that would trigger the
             passed awaiting fiber.
+        fully = Whether or not to unawait all instances of the fiber.
 
     See_Also:
         [unawaitImpl]
@@ -477,10 +490,11 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
 void unawait(
     IRCPlugin plugin,
     Fiber fiber,
-    const IRCEvent.Type type)
+    const IRCEvent.Type type,
+    const Flag!"fully" fully = No.fully)
 in (fiber, "Tried to call `unawait` with a null fiber")
 {
-    return unawaitImpl(fiber, plugin.state.awaitingFibers, type);
+    return unawaitImpl(fiber, plugin.state.awaitingFibers, type, fully);
 }
 
 
@@ -495,15 +509,19 @@ in (fiber, "Tried to call `unawait` with a null fiber")
         plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin].
         type = The kind of [dialect.defs.IRCEvent|IRCEvent] that would trigger this
             implicit awaiting fiber (in the current context).
+        fully = Whether or not to unawait all instances of the current fiber.
 
     See_Also:
         [unawaitImpl]
         [await]
  +/
-void unawait(IRCPlugin plugin, const IRCEvent.Type type)
+void unawait(
+    IRCPlugin plugin,
+    const IRCEvent.Type type,
+    const Flag!"fully" fully = No.fully)
 in (Fiber.getThis(), "Tried to call `unawait` from outside a fiber")
 {
-    return unawait(plugin, Fiber.getThis(), type);
+    return unawait(plugin, Fiber.getThis(), type, fully);
 }
 
 
@@ -520,6 +538,7 @@ in (Fiber.getThis(), "Tried to call `unawait` from outside a fiber")
         types = The kinds of [dialect.defs.IRCEvent|IRCEvent] that should trigger
             the passed awaiting fiber, in an array with elements of type
             [dialect.defs.IRCEvent.Type|IRCEvent.Type].
+        fully = Whether or not to unawait all instances of the fiber.
 
     See_Also:
         [unawaitImpl]
@@ -528,12 +547,13 @@ in (Fiber.getThis(), "Tried to call `unawait` from outside a fiber")
 void unawait(
     IRCPlugin plugin,
     Fiber fiber,
-    const IRCEvent.Type[] types)
+    const IRCEvent.Type[] types,
+    const Flag!"fully" fully = No.fully)
 in (fiber, "Tried to call `unawait` with a null fiber")
 {
     foreach (immutable type; types)
     {
-        unawait(plugin, fiber, type);
+        unawait(plugin, fiber, type, fully);
     }
 }
 
@@ -550,17 +570,21 @@ in (fiber, "Tried to call `unawait` with a null fiber")
         types = The kinds of [dialect.defs.IRCEvent|IRCEvent] that should trigger
             this implicit awaiting fiber (in the current context), in an array
             with elements of type [dialect.defs.IRCEvent.Type|IRCEvent.Type].
+        fully = Whether or not to unawait all instances of the current fiber.
 
     See_Also:
         [unawaitImpl]
         [await]
  +/
-void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
+void unawait(
+    IRCPlugin plugin,
+    const IRCEvent.Type[] types,
+    const Flag!"fully" fully = No.fully)
 in (Fiber.getThis(), "Tried to call `unawait` from outside a fiber")
 {
     foreach (immutable type; types)
     {
-        unawait(plugin, Fiber.getThis(), type);
+        unawait(plugin, Fiber.getThis(), type, fully);
     }
 }
 
@@ -577,6 +601,7 @@ in (Fiber.getThis(), "Tried to call `unawait` from outside a fiber")
             [dialect.defs.IRCEvent|IRCEvent] of type `type` comes along.
         type = The kind of [dialect.defs.IRCEvent|IRCEvent] that would trigger the
             passed awaiting delegate.
+        fully = Whether or not to unawait all instances of the delegate.
 
     See_Also:
         [unawaitImpl]
@@ -585,10 +610,11 @@ in (Fiber.getThis(), "Tried to call `unawait` from outside a fiber")
 void unawait(
     IRCPlugin plugin,
     void delegate(IRCEvent) dg,
-    const IRCEvent.Type type)
+    const IRCEvent.Type type,
+    const Flag!"fully" fully = No.fully)
 in ((dg !is null), "Tried to call `unawait` with a null delegate")
 {
-    return unawaitImpl(dg, plugin.state.awaitingDelegates, type);
+    return unawaitImpl(dg, plugin.state.awaitingDelegates, type, fully);
 }
 
 
@@ -605,6 +631,7 @@ in ((dg !is null), "Tried to call `unawait` with a null delegate")
             [dialect.defs.IRCEvent|IRCEvent] of type `type` comes along.
         types = An array of the kinds of [dialect.defs.IRCEvent|IRCEvent]s that
             would trigger the passed awaiting delegate.
+        fully = Whether or not to unawait all instances of the delegate.
 
     See_Also:
         [unawaitImpl]
@@ -613,11 +640,12 @@ in ((dg !is null), "Tried to call `unawait` with a null delegate")
 void unawait(
     IRCPlugin plugin,
     void delegate(IRCEvent) dg,
-    const IRCEvent.Type[] types)
+    const IRCEvent.Type[] types,
+    const Flag!"fully" fully = No.fully)
 in ((dg !is null), "Tried to call `unawait` with a null delegate")
 {
     foreach (immutable type; types)
     {
-        unawaitImpl(dg, plugin.state.awaitingDelegates, type);
+        unawaitImpl(dg, plugin.state.awaitingDelegates, type, fully);
     }
 }
