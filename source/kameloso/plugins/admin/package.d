@@ -1572,6 +1572,84 @@ void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)
 }
 
 
+// onCommandSelftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.admin)
+    .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("selftest")
+            .policy(PrefixPolicy.nickname)
+            .description("Performs self-tests against another bot.")
+            .addSyntax("$command [target nickname] [optional plugin name(s)]")
+    )
+)
+void onCommandSelftest(AdminPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    import kameloso.thread : CarryingFiber;
+    import std.format : format;
+    import std.typecons : Tuple;
+
+    alias Payload = Tuple!(string[], string[], string[]);
+
+    void selftestDg()
+    {
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+
+        privmsg(plugin.state, event.channel, event.sender.nickname, "Self-tests complete.");
+
+        if (thisFiber.payload[0].length)
+        {
+            enum successPattern = "Succeeded (<b>%d<b>): %-(<b>%s<b>, %)<b>";
+            immutable successMessage = successPattern.format(
+                thisFiber.payload[0].length,
+                thisFiber.payload[0]);
+            privmsg(plugin.state, event.channel, event.sender.nickname, successMessage);
+        }
+
+        if (thisFiber.payload[1].length)
+        {
+            enum failurePattern = "Failed (<b>%d<b>): %-(<b>%s<b>, %)<b>";
+            immutable failureMessage = failurePattern.format(
+                thisFiber.payload[1].length,
+                thisFiber.payload[1]);
+            privmsg(plugin.state, event.channel, event.sender.nickname, failureMessage);
+        }
+
+        if (thisFiber.payload[2].length)
+        {
+            import lu.string : plurality;
+            enum skippedPattern = "<b>%d<b> %s skipped.";
+            immutable skippedMessage = skippedPattern.format(
+                thisFiber.payload[2].length,
+                thisFiber.payload[2].length.plurality("plugin", "plugins"));
+            privmsg(plugin.state, event.channel, event.sender.nickname, skippedMessage);
+        }
+    }
+
+    if (!event.content.length)
+    {
+        enum pattern = "Usage: %s%s [target nickname] [optional plugin name(s)]";
+        immutable message = pattern.format(
+            plugin.state.settings.prefix,
+            event.aux[0]);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    enum message = "Running self-tests. This may take several minutes.";
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    defer!Payload(plugin, &selftestDg, event.channel, event.content);
+}
+
+
 // parseTypesFromString
 /++
     Modifies [AdminPlugin.eventTypesToPrint|eventTypesToPrint] based on a string
@@ -1922,6 +2000,137 @@ void onBusMessage(
         logger.errorf(pattern, verb);
         break;
     }
+}
+
+
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(AdminPlugin _, Selftester s)
+{
+    import std.range : only;
+
+    // ------------ home, guest
+
+    s.send("home del #harpsteff");
+    s.expect("Channel #harpsteff was not listed as a home channel.");
+
+    s.send("home add #harpsteff");
+    s.expect("Home channel added.");
+
+    s.send("home add #harpsteff");
+    s.expect("We are already in that home channel.");
+
+    s.send("home del #harpsteff");
+    s.expect("Home channel removed.");
+
+    s.send("home del #harpsteff");
+    s.expect("Channel #harpsteff was not listed as a home channel.");
+
+    s.send("guest add #BLIRPBLARP");
+    s.expect("Guest channel added.");
+
+    s.send("guest del #BLIRPBLARP");
+    s.expect("Guest channel removed.");
+
+    // ------------ lists
+
+    foreach (immutable list; only("staff"))//, "operator", "elevated", "whitelist", "blacklist"))
+    {
+        immutable definiteFormSingular =
+            (list == "staff") ? "staff" :
+            (list == "operator") ? "an operator" :
+            (list == "elevated") ? "an elevated user" :
+            (list == "whitelist") ? "a whitelisted user" :
+            /*(list == "blacklist") ?*/ "a blacklisted user";
+
+        immutable plural =
+            (list == "staff") ? "staff" :
+            (list == "operator") ? "operators" :
+            (list == "elevated") ? "elevated users" :
+            (list == "whitelist") ? "whitelisted users" :
+            /*(list == "blacklist") ?*/ "blacklisted users";
+
+        s.send(list ~ " del xorael");
+        s.expect("xorael isn't " ~ definiteFormSingular ~ " in ${channel}.");
+
+        s.send(list ~ " add xorael");
+        s.expect("Added xorael as " ~ definiteFormSingular ~ " in ${channel}.");
+
+        s.send(list ~ " add xorael");
+        s.expect("xorael was already " ~ definiteFormSingular ~ " in ${channel}.");
+
+        s.send(list ~ " list");
+        s.expect("Current " ~ plural ~ " in ${channel}: xorael");
+
+        s.send(list ~ " del xorael");
+        s.expect("Removed xorael as " ~ definiteFormSingular ~ " in ${channel}.");
+
+        s.send(list ~ " list");
+        s.expect("There are no " ~ plural ~ " in ${channel}.");
+
+        s.send(list ~ " add");
+        s.expect("No nickname supplied.");
+    }
+
+    // ------------ misc
+
+    s.send("cycle #flirrp");
+    s.expect("I am not in that channel.");
+
+    // ------------ hostmasks
+
+    s.send("hostmask");
+    s.awaitReply();
+
+    enum noHostmaskMessage = "This bot is not currently configured " ~
+        "to use hostmasks for authentication.";
+
+    if (s.lastMessage != noHostmaskMessage)
+    {
+        s.send("hostmask add");
+        s.expect("Usage: !hostmask [add|del|list] ([account] [hostmask]/[hostmask])");
+
+        s.send("hostmask add kameloso HIRF#%%!SNIR@sdasdasd");
+        s.expect("Invalid hostmask.");
+
+        s.send("hostmask add kameloso kameloso^!*@*");
+        s.expect("Hostmask list updated.");
+
+        s.send("hostmask list");
+        // `Current hostmasks: ["kameloso^!*@*":"kameloso"]`);
+        s.expectInBody(`"kameloso^!*@*":"kameloso"`);
+
+        s.send("hostmask del kameloso^!*@*");
+        s.expect("Hostmask list updated.");
+
+        s.send("hostmask del kameloso^!*@*");
+        s.expect("No such hostmask on file.");
+    }
+
+    // ------------ misc
+
+    s.send("reload");
+    s.expect("Reloading plugins.");
+
+    s.send("reload admin");
+    s.expect("Reloading plugin \"admin\".");
+
+    s.send("join #skabalooba");
+    s.send("part #skabalooba");
+
+    s.send("get admin.enabled");
+    s.expect("admin.enabled=true");
+
+    s.send("get core.prefix");
+    s.expect(`core.prefix="${prefix}"`);
+
+    s.send("sudo PRIVMSG ${channel} :hello world");
+    s.expect("hello world");
+
+    return true;
 }
 
 

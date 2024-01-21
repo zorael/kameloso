@@ -565,6 +565,40 @@ void initResources(TimePlugin plugin)
 }
 
 
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(TimePlugin _, Selftester s)
+{
+    s.send("time");
+    s.awaitReply();
+    s.requireHead("The time is currently ");
+    s.requireTail(" locally.");
+
+    s.send("time CET");
+    s.awaitReply();
+    s.requireHead("The time is currently ");
+    s.requireTail(" in CET.");
+
+    s.send("time Europe/Stockholm");
+    s.awaitReply();
+    s.requireHead("The time is currently ");
+    s.requireTail(" in Europe/Stockholm.");
+
+    s.send("time Dubai");
+    s.awaitReply();
+    s.requireHead("The time is currently ");
+    s.requireTail(" in Dubai.");
+
+    s.send("time honk");
+    s.expect("Invalid timezone: honk");
+
+    return true;
+}
+
+
 mixin UserAwareness;
 mixin PluginRegistration!TimePlugin;
 

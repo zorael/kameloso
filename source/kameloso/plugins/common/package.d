@@ -381,6 +381,21 @@ public:
             [kameloso.plugins.common.IRCPluginImpl.initialise]
      +/
     void initialise() @system;
+
+    version(Selftests)
+    {
+        import std.typecons : Ternary;
+
+        // selftest
+        /++
+            Performs self-tests against another bot.
+
+            See_Also:
+                [kameloso.plugins.common.Selftester]
+         +/
+        version(Selftests)
+        Ternary selftest(Selftester) @system;
+    }
 }
 
 
@@ -1697,7 +1712,7 @@ mixin template IRCPluginImpl(
         return didSomething;
     }
 
-    // setup, reload, teardown
+    // initialise, setup, reload, teardown
     /+
         Generates some functions that merely pass on calls to module-level
         functions, where such is available. If they aren't, this is a no-op.
@@ -1790,6 +1805,75 @@ mixin template IRCPluginImpl(
         else
         {
             return false;
+        }
+    }
+
+    version(Selftests)
+    {
+        private import kameloso.plugins.common : Selftester;
+        private import std.typecons : Ternary;
+
+        // selftest
+        /++
+            Self-test function.
+
+            Params:
+                tester = The [kameloso.plugins.common.Selftester|Selftester] to use
+                    for testing.
+
+            Returns:
+                [std.typecons.Ternary.yes|Ternary.yes] if the self-test succeeded,
+                [std.typecons.Ternary.no|Ternary.no] if it failed, and
+                [std.typecons.Ternary.unknown|Ternary.unknown] if the plugin is
+                disabled or doesn't have a `.selftest` function.
+         +/
+        override public Ternary selftest(Selftester tester) @system
+        {
+            static if (__traits(compiles, { alias _ = .selftest; }))
+            {
+                import kameloso.plugins.common : Selftester;
+                import lu.traits : TakesParams;
+
+                if (!this.isEnabled) return Ternary.unknown;
+
+                static if (
+                    is(typeof(.selftest)) &&
+                    is(typeof(.selftest) == function) &&
+                    TakesParams!(.selftest, typeof(this), Selftester))
+                {
+                    tester.plugin = this;
+                    tester.sync();
+
+                    try
+                    {
+                        immutable success = .selftest(this, tester);
+                        return success ? Ternary.yes : Ternary.no;
+                    }
+                    catch (Exception e)
+                    {
+                        version(PrintStacktraces)
+                        {
+                            import std.stdio : writeln;
+                            writeln(e);
+                        }
+
+                        return Ternary.no;
+                    }
+                }
+                else
+                {
+                    import kameloso.traits : stringOfTypeOf;
+                    import std.format : format;
+
+                    enum pattern = "`%s.selftest` has an unsupported function signature: `%s`";
+                    enum message = pattern.format(module_, stringOfTypeOf!(.selftest));
+                    static assert(0, message);
+                }
+            }
+            else
+            {
+                return Ternary.unknown;
+            }
         }
     }
 
@@ -3830,6 +3914,12 @@ public:
      +/
     string context() const pure @safe nothrow @nogc;
 
+    // subcontext
+    /++
+        String secondary context of the action.
+     +/
+    string subcontext() const pure @safe nothrow @nogc;
+
     // creator
     /++
         Name of the function that created this action.
@@ -3866,6 +3956,11 @@ private:
     string _context;
 
     /++
+        Private secondary context string.
+     +/
+    string _subcontext;
+
+    /++
         Private creator string.
      +/
     string _creator;
@@ -3888,9 +3983,11 @@ public:
     this(
         CarryingFiber!T fiber,
         string context,
+        string subcontext,
         const string creator) pure @safe nothrow @nogc
     {
         this._context = context;
+        this._subcontext = subcontext;
         this._fiber = fiber;
         this._creator = creator;
     }
@@ -3907,11 +4004,13 @@ public:
     this(
         void delegate() dg,
         string context,
+        string subcontext,
         const string creator) /*pure @safe @nogc*/ nothrow
     {
         import kameloso.constants : BufferSize;
 
         this._context = context;
+        this._subcontext = subcontext;
         this._fiber = new CarryingFiber!T(dg, BufferSize.fiberStack);
         this._fiber.creator = creator;
         this._creator = creator;
@@ -3927,6 +4026,18 @@ public:
     string context() const pure @safe nothrow @nogc
     {
         return _context;
+    }
+
+    // subcontext
+    /++
+        String secondsary context of the action. May be anything; highly action-specific.
+
+        Returns:
+            A string.
+     +/
+    string subcontext() const pure @safe nothrow @nogc
+    {
+        return _subcontext;
     }
 
     // creator
@@ -3970,15 +4081,18 @@ public:
             array the action will be appended to.
         fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the action.
         context = String context of the action.
+        subcontext = String secondary context of the action.
         creator = Name of the function that created this action.
  +/
 void defer(T)
     (IRCPlugin plugin,
     CarryingFiber!T fiber,
     const string context = string.init,
+    const string subcontext = string.init,
     const string creator = __FUNCTION__) pure @safe nothrow
 {
-    plugin.state.deferredActions.put(new DeferredActionImpl!T(fiber, context, creator));
+    auto action = new DeferredActionImpl!T(fiber, context, subcontext, creator);
+    plugin.state.deferredActions.put(action);
 }
 
 
@@ -3997,15 +4111,411 @@ void defer(T)
             array the action will be appended to.
         dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
         context = String context of the action.
+        subcontext = String secondary context of the action.
         creator = Name of the function that created this action.
  +/
 void defer(T)
     (IRCPlugin plugin,
     void delegate() dg,
     const string context = string.init,
+    const string subcontext = string.init,
     const string creator = __FUNCTION__) /*pure @safe*/ nothrow
 {
-    plugin.state.deferredActions.put(new DeferredActionImpl!T(dg, context, creator));
+    auto action = new DeferredActionImpl!T(dg, context, subcontext, creator);
+    plugin.state.deferredActions.put(action);
+}
+
+
+// Selftester
+/++
+    Helper struct to aid in testing plugins.
+ +/
+struct Selftester
+{
+private:
+    import kameloso.plugins.common.scheduling : delay;
+    import kameloso.messaging : chan;
+    import kameloso.thread : CarryingFiber;
+    import core.time : seconds;
+
+    /++
+        Replaces some tokens in a string with values from the test context.
+
+        Params:
+            line = The string to replace tokens in.
+
+        Returns:
+            A string with the tokens replaced.
+     +/
+    auto replaceTokens(const string line)
+    {
+        import std.array : replace;
+
+        return line
+            .replace("${prefix}", plugin.state.settings.prefix)
+            .replace("${channel}", this.channelName)
+            .replace("${target}", this.targetNickname)
+            .replace("${bot}", plugin.state.client.nickname);
+    }
+
+public:
+    /++
+        The plugin to test.
+     +/
+    IRCPlugin plugin;
+
+    /++
+        The name of the channel to test in.
+     +/
+    string channelName;
+
+    /++
+        The nickname of the other bot to test against.
+     +/
+    string targetNickname;
+
+    /++
+        The [kameloso.thread.CarryingFiber|CarryingFiber] to run the test in.
+     +/
+    CarryingFiber!IRCEvent fiber;
+
+    /++
+        The delay between sending messages.
+     +/
+    static immutable delayBetween = 3.seconds;
+
+    /++
+        Sends a message to the other test bot, prepending it with its nickname.
+
+        Params:
+            tokenedLine = The message to send.
+     +/
+    void send(const string tokenedLine)
+    in (fiber, "Tried to send a test message with no fiber attached")
+    {
+        immutable line = replaceTokens(tokenedLine);
+        delay(plugin, delayBetween, Yes.yield);
+        chan(plugin.state, channelName, targetNickname ~ ": " ~ line);
+    }
+
+    /++
+        Sends a message to the other test bot, prepending it with the
+        [kameloso.pods.CoreSettings.prefix|command prefix].
+
+        Params:
+            tokenedLine = The message to send.
+     +/
+    void sendPrefixed(const string tokenedLine)
+    in (fiber, "Tried to send a prefixed test message with no fiber attached")
+    {
+        immutable line = replaceTokens(tokenedLine);
+        delay(plugin, delayBetween, Yes.yield);
+        chan(plugin.state, channelName, plugin.state.settings.prefix ~ line);
+    }
+
+    /++
+        Sends a message to the other test bot as-is, without any prefixing.
+
+        Params:
+            tokenedLine = The message to send.
+     +/
+    void sendPlain(const string tokenedLine)
+    in (fiber, "Tried to send a plain test message with no fiber attached")
+    {
+        immutable line = replaceTokens(tokenedLine);
+        delay(plugin, delayBetween, Yes.yield);
+        chan(plugin.state, channelName, line);
+    }
+
+    /++
+        Yields and waits for a response from the other bot.
+
+        If an event is received that is not in the correct channel, and/or does
+        not originate from the correct nickname, it is ignored and the fiber
+        is yielded again.
+
+     +/
+    void awaitReply()
+    in (fiber, "Tried to await a test reply with no fiber attached")
+    {
+        import core.thread : Fiber;
+
+        do Fiber.yield();
+        while (
+            (fiber.payload.channel != channelName) ||
+            (fiber.payload.sender.nickname != targetNickname));
+    }
+
+    /++
+        Yields and waits for a response from the other bot, then throws if the
+        message doesn't match the passed string.
+
+        Params:
+            tokenedExpected = The expected string, which may include some replace-tokens.
+            file = The file the test is in.
+            line = The line the test is on.
+     +/
+    void expect(
+        const string tokenedExpected,
+        const string file = __FILE__,
+        const size_t line = __LINE__)
+    in (fiber, "Tried to await a specific test reply with no fiber attached")
+    {
+        awaitReply();
+        require(tokenedExpected, file, line);
+    }
+
+    /++
+        Checks that the last message received matches the passed string, and
+        throws if it does not.
+
+        Params:
+            tokenedExpected = The expected string, which may include some replace-tokens.
+            file = The file the test is in.
+            line = The line the test is on.
+
+        Throws:
+            [object.Exception|Exception] if the last message received does not match
+            the expected string.
+     +/
+    void require(
+        const string tokenedExpected,
+        const string file = __FILE__,
+        const size_t line = __LINE__)
+    {
+        immutable actual = this.lastMessage(Yes.strip);
+        immutable expected = replaceTokens(tokenedExpected);
+
+        if (actual != expected)
+        {
+            import std.format : format;
+            enum pattern = `Received "%s" does not match expected "%s" (%s:%d)`;
+            immutable message = pattern.format(actual, expected, file, line);
+            throw new Exception(message);
+        }
+    }
+
+    /++
+        Yields and waits for a response from the other bot, then throws if the
+        message head does not match that of the passed string.
+
+        Params:
+            tokenedExpected = The expected head, which may include some replace-tokens.
+            file = The file the test is in.
+            line = The line the test is on.
+     +/
+    void expectHead(
+        const string tokenedExpected,
+        const string file = __FILE__,
+        const size_t line = __LINE__)
+    in (fiber, "Tried to await a specific test head with no fiber attached")
+    {
+        awaitReply();
+        requireHead(tokenedExpected, file, line);
+    }
+
+    /++
+        Checks that the head of the last message received matches that of the
+        passed string, and throws if it does not.
+
+        Params:
+            tokenedExpected = The expected head, which may include some replace-tokens.
+            file = The file the test is in.
+            line = The line the test is on.
+
+        Throws:
+            [object.Exception|Exception] if the head of the last message received
+            does not match the expected string.
+     +/
+    void requireHead(
+        const string tokenedExpected,
+        const string file = __FILE__,
+        const size_t line = __LINE__)
+    {
+        import std.algorithm.searching : startsWith;
+
+        immutable actual = this.lastMessage(Yes.strip);
+        immutable expectedHead = replaceTokens(tokenedExpected);
+
+        if (!actual.startsWith(expectedHead))
+        {
+            import std.format : format;
+            enum pattern = `Received "%s" does not have the expected head "%s" (%s:%d)`;
+            immutable message = pattern.format(actual, expectedHead, file, line);
+            throw new Exception(message);
+        }
+    }
+
+    /++
+        Yields and waits for a response from the other bot, then throws if the
+        message tail does not match that of the passed string.
+
+        Params:
+            tokenedExpected = The expected tail, which may include some replace-tokens.
+            file = The file the test is in.
+            line = The line the test is on.
+     +/
+    void expectTail(
+        const string tokenedExpected,
+        const string file = __FILE__,
+        const size_t line = __LINE__)
+    {
+        awaitReply();
+        requireTail(tokenedExpected, file, line);
+    }
+
+    /++
+        Checks that the tail of the last message received contains the passed
+        string, and throws if it does not.
+
+        Params:
+            tokenedExpected = The expected tail, which may include some replace-tokens.
+            file = The file the test is in.
+            line = The line the test is on.
+
+        Throws:
+            [object.Exception|Exception] if the tail of the last message received
+            does not match the expected string.
+     +/
+    void requireTail(
+        const string tokenedExpected,
+        const string file = __FILE__,
+        const size_t line = __LINE__)
+    {
+        import std.algorithm.searching : endsWith;
+
+        immutable actual = this.lastMessage(Yes.strip);
+        immutable expectedTail = replaceTokens(tokenedExpected);
+
+        if (!actual.endsWith(expectedTail))
+        {
+            import std.format : format;
+            enum pattern = `Received "%s" does not have the expected tail "%s" (%s:%d)`;
+            immutable message = pattern.format(actual, expectedTail, file, line);
+            throw new Exception(message);
+        }
+    }
+
+    /++
+        Yields and waits for a response from the other bot, then throws if the
+        message body does not contain the passed string.
+
+        Params:
+            tokenedExpected = The expected string, which may include some replace-tokens.
+            file = The file the test is in.
+            line = The line the test is on.
+     +/
+    void expectInBody(
+        const string tokenedExpected,
+        const string file = __FILE__,
+        const size_t line = __LINE__)
+    {
+        awaitReply();
+        requireInBody(tokenedExpected, file, line);
+    }
+
+    /++
+        Checks that the body of the last message received contains the passed
+        string, and throws if it does not.
+
+        Params:
+            tokenedExpected = The expected string, which may include some replace-tokens.
+            file = The file the test is in.
+            line = The line the test is on.
+
+        Throws:
+            [object.Exception|Exception] if the last message received does not
+            contain the expected string.
+     +/
+    void requireInBody(
+        const string tokenedExpected,
+        const string file = __FILE__,
+        const size_t line = __LINE__)
+    {
+        import std.algorithm.searching : canFind;
+
+        immutable actual = this.lastMessage(Yes.strip);
+        immutable expected = replaceTokens(tokenedExpected);
+
+        if (!actual.canFind(expected))
+        {
+            import std.format : format;
+            enum pattern = `Received "%s" does not contain the expected "%s" (%s:%d)`;
+            immutable message = pattern.format(actual, expected, file, line);
+            throw new Exception(message);
+        }
+    }
+
+    /++
+        The last message received from the other bot, stripped of effects.
+     +/
+    auto lastMessage(const Flag!"strip" strip = Yes.strip)
+    {
+        if (strip)
+        {
+            import kameloso.irccolours : stripEffects;
+            return fiber.payload.content.stripEffects();
+        }
+        else
+        {
+            return fiber.payload.content;
+        }
+    }
+
+    // triggeredByTimer
+    /++
+        Whether or not the last fiber invocation was triggered by a timer.
+     +/
+    auto triggeredByTimer()
+    {
+        return (fiber.payload == IRCEvent.init);
+    }
+
+    // requireTriggerdByTimer
+    /++
+        Checks that the last fiber invocation was triggered by a timer.
+
+        Params:
+            file = The file the test is in.
+            line = The line the test is on.
+
+        Throws:
+            [object.Exception|Exception] if the fiber was last called due to a
+            scheduled timer firing.
+     +/
+    void requireTriggeredByTimer(
+        const string file = __FILE__,
+        const size_t line = __LINE__)
+    {
+        if (!this.triggeredByTimer)
+        {
+            import kameloso.prettyprint;
+            import std.format : format;
+
+            prettyprint(fiber.payload);
+
+            enum pattern = `Last fiber invocation was triggered not by a timer (%s:%d)`;
+            immutable message = pattern.format(file, line);
+            throw new Exception(message);
+        }
+    }
+
+    /++
+        Synchronises with the target bot by sending a random number and waiting
+        for it to be echoed back.
+     +/
+    void sync()
+    in (fiber, "Tried to synchronise with a target bot with no fiber attached")
+    {
+        import std.conv : text;
+        import std.random : uniform;
+
+        immutable id = uniform(0, 1000);
+        this.send(text("say ", id));
+
+        do this.awaitReply();
+        while (fiber.payload.content != id.text);
+    }
 }
 
 

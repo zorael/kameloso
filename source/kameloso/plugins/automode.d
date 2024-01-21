@@ -602,6 +602,56 @@ void pruneChannels(ref string[string][string] automodes)
 }
 
 
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(AutomodePlugin _, Selftester s)
+{
+    s.send("automode list");
+    s.expect("No automodes defined for channel ${channel}.");
+
+    s.send("automode del");
+    s.expect("Usage: ${prefix}automode [add|clear|list] [nickname/account] [mode]");
+
+    s.send("automode");
+    s.expect("Usage: ${prefix}automode [add|clear|list] [nickname/account] [mode]");
+
+    s.send("automode add $¡$¡ +o");
+    s.expect("Invalid nickname.");
+
+    s.send("automode add kameloso -v");
+    s.expect("Automodes cannot be negative.");
+
+    s.send("automode add kameloso +");
+    s.expect("You must supply a valid mode.");
+
+    s.send("automode add kameloso +o");
+    s.expect("Automode modified! kameloso in ${channel}: +o");
+
+    s.send("automode add kameloso +v");
+    s.expect("Automode modified! kameloso in ${channel}: +v");
+
+    s.send("automode list");
+    s.expectInBody(`"kameloso":"v"`);
+
+    s.send("automode del $¡$¡");
+    s.expect("Automode for $¡$¡ cleared.");
+
+    s.send("automode del kameloso");
+    s.expect("Automode for kameloso cleared.");
+
+    s.send("automode list");
+    s.expect("No automodes defined for channel ${channel}.");
+
+    s.send("automode del flerrp");
+    s.expect("Automode for flerrp cleared.");
+
+    return true;
+}
+
+
 mixin UserAwareness;
 mixin ChannelAwareness;
 mixin PluginRegistration!AutomodePlugin;

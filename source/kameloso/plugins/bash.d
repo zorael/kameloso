@@ -173,6 +173,18 @@ void lookupQuote(
     import kameloso.messaging : privmsg;
     import core.time : Duration;
 
+    void sendNoQuoteFound()
+    {
+        enum message = "No such <b>bash.org<b> quote found.";
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
+    void sendFailedToFetch()
+    {
+        enum message = "Failed to fetch <b>bash.org<b> quote.";
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
     immutable url = quoteID.length ?
         "https://bashforever.com/?" ~ quoteID :
         "https://bashforever.com/?random";
@@ -189,7 +201,8 @@ void lookupQuote(
             {
                 if (result.responseBody.length) logger.trace(result.responseBody);
             }
-            return;
+
+            return sendFailedToFetch();
         }
 
         if ((result.code < 200) ||
@@ -207,15 +220,11 @@ void lookupQuote(
             {
                 if (result.responseBody.length) logger.trace(result.responseBody);
             }
-            return;
+
+            return sendFailedToFetch();
         }
 
-        if (!result.quoteID.length)
-        {
-            enum message = "No such <b>bash.org<b> quote found.";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            return;
-        }
+        if (!result.quoteID.length) return sendNoQuoteFound();
 
         // Seems okay, send it
         immutable message = "[<b>bash.org<b>] #" ~ result.quoteID;
@@ -278,27 +287,10 @@ auto parseResponseIntoBashLookupResult(/*const*/ Response res)
     result.code = res.code;
     result.responseBody = cast(string)res.responseBody;  // .idup?
 
-    auto reportLayoutErrorAndReturnResults()
+    auto attachErrorAndReturn()
     {
-        import kameloso.common : logger;
-        import kameloso.tables : getHTTPResponseCodeText;
-
-        enum message = "Bash plugin failed to parse <l>bash.org</> response: " ~
+        result.exceptionText = "Failed to parse bashforever.com response: " ~
             "page has unexpected layout";
-        logger.error(message);
-
-        version(PrintStacktraces)
-        {
-            logger.trace("HTTP status <l>%03d</> (%s)",
-                result.code,
-                getHTTPResponseCodeText(result.code));
-
-            if ((result.code != 200) && result.responseBody.length)
-            {
-                import std.stdio : writeln;
-                writeln(result.responseBody);
-            }
-        }
         return result;
     }
 
@@ -309,54 +301,63 @@ auto parseResponseIntoBashLookupResult(/*const*/ Response res)
     }
 
     immutable endHeadPos = result.responseBody.indexOf("</head>");
-    if (endHeadPos == -1) return reportLayoutErrorAndReturnResults();
+    if (endHeadPos == -1) return attachErrorAndReturn();
 
     immutable headlessBody = result.responseBody[endHeadPos+5..$];  // slice away the </head>
-    if (!headlessBody.length) return reportLayoutErrorAndReturnResults();
+    if (!headlessBody.length) return attachErrorAndReturn();
 
     auto doc = new Document;
     doc.parseGarbage(headlessBody);
 
     auto quotesElements = doc.getElementsByClassName("quotes");
-    if (!quotesElements.length) return reportLayoutErrorAndReturnResults();
+    if (!quotesElements.length) return attachErrorAndReturn();
 
     immutable quotesHTML = quotesElements[0].toString();
-    if (!quotesHTML.length) return reportLayoutErrorAndReturnResults();
+    if (!quotesHTML.length) return attachErrorAndReturn();
 
     doc.parseGarbage(quotesHTML[20..$]);  // slice away the <div class="quotes">
 
     auto div = doc.getElementsByTagName("div");
-    if (!div.length) return reportLayoutErrorAndReturnResults();
+    if (!div.length) return attachErrorAndReturn();
 
     immutable divString = div[0].toString();
-    if (!divString.length) return reportLayoutErrorAndReturnResults();
+    if (!divString.length) return attachErrorAndReturn();
 
     immutable hashPos = divString.indexOf("#");
-    if (hashPos == -1) return reportLayoutErrorAndReturnResults();
+    if (hashPos == -1) return attachErrorAndReturn();
 
     immutable endAPos = divString.indexOf("</a>", hashPos);
-    if (endAPos == -1) return reportLayoutErrorAndReturnResults();
+    if (endAPos == -1) return attachErrorAndReturn();
 
     immutable quoteID = divString[hashPos+1..endAPos];
     result.quoteID = quoteID;
 
     auto ps = doc.getElementsByTagName("p");
-    if (!ps.length) return reportLayoutErrorAndReturnResults();
+    if (!ps.length) return attachErrorAndReturn();
 
     immutable pString = ps[0].toString();
-    if (!pString.length) return reportLayoutErrorAndReturnResults();
+    if (!pString.length) return attachErrorAndReturn();
 
     immutable endDivPos = pString.indexOf("</div>");
-    if (endDivPos == -1) return reportLayoutErrorAndReturnResults();
+    if (endDivPos == -1) return attachErrorAndReturn();
 
     immutable endPPos = pString.indexOf("</p>", endDivPos);
-    if (endPPos == -1) return reportLayoutErrorAndReturnResults();
+    if (endPPos == -1) return attachErrorAndReturn();
 
     result.lines = pString[endDivPos+6..endPPos]
         .htmlEntitiesDecode()
         .stripped
         .splitter("<br />")
         .array;
+
+    if (result.lines.length)
+    {
+        import lu.string : strippedRight;
+        import std.string : indexOf;
+
+        immutable divPos = result.lines[$-1].indexOf("<div");
+        if (divPos != -1) result.lines[$-1] = result.lines[$-1][0..divPos].strippedRight;
+    }
 
     return result;
 }
@@ -668,6 +669,33 @@ void teardown(BashPlugin plugin)
     {
        plugin.transient.workerTid.prioritySend(true);
     }
+}
+
+
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(BashPlugin _, Selftester s)
+{
+    s.send("bash 5273");
+    s.expect("[bash.org] #5273");
+    s.expect("<erno> hm. I've lost a machine.. literally _lost_. it responds to ping, " ~
+        "it works completely, I just can't figure out where in my apartment it is.");
+
+    s.send("bash #4278");
+    s.expect("[bash.org] #4278");
+    s.expect("<BombScare> i beat the internet");
+    s.expect("<BombScare> the end guy is hard");
+
+    s.send("bash honk");
+    s.expect("Usage: !bash [optional bash quote number]");
+
+    /*s.send("bash 0");  // Produces a wall of text on the target side
+    s.expect("Failed to fetch bash.org quote.");*/
+
+    return true;
 }
 
 

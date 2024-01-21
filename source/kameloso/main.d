@@ -2104,7 +2104,8 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
                 }
             }
 
-            if (scheduledFiber.fiber.state == Fiber.State.HOLD)
+            if (scheduledFiber.fiber &&
+                (scheduledFiber.fiber.state == Fiber.State.HOLD))
             {
                 scheduledFiber.fiber.call();
             }
@@ -2298,6 +2299,7 @@ version(WithAdminPlugin)
 {
     version = WantGetSettingHandler;
     version = WantSetSettingHandler;
+    version = WantSelftestHandler;
 }
 
 version(WithHelpPlugin)
@@ -2389,7 +2391,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                 fiber.payload[0] = globalCommandAA;
                 fiber.payload[1] = channelCommandAA;
                 fiber.call(action.creator);
-                continue;
+                continue top;
             }
         }
 
@@ -2494,7 +2496,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                     fiber.call(action.creator);
                     break;
                 }
-                continue;
+                continue top;
             }
         }
 
@@ -2515,7 +2517,77 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
 
                 fiber.payload[0] = success;
                 fiber.call(action.creator);
-                continue;
+                continue top;
+            }
+        }
+
+        version(Selftests)
+        version(WantSelftestHandler)
+        {
+            import kameloso.plugins.common : Selftester;
+
+            alias SelftestPayload = Tuple!(string[], string[], string[]);
+
+            if (auto fiber = cast(CarryingFiber!(SelftestPayload))(action.fiber))
+            {
+                import kameloso.constants : BufferSize;
+
+                void selftestDg()
+                {
+                    import lu.string : advancePast;
+                    import std.algorithm.searching : canFind;
+                    import std.array : split;
+
+                    Selftester tester;
+                    tester.fiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+                    tester.channelName = action.context;
+
+                    string slice = action.subcontext;  // mutable
+                    tester.targetNickname = slice.advancePast(' ', Yes.inherit);
+                    const pluginNames = slice.split(' ');
+
+                    foreach (immutable i, thisPlugin; instance.plugins)
+                    {
+                        import kameloso.plugins.common.scheduling : await, delay, unawait;
+                        import std.typecons : Ternary;
+
+                        if (!thisPlugin.isEnabled ||
+                            (pluginNames.length && !pluginNames.canFind(thisPlugin.name)))
+                        {
+                            fiber.payload[2] ~= thisPlugin.name;
+                            continue;
+                        }
+
+                        await(thisPlugin, tester.fiber, IRCEvent.Type.CHAN);
+                        scope(exit) unawait(thisPlugin, tester.fiber, IRCEvent.Type.CHAN);
+
+                        immutable result = thisPlugin.selftest(tester);
+
+                        if (result == Ternary.yes)
+                        {
+                            enum pattern = "Self-test of the <l>%s</> plugin succeeded.";
+                            logger.infof(pattern, thisPlugin.name);
+                            fiber.payload[0] ~= thisPlugin.name;
+                        }
+                        else if (result == Ternary.no)
+                        {
+                            enum pattern = "Self-test of the <l>%s</> plugin FAILED.";
+                            logger.warningf(pattern, thisPlugin.name);
+                            fiber.payload[1] ~= thisPlugin.name;
+                        }
+                        else /*if (result == Ternary.unknown)*/
+                        {
+                            fiber.payload[2] ~= thisPlugin.name;
+                            //continue;
+                        }
+                    }
+
+                    fiber.call(action.creator);
+                }
+
+                auto selftestFiber = new CarryingFiber!IRCEvent(&selftestDg, BufferSize.fiberStack);
+                selftestFiber.call(action.creator);
+                continue top;
             }
         }
 

@@ -625,6 +625,40 @@ void initPrevlines(
 }
 
 
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(SedReplacePlugin plugin, Selftester s)
+{
+    import kameloso.plugins.common.scheduling : delay;
+    import core.time : seconds;
+
+    s.sendPlain("I am a fish");
+    s.sendPlain("s/fish/snek/");
+    s.expect("${bot} | I am a snek");
+
+    s.sendPlain("I am a fish fish");
+    s.sendPlain("s#fish#snek#");
+    s.expect("${bot} | I am a snek fish");
+
+    s.sendPlain("I am a fish fish");
+    s.sendPlain("s_fish_snek_g");
+    s.expect("${bot} | I am a snek snek");
+
+    s.sendPlain("s/harbusnarbu");
+    s.sendPlain("s#snarbu#snofl/#");
+
+    // Should be no response
+    static immutable delayDuration = 5.seconds;
+    delay(plugin, delayDuration, Yes.yield);
+    s.requireTriggeredByTimer();
+
+    return true;
+}
+
+
 mixin MinimalAuthentication;
 mixin PluginRegistration!SedReplacePlugin;
 

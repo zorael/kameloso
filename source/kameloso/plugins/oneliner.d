@@ -1520,6 +1520,131 @@ void initResources(OnelinerPlugin plugin)
 }
 
 
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(OnelinerPlugin plugin, Selftester s)
+{
+    import kameloso.plugins.common.scheduling : delay;
+    import kameloso.common : logger;
+    import core.time : seconds;
+
+    s.send("commands");
+    s.expect("There are no commands available right now.");
+
+    s.send("oneliner");
+    s.expect("Usage: ${prefix}oneliner [new|insert|add|alias|modify|edit|del|list] ...");
+
+    s.send("oneliner add herp derp dirp darp");
+    s.expect("No such oneliner: ${prefix}herp");
+
+    s.send("oneliner new");
+    s.expect("Usage: ${prefix}oneliner new [trigger] [type] [optional cooldown]");
+
+    s.send("oneliner new herp ordered");
+    s.expect("Oneliner ${prefix}herp created!");
+
+    s.sendPrefixed("herp");
+    s.expect("(Empty oneliner; use ${prefix}oneliner add herp to add lines.)");
+
+    s.send("oneliner alias hirp herp");
+    s.expect("Oneliner ${prefix}hirp created as an alias of ${prefix}herp.");
+
+    s.sendPrefixed("hirp");
+    s.expect("(Empty oneliner; use ${prefix}oneliner add herp to add lines.)");
+
+    s.send("oneliner add herp 123");
+    s.expect("Oneliner line added.");
+
+    s.send("oneliner add herp 456");
+    s.expect("Oneliner line added.");
+
+    s.sendPrefixed("herp");
+    s.expect("123");
+
+    s.sendPrefixed("hirp");
+    s.expect("456");
+
+    s.sendPrefixed("herp");
+    s.expect("123");
+
+    s.send("oneliner insert herp 0 000");
+    s.expect("Oneliner line inserted.");
+
+    s.sendPrefixed("herp");
+    s.expect("000");
+
+    s.sendPrefixed("hirp");
+    s.expect("123");
+
+    s.send("oneliner list");
+    s.expect("Available commands: ${prefix}herp, ${prefix}hirp*");
+
+    s.sendPrefixed("commands");
+    s.expect("Available commands: ${prefix}herp");
+
+    s.send("oneliner del hurp");
+    s.expect("No such oneliner: ${prefix}hurp");
+
+    s.send("oneliner del herp");
+    s.expect("Oneliner ${prefix}herp removed.");
+    s.expect("Oneliner alias ${prefix}hirp removed.");
+
+    s.send("oneliner list");
+    s.expect("There are no commands available right now.");
+
+    s.send("oneliner new herp random 10");
+    s.expect("Oneliner ${prefix}herp created!");
+
+    s.sendPrefixed("herp");
+    s.expect("(Empty oneliner; use ${prefix}oneliner add herp to add lines.)");
+
+    s.send("oneliner add herp abc");
+    s.expect("Oneliner line added.");
+
+    s.sendPrefixed("herp");
+    s.expect("abc");
+
+    s.sendPrefixed("herp");
+
+    static immutable waitDuration = 10.seconds;
+    logger.info("wait ", waitDuration, "...");
+    delay(plugin, waitDuration, Yes.yield);
+    s.requireTriggeredByTimer();
+
+    s.sendPrefixed("herp");
+    s.expect("abc");
+
+    s.send("oneliner modify");
+    s.expect("Usage: ${prefix}oneliner modify [trigger] [type] [optional cooldown]");
+
+    s.send("oneliner modify herp ordered 0");
+    s.expect("Oneliner ${prefix}herp modified to type ordered, cooldown 0 seconds");
+
+    s.send("oneliner add herp def");
+    s.expect("Oneliner line added.");
+
+    s.sendPrefixed("herp");
+    s.expect("abc");
+
+    s.sendPrefixed("herp");
+    s.expect("def");
+
+    s.sendPrefixed("herp");
+    s.expect("abc");
+
+    s.send("oneliner del herp");
+    s.expect("Oneliner ${prefix}herp removed.");
+
+    s.send("commands");
+    s.expect("There are no commands available right now.");
+
+    return true;
+}
+
+
 mixin UserAwareness;
 mixin ChannelAwareness;
 mixin PluginRegistration!OnelinerPlugin;

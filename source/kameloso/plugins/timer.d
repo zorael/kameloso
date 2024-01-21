@@ -1584,6 +1584,97 @@ void reload(TimerPlugin plugin)
 }
 
 
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(TimerPlugin plugin, Selftester s)
+{
+    import kameloso.plugins.common.scheduling : delay;
+
+    s.send("timer");
+    s.expect("Usage: ${prefix}timer [new|modify|add|del|suspend|resume|list] ...");
+
+    s.send("timer new");
+    s.expect("Usage: ${prefix}timer new [name] [type] [condition] [message count threshold] " ~
+        "[time threshold] [optional stagger message count] [optional stagger time]");
+
+    s.send("timer new hirrsteff ordered both 0 10s 0 10s");
+    s.expect("New timer added! Use !timer add to add lines.");
+
+    s.send("timer suspend hirrsteff");
+    s.expect("Timer suspended. Use ${prefix}timer resume hirrsteff to resume it.");
+
+    s.send("timer add splorf hello");
+    s.expect("No such timer is defined. Add a new one with !timer new.");
+
+    s.send("timer add hirrsteff HERLO");
+    s.expect("Line added to timer hirrsteff.");
+
+    s.send("timer insert hirrsteff 0 fgsfds");
+    s.expect("Line added to timer hirrsteff.");
+
+    s.send("timer edit hirrsteff 1 HARLO");
+    s.expect("Line #1 of timer hirrsteff edited.");
+
+    s.send("timer list");
+    s.expect("Current timers for channel ${channel}:");
+    s.expect(`["hirrsteff"] lines:2 | type:ordered | condition:both | ` ~
+        "message count threshold:0 | time threshold:10 | stagger message count:0 | " ~
+        "stagger time:10 | suspended:true");
+
+    logger.info("Wait 1 cycle, nothing should happen...");
+    delay(plugin, TimerPlugin.timerPeriodicity, Yes.yield);
+    s.requireTriggeredByTimer();
+
+    s.send("timer resume hirrsteff");
+    s.expect("Timer resumed!");
+
+    logger.info("Wait <4 cycles...");
+
+    s.expect("fgsfds");
+    logger.info("ok");
+
+    s.expect("HARLO");
+    logger.info("ok");
+
+    s.expect("fgsfds");
+    logger.info("all ok");
+
+    s.send("timer del hirrsteff 0");
+    s.expect("Line removed from timer hirrsteff. Lines remaining: 1");
+
+    s.expect("HARLO");
+    logger.info("all ok again");
+
+    s.send("timer modify");
+    s.expect("Usage: ${prefix}timer modify [name] [type] [condition] [message count threshold] " ~
+        "[time threshold] [optional stagger message count] [optional stagger time]");
+
+    s.send("timer modify hirrsteff random both 1 10s");
+    s.expect(`Timer "hirrsteff" modified to type random, condition both, ` ~
+        "message count threshold 1, time threshold 10 seconds, " ~
+        "stagger message count 0, stagger time 10 seconds");
+
+    logger.info("Wait 1 cycle, nothing should happen...");
+    delay(plugin, TimerPlugin.timerPeriodicity, Yes.yield);
+    s.requireTriggeredByTimer();
+
+    s.send("blep");
+    s.expect("HARLO");
+    logger.info("ok");
+
+    s.send("timer del hirrsteff");
+    s.expect("Timer removed.");
+
+    s.send("timer del hirrsteff");
+    s.expect("There is no timer by that name.");
+
+    return true;
+}
+
+
 mixin MinimalAuthentication;
 mixin PluginRegistration!TimerPlugin;
 

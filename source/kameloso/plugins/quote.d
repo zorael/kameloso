@@ -1536,6 +1536,80 @@ void reload(QuotePlugin plugin)
 }
 
 
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(QuotePlugin _, Selftester s)
+{
+    s.send("quote");
+    s.expect("Usage: ${prefix}quote [nickname] [optional search terms or #index]");
+
+    s.send("quote $¡$¡");
+    s.expect("Invalid nickname: $¡$¡");
+
+    s.send("quote flerrp");
+    s.expect("No quotes on record for flerrp!");
+
+    s.send("addquote");
+    s.expect("Usage: ${prefix}addquote [nickname] [new quote]");
+
+    s.send("addquote flerrp flirrp flarrp flurble");
+    s.expect("Quote added at index #0.");
+
+    s.send("addquote flerrp flirrp flarrp FLARBLE");
+    s.expect("Quote added at index #1.");
+
+    s.send("quote flerrp");
+    s.expectHead("flirrp flarrp");
+
+    s.send("quote flerrp #1");
+    s.expectHead("flirrp flarrp FLARBLE (");
+
+    s.send("quote flerrp #99");
+    s.expect("Index #99 out of range; valid is [0..1] (inclusive).");
+
+    s.send("quote flerrp #honk");
+    s.expect("Index must be a positive number.");
+
+    s.send("quote flerrp flarble");
+    s.expectHead("flirrp flarrp FLARBLE (");
+
+    s.send("quote flerrp honkedonk");
+    s.expect(`No quotes found for search terms "honkedonk"`);
+
+    s.send("modquote");
+    s.expect("Usage: ${prefix}modquote [nickname] [index] [new quote text]");
+
+    s.send("modquote flerrp #0 KAAS FLAAS");
+    s.expect("Quote modified.");
+
+    s.send("quote flerrp #0");
+    s.expectHead("KAAS FLAAS (");
+
+    s.send("mergequotes flerrp flirrp");
+    s.expect("2 quotes merged.");
+
+    s.send("quote flirrp #0");
+    s.expectHead("KAAS FLAAS (");
+
+    s.send("quote flerrp");
+    s.expect("No quotes on record for flerrp!");
+
+    s.send("delquote flirrp #0");
+    s.expect("Quote removed, indexes updated.");
+
+    s.send("delquote flirrp #0");
+    s.expect("Quote removed, indexes updated.");
+
+    s.send("delquote flirrp #0");
+    s.expect("No quotes on record for flirrp!");
+
+    return true;
+}
+
+
 public:
 
 
