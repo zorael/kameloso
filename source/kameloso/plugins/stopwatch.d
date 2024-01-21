@@ -297,6 +297,55 @@ void teardown(StopwatchPlugin plugin)
 }
 
 
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(StopwatchPlugin _, Selftester s)
+{
+    // ------------ !stopwatch
+
+    s.send("stopwatch harbl");
+    s.expect("Usage: !stopwatch [start|stop|status]");
+
+    s.send("stopwatch");
+    s.expect("You do not have a stopwatch running.");
+
+    s.send("stopwatch status");
+    s.expect("You do not have a stopwatch running.");
+
+    s.send("stopwatch status harbl");
+    s.expect("There is no such stopwatch running. (harbl)");
+
+    s.send("stopwatch start");
+    s.expect("Stopwatch started!");
+
+    s.send("stopwatch");
+    s.expectHead("Elapsed time: ");
+
+    s.send("stopwatch status");
+    s.expectHead("Elapsed time: ");
+
+    s.send("stopwatch start");
+    s.expect("Stopwatch restarted!");
+
+    s.send("stopwatch stop");
+    s.expectHead("Stopwatch stopped after ");
+
+    s.send("stopwatch start");
+    s.expect("Stopwatch started!");
+
+    s.send("stopwatch clear");
+    s.expect("Clearing all stopwatches in channel ${channel}.");
+
+    s.send("stopwatch");
+    s.expect("You do not have a stopwatch running.");
+
+    return true;
+}
+
+
 mixin MinimalAuthentication;
 mixin PluginRegistration!StopwatchPlugin;
 

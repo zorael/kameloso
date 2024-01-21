@@ -1287,6 +1287,34 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
 }
 
 
+// selftest
+/++
+    Performs self-tests against another bot.
+
+    This is just a small test suite to make sure the plugin works as intended.
+ +/
+version(Selftests)
+auto selftest(SeenPlugin _, Selftester s)
+{
+    s.send("!seen");
+    s.expect("Usage: !seen [nickname]");
+
+    s.send("!seen ####");
+    s.expect("Invalid user: ####");
+
+    s.send("!seen HarblSnarbl");
+    s.expect("I have never seen HarblSnarbl.");
+
+    s.send("!seen ${bot}");
+    s.expect("That's you!");
+
+    s.send("!seen ${target}");
+    s.expect("T-that's me though...");
+
+    return true;
+}
+
+
 /+
     This full plugin is ~220 source lines of code. (`dscanner --sloc seen.d`)
     Even at those numbers it is fairly feature-rich.
