@@ -2003,6 +2003,137 @@ void onBusMessage(
 }
 
 
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(AdminPlugin _, Selftester s)
+{
+    import std.range : only;
+
+    // ------------ home, guest
+
+    s.send("home del #harpsteff");
+    s.expect("Channel #harpsteff was not listed as a home channel.");
+
+    s.send("home add #harpsteff");
+    s.expect("Home channel added.");
+
+    s.send("home add #harpsteff");
+    s.expect("We are already in that home channel.");
+
+    s.send("home del #harpsteff");
+    s.expect("Home channel removed.");
+
+    s.send("home del #harpsteff");
+    s.expect("Channel #harpsteff was not listed as a home channel.");
+
+    s.send("guest add #BLIRPBLARP");
+    s.expect("Guest channel added.");
+
+    s.send("guest del #BLIRPBLARP");
+    s.expect("Guest channel removed.");
+
+    // ------------ lists
+
+    foreach (immutable list; only("staff"))//, "operator", "elevated", "whitelist", "blacklist"))
+    {
+        immutable definiteFormSingular =
+            (list == "staff") ? "staff" :
+            (list == "operator") ? "an operator" :
+            (list == "elevated") ? "an elevated user" :
+            (list == "whitelist") ? "a whitelisted user" :
+            /*(list == "blacklist") ?*/ "a blacklisted user";
+
+        immutable plural =
+            (list == "staff") ? "staff" :
+            (list == "operator") ? "operators" :
+            (list == "elevated") ? "elevated users" :
+            (list == "whitelist") ? "whitelisted users" :
+            /*(list == "blacklist") ?*/ "blacklisted users";
+
+        s.send(list ~ " del xorael");
+        s.expect("xorael isn't " ~ definiteFormSingular ~ " in ${channel}.");
+
+        s.send(list ~ " add xorael");
+        s.expect("Added xorael as " ~ definiteFormSingular ~ " in ${channel}.");
+
+        s.send(list ~ " add xorael");
+        s.expect("xorael was already " ~ definiteFormSingular ~ " in ${channel}.");
+
+        s.send(list ~ " list");
+        s.expect("Current " ~ plural ~ " in ${channel}: xorael");
+
+        s.send(list ~ " del xorael");
+        s.expect("Removed xorael as " ~ definiteFormSingular ~ " in ${channel}.");
+
+        s.send(list ~ " list");
+        s.expect("There are no " ~ plural ~ " in ${channel}.");
+
+        s.send(list ~ " add");
+        s.expect("No nickname supplied.");
+    }
+
+    // ------------ misc
+
+    s.send("cycle #flirrp");
+    s.expect("I am not in that channel.");
+
+    // ------------ hostmasks
+
+    s.send("hostmask");
+    s.awaitReply();
+
+    enum noHostmaskMessage = "This bot is not currently configured " ~
+        "to use hostmasks for authentication.";
+
+    if (s.lastMessage != noHostmaskMessage)
+    {
+        s.send("hostmask add");
+        s.expect("Usage: !hostmask [add|del|list] ([account] [hostmask]/[hostmask])");
+
+        s.send("hostmask add kameloso HIRF#%%!SNIR@sdasdasd");
+        s.expect("Invalid hostmask.");
+
+        s.send("hostmask add kameloso kameloso^!*@*");
+        s.expect("Hostmask list updated.");
+
+        s.send("hostmask list");
+        // `Current hostmasks: ["kameloso^!*@*":"kameloso"]`);
+        s.expectInBody(`"kameloso^!*@*":"kameloso"`);
+
+        s.send("hostmask del kameloso^!*@*");
+        s.expect("Hostmask list updated.");
+
+        s.send("hostmask del kameloso^!*@*");
+        s.expect("No such hostmask on file.");
+    }
+
+    // ------------ misc
+
+    s.send("reload");
+    s.expect("Reloading plugins.");
+
+    s.send("reload admin");
+    s.expect("Reloading plugin \"admin\".");
+
+    s.send("join #skabalooba");
+    s.send("part #skabalooba");
+
+    s.send("get admin.enabled");
+    s.expect("admin.enabled=true");
+
+    s.send("get core.prefix");
+    s.expect(`core.prefix="${prefix}"`);
+
+    s.send("sudo PRIVMSG ${channel} :hello world");
+    s.expect("hello world");
+
+    return true;
+}
+
+
 mixin UserAwareness!omniscientChannelPolicy;
 mixin ChannelAwareness!omniscientChannelPolicy;
 mixin PluginRegistration!(AdminPlugin, -4.priority);
