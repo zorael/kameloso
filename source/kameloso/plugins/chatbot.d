@@ -171,6 +171,30 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(ChatbotPlugin plugin, Selftester s)
+{
+    import kameloso.plugins.common.scheduling : await, unawait;
+
+    s.send("say xoraelblarbhl");
+    s.expect("xoraelblarbhl");
+
+    await(plugin, IRCEvent.Type.EMOTE, No.yield);
+    scope(exit) unawait(plugin, IRCEvent.Type.EMOTE);
+
+    s.sendPlain("get on up and DANCE");
+    s.expect("dances :D-<");
+    s.expect("dances :D|-<");
+    s.expect("dances :D/-<");
+
+    return true;
+}
+
+
 mixin MinimalAuthentication;
 mixin PluginRegistration!ChatbotPlugin;
 
