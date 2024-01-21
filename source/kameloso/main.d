@@ -2102,7 +2102,8 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
                 }
             }
 
-            if (scheduledFiber.fiber.state == Fiber.State.HOLD)
+            if (scheduledFiber.fiber &&
+                (scheduledFiber.fiber.state == Fiber.State.HOLD))
             {
                 scheduledFiber.fiber.call();
             }
