@@ -175,6 +175,35 @@ configuration "dev-lowmem" {
         //"TraceHTTPRequests" \
 }
 
+configuration "selftest" {
+    subConfiguration "dialect" "dev"
+
+    versions \
+        "Selftests" \
+        "Debug" \
+        "TwitchSupport" \
+        "WithTwitchPlugin" \
+        "PrintStacktraces" \
+        "ExplainReplay" \
+        "GCStatsOnExit" \
+        "IncludeHeavyStuff"
+}
+
+configuration "selftest-lowmem" {
+    subConfiguration "dialect" "dev"
+    dflags "-lowmem"
+
+    versions \
+        "Selftests" \
+        "Debug" \
+        "TwitchSupport" \
+        "WithTwitchPlugin" \
+        "PrintStacktraces" \
+        "ExplainReplay" \
+        "GCStatsOnExit" \
+        "IncludeHeavyStuff"
+}
+
 configuration "unittest" {
     targetName "kameloso-test"
     subConfiguration "dialect" "dev"
