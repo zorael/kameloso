@@ -591,6 +591,83 @@ void initResources(NotePlugin plugin)
 }
 
 
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(NotePlugin plugin, Selftester s)
+{
+    void cycle()
+    {
+        import kameloso.plugins.common.scheduling : await, unawait;
+        import core.thread : Fiber;
+
+        part(plugin.state, s.channelName);
+        await(plugin, IRCEvent.Type.SELFPART, Yes.yield);
+
+        while (
+            (s.fiber.payload.type != IRCEvent.Type.SELFPART) ||
+            (s.fiber.payload.channel != s.channelName))
+        {
+            Fiber.yield();
+        }
+
+        unawait(plugin, IRCEvent.Type.SELFPART);
+
+        join(plugin.state, s.channelName);
+        await(plugin, IRCEvent.Type.SELFJOIN, Yes.yield);
+
+        while (
+            (s.fiber.payload.type != IRCEvent.Type.SELFJOIN) ||
+            (s.fiber.payload.channel != s.channelName))
+        {
+            Fiber.yield();
+        }
+
+        unawait(plugin, IRCEvent.Type.SELFJOIN);
+    }
+
+    // ------------ !note
+
+    s.send("note ${target} test");
+    s.expect("You cannot leave me a message; it would never be replayed.");
+
+    s.send("note ${bot} test");
+    s.expect("Note saved.");
+
+    cycle();
+
+    s.awaitReply();
+    {
+        import std.format : format;
+
+        enum pattern = "%s! %1$s left note";
+        immutable head = pattern.format(plugin.state.client.nickname);
+        enum tail = "ago: test";
+        s.requireHead(head);
+        s.requireTail(tail);
+    }
+
+    s.send("set note.playBackOnAnyActivity=false");
+    s.expect("Setting changed.");
+
+    s.send("note ${bot} abc def ghi");
+    s.expect("Note saved.");
+
+    s.send("note ${bot} 123 456 789");
+    s.expect("Note saved.");
+
+    cycle();
+
+    s.expect("${bot}! You have 2 notes.");
+    s.expectTail("ago: abc def ghi");
+    s.expectTail("ago: 123 456 789");
+
+    return true;
+}
+
+
 public:
 
 
