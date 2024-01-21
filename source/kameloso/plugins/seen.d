@@ -1316,6 +1316,6 @@ auto selftest(SeenPlugin _, Selftester s)
 
 
 /+
-    This full plugin is ~220 source lines of code. (`dscanner --sloc seen.d`)
+    This full plugin is <250 source lines of code. (`dscanner --sloc seen.d`)
     Even at those numbers it is fairly feature-rich.
  +/

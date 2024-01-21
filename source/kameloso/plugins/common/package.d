@@ -1712,7 +1712,7 @@ mixin template IRCPluginImpl(
         return didSomething;
     }
 
-    // setup, reload, teardown
+    // initialise, setup, reload, teardown
     /+
         Generates some functions that merely pass on calls to module-level
         functions, where such is available. If they aren't, this is a no-op.
