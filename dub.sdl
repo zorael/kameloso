@@ -223,6 +223,7 @@ configuration "unittest" {
         "TwitchCustomEmotesEverywhere" \
         "BenchmarkHTTPRequests" \
         "TraceHTTPRequests" \
+        "Selftests" \
         "OSXTMPDIR"
 }
 
@@ -246,5 +247,6 @@ configuration "unittest-lowmem" {
         "TwitchCustomEmotesEverywhere" \
         "BenchmarkHTTPRequests" \
         "TraceHTTPRequests" \
+        "Selftests" \
         "OSXTMPDIR"
 }
