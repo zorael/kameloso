@@ -1022,6 +1022,58 @@ void teardown(PollPlugin plugin)
 }
 
 
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(PollPlugin _, Selftester s)
+{
+    s.send("poll");
+    s.expect("Usage: ${prefix}poll [duration] [choice1] [choice2] ...");
+
+    s.send("poll arf");
+    s.expect("Need one duration and at least two choices.");
+
+    s.send("poll arf urf hirf");
+    s.expect("Malformed duration.");
+
+    s.send("poll 5s snik snek");
+    s.expect("Voting commenced! Please place your vote for one of: snek, snik (5 seconds)");
+    s.expect("Voting complete, no one voted.");
+
+    s.send("poll 7 snik snek");
+    s.expect("Voting commenced! Please place your vote for one of: snek, snik (7 seconds)");
+    s.sendPlain("snek");
+
+    s.expect("Voting complete! Here are the results:");
+    s.expect("snik : 0 votes");
+    s.expect("snek : 1 vote (100.0%)");
+
+    s.send("poll 1h2m3s snik snek");
+    s.expect("Voting commenced! Please place your vote for one of: snek, snik " ~
+        "(1 hour, 2 minutes and 3 seconds)");
+
+    s.send("poll end");
+    s.expect("Voting complete, no one voted.");
+
+    s.send("poll 1d23h59m59s snik snek");
+    s.expect("Voting commenced! Please place your vote for one of: snek, snik " ~
+        "(1 day, 23 hours, 59 minutes and 59 seconds)");
+
+    s.send("poll abort");
+    s.expect("Poll aborted.");
+
+    s.send("poll abort");
+    s.expect("There is no ongoing poll.");
+
+    s.send("poll end");
+    s.expect("There is no ongoing poll.");
+
+    return true;
+}
+
+
 mixin MinimalAuthentication;
 mixin PluginRegistration!PollPlugin;
 
