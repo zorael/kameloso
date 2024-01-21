@@ -889,6 +889,131 @@ void initResources(CounterPlugin plugin)
 }
 
 
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(CounterPlugin _, Selftester s)
+{
+    s.send("counter");
+    s.expect("Usage: !counter [add|del|format|list] [counter word]");
+
+    s.send("counter list");
+    s.expect("No counters currently active in this channel.");
+
+    s.send("counter last");
+    s.expect("Usage: !counter [add|del|format|list] [counter word]");
+
+    s.send("counter add");
+    s.expect("Usage: !counter [add|del|format|list] [counter word]");
+
+    s.send("counter del blah");
+    s.expect("No such counter available.");
+
+    s.send("counter del bluh");
+    s.expect("No such counter available.");
+
+    s.send("counter add blah");
+    s.expect("Counter blah added! Access it with !blah.");
+
+    s.send("counter add bluh");
+    s.expect("Counter bluh added! Access it with !bluh.");
+
+    s.send("counter add bluh");
+    s.expect("A counter with that name already exists.");
+
+    s.send("counter list");
+    s.expectHead("Current counters: ");
+    s.requireInBody("!blah");
+    s.requireInBody("!bluh");
+
+    // ------------ ![word]
+
+    s.sendPrefixed("blah");
+    s.expect("blah count so far: 0");
+
+    s.sendPrefixed("blah+");
+    s.expect("blah +1! Current count: 1");
+
+    s.sendPrefixed("blah++");
+    s.expect("blah +1! Current count: 2");
+
+    s.sendPrefixed("blah+2");
+    s.expect("blah +2! Current count: 4");
+
+    s.sendPrefixed("blah+abc");
+    s.expect("abc is not a number.");
+
+    s.sendPrefixed("blah-");
+    s.expect("blah -1! Current count: 3");
+
+    s.sendPrefixed("blah--");
+    s.expect("blah -1! Current count: 2");
+
+    s.sendPrefixed("blah-2");
+    s.expect("blah -2! Current count: 0");
+
+    s.sendPrefixed("blah=10");
+    s.expect("blah count assigned to 10!");
+
+    s.sendPrefixed("blah");
+    s.expect("blah count so far: 10");
+
+    s.sendPrefixed("blah?");
+    s.expect("blah count so far: 10");
+
+    s.send("counter format blah ? ABC $count DEF");
+    s.expect("Format pattern updated.");
+
+    s.send("counter format blah + count +$step = $count");
+    s.expect("Format pattern updated.");
+
+    s.send("counter format blah - count -$step = $count");
+    s.expect("Format pattern updated.");
+
+    s.send("counter format blah = count := $count");
+    s.expect("Format pattern updated.");
+
+    s.sendPrefixed("blah");
+    s.expect("ABC 10 DEF");
+
+    s.sendPrefixed("blah+");
+    s.expect("count +1 = 11");
+
+    s.sendPrefixed("blah-2");
+    s.expect("count -2 = 9");
+
+    s.sendPrefixed("blah=42");
+    s.expect("count := 42");
+
+    s.send("counter format blah ? -");
+    s.expect("Format pattern reset.");
+
+    s.sendPrefixed("blah");
+    s.expect("blah count so far: 42");
+
+    // ------------ !counter cleanup
+
+    s.send("counter del blah");
+    s.expect("Counter blah removed.");
+
+    s.send("counter del blah");
+    s.expect("No such counter available.");
+
+    s.send("counter list");
+    s.expect("Current counters: !bluh");
+
+    s.send("counter del bluh");
+    s.expect("Counter bluh removed.");
+
+    s.send("counter list");
+    s.expect("No counters currently active in this channel.");
+
+    return true;
+}
+
+
 mixin MinimalAuthentication;
 mixin PluginRegistration!CounterPlugin;
 
