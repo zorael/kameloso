@@ -173,6 +173,18 @@ void lookupQuote(
     import kameloso.messaging : privmsg;
     import core.time : Duration;
 
+    void sendNoQuoteFound()
+    {
+        enum message = "No such <b>bash.org<b> quote found.";
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
+    void sendFailedToFetch()
+    {
+        enum message = "Failed to fetch <b>bash.org<b> quote.";
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
     immutable url = quoteID.length ?
         "https://bashforever.com/?" ~ quoteID :
         "https://bashforever.com/?random";
@@ -189,7 +201,8 @@ void lookupQuote(
             {
                 if (result.responseBody.length) logger.trace(result.responseBody);
             }
-            return;
+
+            return sendFailedToFetch();
         }
 
         if ((result.code < 200) ||
@@ -207,15 +220,11 @@ void lookupQuote(
             {
                 if (result.responseBody.length) logger.trace(result.responseBody);
             }
-            return;
+
+            return sendFailedToFetch();
         }
 
-        if (!result.quoteID.length)
-        {
-            enum message = "No such <b>bash.org<b> quote found.";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            return;
-        }
+        if (!result.quoteID.length) return sendNoQuoteFound();
 
         // Seems okay, send it
         immutable message = "[<b>bash.org<b>] #" ~ result.quoteID;
@@ -668,6 +677,33 @@ void teardown(BashPlugin plugin)
     {
        plugin.transient.workerTid.prioritySend(true);
     }
+}
+
+
+// selftest
+/++
+    Performs self-tests against another bot.
+ +/
+version(Selftests)
+auto selftest(BashPlugin _, Selftester s)
+{
+    s.send("bash 5273");
+    s.expect("[bash.org] #5273");
+    s.expect("<erno> hm. I've lost a machine.. literally _lost_. it responds to ping, " ~
+        "it works completely, I just can't figure out where in my apartment it is.");
+
+    s.send("bash #4278");
+    s.expect("[bash.org] #4278");
+    s.expect("<BombScare> i beat the internet");
+    s.expect("<BombScare> the end guy is hard");
+
+    s.send("bash honk");
+    s.expect("Usage: !bash [optional bash quote number]");
+
+    /*s.send("bash 0");  // Produces a wall of text on the target side
+    s.expect("Failed to fetch bash.org quote.");*/
+
+    return true;
 }
 
 
