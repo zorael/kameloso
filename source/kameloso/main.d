@@ -1785,6 +1785,8 @@ void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
     {
         foreach (immutable i, dg; dgsForType)
         {
+            if (!dg) continue;
+
             try
             {
                 dg(event);
