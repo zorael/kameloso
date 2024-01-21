@@ -44,6 +44,7 @@ public:
         fiber = [core.thread.fiber.Fiber|Fiber] to enqueue to be executed at a
             later point in time.
         duration = Amount of time to delay the `fiber`.
+        caller = String name of calling function.
 
     See_Also:
         [undelay]
@@ -51,14 +52,15 @@ public:
 void delay(
     IRCPlugin plugin,
     Fiber fiber,
-    const Duration duration)
+    const Duration duration,
+    const string caller = __FUNCTION__)
 in ((fiber !is null), "Tried to delay a null fiber")
 {
     import kameloso.thread : ScheduledFiber;
     import std.datetime.systime : Clock;
 
     immutable time = Clock.currStdTime + duration.total!"hnsecs";
-    plugin.state.scheduledFibers ~= ScheduledFiber(fiber, time);
+    plugin.state.scheduledFibers ~= ScheduledFiber(fiber, time, caller);
     plugin.state.updateSchedule();
 }
 
@@ -74,6 +76,7 @@ in ((fiber !is null), "Tried to delay a null fiber")
         plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin].
         duration = Amount of time to delay the implicit fiber in the current context.
         yield = Whether or not to immediately yield the fiber.
+        caller = String name of calling function.
 
     See_Also:
         [undelay]
@@ -81,10 +84,11 @@ in ((fiber !is null), "Tried to delay a null fiber")
 void delay(
     IRCPlugin plugin,
     const Duration duration,
-    const Flag!"yield" yield)
+    const Flag!"yield" yield,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to delay the current fiber outside of a fiber")
 {
-    delay(plugin, Fiber.getThis(), duration);
+    delay(plugin, Fiber.getThis(), duration, caller);
     if (yield) Fiber.yield();
 }
 
@@ -104,6 +108,7 @@ in (Fiber.getThis(), "Tried to delay the current fiber outside of a fiber")
         plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin].
         dg = Delegate to enqueue to be executed at a later point in time.
         duration = Amount of time to delay the `fiber`.
+        caller = String name of calling function.
 
     See_Also:
         [undelay]
@@ -111,14 +116,15 @@ in (Fiber.getThis(), "Tried to delay the current fiber outside of a fiber")
 void delay(
     IRCPlugin plugin,
     void delegate() dg,
-    const Duration duration)
+    const Duration duration,
+    const string caller = __FUNCTION__)
 in ((dg !is null), "Tried to delay a null delegate")
 {
     import kameloso.thread : ScheduledDelegate;
     import std.datetime.systime : Clock;
 
     immutable time = Clock.currStdTime + duration.total!"hnsecs";
-    plugin.state.scheduledDelegates ~= ScheduledDelegate(dg, time);
+    plugin.state.scheduledDelegates ~= ScheduledDelegate(dg, time, caller);
     plugin.state.updateSchedule();
 }
 
