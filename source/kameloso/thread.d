@@ -523,6 +523,12 @@ final class CarryingFiber(T) : Fiber
     uint called;
 
     /++
+        Whether or not this [CarryingFiber] has been called to completion and
+        should be considered expired.
+     +/
+    bool hasExpired;
+
+    /++
         Constructor function merely taking a function/delegate pointer, to call
         when invoking this fiber (via [CarryingFiber.call|.call()]).
 
@@ -610,6 +616,14 @@ final class CarryingFiber(T) : Fiber
      +/
     auto call(const string caller = __FUNCTION__)
     {
+        scope(exit)
+        {
+            if (this.state == Fiber.State.TERM)
+            {
+                this.hasExpired = true;
+            }
+        }
+
         this.caller = caller;
         ++this.called;
         return super.call();
@@ -644,6 +658,21 @@ final class CarryingFiber(T) : Fiber
     void resetPayload()
     {
         payload = T.init;
+    }
+
+    /++
+        Safely returns the state of the fiber, taking into consideration it may
+        have been reset.
+
+        Returns:
+            [Fiber.State.TERM] if the fiber has been reset; the state of the
+            underlying [core.thread.fiber.Fiber|Fiber] otherwise.
+     +/
+    auto state()
+    {
+        return this.hasExpired ?
+            Fiber.State.TERM :
+            super.state();
     }
 }
 
