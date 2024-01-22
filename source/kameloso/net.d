@@ -31,7 +31,7 @@
     {
         // attempt is a yielded `ResolveAttempt`
         // switch on `attempt.state`, deal with it accordingly
-        // it may be `typeof(attepmt.state).noop` on the first iteration
+        // it may be `typeof(attempt.state).noop` on the first iteration
     }
 
     // Resolution done
@@ -53,7 +53,7 @@
 
     // Connection established
 
-    enum connectionLostSectons = 600;
+    enum connectionLostSeconds = 600;
 
     auto listener = new Generator!ListenAttempt(() =>
         listenFiber(
@@ -471,7 +471,7 @@ public:
     /++
         Sends a line to the server.
 
-        Intended for servers that deliminates lines by linebreaks, such as IRC servers.
+        Intended for servers that delimits lines by linebreaks, such as IRC servers.
 
         Example:
         ---

@@ -194,7 +194,7 @@ bool isTerminal() @system
 
     Params:
         flush = Reference to flush setting bool.
-        colours = Refreence to colours settings bool.
+        colours = Reference to colours settings bool.
  +/
 void applyTerminalOverrides(ref bool flush, ref bool colours) @system
 {

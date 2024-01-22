@@ -238,7 +238,7 @@ public:
 
     // previousWhoisTimestamps
     /++
-        An associative array o fwhen a nickname was last issued a WHOIS query for,
+        An associative array of when a nickname was last issued a WHOIS query for,
         UNIX timestamps by nickname key, for hysteresis and rate-limiting.
      +/
     long[string] previousWhoisTimestamps;
@@ -792,7 +792,7 @@ public:
 
     // propagate
     /++
-        Propgates an updated struct, to `this`, [parser], and to each plugins'
+        Propagates an updated struct, to `this`, [parser], and to each plugins'
         [kameloso.plugins.common.IRCPluginState|IRCPluginState]s, overwriting
         existing such.
 
@@ -884,7 +884,7 @@ public:
         long numEvents;
 
         /++
-            How many bytses were read during this connection.
+            How many bytes were read during this connection.
          +/
         ulong bytesReceived;
     }

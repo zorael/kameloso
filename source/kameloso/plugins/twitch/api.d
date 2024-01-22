@@ -611,7 +611,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
                 }
 
                 status = "Error";
-                message = "An unspecified error occured";
+                message = "An unspecified error occurred";
             }
 
             enum pattern = "%3d %s: %s";

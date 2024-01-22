@@ -1688,7 +1688,7 @@ public:
 
 // TimerPlugin
 /++
-    The Timer plugin serves reoccuring (timered) announcements.
+    The Timer plugin serves reoccurring (timered) announcements.
  +/
 final class TimerPlugin : IRCPlugin
 {

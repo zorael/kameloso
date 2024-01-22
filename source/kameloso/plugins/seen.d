@@ -23,7 +23,7 @@
     Callback delegates and [core.thread.fiber.Fiber|Fiber]s *are* supported, however.
     Event handlers can be annotated to be called from with in a fiber, and other
     fibers and delegates can be manually registered to process on incoming events,
-    alterntaively scheduled to a point in time with a reasonably high degree of precision.
+    alternatively scheduled to a point in time with a reasonably high degree of precision.
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#seen,
@@ -953,7 +953,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
         signed = Nickname to update, potentially prefixed with one or more modesigns
             (`@`, `+`, `%`, ...).
         time = UNIX timestamp of when the user was seen.
-        skipModesignStrp = Whether or not to explicitly not strip modesigns from the nickname.
+        skipModesignStrip = Whether or not to explicitly not strip modesigns from the nickname.
  +/
 void updateUser(
     SeenPlugin plugin,
@@ -1217,7 +1217,7 @@ void initResources(SeenPlugin plugin)
 
 
 /+
-    Only some plugins benefit from this one implementning `onBusMessage`, so omit
+    Only some plugins benefit from this one implementing `onBusMessage`, so omit
     it if they aren't available.
 
     Use an enum instead of a version, since for some reason this suddenly broke

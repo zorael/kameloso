@@ -101,7 +101,7 @@ public:
             bool normaliseTruecolour = true;
 
             /++
-                Whether or not emotes should be highlit in colours.
+                Whether or not emotes should be highlighted in colours.
              +/
             bool colourfulEmotes = true;
         }

@@ -1,5 +1,5 @@
 /++
-    Contains the definition of an [IRCPlugin] and its ancilliaries, as well as
+    Contains the definition of an [IRCPlugin] and its ancillaries, as well as
     mixins to fully implement it.
 
     Event handlers can then be module-level functions, annotated with
@@ -1197,7 +1197,7 @@ mixin template IRCPluginImpl(
         {
             version(unittest)
             {
-                // Skip event handler checks when unittesting, as it triggers
+                // Skip event handler checks when unit-testing, as it triggers
                 // unit tests in common/core.d
             }
             else
@@ -2252,7 +2252,7 @@ auto prefixPolicyMatches(bool verbose)
 
     static if (verbose)
     {
-        writeln("    ...policy checks out! (droped down to return true)");
+        writeln("    ...policy checks out! (dropped down to return true)");
     }
 
     return true;
@@ -3569,7 +3569,7 @@ enum Permissions
 
     /++
         Only users with a [dialect.defs.IRCUser.Class.operator|IRCUser.Class.operator]
-        classifier (or higiher) may trigger the annotated function.
+        classifier (or higher) may trigger the annotated function.
 
         Note: this does not mean IRC "+o" operators.
      +/
@@ -4030,7 +4030,7 @@ public:
 
     // subcontext
     /++
-        String secondsary context of the action. May be anything; highly action-specific.
+        String secondary context of the action. May be anything; highly action-specific.
 
         Returns:
             A string.
@@ -4471,7 +4471,7 @@ public:
         return (fiber.payload == IRCEvent.init);
     }
 
-    // requireTriggerdByTimer
+    // requireTriggeredByTimer
     /++
         Checks that the last fiber invocation was triggered by a timer.
 

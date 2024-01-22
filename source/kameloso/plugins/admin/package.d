@@ -942,7 +942,7 @@ void onCommandPrintEvents(AdminPlugin plugin, const ref IRCEvent event)
             .word("join")
             .policy(PrefixPolicy.nickname)
             .description("Joins a channel temporarily, without recording as " ~
-                "neither a home nor as a guest chnanel.")
+                "neither a home nor as a guest channel.")
             .addSyntax("$command [channel] [optional key]")
     )
 )

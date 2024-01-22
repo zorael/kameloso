@@ -703,7 +703,7 @@ private:
     alias BufferType = CircularBuffer!(Line, Yes.dynamic, messageMemory);
 
     /++
-        An associative arary of [BufferType]s of the previous line(s) every user said,
+        An associative array of [BufferType]s of the previous line(s) every user said,
         keyed by nickname keyed by channel.
      +/
     BufferType[string][string] prevlines;

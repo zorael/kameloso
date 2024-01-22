@@ -462,7 +462,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         }
         catch (Exception e)
         {
-            enum pattern = "Unhandles exception caught when writing to log (<l>%s</>): <t>%s%s";
+            enum pattern = "Unhandled exception caught when writing to log (<l>%s</>): <t>%s%s";
             logger.warningf(pattern, key, e.msg, plugin.transient.bell);
             version(PrintStacktraces) logger.trace(e);
         }
@@ -789,7 +789,7 @@ void flushLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     }
     catch (Exception e)
     {
-        enum pattern = "Unexpected exception caught when flusing log <l>%s</>: <t>%s%s";
+        enum pattern = "Unexpected exception caught when flushing log <l>%s</>: <t>%s%s";
         logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, plugin.transient.bell);
         version(PrintStacktraces) logger.trace(e);
     }

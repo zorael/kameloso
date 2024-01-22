@@ -1319,7 +1319,7 @@ unittest
 
     Params:
         event = [dialect.defs.IRCEvent|IRCEvent] whose content text to highlight.
-        colourful = Whether or not emotes should be highlit in colours.
+        colourful = Whether or not emotes should be highlighted in colours.
         settings = Current [kameloso.pods.CoreSettings|settings].
 
     Returns:
@@ -1413,12 +1413,12 @@ auto highlightEmotes(
 
     Params:
         sink = Output range to put the results into.
-        line = Content line whose containing emotes should be highlit.
+        line = Content line whose containing emotes should be highlighted.
         emotes = The list of emotes and their positions as divined from the
             IRCv3 tags of an event.
         pre = Terminal foreground tint to colour the emotes with.
         post = Terminal foreground tint to reset to after colouring an emote.
-        colourful = Whether or not emotes should be highlit in colours.
+        colourful = Whether or not emotes should be highlighted in colours.
         settings = Current [kameloso.pods.CoreSettings|settings].
  +/
 version(Colours)

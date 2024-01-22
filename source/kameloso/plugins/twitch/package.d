@@ -182,7 +182,7 @@ private enum SRM
     youtube,
 
     /++
-        Song requests relatet to a Spotify playlist.
+        Song requests relate to a Spotify playlist.
      +/
     spotify,
 }
@@ -326,7 +326,7 @@ package struct Credentials
             json = JSON representation of some [Credentials].
 
         Returns:
-            A new [Credentials] with values from the paseed `json`.
+            A new [Credentials] with values from the passed `json`.
      +/
     static auto fromJSON(const JSONValue json)
     {

@@ -382,7 +382,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             {
                 version(TwitchSupport)
                 {
-                    // This needs to be versioned becaused IRCUser.badges isn't
+                    // This needs to be versioned because IRCUser.badges isn't
                     // available if not version TwitchSupport
                     stored.class_ = IRCUser.Class.anyone;
                     //stored.badges = string.init;  // already done above on cache hit
@@ -464,7 +464,7 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
 )
 void onNick(PersistenceService service, const ref IRCEvent event)
 {
-    // onQuit already doees everything this function wants to do.
+    // onQuit already does everything this function wants to do.
     // Do not move the old user to the new one, as this is done in postprocess.
     onQuit(service, event);
 }

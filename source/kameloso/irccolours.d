@@ -3,7 +3,7 @@
     terminal such, stripping it, etc.
 
     IRC colours are not in the standard per se, but there is a de-facto standard
-    based on the mIRC coluring syntax of `\3fg,bg...\3`, where '\3' is byte 3,
+    based on the mIRC colouring syntax of `\3fg,bg...\3`, where '\3' is byte 3,
     `fg` is a foreground colour number (of [IRCColour]) and `bg` is a similar
     background colour number.
 
@@ -398,7 +398,7 @@ in (word.length, "Tried to apply IRC colours by hash to a string but no string w
     in IRC messages.
 
     Params:
-        word = `dtring`` to tint.
+        word = `dstring`` to tint.
         extendedOutgoingColours = Whether or not to use extended colours (16-98).
 
     Returns:
@@ -1146,7 +1146,7 @@ unittest
     bold text then, we'll get lines that start off bold and continue as such
     until the very end.
 
-    Instead we iterate all occcurences of the passed `mircToken`, toggling the
+    Instead we iterate all occurrences of the passed `mircToken`, toggling the
     effect on and off.
 
     Params:

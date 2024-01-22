@@ -3289,7 +3289,7 @@ auto verifySettings(Kameloso instance)
 
         if (!instance.parser.client.nickname.isValidNickname(conservativeServer))
         {
-            // No need to print the nickname, visible from prettyprint preivously
+            // No need to print the nickname, visible from prettyprint previously
             logger.error("Invalid nickname!");
             return Next.returnFailure;
         }

@@ -451,7 +451,7 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
 
 // getBase64Authorization
 /++
-    Construts a `Basic` OAuth authorisation string based on the Spotify client ID
+    Constructs a `Basic` OAuth authorisation string based on the Spotify client ID
     and client secret.
 
     Params:

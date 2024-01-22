@@ -262,7 +262,7 @@ struct ThreadMessage
         shortenReceiveTimeout,
 
         /++
-            Removes an entry from the custom settings array popualted at program
+            Removes an entry from the custom settings array populated at program
             start with the `--set` parameter.
          +/
         popCustomSetting,

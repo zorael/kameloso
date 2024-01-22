@@ -180,7 +180,7 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
     * If [Rejoin.merge|ChannelRejoinBehaviour.merge], it will join all home channels
       all guest channels *and* any channels carried over from previous connections
       (or executions).
-    * If [Rejoin.mergeHomes|ChannelRejoinBehaviour.mergeHomes|, it wil join all
+    * If [Rejoin.mergeHomes|ChannelRejoinBehaviour.mergeHomes|, it will join all
       channels carried over from previous connections *and* all home channels as
       defined in the configuration file, but ignore guest channels.
     * If [Rejoin.original|ChannelRejoinBehaviour.original], it will join all home

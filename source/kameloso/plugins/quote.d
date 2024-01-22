@@ -790,7 +790,7 @@ unittest
         immutable expected = "2023";
         assert((actual == expected), actual);
     }
-    version(nonne)
+    version(none)
     {
         // We have to disable this test as the month string is locale-dependent
         immutable actual = getTimeStringFromTimestamp(when, Precision.month);
@@ -931,7 +931,7 @@ private:
 
 // getRandomQuote
 /++
-    Fethes a random [Quote] from an array of such.
+    Fetches a random [Quote] from an array of such.
 
     Params:
         quotes = Array of [Quote]s to get a random one from.
@@ -1229,7 +1229,7 @@ in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickna
     }
     else
     {
-        // Only matches the timestmp so don't trust it
+        // Only matches the timestamp so don't trust it
         slice = line;
     }
 

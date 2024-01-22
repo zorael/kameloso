@@ -61,7 +61,7 @@ public:
 
     // preferHostmasks
     /++
-        Flag denoting that usermasks should be used instead of accounts to authenticate users.
+        Flag denoting that hostmasks should be used instead of accounts to authenticate users.
      +/
     bool preferHostmasks = false;
 

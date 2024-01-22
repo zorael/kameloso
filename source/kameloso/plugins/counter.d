@@ -105,7 +105,7 @@ public:
     string patternAssign = "<b>$word<b> count assigned to <b>$count<b>!";
 
     /++
-        Constructor. Only kept as a compatibility measure to ensure [word] alawys
+        Constructor. Only kept as a compatibility measure to ensure [word] always
         has a value. Remove later.
      +/
     this(const string word) pure @safe nothrow @nogc
