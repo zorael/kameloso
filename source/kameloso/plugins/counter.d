@@ -894,8 +894,11 @@ void initResources(CounterPlugin plugin)
     Performs self-tests against another bot.
  +/
 version(Selftests)
-auto selftest(CounterPlugin _, Selftester s)
+auto selftest(CounterPlugin plugin, Selftester s)
 {
+    import kameloso.plugins.common.scheduling : delay;
+    import core.time : seconds;
+
     s.send("counter");
     s.expect("Usage: !counter [add|del|format|list] [counter word]");
 
@@ -992,6 +995,25 @@ auto selftest(CounterPlugin _, Selftester s)
 
     s.sendPrefixed("blah");
     s.expect("blah count so far: 42");
+
+    s.send(`counter format blah + ""`);
+    s.expect("Format pattern updated.");
+
+    s.send(`counter format blah - ""`);
+    s.expect("Format pattern updated.");
+
+    static immutable delayToWait = 5.seconds;
+
+    s.sendPrefixed("blah+");
+    delay(plugin, delayToWait, Yes.yield);
+    s.requireTriggeredByTimer();
+
+    s.sendPrefixed("blah-5");
+    delay(plugin, delayToWait, Yes.yield);
+    s.requireTriggeredByTimer();
+
+    s.sendPrefixed("blah");
+    s.expect("blah count so far: 38");
 
     // ------------ !counter cleanup
 
