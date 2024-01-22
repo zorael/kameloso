@@ -1581,7 +1581,6 @@ version(Selftests)
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
-    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("selftest")
@@ -1594,44 +1593,118 @@ void onCommandSelftest(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : CarryingFiber;
     import std.format : format;
-    import std.typecons : Tuple;
+    import std.typecons : Ternary, Tuple;
 
-    alias Payload = Tuple!(string[], string[], string[]);
+    alias Payload = Tuple!(string[], Ternary delegate()[]);
 
-    void selftestDg()
+    void selftestDgOuter()
     {
-        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
-        assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
+        import kameloso.constants : BufferSize;
+        import kameloso.thread : CarryingFiber;
 
-        privmsg(plugin.state, event.channel, event.sender.nickname, "Self-tests complete.");
+        auto outerFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        assert(outerFiber, "Incorrectly cast fiber: " ~ typeof(outerFiber).stringof);
 
-        if (thisFiber.payload[0].length)
+        immutable pluginNames = outerFiber.payload[0].idup;
+        auto testDelegates = outerFiber.payload[1].dup;
+
+        void selftestDgInner()
         {
-            enum successPattern = "Succeeded (<b>%d<b>): %-(<b>%s<b>, %)<b>";
-            immutable successMessage = successPattern.format(
-                thisFiber.payload[0].length,
-                thisFiber.payload[0]);
-            privmsg(plugin.state, event.channel, event.sender.nickname, successMessage);
+            import kameloso.time : timeSince;
+            import core.time : MonoTime;
+
+            /*auto innerFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+            assert(innerFiber, "Incorrectly cast fiber: " ~ typeof(innerFiber).stringof);*/
+
+            immutable start = MonoTime.currTime;
+
+            enum message = "Running self-tests. This may take several minutes.";
+            chan(plugin.state, event.channel, message);
+
+            string[] succeeded;
+            string[] failed;
+            string[] skipped;
+
+            foreach (immutable i; 0..pluginNames.length)
+            {
+                immutable pluginName = pluginNames[i];
+
+                try
+                {
+                    immutable pre = MonoTime.currTime;
+                    immutable result = testDelegates[i]();
+                    immutable post = MonoTime.currTime;
+                    immutable delta = (post - pre);
+                    immutable elapsed = delta.timeSince;
+
+                    if (result == Ternary.yes)
+                    {
+                        succeeded ~= pluginName;
+                        enum successPattern = "Self-test of the <l>%s</> plugin " ~
+                            "finished without errors in <l>%s</>.";
+                        logger.infof(successPattern, pluginName, elapsed);
+                    }
+                    else if (result == Ternary.no)
+                    {
+                        failed ~= pluginName;
+                        enum failurePattern = "Self-test of the <l>%s</> plugin " ~
+                            "FAILED after <l>%s</>.";
+                        logger.warningf(failurePattern, pluginName, elapsed);
+                    }
+                    else /*if (result == Ternary.unknown)*/
+                    {
+                        skipped ~= pluginName;
+                    }
+                }
+                catch (Exception e)
+                {
+                    version(PrintStacktraces)
+                    {
+                        logger.trace(e);
+                    }
+                    failed ~= pluginName;
+                }
+            }
+
+            immutable stop = MonoTime.currTime;
+            immutable delta = (stop - start);
+            immutable elapsed = delta.timeSince;
+
+            enum completePattern = "Self-tests completed in <b>%s<b>.";
+            immutable completeMessage = completePattern.format(elapsed);
+            chan(plugin.state, event.channel, completeMessage);
+
+            if (succeeded.length)
+            {
+                enum successPattern = "Succeeded (<b>%d<b>): %-(<b>%s<b>, %)<b>";
+                immutable successMessage = successPattern.format(
+                    succeeded.length,
+                    succeeded);
+                chan(plugin.state, event.channel, successMessage);
+            }
+
+            if (failed.length)
+            {
+                enum failurePattern = "Failed (<b>%d<b>): %-(<b>%s<b>, %)<b>";
+                immutable failureMessage = failurePattern.format(
+                    failed.length,
+                    failed);
+                chan(plugin.state, event.channel, failureMessage);
+            }
+
+            if (skipped.length)
+            {
+                import lu.string : plurality;
+                enum skippedPattern = "<b>%d<b> %s skipped due to not having any tests defined.";
+                immutable skippedMessage = skippedPattern.format(
+                    skipped.length,
+                    skipped.length.plurality("plugin was", "plugins were"));
+                chan(plugin.state, event.channel, skippedMessage);
+            }
         }
 
-        if (thisFiber.payload[1].length)
-        {
-            enum failurePattern = "Failed (<b>%d<b>): %-(<b>%s<b>, %)<b>";
-            immutable failureMessage = failurePattern.format(
-                thisFiber.payload[1].length,
-                thisFiber.payload[1]);
-            privmsg(plugin.state, event.channel, event.sender.nickname, failureMessage);
-        }
-
-        if (thisFiber.payload[2].length)
-        {
-            import lu.string : plurality;
-            enum skippedPattern = "<b>%d<b> %s skipped.";
-            immutable skippedMessage = skippedPattern.format(
-                thisFiber.payload[2].length,
-                thisFiber.payload[2].length.plurality("plugin", "plugins"));
-            privmsg(plugin.state, event.channel, event.sender.nickname, skippedMessage);
-        }
+        auto innerFiber = new CarryingFiber!IRCEvent(&selftestDgInner, BufferSize.fiberStack);
+        innerFiber.call();
     }
 
     if (!event.content.length)
@@ -1644,9 +1717,7 @@ void onCommandSelftest(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         return;
     }
 
-    enum message = "Running self-tests. This may take several minutes.";
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
-    defer!Payload(plugin, &selftestDg, event.channel, event.content);
+    defer!Payload(plugin, &selftestDgOuter, event.channel, event.content);
 }
 
 

@@ -2525,8 +2525,9 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
         version(WantSelftestHandler)
         {
             import kameloso.plugins.common : Selftester;
+            import std.typecons : Ternary;
 
-            alias SelftestPayload = Tuple!(string[], string[], string[]);
+            alias SelftestPayload = Tuple!(string[], Ternary delegate()[]);
 
             if (auto fiber = cast(CarryingFiber!(SelftestPayload))(action.fiber))
             {
@@ -2539,47 +2540,37 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                     import std.array : split;
 
                     Selftester tester;
-                    tester.fiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
                     tester.channelName = action.context;
 
                     string slice = action.subcontext;  // mutable
                     tester.targetNickname = slice.advancePast(' ', Yes.inherit);
-                    const pluginNames = slice.split(' ');
+                    immutable pluginNames = slice.split(' ');
 
-                    foreach (immutable i, thisPlugin; instance.plugins)
+                    foreach (thisPlugin; instance.plugins)
                     {
-                        import kameloso.plugins.common.scheduling : await, delay, unawait;
-                        import std.typecons : Ternary;
-
                         if (!thisPlugin.isEnabled ||
                             (pluginNames.length && !pluginNames.canFind(thisPlugin.name)))
                         {
-                            fiber.payload[2] ~= thisPlugin.name;
                             continue;
                         }
 
-                        await(thisPlugin, tester.fiber, IRCEvent.Type.CHAN);
-                        scope(exit) unawait(thisPlugin, tester.fiber, IRCEvent.Type.CHAN);
+                        Ternary pluginSelftestDg(IRCPlugin plugin)
+                        {
+                            import kameloso.plugins.common.scheduling : await, unawait;
 
-                        immutable result = thisPlugin.selftest(tester);
+                            auto dgFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+                            assert(dgFiber, "Incorrectly cast fiber: " ~ typeof(dgFiber).stringof);
+                            tester.fiber = dgFiber;
 
-                        if (result == Ternary.yes)
-                        {
-                            enum pattern = "Self-test of the <l>%s</> plugin succeeded.";
-                            logger.infof(pattern, thisPlugin.name);
-                            fiber.payload[0] ~= thisPlugin.name;
+                            await(plugin, dgFiber, IRCEvent.Type.CHAN);
+                            scope(exit) unawait(plugin, dgFiber, IRCEvent.Type.CHAN);
+
+                            return plugin.selftest(tester);
                         }
-                        else if (result == Ternary.no)
-                        {
-                            enum pattern = "Self-test of the <l>%s</> plugin FAILED.";
-                            logger.warningf(pattern, thisPlugin.name);
-                            fiber.payload[1] ~= thisPlugin.name;
-                        }
-                        else /*if (result == Ternary.unknown)*/
-                        {
-                            fiber.payload[2] ~= thisPlugin.name;
-                            //continue;
-                        }
+
+                        // https://forum.dlang.org/post/dxnhgxehdrcqdolbnfuy@forum.dlang.org
+                        fiber.payload[0] ~= thisPlugin.name;
+                        fiber.payload[1] ~= (plugin => () => pluginSelftestDg(plugin))(thisPlugin);
                     }
 
                     fiber.call(action.creator);
