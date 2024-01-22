@@ -1929,6 +1929,8 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
     // Clean up processed fibers
     foreach (ref expiredFiber; expiredFibers)
     {
+        import kameloso.thread : CarryingFiber;
+
         // Detect duplicates that were already destroyed and skip
         if (!expiredFiber) continue;
 
@@ -1942,7 +1944,6 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
 
                 version(TraceFibersAndDelegates)
                 {
-                    import kameloso.thread : CarryingFiber;
                     import lu.conv : Enum;
 
                     if (auto carryingFiber = cast(CarryingFiber!IRCEvent)fiber)
@@ -1976,7 +1977,14 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
             }
         }
 
-        destroy(expiredFiber);
+        if (auto carryingFiber = cast(CarryingFiber!IRCEvent)expiredFiber)
+        {
+            if (carryingFiber.state == Fiber.State.TERM)
+            {
+                carryingFiber.reset();
+            }
+        }
+
         expiredFiber = null;  // needs ref
     }
 
@@ -2067,10 +2075,19 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
 void processScheduledFibers(IRCPlugin plugin, const long nowInHnsecs)
 in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset timestamp")
 {
+    import kameloso.thread : CarryingFiber;
+    import std.algorithm.iteration : uniq;
+    import std.algorithm.sorting : sort;
+    import std.range : chain;
     import core.thread : Fiber;
 
     size_t[] toRemove;
+    size_t[] toReset;
 
+    /+
+        Walk through the scheduled fibers and call them if their timestamp is up.
+        Expired fibers will be cleaned up below.
+     +/
     foreach (immutable i, ref scheduledFiber; plugin.state.scheduledFibers)
     {
         if (scheduledFiber.timestamp > nowInHnsecs) continue;
@@ -2079,8 +2096,6 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         {
             version(TraceFibersAndDelegates)
             {
-                import kameloso.thread : CarryingFiber;
-
                 if (auto carryingFiber = cast(CarryingFiber!IRCEvent)scheduledFiber.fiber)
                 {
                     enum pattern = "<l>%s</>.scheduledFibers[%d] " ~
@@ -2095,7 +2110,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
                 else
                 {
                     enum pattern = "<l>%s</>.scheduledFibers[%d] " ~
-                        "plain fiber";
+                        "(probably) plain fiber";
 
                     logger.tracef(
                         pattern,
@@ -2104,10 +2119,20 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
                 }
             }
 
-            if (scheduledFiber.fiber &&
-                (scheduledFiber.fiber.state == Fiber.State.HOLD))
+            if (auto carryingFiber = cast(CarryingFiber!IRCEvent)scheduledFiber.fiber)
             {
-                scheduledFiber.fiber.call();
+                if (carryingFiber.state == Fiber.State.HOLD)
+                {
+                    carryingFiber.call();
+                }
+            }
+            else
+            {
+                if (scheduledFiber.fiber &&
+                    (scheduledFiber.fiber.state == Fiber.State.HOLD))
+                {
+                    scheduledFiber.fiber.call();
+                }
             }
         }
         catch (Exception e)
@@ -2120,29 +2145,62 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         }
         finally
         {
-            // destroy the fiber if it has ended UNLESS it was undelayed
-            // (in which case .fiber is null and we would segfault)
-            if (scheduledFiber.fiber &&
-                (scheduledFiber.fiber.state == Fiber.State.TERM))
+            /+
+                Always remove a scheduled fiber after processing, regardless of its state.
+                Don't necessarily reset it though, as it may be referenced to
+                elsewhere too. Evaluate that below.
+             +/
+            toRemove ~= i;
+        }
+    }
+
+    /+
+        Collect expired CarryingFibers and store their indices in toReset.
+        Don't reset normal fibers, as they may be referenced to elsewhere too
+        and we have no way of telling.
+     +/
+    foreach (immutable i, /*ref*/ scheduledFiber; plugin.state.scheduledFibers)
+    {
+        if (auto carryingFiber = cast(CarryingFiber!IRCEvent)scheduledFiber.fiber)
+        {
+            if (carryingFiber.state == Fiber.State.TERM)
             {
-                destroy(scheduledFiber.fiber);
-                scheduledFiber.fiber = null;  // needs ref
+                toReset ~= i;
+            }
+        }
+    }
+
+    // No need to continue if there's nothing to do
+    if (!toRemove.length && !toReset.length) return;
+
+    /+
+        Sort the indices so we can walk them in reverse order.
+     +/
+    auto indexRange = chain(toRemove, toReset)
+        .sort!((a, b) => a < b)
+        .uniq;
+
+    /+
+        Finally, remove the expired fibers, additionally resetting those that
+        were terminated.
+     +/
+    foreach_reverse (immutable i; indexRange)
+    {
+        import std.algorithm.mutation : SwapStrategy, remove;
+        import std.algorithm.searching : canFind;
+
+        if (toReset.canFind(i))
+        {
+            if (auto carryingFiber = cast(CarryingFiber!IRCEvent)plugin.state.scheduledFibers[i].fiber)
+            {
+                carryingFiber.reset();
             }
         }
 
-        // Always remove a scheduled fiber after processing
-        toRemove ~= i;
-    }
-
-    // Clean up processed fibers
-    foreach_reverse (immutable i; toRemove)
-    {
-        import std.algorithm.mutation : SwapStrategy, remove;
+        plugin.state.scheduledFibers[i].fiber = null;
         plugin.state.scheduledFibers = plugin.state.scheduledFibers
             .remove!(SwapStrategy.unstable)(i);
     }
-
-    toRemove = null;
 }
 
 
