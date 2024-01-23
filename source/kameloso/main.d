@@ -4555,6 +4555,52 @@ auto run(string[] args)
     // Resolve resource and private key/certificate paths.
     resolvePaths(instance);
 
+    version(Windows)
+    {
+        import std.file : exists;
+
+        if (!instance.connSettings.caBundleFile.length)
+        {
+            import std.file : isDir;
+            import std.path : buildNormalizedPath;
+
+            /+
+                If no CA bundle file was specified *and* one exists in the default
+                path (next to the configuration file), assume that filename.
+             +/
+            immutable defaultCaBundleFilePath = buildNormalizedPath(
+                instance.settings.configDirectory,
+                "cacert.pem");
+
+            if (defaultCaBundleFilePath.exists && !defaultCaBundleFilePath.isDir)
+            {
+                instance.connSettings.caBundleFile = defaultCaBundleFilePath;
+            }
+        }
+        else if (
+            !instance.settings.headless &&
+            !instance.transient.numReexecs &&
+            !instance.connSettings.caBundleFile.exists)  // place this last as a micro-optimisation
+        {
+            import std.path : baseName;
+
+            /+
+                One was specified (at the command line or in the configuration file)
+                but doesn't exist. Warn but continue.
+             +/
+            enum caBundleMessage1 = "No certificate authority bundle file was found.";
+            enum cabundlePattern2 = "Run the program with <l>%s --get-cacert</> to download one, " ~
+                "or specify an existing file with <l>--cacert</>.";
+            enum caBundleMessage3 = "Some plugins will in all likelihood misbehave.";
+
+            logger.trace();
+            logger.warning(caBundleMessage1);
+            logger.warningf(cabundlePattern2, args[0].baseName);
+            logger.warning(caBundleMessage3);
+            logger.trace();
+        }
+    }
+
     // Sync settings and connSettings.
     instance.conn.certFile = instance.connSettings.certFile;
     instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
