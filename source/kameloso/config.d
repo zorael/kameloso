@@ -960,6 +960,14 @@ auto handleGetopt(Kameloso instance) @system
             instance.parser.client.realName = "likewise";
             shouldWriteConfig = true;
             shouldOpenGraphicalEditor = true;
+
+            version(Windows)
+            {
+                import std.file : exists;
+                shouldDownloadCacert =
+                    !instance.connSettings.caBundleFile.length ||
+                    !instance.connSettings.caBundleFile.exists;
+            }
         }
     }
 
