@@ -645,6 +645,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
  +/
 auto establishLogLocation(const string logLocation, ref bool naggedAboutDir)
 {
+    import kameloso.string : doublyBackslashed;
     import std.file : exists, isDir;
 
     if (logLocation.exists)
@@ -654,7 +655,7 @@ auto establishLogLocation(const string logLocation, ref bool naggedAboutDir)
         if (!naggedAboutDir)
         {
             enum pattern = "Specified log directory (<l>%s</>) is not a directory.";
-            logger.warningf(pattern, logLocation);
+            logger.warningf(pattern, logLocation.doublyBackslashed);
             naggedAboutDir = true;
         }
 
@@ -667,7 +668,7 @@ auto establishLogLocation(const string logLocation, ref bool naggedAboutDir)
 
         mkdirRecurse(logLocation);
         enum pattern = "Created log directory: <i>%s";
-        logger.logf(pattern, logLocation);
+        logger.logf(pattern, logLocation.doublyBackslashed);
     }
 
     return true;
