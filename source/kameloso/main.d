@@ -4557,30 +4557,41 @@ auto run(string[] args)
 
     version(Windows)
     {
-        import std.file : exists;
+        import std.file : exists, isDir;
 
         if (!instance.connSettings.caBundleFile.length)
         {
-            import std.file : isDir;
-            import std.path : buildNormalizedPath;
+            import std.path : buildNormalizedPath, dirName;
 
             /+
-                If no CA bundle file was specified *and* one exists in the default
-                path (next to the configuration file), assume that filename.
+                If no CA bundle file was specified *and* one exists either next
+                to the configuration file or next to the binary, assume that filename.
              +/
-            immutable defaultCaBundleFilePath = buildNormalizedPath(
+            immutable string[2] fallbackCaBundleFileDirs =
+            [
                 instance.settings.configDirectory,
-                "cacert.pem");
+                args[0].dirName,
+            ];
 
-            if (defaultCaBundleFilePath.exists && !defaultCaBundleFilePath.isDir)
+            foreach (immutable fallbackDir; fallbackCaBundleFileDirs[])
             {
-                instance.connSettings.caBundleFile = defaultCaBundleFilePath;
+                immutable fullPath = buildNormalizedPath(
+                    fallbackDir,
+                    "cacert.pem");
+
+                if (fullPath.exists && !fullPath.isDir)
+                {
+                    instance.connSettings.caBundleFile = fullPath;
+                    break;
+                }
             }
         }
-        else if (
-            !instance.settings.headless &&
-            !instance.transient.numReexecs &&
-            !instance.connSettings.caBundleFile.exists)  // place this last as a micro-optimisation
+
+        if (
+            (!instance.settings.headless &&
+            !instance.transient.numReexecs) &&
+            (!instance.connSettings.caBundleFile.exists ||
+            instance.connSettings.caBundleFile.isDir))
         {
             import std.path : baseName;
 
