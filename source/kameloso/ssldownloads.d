@@ -99,10 +99,41 @@ auto downloadWindowsSSL(
         import kameloso.string : doublyBackslashed;
         import std.path : dirName;
 
+        if (instance.connSettings.caBundleFile.length)
+        {
+            import std.file : exists, isDir;
+
+            if (!instance.connSettings.caBundleFile.exists)
+            {
+                // Filename specified and nothing is in the way, use it
+            }
+            else if (instance.connSettings.caBundleFile.isDir)
+            {
+                // Place the file inside the given directory
+                instance.connSettings.caBundleFile = buildNormalizedPath(
+                    instance.connSettings.caBundleFile,
+                    "cacert.pem");
+            }
+            else
+            {
+                enum inTheWayPattern = "Something is in the way of saving the certificate bundle to <l>%s";
+                logger.error(inTheWayPattern, instance.connSettings.caBundleFile.doublyBackslashed);
+                return No.settingsTouched;
+            }
+        }
+        else
+        {
+            // Save next to the configuration file
+            instance.connSettings.caBundleFile = buildNormalizedPath(
+                instance.settings.configFile.dirName,
+                "cacert.pem");
+        }
+
         enum cacertURL = "http://curl.se/ca/cacert.pem";
-        immutable configDir = instance.settings.configFile.dirName;
-        immutable cacertFile = buildNormalizedPath(configDir, "cacert.pem");
-        immutable result = downloadFile(cacertURL, "certificate bundle", cacertFile);
+        immutable result = downloadFile(
+            cacertURL,
+            "certificate bundle",
+            instance.connSettings.caBundleFile);
         if (*instance.abort) return No.settingsTouched;
 
         if (result == 0)
@@ -110,15 +141,13 @@ auto downloadWindowsSSL(
             if (!instance.settings.force)
             {
                 enum cacertPattern = "File saved as <l>%s</>; configuration updated.";
-                logger.infof(cacertPattern, cacertFile.doublyBackslashed);
-                instance.connSettings.caBundleFile = "cacert.pem";  // cacertFile
+                logger.infof(cacertPattern, instance.connSettings.caBundleFile.doublyBackslashed);
                 retval = Yes.settingsTouched;
             }
             else
             {
                 enum cacertPattern = "File saved as <l>%s</>.";
-                logger.infof(cacertPattern, cacertFile.doublyBackslashed);
-                instance.connSettings.caBundleFile = cacertFile;  // absolute path
+                logger.infof(cacertPattern, instance.connSettings.caBundleFile.doublyBackslashed);
                 //retval = Yes.settingsTouched;  // let user supply --save
             }
         }
