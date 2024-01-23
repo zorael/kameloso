@@ -97,7 +97,6 @@ auto downloadWindowsSSL(
     if (shouldDownloadCacert)
     {
         import kameloso.string : doublyBackslashed;
-        import std.path : dirName;
 
         if (instance.connSettings.caBundleFile.length)
         {
@@ -125,7 +124,7 @@ auto downloadWindowsSSL(
         {
             // Save next to the configuration file
             instance.connSettings.caBundleFile = buildNormalizedPath(
-                instance.settings.configFile.dirName,
+                instance.settings.configDirectory,
                 "cacert.pem");
         }
 
