@@ -122,9 +122,12 @@ auto downloadWindowsSSL(
         }
         else
         {
+            import std.path : dirName;
+
             // Save next to the configuration file
+            // Can't use instance.settings.configDirectory; it hasn't been resolved yet
             instance.connSettings.caBundleFile = buildNormalizedPath(
-                instance.settings.configDirectory,
+                instance.settings.configFile.dirName,
                 "cacert.pem");
         }
 
