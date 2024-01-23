@@ -4559,6 +4559,8 @@ auto run(string[] args)
     {
         import std.file : exists, isDir;
 
+        bool shouldWarnAboutMissingCaBundle;
+
         if (!instance.connSettings.caBundleFile.length)
         {
             import std.path : buildNormalizedPath, dirName;
@@ -4593,22 +4595,7 @@ auto run(string[] args)
             (!instance.connSettings.caBundleFile.exists ||
             instance.connSettings.caBundleFile.isDir))
         {
-            import std.path : baseName;
-
-            /+
-                One was specified (at the command line or in the configuration file)
-                but doesn't exist. Warn but continue.
-             +/
-            enum caBundleMessage1 = "No certificate authority bundle file was found.";
-            enum cabundlePattern2 = "Run the program with <l>%s --get-cacert</> to download one, " ~
-                "or specify an existing file with <l>--cacert</>.";
-            enum caBundleMessage3 = "Some plugins will in all likelihood misbehave.";
-
-            logger.trace();
-            logger.warning(caBundleMessage1);
-            logger.warningf(cabundlePattern2, args[0].baseName);
-            logger.warning(caBundleMessage3);
-            logger.trace();
+            shouldWarnAboutMissingCaBundle = true;
         }
     }
 
@@ -4679,6 +4666,28 @@ auto run(string[] args)
     // Save the original nickname *once*, outside the connection loop.
     // It will change later and knowing this is useful when authenticating
     instance.parser.client.origNickname = instance.parser.client.nickname;
+
+    version(Windows)
+    {
+        if (shouldWarnAboutMissingCaBundle)
+        {
+            import std.path : baseName;
+
+            /+
+                One was specified (at the command line or in the configuration file)
+                but doesn't exist. Warn but continue.
+             +/
+            enum caBundleMessage1 = "No certificate authority bundle file was found.";
+            enum cabundlePattern2 = "Run the program with <l>%s --get-cacert</> to download one, " ~
+                "or specify an existing file with <l>--cacert</>.";
+            enum caBundleMessage3 = "Some plugins will in all likelihood misbehave.";
+
+            logger.warning(caBundleMessage1);
+            logger.warningf(cabundlePattern2, args[0].baseName);
+            logger.warning(caBundleMessage3);
+            logger.trace();
+        }
+    }
 
     // Plugins were instantiated but not initialised, so do that here
     try
