@@ -66,8 +66,8 @@ in (((channelName.length && id) ||
 
     scope(exit) if (channelName.length) ++plugin.transient.numCustomEmoteImports;
 
-    enum failureReportPeriodicity = 5;
-    enum giveUpThreshold = 15;  // multiple of failureReportPeriodicity
+    enum failureReportPoint = 5;
+    enum giveUpThreshold = failureReportPoint * 3;
 
     EmoteImport[] emoteImports;
     bool[dstring]* customEmotes;
@@ -178,8 +178,8 @@ in (((channelName.length && id) ||
             {
                 ++emoteImport.failures;
 
-                // Occasionally report failures
-                if ((emoteImport.failures % failureReportPeriodicity) == 0)
+                // Report failure once but keep trying
+                if (emoteImport.failures == failureReportPoint)
                 {
                     if (channelName.length)
                     {
