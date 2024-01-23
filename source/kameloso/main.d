@@ -4671,19 +4671,17 @@ auto run(string[] args)
     {
         if (shouldWarnAboutMissingCaBundle)
         {
-            import std.path : baseName;
-
             /+
-                One was specified (at the command line or in the configuration file)
-                but doesn't exist. Warn but continue.
+                A cacert.pem was specified (at the command line or in the
+                configuration file) but it doesn't exist. Warn.
              +/
-            enum caBundleMessage1 = "No certificate authority bundle file was found.";
-            enum cabundlePattern2 = "Run the program with <l>%s --get-cacert</> to download one, " ~
-                "or specify an existing file with <l>--cacert</>.";
-            enum caBundleMessage3 = "Some plugins will in all likelihood misbehave.";
+            enum caBundleMessage1 = "No SSL certificate authority bundle file found.";
+            enum cabundleMessage2 = "Run the program with <l>--get-cacert</> to download one, " ~
+                "or specify an existing file with <l>--cacert";  // no dot at end on purpose
+            enum caBundleMessage3 = "Expect some plugins to break.";
 
             logger.warning(caBundleMessage1);
-            logger.warningf(cabundlePattern2, args[0].baseName);
+            logger.warning(cabundleMessage2);
             logger.warning(caBundleMessage3);
             logger.trace();
         }
