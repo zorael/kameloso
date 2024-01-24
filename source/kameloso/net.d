@@ -341,8 +341,24 @@ public:
         import std.path : extension;
         import std.string : toStringz;
 
-        sslContext = openssl.SSL_CTX_new(openssl.TLS_method);
-        openssl.SSL_CTX_set_verify(sslContext, 0, null);
+        try
+        {
+            sslContext = openssl.SSL_CTX_new(openssl.TLS_method);
+            openssl.SSL_CTX_set_verify(sslContext, 0, null);
+        }
+        catch (Exception e)
+        {
+            import kameloso.constants : MagicErrorStrings;
+
+            if (e.msg == MagicErrorStrings.sslContextCreationFailure)
+            {
+                enum message = MagicErrorStrings.sslLibraryNotFoundRewritten;
+                throw new SSLException(message);
+            }
+
+            // Unsure what thi scould be so just rethrow it
+            throw e;
+        }
 
         if (certFile.length)
         {
@@ -1255,13 +1271,11 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                 }
                 catch (SSLException e)
                 {
-                    import std.format : format;
-
-                    enum pattern = "%s (%s)";
-                    attempt.state = State.transientSSLFailure;
-                    attempt.error = pattern.format(e.msg, conn.getSSLErrorMessage(e.code));
+                    attempt.state = State.fatalSSLFailure;
+                    attempt.error = e.msg;
                     yield(attempt);
-                    continue attemptloop;
+                    // Should never get here
+                    assert(0, "Finished `connectFiber` resumed after yield (SSL error)");
                 }
                 catch (SSLFileException e)
                 {
@@ -1272,7 +1286,17 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                     attempt.state = State.fatalSSLFailure;
                     attempt.error = pattern.format(e.msg, e.filename.doublyBackslashed);
                     yield(attempt);
-                    continue attemptloop;
+                    // Should never get here
+                    assert(0, "Finished `connectFiber` resumed after yield (SSL error)");
+                }
+                catch (Exception e)
+                {
+                    // Unsure what this could be but pass on a fatal state
+                    attempt.state = State.fatalSSLFailure;
+                    attempt.error = e.msg;
+                    yield(attempt);
+                    // Should never get here
+                    assert(0, "Finished `connectFiber` resumed after yield (SSL error)");
                 }
             }
 

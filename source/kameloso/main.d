@@ -2797,7 +2797,6 @@ auto tryConnect(Kameloso instance)
     import kameloso.constants :
         ConnectionDefaultFloats,
         ConnectionDefaultIntegers,
-        MagicErrorStrings,
         Timeout;
     import kameloso.net : ConnectionAttempt, connectFiber;
     import kameloso.thread : interruptibleSleep;
@@ -3015,16 +3014,13 @@ auto tryConnect(Kameloso instance)
             continue;
 
         case fatalSSLFailure:
-            enum pattern = "Failed to connect (fatal): <l>%s</> <t>(%d)";
-            logger.errorf(pattern, attempt.error, attempt.errno);
-            return Next.returnFailure;
+            import kameloso.constants : MagicErrorStrings;
 
-        case exception:
             /+
                 We can only detect SSL context creation failure based on the string
                 in the generic Exception thrown, sadly.
              +/
-            if (attempt.error == MagicErrorStrings.sslContextCreationFailure)
+            if (attempt.error == MagicErrorStrings.sslLibraryNotFoundRewritten)
             {
                 enum message = "Connection error: <l>" ~
                     MagicErrorStrings.sslLibraryNotFoundRewritten ~
@@ -3038,14 +3034,19 @@ auto tryConnect(Kameloso instance)
                     enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
                     logger.error(getoptMessage);
                 }
-                return Next.returnFailure;
             }
             else
             {
-                enum pattern = "Connection error: <l>%s";
+                enum pattern = "Failed to connect due to SSL errors: <l>%s";
                 logger.errorf(pattern, attempt.error);
-                continue;
             }
+            return Next.returnFailure;
+
+        case exception:
+            enum pattern = "Connection error: <l>%s";
+            logger.errorf(pattern, attempt.error);
+            //continue;  // safe to continue?
+            return Next.returnFailure;
 
         case invalidConnectionError:
         case error:
