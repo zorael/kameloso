@@ -38,6 +38,8 @@ public:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         shouldDownloadCacert = Whether or not `cacert.pem` should be downloaded.
         shouldDownloadOpenSSL = Whether or not OpenSSL for Windows should be downloaded.
+        shouldDownloadOpenSSL1_1 = Whether or not OpenSSL v1.1 should be downloaded
+            instead of v3.2.
 
     Returns:
         `Yes.settingsTouched` if [kameloso.kameloso.Kameloso.settings|Kameloso.settings]
@@ -46,7 +48,8 @@ public:
 auto downloadWindowsSSL(
     Kameloso instance,
     const Flag!"shouldDownloadCacert" shouldDownloadCacert,
-    const Flag!"shouldDownloadOpenSSL" shouldDownloadOpenSSL)
+    const Flag!"shouldDownloadOpenSSL" shouldDownloadOpenSSL,
+    const Flag!"shouldDownloadOpenSSL1_1" shouldDownloadOpenSSL1_1)
 {
     import kameloso.common : logger;
     import std.path : buildNormalizedPath;
@@ -183,16 +186,22 @@ auto downloadWindowsSSL(
 
                 version(Win64)
                 {
-                    enum head = "Win64OpenSSL_Light-3_2";
+                    immutable head = shouldDownloadOpenSSL1_1 ?
+                        "Win64OpenSSL_Light-1_1" :
+                        "Win64OpenSSL_Light-3_2";
                 }
                 else version(Win32)
                 {
-                    enum head = "Win32OpenSSL_Light-3_2";
+                    immutable head = shouldDownloadOpenSSL1_1 ?
+                        "Win32OpenSSL_Light-1_1" :
+                        "Win32OpenSSL_Light-3_2";
                 }
                 else version(AArch64)
                 {
                     // Untested, might work?
-                    enum head = "Win64ARMOpenSSL_Light-3_2";
+                    immutable head = shouldDownloadOpenSSL1_1 ?
+                        "Win64ARMOpenSSL_Light-1_1" :
+                        "Win64ARMOpenSSL_Light-3_2";
                 }
                 else
                 {

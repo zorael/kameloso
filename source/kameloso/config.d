@@ -583,6 +583,7 @@ auto handleGetopt(Kameloso instance) @system
     // Windows-only but must be declared regardless of platform
     bool shouldDownloadOpenSSL;
     bool shouldDownloadCacert;
+    bool shouldDownloadOpenSSL1_1;
 
     // Likewise but version `TwitchSupport`
     bool shouldSetupTwitch;
@@ -637,6 +638,8 @@ auto handleGetopt(Kameloso instance) @system
         Call getopt once more just to get values for colour and the Twitch
         --setup-twitch. Catching --setup-twitch here means we can override
         its defaults with the main getopt call.
+
+        Also catch --get-openssl-1_1 here, as it should be hidden.
      +/
     cast(void)std.getopt.getopt(args,
         std.getopt.config.caseSensitive,
@@ -645,6 +648,7 @@ auto handleGetopt(Kameloso instance) @system
         "colour", &colourString,
         "color", &colourString,
         "setup-twitch", &shouldSetupTwitch,
+        "get-openssl-1_1", &shouldDownloadOpenSSL1_1,
         "internal-num-reexecs", &instance.transient.numReexecs,
         "internal-channel-override", &channelOverride,
     );
@@ -1071,14 +1075,15 @@ auto handleGetopt(Kameloso instance) @system
 
     version(Windows)
     {
-        if (shouldDownloadCacert || shouldDownloadOpenSSL)
+        if (shouldDownloadCacert || shouldDownloadOpenSSL || shouldDownloadOpenSSL1_1)
         {
             import kameloso.ssldownloads : downloadWindowsSSL;
 
             immutable settingsTouched = downloadWindowsSSL(
                 instance,
                 cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
-                cast(Flag!"shouldDownloadOpenSSL")shouldDownloadOpenSSL);
+                cast(Flag!"shouldDownloadOpenSSL")(shouldDownloadOpenSSL || shouldDownloadOpenSSL1_1),
+                cast(Flag!"shouldDownloadOpenSSL1_1")shouldDownloadOpenSSL1_1);
 
             if (*instance.abort) return Next.returnFailure;
 
