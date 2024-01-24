@@ -509,7 +509,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         averageApproximateQueryTime(plugin, msecs_);
     }
 
-    if (response == QueryResponse.init) //.code == 0) // can't go by response.str.length, as it can be empty
+    if (response == QueryResponse.init)
     {
         throw new EmptyResponseException("No response");
     }

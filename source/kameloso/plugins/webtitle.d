@@ -631,15 +631,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
     immutable result = waitForLookupResults(plugin, id);
 
-    if (result.code == 0) //(!result.title.length)
-    {
-        // ?
-    }
-    else if (result.code < 10)
-    {
-        // ?
-    }
-    else if ((result.code >= 500) && !recursing)
+    if ((result.code >= 500) && !recursing)
     {
         return sendHTTPRequest(
             plugin,
@@ -647,10 +639,6 @@ in (url.length, "Tried to send an HTTP request without a URL")
             Yes.recursing,
             id,
             caller);
-    }
-    else if (result.code >= 400)
-    {
-        // ?
     }
 
     return result;
