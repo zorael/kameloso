@@ -4672,18 +4672,22 @@ auto run(string[] args)
     {
         if (shouldWarnAboutMissingCaBundle)
         {
+            import kameloso.constants : MagicErrorStrings;
+
             /+
                 A cacert.pem was specified (at the command line or in the
                 configuration file) but it doesn't exist. Warn.
              +/
             enum caBundleMessage1 = "No SSL certificate authority bundle file found.";
-            enum cabundleMessage2 = "Run the program with <l>--get-cacert</> to download one, " ~
-                "or specify an existing file with <l>--cacert";  // no dot at end on purpose
-            enum caBundleMessage3 = "Expect some plugins to break.";
+            enum caBundleMessage2 = cast(string)MagicErrorStrings.visitWikiOneliner;
+            enum caBundleMessage3 = "Run the program with <l>--get-cacert</> to download one, " ~
+                "or specify an existing file with <l>--cacert=";  // no dot at end on purpose
+            enum caBundleMessage4 = "Expect some plugins to break.";
 
             logger.warning(caBundleMessage1);
-            logger.warning(cabundleMessage2);
+            logger.warning(caBundleMessage2);
             logger.warning(caBundleMessage3);
+            logger.warning(caBundleMessage4);
             logger.trace();
         }
     }
