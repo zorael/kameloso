@@ -183,16 +183,16 @@ auto downloadWindowsSSL(
 
                 version(Win64)
                 {
-                    enum head = "Win64OpenSSL_Light-3_";
+                    enum head = "Win64OpenSSL_Light-3_2";
                 }
                 else version(Win32)
                 {
-                    enum head = "Win32OpenSSL_Light-3_";
+                    enum head = "Win32OpenSSL_Light-3_2";
                 }
                 else version(AArch64)
                 {
                     // Untested, might work?
-                    enum head = "Win64ARMOpenSSL_Light-3_";
+                    enum head = "Win64ARMOpenSSL_Light-3_2";
                 }
                 else
                 {
