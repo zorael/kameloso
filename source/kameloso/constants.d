@@ -608,11 +608,6 @@ enum MagicErrorStrings
     sslContextCreationFailure = "can't complete call to TLS_method",
 
     /++
-        Could not initialise SSL libraries, original line ([arsd.http2]).
-     +/
-    sslLibraryNotFound = "libssl library not found",
-
-    /++
         Could not initialise SSL libraries, rewritten line.
      +/
     sslLibraryNotFoundRewritten = "SSL libraries not found",
