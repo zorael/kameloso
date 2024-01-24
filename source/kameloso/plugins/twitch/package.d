@@ -3132,33 +3132,21 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
             {
                 import kameloso.constants : MagicErrorStrings;
 
-                // Something is deeply wrong.
-                if (e.code == 2)
+                if (e.msg == MagicErrorStrings.sslLibraryNotFoundRewritten)
                 {
-                    enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
+                    enum sslMessage = "Failed to validate Twitch API keys: <l>" ~
+                        cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten ~
+                        " <t>(is OpenSSL installed?)";
+                    logger.error(sslMessage);
+                    logger.error(cast(string)MagicErrorStrings.visitWikiOneliner);
 
-                    if (e.error == MagicErrorStrings.sslLibraryNotFound)
+                    version(Windows)
                     {
-                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
-                            "<t>(is OpenSSL installed?)";
-                        logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
-                        logger.error(wikiMessage);
-
-                        version(Windows)
-                        {
-                            enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                            logger.error(getoptMessage);
-                        }
-
-                        // Unrecoverable
-                        return;
+                        logger.error(cast(string)MagicErrorStrings.getOpenSSLSuggestion);
                     }
-                    else
-                    {
-                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) <t>(%d)";
-                        logger.errorf(pattern, e.msg, e.error, e.code);
-                        logger.error(wikiMessage);
-                    }
+
+                    // Unrecoverable
+                    return;
                 }
                 else
                 {

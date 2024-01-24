@@ -192,43 +192,50 @@ private auto handleRetryDelegateException(
         }
         return;  //continue;
     }
-    else
+    else if (auto e = cast(TwitchQueryException)base)
     {
-        if (endlessly)
-        {
-            // Unconditionally continue, but print the exception once if it's erroring
-            version(PrintStacktraces)
-            {
-                if (!headless)
-                {
-                    alias printExceptionAfterNFailures = TwitchPlugin.delegateRetries;
+        import kameloso.constants : MagicErrorStrings;
 
-                    if (i == printExceptionAfterNFailures)
-                    {
-                        printRetryDelegateException(base);
-                    }
-                }
-            }
-            return;  //continue;
+        if (e.msg == MagicErrorStrings.sslLibraryNotFoundRewritten)
+        {
+            // Missing OpenSSL
+            throw e;
         }
-        else
-        {
-            // Retry until we reach the retry limit, then print if we should, before rethrowing
-            if (i < TwitchPlugin.delegateRetries-1) return;  //continue;
 
-            version(PrintStacktraces)
+        // Drop down
+    }
+
+    if (endlessly)
+    {
+        // Unconditionally continue, but print the exception once if it's erroring
+        version(PrintStacktraces)
+        {
+            if (!headless)
             {
-                if (!headless)
+                alias printExceptionAfterNFailures = TwitchPlugin.delegateRetries;
+
+                if (i == printExceptionAfterNFailures)
                 {
                     printRetryDelegateException(base);
                 }
             }
-            throw base;
         }
+        return;  //continue;
     }
+    else
+    {
+        // Retry until we reach the retry limit, then print if we should, before rethrowing
+        if (i < TwitchPlugin.delegateRetries-1) return;  //continue;
 
-    // We can logically never get here
-    assert(0, "Unreachable");
+        version(PrintStacktraces)
+        {
+            if (!headless)
+            {
+                printRetryDelegateException(base);
+            }
+        }
+        throw base;
+    }
 }
 
 
@@ -336,7 +343,7 @@ void persistentQuerier(
             cast(ubyte[])body_,
             contentType);
 
-        if (response.code > 0)  // can't go by response.str.length, as it can be empty
+        if (response != QueryResponse.init)
         {
             responseBucket[id] = response;
         }
@@ -502,9 +509,9 @@ in (url.length, "Tried to send an HTTP request without a URL")
         averageApproximateQueryTime(plugin, msecs_);
     }
 
-    if (response.code == 0) // can't go by response.str.length, as it can be empty
+    if (response == QueryResponse.init) //.code == 0) // can't go by response.str.length, as it can be empty
     {
-        throw new EmptyResponseException("Empty response");
+        throw new EmptyResponseException("No response");
     }
     else if (response.code < 10)
     {
@@ -735,7 +742,11 @@ auto sendHTTPRequestImpl(
     }
     catch (Exception e)
     {
-        response.exceptionText = e.msg;
+        import kameloso.constants : MagicErrorStrings;
+
+        response.exceptionText = (e.msg == MagicErrorStrings.sslContextCreationFailure) ?
+            MagicErrorStrings.sslLibraryNotFoundRewritten :
+            e.msg;
         return response;
     }
 
@@ -1018,13 +1029,17 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
                 plugin.state.connSettings.caBundleFile);
 
             // Copy/paste error handling...
-            if (response.code == 0) //(!response.str.length)
+            if (response.exceptionText.length)
             {
                 throw new TwitchQueryException(
-                    "Empty response",
+                    response.exceptionText,
                     response.str,
                     response.error,
                     response.code);
+            }
+            else if (response == QueryResponse.init)
+            {
+                throw new TwitchQueryException("No response");
             }
             else if (response.code < 10)
             {
