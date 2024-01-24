@@ -513,7 +513,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     {
         throw new EmptyResponseException("No response");
     }
-    else if (response.code < 10)
+    else if (response.code < 200)
     {
         throw new TwitchQueryException(
             response.error,
