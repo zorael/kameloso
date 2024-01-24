@@ -78,6 +78,8 @@ If there's anyone talking it should show on your screen.
   * [Further help](#further-help)
 * [Known issues](#known-issues)
   * [Windows](#windows)
+    * [OpenSSL](#openssl)
+    * [Certificate authority bundle](#certificate-authority-bundle)
   * [YouTube song request playlist integration errors](#youtube-song-request-playlist-integration-errors)
 * [Roadmap](#roadmap)
 * [Built with](#built-with)
@@ -104,7 +106,9 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 #### SSL libraries on Windows
 
-See the [known issues](#known-issues) section on Windows for information on libraries needed to make encrypted connections to IRC servers, and to allow plugins secure access to the Internet.
+See the [known issues](#windows) section for extra steps required to create secure connections.
+
+(**tl;dr**: Run the program with `--get-openssl` and `--get-cacert` to download what is needed as a one-time setup.)
 
 ### Downloading source
 
@@ -405,21 +409,13 @@ Not all servers offer services, and in those cases you can enable [**hostmasks m
 
 Prebuilt binaries for Windows and Linux can be found under [**Releases**](https://github.com/zorael/kameloso/releases) (64-bit only).
 
-If you're on **Windows**, you must first [install the **OpenSSL** library](#windows). Navigate to where you downloaded the **kameloso.exe** executable, then run the following command to download and launch the OpenSSL installer. When asked, make sure to opt to *install to Windows system directories*.
-
-Here in Powershell syntax:
-
-```shell
-./kameloso --get-openssl
-```
-
-The rest is common for all platforms.
-
 ```shell
 ./kameloso --setup-twitch
 ```
 
-The `--setup-twitch` command creates a configuration file with the server address and port already set to connect to Twitch, then opens it up in a text editor.
+The `--setup-twitch` flag creates a configuration file with the server address and port already set to connect to Twitch, then opens it up in a text editor.
+
+On Windows it additionally downloads and launches an installer for [**OpenSSL for Windows**](#openssl), which is required to create secure connections. Make sure to opt to *install to Windows system directories* when asked.
 
 **A line with a leading `#` is disabled, so remove any `#`s from the heads of entries you want to enable.**
 
@@ -559,7 +555,17 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 ### Windows
 
-The bot uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library for such in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, pass the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows v3.2.\* _Light_**](https://slproweb.com/products/Win32OpenSSL.html). When asked, make sure to opt to *install to Windows system directories*.
+#### OpenSSL
+
+The dependency we use to create secure connections in turn requires [**OpenSSL**](https://www.openssl.org) to be installed. It is *the* standard library for such on every major platform -- except for Windows, which has its own solution in the form of Windows Secure Channel.
+
+Run the program with the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows v3.2.\* _(Light)_**](https://slproweb.com/products/Win32OpenSSL.html). When asked, make sure to opt to *install to Windows system directories*.
+
+#### Certificate authority bundle
+
+Said dependency does not have the ability to retrieve certificates from Windows' own certificate storage, so in addition to the system-wide installation of **OpenSSL**, you will also need a *certificate authority bundle* file. Pass `--get-cacert` on the command line and the program will download a copy of [`cacert.pem`](https://curl.se/ca/cacert.pem), as extracted from Mozilla Firefox [by the **curl** project](https://curl.se/docs/caextract.html), and save it next to your configuration file.
+
+> You can pass both `--get-openssl` and `--get-cacert` at the same time for a one-time setup.
 
 ### YouTube song request playlist integration errors
 
