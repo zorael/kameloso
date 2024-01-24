@@ -620,7 +620,8 @@ enum MagicErrorStrings
     /++
         `--get-openssl` suggestion hint oneliner, tagged.
      +/
-    getOpenSSLSuggestion = "Suggestion: <l>--get-openssl</> may help.",
+    getOpenSSLSuggestion = "Run the program with <l>--get-openssl</> to download " ~
+        "and run the installer for <l>OpenSSL for Windows</>.",
 }
 
 
