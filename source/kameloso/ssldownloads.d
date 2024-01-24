@@ -208,22 +208,22 @@ auto downloadWindowsSSL(
                     static assert(0, "Unsupported platform, please file a bug.");
                 }
 
-                if (filename.startsWith(head) && filename.endsWith(".exe"))
+                if (filename.startsWith(head) && filename.endsWith(".msi"))
                 {
                     import std.process : execute;
 
-                    immutable exeFile = buildNormalizedPath(temporaryDir, filename);
-                    immutable downloadResult = downloadFile(fileEntryJSON["url"].str, "OpenSSL installer", exeFile);
+                    immutable msi = buildNormalizedPath(temporaryDir, filename);
+                    immutable downloadResult = downloadFile(fileEntryJSON["url"].str, "OpenSSL installer", msi);
                     if (*instance.abort) return No.settingsTouched;
                     if (downloadResult != 0) break;
 
                     logger.info("Launching <l>OpenSSL</> installer.");
-                    cast(void)execute([ exeFile ]);
+                    cast(void)execute([ "msiexec", "/i", msi ]);
                     return retval;
                 }
             }
 
-            logger.error("Could not find <l>OpenSSL</> .exe to download");
+            logger.error("Could not find <l>OpenSSL</> .msi to download");
             // Drop down and return
         }
         catch (JSONException e)
