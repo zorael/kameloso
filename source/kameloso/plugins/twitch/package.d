@@ -3137,21 +3137,23 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
                     enum sslMessage = "Failed to validate Twitch API keys: <l>" ~
                         cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten ~
                         " <t>(is OpenSSL installed?)";
-                    logger.error(sslMessage);
-                    logger.error(cast(string)MagicErrorStrings.visitWikiOneliner);
+                    logger.warning(sslMessage);
+                    logger.warning(cast(string)MagicErrorStrings.visitWikiOneliner);
+                    logger.warning("Expect the Twitch plugin to largely break.");
 
                     version(Windows)
                     {
-                        logger.error(cast(string)MagicErrorStrings.getOpenSSLSuggestion);
+                        logger.warning(cast(string)MagicErrorStrings.getOpenSSLSuggestion);
                     }
 
+                    logger.trace();
                     // Unrecoverable
                     return;
                 }
                 else
                 {
                     enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) <t>(%d)";
-                    logger.errorf(pattern, e.msg, e.error, e.code);
+                    logger.warningf(pattern, e.msg, e.error, e.code);
                 }
 
                 version(PrintStacktraces) logger.trace(e);
