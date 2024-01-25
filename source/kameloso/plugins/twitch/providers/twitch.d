@@ -53,7 +53,7 @@ void requestTwitchKey(TwitchPlugin plugin)
     logger.trace();
     logger.warning("== Twitch authorisation key generation wizard ==");
     enum attemptToOpenMessage = `
-<l>Attempting to open a <i>Twitch login page</> in your default web browser.</>
+<l>Attempting to open a <i>Twitch login page<l> in your default web browser.</>
 Follow the instructions and log in to authorise the use of this program with
 your <w>BOT</> account.
 
@@ -254,7 +254,7 @@ You also need to supply the channel for which it all relates.
     enum attemptToOpenMessage = `
 --------------------------------------------------------------------------------
 
-<l>Attempting to open a <i>Twitch login page</> in your default web browser.</>
+<l>Attempting to open a <i>Twitch login page<l> in your default web browser.</>
 Follow the instructions and log in to authorise the use of this program with
 your main <w>STREAMER</> account.
 
