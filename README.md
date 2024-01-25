@@ -7,7 +7,7 @@
 * real-time chat monitoring
 * channel polls, user quotes, `!seen`, counters, oneliner commands, recurring timed announcements, [...](https://github.com/zorael/kameloso/wiki/Current-plugins)
 * saving notes to offline users that get played back when they come online
-* reporting titles of pasted URLs, YouTube video information
+* reporting titles of pasted web URLs, YouTube video information
 * `sed`-like replacement of messages (`s/this/that/` substitution)
 * [Twitch support](#twitch) with some [common bot features](#twitch-bot)
 * logs
@@ -68,6 +68,7 @@ If there's anyone talking it should show on your screen.
   * [Example use](#example-use)
     * [Online help and commands](#online-help-and-commands)
     * [***Except nothing happens***](#except-nothing-happens)
+    * [Hostmasks](#hostmasks)
   * [**Twitch**](#twitch)
     * [**Copy/paste-friendly concrete setup from scratch**](#copy-paste-friendly-concrete-setup-from-scratch)
     * [Example configuration](#example-configuration)
@@ -136,12 +137,12 @@ Refer to the output of `dub --annotate --print-builds` for more build types.
 
 #### Build configurations
 
-There are two major configurations in which the bot may be built.
+There are two primary configurations in which the bot may be built.
 
-* `application`: base configuration; everything needed for an IRC bot
-* `twitch`: additionally includes Twitch chat support and the Twitch bot plugin
+* `application`: base configuration
+* `twitch`: additionally includes support for Twitch chat and the **Twitch** bot plugin
 
-Both configurations come in `-lowmem` variants; `application-lowmem` and `twitch-lowmem`; that lower compilation memory required at the cost of increased compilation time. This may help on memory-constrained systems, such as the Raspberry Pi.
+Both configurations come in `-lowmem` variants; `application-lowmem` and `twitch-lowmem`; that lower compilation memory required at the cost of increased build times. This may help on memory-constrained systems, such as the Raspberry Pi.
 
 List configurations with `dub --annotate --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
@@ -194,7 +195,7 @@ Settings not touched will keep their values.
 
 #### Display settings
 
-The bot uses [terminal ANSI colouring](https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit) and text colours are by default set to go well with dark terminal backgrounds. If you instead have a bright background, text may be difficult to read (e.g. white on white), depending on your terminal emulator. If so, try passing the `--bright` argument, or modify the configuration file to enable `brightTerminal` under `[Core]` to make the setting persistent. If only some colours work, try limiting colouring to only those by disabling `extendedColours`, also under `[Core]`. If one or more colours are still too dark or too bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
+The bot uses [terminal ANSI colouring](https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit) and text colours are by default set to go well with dark terminal backgrounds. If you instead have a bright background, text may be difficult to read (e.g. white on white), depending on your terminal emulator. If so, try passing the `--bright` argument, or modify the configuration file to enable `brightTerminal` under `[Core]` to make the setting persistent. If only some colours work, try limiting colouring some by disabling `extendedColours`, also under `[Core]`. If one or more colours are still too dark or too bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
 
 An alternative is to disable colours entirely with `--color=never`.
 
@@ -380,26 +381,30 @@ MrOffline joined #channel
 
 Use the `!help` command of the **Help** plugin for a summary of available bot commands, and `!help [plugin] [command]` for a brief description of a specific one. The shorthand `!help !command` also works.
 
-The command **prefix** (here "`!`") is configurable; refer to your configuration file. Common alternatives are `.` (dot), `~` (tilde) and `?`, making it `.note`, `~quote` and `?counter` respectively.
+The command *prefix* (here "`!`") is configurable; refer to your configuration file. Common alternatives are `.` (dot), `~` (tilde) and `?`, making it `.note`, `~quote` and `?counter` respectively.
 
 ```ini
 [Core]
 prefix                      "!"
 ```
 
-It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...).
+It can technically be any string and not just one character. It may include spaces if enclosed within quotes.
 
-Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. Many administrative commands only work when called this way; notably everything that only outputs information to the local terminal.
+Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. Most administrative commands can only be called this way; notably everything that only outputs information to the local terminal.
 
 If an empty prefix is set, commands may *only* be called by prefixing them with the bot's nickname.
 
 #### ***Except nothing happens***
 
-Before allowing *anyone* to trigger *any* restricted functionality, the bot will try to identify the accessing user by querying the server for what [**services account**](https://en.wikipedia.org/wiki/IRC_services) that user is logged onto, if not already known. For full and global administrative privileges you will need to be logged into services with an account listed in the `admins` field in the configuration file. Other users may be defined with other per-channel permissions in your [`users.json`](#other-files) file placed in your resource directory, which can be managed online by commands provided by [the **Admin** plugin](https://github.com/zorael/kameloso/wiki/Current-plugins#admin).
+Before allowing *anyone* to trigger *any* restricted functionality, the bot will try to identify the accessing user by querying the server for what [*services account*](https://en.wikipedia.org/wiki/IRC_services) that user is logged onto, if not already known. For full and global administrative privileges, you will need to be logged into services with an account listed in the `admins` field in the configuration file. Other users may have permissions defined per-channel in the [`users.json`](#other-files) file, placed in your resource directory. These can also be managed online by commands provided by [the **Admin** plugin](https://github.com/zorael/kameloso/wiki/Current-plugins#admin).
 
 If a user is not logged onto services, it is considered as not being uniquely identifiable, and thus cannot be resolved to an account.
 
-Not all servers offer services, and in those cases you can enable [**hostmasks mode**](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)). With it enabled, the above still applies but "accounts" are derived from user hostmasks. See the `!hostmask` command of the same **Admin** plugin (and the [`hostmasks.json`](#other-files) resource file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification, but it's better than nothing if services aren't available.
+#### Hostmasks
+
+Not all servers offer services, and in those cases you can enable [*hostmasks mode*](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)). This is a weaker solution to user identification, but it's better than nothing if services aren't available. With it enabled, the above still applies but "accounts" are derived from user hostmasks.
+
+See the `!hostmask` command of the same [**Admin** plugin]((https://github.com/zorael/kameloso/wiki/Current-plugins#admin)) (and the [`hostmasks.json`](#other-files) resource file) for how to map hostmasks to would-be accounts.
 
 ### **Twitch**
 
@@ -420,11 +425,11 @@ On Windows it additionally downloads and launches an installer for [**OpenSSL fo
 **A line with a leading `#` is disabled, so remove any `#`s from the heads of entries you want to enable.**
 
 * Add your channel to `homeChannels`. Channel names are account names (which are always lowercase) with a `#` in front, so the Twitch user `streamer123` would have the channel `#streamer123`.
-* Optionally add an account name to `admins` to give them global low-level control of the bot. Owners of channels (broadcasters) automatically have high privileges in the scope of their own channels, so it's not strictly needed for general use, but may be a good idea to have while you're setting things up.
+* Optionally add one or more account names to `admins` to give them global low-level control of the bot. Owners of channels (broadcasters) automatically have high privileges in the scope of their own channels, so it's not strictly needed for general use, but may be a good idea to have while you're setting things up.
 * You can ignore `nickname`, `user`, `realName`, `account` and `password`, as they're not applicable on Twitch. *Do not enter your Twitch password **anywhere** in this file.*
 * Peruse the file for other settings if you want; you can always get back to it by passing `--gedit` (short for **g**raphical **edit**or).
 
-The program can then be run normally.
+The program can then be run normally, though a few preparatory steps remain.
 
 ```shell
 ./kameloso
@@ -432,7 +437,7 @@ The program can then be run normally.
 
 It should now start a terminal wizard requesting a new *authorisation token*, upon detecting it's missing one. See the [long story](#long-story) section below for details.
 
-**Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different **bot user** instead, open up a private/incognito window, log into Twitch normally *with the bot account* there, copy [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true), then follow it in that browser window instead. After that, refer to the terminal instructions again.
+**Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different **bot user** instead, open up a private/incognito window, log into Twitch normally *with the bot account* there, copy [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=moderator:manage:chat_messages+moderator:manage:banned_users+user:manage:whispers+channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+moderator:read:followers+user:read:follows&force_verify=true&state=kameloso), then follow it in that browser window instead. Refer to the terminal instructions again to continue.
 
 After obtaining a token, it will save it to your configuration file and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in your chat in your browser and it should show in your terminal. If there were errors or snags, or if something was simply unintuitive, [please file an issue](https://github.com/zorael/kameloso/issues/new) so the process can be improved upon.
 
@@ -486,9 +491,9 @@ It will open a browser window in which you are asked to log onto Twitch *on Twit
 
 After entering your login and password and clicking **Authorize**, you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. **Copy the URL address of it** and **paste** it into the terminal, when prompted to. It will parse the address, extract your authorisation token, save it to your configuration file, and then finally connect to the server.
 
-If you prefer to generate the token manually, [here is the URL you need to follow](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+moderator:read:followers+user:read:follows&force_verify=true). The key generation wizard only opens it for you, as well as automates saving the resulting token to your configuration file (as `pass` under `[IRCBot]`).
+If you prefer to generate the token manually, [here is the URL you need to follow](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=moderator:manage:chat_messages+moderator:manage:banned_users+user:manage:whispers+channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+moderator:read:followers+user:read:follows&force_verify=true&state=kameloso). The key generation wizard only opens it for you, as well as automates saving the resulting token to your configuration file (as `pass` under `[IRCBot]`).
 
-> Mind that the authorisation token should be kept secret. It's not possible to derive your Twitch account password from it, but anyone with access to it can chat as if they were you.
+> Mind that the authorisation token should still be kept secret. It's not possible to derive your Twitch account password from it, but anyone with access to it can chat as if they were you.
 
 #### Twitch bot
 
@@ -506,9 +511,9 @@ Assuming a prefix of `!`, commands to test are:
 * `!songrequest`
 * `!settitle`
 * `!setgame`
-* `!commercial`
 * `!shoutout`
-* `!startpoll`/`!endpoll` (*highly* experimental and unlikely to work unwil we can perform some live testing, which requires the help of a Twitch affiliate)
+* `!startpoll`/`!endpoll` (*highly* experimental and unlikely to work until we can perform some live testing, which requires the help of a Twitch affiliate)
+* `!commercial` (also requires affiliate testing)
 * `!subs`
 
 ...alongside `!oneliner`, `!counter`, `!timer`, `!poll` (chat variant), `!time`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
@@ -569,7 +574,7 @@ Said dependency does not have the ability to retrieve certificates from Windows'
 
 ### YouTube song request playlist integration errors
 
-If you're seemingly doing everything right and you still get permissions errors when attempting to add a YouTube video clip to a playlist, redo the Google keygen. When you're asked to pick one of your accounts late in the process, make sure that you select a **YouTube account** , as opposed to an overarching **Google account**. It should say **YouTube** underneath the option.
+If you're seemingly doing everything right and you still get permissions errors when attempting to add a YouTube video clip to a playlist, redo the Google keygen. When you're asked to pick one of your accounts late in the process, make sure that you select a **YouTube account**, as opposed to an overarching **Google account**. It should say **YouTube** underneath the option.
 
 ## Roadmap
 
