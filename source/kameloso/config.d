@@ -967,8 +967,10 @@ auto handleGetopt(Kameloso instance) @system
 
             version(Windows)
             {
+                import kameloso.net : openSSLIsInstalled;
                 import std.file : exists, isDir;
 
+                shouldDownloadOpenSSL = !openSSLIsInstalled;
                 shouldDownloadCacert =
                     !instance.connSettings.caBundleFile.length ||
                     !instance.connSettings.caBundleFile.exists ||
