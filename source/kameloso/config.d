@@ -967,10 +967,12 @@ auto handleGetopt(Kameloso instance) @system
 
             version(Windows)
             {
-                import std.file : exists;
+                import std.file : exists, isDir;
+
                 shouldDownloadCacert =
                     !instance.connSettings.caBundleFile.length ||
-                    !instance.connSettings.caBundleFile.exists;
+                    !instance.connSettings.caBundleFile.exists ||
+                    instance.connSettings.caBundleFile.isDir;
             }
         }
     }
