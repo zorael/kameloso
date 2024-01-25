@@ -1586,7 +1586,8 @@ auto openSSLIsInstalled() @system
     try
     {
         // This throws if OpenSSL is not installed
-        return openssl.TLS_method() is null;
+        cast(void)openssl.TLS_method();
+        return true;
     }
     catch (Exception _)
     {
