@@ -77,7 +77,7 @@ public:
     /++
         What kind of song requests to accept, if any.
      +/
-    SongRequestMode songrequestMode = SongRequestMode.youtube;
+    SongRequestMode songrequestMode = SongRequestMode.disabled;
 
     /++
         What level of user permissions are needed to issue song requests.
