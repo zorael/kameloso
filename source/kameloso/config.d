@@ -268,8 +268,12 @@ void manageConfigFile(
 
     /++
         Opens up the configuration file in a graphical text editor.
+
+        Params:
+            giveInstructions = Whether or not to give instructions to edit the
+                generated file and supply admins and/or home channels.
      +/
-    void openGraphicalEditor()
+    void openGraphicalEditor(const Flag!"giveInstructions" giveInstructions)
     {
         import std.process : execute;
 
@@ -310,6 +314,13 @@ void manageConfigFile(
         enum pattern = "Attempting to open <i>%s</> in a graphical text editor...";
         logger.logf(pattern, instance.settings.configFile.doublyBackslashed);
 
+        if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
+        {
+            logger.trace();
+            logger.log("Make sure it contains at least one of the following:");
+            giveConfigurationMinimalInstructions();
+        }
+
         immutable command = [ editor, instance.settings.configFile ];
         execute(command);
     }
@@ -325,12 +336,17 @@ void manageConfigFile(
 
     if (shouldWriteConfig || !configFileExists)
     {
+        immutable giveInstructions =
+            !configFileExists &&
+            //!shouldOpenTerminalEditor &&
+            !shouldOpenGraphicalEditor;
+
         verboselyWriteConfig(
             instance,
             instance.parser.client,
             instance.parser.server,
             instance.bot,
-            cast(Flag!"giveInstructions")(!configFileExists));
+            cast(Flag!"giveInstructions")giveInstructions);
     }
 
     if (!instance.settings.headless && (shouldOpenTerminalEditor || shouldOpenGraphicalEditor))
@@ -345,7 +361,7 @@ void manageConfigFile(
         }
         else /*if (shouldOpenGraphicalEditor)*/
         {
-            openGraphicalEditor();
+            openGraphicalEditor(cast(Flag!"giveInstructions")!configFileExists);
         }
     }
 }
