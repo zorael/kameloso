@@ -1097,7 +1097,7 @@ auto handleGetopt(Kameloso instance) @system
 
             if (shouldSetupTwitch)
             {
-                logger.info("== Twitch setup ==");
+                logger.warning("== Twitch setup ==");
                 logger.trace("This will download <l>OpenSSL</> and a <l>cacert.pem</> certificate bundle file.");
                 logger.trace(cast(string)MagicErrorStrings.visitWikiOneliner);
                 logger.trace();
