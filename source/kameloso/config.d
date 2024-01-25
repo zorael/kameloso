@@ -1091,7 +1091,19 @@ auto handleGetopt(Kameloso instance) @system
     {
         if (shouldDownloadCacert || shouldDownloadOpenSSL || shouldDownloadOpenSSL1_1)
         {
+            import kameloso.constants : MagicErrorStrings;
             import kameloso.ssldownloads : downloadWindowsSSL;
+            import std.stdio : writeln;
+
+            if (shouldSetupTwitch)
+            {
+                logger.info("== Twitch setup ==");
+                logger.trace("This will download <l>OpenSSL</> and a <l>cacert.pem</> certificate bundle file.");
+                logger.trace(cast(string)MagicErrorStrings.visitWikiOneliner);
+                logger.trace();
+                logger.trace("Setup will resume after installation finishes.");
+                logger.trace();
+            }
 
             immutable settingsTouched = downloadWindowsSSL(
                 instance,
@@ -1103,20 +1115,22 @@ auto handleGetopt(Kameloso instance) @system
 
             if (settingsTouched)
             {
-                import std.stdio : writeln;
                 shouldWriteConfig = true;
-                writeln();
             }
             else
             {
                 if (!shouldWriteConfig) return Next.returnSuccess;
             }
+
+            // Add an empty line as distance to start screen
+            writeln();
         }
     }
 
     if (shouldWriteConfig || shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
     {
         // --save and/or --edit was passed; defer to manageConfigFile
+        // (or --setup-twitch)
         // Also pass Yes.shouldWriteConfig if something was changed via getopt
         shouldWriteConfig =
             shouldWriteConfig ||
@@ -1131,6 +1145,7 @@ auto handleGetopt(Kameloso instance) @system
             cast(Flag!"shouldOpenTerminalEditor")shouldOpenTerminalEditor,
             cast(Flag!"shouldOpenGraphicalEditor")shouldOpenGraphicalEditor,
             cast(Flag!"force")instance.settings.force);
+
         return Next.returnSuccess;
     }
 
