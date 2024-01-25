@@ -95,15 +95,11 @@ auto downloadWindowsSSL(
         return result.status;
     }
 
-    Flag!"settingsTouched" retval;
-
-    if (shouldDownloadCacert)
+    void resolveCacert()
     {
-        import kameloso.string : doublyBackslashed;
-
         if (instance.connSettings.caBundleFile.length)
         {
-            import std.file : exists, isDir;
+            import std.file : exists, isDir, isFile;
 
             if (!instance.connSettings.caBundleFile.exists)
             {
@@ -118,9 +114,7 @@ auto downloadWindowsSSL(
             }
             else
             {
-                enum inTheWayPattern = "Something is in the way of saving the certificate bundle to <l>%s";
-                logger.error(inTheWayPattern, instance.connSettings.caBundleFile.doublyBackslashed);
-                return No.settingsTouched;
+                // Assume a proper file is already in place
             }
         }
         else
@@ -133,8 +127,13 @@ auto downloadWindowsSSL(
                 instance.settings.configFile.dirName,
                 "cacert.pem");
         }
+    }
 
-        enum cacertURL = "http://curl.se/ca/cacert.pem";
+    auto downloadCacert()
+    {
+        import kameloso.string : doublyBackslashed;
+
+        enum cacertURL = "https://curl.se/ca/cacert.pem";
         immutable result = downloadFile(
             cacertURL,
             "certificate bundle",
@@ -147,18 +146,22 @@ auto downloadWindowsSSL(
             {
                 enum cacertPattern = "File saved as <l>%s</>; configuration updated.";
                 logger.infof(cacertPattern, instance.connSettings.caBundleFile.doublyBackslashed);
-                retval = Yes.settingsTouched;
+                return Yes.settingsTouched;
             }
             else
             {
                 enum cacertPattern = "File saved as <l>%s</>.";
                 logger.infof(cacertPattern, instance.connSettings.caBundleFile.doublyBackslashed);
-                //retval = Yes.settingsTouched;  // let user supply --save
+                return No.settingsTouched;  // let user supply --save
             }
+        }
+        else
+        {
+            return No.settingsTouched;
         }
     }
 
-    if (shouldDownloadOpenSSL)
+    auto downloadOpenSSL()
     {
         import std.file : mkdirRecurse, tempDir;
         import std.json : JSONException;
@@ -171,7 +174,7 @@ auto downloadWindowsSSL(
         immutable jsonFile = buildNormalizedPath(temporaryDir, "win32_openssl_hashes.json");
         immutable result = downloadFile(jsonURL, "manifest", jsonFile);
         if (*instance.abort) return No.settingsTouched;
-        if (result != 0) return retval;
+        if (result != 0) return No.settingsTouched;
 
         try
         {
@@ -218,13 +221,14 @@ auto downloadWindowsSSL(
                     if (downloadResult != 0) break;
 
                     logger.info("Launching <l>OpenSSL</> installer.");
-                    cast(void)execute([ "msiexec", "/i", msi ]);
-                    return retval;
+                    /*immutable execResult =*/ execute([ "msiexec", "/i", msi ]);
+                    return Yes.settingsTouched;
                 }
             }
 
+            // If we're here, we couldn't find anything in the json
+            // Drop down
             logger.error("Could not find <l>OpenSSL</> .msi to download");
-            // Drop down and return
         }
         catch (JSONException e)
         {
@@ -235,6 +239,47 @@ auto downloadWindowsSSL(
         {
             enum pattern = "Error starting <l>OpenSSL</> installer: <l>%s";
             logger.errorf(pattern, e.msg);
+        }
+
+        return No.settingsTouched;
+    }
+
+    Flag!"settingsTouched" retval;
+
+    if (shouldDownloadCacert)
+    {
+        import kameloso.string : doublyBackslashed;
+        import std.file : exists;
+
+        resolveCacert();
+
+        if (instance.connSettings.caBundleFile.exists && !instance.settings.force)
+        {
+            enum pattern = "Found certificate authority bundle file <l>%s</>; not downloading.";
+            logger.infof(pattern, instance.connSettings.caBundleFile.doublyBackslashed);
+            //retval |= No.settingsTouched;
+        }
+        else
+        {
+            retval |= downloadCacert();
+        }
+    }
+
+    if (*instance.abort) return retval;
+
+    if (shouldDownloadOpenSSL)
+    {
+        import kameloso.net : openSSLIsInstalled;
+
+        if (openSSLIsInstalled && !instance.settings.force)
+        {
+            enum message = "Found <l>OpenSSL for Windows</> as already installed; not downloading.";
+            logger.info(message);
+            //retval |= No.settingsTouched;
+        }
+        else
+        {
+            retval |= downloadOpenSSL();
         }
     }
 
