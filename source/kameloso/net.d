@@ -1570,6 +1570,31 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 }
 
 
+// openSSLIsInstalled
+/++
+    Returns whether OpenSSL is installed on the system or not.
+    Only really relevant on Windows.
+
+    Returns:
+        `true` if OpenSSL is installed, `false` if not.
+ +/
+version(Windows)
+auto openSSLIsInstalled() @system
+{
+    import requests.ssl_adapter : openssl;
+
+    try
+    {
+        // This throws if OpenSSL is not installed
+        return openssl.TLS_method() is null;
+    }
+    catch (Exception _)
+    {
+        return false;
+    }
+}
+
+
 // SSLException
 /++
     Exception thrown when OpenSSL functions return a non-`1` error code, such as
