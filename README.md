@@ -7,7 +7,7 @@
 * real-time chat monitoring
 * channel polls, user quotes, `!seen`, counters, oneliner commands, recurring timed announcements, [...](https://github.com/zorael/kameloso/wiki/Current-plugins)
 * saving notes to offline users that get played back when they come online
-* reporting titles of pasted web URLs, YouTube video information
+* reporting titles of pasted links, YouTube video information
 * `sed`-like replacement of messages (`s/this/that/` substitution)
 * [Twitch support](#twitch) with some [common bot features](#twitch-bot)
 * logs
@@ -140,7 +140,7 @@ Refer to the output of `dub --annotate --print-builds` for more build types.
 There are two primary configurations in which the bot may be built.
 
 * `application`: base configuration
-* `twitch`: additionally includes support for Twitch chat and the **Twitch** bot plugin
+* `twitch`: additionally includes the Twitch plugin and support for Twitch chat
 
 Both configurations come in `-lowmem` variants; `application-lowmem` and `twitch-lowmem`; that lower compilation memory required at the cost of increased build times. This may help on memory-constrained systems, such as the Raspberry Pi.
 
@@ -150,13 +150,13 @@ List configurations with `dub --annotate --print-configs`. You can specify which
 dub build -c twitch
 ```
 
-If you want to thin down the program and customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add a character to the lines corresponding to the plugins you want to omit, thus invalidating the version identifiers and effectively disabling the code they relate to. Mind that disabling any of the **_\*Service_** plugins may/will break the bot in subtle ways.
+If you want to thin down the program and customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add a character to the lines corresponding to the plugins you want to omit, thus invalidating the version identifiers and effectively disabling the code they relate to. Mind that disabling any of the **_\*Service_** plugins may/will break the bot in subtle ways. All other plugins are optional.
 
 ## How to use
 
 ### Configuration
 
-The bot ideally wants the [**services account name**](#except-nothing-happens) of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is admittedly also a completely valid use-case. To define these you can either supply them on the command line, by use of flags listed by calling the program with `--help`, or by generating a configuration file with `--save` and entering them in there.
+The bot ideally wants the [*services account name*](#except-nothing-happens) of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is admittedly also a completely valid use-case, but probably not what you want. To define these you can either supply them on the command line by use of flags listed by calling the program with `--help`, or by generating a configuration file with `--save` and entering them in there.
 
 ```shell
 ./kameloso --save
@@ -176,7 +176,7 @@ Open the file in a normal text editor.
 
 #### Command-line arguments
 
-You can make changes to your configuration file in-place by specifying some settings at the command line and adding `--save`.
+You can make changes to your configuration file in-place by specifying some settings at the command line at the same time as `--save`.
 
 ```shell
 $ ./kameloso \
@@ -392,13 +392,13 @@ It can technically be any string and not just one character. It may include spac
 
 Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. Most administrative commands can only be called this way; notably everything that only outputs information to the local terminal.
 
-If an empty prefix is set, commands may *only* be called by prefixing them with the bot's nickname.
+If an empty prefix is set, commands may only be invoked by prefixing them with the bot's nickname.
 
 #### ***Except nothing happens***
 
 Before allowing *anyone* to trigger *any* restricted functionality, the bot will try to identify the accessing user by querying the server for what [*services account*](https://en.wikipedia.org/wiki/IRC_services) that user is logged onto, if not already known. For full and global administrative privileges, you will need to be logged into services with an account listed in the `admins` field in the configuration file. Other users may have permissions defined per-channel in the [`users.json`](#other-files) file, placed in your resource directory. These can also be managed online by commands provided by [the **Admin** plugin](https://github.com/zorael/kameloso/wiki/Current-plugins#admin).
 
-If a user is not logged onto services, it is considered as not being uniquely identifiable, and thus cannot be resolved to an account.
+If a user is not logged onto services, they are considered as not being uniquely identifiable, and thus cannot be resolved to an account.
 
 #### Hostmasks
 
@@ -477,7 +477,7 @@ promoteVIPs                 true
 workerThreads               3
 ```
 
-The port to use for secure traffic is **6697** (alternatively **443**). For a non-encrypted connection, while heavily discouraged, use the default port **6667**.
+The port to use for a secure connection is **6697** (alternatively **443**). For a non-encrypted connection, while heavily discouraged, use the default port **6667**.
 
 #### **Long story**
 
@@ -485,7 +485,7 @@ To connect to Twitch servers, you must first compile the `twitch` build configur
 
 You will also require an [*authorisation token*](https://en.wikipedia.org/wiki/OAuth). Assuming you have a configuration file set up to connect to Twitch, it will automatically start a terminal wizard requesting one on program startup, if none is present. Run the bot with `--set twitch.keygen` to force it if it doesn't, or if your token expired. (They last about 60 days.)
 
-It will open a browser window in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
+It will open a browser window in which you are asked to log into Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
 
 > Do note that at no point is the bot privy to your Twitch login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with all this is open for audit; [`requestTwitchKey` in `plugins/twitch/providers/twitch.d`](source/kameloso/plugins/twitch/providers/twitch.d).
 
@@ -524,17 +524,17 @@ Assuming a prefix of `!`, commands to test are:
 
 To be able to serve song requests, you need to register an *application* to interface with [Google (YouTube)](https://console.cloud.google.com/projectcreate) and/or [Spotify](https://developer.spotify.com/dashboard) servers individually. To initiate the wizards for this, pass `--set twitch.googleKeygen` for YouTube and `--set twitch.spotifyKeygen` for Spotify, and follow the on-screen instructions. (They behave much like `--set twitch.keygen`.)
 
-You may set up access tokens for both song request providers, but only one may be enabled at any one time. To control which, set `songrequestMode` to either `youtube` or `spotify` in your configuration file. A value of `disabled` disables the feature entirely.
+You may set up access tokens for both song request providers, but only one provider may be enabled at any one time. To control which, set `songrequestMode` to either `youtube` or `spotify` in your configuration file (under `[Twitch]`). A value of `disabled` disables the feature entirely.
 
 ##### Certain commands require higher permissions
 
-Some functionality, such as setting the channel title or currently played game, require elevated credentials with the permissions of the channel owner (broadcaster), as opposed to those of any moderator. If you want to use such commands, you will need to generate an OAuth authorisation token for **your main account** separately, much as you generated one to be able to connect with the bot account. This will request a token from Twitch with different permissions, and the authorisation browser page should reflect this.
+Some functionality, such as setting the channel title or currently played game, require elevated credentials with the permissions of the channel owner (broadcaster), as opposed to those of any moderator. If you want to use such commands, you will need to generate an OAuth authorisation token for *your main account* separately, much as you generated one to be able to connect with the bot account. This will request a token from Twitch with different permissions, and the authorisation browser page should reflect this.
 
 ```shell
 ./kameloso --set twitch.superKeygen
 ```
 
-Mind that you need to be logged into Twitch (in your browser) with your **main (broadcaster) account** while doing this, or the token obtained will be with permissions for the wrong channel. This is in contrast to `--set twitch.keygen`, with which it is recommended you use a separate bot account.
+Mind that you need to be logged into Twitch (in your browser) with your *main (broadcaster) account* while doing this, or the token obtained will be with permissions for the wrong channel. This is in contrast to `--set twitch.keygen`, with which it is recommended you use a separate bot account with only moderator status.
 
 All keygens can be triggered at the same time.
 
@@ -574,7 +574,7 @@ Said dependency does not have the ability to retrieve certificates from Windows'
 
 ### YouTube song request playlist integration errors
 
-If you're seemingly doing everything right and you still get permissions errors when attempting to add a YouTube video clip to a playlist, redo the Google keygen. When you're asked to pick one of your accounts late in the process, make sure that you select a **YouTube account**, as opposed to an overarching **Google account**. It should say **YouTube** underneath the option.
+If you're seemingly doing everything right and you still get permissions errors when attempting to add a YouTube video clip to a playlist, redo the Google keygen. When you're asked to pick one of your accounts late in the process, make sure that you select a *YouTube account*, as opposed to an overarching *Google account*. It should say **YouTube** underneath the option.
 
 ## Roadmap
 
