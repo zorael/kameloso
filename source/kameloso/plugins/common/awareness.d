@@ -1393,7 +1393,7 @@ mixin template TwitchAwareness(
     )
     void onTwitchAwarenessSenderCarryingEventMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent(plugin, event);
+        kameloso.plugins.common.awareness.onTwitchAwarenessUserCarrierImpl(plugin, event.channel, event.sender);
     }
 
     // onTwitchAwarenessTargetCarryingEventMixin
@@ -1424,14 +1424,14 @@ mixin template TwitchAwareness(
     )
     void onTwitchAwarenessTargetCarryingEventMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onTwitchAwarenessTargetCarryingEvent(plugin, event);
+        kameloso.plugins.common.awareness.onTwitchAwarenessUserCarrierImpl(plugin, event.channel, event.target);
     }
 }
 
 
-// onTwitchAwarenessSenderCarryingEvent
+// onTwitchAwarenessUserCarrierImpl
 /++
-    Catch senders from normal Twitch events.
+    Catch a user from normal Twitch events.
 
     This has to be done on certain Twitch channels whose participants are
     not enumerated upon joining it, nor joins or parts announced. By
@@ -1442,62 +1442,29 @@ mixin template TwitchAwareness(
         [kameloso.plugins.common.awareness.onTwitchAwarenessTargetCarryingEvent|onTwitchAwarenessTargetCarryingEvent]
  +/
 version(TwitchSupport)
-void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent event) @system
+void onTwitchAwarenessUserCarrierImpl(
+    IRCPlugin plugin,
+    const string channelName,
+    const IRCUser user) @system
 {
     import kameloso.plugins.common.misc : catchUser;
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
-    if (!event.sender.nickname) return;
+    if (!user.nickname) return;
 
     // Move the catchUser call here to populate the users array with users in guest channels
-    //catchUser(plugin, event.sender);
+    //catchUser(plugin, user);
 
-    auto channel = event.channel in plugin.state.channels;
+    auto channel = channelName in plugin.state.channels;
     if (!channel) return;
 
-    if (event.sender.nickname !in channel.users)
+    if (user.nickname !in channel.users)
     {
-        channel.users[event.sender.nickname] = true;
+        channel.users[user.nickname] = true;
     }
 
-    catchUser(plugin, event.sender);  // <-- this one
-}
-
-
-// onTwitchAwarenessTargetCarryingEvent
-/++
-    Catch targets from normal Twitch events.
-
-    This has to be done on certain Twitch channels whose participants are
-    not enumerated upon joining it, nor joins or parts announced. By
-    listening for any message with targets and catching that user that way
-    we ensure we do our best to scrape the channels.
-
-    See_Also:
-        [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent|onTwitchAwarenessSenderCarryingEvent]
- +/
-version(TwitchSupport)
-void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const ref IRCEvent event) @system
-{
-    import kameloso.plugins.common.misc : catchUser;
-
-    if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
-
-    if (!event.target.nickname) return;
-
-    // Move the catchUser call here to populate the users array with users in guest channels
-    //catchUser(plugin, event.target);
-
-    auto channel = event.channel in plugin.state.channels;
-    if (!channel) return;
-
-    if (event.target.nickname !in channel.users)
-    {
-        channel.users[event.target.nickname] = true;
-    }
-
-    catchUser(plugin, event.target);   // <-- this one
+    catchUser(plugin, user);  // <-- this one
 }
 
 
