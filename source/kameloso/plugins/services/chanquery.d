@@ -271,8 +271,8 @@ void startChannelQueries(ChanQueryService service)
         import kameloso.messaging : whois;
         import core.time : seconds;
 
-        if ((nickname !in service.state.users) ||
-            (service.state.users[nickname].account.length))
+        const user = nickname in service.state.users;
+        if (!user || (*user).account.length)
         {
             // User disappeared, or something else WHOISed it already.
             continue;
