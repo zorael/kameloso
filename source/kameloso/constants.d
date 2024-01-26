@@ -480,19 +480,6 @@ enum Timeout
 }
 
 
-// Periodicals
-/++
-    Timings and timeouts of various periodical events.
- +/
-enum Periodicals
-{
-    /++
-        How often to rehash plugins' `users` associative arrays for more efficient lookups.
-     +/
-    userAARehashMinutes = 60,
-}
-
-
 // ShellReturnValue
 /++
     Magic number shell exit codes.

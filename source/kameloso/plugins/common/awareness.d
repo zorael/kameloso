@@ -394,23 +394,6 @@ mixin template UserAwareness(
     {
         return kameloso.plugins.common.awareness.onUserAwarenessEndOfList(plugin, event);
     }
-
-    // onUserAwarenessPingMixin
-    /++
-        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessPing|onUserAwarenessPing].
-
-        See_Also:
-            [kameloso.plugins.common.awareness.onUserAwarenessPing|onUserAwarenessPing]
-     +/
-    @(IRCEventHandler()
-        .onEvent(IRCEvent.Type.PING)
-        .when(Timing.early)
-        .chainable(true)
-    )
-    void onUserAwarenessPingMixin(IRCPlugin plugin, const ref IRCEvent event) @system
-    {
-        return kameloso.plugins.common.awareness.onUserAwarenessPing(plugin, event);
-    }
 }
 
 
@@ -609,45 +592,6 @@ void onUserAwarenessEndOfList(IRCPlugin plugin, const ref IRCEvent event) @syste
 
     // Pass a channel name so only that channel is rehashed
     rehashUsers(plugin, event.channel);
-}
-
-
-// onUserAwarenessPingMixin
-/++
-    Rehash the internal [kameloso.plugins.common.IRCPluginState.users|IRCPluginState.users]
-    associative array of [dialect.defs.IRCUser|IRCUser]s, once every
-    [kameloso.constants.Periodicals.userAARehashMinutes|Periodicals.userAARehashMinutes] minutes.
-
-    We ride the periodicity of [dialect.defs.IRCEvent.Type.PING|PING] to get
-    a natural cadence without having to resort to queued
-    [kameloso.thread.ScheduledFiber|ScheduledFiber]s.
-
-    The number of hours is so far hardcoded but can be made configurable if
-    there's a use-case for it.
- +/
-void onUserAwarenessPing(IRCPlugin plugin, const ref IRCEvent event) @system
-{
-    import std.datetime.systime : Clock;
-
-    enum minutesBeforeInitialRehash = 5;
-
-    static long pingRehash;
-
-    if (pingRehash == 0L)
-    {
-        // First PING encountered
-        // Delay rehashing to let the client join all channels
-        pingRehash = event.time + (minutesBeforeInitialRehash * 60);
-    }
-    else if (event.time >= pingRehash)
-    {
-        import kameloso.constants : Periodicals;
-        import kameloso.plugins.common.misc : rehashUsers;
-
-        // Once every `userAARehashMinutes` minutes, rehash the `users` array.
-        rehashUsers(plugin);
-        pingRehash = event.time + (Periodicals.userAARehashMinutes * 60);
-    }
 }
 
 
