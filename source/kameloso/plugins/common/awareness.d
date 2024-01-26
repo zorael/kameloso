@@ -588,10 +588,11 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event) @syst
  +/
 void onUserAwarenessEndOfList(IRCPlugin plugin, const ref IRCEvent event) @system
 {
-    import kameloso.plugins.common.misc : rehashUsers;
-
-    // Pass a channel name so only that channel is rehashed
-    rehashUsers(plugin, event.channel);
+    if (auto channel = event.channel in plugin.state.channels)
+    {
+        // created in `onChannelAwarenessSelfjoin`
+        channel.users.rehash();
+    }
 }
 
 

@@ -329,35 +329,6 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @system
 }
 
 
-// rehashUsers
-/++
-    Rehashes a plugin's users, both the ones in the
-    [kameloso.plugins.common.IRCPluginState.users|IRCPluginState.users]
-    associative array and the ones in each [dialect.defs.IRCChannel.users] associative arrays.
-
-    This optimises lookup and should be done every so often.
-
-    Params:
-        plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin].
-        channelName = Optional name of the channel to rehash for. If none given
-            it will rehash the main
-            [kameloso.plugins.common.IRCPluginState.users|IRCPluginState.users]
-            associative array instead.
- +/
-void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
-{
-    if (!channelName.length)
-    {
-        plugin.state.users.rehash();
-    }
-    else if (auto channel = channelName in plugin.state.channels)
-    {
-        // created in `onChannelAwarenessSelfjoin`
-        channel.users.rehash();
-    }
-}
-
-
 // nameOf
 /++
     Returns either the nickname or the display name of a user, depending on whether the
