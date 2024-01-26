@@ -4193,7 +4193,7 @@ void echoQuitMessage(Kameloso instance, const string reason) @safe
 void propagateWhoisTimestamp(
     Kameloso instance,
     const string nickname,
-    const long nowInUnix) pure @safe nothrow
+    const long nowInUnix) @system
 {
     instance.previousWhoisTimestamps[nickname] = nowInUnix;
 
@@ -4215,7 +4215,7 @@ void propagateWhoisTimestamp(
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void propagateWhoisTimestamps(Kameloso instance) pure @safe
+void propagateWhoisTimestamps(Kameloso instance) @system
 {
     auto copy = instance.previousWhoisTimestamps.dup;  // mutable
 

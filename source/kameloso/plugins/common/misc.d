@@ -313,7 +313,7 @@ final class IRCPluginInitialisationException : Exception
         plugin = Current [kameloso.plugins.common.IRCPlugin|IRCPlugin].
         newUser = The [dialect.defs.IRCUser|IRCUser] to catch.
  +/
-void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
+void catchUser(IRCPlugin plugin, const IRCUser newUser) @system
 {
     if (!newUser.nickname.length) return;
 
@@ -558,7 +558,7 @@ auto getUser(IRCPlugin plugin, const string specified)
     {
         if (isTwitch)
         {
-            foreach (user; plugin.state.users)
+            foreach (user; plugin.state.users.aaOf)
             {
                 if (user.displayName == nickname)
                 {

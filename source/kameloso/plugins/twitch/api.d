@@ -1456,7 +1456,7 @@ in ((givenName.length || id),
     // No such luck
     if (searchByDisplayName)
     {
-        foreach (const stored; plugin.state.users)
+        foreach (const stored; plugin.state.users.aaOf)
         {
             if (stored.displayName == givenName)
             {

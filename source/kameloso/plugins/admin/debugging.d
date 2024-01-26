@@ -135,7 +135,7 @@ void onCommandShowUsersImpl(AdminPlugin plugin)
 
     if (plugin.state.settings.headless) return;
 
-    foreach (immutable name, const user; plugin.state.users)
+    foreach (immutable name, const user; plugin.state.users.aaOf)
     {
         writeln(name);
         prettyprint(user);

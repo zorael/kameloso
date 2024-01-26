@@ -434,7 +434,7 @@ void onUserAwarenessQuit(IRCPlugin plugin, const ref IRCEvent event)
 
     Removes the old entry after assigning it to the new key.
  +/
-void onUserAwarenessNick(IRCPlugin plugin, const ref IRCEvent event)
+void onUserAwarenessNick(IRCPlugin plugin, const ref IRCEvent event) @system
 {
     if (plugin.state.settings.preferHostmasks)
     {
@@ -462,7 +462,7 @@ void onUserAwarenessNick(IRCPlugin plugin, const ref IRCEvent event)
     [dialect.defs.IRCEvent.Type.CHGHOST] occurs when a user changes host
     on some servers that allow for custom host addresses.
  +/
-void onUserAwarenessCatchTarget(IRCPlugin plugin, const ref IRCEvent event)
+void onUserAwarenessCatchTarget(IRCPlugin plugin, const ref IRCEvent event) @system
 {
     import kameloso.plugins.common.misc : catchUser;
     catchUser(plugin, event.target);
@@ -480,7 +480,7 @@ void onUserAwarenessCatchTarget(IRCPlugin plugin, const ref IRCEvent event)
     the user into the user array so we don't have to WHOIS them later.
  +/
 void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
-    (IRCPlugin plugin, const ref IRCEvent event)
+    (IRCPlugin plugin, const ref IRCEvent event) @system
 {
     import kameloso.plugins.common.misc : catchUser;
 
@@ -538,7 +538,7 @@ void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
     Freenode only sends a list of the nicknames but SpotChat sends the full
     `user!ident@address` information.
  +/
-void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
+void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event) @system
 {
     import kameloso.plugins.common.misc : catchUser;
     import kameloso.irccolours : stripColours;
@@ -1479,7 +1479,7 @@ mixin template TwitchAwareness(
         [kameloso.plugins.common.awareness.onTwitchAwarenessTargetCarryingEvent|onTwitchAwarenessTargetCarryingEvent]
  +/
 version(TwitchSupport)
-void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent event)
+void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent event) @system
 {
     import kameloso.plugins.common.misc : catchUser;
 
@@ -1515,7 +1515,7 @@ void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent e
         [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent|onTwitchAwarenessSenderCarryingEvent]
  +/
 version(TwitchSupport)
-void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const ref IRCEvent event)
+void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const ref IRCEvent event) @system
 {
     import kameloso.plugins.common.misc : catchUser;
 

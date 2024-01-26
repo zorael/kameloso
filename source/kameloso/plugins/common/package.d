@@ -2802,6 +2802,7 @@ private:
     import kameloso.pods : ConnectionSettings, CoreSettings, IRCBot;
     import kameloso.messaging : Message;
     import kameloso.thread : ScheduledDelegate, ScheduledFiber, ThreadMessage;
+    import lu.container : RehashingAA;
     import std.array : Appender;
     import std.concurrency : Tid;
     import core.thread : Fiber;
@@ -2882,7 +2883,7 @@ public:
     /++
         Hashmap of IRC user details.
      +/
-    IRCUser[string] users;
+    RehashingAA!(IRCUser[string]) users;
 
     // channels
     /++
@@ -2984,7 +2985,7 @@ public:
         of UNIX timestamps of when someone had a WHOIS query aimed at them, keyed
         by nickname.
      +/
-    long[string] previousWhoisTimestamps;
+    RehashingAA!(long[string]) previousWhoisTimestamps;
 
     // updates
     /++
