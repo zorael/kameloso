@@ -45,7 +45,7 @@ version(Windows)
     // Taken from LDC: https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
     // https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
 
-    import core.sys.windows.wincon : SetConsoleCP, SetConsoleMode, SetConsoleOutputCP;
+    private import core.sys.windows.wincon : SetConsoleCP, SetConsoleMode, SetConsoleOutputCP;
 
     /++
         Original codepage at program start.
