@@ -473,7 +473,9 @@ void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
     case ACCOUNT:
     case AWAY:
     case BACK:
-        static if (channelPolicy == ChannelPolicy.home)
+        static if (
+            (channelPolicy == ChannelPolicy.home) ||
+            (channelPolicy == ChannelPolicy.guest))
         {
             // These events don't carry a channel.
             // Catch if there's already an entry. Trust that it's supposed
@@ -481,19 +483,32 @@ void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
 
             if (event.sender.nickname in plugin.state.users)
             {
-                catchUser(plugin, event.sender);
-                break;
+                return catchUser(plugin, event.sender);
             }
 
             static if (__traits(compiles, { alias _ = .hasChannelAwareness; }))
             {
                 // Catch the user if it's visible in some channel we're in.
 
-                foreach (const channel; plugin.state.channels)
+                foreach (immutable channelName, const channel; plugin.state.channels)
                 {
+                    import std.algorithm.searching : canFind;
+
+                    static if (channelPolicy == ChannelPolicy.home)
+                    {
+                        auto channelArray = &plugin.state.bot.homeChannels;
+                    }
+                    else /*if (channelPolicy == ChannelPolicy.guest)*/
+                    {
+                        auto channelArray = &plugin.state.bot.guestChannels;
+                    }
+
+                    // Skip if the channel is not a home channel or a guest channel, respectively
+                    if (!(*channelArray).canFind(channelName)) continue;
+
                     if (event.sender.nickname in channel.users)
                     {
-                        // event is from a user that's in a relevant channel
+                        // event is from a user that's in a home channel
                         return catchUser(plugin, event.sender);
                     }
                 }
@@ -508,7 +523,7 @@ void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
 
     //case JOIN:
     default:
-        return catchUser(plugin, event.sender);
+        catchUser(plugin, event.sender);
     }
 }
 
