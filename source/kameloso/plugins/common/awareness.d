@@ -124,7 +124,7 @@ mixin template MinimalAuthentication(
     )
     void onMinimalAuthenticationAccountInfoTargetMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget(plugin, event);
+        kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget(plugin, event);
     }
 
     // onMinimalAuthenticationUnknownCommandWHOISMixin
@@ -140,9 +140,9 @@ mixin template MinimalAuthentication(
         .when(Timing.early)
         .chainable(true)
     )
-    void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCEvent event) @system
+    void onMinimalAuthenticationUnknownCommandWHOISMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS(plugin, event);
+        kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS(plugin, event);
     }
 }
 
@@ -290,7 +290,7 @@ mixin template UserAwareness(
     )
     void onUserAwarenessQuitMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onUserAwarenessQuit(plugin, event);
+        kameloso.plugins.common.awareness.onUserAwarenessQuit(plugin, event);
     }
 
     // onUserAwarenessNickMixin
@@ -307,7 +307,7 @@ mixin template UserAwareness(
     )
     void onUserAwarenessNickMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onUserAwarenessNick(plugin, event);
+        kameloso.plugins.common.awareness.onUserAwarenessNick(plugin, event);
     }
 
     // onUserAwarenessCatchTargetMixin
@@ -329,7 +329,7 @@ mixin template UserAwareness(
     )
     void onUserAwarenessCatchTargetMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onUserAwarenessCatchTarget(plugin, event);
+        kameloso.plugins.common.awareness.onUserAwarenessCatchTarget(plugin, event);
     }
 
     // onUserAwarenessCatchSenderMixin
@@ -353,7 +353,7 @@ mixin template UserAwareness(
     )
     void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onUserAwarenessCatchSender!channelPolicy(plugin, event);
+        kameloso.plugins.common.awareness.onUserAwarenessCatchSender!channelPolicy(plugin, event);
     }
 
     // onUserAwarenessNamesReplyMixin
@@ -372,7 +372,7 @@ mixin template UserAwareness(
     )
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onUserAwarenessNamesReply(plugin, event);
+        kameloso.plugins.common.awareness.onUserAwarenessNamesReply(plugin, event);
     }
 
     // onUserAwarenessEndOfListMixin
@@ -392,7 +392,7 @@ mixin template UserAwareness(
     )
     void onUserAwarenessEndOfListMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onUserAwarenessEndOfList(plugin, event);
+        kameloso.plugins.common.awareness.onUserAwarenessEndOfList(plugin, event);
     }
 }
 
@@ -679,7 +679,7 @@ mixin template ChannelAwareness(
     )
     void onChannelAwarenessSelfjoinMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin(plugin, event);
+        kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin(plugin, event);
     }
 
     // onChannelAwarenessSelfpartMixin
@@ -699,7 +699,7 @@ mixin template ChannelAwareness(
     )
     void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onChannelAwarenessSelfpart(plugin, event);
+        kameloso.plugins.common.awareness.onChannelAwarenessSelfpart(plugin, event);
     }
 
     // onChannelAwarenessJoinMixin
@@ -717,7 +717,7 @@ mixin template ChannelAwareness(
     )
     void onChannelAwarenessJoinMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onChannelAwarenessJoin(plugin, event);
+        kameloso.plugins.common.awareness.onChannelAwarenessJoin(plugin, event);
     }
 
     // onChannelAwarenessPartMixin
@@ -735,7 +735,7 @@ mixin template ChannelAwareness(
     )
     void onChannelAwarenessPartMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onChannelAwarenessPart(plugin, event);
+        kameloso.plugins.common.awareness.onChannelAwarenessPart(plugin, event);
     }
 
     // onChannelAwarenessNickMixin
@@ -752,7 +752,7 @@ mixin template ChannelAwareness(
     )
     void onChannelAwarenessNickMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onChannelAwarenessNick(plugin, event);
+        kameloso.plugins.common.awareness.onChannelAwarenessNick(plugin, event);
     }
 
     // onChannelAwarenessQuitMixin
@@ -769,7 +769,7 @@ mixin template ChannelAwareness(
     )
     void onChannelAwarenessQuitMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onChannelAwarenessQuit(plugin, event);
+        kameloso.plugins.common.awareness.onChannelAwarenessQuit(plugin, event);
     }
 
     // onChannelAwarenessTopicMixin
@@ -788,7 +788,7 @@ mixin template ChannelAwareness(
     )
     void onChannelAwarenessTopicMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onChannelAwarenessTopic(plugin, event);
+        kameloso.plugins.common.awareness.onChannelAwarenessTopic(plugin, event);
     }
 
     // onChannelAwarenessCreationTimeMixin
@@ -807,7 +807,7 @@ mixin template ChannelAwareness(
     )
     void onChannelAwarenessCreationTimeMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onChannelAwarenessCreationTime(plugin, event);
+        kameloso.plugins.common.awareness.onChannelAwarenessCreationTime(plugin, event);
     }
 
     // onChannelAwarenessModeMixin
@@ -825,7 +825,7 @@ mixin template ChannelAwareness(
     )
     void onChannelAwarenessModeMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onChannelAwarenessMode(plugin, event);
+        kameloso.plugins.common.awareness.onChannelAwarenessMode(plugin, event);
     }
 
     // onChannelAwarenessWhoReplyMixin
@@ -844,7 +844,7 @@ mixin template ChannelAwareness(
     )
     void onChannelAwarenessWhoReplyMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onChannelAwarenessWhoReply(plugin, event);
+        kameloso.plugins.common.awareness.onChannelAwarenessWhoReply(plugin, event);
     }
 
     // onChannelAwarenessNamesReplyMixin
@@ -863,7 +863,7 @@ mixin template ChannelAwareness(
     )
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onChannelAwarenessNamesReply(plugin, event);
+        kameloso.plugins.common.awareness.onChannelAwarenessNamesReply(plugin, event);
     }
 
     // onChannelAwarenessModeListsMixin
@@ -886,7 +886,7 @@ mixin template ChannelAwareness(
     )
     void onChannelAwarenessModeListsMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onChannelAwarenessModeLists(plugin, event);
+        kameloso.plugins.common.awareness.onChannelAwarenessModeLists(plugin, event);
     }
 
     // onChannelAwarenessChannelModeIsMixin
@@ -905,7 +905,7 @@ mixin template ChannelAwareness(
     )
     void onChannelAwarenessChannelModeIsMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onChannelAwarenessChannelModeIs(plugin, event);
+        kameloso.plugins.common.awareness.onChannelAwarenessChannelModeIs(plugin, event);
     }
 }
 
