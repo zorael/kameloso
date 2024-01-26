@@ -73,7 +73,7 @@ public:
      +/
     void clear() @safe nothrow
     {
-        import kameloso.common : zero;
+        import lu.array : zero;
         lines.zero();
     }
 

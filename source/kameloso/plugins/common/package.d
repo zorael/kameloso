@@ -524,7 +524,7 @@ mixin template IRCPluginImpl(
      +/
     override public bool isEnabled() const pure nothrow @nogc
     {
-        import kameloso.traits : udaIndexOf;
+        import lu.traits : udaIndexOf;
 
         bool retval = true;
 
@@ -1384,7 +1384,7 @@ mixin template IRCPluginImpl(
         {
             static if (isSerialisable!(this.tupleof[i]))
             {
-                import kameloso.traits : udaIndexOf;
+                import lu.traits : udaIndexOf;
 
                 enum resourceUDAIndex = udaIndexOf!(this.tupleof[i], Resource);
                 static if (resourceUDAIndex != -1)
@@ -1479,7 +1479,7 @@ mixin template IRCPluginImpl(
             }
             else
             {
-                import kameloso.traits : stringOfTypeOf;
+                import lu.traits : stringOfTypeOf;
                 import std.format : format;
 
                 enum pattern = "`%s.postprocess` has an unsupported function signature: `%s`";
@@ -1514,7 +1514,7 @@ mixin template IRCPluginImpl(
             }
             else
             {
-                import kameloso.traits : stringOfTypeOf;
+                import lu.traits : stringOfTypeOf;
                 import std.format : format;
 
                 enum pattern = "`%s.initResources` has an unsupported function signature: `%s`";
@@ -1550,7 +1550,7 @@ mixin template IRCPluginImpl(
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
-                import kameloso.traits : udaIndexOf;
+                import lu.traits : udaIndexOf;
 
                 enum hasSettingsUDA =
                     (udaIndexOf!(typeof(this.tupleof[i]), Settings) != -1) ||
@@ -1619,7 +1619,7 @@ mixin template IRCPluginImpl(
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
-                import kameloso.traits : udaIndexOf;
+                import lu.traits : udaIndexOf;
 
                 enum hasSettingsUDA =
                     (udaIndexOf!(typeof(this.tupleof[i]), Settings) != -1) ||
@@ -1647,7 +1647,7 @@ mixin template IRCPluginImpl(
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
-                import kameloso.traits : udaIndexOf;
+                import lu.traits : udaIndexOf;
 
                 enum hasSettingsUDA =
                     (udaIndexOf!(typeof(this.tupleof[i]), Settings) != -1) ||
@@ -1692,7 +1692,7 @@ mixin template IRCPluginImpl(
         {
             static if (is(typeof(this.tupleof[i]) == struct))
             {
-                import kameloso.traits : udaIndexOf;
+                import lu.traits : udaIndexOf;
 
                 enum hasSettingsUDA =
                     (udaIndexOf!(typeof(this.tupleof[i]), Settings) != -1) ||
@@ -1756,7 +1756,7 @@ mixin template IRCPluginImpl(
                 }
                 else
                 {
-                    import kameloso.traits : stringOfTypeOf;
+                    import lu.traits : stringOfTypeOf;
                     import std.format : format;
 
                     ` ~ "enum pattern = \"`%s.%s` has an unsupported function signature: `%s`\";
@@ -1794,7 +1794,7 @@ mixin template IRCPluginImpl(
             }
             else
             {
-                import kameloso.traits : stringOfTypeOf;
+                import lu.traits : stringOfTypeOf;
                 import std.format : format;
 
                 enum pattern = "`%s.tick` has an unsupported function signature: `%s`";
@@ -1862,7 +1862,7 @@ mixin template IRCPluginImpl(
                 }
                 else
                 {
-                    import kameloso.traits : stringOfTypeOf;
+                    import lu.traits : stringOfTypeOf;
                     import std.format : format;
 
                     enum pattern = "`%s.selftest` has an unsupported function signature: `%s`";
@@ -2077,7 +2077,7 @@ mixin template IRCPluginImpl(
             }
             else
             {
-                import kameloso.traits : stringOfTypeOf;
+                import lu.traits : stringOfTypeOf;
                 import std.format : format;
 
                 enum pattern = "`%s.onBusMessage` has an unsupported function signature: `%s`";

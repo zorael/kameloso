@@ -20,7 +20,6 @@ private:
 
 import kameloso.pods : CoreSettings;
 import kameloso.logger : KamelosoLogger;
-import std.array : Appender;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -469,68 +468,4 @@ expected:"deF"
   actual:"def"
             ^
  +/
-}
-
-
-// zero
-/++
-    Zeroes out the contents of an [std.array.Appender|Appender].
-
-    Params:
-        sink = The [std.array.Appender|Appender] to zero out.
-        clear = (Optional) Whether to also call the `.clear()` method of the
-            [std.array.Appender|Appender] sink.
-        zeroValue = (Optional) The value to zero out the contents with.
- +/
-void zero(Sink : Appender!(T[]), T)
-    (ref Sink sink,
-    const Flag!"clear" clear = Yes.clear,
-    T zeroValue = T.init)
-{
-    foreach (ref thing; sink.data)
-    {
-        thing = zeroValue;
-    }
-
-    if (clear) sink.clear();
-}
-
-///
-unittest
-{
-    {
-        Appender!(char[]) sink;
-        sink.put('a');
-        sink.put('b');
-        sink.put('c');
-        assert(sink.data == ['a', 'b', 'c']);
-
-        sink.zero(No.clear);
-        assert(sink.data == [ 255, 255, 255 ]);
-
-        sink.put('d');
-        assert(sink.data == [ 255, 255, 255, 'd' ]);
-
-        sink.zero(No.clear, 'X');
-        assert(sink.data == [ 'X', 'X', 'X', 'X' ]);
-
-        sink.zero(Yes.clear);
-        assert(!sink.data.length);
-    }
-    {
-        Appender!(string[]) sink;
-        sink.put("abc");
-        sink.put("def");
-        sink.put("ghi");
-        assert(sink.data == [ "abc", "def", "ghi" ]);
-
-        sink.zero(No.clear, "(empty)");
-        assert(sink.data == [ "(empty)", "(empty)", "(empty)" ]);
-
-        sink.zero(No.clear);
-        assert(sink.data == [ string.init, string.init, string.init ]);
-
-        sink.zero(Yes.clear);
-        assert(!sink.data.length);
-    }
 }

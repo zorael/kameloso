@@ -12,7 +12,6 @@ module kameloso.string;
 private:
 
 import dialect.defs : IRCClient;
-import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -454,99 +453,6 @@ unittest
         assert((excl == "!"), excl);
         assert((question == "?"), question);
     }
-}
-
-
-// replaceFromAA
-/++
-    Replaces space-separated tokens (that begin with a token character) in a
-    string with values from a supplied associative array.
-
-    The AA values are of some type of function or delegate returning strings.
-
-    Example:
-    ---
-    const @safe string delegate()[string] aa =
-    [
-        "$foo"  : () => "bar",
-        "$baz"  : () => "quux"
-        "$now"  : () => Clock.currTime.toISOExtString(),
-        "$rng"  : () => uniform(0, 100).to!string,
-        "$hirr" : () => 10.to!string,
-    ];
-
-    immutable line = "first $foo second $baz third $hirr end";
-    enum expected = "first bar second quux third 10 end";
-    immutable actual = line.replaceFromAA(aa);
-    assert((actual == expected), actual);
-    ---
-
-    Params:
-        tokenCharacter = What character to use to denote tokens, defaults to '`$`'
-            but may be any `char`.
-        line = String to replace tokens in.
-        aa = Associative array of token keys and replacement callable values.
-
-    Returns:
-        A new string with occurrences of any passed tokens replaced, or the
-        original string as-is if there were no changes made.
- +/
-auto replaceFromAA(char tokenCharacter = '$', Fn)
-    (const string line,
-    const Fn[string] aa)
-if (isSomeFunction!Fn)
-{
-    import std.array : Appender;
-    import std.string : indexOf;
-
-    static Appender!(char[]) sink;
-    if (sink.capacity == 0) sink.reserve(line.length + 32);  // guesstimate
-
-    scope(exit) sink.clear();
-
-    size_t previousEnd;
-
-    for (size_t i = 0; i < line.length; ++i)
-    {
-        if (line[i] == tokenCharacter)
-        {
-            immutable spacePos = line.indexOf(' ', i);
-            immutable end = (spacePos == -1) ? line.length : spacePos;
-            immutable key = line[i..end];
-
-            if (const replacement = key in aa)
-            {
-                sink.put(line[previousEnd..i]);
-                sink.put((*replacement)());
-                i += key.length;
-                previousEnd = i;
-            }
-        }
-    }
-
-    if (previousEnd == 0) return line;
-
-    sink.put(line[previousEnd..$]);
-    return sink.data.idup;
-}
-
-///
-unittest
-{
-    static auto echo(const string what) { return what; }
-    immutable hello = "hello";
-
-    @safe string delegate()[string] aa =
-    [
-        "$foo" : () => hello,
-        "$bar" : () => echo("I was one"),
-        "$baz" : () => "BAZ",
-    ];
-
-    enum line = "I thought what I'd $foo was, I'd pretend $bar of those deaf-$baz";
-    enum expected = "I thought what I'd hello was, I'd pretend I was one of those deaf-BAZ";
-    immutable actual = line.replaceFromAA(aa);
-    assert((actual == expected), actual);
 }
 
 

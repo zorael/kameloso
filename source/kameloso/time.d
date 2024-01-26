@@ -12,7 +12,6 @@ module kameloso.time;
 private:
 
 import std.datetime.systime : SysTime;
-import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 import core.time : Duration;
 
