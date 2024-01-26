@@ -446,6 +446,31 @@ expected:"%s"
     }
 }
 
+///
+version(none)
+unittest
+{
+    enum actual =
+"abc
+def
+ghi";
+
+    enum expected =
+"abc
+deF
+ghi";
+
+    assertMultilineOpEquals(actual, expected);
+
+/+
+core.exception.AssertError@file.d(123):
+Line mismatch at file.d:456, block 2:3; expected 'F'(70) was 'f'(102)
+expected:"deF"
+  actual:"def"
+            ^
+ +/
+}
+
 
 // zero
 /++
