@@ -1,5 +1,5 @@
 /++
-    Plugin offering announcement timers; routines that periodically sends lines
+    Plugin offering announcement timers; routines that periodically send lines
     of text to a channel.
 
     See_Also:

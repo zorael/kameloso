@@ -820,11 +820,11 @@ unittest
 
 // interruptibleSleep
 /++
-    Sleep in small periods, checking the passed `abort` bool in between to see
+    Sleep in small periods, checking the passed `abort` flag in between to see
     if we should break and return.
 
     This is useful when a different signal handler has been set up, as triggering
-    it won't break sleeps. This way it does, assuming the `abort` bool is the
+    it won't break sleeps. This way it does, assuming the `abort` flag is the
     same one the signal handler monitors. As such, take it by `ref`.
 
     Example:
@@ -862,10 +862,8 @@ void interruptibleSleep(const Duration dur, const Flag!"abort"* abort) @system
 /++
     Iterates the [kameloso.plugins.common.IRCPluginState.messages|messages] and
     [kameloso.plugins.common.IRCPluginState.priorityMessages|priorityMessages] arrays
-    of each plugin.
-
-    If a [kameloso.thread.ThreadMessage.MessageType.quit|quit] message is found,
-    its content is returned.
+    of each plugin. If a [kameloso.thread.ThreadMessage.MessageType.quit|quit]
+    message is found, its content is returned.
 
     Note: The message arrays are not nulled out in this function.
 

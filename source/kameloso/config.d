@@ -1162,7 +1162,7 @@ auto handleGetopt(Kameloso instance) @system
 
 // writeConfigurationFile
 /++
-    Write all settings to the configuration filename passed.
+    Writes all settings to the configuration filename passed.
 
     It gathers configuration text from all plugins before formatting it into
     nice columns, then writes it all in one go.

@@ -43,7 +43,7 @@ static this()
     timestamped and coloured logging.
 
     The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
-    and `fatal`. It is not `__gshared`, so instantiate a thread-local
+    `critical` and `fatal`. It is not `__gshared`, so instantiate a thread-local
     [kameloso.logger.KamelosoLogger|KamelosoLogger] if threading.
 
     Having this here is unfortunate; ideally plugins should not use variables

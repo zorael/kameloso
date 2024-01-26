@@ -20,7 +20,7 @@ public:
 // stripSeparatedPrefix
 /++
     Strips a prefix word from a string, optionally also stripping away some
-    non-word characters (currently ":;?! ").
+    non-word characters (currently "`:;?! `").
 
     This is to make a helper for stripping away bot prefixes, where such may be
     "kameloso: ".
@@ -37,7 +37,7 @@ public:
             separating characters.
         prefix = Prefix to strip.
         demandSep = Makes it a necessity that `line` is followed
-            by one of the prefix letters ": !?;". If it isn't, the `line` string
+            by one of the prefix letters "`: !?;`". If it isn't, the `line` string
             will be returned as is.
 
     Returns:

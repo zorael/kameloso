@@ -1064,7 +1064,7 @@ void onChannelAwarenessCreationTime(IRCPlugin plugin, const ref IRCEvent event)
 {
     if (auto channel = event.channel in plugin.state.channels)
     {
-        channel.created = event.count[0].get;
+        channel.created = event.count[0].get();
     }
 }
 
@@ -1237,12 +1237,14 @@ void onChannelAwarenessModeLists(IRCPlugin plugin, const ref IRCEvent event)
 
         case RPL_EXCEPTLIST:
             modestring = (plugin.state.server.exceptsChar == 'e') ?
-                "e" : plugin.state.server.exceptsChar.to!string;
+                "e" :
+                plugin.state.server.exceptsChar.to!string;
             break;
 
         case RPL_INVITELIST:
             modestring = (plugin.state.server.invexChar == 'I') ?
-                "I" : plugin.state.server.invexChar.to!string;
+                "I" :
+                plugin.state.server.invexChar.to!string;
             break;
 
         case RPL_REOPLIST:
@@ -1254,8 +1256,9 @@ void onChannelAwarenessModeLists(IRCPlugin plugin, const ref IRCEvent event)
             break;
 
         default:
-            assert(0, "Unexpected IRC event type annotation on " ~
-                "`onChannelAwarenessModeListMixin`");
+            enum message = "Unexpected IRC event type annotation on " ~
+                "`onChannelAwarenessModeListMixin`";
+            assert(0, message);
         }
 
         (*channel).setMode(modestring, event.content, plugin.state.server);

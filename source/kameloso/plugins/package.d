@@ -1,5 +1,8 @@
 /++
-    Package module for plugins.
+    Plugins for the **kameloso** bot.
+
+    See https://github.com/zorael/kameloso/wiki/Current-plugins for a list and
+    a description of all available plugins.
 
     Example:
     ---
@@ -23,6 +26,9 @@
 
     IRCPlugin[] plugins = instantiatePlugins(state);
     ---
+
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)

@@ -216,8 +216,9 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
 
     default:
         import lu.conv : Enum;
-        assert(0, "Missing `CTCP_` case entry for `IRCEvent.Type." ~
-            Enum!(IRCEvent.Type).toString(event.type) ~ '`');
+        immutable message = "Missing `CTCP_` case entry for `IRCEvent.Type." ~
+            Enum!(IRCEvent.Type).toString(event.type) ~ '`';
+        assert(0, message);
     }
 
     version(unittest)

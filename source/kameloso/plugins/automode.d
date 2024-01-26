@@ -153,7 +153,8 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
         break;
 
     default:
-        assert(0, "Invalid `onEvent` type annotation on `" ~ __FUNCTION__ ~ '`');
+        enum message = "Invalid `onEvent` type annotation on `" ~ __FUNCTION__ ~ '`';
+        assert(0, message);
     }
 
     foreach (immutable homeChannel; plugin.state.bot.homeChannels)
