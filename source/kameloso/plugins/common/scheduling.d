@@ -211,20 +211,6 @@ in ((dg !is null), "Tried to remove a delayed null delegate")
 }
 
 
-// removeDelayedFiber
-/++
-    Deprecated alias for [undelay].
-
-    Will be removed in a future release.
- +/
-deprecated("Use `undelay` instead")
-alias removeDelayedFiber = undelay;
-
-/// ditto
-deprecated("Use `undelay` instead")
-alias removeDelayedDelegate = undelay;
-
-
 // await
 /++
     Queues a [core.thread.fiber.Fiber|Fiber] to be called whenever the next parsed

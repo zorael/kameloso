@@ -157,30 +157,6 @@ private:
 
 public:
     /++
-        Creates a new [KamelosoLogger] with the passed settings.
-
-        Params:
-            colours = Whether or not to print colours.
-            brightTerminal = Bright terminal setting.
-            headless = Headless setting.
-            flush = Flush setting.
-     +/
-    deprecated("Use the constructor taking a `CoreSettings` struct instead")
-    this(
-        const Flag!"colours" colours,
-        const Flag!"brightTerminal" brightTerminal,
-        const Flag!"headless" headless,
-        const Flag!"flush" flush) pure nothrow @safe
-    {
-        linebuffer.reserve(bufferInitialSize);
-        messagebuffer.reserve(bufferInitialSize);
-        this.colours = colours;
-        this.brightTerminal = brightTerminal;
-        this.headless = headless;
-        this.flush = flush;
-    }
-
-    /++
         Creates a new [KamelosoLogger] with settings divined from the passed
         [kameloso.pods.CoreSettings|CoreSettings] struct.
 

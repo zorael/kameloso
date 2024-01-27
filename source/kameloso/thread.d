@@ -328,12 +328,6 @@ struct ThreadMessage
     }
 
     /++
-        Deprecated alias to [MessageType].
-     +/
-    deprecated("Use `ThreadMessage.MessageType` instead")
-    alias Type = MessageType;
-
-    /++
         The [MessageType] of this thread message.
      +/
     MessageType type;
@@ -565,35 +559,6 @@ final class CarryingFiber(T) : Fiber
         T payload,
         Args args,
         const string creator = __FUNCTION__)  // ditto
-    if (isSomeFunction!FnOrDg && (!Args.length || allSatisfy!(isNumeric, Args)))
-    {
-        this.payload = payload;
-        this.creator = creator;
-        super(fnOrDg, args);
-    }
-
-    /++
-        Constructor function taking a `T` `payload` to assign to its own
-        internal [CarryingFiber.payload|this.payload], as well as a function/delegate pointer to call
-        when invoking this fiber (via [CarryingFiber.call|.call()]).
-
-        Deprecated: Use the constructor taking a function/delegate pointer first
-            instead. This overload will be removed in a later release.
-
-        Params:
-            payload = Payload to assign to [CarryingFiber.payload|.payload].
-            fnOrDg = Function/delegate pointer to call when invoking this [CarryingFiber].
-            args = Arguments to pass to the [core.thread.fiber.Fiber|Fiber] `super`
-                constructor. If empty, the default arguments are used.
-            creator = String name of the creating function of this [CarryingFiber].
-     +/
-    deprecated("Use the constructor taking a function/delegate pointer first instead" ~
-        "This overload will be removed in a later release")
-    this(FnOrDg, Args...)
-        (T payload,
-        FnOrDg fnOrDg,
-        Args args,
-        const string creator = __FUNCTION__)  // as above
     if (isSomeFunction!FnOrDg && (!Args.length || allSatisfy!(isNumeric, Args)))
     {
         this.payload = payload;

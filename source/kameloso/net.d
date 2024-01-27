@@ -597,12 +597,6 @@ struct ListenAttempt
     }
 
     /++
-        Deprecated alias to [ListenState].
-     +/
-    deprecated("Use `ListenAttempt.ListenState` instead")
-    alias State = ListenState;
-
-    /++
         The current state of the attempt.
      +/
     ListenState state;
@@ -971,12 +965,6 @@ public:
     }
 
     /++
-        Deprecated alias to [ConnectState].
-     +/
-    deprecated("Use `ConnectionAttempt.ConnectState` instead")
-    alias State = ConnectState;
-
-    /++
         The current state of the attempt.
      +/
     ConnectState state;
@@ -1330,12 +1318,6 @@ struct ResolveAttempt
         failure,        /// Resolution failure; should abort.
         error,          /// Failure, unrecoverable exception thrown.
     }
-
-    /++
-        Deprecated alias to [ResolveState].
-     +/
-    deprecated("Use `ResolveAttempt.ResolveState` instead")
-    alias State = ResolveState;
 
     /++
         The current state of the attempt.
