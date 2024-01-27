@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>findURLs (kameloso.common.findURLs)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>findURLs</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.common.html">common</a> </div><div><div class="documentation-comment synopsis"><div><p>Finds URLs in a string, returning an array of them. Does not filter out duplicates.</p><p>Replacement for regex matching using much less memory when compiling
+    (around ~300mb).</p><p>To consider: does this need a <tt class="inline-code">dstring</tt>?</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> pure </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">findURLs</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="1"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="line"><a href="#param-line">line</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-line"><a class="parameter-name" data-ident="line" href="#param-line">line</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>String line to examine and find URLs in.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>A <tt class="inline-code">string[]</tt> array of found URLs. These include fragment identifiers.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="com">// Replaces the following:</span>
+<span class="com">// enum stephenhay = `\bhttps?://[^\s/$.?#].[^\s]*`;</span>
+<span class="com">// static urlRegex = ctRegex!stephenhay;</span>
+
+<span class="type">string</span>[] <span class="hid">urls</span> = <span class="hid">findURL</span>(<span class="str">&quot;blah https://google.com http://facebook.com httpx://wefpokwe&quot;</span>);
+<span class="kwrd">assert</span>(<span class="hid">urls</span>.<span class="hid">length</span> == <span class="num">2</span>);</pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">conv</span> : <span class="hid">to</span>;
+
+{
+    <span class="kwrd">const</span> <span class="hid">urls</span> = <span class="hid">findURLs</span>(<span class="str">&quot;http://google.com&quot;</span>);
+    <span class="kwrd">assert</span>((<span class="hid">urls</span>.<span class="hid">length</span> == <span class="num">1</span>), <span class="hid">urls</span>.<span class="hid">to</span>!<span class="type">string</span>);
+    <span class="kwrd">assert</span>((<span class="hid">urls</span>[<span class="num">0</span>] == <span class="str">&quot;http://google.com&quot;</span>), <span class="hid">urls</span>[<span class="num">0</span>]);
+}
+{
+    <span class="kwrd">const</span> <span class="hid">urls</span> = <span class="hid">findURLs</span>(<span class="str">&quot;blah https://a.com http://b.com shttps://c https://d.asdf.asdf.asdf        &quot;</span>);
+    <span class="kwrd">assert</span>((<span class="hid">urls</span>.<span class="hid">length</span> == <span class="num">3</span>), <span class="hid">urls</span>.<span class="hid">to</span>!<span class="type">string</span>);
+    <span class="kwrd">assert</span>((<span class="hid">urls</span> == [ <span class="str">&quot;https://a.com&quot;</span>, <span class="str">&quot;http://b.com&quot;</span>, <span class="str">&quot;https://d.asdf.asdf.asdf&quot;</span> ]), <span class="hid">urls</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="kwrd">const</span> <span class="hid">urls</span> = <span class="hid">findURLs</span>(<span class="str">&quot;http:// http://asdf https:// asdfhttpasdf http://google.com&quot;</span>);
+    <span class="kwrd">assert</span>((<span class="hid">urls</span>.<span class="hid">length</span> == <span class="num">1</span>), <span class="hid">urls</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="kwrd">const</span> <span class="hid">urls</span> = <span class="hid">findURLs</span>(<span class="str">&quot;http://a.sehttp://a.shttp://a.http://http:&quot;</span>);
+    <span class="kwrd">assert</span>(!<span class="hid">urls</span>.<span class="hid">length</span>, <span class="hid">urls</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="kwrd">const</span> <span class="hid">urls</span> = <span class="hid">findURLs</span>(<span class="str">&quot;blahblah https://motorb&#246;rsen.se blhblah&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">urls</span>.<span class="hid">length</span>, <span class="hid">urls</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="com">// Let dlang-requests attempt complex URLs, don't validate more than necessary</span>
+    <span class="kwrd">const</span> <span class="hid">urls</span> = <span class="hid">findURLs</span>(<span class="str">&quot;blahblah https://&#39640;&#25152;&#24656;&#24598;&#30151;&#12290;co.jp blhblah&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">urls</span>.<span class="hid">length</span>, <span class="hid">urls</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="kwrd">const</span> <span class="hid">urls</span> = <span class="hid">findURLs</span>(<span class="str">&quot;nyaa is now at https://nyaa.si, https://nyaa.si? &quot;</span> ~
+        <span class="str">&quot;https://nyaa.si. https://nyaa.si! and you should use it https://nyaa.si:&quot;</span>);
+
+    <span class="kwrd">foreach</span> (<span class="kwrd">immutable</span> <span class="hid">url</span>; <span class="hid">urls</span>)
+    {
+        <span class="kwrd">assert</span>((<span class="hid">url</span> == <span class="str">&quot;https://nyaa.si&quot;</span>), <span class="hid">url</span>);
+    }
+}
+{
+    <span class="kwrd">const</span> <span class="hid">urls</span> = <span class="hid">findURLs</span>(<span class="str">&quot;https://google.se httpx://google.se https://google.se&quot;</span>);
+    <span class="kwrd">assert</span>((<span class="hid">urls</span> == [ <span class="str">&quot;https://google.se&quot;</span>, <span class="str">&quot;https://google.se&quot;</span> ]), <span class="hid">urls</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="kwrd">const</span> <span class="hid">urls</span> = <span class="hid">findURLs</span>(<span class="str">&quot;https://               &quot;</span>);
+    <span class="kwrd">assert</span>(!<span class="hid">urls</span>.<span class="hid">length</span>, <span class="hid">urls</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="kwrd">const</span> <span class="hid">urls</span> = <span class="hid">findURLs</span>(<span class="str">&quot;http://               &quot;</span>);
+    <span class="kwrd">assert</span>(!<span class="hid">urls</span>.<span class="hid">length</span>, <span class="hid">urls</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.common.html">common</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.common.assertMultilineOpEquals.html">assertMultilineOpEquals</a></li><li><a class="function current" href="kameloso.common.findURLs.html">findURLs</a></li><li><a class="function" href="kameloso.common.printGCStats.html">printGCStats</a></li><li><a class="function" href="kameloso.common.printStacktrace.html">printStacktrace</a></li><li><a class="function" href="kameloso.common.printVersionInfo.html">printVersionInfo</a></li></ul><span class="type-separator">static variables</span><ul><li><a class="static-variable" href="kameloso.common.globalAbort.html">globalAbort</a></li><li><a class="static-variable" href="kameloso.common.globalHeadless.html">globalHeadless</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.common.OutgoingLine.html">OutgoingLine</a></li></ul><span class="type-separator">variables</span><ul><li><a class="variable" href="kameloso.common.logger.html">logger</a></li><li><a class="variable" href="kameloso.common.settings.html">settings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
