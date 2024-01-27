@@ -161,7 +161,7 @@ auto downloadWindowsSSL(
         }
     }
 
-    auto downloadOpenSSL()
+    void downloadOpenSSL()
     {
         import std.file : mkdirRecurse, tempDir;
         import std.json : JSONException;
@@ -173,13 +173,37 @@ auto downloadWindowsSSL(
         enum jsonURL = "https://raw.githubusercontent.com/slproweb/opensslhashes/master/win32_openssl_hashes.json";
         immutable jsonFile = buildNormalizedPath(temporaryDir, "win32_openssl_hashes.json");
         immutable result = downloadFile(jsonURL, "manifest", jsonFile);
-        if (*instance.abort) return No.settingsTouched;
-        if (result != 0) return No.settingsTouched;
+        if (*instance.abort) return;
+        if (result != 0) return;
 
         try
         {
             import std.file : readText;
             import std.json : parseJSON;
+
+            version(Win64)
+            {
+                immutable head = shouldDownloadOpenSSL1_1 ?
+                    "Win64OpenSSL_Light-1_1" :
+                    "Win64OpenSSL_Light-3_2";
+            }
+            else version(Win32)
+            {
+                immutable head = shouldDownloadOpenSSL1_1 ?
+                    "Win32OpenSSL_Light-1_1" :
+                    "Win32OpenSSL_Light-3_2";
+            }
+            else version(AArch64)
+            {
+                // Untested, might work?
+                immutable head = shouldDownloadOpenSSL1_1 ?
+                    "Win64ARMOpenSSL_Light-1_1" :
+                    "Win64ARMOpenSSL_Light-3_2";
+            }
+            else
+            {
+                static assert(0, "Unsupported platform, please file a bug.");
+            }
 
             const hashesJSON = parseJSON(readText(jsonFile));
 
@@ -187,42 +211,18 @@ auto downloadWindowsSSL(
             {
                 import std.algorithm.searching : endsWith, startsWith;
 
-                version(Win64)
-                {
-                    immutable head = shouldDownloadOpenSSL1_1 ?
-                        "Win64OpenSSL_Light-1_1" :
-                        "Win64OpenSSL_Light-3_2";
-                }
-                else version(Win32)
-                {
-                    immutable head = shouldDownloadOpenSSL1_1 ?
-                        "Win32OpenSSL_Light-1_1" :
-                        "Win32OpenSSL_Light-3_2";
-                }
-                else version(AArch64)
-                {
-                    // Untested, might work?
-                    immutable head = shouldDownloadOpenSSL1_1 ?
-                        "Win64ARMOpenSSL_Light-1_1" :
-                        "Win64ARMOpenSSL_Light-3_2";
-                }
-                else
-                {
-                    static assert(0, "Unsupported platform, please file a bug.");
-                }
-
                 if (filename.startsWith(head) && filename.endsWith(".msi"))
                 {
                     import std.process : execute;
 
                     immutable msi = buildNormalizedPath(temporaryDir, filename);
                     immutable downloadResult = downloadFile(fileEntryJSON["url"].str, "OpenSSL installer", msi);
-                    if (*instance.abort) return No.settingsTouched;
+                    if (*instance.abort) return;
                     if (downloadResult != 0) break;
 
                     logger.info("Launching <l>OpenSSL</> installer.");
                     /*immutable execResult =*/ execute([ "msiexec", "/i", msi ]);
-                    return Yes.settingsTouched;
+                    return;
                 }
             }
 
@@ -240,8 +240,6 @@ auto downloadWindowsSSL(
             enum pattern = "Error starting <l>OpenSSL</> installer: <l>%s";
             logger.errorf(pattern, e.msg);
         }
-
-        return No.settingsTouched;
     }
 
     Flag!"settingsTouched" retval;
@@ -257,29 +255,27 @@ auto downloadWindowsSSL(
         {
             enum pattern = "Found certificate authority bundle file <l>%s</>; not downloading.";
             logger.infof(pattern, instance.connSettings.caBundleFile.doublyBackslashed);
-            //retval |= No.settingsTouched;
         }
         else
         {
-            retval |= downloadCacert();
+            retval = downloadCacert();
         }
     }
 
-    if (*instance.abort) return retval;
+    if (*instance.abort) return retval;  // or No.settingsTouched?
 
     if (shouldDownloadOpenSSL)
     {
         import kameloso.net : openSSLIsInstalled;
 
-        if (openSSLIsInstalled && !instance.settings.force)
+        if (!instance.settings.force && openSSLIsInstalled())
         {
             enum message = "Found <l>OpenSSL for Windows</> as already installed; not downloading.";
             logger.info(message);
-            //retval |= No.settingsTouched;
         }
         else
         {
-            retval |= downloadOpenSSL();
+            downloadOpenSSL();
         }
     }
 
