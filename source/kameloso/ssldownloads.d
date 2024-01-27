@@ -220,8 +220,35 @@ auto downloadWindowsSSL(
                     if (*instance.abort) return;
                     if (downloadResult != 0) break;
 
+                    immutable string[3] command =
+                    [
+                        "msiexec",
+                        "/i",
+                        msi,
+                    ];
+
                     logger.info("Launching <l>OpenSSL</> installer.");
-                    /*immutable execResult =*/ execute([ "msiexec", "/i", msi ]);
+                    immutable result = execute(command[]);
+
+                    if (result.status != 0)
+                    {
+                        enum errorPattern = "Installation process exited with status <l>%d";
+                        logger.errorf(errorPattern, result.status);
+
+                        version(PrintStacktraces)
+                        {
+                            import std.stdio : stdout, writeln;
+                            import std.string : chomp;
+
+                            immutable output = result.output.chomp;
+
+                            if (output.length)
+                            {
+                                writeln(output);
+                                stdout.flush();
+                            }
+                        }
+                    }
                     return;
                 }
             }
