@@ -26,8 +26,6 @@ import kameloso.plugins.printer;
 
 import kameloso.common : logger;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
-
 
 package:
 
@@ -165,9 +163,9 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         const ref IRCEvent event,
         const string key,
         const string givenPath = string.init,
-        const Flag!"intoSubdir" intoSubdir = Yes.intoSubdir,
-        const Flag!"raw" raw = No.raw,
-        const Flag!"errors" errors = No.errors)
+        const bool intoSubdir = true,
+        const bool raw = false,
+        const bool errors = false)
     {
         import std.exception : ErrnoException;
         import std.file : FileException;
@@ -257,8 +255,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         plugin,
                         plugin.linebuffer,
                         event,
-                        No.bellOnMention,
-                        No.bellOnError);
+                        bellOnMention : false,
+                        bellOnError: false);
 
                     if (plugin.printerSettings.bufferedWrites)
                     {
@@ -318,7 +316,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         // Adds some 220 mb to compilation memory usage
                         prettyformat!(Yes.all, No.coloured)
                             (plugin.linebuffer,
-                            No.brightTerminal,
+                            brightTerminal: false,
                             event);
 
                         errBuffer.lines.put(plugin.linebuffer.data.idup);
@@ -329,7 +327,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                             prettyformat!(Yes.all, No.coloured)
                                 (plugin.linebuffer,
-                                No.brightTerminal,
+                                brightTerminal: false,
                                 event.sender);
 
                             errBuffer.lines.put(plugin.linebuffer.data.idup);
@@ -341,7 +339,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                             prettyformat!(Yes.all, No.coloured)
                                 (plugin.linebuffer,
-                                No.brightTerminal,
+                                brightTerminal: false,
                                 event.target);
 
                             errBuffer.lines.put(plugin.linebuffer.data.idup);
@@ -382,7 +380,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                         prettyformat!(Yes.all, No.coloured)
                             (plugin.linebuffer,
-                            No.brightTerminal,
+                            brightTerminal: false,
                             event);
 
                         errFile.writeln(plugin.linebuffer.data);
@@ -393,7 +391,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                             prettyformat!(Yes.all, No.coloured)
                                 (plugin.linebuffer,
-                                No.brightTerminal,
+                                brightTerminal: false,
                                 event.sender);
 
                             errFile.writeln(plugin.linebuffer.data);
@@ -405,7 +403,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                             prettyformat!(Yes.all, No.coloured)
                                 (plugin.linebuffer,
-                                No.brightTerminal,
+                                brightTerminal: false,
                                 event.target);
 
                             errFile.writeln(plugin.linebuffer.data);
@@ -479,8 +477,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
             event,
             rawMarker,
             "raw.log",
-            No.intoSubdir,
-            Yes.raw);
+            intoSubdir : false,
+            raw: true);
     }
 
     if (event.errors.length && plugin.printerSettings.logErrors)
@@ -491,9 +489,9 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
             event,
             errorMarker,
             "error.log",
-            No.intoSubdir,
-            No.raw,
-            Yes.errors);
+            intoSubdir: false,
+            raw: false,
+            errors: true);
 
         if (plugin.printerSettings.bufferedWrites)
         {
@@ -608,7 +606,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 event,
                 plugin.state.server.address,
                 "server.log",
-                No.intoSubdir);
+                intoSubdir: false);
         }
         else
         {

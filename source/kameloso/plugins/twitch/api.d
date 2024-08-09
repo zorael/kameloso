@@ -27,7 +27,6 @@ import kameloso.plugins.twitch.common;
 import kameloso.tables : HTTPVerb;
 import dialect.defs;
 import lu.container : MutexedAA;
-import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 import core.time : Duration, seconds;
 
@@ -99,8 +98,8 @@ struct QueryResponse
 auto retryDelegate(Dg)
     (TwitchPlugin plugin,
     Dg dg,
-    const Flag!"async" async = Yes.async,
-    const Flag!"endlessly" endlessly = No.endlessly,
+    const bool async = true,
+    const bool endlessly = false,
     const Duration retryDelay = 4.seconds)
 in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outside a fiber")
 {
@@ -117,7 +116,7 @@ in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outsi
                 if (async)
                 {
                     import kameloso.plugins.common.scheduling : delay;
-                    delay(plugin, retryDelay, Yes.yield);
+                    delay(plugin, retryDelay, yield: true);
                 }
                 else
                 {
@@ -132,8 +131,8 @@ in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outsi
             handleRetryDelegateException(
                 e,
                 i,
-                endlessly,
-                cast(Flag!"headless")plugin.state.settings.headless);
+                endlessly: endlessly,
+                headless: plugin.state.settings.headless);
             continue;  // If we're here the above didn't throw; continue
         }
     }
@@ -164,8 +163,8 @@ in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outsi
 private auto handleRetryDelegateException(
     Exception base,
     const size_t i,
-    const Flag!"endlessly" endlessly,
-    const Flag!"headless" headless)
+    const bool endlessly,
+    const bool headless)
 {
     if (auto e = cast(MissingBroadcasterTokenException)base)
     {
@@ -452,7 +451,7 @@ QueryResponse sendHTTPRequest(
     /*const*/ ubyte[] body_ = null,
     const string contentType = string.init,
     int id = 0,
-    const Flag!"recursing" recursing = No.recursing)
+    const bool recursing = false)
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
 {
@@ -488,7 +487,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         body_.idup,
         contentType);
 
-    delay(plugin, plugin.transient.approximateQueryTime.msecs, Yes.yield);
+    delay(plugin, plugin.transient.approximateQueryTime.msecs, yield: true);
     immutable response = waitForQueryResponse(plugin, id);
 
     if (response.exceptionText.length)
@@ -532,7 +531,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
             body_,
             contentType,
             id,
-            Yes.recursing);
+            recursing: true);
     }
     else if (response.code >= 400)
     {
@@ -958,7 +957,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 auto getValidation(
     TwitchPlugin plugin,
     /*const*/ string authToken,
-    const Flag!"async" async,
+    const bool async,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getValidation` from outside a fiber")
 in (authToken.length, "Tried to validate an empty Twitch authorisation token")
@@ -1108,7 +1107,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         return validationJSON;
     }
 
-    return retryDelegate(plugin, &getValidationDg, Yes.async, Yes.endlessly);
+    return retryDelegate(plugin, &getValidationDg, async: true, endlessly: true);
 }
 
 
@@ -1307,7 +1306,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
         cast(ubyte[])null,
         string.init);
 
-    delay(plugin, plugin.transient.approximateQueryTime.msecs, Yes.yield);
+    delay(plugin, plugin.transient.approximateQueryTime.msecs, yield: true);
     immutable response = waitForQueryResponse(plugin, id, url);
     // response.str is the response body
     assert(id !in plugin.responseBucket);
@@ -1386,7 +1385,7 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
                     cast(long)briefWait);
             }
 
-            delay(plugin, briefWait.msecs, Yes.yield);
+            delay(plugin, briefWait.msecs, yield: true);
             continue;
         }
         else
@@ -1427,7 +1426,7 @@ auto getTwitchUser(
     TwitchPlugin plugin,
     const string givenName,
     const uint id = 0,
-    const Flag!"searchByDisplayName" searchByDisplayName = No.searchByDisplayName)
+    const bool searchByDisplayName = false)
 in (Fiber.getThis(), "Tried to call `getTwitchUser` from outside a fiber")
 in ((givenName.length || id),
     "Tried to get Twitch user without supplying a name nor an ID")
@@ -2373,7 +2372,7 @@ auto endPoll(
     TwitchPlugin plugin,
     const string channelName,
     const string pollID,
-    const Flag!"terminate" terminate,
+    const bool terminate,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `endPoll` from outside a fiber")
 in (channelName.length, "Tried to end a poll with an empty channel name string")
@@ -2675,7 +2674,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
 auto getSubscribers(
     TwitchPlugin plugin,
     const string channelName,
-    const Flag!"totalOnly" totalOnly,
+    const bool totalOnly,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getSubscribers` from outside a fiber")
 in (channelName.length, "Tried to get subscribers with an empty channel name string")
@@ -2954,7 +2953,7 @@ in (channelName.length, "Tried to delete a message without providing a channel n
     }
 
     static immutable failedDeleteRetry = 100.msecs;
-    return retryDelegate(plugin, &deleteDg, Yes.async, Yes.endlessly, failedDeleteRetry);
+    return retryDelegate(plugin, &deleteDg, async: true, endlessly: true, failedDeleteRetry);
 }
 
 

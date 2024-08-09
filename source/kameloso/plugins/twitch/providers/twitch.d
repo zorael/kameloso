@@ -27,7 +27,6 @@ import kameloso.plugins.twitch.providers.common;
 
 import kameloso.common : logger;
 import kameloso.terminal.colours.tags : expandTags;
-import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
 public:
@@ -241,7 +240,7 @@ You also need to supply the channel for which it all relates.
 
     while (!channel.length)
     {
-        Flag!"benignAbort" benignAbort;
+        bool benignAbort;
 
         channel = readChannelName(
             numEmptyLinesEntered,
@@ -440,7 +439,7 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
             writeln();
             logger.warning("Aborting.");
             logger.trace();
-            *plugin.state.abort = Yes.abort;
+            *plugin.state.abort = true;
             return string.init;
         }
 
@@ -536,7 +535,7 @@ in (Fiber.getThis(), "Tried to call `getTokenExpiry` from outside a fiber")
     {
         try
         {
-            immutable validationJSON = getValidation(plugin, authToken, No.async);
+            immutable validationJSON = getValidation(plugin, authToken, async: false);
             plugin.state.client.nickname = validationJSON["login"].str;
             plugin.state.updates |= typeof(plugin.state.updates).client;
             immutable expiresIn = validationJSON["expires_in"].integer;

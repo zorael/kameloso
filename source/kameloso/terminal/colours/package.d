@@ -66,7 +66,6 @@ private:
 import kameloso.terminal : TerminalToken;
 import kameloso.terminal.colours.defs : ANSICodeType;
 import kameloso.pods : CoreSettings;
-import std.typecons : Flag, No, Yes;
 
 public:
 
@@ -420,7 +419,7 @@ unittest
     import std.conv : to;
     import std.stdio : write, writeln;
 
-    enum bright = Yes.brightTerminal;
+    enum bright = true;
     // ▄█▀
 
     writeln("BRIGHT: ", bright);
@@ -520,8 +519,8 @@ void applyTruecolour(Sink)
     uint r,
     uint g,
     uint b,
-    const Flag!"brightTerminal" bright = No.brightTerminal,
-    const Flag!"normalise" normalise = Yes.normalise)
+    const bool brightTerminal = false,
+    const bool normalise = true)
 {
     import lu.conv : toAlphaInto;
     import std.range.primitives : isOutputRange;
@@ -542,7 +541,7 @@ void applyTruecolour(Sink)
 
     if (normalise)
     {
-        if (bright)
+        if (brightTerminal)
         {
             normaliseColoursBright(r, g, b);
         }
@@ -595,8 +594,8 @@ string asTruecolour(
     const uint r,
     const uint g,
     const uint b,
-    const Flag!"brightTerminal" bright = No.brightTerminal,
-    const Flag!"normalise" normalise = Yes.normalise) pure @safe
+    const bool brightTerminal = false,
+    const bool normalise = true) pure @safe
 {
     import kameloso.terminal.colours.defs : TerminalReset;
     import std.array : Appender;
@@ -606,7 +605,7 @@ string asTruecolour(
     // \033[48 for background
     sink.reserve(word.length + 23);
 
-    sink.applyTruecolour(r, g, b, bright, normalise);
+    sink.applyTruecolour(r, g, b, brightTerminal: brightTerminal, normalise: normalise);
     sink.put(word);
     sink.applyANSI(TerminalReset.all);
     return sink.data;
@@ -617,7 +616,7 @@ unittest
 {
     import std.format : format;
 
-    immutable name = "blarbhl".asTruecolour(255, 255, 255, No.brightTerminal, No.normalise);
+    immutable name = "blarbhl".asTruecolour(255, 255, 255, brightTerminal: false, normalise: false);
     immutable alsoName = "%c[38;2;%d;%d;%dm%s%c[0m"
         .format(cast(char)TerminalToken.format, 255, 255, 255,
            "blarbhl", cast(char)TerminalToken.format);
@@ -634,7 +633,7 @@ unittest
     ---
     immutable line = "This is an example!";
     writeln(line.invert("example"));  // "example" substring visually inverted
-    writeln(line.invert("EXAMPLE", Yes.caseInsensitive)); // "example" inverted as "EXAMPLE"
+    writeln(line.invert("EXAMPLE", caseInsensitive: true)); // "example" inverted as "EXAMPLE"
     ---
 
     Params:
@@ -650,7 +649,7 @@ unittest
 string invert(
     const string line,
     const string toInvert,
-    const Flag!"caseSensitive" caseSensitive = Yes.caseSensitive) pure @safe
+    const bool caseSensitive = true) pure @safe
 {
     import kameloso.terminal.colours.defs : TerminalFormat, TerminalReset;
     import dialect.common : isValidNicknameCharacter;
@@ -865,17 +864,17 @@ unittest
     // Case-insensitive tests
 
     {
-        immutable line = "KAMELOSO".invert("kameloso", No.caseSensitive);
+        immutable line = "KAMELOSO".invert("kameloso", caseSensitive: false);
         immutable expected = pre ~ "kameloso" ~ post;
         assert((line == expected), line);
     }
     {
-        immutable line = "KamelosoTV".invert("kameloso", No.caseSensitive);
+        immutable line = "KamelosoTV".invert("kameloso", caseSensitive: false);
         immutable expected = "KamelosoTV";
         assert((line == expected), line);
     }
     {
-        immutable line = "Blah blah kAmElOsO Blah blah".invert("kameloso", No.caseSensitive);
+        immutable line = "Blah blah kAmElOsO Blah blah".invert("kameloso", caseSensitive: false);
         immutable expected = "Blah blah " ~ pre ~ "kameloso" ~ post ~ " Blah blah";
         assert((line == expected), line);
     }
@@ -902,8 +901,8 @@ unittest
     Hashes the passed string and picks an ANSI colour for it by modulo.
 
     Picks any colour, taking care not to pick black or white based on
-    the passed [std.typecons.Flag|Flag!"brightTerminal"] flag. If the
-    [std.typecons.Flag|Flag!"extendedColours"] flag is passed, it will
+    the passed `brightTerminal` bool. If
+    `extendedColours: true` is passed, it will
     pick from the extended colour range instead of the basic one.
 
     Any number of flags may be passed. If duplicates are passed, the last one
@@ -911,14 +910,14 @@ unittest
 
     Example:
     ---
-    immutable nickColour = "kameloso".getColourByHash(Yes.brightTerminal);
-    immutable otherColour = "kameloso^".getColourByHash(No.extendedColours);
+    immutable nickColour = "kameloso".getColourByHash(brightTerminal: true);
+    immutable otherColour = "kameloso^".getColourByHash(extendedColours: false);
     ---
 
     Params:
         word = String to hash and base colour on.
-        flags = A variadic combination of one or more [std.typecons.Flag] flags
-            to configure the output.
+        brightTerminal = Whether the terminal has a bright background or not.
+        extendedColours = Whether to use extended colours or not.
 
     Returns:
         A `uint` that can be used in an ANSI foreground colour sequence.
@@ -926,36 +925,12 @@ unittest
     See_Also:
         [getColourByHashImpl]
  +/
-auto getColourByHash(Flags...)
-    (const string word,
-    const Flags flags) pure @safe nothrow
-in (word.length, "Tried to get a colour by hash but no word was given")
+auto getColourByHash(
+    const string word,
+    const bool brightTerminal = CoreSettings.init.brightTerminal,
+    const bool extendedColours = CoreSettings.init.extendedColours) pure @safe nothrow
+in (word.length, "Tried to get colour by hash but no word was given")
 {
-    static immutable CoreSettings settingsInit;
-    auto brightTerminal = cast(Flag!"brightTerminal")settingsInit.brightTerminal;
-    auto extendedColours = cast(Flag!"extendedColours")settingsInit.extendedColours;
-
-    foreach (flag; flags)
-    {
-        static if (is(typeof(flag) : typeof(brightTerminal)))
-        {
-            brightTerminal = flag;
-        }
-        else static if (is(typeof(flag) : typeof(extendedColours)))
-        {
-            extendedColours = flag;
-        }
-        else
-        {
-            import std.format : format;
-            import std.traits : TemplateArgsOf;
-            enum pattern = "Unknown flag `%s` passed to getColourByHash";
-            enum flagType = TemplateArgsOf!(typeof(flag))[0].stringof;
-            enum message = pattern.format(flagType);
-            static assert(0, message);
-        }
-    }
-
     return getColourByHashImpl(word, brightTerminal, extendedColours);
 }
 
@@ -966,17 +941,17 @@ unittest
 
     {
         enum word = "kameloso";
-        immutable hash = getColourByHash(word, No.brightTerminal, Yes.extendedColours);
+        immutable hash = getColourByHash(word, brightTerminal: false, extendedColours: true);
         assert((hash == 227), hash.to!string);
     }
     {
         enum word = "kameloso";
-        immutable hash = getColourByHash(word, No.brightTerminal);
+        immutable hash = getColourByHash(word, brightTerminal: false);
         assert((hash == 227), hash.to!string);
     }
     {
         enum word = "kameloso";
-        immutable hash = getColourByHash(word, Yes.extendedColours);
+        immutable hash = getColourByHash(word, extendedColours: true);
         assert((hash == 227), hash.to!string);
     }
     {
@@ -993,19 +968,16 @@ unittest
         enum word = "zorael";
         immutable hash = getColourByHash(
             word,
-            No.brightTerminal,
-            Yes.brightTerminal,
-            No.extendedColours,
-            Yes.extendedColours);
+            brightTerminal: true,
+            extendedColours: true);
         assert((hash == 35), hash.to!string);
     }
     {
         enum word = "NO";
         immutable hash = getColourByHash(
             word,
-            Yes.brightTerminal,
-            Yes.extendedColours,
-            Yes.extendedColours);
+            brightTerminal: true,
+            extendedColours: true);
         assert((hash == 90), hash.to!string);
     }
 }
@@ -1080,13 +1052,13 @@ unittest
     Implementation function.
 
     Picks any colour, taking care not to pick black or white based on
-    the passed [std.typecons.Flag|Flag!"brightTerminal"] flag. If the
-    [std.typecons.Flag|Flag!"extendedColours"] flag is passed, it will
+    the passed `brightTerminal` bool. If the
+    `extendedColours` bool is passed, it will
     pick from the extended colour range instead of the basic one.
 
     Example:
     ---
-    immutable nickColour = "kameloso".getColourByHash(No.brightTerminal, Yes.extendedColours);
+    immutable nickColour = "kameloso".getColourByHash(brightTerminal: false, extendedColours: true);
     ---
 
     Params:
@@ -1173,22 +1145,22 @@ unittest
 
     {
         enum word = "kameloso";
-        immutable hash = getColourByHashImpl(word, No.brightTerminal, Yes.extendedColours);
+        immutable hash = getColourByHashImpl(word, brightTerminal: false, extendedColours: true);
         assert((hash == 227), hash.to!string);
     }
     {
         enum word = "kameloso^";
-        immutable hash = getColourByHashImpl(word, No.brightTerminal, Yes.extendedColours);
+        immutable hash = getColourByHashImpl(word, brightTerminal: false, extendedColours: true);
         assert((hash == 46), hash.to!string);
     }
     {
         enum word = "zorael";
-        immutable hash = getColourByHashImpl(word, Yes.brightTerminal, Yes.extendedColours);
+        immutable hash = getColourByHashImpl(word, brightTerminal: true, extendedColours: true);
         assert((hash == 35), hash.to!string);
     }
     {
         enum word = "NO";
-        immutable hash = getColourByHashImpl(word, Yes.brightTerminal, Yes.extendedColours);
+        immutable hash = getColourByHashImpl(word, brightTerminal: true, extendedColours: true);
         assert((hash == 90), hash.to!string);
     }
 }
@@ -1200,8 +1172,8 @@ unittest
 
     Params:
         word = String to colour.
-        flags = A variadic combination of one or more [std.typecons.Flag] flags
-            to configure the output.
+        brightTerminal = Whether the terminal has a bright background or not.
+        extendedColours = Whether to use extended colours beyond the normal ANSI.
 
     Returns:
         `word`, now in colour based on the hash of its contents.
@@ -1210,36 +1182,12 @@ unittest
         [getColourByHash]
         [getColourByHashImpl]
  +/
-auto colourByHash(Flags...)
-    (const string word,
-    const Flags flags) pure @safe nothrow
+auto colourByHash(
+    const string word,
+    const bool brightTerminal = CoreSettings.init.brightTerminal,
+    const bool extendedColours = CoreSettings.init.extendedColours) pure @safe nothrow
 in (word.length, "Tried to colour a word by hash but no word was given")
 {
-    static immutable CoreSettings settingsInit;
-    auto brightTerminal = cast(Flag!"brightTerminal")settingsInit.brightTerminal;
-    auto extendedColours = cast(Flag!"extendedColours")settingsInit.extendedColours;
-
-    foreach (flag; flags)
-    {
-        static if (is(typeof(flag) : typeof(brightTerminal)))
-        {
-            brightTerminal = flag;
-        }
-        else static if (is(typeof(flag) : typeof(extendedColours)))
-        {
-            extendedColours = flag;
-        }
-        else
-        {
-            import std.format : format;
-            import std.traits : TemplateArgsOf;
-            enum pattern = "Unknown flag `%s` passed to colourByHash";
-            enum flagType = TemplateArgsOf!(typeof(flag))[0].stringof;
-            enum message = pattern.format(flagType);
-            static assert(0, message);
-        }
-    }
-
     immutable code = getColourByHashImpl(word, brightTerminal, extendedColours);
     return word.withANSI(code);
 }
@@ -1250,27 +1198,27 @@ unittest
     import std.conv : to;
 
     {
-        immutable coloured = "kameloso".colourByHash(No.brightTerminal, Yes.extendedColours);
+        immutable coloured = "kameloso".colourByHash(brightTerminal: false, extendedColours: true);
         assert((coloured == "\033[38;5;227mkameloso\033[0m"), coloured);
     }
     {
-        immutable coloured = "kameloso".colourByHash(Yes.extendedColours, Yes.brightTerminal);
+        immutable coloured = "kameloso".colourByHash(extendedColours: true, brightTerminal: true);
         assert((coloured == "\033[38;5;222mkameloso\033[0m"), coloured);
     }
     {
-        immutable coloured = "kameloso".colourByHash(Yes.brightTerminal);
+        immutable coloured = "kameloso".colourByHash(brightTerminal: true);
         assert((coloured == "\033[38;5;222mkameloso\033[0m"), coloured);
     }
     {
-        immutable coloured = "zorael".colourByHash(Yes.extendedColours);
+        immutable coloured = "zorael".colourByHash(extendedColours: true);
         assert((coloured == "\033[35mzorael\033[0m"), coloured);
     }
     {
-        immutable coloured = "zorael".colourByHash(No.extendedColours, Yes.extendedColours);
+        immutable coloured = "zorael".colourByHash(extendedColours: true);
         assert((coloured == "\033[35mzorael\033[0m"), coloured);
     }
     {
-        immutable coloured = "NO".colourByHash(Yes.extendedColours);
+        immutable coloured = "NO".colourByHash(extendedColours: true);
         assert((coloured == "\033[90mNO\033[0m"), coloured);
     }
 }

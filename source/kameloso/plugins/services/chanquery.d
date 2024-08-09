@@ -29,7 +29,6 @@ import kameloso.plugins;
 import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 
 version(OmniscientQueries)
@@ -121,7 +120,7 @@ void startChannelQueries(ChanQueryService service)
         if (i > 0)
         {
             // Delay between runs after first since aMode probes don't delay at end
-            delay(service, ChanQueryService.timeBetweenQueries, Yes.yield);
+            delay(service, ChanQueryService.timeBetweenQueries, yield: true);
         }
 
         version(WithPrinterPlugin)
@@ -137,7 +136,7 @@ void startChannelQueries(ChanQueryService service)
             import std.conv : text;
 
             scope(exit) unawait(service, types);
-            await(service, types, No.yield);
+            await(service, types, yield: false);
 
             version(WithPrinterPlugin)
             {
@@ -152,7 +151,7 @@ void startChannelQueries(ChanQueryService service)
             do Fiber.yield();  // Awaiting specified types
             while (thisFiber.payload.channel != channelName);
 
-            delay(service, ChanQueryService.timeBetweenQueries, Yes.yield);
+            delay(service, ChanQueryService.timeBetweenQueries, yield: true);
         }
 
         /++
@@ -180,7 +179,7 @@ void startChannelQueries(ChanQueryService service)
             if (n > 0)
             {
                 // Cannot await by event type; there are too many types.
-                delay(service, ChanQueryService.timeBetweenQueries, Yes.yield);
+                delay(service, ChanQueryService.timeBetweenQueries, yield: true);
                 if (channelName !in service.channelStates) continue chanloop;
             }
 
@@ -247,7 +246,7 @@ void startChannelQueries(ChanQueryService service)
         IRCEvent.Type.ERR_UNKNOWNCOMMAND,
     ];
 
-    await(service, whoisTypes, No.yield);
+    await(service, whoisTypes, yield: false);
 
     scope(exit)
     {
@@ -279,13 +278,13 @@ void startChannelQueries(ChanQueryService service)
         }
 
         // Delay between runs after first since aMode probes don't delay at end
-        delay(service, ChanQueryService.timeBetweenQueries, Yes.yield);
+        delay(service, ChanQueryService.timeBetweenQueries, yield: true);
         auto elapsed = (Clock.currTime.toUnixTime() - lastQueryResults);
         auto remaining = (numSecondsBetween - elapsed);
 
         while (remaining > 0)
         {
-            delay(service, remaining.seconds, Yes.yield);
+            delay(service, remaining.seconds, yield: false);
             elapsed = (Clock.currTime.toUnixTime() - lastQueryResults);
             remaining = (numSecondsBetween - elapsed);
         }
@@ -452,7 +451,7 @@ void onEndOfNames(ChanQueryService service)
 void onMyInfo(ChanQueryService service)
 {
     import kameloso.plugins.common.scheduling : delay;
-    delay(service, service.timeBeforeInitialQueries, Yes.yield);
+    delay(service, service.timeBeforeInitialQueries, yield: true);
     startChannelQueries(service);
 }
 

@@ -14,16 +14,18 @@
 # Executables
 *.exe
 /kameloso
+/kameloso-test
 
 # DUB
-.dub
+/.dub
+/dub.selections.json
 docs.json
 __dummy.html
-docs/
+/docs/
 
 # Code coverage
 *.lst
-grinds/
+/grinds
 callgrind*
 
 # Other directories
@@ -32,4 +34,22 @@ callgrind*
 # Misc
 *.conf
 *.json
-TODO
+/TODO
+/RELEASE.md
+
+# tracy
+/trace.tracy
+/trace.json
+
+# compilers
+/1.*
+/2.*
+/dub
+/safepush
+
+# adrdox
+/generated-docs
+/skeleton.html
+
+# project-specific
+/conf

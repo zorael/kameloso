@@ -20,7 +20,6 @@ private:
 
 import kameloso.pods : CoreSettings;
 import kameloso.logger : KamelosoLogger;
-import std.typecons : Flag, No, Yes;
 
 public:
 
@@ -75,7 +74,7 @@ CoreSettings settings;
 
     Must be `__gshared` or it doesn't seem to work on Windows.
  +/
-__gshared Flag!"abort" globalAbort;
+__gshared bool globalAbort;
 
 
 // globalHeadless
@@ -84,7 +83,7 @@ __gshared Flag!"abort" globalAbort;
 
     If this is true the program should not output anything to the terminal.
  +/
-__gshared Flag!"headless" globalHeadless;
+__gshared bool globalHeadless;
 
 
 // printVersionInfo
@@ -94,13 +93,13 @@ __gshared Flag!"headless" globalHeadless;
 
     Example:
     ---
-    printVersionInfo(Yes.colours);
+    printVersionInfo(colours: true);
     ---
 
     Params:
-        colours = Whether or not to tint output, default yes.
+        colours = Whether or not to tint output, default true.
  +/
-void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
+void printVersionInfo(const bool colours = true) @safe
 {
     import kameloso.common : logger;
     import kameloso.constants : KamelosoInfo;
@@ -180,7 +179,7 @@ struct OutgoingLine
     /++
         Constructor.
      +/
-    this(const string line, const Flag!"quiet" quiet = No.quiet) pure @safe nothrow @nogc
+    this(const string line, const bool quiet = false) pure @safe nothrow @nogc
     {
         this.line = line;
         this.quiet = quiet;
@@ -217,7 +216,6 @@ auto findURLs(const string line) @safe pure
 {
     import lu.string : advancePast, stripped, strippedRight;
     import std.string : indexOf;
-    import std.typecons : Flag, No, Yes;
 
     enum wordBoundaryTokens = ".,!?:";
     enum minimumPossibleLinkLength = "http://a.se".length;
@@ -271,7 +269,7 @@ auto findURLs(const string line) @safe pure
         // advancePast until the next space if there is one, otherwise just inherit slice
         // Also strip away common punctuation
         immutable hit = slice
-            .advancePast(' ', Yes.inherit)
+            .advancePast(' ', inherit: true)
             .strippedRight(wordBoundaryTokens);
         if (hit.indexOf('.') != -1) hits ~= hit;
         httpPos = slice.indexOf("http");

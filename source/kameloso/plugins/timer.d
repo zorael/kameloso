@@ -25,7 +25,6 @@ import kameloso.plugins.common.awareness : MinimalAuthentication, UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
 
@@ -367,7 +366,7 @@ void onCommandTimer(TimerPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.advancePast(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', inherit: true);
 
     switch (verb)
     {
@@ -379,10 +378,10 @@ void onCommandTimer(TimerPlugin plugin, const /*ref*/ IRCEvent event)
         return handleModifyTimer(plugin, event, slice);
 
     case "insert":
-        return handleModifyTimerLines(plugin, event, slice, Yes.insert);
+        return handleModifyTimerLines(plugin, event, slice, insert: true);
 
     case "edit":
-        return handleModifyTimerLines(plugin, event, slice, No.insert);  // --> Yes.edit
+        return handleModifyTimerLines(plugin, event, slice, insert: false);  // --> edit: true
 
     case "add":
         return handleAddToTimer(plugin, event, slice);
@@ -391,10 +390,10 @@ void onCommandTimer(TimerPlugin plugin, const /*ref*/ IRCEvent event)
         return handleDelTimer(plugin, event, slice);
 
     case "suspend":
-        return handleSuspendTimer(plugin, event, slice, Yes.suspend);
+        return handleSuspendTimer(plugin, event, slice, suspend: true);
 
     case "resume":
-        return handleSuspendTimer(plugin, event, slice, No.suspend);  // --> Yes.resume
+        return handleSuspendTimer(plugin, event, slice, suspend: false);  // --> resume: true
 
     case "list":
         return handleListTimers(plugin, event);
@@ -839,14 +838,14 @@ void handleDelTimer(
         plugin = The current [TimerPlugin].
         event = The [dialect.defs.IRCEvent|IRCEvent] that requested the insert or edit.
         slice = Relevant slice of the original request string.
-        insert = Whether or not an insert action was requested. If `No.insert`,
+        insert = Whether or not an insert action was requested. If `insert: false`,
             then an edit action was requested.
  +/
 void handleModifyTimerLines(
     TimerPlugin plugin,
     const /*ref*/ IRCEvent event,
     /*const*/ string slice,
-    const Flag!"insert" insert)
+    const bool insert)
 {
     import lu.string : SplitResults, splitInto;
     import std.conv : ConvException, to;
@@ -971,7 +970,7 @@ void handleAddToTimer(
         chan(plugin.state, event.channel, noSuchTimerMessage);
     }
 
-    immutable name = slice.advancePast(' ', Yes.inherit);
+    immutable name = slice.advancePast(' ', inherit: true);
     if (!slice.length) return sendAddUsage();
 
     auto channel = event.channel in plugin.channels;
@@ -1073,14 +1072,14 @@ void handleListTimers(
         plugin = The current [TimerPlugin].
         event = The [dialect.defs.IRCEvent|IRCEvent] that requested the suspend or resume.
         slice = Relevant slice of the original request string.
-        suspend = Whether or not a suspend action was requested. If `No.suspend`,
+        suspend = Whether or not a suspend action was requested. If `suspend: false`,
             then a resume action was requested.
  +/
 void handleSuspendTimer(
     TimerPlugin plugin,
     const ref IRCEvent event,
     /*const*/ string slice,
-    const Flag!"suspend" suspend)
+    const bool suspend)
 {
     import lu.string : SplitResults, splitInto;
     import std.format : format;
@@ -1154,7 +1153,7 @@ void onAnyMessage(TimerPlugin plugin, const ref IRCEvent event)
     if (!channel)
     {
         // Race...
-        handleSelfjoin(plugin, event.channel, No.force);
+        handleSelfjoin(plugin, event.channel, force: false);
         channel = event.channel in plugin.channels;
     }
 
@@ -1262,7 +1261,7 @@ void startTimerMonitor(TimerPlugin plugin)
                 return;
             }
 
-            delay(plugin, plugin.timerPeriodicity, Yes.yield);
+            delay(plugin, plugin.timerPeriodicity, yield: true);
         }
     }
 
@@ -1300,7 +1299,7 @@ void onWelcome(TimerPlugin plugin)
 )
 void onSelfjoin(TimerPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    handleSelfjoin(plugin, event.channel, No.force);
+    handleSelfjoin(plugin, event.channel, force: false);
 }
 
 
@@ -1321,7 +1320,7 @@ void onSelfjoin(TimerPlugin plugin, const /*ref*/ IRCEvent event)
 void handleSelfjoin(
     TimerPlugin plugin,
     const string channelName,
-    const Flag!"force" force = No.force)
+    const bool force = false)
 {
     auto channel = channelName in plugin.channels;
     auto channelTimers = channelName in plugin.timersByChannel;
@@ -1579,7 +1578,7 @@ void reload(TimerPlugin plugin)
     {
         // Just reuse the SELFJOIN routine, but be sure to force it
         // it will destroy the fibers, so we don't have to here
-        handleSelfjoin(plugin, channelName, Yes.force);
+        handleSelfjoin(plugin, channelName, force: true);
     }
 }
 
@@ -1625,7 +1624,7 @@ auto selftest(TimerPlugin plugin, Selftester s)
         "stagger time:10 | suspended:true");
 
     logger.info("Wait 1 cycle, nothing should happen...");
-    delay(plugin, TimerPlugin.timerPeriodicity, Yes.yield);
+    delay(plugin, TimerPlugin.timerPeriodicity, yield: true);
     s.requireTriggeredByTimer();
 
     s.send("timer resume hirrsteff");
@@ -1658,7 +1657,7 @@ auto selftest(TimerPlugin plugin, Selftester s)
         "stagger message count 0, stagger time 10 seconds");
 
     logger.info("Wait 1 cycle, nothing should happen...");
-    delay(plugin, TimerPlugin.timerPeriodicity, Yes.yield);
+    delay(plugin, TimerPlugin.timerPeriodicity, yield: true);
     s.requireTriggeredByTimer();
 
     s.send("blep");

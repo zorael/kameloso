@@ -266,7 +266,7 @@ public:
         When this is set by signal handlers, the program should exit. Other
         parts of the program will be monitoring it.
      +/
-    Flag!"abort"* abort;
+    bool* abort;
 
     // outbuffer
     /++
@@ -407,9 +407,9 @@ public:
      +/
     auto throttleline(Buffer)
         (ref Buffer buffer,
-        const Flag!"dryRun" dryRun = No.dryRun,
-        const Flag!"sendFaster" sendFaster = No.sendFaster,
-        const Flag!"immediate" immediate = No.immediate)
+        const bool dryRun = false,
+        const bool sendFaster = false,
+        const bool immediate = false)
     {
         import core.time : MonoTime;
 

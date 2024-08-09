@@ -26,7 +26,6 @@ import kameloso.plugins.twitch.common;
 import kameloso.plugins.twitch.providers.common;
 
 import kameloso.common : logger;
-import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
 public:
@@ -121,7 +120,7 @@ A normal URL to any playlist you can modify will work fine. They do not have to 
 
     while (!channel.length)
     {
-        Flag!"benignAbort" benignAbort;
+        bool benignAbort;
 
         channel = readChannelName(
             numEmptyLinesEntered,
@@ -135,7 +134,7 @@ A normal URL to any playlist you can modify will work fine. They do not have to 
     creds.googleClientID = readNamedString(
         readOAuthIDMessage,
         72L,
-        No.passThroughEmptyString,
+        passThroughEmptyString: false,
         plugin.state.abort);
     if (*plugin.state.abort) return;
 
@@ -143,7 +142,7 @@ A normal URL to any playlist you can modify will work fine. They do not have to 
     creds.googleClientSecret = readNamedString(
         readOAuthSecretMessage,
         35L,
-        No.passThroughEmptyString,
+        passThroughEmptyString: false,
         plugin.state.abort);
     if (*plugin.state.abort) return;
 
@@ -154,7 +153,7 @@ A normal URL to any playlist you can modify will work fine. They do not have to 
         immutable playlistURL = readNamedString(
             readPlaylistMessage,
             0L,
-            No.passThroughEmptyString,
+            passThroughEmptyString: false,
             plugin.state.abort);
         if (*plugin.state.abort) return;
 
@@ -167,7 +166,7 @@ A normal URL to any playlist you can modify will work fine. They do not have to 
         {
             string slice = playlistURL;  // mutable
             slice.advancePast("list=");
-            creds.youtubePlaylistID = slice.advancePast('&', Yes.inherit);
+            creds.youtubePlaylistID = slice.advancePast('&', inherit: true);
         }
         else
         {
@@ -261,7 +260,7 @@ then finally <i>Allow</>.`;
             writeln();
             logger.warning("Aborting.");
             logger.trace();
-            *plugin.state.abort = Yes.abort;
+            *plugin.state.abort = true;
             return;
         }
         else if (!input.length)
@@ -299,7 +298,7 @@ then finally <i>Allow</>.`;
 
         string slice = input;  // mutable
         slice.advancePast("?code=");
-        code = slice.advancePast('&', Yes.inherit);
+        code = slice.advancePast('&', inherit: true);
 
         if (code.length != 73L)
         {
@@ -378,7 +377,7 @@ auto addVideoToYouTubePlaylist(
     TwitchPlugin plugin,
     ref Credentials creds,
     const string videoID,
-    const Flag!"recursing" recursing = No.recursing)
+    const bool recursing = false)
 in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
@@ -509,7 +508,7 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
             {
                 refreshGoogleToken(plugin, creds);
                 saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-                return addVideoToYouTubePlaylist(plugin, creds, videoID, Yes.recursing);
+                return addVideoToYouTubePlaylist(plugin, creds, videoID, recursing: true);
             }
         }
     }

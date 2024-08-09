@@ -26,7 +26,6 @@ import kameloso.plugins.common.awareness : MinimalAuthentication;
 import requests.base : Response;
 import dialect.defs;
 import lu.container : MutexedAA;
-import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
 mixin MinimalAuthentication;
@@ -434,7 +433,7 @@ auto sendHTTPRequestImpl(
 BashLookupResult sendHTTPRequest(
     BashPlugin plugin,
     const string url,
-    const Flag!"recursing" recursing = No.recursing,
+    const bool recursing = false,
     /*const*/ int id = 0,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
@@ -463,7 +462,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     plugin.transient.workerTid.send(url, id);
 
     static immutable initialDelay = 500.msecs;
-    delay(plugin, initialDelay, Yes.yield);
+    delay(plugin, initialDelay, yield: true);
 
     auto result = waitForLookupResults(plugin, id);
 
@@ -472,7 +471,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         return sendHTTPRequest(
             plugin,
             url,
-            Yes.recursing,
+            recursing: true,
             id,
             caller);
     }
@@ -537,7 +536,7 @@ in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber"
 
             // Wait a bit before checking again
             static immutable checkDelay = 200.msecs;
-            delay(plugin, checkDelay, Yes.yield);
+            delay(plugin, checkDelay, yield: true);
             continue;
         }
         else

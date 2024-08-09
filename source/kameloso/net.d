@@ -14,7 +14,7 @@
     import std.concurrency : Generator;
 
     Connection conn;
-    Flag!"abort"* abort;  // Set to Yes.abort if something goes wrong
+    bool* abort;  // Set to true if something goes wrong
 
     conn.reset();
 
@@ -23,7 +23,7 @@
             conn,
             "irc.libera.chat",
             6667,
-            No.useIPv6,
+            useIPv6: false,
             abort));
 
     resolveloop:
@@ -83,7 +83,6 @@ module kameloso.net;
 private:
 
 import kameloso.constants : BufferSize, Timeout;
-import std.typecons : Flag, No, Yes;
 
 public:
 
@@ -696,7 +695,7 @@ struct ListenAttempt
  +/
 void listenFiber(size_t bufferSize = BufferSize.socketReceive*2)
     (Connection conn,
-    const Flag!"abort"* abort,
+    const bool* abort,
     const int connectionLost = Timeout.connectionLost) @system
 in ((conn.connected), "Tried to set up a listening fiber on a dead connection")
 in ((connectionLost > 0), "Tried to set up a listening fiber with connection timeout of <= 0")
@@ -1053,7 +1052,7 @@ public:
 void connectFiber(
     Connection conn,
     const uint connectionRetries,
-    const Flag!"abort"* abort) @system
+    const bool* abort) @system
 in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
 in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 {
@@ -1408,8 +1407,8 @@ void resolveFiber(
     Connection conn,
     const string address,
     const ushort port,
-    const Flag!"useIPv6" useIPv6,
-    const Flag!"abort"* abort) @system
+    const bool useIPv6,
+    const bool* abort) @system
 in (!conn.connected, "Tried to set up a resolving fiber on an already live connection")
 in (address.length, "Tried to set up a resolving fiber on an empty address")
 {

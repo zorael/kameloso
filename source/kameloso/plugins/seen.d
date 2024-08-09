@@ -65,9 +65,6 @@ private import dialect.defs;
 // [lu.container] for the rehashing associative array wrapper.
 private import lu.container : RehashingAA;
 
-// [std.typecons] for [std.typecons.Flag|Flag] and its friends.
-private import std.typecons : Flag, No, Yes;
-
 
 version(OmniscientSeen)
 {
@@ -686,7 +683,7 @@ void onNick(SeenPlugin plugin, const ref IRCEvent event)
 {
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
-    updateUser(plugin, event.target.nickname, event.time, Yes.skipModesignStrip);
+    updateUser(plugin, event.target.nickname, event.time, skipModesignStrip: true);
 }
 
 
@@ -742,10 +739,9 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
     {
         import dialect.common : stripModesign;
         import lu.string : advancePast;
-        import std.typecons : Flag, No, Yes;
 
         string slice = entry;  // mutable
-        slice = slice.advancePast('!', Yes.inherit); // In case SpotChat-like, full nick!ident@address form
+        slice = slice.advancePast('!', inherit: true); // In case SpotChat-like, full nick!ident@address form
         slice = slice.stripModesign(plugin.state.server);
         updateUser(plugin, slice, event.time);
     }
@@ -959,7 +955,7 @@ void updateUser(
     SeenPlugin plugin,
     const string signed,
     const long time,
-    const Flag!"skipModesignStrip" skipModesignStrip = No.skipModesignStrip)
+    const bool skipModesignStrip = false)
 in (signed.length, "Tried to update a user with an empty (signed) nickname")
 {
     import dialect.common : stripModesign;
@@ -1009,7 +1005,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
 
     foreach (immutable nickname; uniqueUsers.byKey)
     {
-        updateUser(plugin, nickname, nowInUnix, Yes.skipModesignStrip);
+        updateUser(plugin, nickname, nowInUnix, skipModesignStrip: true);
     }
 }
 
@@ -1125,7 +1121,7 @@ void onWelcome(SeenPlugin plugin)
         {
             updateAllObservedUsers(plugin);
             saveSeen(plugin);
-            delay(plugin, plugin.timeBetweenSaves, Yes.yield);
+            delay(plugin, plugin.timeBetweenSaves, yield: true);
         }
     }
 
@@ -1256,7 +1252,7 @@ else
 version(Debug)
 //version(ShouldImplementOnBusMessage)
 static if (shouldImplementOnBusMessage)
-void onBusMessage(SeenPlugin plugin, const string header, shared Sendable content)
+void onBusMessage(SeenPlugin plugin, const string header, /*shared*/ Sendable content)
 {
     import kameloso.thread : Boxed;
     import lu.string : strippedRight;

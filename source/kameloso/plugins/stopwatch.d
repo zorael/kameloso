@@ -25,7 +25,6 @@ import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 
 // StopwatchSettings
@@ -131,7 +130,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.advancePast(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', inherit: true);
     slice = slice.strippedLeft;
 
     string getDiff(const string id)

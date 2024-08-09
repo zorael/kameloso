@@ -27,7 +27,6 @@ import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 
 // CounterSettings
@@ -294,7 +293,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.advancePast(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', inherit: true);
     slice = slice.strippedLeft;
 
     switch (verb)
@@ -559,7 +558,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     }
     else if (slice.startsWith(plugin.state.client.nickname))
     {
-        slice = slice.stripSeparatedPrefix(plugin.state.client.nickname, Yes.demandSeparatingChars);
+        slice = slice.stripSeparatedPrefix(plugin.state.client.nickname, demandSeparatingChars: true);
     }
     else
     {
@@ -567,7 +566,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
         {
             if (plugin.state.client.displayName.length && slice.startsWith(plugin.state.client.displayName))
             {
-                slice = slice.stripSeparatedPrefix(plugin.state.client.displayName, Yes.demandSeparatingChars);
+                slice = slice.stripSeparatedPrefix(plugin.state.client.displayName, demandSeparatingChars: true);
             }
             else
             {
@@ -1005,11 +1004,11 @@ auto selftest(CounterPlugin plugin, Selftester s)
     static immutable delayToWait = 5.seconds;
 
     s.sendPrefixed("blah+");
-    delay(plugin, delayToWait, Yes.yield);
+    delay(plugin, delayToWait, yield: true);
     s.requireTriggeredByTimer();
 
     s.sendPrefixed("blah-5");
-    delay(plugin, delayToWait, Yes.yield);
+    delay(plugin, delayToWait, yield: true);
     s.requireTriggeredByTimer();
 
     s.sendPrefixed("blah");

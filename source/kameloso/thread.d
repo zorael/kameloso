@@ -40,7 +40,6 @@ private:
 import kameloso.plugins.common : IRCPlugin;
 import std.meta : allSatisfy;
 import std.traits : isNumeric, isSomeFunction;
-import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 import core.time : Duration;
 
@@ -799,10 +798,10 @@ unittest
 
     Params:
         dur = Duration to sleep for.
-        abort = Pointer to the "abort" flag which, if set, means we should
+        abort = Pointer to the "abort" bool which, if set, means we should
             interrupt and return early.
  +/
-void interruptibleSleep(const Duration dur, const Flag!"abort"* abort) @system
+void interruptibleSleep(const Duration dur, const bool* abort) @system
 {
     import core.thread : Thread, msecs;
 

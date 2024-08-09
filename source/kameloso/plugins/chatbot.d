@@ -26,7 +26,6 @@ import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 
 // ChatbotSettings
@@ -158,10 +157,10 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
         import kameloso.messaging : emote;
 
         emote(plugin.state, event.channel, "dances :D-<");
-        delay(plugin, timeBetweenDances, Yes.yield);
+        delay(plugin, timeBetweenDances, yield: true);
 
         emote(plugin.state, event.channel, "dances :D|-<");
-        delay(plugin, timeBetweenDances, Yes.yield);
+        delay(plugin, timeBetweenDances, yield: true);
 
         emote(plugin.state, event.channel, "dances :D/-<");
     }
@@ -183,7 +182,7 @@ auto selftest(ChatbotPlugin plugin, Selftester s)
     s.send("say xoraelblarbhl");
     s.expect("xoraelblarbhl");
 
-    await(plugin, IRCEvent.Type.EMOTE, No.yield);
+    await(plugin, IRCEvent.Type.EMOTE, yield: false);
     scope(exit) unawait(plugin, IRCEvent.Type.EMOTE);
 
     s.sendPlain("get on up and DANCE");

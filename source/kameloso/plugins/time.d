@@ -522,12 +522,11 @@ in (filename.length, "Tried to save resources to an empty filename string")
 void reload(TimePlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
-    import std.typecons : Flag, No, Yes;
 
     JSONStorage channelTimezonesJSON;
     channelTimezonesJSON.load(plugin.timezonesFile);
     plugin.channelTimezones = null;
-    plugin.channelTimezones.populateFromJSON(channelTimezonesJSON, Yes.lowercaseKeys);
+    plugin.channelTimezones.populateFromJSON(channelTimezonesJSON, lowercaseKeys: true);
 }
 
 

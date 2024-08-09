@@ -26,7 +26,6 @@ import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : logger;
 import kameloso.messaging : Message;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 
 // HelpSettings

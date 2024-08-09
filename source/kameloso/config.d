@@ -27,7 +27,6 @@ import kameloso.common : logger;
 import kameloso.pods : IRCBot;
 import dialect.defs : IRCClient, IRCServer;
 import std.getopt : GetoptResult;
-import std.typecons : Flag, No, Yes;
 
 @safe:
 
@@ -114,7 +113,7 @@ void verboselyWriteConfig(
     ref IRCClient client,
     ref IRCServer server,
     ref IRCBot bot,
-    const Flag!"giveInstructions" giveInstructions = Yes.giveInstructions) @system
+    const bool giveInstructions = true) @system
 {
     import kameloso.common : logger;
     static import kameloso.common;
@@ -158,7 +157,7 @@ void verboselyWriteConfig(
         if (shouldGiveBrightTerminalHint)
         {
             logger.trace();
-            giveBrightTerminalHint(Yes.alsoAboutConfigSetting);
+            giveBrightTerminalHint(alsoAboutConfigSetting: true);
         }
     }
 }
@@ -177,6 +176,7 @@ void printSettings(Kameloso instance) @system
     import kameloso.plugins.common.misc : applyCustomSettings;
     import kameloso.prettyprint : prettyprint;
     import std.stdio : stdout, writeln;
+    import std.typecons : Flag, No, Yes;
     static import kameloso.common;
 
     if (instance.customSettings.length)
@@ -221,10 +221,10 @@ void printSettings(Kameloso instance) @system
  +/
 void manageConfigFile(
     Kameloso instance,
-    const Flag!"shouldWriteConfig" shouldWriteConfig,
-    const Flag!"shouldOpenTerminalEditor" shouldOpenTerminalEditor,
-    const Flag!"shouldOpenGraphicalEditor" shouldOpenGraphicalEditor,
-    const Flag!"force" force) @system
+    const bool shouldWriteConfig,
+    const bool shouldOpenTerminalEditor,
+    const bool shouldOpenGraphicalEditor,
+    const bool force) @system
 {
     import kameloso.string : doublyBackslashed;
     import std.file : exists;
@@ -273,7 +273,7 @@ void manageConfigFile(
             giveInstructions = Whether or not to give instructions to edit the
                 generated file and supply admins and/or home channels.
      +/
-    void openGraphicalEditor(const Flag!"giveInstructions" giveInstructions)
+    void openGraphicalEditor(const bool giveInstructions)
     {
         import std.process : execute;
 
@@ -328,7 +328,7 @@ void manageConfigFile(
     /+
         Write config if...
         * --save was passed
-        * a setting was changed via getopt (also passes Yes.shouldWriteConfig)
+        * a setting was changed via getopt (also passes shouldWriteConfig: true)
         * the config file doesn't exist
      +/
 
@@ -346,7 +346,7 @@ void manageConfigFile(
             instance.parser.client,
             instance.parser.server,
             instance.bot,
-            cast(Flag!"giveInstructions")giveInstructions);
+            giveInstructions: giveInstructions);
     }
 
     if (!instance.settings.headless && (shouldOpenTerminalEditor || shouldOpenGraphicalEditor))
@@ -361,7 +361,7 @@ void manageConfigFile(
         }
         else /*if (shouldOpenGraphicalEditor)*/
         {
-            openGraphicalEditor(cast(Flag!"giveInstructions")!configFileExists);
+            openGraphicalEditor(giveInstructions: !configFileExists);
         }
     }
 }
@@ -378,7 +378,7 @@ void manageConfigFile(
     Appender!(char[]) sink;
     sink.serialise(client, server, settings);
     immutable configText = sink.data.justifiedEntryValueText;
-    writeToDisk("kameloso.conf", configText, Yes.addBanner);
+    writeToDisk("kameloso.conf", configText, addBanner: true);
     ---
 
     Params:
@@ -389,7 +389,7 @@ void manageConfigFile(
 void writeToDisk(
     const string filename,
     const string configurationText,
-    const Flag!"addBanner" banner = Yes.addBanner)
+    const bool addBanner = true)
 {
     import std.file : mkdirRecurse;
     import std.path : dirName;
@@ -400,7 +400,7 @@ void writeToDisk(
 
     auto file = File(filename, "w");
 
-    if (banner)
+    if (addBanner)
     {
         import kameloso.constants : KamelosoInfo;
         import std.datetime.systime : Clock;
@@ -635,7 +635,7 @@ auto handleGetopt(Kameloso instance) @system
     if (shouldShowVersion)
     {
         // --version was passed; show version info and quit
-        printVersionInfo(No.colours);
+        printVersionInfo(colours: false);
         return Next.returnSuccess;
     }
 
@@ -675,7 +675,7 @@ auto handleGetopt(Kameloso instance) @system
         Call getopt in a nested function so we can call it both to merely
         parse for settings and to format the help listing.
      +/
-    auto callGetopt(/*const*/ string[] theseArgs, const Flag!"quiet" quiet)
+    auto callGetopt(/*const*/ string[] theseArgs, const bool quiet)
     {
         import kameloso.logger : LogLevel;
         import kameloso.terminal.colours.tags : expandTags;
@@ -990,7 +990,7 @@ auto handleGetopt(Kameloso instance) @system
     }
 
     // No need to catch the return value, only used for --help
-    cast(void)callGetopt(args, Yes.quiet);
+    cast(void)callGetopt(args, quiet: true);
 
     // Save the user from themselves. (A receive timeout of 0 breaks all sorts of things.)
     if (instance.connSettings.receiveTimeout == 0)
@@ -1080,7 +1080,7 @@ auto handleGetopt(Kameloso instance) @system
         {
             import std.stdio : stdout;
             printVersionInfo();
-            printHelp(callGetopt(args, No.quiet));
+            printHelp(callGetopt(args, quiet: false));
             if (instance.settings.flush) stdout.flush();
         }
 
@@ -1107,9 +1107,9 @@ auto handleGetopt(Kameloso instance) @system
 
             immutable settingsTouched = downloadWindowsSSL(
                 instance,
-                cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
-                cast(Flag!"shouldDownloadOpenSSL")(shouldDownloadOpenSSL || shouldDownloadOpenSSL1_1),
-                cast(Flag!"shouldDownloadOpenSSL1_1")shouldDownloadOpenSSL1_1);
+                shouldDownloadCacert: shouldDownloadCacert,
+                shouldDownloadOpenSSL: (shouldDownloadOpenSSL || shouldDownloadOpenSSL1_1),
+                shouldDownloadOpenSSL1_1: shouldDownloadOpenSSL1_1);
 
             if (*instance.abort) return Next.returnFailure;
 
@@ -1131,7 +1131,7 @@ auto handleGetopt(Kameloso instance) @system
     {
         // --save and/or --edit was passed; defer to manageConfigFile
         // (or --setup-twitch)
-        // Also pass Yes.shouldWriteConfig if something was changed via getopt
+        // Also pass `shouldWriteConfig: true` if something was changed via getopt
         shouldWriteConfig =
             shouldWriteConfig ||
             instance.customSettings.length ||
@@ -1141,10 +1141,10 @@ auto handleGetopt(Kameloso instance) @system
 
         manageConfigFile(
             instance,
-            cast(Flag!"shouldWriteConfig")shouldWriteConfig,
-            cast(Flag!"shouldOpenTerminalEditor")shouldOpenTerminalEditor,
-            cast(Flag!"shouldOpenGraphicalEditor")shouldOpenGraphicalEditor,
-            cast(Flag!"force")instance.settings.force);
+            shouldWriteConfig: shouldWriteConfig,
+            shouldOpenTerminalEditor: shouldOpenTerminalEditor,
+            shouldOpenGraphicalEditor: shouldOpenGraphicalEditor,
+            force: instance.settings.force);
 
         return Next.returnSuccess;
     }
@@ -1286,7 +1286,7 @@ void writeConfigurationFile(
     }
 
     immutable justified = sink.data.assumeUnique().justifiedEntryValueText;
-    writeToDisk(filename, justified, Yes.addBanner);
+    writeToDisk(filename, justified, addBanner: true);
 
     // Restore resource dir in case we aren't exiting
     instance.settings.resourceDirectory = settingsResourceDirSnapshot;
@@ -1372,19 +1372,18 @@ void notifyAboutIncompleteConfiguration(
     Display a hint about the existence of the `--bright` getopt flag.
 
     Params:
-        alsoConfigSetting = Whether or not to also give a hint about the
+        alsoAboutConfigSetting = Whether or not to also give a hint about the
             possibility of saving the setting to
             [kameloso.pods.CoreSettings.brightTerminal|CoreSettings.brightTerminal].
  +/
-void giveBrightTerminalHint(
-    const Flag!"alsoAboutConfigSetting" alsoConfigSetting = No.alsoAboutConfigSetting)
+void giveBrightTerminalHint(const bool alsoAboutConfigSetting = false)
 {
     // Don't highlight the getopt flags as they might be difficult to read
     enum brightPattern = "If text is difficult to read (e.g. white on white), " ~
         "try running the program with --bright or --color=never.";
     logger.trace(brightPattern);
 
-    if (alsoConfigSetting)
+    if (alsoAboutConfigSetting)
     {
         // As above
         enum configPattern = "The setting will be made persistent if you pass it " ~

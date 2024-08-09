@@ -32,7 +32,6 @@ import kameloso.plugins;
 import kameloso.plugins.common;
 import kameloso.common : logger;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 import core.time : Duration;
 
 
@@ -102,7 +101,7 @@ void onWelcome(PipelinePlugin plugin)
     {
         plugin.transient.fifoFilename = initialiseFIFO(plugin);
         plugin.transient.fd = openFIFO(plugin.transient.fifoFilename);
-        printUsageText(plugin, No.reinit);
+        printUsageText(plugin, reinit: false);
     }
 
     try
@@ -120,7 +119,7 @@ void onWelcome(PipelinePlugin plugin)
     static immutable discoveryPeriod = 1.minutes;
 
     // Delay once before entering loop
-    delay(plugin, discoveryPeriod, Yes.yield);
+    delay(plugin, discoveryPeriod, yield: true);
 
     while (true)
     {
@@ -140,7 +139,7 @@ void onWelcome(PipelinePlugin plugin)
             }
         }
 
-        delay(plugin, discoveryPeriod, Yes.yield);
+        delay(plugin, discoveryPeriod, yield: true);
     }
 }
 
@@ -153,7 +152,7 @@ void onWelcome(PipelinePlugin plugin)
         plugin = The current [PipelinePlugin].
         reinit = Whether or not the FIFO disappeared and was recreated.
  +/
-void printUsageText(PipelinePlugin plugin, const Flag!"reinit" reinit)
+void printUsageText(PipelinePlugin plugin, const bool reinit)
 {
     if (reinit)
     {
@@ -442,7 +441,7 @@ auto readFIFO(PipelinePlugin plugin)
             import lu.string : advancePast;
 
             line = line[1..$];  // skip the colon
-            immutable header = line.advancePast(' ', Yes.inherit);
+            immutable header = line.advancePast(' ', inherit: true);
             if (!header.length) continue;
 
             plugin.state.messages ~= ThreadMessage.busMessage(header, boxed(line));
@@ -554,7 +553,7 @@ void reload(PipelinePlugin plugin)
     // Let exceptions fall through
     plugin.transient.fifoFilename = initialiseFIFO(plugin);
     plugin.transient.fd = openFIFO(plugin.transient.fifoFilename);
-    printUsageText(plugin, Yes.reinit);
+    printUsageText(plugin, reinit: true);
 }
 
 

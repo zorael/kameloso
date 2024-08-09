@@ -28,7 +28,6 @@ import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.algorithm.comparison : among;
-import std.typecons : Flag, No, Yes;
 
 package:
 
@@ -49,7 +48,6 @@ void manageClassLists(
 {
     import lu.string : advancePast, stripped;
     import std.algorithm.searching : startsWith;
-    import std.typecons : Flag, No, Yes;
 
     void sendUsage()
     {
@@ -67,7 +65,7 @@ void manageClassLists(
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.advancePast(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', inherit: true);
     if (slice.startsWith('@')) slice = slice[1..$];
 
     switch (verb)
@@ -251,7 +249,7 @@ void lookupEnlist(
 
             alterAccountClassifier(
                 plugin,
-                No.add,
+                add: false,
                 thisClass,
                 account,
                 channelName);
@@ -260,7 +258,7 @@ void lookupEnlist(
         // Make the class change and report
         immutable result = alterAccountClassifier(
             plugin,
-            Yes.add,
+            add: true,
             class_,
             account,
             channelName);
@@ -510,7 +508,7 @@ void delist(
     immutable role = getNoun(NounForm.singular, class_);
     immutable result = alterAccountClassifier(
         plugin,
-        No.add,
+        add: false,
         class_,
         account,
         channelName);
@@ -597,17 +595,17 @@ enum AlterationResult
         channelName = Channel the account-class applies to.
 
     Returns:
-        [AlterationResult.alreadyInList] if enlisting (`Yes.add`) and the account
+        [AlterationResult.alreadyInList] if enlisting (`add: true`) and the account
         was already in the specified list.
-        [AlterationResult.noSuchAccount] if delisting (`No.add`) and no such
+        [AlterationResult.noSuchAccount] if delisting (`add: false`) and no such
         account could be found in the specified list.
-        [AlterationResult.noSuchChannel] if delisting (`No.add`) and no such
+        [AlterationResult.noSuchChannel] if delisting (`add: false`) and no such
         channel could be found in the specified list.
         [AlterationResult.success] if enlisting or delisting succeeded.
  +/
 auto alterAccountClassifier(
     AdminPlugin plugin,
-    const Flag!"add" add,
+    const bool add,
     const IRCUser.Class class_,
     const string account,
     const string channelName)
@@ -700,7 +698,7 @@ auto alterAccountClassifier(
  +/
 void modifyHostmaskDefinition(
     AdminPlugin plugin,
-    const Flag!"add" add,
+    const bool add,
     const string account,
     const string mask,
     const ref IRCEvent event)

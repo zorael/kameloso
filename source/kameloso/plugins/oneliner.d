@@ -28,7 +28,6 @@ import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, Us
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 
 // OnelinerSettings
@@ -346,7 +345,6 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     import std.algorithm.searching : startsWith;
     import std.array : replace;
     import std.conv : text, to;
-    import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
 
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
@@ -370,7 +368,7 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     auto channelOneliners = event.channel in plugin.onelinersByChannel;  // mustn't be const
     if (!channelOneliners) return;
 
-    immutable triggerCased = slice.advancePast(' ', Yes.inherit);  // mutable
+    immutable triggerCased = slice.advancePast(' ', inherit: true);  // mutable
     immutable trigger = triggerCased.toLower();
 
     auto oneliner = trigger in *channelOneliners;  // mustn't be const
@@ -490,7 +488,6 @@ void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
 void onCommandModifyOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : advancePast, stripped;
-    import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
 
     void sendUsage()
@@ -505,7 +502,7 @@ void onCommandModifyOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
     if (!event.content.length) return sendUsage();
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.advancePast(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', inherit: true);
 
     switch (verb)
     {
@@ -529,7 +526,7 @@ void onCommandModifyOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
         return handleAliasOneliner(plugin, event, slice);
 
     case "list":
-        return listCommands(plugin, event, Yes.includeAliases, slice);
+        return listCommands(plugin, event, includeAliases: true, slice);
 
     default:
         return sendUsage();
@@ -1026,7 +1023,6 @@ void handleDelFromOneliner(
     import lu.string : advancePast;
     import std.conv : ConvException, to;
     import std.format : format;
-    import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
 
     void sendDelUsage()
@@ -1076,7 +1072,7 @@ void handleDelFromOneliner(
 
     if (!slice.length) return sendDelUsage();
 
-    immutable rawTrigger = slice.advancePast(' ', Yes.inherit);
+    immutable rawTrigger = slice.advancePast(' ', inherit: true);
     immutable trigger = Oneliner.stripPrefix(rawTrigger, plugin.state.settings.prefix).toLower;
 
     auto channelOneliners = event.channel in plugin.onelinersByChannel;
@@ -1242,7 +1238,7 @@ void handleAliasOneliner(
 )
 void onCommandCommands(OnelinerPlugin plugin, const ref IRCEvent event)
 {
-    listCommands(plugin, event, No.includeAliases);
+    listCommands(plugin, event, includeAliases: false);
 }
 
 
@@ -1259,7 +1255,7 @@ void onCommandCommands(OnelinerPlugin plugin, const ref IRCEvent event)
 void listCommands(
     OnelinerPlugin plugin,
     const ref IRCEvent event,
-    const Flag!"includeAliases" includeAliases,
+    const bool includeAliases,
     /*const*/ string slice = string.init)
 {
     import lu.string : stripped;
@@ -1611,7 +1607,7 @@ auto selftest(OnelinerPlugin plugin, Selftester s)
 
     static immutable waitDuration = 10.seconds;
     logger.info("wait ", waitDuration, "...");
-    delay(plugin, waitDuration, Yes.yield);
+    delay(plugin, waitDuration, yield: true);
     s.requireTriggeredByTimer();
 
     s.sendPrefixed("herp");

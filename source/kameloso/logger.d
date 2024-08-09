@@ -5,10 +5,10 @@
     Example:
     ---
     auto logger = new KamelosoLogger(
-        Yes.colours,
-        No.brightTerminal,
-        No.headless,
-        No.flush);
+        colours: true,
+        brightTerminal: false,
+        headless: false,
+        flush: false);
 
     logger.log("This is LogLevel.all");
     logger.info("LogLevel.info");
@@ -30,8 +30,6 @@
 module kameloso.logger;
 
 private:
-
-import std.typecons : Flag, No, Yes;
 
 public:
 
@@ -187,13 +185,13 @@ public:
 
             Example:
             ---
-            TerminalForeground errtint = KamelosoLogger.tint(LogLevel.error, No.brightTerminal);
+            TerminalForeground errtint = KamelosoLogger.tint(LogLevel.error, brightTerminal: false);
             immutable errtintString = errtint.asANSI;
             ---
 
             Params:
                 level = The [LogLevel] of the colour we want to scry.
-                bright = Whether the colour should be for a bright terminal
+                brightTerminal = Whether the colour should be for a bright terminal
                     background or a dark one.
 
             Returns:
@@ -201,9 +199,9 @@ public:
                 the right colour. Use with [kameloso.terminal.colours.asANSI|asANSI]
                 to get a string.
          +/
-        static uint tint(const LogLevel level, const Flag!"brightTerminal" bright) pure nothrow @nogc @safe
+        static uint tint(const LogLevel level, const bool brightTerminal) pure nothrow @nogc @safe
         {
-            return bright ? logcoloursBright[level] : logcoloursDark[level];
+            return brightTerminal ? logcoloursBright[level] : logcoloursDark[level];
         }
 
         ///
@@ -221,12 +219,12 @@ public:
             {
                 import std.format : format;
 
-                immutable tintBright = tint(logLevel, Yes.brightTerminal);
+                immutable tintBright = tint(logLevel, brightTerminal: true);
                 immutable tintBrightTable = logcoloursBright[logLevel];
                 assert((tintBright == tintBrightTable), "%s != %s"
                     .format(tintBright, tintBrightTable));
 
-                immutable tintDark = tint(logLevel, No.brightTerminal);
+                immutable tintDark = tint(logLevel, brightTerminal: false);
                 immutable tintDarkTable = logcoloursDark[logLevel];
                 assert((tintDark == tintDarkTable), "%s != %s"
                     .format(tintDark, tintDarkTable));
@@ -256,12 +254,12 @@ public:
             }
             else if (brightTerminal)
             {
-                enum ctTintBright = tint(level, Yes.brightTerminal).asANSI.idup;
+                enum ctTintBright = tint(level, brightTerminal: true).asANSI.idup;
                 return ctTintBright;
             }
             else
             {
-                enum ctTintDark = tint(level, No.brightTerminal).asANSI.idup;
+                enum ctTintDark = tint(level, brightTerminal: false).asANSI.idup;
                 return ctTintDark;
             }
         }
@@ -473,7 +471,7 @@ public:
             }
         }
 
-        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")!colours));
+        linebuffer.put(messagebuffer.data.expandTags(logLevel, strip: !colours));
         finishLogMsg();
     }
 
@@ -506,7 +504,7 @@ public:
 
         beginLogMsg(logLevel);
         messagebuffer.formattedWrite(pattern, args);
-        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")!colours));
+        linebuffer.put(messagebuffer.data.expandTags(logLevel, strip: !colours));
         finishLogMsg();
     }
 
@@ -537,7 +535,7 @@ public:
 
         beginLogMsg(logLevel);
         messagebuffer.formattedWrite!pattern(args);
-        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")!colours));
+        linebuffer.put(messagebuffer.data.expandTags(logLevel, strip: !colours));
         finishLogMsg();
     }
 

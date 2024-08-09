@@ -943,7 +943,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             import std.format : format;
 
-            immutable user = getTwitchUser(plugin, name, 0, Yes.searchByDisplayName);
+            immutable user = getTwitchUser(plugin, name, 0, searchByDisplayName: true);
             if (!user.nickname.length) return sendNoSuchUser(name);
 
             enum pattern = "%s is currently not a follower.";
@@ -1192,7 +1192,7 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     immutable multiplier = plugin.state.bot.homeChannels.length + baseMultiplier;
     immutable delayUntilImport = baseDelayBetweenImports * multiplier;
 
-    delay(plugin, delayUntilImport, Yes.yield);
+    delay(plugin, delayUntilImport, yield: true);
     importCustomEmotes(plugin, event.channel, event.aux[0].to!uint);
 }
 
@@ -1483,7 +1483,7 @@ void onCommandSubs(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     try
     {
         enum pattern = "%s has %d subscribers.";
-        const subs = getSubscribers(plugin, event.channel, Yes.totalOnly);
+        const subs = getSubscribers(plugin, event.channel, totalOnly: true);
         immutable message = pattern.format(room.broadcasterDisplayName, subs[0].total);
         chan(plugin.state, event.channel, message);
     }
@@ -1675,12 +1675,12 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         else if (slice.indexOf("youtube.com/watch?v=") != -1)
         {
             slice.advancePast("youtube.com/watch?v=");
-            videoID = slice.advancePast('&', Yes.inherit);
+            videoID = slice.advancePast('&', inherit: true);
         }
         else if (slice.indexOf("youtu.be/") != -1)
         {
             slice.advancePast("youtu.be/");
-            videoID = slice.advancePast('?', Yes.inherit);
+            videoID = slice.advancePast('?', inherit: true);
         }
         else
         {
@@ -1759,7 +1759,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         else if (slice.indexOf("spotify.com/track/") != -1)
         {
             slice.advancePast("spotify.com/track/");
-            trackID = slice.advancePast('?', Yes.inherit);
+            trackID = slice.advancePast('?', inherit: true);
         }
         else
         {
@@ -1967,7 +1967,7 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             plugin,
             event.channel,
             polls[0].pollID,
-            Yes.terminate);
+            terminate: true);
 
         alias Status = typeof(endedPoll.status);
 
@@ -2257,8 +2257,8 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 
         immutable start = slice.advancePast('-').to!size_t;
         immutable end = slice
-            .advancePast('/', Yes.inherit)
-            .advancePast(',', Yes.inherit)
+            .advancePast('/', inherit: true)
+            .advancePast(',', inherit: true)
             .to!size_t + 1;  // upper-bound inclusive!
 
         string rawSlice = event.raw;  // mutable
@@ -2358,9 +2358,9 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
     else
     {
-        string givenName = slice.advancePast(' ', Yes.inherit);  // mutable
+        string givenName = slice.advancePast(' ', inherit: true);  // mutable
         if (givenName.startsWith('@')) givenName = givenName[1..$];
-        immutable user = getTwitchUser(plugin, givenName, 0, Yes.searchByDisplayName);
+        immutable user = getTwitchUser(plugin, givenName, 0, searchByDisplayName: true);
 
         if (!user.nickname.length)
         {
@@ -2862,7 +2862,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
 
             if (!room.stream.live)
             {
-                delay(plugin, monitorUpdatePeriodicity, Yes.yield);
+                delay(plugin, monitorUpdatePeriodicity, yield: true);
                 continue;
             }
 
@@ -2943,7 +2943,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                 // Just swallow the exception and retry next time
             }
 
-            delay(plugin, monitorUpdatePeriodicity, Yes.yield);
+            delay(plugin, monitorUpdatePeriodicity, yield: true);
         }
     }
 
@@ -3045,7 +3045,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                 // Just swallow the exception and retry next time
             }
 
-            delay(plugin, monitorUpdatePeriodicity, Yes.yield);
+            delay(plugin, monitorUpdatePeriodicity, yield: true);
         }
     }
 
@@ -3076,7 +3076,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                 // Just swallow the exception and retry next time
             }
 
-            delay(plugin, (now.nextMidnight - now), Yes.yield);
+            delay(plugin, (now.nextMidnight - now), yield: true);
         }
     }
 
@@ -3119,14 +3119,14 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
     {
         try
         {
-            validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
+            validationJSON = getValidation(plugin, plugin.state.bot.pass, async: true);
         }
         catch (TwitchQueryException e)
         {
             if (plugin.state.settings.headless)
             {
                 //version(PrintStacktraces) logger.trace(e);
-                delay(plugin, retryDelay, Yes.yield);
+                delay(plugin, retryDelay, yield: true);
             }
             else
             {
@@ -3157,7 +3157,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
                 }
 
                 version(PrintStacktraces) logger.trace(e);
-                delay(plugin, retryDelay, Yes.yield);
+                delay(plugin, retryDelay, yield: true);
             }
             continue;
         }
@@ -3166,7 +3166,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
             if (plugin.state.settings.headless)
             {
                 //version(PrintStacktraces) logger.trace(e);
-                delay(plugin, retryDelay, Yes.yield);
+                delay(plugin, retryDelay, yield: true);
             }
             else
             {
@@ -3174,7 +3174,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
                 enum pattern = "Failed to validate Twitch API keys: <t>%s</>";
                 logger.errorf(pattern, e.msg);
                 version(PrintStacktraces) logger.trace(e);
-                delay(plugin, retryDelay, Yes.yield);
+                delay(plugin, retryDelay, yield: true);
             }
             continue;
         }
@@ -3183,7 +3183,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
         if (!userIDJSON)
         {
             // No key in response?
-            delay(plugin, retryDelay, Yes.yield);
+            delay(plugin, retryDelay, yield: true);
             continue;
         }
 
@@ -3302,7 +3302,7 @@ in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
     static immutable savePeriodicity = 2.hours;
 
     // Delay initially
-    delay(plugin, savePeriodicity, Yes.yield);
+    delay(plugin, savePeriodicity, yield: true);
 
     // Periodically save ecounts and viewer times
     while (true)
@@ -3325,7 +3325,7 @@ in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
             plugin.transient.viewerTimesDirty = false;
         }
 
-        delay(plugin, savePeriodicity, Yes.yield);
+        delay(plugin, savePeriodicity, yield: true);
     }
 }
 
@@ -3869,7 +3869,7 @@ void reload(TwitchPlugin plugin)
 
             plugin.customEmotesByChannel.remove(channelName);
             importCustomEmotes(plugin, channelName, room.id);
-            delay(plugin, baseDelayBetweenImports, Yes.yield);
+            delay(plugin, baseDelayBetweenImports, yield: true);
         }
     }
 }
@@ -3889,7 +3889,7 @@ void reload(TwitchPlugin plugin)
 void onBusMessage(
     TwitchPlugin plugin,
     const string header,
-    shared Sendable content)
+    /*shared*/ Sendable content)
 {
     import kameloso.messaging : Message;
     import kameloso.thread : Boxed;
@@ -3923,7 +3923,7 @@ void onBusMessage(
                     if (untilNextSeconds == 0.0) return;
 
                     immutable untilNextMsecs = cast(uint)(untilNextSeconds * 1000);
-                    delay(plugin, untilNextMsecs.msecs, Yes.yield);
+                    delay(plugin, untilNextMsecs.msecs, yield: true);
                 }
             }
 
@@ -4390,7 +4390,7 @@ package:
      +/
     auto throttleline(Buffer)
         (ref Buffer buffer,
-        const Flag!"immediate" immediate = No.immediate)
+        const bool immediate = false)
     {
         import core.time : MonoTime;
 
@@ -4448,7 +4448,7 @@ package:
 
                 // 429 Too Many Requests
                 // rate limited; delay and try again without popping?
-                delay(plugin, 10.seconds, Yes.yield);
+                delay(plugin, 10.seconds, yield: true);
                 continue;
             }
 

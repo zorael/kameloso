@@ -347,7 +347,6 @@ Pid exec(
         {
             import lu.string : advancePast;
             import std.algorithm.searching : startsWith;
-            import std.typecons : Flag, No, Yes;
 
             if (args[i] == "--set")
             {
@@ -357,7 +356,7 @@ Pid exec(
 
                 if (slice.startsWith("twitch."))
                 {
-                    immutable flag = slice.advancePast('=', Yes.inherit);
+                    immutable flag = slice.advancePast('=', inherit: true);
 
                     if (flag.among!(
                         "twitch.keygen",
@@ -375,7 +374,7 @@ Pid exec(
             else
             {
                 string slice = args[i];  // mutable
-                immutable flag = slice.advancePast('=', Yes.inherit);
+                immutable flag = slice.advancePast('=', inherit: true);
 
                 if (flag.among!(
                     //"--setup-twitch",  // this only does the keygen, then exits

@@ -27,7 +27,6 @@ import kameloso.net : ListenAttempt;
 import kameloso.plugins.common : IRCPlugin;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 version(DigitalMars)
 {
@@ -135,7 +134,7 @@ version(Posix)
 /++
     Called when a signal is raised, usually `SIGINT`.
 
-    Sets the [kameloso.common.globalAbort|globalAbort] global to `Yes.abort`
+    Sets the [kameloso.common.globalAbort|globalAbort] global to `true`
     so other parts of the program knows to gracefully shut down.
 
     Params:
@@ -205,7 +204,7 @@ void signalHandler(int sig) nothrow @nogc @system
     }
 
     if (kameloso.common.globalAbort) resetSignals();
-    else kameloso.common.globalAbort = Yes.abort;
+    else kameloso.common.globalAbort = true;
 
     version(Posix)
     {
@@ -263,13 +262,13 @@ auto processMessages(Kameloso instance)
                 instance.transient.pongline = pongHeader ~ message.content;
             }
 
-            instance.priorityBuffer.put(OutgoingLine(instance.transient.pongline, Yes.quiet));
+            instance.priorityBuffer.put(OutgoingLine(instance.transient.pongline, quiet: true));
             break;
 
         case ping:
             // No need to micro-optimise here, PINGs should be very rare
             immutable pingline = "PING :" ~ message.content;
-            instance.priorityBuffer.put(OutgoingLine(pingline, Yes.quiet));
+            instance.priorityBuffer.put(OutgoingLine(pingline, quiet: true));
             break;
 
         case shortenReceiveTimeout:
@@ -279,7 +278,7 @@ auto processMessages(Kameloso instance)
         case busMessage:
             foreach (plugin; instance.plugins)
             {
-                plugin.onBusMessage(message.content, message.payload);
+                plugin.onBusMessage(message.content, cast()message.payload);
             }
             break;
 
@@ -294,7 +293,7 @@ auto processMessages(Kameloso instance)
 
             instance.priorityBuffer.put(OutgoingLine(
                 quitMessage,
-                cast(Flag!"quiet")message.quiet));
+                quiet: message.quiet));
 
             instance.transient.quitMessageSent = true;
             next = Next.returnSuccess;
@@ -320,7 +319,7 @@ auto processMessages(Kameloso instance)
 
             instance.priorityBuffer.put(OutgoingLine(
                 "QUIT :" ~ quitMessage,
-                Yes.quiet));
+                quiet: true));
 
             instance.transient.quitMessageSent = true;
             next = Next.retry;
@@ -331,7 +330,7 @@ auto processMessages(Kameloso instance)
             break;
 
         case abort:
-            *instance.abort = Yes.abort;
+            *instance.abort = true;
             break;
 
         case reload:
@@ -371,7 +370,7 @@ auto processMessages(Kameloso instance)
                 import lu.string : advancePast;
 
                 string slice = line;  // mutable
-                immutable setting = slice.advancePast('=', Yes.inherit);
+                immutable setting = slice.advancePast('=', inherit: true);
                 if (setting == message.content) toRemove ~= i;
             }
 
@@ -481,8 +480,7 @@ auto processMessages(Kameloso instance)
         }
 
         immutable background = (m.properties & Message.Property.background);
-        immutable quietFlag = cast(Flag!"quiet")
-            (instance.settings.hideOutgoing || (m.properties & Message.Property.quiet));
+        immutable quiet = (instance.settings.hideOutgoing || (m.properties & Message.Property.quiet));
         immutable force = (m.properties & Message.Property.forced);
         immutable priority = (m.properties & Message.Property.priority);
         immutable immediate = (m.properties & Message.Property.immediate);
@@ -642,7 +640,7 @@ auto processMessages(Kameloso instance)
                         pattern,
                         m.event.target.nickname,
                         m.caller,
-                        cast(bool)quietFlag,
+                        quiet: quiet,
                         cast(bool)background);
                     // flush stdout with writeln later below
                 }
@@ -712,7 +710,7 @@ auto processMessages(Kameloso instance)
         {
             if (immediate)
             {
-                return instance.immediateBuffer.put(OutgoingLine(finalLine, quietFlag));
+                return instance.immediateBuffer.put(OutgoingLine(finalLine, quiet: quiet));
             }
 
             version(TwitchSupport)
@@ -720,26 +718,26 @@ auto processMessages(Kameloso instance)
                 if (/*(instance.parser.server.daemon == IRCServer.Daemon.twitch) &&*/ fast)
                 {
                     // Send a line via the fastbuffer, faster than normal sends.
-                    return instance.fastbuffer.put(OutgoingLine(finalLine, quietFlag));
+                    return instance.fastbuffer.put(OutgoingLine(finalLine, quiet: quiet));
                 }
             }
 
             if (priority)
             {
-                instance.priorityBuffer.put(OutgoingLine(finalLine, quietFlag));
+                instance.priorityBuffer.put(OutgoingLine(finalLine, quiet: quiet));
             }
             else if (background)
             {
                 // Send a line via the low-priority background buffer.
-                instance.backgroundBuffer.put(OutgoingLine(finalLine, quietFlag));
+                instance.backgroundBuffer.put(OutgoingLine(finalLine, quiet: quiet));
             }
-            else if (quietFlag)
+            else if (quiet)
             {
-                instance.outbuffer.put(OutgoingLine(finalLine, Yes.quiet));
+                instance.outbuffer.put(OutgoingLine(finalLine, quiet: true));
             }
             else
             {
-                instance.outbuffer.put(OutgoingLine(finalLine, cast(Flag!"quiet")instance.settings.hideOutgoing));
+                instance.outbuffer.put(OutgoingLine(finalLine, quiet: instance.settings.hideOutgoing));
             }
         }
 
@@ -1292,9 +1290,9 @@ auto sendLines(Kameloso instance)
     {
         cast(void)instance.throttleline(
             instance.immediateBuffer,
-            No.dryRun,
-            No.sendFaster,
-            Yes.immediate);
+            dryRun: false,
+            sendFaster: false,
+            immediate: true);
     }
 
     if (!instance.priorityBuffer.empty)
@@ -1309,8 +1307,8 @@ auto sendLines(Kameloso instance)
         {
             immutable untilNextSeconds = instance.throttleline(
                 instance.fastbuffer,
-                No.dryRun,
-                Yes.sendFaster);
+                dryRun: false,
+                sendFaster: true);
             if (untilNextSeconds > 0.0) return untilNextSeconds;
         }
     }
@@ -1506,7 +1504,6 @@ void processLineFromServer(
     import kameloso.string : doublyBackslashed;
     import dialect.common : IRCParseException;
     import lu.string : AdvanceException;
-    import std.typecons : Flag, No, Yes;
     import std.utf : UTFException;
     import core.exception : UnicodeException;
 
@@ -1525,7 +1522,7 @@ void processLineFromServer(
 
             // Something asserted
             logger.error("scopeguard tripped.");
-            printEventDebugDetails(event, raw, cast(Flag!"eventWasInitialised")eventWasInitialised);
+            printEventDebugDetails(event, raw, eventWasInitialised: eventWasInitialised);
 
             immutable rawRepresentation = raw.representation;
 
@@ -1695,16 +1692,16 @@ void processLineFromServer(
                 // (There's no easy way to tell from here.)
                 if (event.channel.length && instance.bot.homeChannels.canFind(event.channel))
                 {
-                    instance.throttleline(instance.fastbuffer, Yes.dryRun, Yes.sendFaster);
+                    instance.throttleline(instance.fastbuffer, dryRun: true, sendFaster: true);
                 }
                 else
                 {
-                    instance.throttleline(instance.outbuffer, Yes.dryRun);
+                    instance.throttleline(instance.outbuffer, dryRun: true);
                 }
             }
             else
             {
-                instance.throttleline(instance.outbuffer, Yes.dryRun);
+                instance.throttleline(instance.outbuffer, dryRun: true);
             }
             break;
 
@@ -2320,7 +2317,7 @@ void processPendingReplays(Kameloso instance, IRCPlugin plugin)
             }
 
             /*instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
-                cast(Flag!"quiet")instance.settings.hideOutgoing));
+                quiet: instance.settings.hideOutgoing));
             propagateWhoisTimestamp(instance, nickname, nowInUnix);*/
 
             enum properties = (Message.Property.forced | Message.Property.quiet);
@@ -2466,7 +2463,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
 
                 immutable expression = action.context;
                 string slice = expression;  // mutable
-                immutable pluginName = slice.advancePast('.', Yes.inherit);
+                immutable pluginName = slice.advancePast('.', inherit: true);
                 alias setting = slice;
 
                 Appender!(char[]) sink;
@@ -2482,7 +2479,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                         {
                             string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
                             if (lineslice.startsWith('#')) lineslice = lineslice[1..$];
-                            const thisSetting = lineslice.advancePast(' ', Yes.inherit);
+                            const thisSetting = lineslice.advancePast(' ', inherit: true);
 
                             if (thisSetting != setting) continue;
 
@@ -2503,7 +2500,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                         foreach (const line; sink.data.splitter('\n'))
                         {
                             string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
-                            if (!lineslice.startsWith('[')) allSettings ~= lineslice.advancePast(' ', Yes.inherit);
+                            if (!lineslice.startsWith('[')) allSettings ~= lineslice.advancePast(' ', inherit: true);
                         }
 
                         fiber.payload[0] = pluginName;
@@ -2601,7 +2598,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                     tester.channelName = action.context;
 
                     string slice = action.subcontext;  // mutable
-                    tester.targetNickname = slice.advancePast(' ', Yes.inherit);
+                    tester.targetNickname = slice.advancePast(' ', inherit: true);
                     immutable pluginNames = slice.split(' ');
 
                     foreach (thisPlugin; instance.plugins)
@@ -3098,7 +3095,7 @@ auto tryConnect(Kameloso instance)
         [lu.common.Next.returnFailure|Next.returnFailure] if it failed and the
         program should exit.
  +/
-auto tryResolve(Kameloso instance, const Flag!"firstConnect" firstConnect)
+auto tryResolve(Kameloso instance, const bool firstConnect)
 {
     import kameloso.constants : Timeout;
     import kameloso.net : ResolveAttempt, resolveFiber;
@@ -3110,8 +3107,8 @@ auto tryResolve(Kameloso instance, const Flag!"firstConnect" firstConnect)
             instance.conn,
             instance.parser.server.address,
             instance.parser.server.port,
-            cast(Flag!"useIPv6")instance.connSettings.ipv6,
-            instance.abort));
+            useIPv6: instance.connSettings.ipv6,
+            abort: instance.abort));
 
     scope(exit)
     {
@@ -3731,7 +3728,7 @@ auto startBot(Kameloso instance)
          +/
         immutable actionAfterResolve = tryResolve(
             instance,
-            cast(Flag!"firstConnect")(attempt.firstConnect));
+            firstConnect: attempt.firstConnect);
         if (*instance.abort) return attempt;  // tryResolve interruptibleSleep can abort
 
         with (Next)
@@ -3974,7 +3971,7 @@ auto startBot(Kameloso instance)
 void printEventDebugDetails(
     const ref IRCEvent event,
     const string raw,
-    const Flag!"eventWasInitialised" eventWasInitialised = Yes.eventWasInitialised)
+    const bool eventWasInitialised = true)
 {
     static import kameloso.common;
 
@@ -4101,7 +4098,7 @@ void printSummary(const Kameloso instance) @safe
         writefln(
             pattern,
             ++i,
-            duration.timeSince!(7, 0)(Yes.abbreviate),
+            duration.timeSince!(7, 0)(abbreviate: true),
             entry.numEvents,
             entry.bytesReceived,
             startString,
@@ -4298,7 +4295,7 @@ auto checkInitialisationMessages(
                 import lu.string : advancePast;
 
                 string slice = line;  // mutable
-                immutable setting = slice.advancePast('=', Yes.inherit);
+                immutable setting = slice.advancePast('=', inherit: true);
                 if (setting == message.content) toRemove ~= i;
             }
 
@@ -4444,12 +4441,12 @@ auto run(string[] args)
             logger.error("We just crashed!", bell);
         }
 
-        *instance.abort = Yes.abort;
+        *instance.abort = true;
     }
 
     // Handle command-line arguments.
     immutable actionAfterGetopt = tryGetopt(instance);
-    kameloso.common.globalHeadless = cast(Flag!"headless")instance.settings.headless;
+    kameloso.common.globalHeadless = instance.settings.headless;
 
     with (Next)
     final switch (actionAfterGetopt)

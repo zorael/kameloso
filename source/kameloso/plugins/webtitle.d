@@ -27,7 +27,6 @@ import kameloso.plugins.common;
 import requests.base : Response;
 import dialect.defs;
 import lu.container : MutexedAA;
-import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
 
@@ -192,7 +191,7 @@ void onMessageImpl(WebtitlePlugin plugin, const ref IRCEvent event)
         // don't catch the URL.
         immutable nicknameStripped = content.stripSeparatedPrefix(
             plugin.state.client.nickname,
-            Yes.demandSeparatingChars);
+            demandSeparatingChars: true);
 
         if (nicknameStripped != content) return;
     }
@@ -236,7 +235,7 @@ void lookupURLs(
         // If the URL contains an octothorpe fragment identifier, like
         // https://www.google.com/index.html#this%20bit
         // then strip that.
-        url = url.advancePast('#', Yes.inherit);
+        url = url.advancePast('#', inherit: true);
         while (url[$-1] == '/') url = url[0..$-1];
 
         if (url in uniques) continue;
@@ -375,7 +374,7 @@ in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber"
 
             // Wait a bit before checking again
             static immutable checkDelay = 200.msecs;
-            delay(plugin, checkDelay, Yes.yield);
+            delay(plugin, checkDelay, yield: true);
             continue;
         }
         else
@@ -598,7 +597,7 @@ void persistentQuerier(
 TitleLookupResult sendHTTPRequest(
     WebtitlePlugin plugin,
     const string url,
-    const Flag!"recursing" recursing = No.recursing,
+    const bool recursing = false,
     /*const*/ int id = 0,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
@@ -627,7 +626,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     plugin.getNextWorkerTid().send(url, id);
 
     static immutable initialDelay = 500.msecs;
-    delay(plugin, initialDelay, Yes.yield);
+    delay(plugin, initialDelay, yield: true);
 
     immutable result = waitForLookupResults(plugin, id);
 
@@ -636,7 +635,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         return sendHTTPRequest(
             plugin,
             url,
-            Yes.recursing,
+            recursing: true,
             id,
             caller);
     }
@@ -780,7 +779,6 @@ auto rewriteDirectImgurURL(const string url) @safe pure
 {
     import lu.string : advancePast;
     import std.algorithm.searching : startsWith;
-    import std.typecons : No, Yes;
 
     if (url.startsWith("https://i.imgur.com/"))
     {

@@ -20,8 +20,6 @@ version(WithTwitchPlugin):
 
 private:
 
-import std.typecons : Flag, No, Yes;
-
 package:
 
 
@@ -43,8 +41,8 @@ package:
 auto readNamedString(
     const string wording,
     const size_t expectedLength,
-    const Flag!"passThroughEmptyString" passThroughEmptyString,
-    const Flag!"abort"* abort)
+    const bool passThroughEmptyString,
+    const bool* abort)
 {
     import kameloso.common : logger;
     import kameloso.logger : LogLevel;
@@ -97,7 +95,7 @@ auto readNamedString(
 
     Params:
         numEmptyLinesEntered = Number of empty lines entered so far.
-        benignAbort = out-reference benign abort flag.
+        benignAbort = out-reference benign abort bool.
         abort = Global abort pointer.
 
     Returns:
@@ -105,8 +103,8 @@ auto readNamedString(
  +/
 auto readChannelName(
     ref uint numEmptyLinesEntered,
-    out Flag!"benignAbort" benignAbort,
-    const Flag!"abort"* abort)
+    out bool benignAbort,
+    const bool* abort)
 {
     import kameloso.plugins.twitch.common : isValidTwitchUsername;
     import kameloso.common : logger;
@@ -118,7 +116,7 @@ auto readChannelName(
     immutable input = readNamedString(
         readChannelMessage,
         0L,
-        Yes.passThroughEmptyString,
+        passThroughEmptyString: true,
         abort).stripped;
     if (*abort) return string.init;
 
@@ -128,7 +126,7 @@ auto readChannelName(
 
         if (numEmptyLinesEntered < numEmptyLinesEnteredBreakpoint)
         {
-            // benignAbort is the default No.benignAbort;
+            // benignAbort is the default false;
             // Just drop down and return string.init
         }
         else if (numEmptyLinesEntered == numEmptyLinesEnteredBreakpoint)
@@ -142,7 +140,7 @@ auto readChannelName(
             enum cancellingKeygenMessage = "Cancelling keygen.";
             logger.warning(cancellingKeygenMessage);
             logger.trace();
-            benignAbort = Yes.benignAbort;
+            benignAbort = true;
         }
         return string.init;
     }

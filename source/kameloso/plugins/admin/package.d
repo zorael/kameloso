@@ -36,7 +36,6 @@ import kameloso.common : logger;
 import kameloso.messaging;
 import kameloso.thread : Sendable;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 import core.time : Duration;
 
@@ -307,7 +306,8 @@ void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
     in the [kameloso.pods.IRCBot.homeChannels|IRCBot.homeChannels] array of
     the current [AdminPlugin]'s [kameloso.plugins.common.IRCPluginState|IRCPluginState].
 
-    Merely passes on execution to [addChannel] and [delChannel] with `Yes.home` as argument.
+    Merely passes on execution to [addChannel] and [delChannel] with `addAsHome: true`
+    (and `delFromHomes: true`) as argument.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -329,7 +329,6 @@ void onCommandHome(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : advancePast, strippedRight;
     import std.format : format;
-    import std.typecons : Flag, No, Yes;
 
     void sendUsage()
     {
@@ -341,15 +340,15 @@ void onCommandHome(AdminPlugin plugin, const /*ref*/ IRCEvent event)
     if (!event.content.length) return sendUsage();
 
     string slice = event.content.strippedRight;  // mutable
-    immutable verb = slice.advancePast(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', inherit: true);
 
     switch (verb)
     {
     case "add":
-        return addChannel(plugin, event, slice, Yes.home);
+        return addChannel(plugin, event, slice, addAsHome: true);
 
     case "del":
-        return delChannel(plugin, event, slice, Yes.home);
+        return delChannel(plugin, event, slice, delFromHomes: true);
 
     case "list":
         enum pattern = "Current home channels: %-(<b>%s<b>, %)<b>";
@@ -368,7 +367,8 @@ void onCommandHome(AdminPlugin plugin, const /*ref*/ IRCEvent event)
     in the [kameloso.pods.IRCBot.guestChannels|IRCBot.guestChannels] array of
     the current [AdminPlugin]'s [kameloso.plugins.common.IRCPluginState|IRCPluginState].
 
-    Merely passes on execution to [addChannel] and [delChannel] with `No.home` as argument.
+    Merely passes on execution to [addChannel] and [delChannel] with `addAsHome: false`
+    (and `delFromHomes: false`) as argument.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -390,7 +390,6 @@ void onCommandGuest(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : advancePast, strippedRight;
     import std.format : format;
-    import std.typecons : Flag, No, Yes;
 
     void sendUsage()
     {
@@ -402,15 +401,15 @@ void onCommandGuest(AdminPlugin plugin, const /*ref*/ IRCEvent event)
     if (!event.content.length) return sendUsage();
 
     string slice = event.content.strippedRight;  // mutable
-    immutable verb = slice.advancePast(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', inherit: true);
 
     switch (verb)
     {
     case "add":
-        return addChannel(plugin, event, slice, No.home);
+        return addChannel(plugin, event, slice, addAsHome: false);
 
     case "del":
-        return delChannel(plugin, event, slice, No.home);
+        return delChannel(plugin, event, slice, delFromHomes: false);
 
     case "list":
         enum pattern = "Current guest channels: %-(<b>%s<b>, %)<b>";
@@ -438,13 +437,13 @@ void onCommandGuest(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         plugin = The current [AdminPlugin].
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         rawChannel = The channel to be added, potentially in unstripped, cased form.
-        home = Whether to add the channel as a home or guest channel.
+        addAsHome = Whether to add the channel as a home or guest channel.
  +/
 void addChannel(
     AdminPlugin plugin,
     const /*ref*/ IRCEvent event,
     const string rawChannel,
-    const Flag!"home" addAsHome)
+    const bool addAsHome)
 in (Fiber.getThis(), "Tried to call `addChannel` from outside a fiber")
 in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
@@ -542,7 +541,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
     ];
 
     scope(exit) unawait(plugin, joinTypes[]);
-    await(plugin, joinTypes[], Yes.yield);
+    await(plugin, joinTypes[], yield: true);
 
     while (true)
     {
@@ -628,13 +627,13 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         plugin = The current [AdminPlugin].
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         rawChannel = The channel to be removed, potentially in unstripped, cased form.
-        home = Whether to remove a home or a guest channel.
+        delFromHomes = Whether to remove a home or a guest channel.
  +/
 void delChannel(
     AdminPlugin plugin,
     const ref IRCEvent event,
     const string rawChannel,
-    const Flag!"home" delFromHomes)
+    const bool delFromHomes)
 in (rawChannel.length, "Tried to delete a home but the channel string was empty")
 {
     import lu.string : stripped;
@@ -1245,7 +1244,7 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
     string slice = event.content.stripped;  // mutable
     if (!slice.length) return cycle(plugin, event.channel);
 
-    immutable channelName = slice.advancePast(' ', Yes.inherit);
+    immutable channelName = slice.advancePast(' ', inherit: true);
 
     if (channelName !in plugin.state.channels)
     {
@@ -1256,7 +1255,7 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
     if (!slice.length) return cycle(plugin, channelName);
 
     immutable delaystring = slice
-        .advancePast(' ', Yes.inherit)
+        .advancePast(' ', inherit: true)
         .stripped;
 
     try
@@ -1304,7 +1303,7 @@ in (Fiber.getThis(), "Tried to call `cycle` from outside a fiber")
     part(plugin.state, channelName, "Cycling");
 
     scope(exit) unawait(plugin, IRCEvent.Type.SELFPART);
-    await(plugin, IRCEvent.Type.SELFPART, Yes.yield);
+    await(plugin, IRCEvent.Type.SELFPART, yield: true);
 
     while (true)
     {
@@ -1321,7 +1320,7 @@ in (Fiber.getThis(), "Tried to call `cycle` from outside a fiber")
             continue;
         }
 
-        if (delay_ > Duration.zero) delay(plugin, delay_, Yes.yield);
+        if (delay_ > Duration.zero) delay(plugin, delay_, yield: true);
         return join(plugin.state, channelName, key);
     }
 }
@@ -1372,7 +1371,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    immutable verb = slice.advancePast(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', inherit: true);
 
     switch (verb)
     {
@@ -1388,7 +1387,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
             return privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 
-        return modifyHostmaskDefinition(plugin, Yes.add, account, mask, event);
+        return modifyHostmaskDefinition(plugin, add: true, account, mask, event);
 
     case "del":
     case "remove":
@@ -1401,7 +1400,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
             return privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 
-        return modifyHostmaskDefinition(plugin, No.add, string.init, slice, event);
+        return modifyHostmaskDefinition(plugin, add: false, string.init, slice, event);
 
     case "list":
         return listHostmaskDefinitions(plugin, event);
@@ -1781,7 +1780,7 @@ void initialise(AdminPlugin plugin)
         plugin,
         plugin.adminSettings.printEvents);
 
-    if (!success) *plugin.state.abort = Yes.abort;
+    if (!success) *plugin.state.abort = true;
 }
 
 
@@ -1801,7 +1800,7 @@ void initialise(AdminPlugin plugin)
 void onBusMessage(
     AdminPlugin plugin,
     const string header,
-    shared Sendable content)
+    /*shared*/ Sendable content)
 {
     import kameloso.thread : Boxed, ThreadMessage, boxed;
     import lu.string : advancePast, strippedRight;
@@ -1813,7 +1812,7 @@ void onBusMessage(
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     string slice = message.payload.strippedRight;
-    immutable verb = slice.advancePast(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', inherit: true);
 
     switch (verb)
     {
@@ -2019,7 +2018,7 @@ void onBusMessage(
     case "hostmask":
         import lu.string : advancePast;
 
-        immutable subverb = slice.advancePast(' ', Yes.inherit);
+        immutable subverb = slice.advancePast(' ', inherit: true);
 
         switch (subverb)
         {
@@ -2038,7 +2037,7 @@ void onBusMessage(
             }
 
             IRCEvent lvalueEvent;
-            return modifyHostmaskDefinition(plugin, Yes.add, account, mask, lvalueEvent);
+            return modifyHostmaskDefinition(plugin, add: true, account, mask, lvalueEvent);
 
         case "del":
         case "remove":
@@ -2050,7 +2049,7 @@ void onBusMessage(
             }
 
             IRCEvent lvalueEvent;
-            return modifyHostmaskDefinition(plugin, No.add, string.init, slice, lvalueEvent);
+            return modifyHostmaskDefinition(plugin, add: false, string.init, slice, lvalueEvent);
 
         case "list":
             IRCEvent lvalueEvent;

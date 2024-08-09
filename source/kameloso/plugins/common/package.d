@@ -344,7 +344,7 @@ public:
         See_Also:
             [kameloso.plugins.common.IRCPluginImpl.onBusMessage]
      +/
-    void onBusMessage(const string header, shared Sendable content) @system;
+    void onBusMessage(const string header, /*shared*/ Sendable content) @system;
 
     // isEnabled
     /++
@@ -837,7 +837,7 @@ mixin template IRCPluginImpl(
                             import std.uni : toLower;
 
                             // Cache it
-                            commandWordInEvent = event.content.advancePast(' ', Yes.inherit);
+                            commandWordInEvent = event.content.advancePast(' ', inherit: true);
                             commandWordInEventLower = commandWordInEvent.toLower();
                             contentSansCommandWordInEvent = event.content;
                         }
@@ -2062,7 +2062,7 @@ mixin template IRCPluginImpl(
                 message was meant for them.
             content = Wildcard content, to be cast to concrete types if the header matches.
      +/
-    override public void onBusMessage(const string header, shared Sendable content) @system
+    override public void onBusMessage(const string header, /*shared*/ Sendable content) @system
     {
         static if (__traits(compiles, { alias _ = .onBusMessage; }))
         {
@@ -2188,7 +2188,7 @@ auto prefixPolicyMatches(bool verbose)
                 }
 
                 event.content = event.content
-                    .stripSeparatedPrefix(state.client.displayName, Yes.demandSeparatingChars);
+                    .stripSeparatedPrefix(state.client.displayName, demandSeparatingChars: true);
 
                 if (state.settings.prefix.length && event.content.startsWith(state.settings.prefix))
                 {
@@ -2217,7 +2217,7 @@ auto prefixPolicyMatches(bool verbose)
             }
 
             event.content = event.content
-                .stripSeparatedPrefix(state.client.nickname, Yes.demandSeparatingChars);
+                .stripSeparatedPrefix(state.client.nickname, demandSeparatingChars: true);
 
             if (state.settings.prefix.length && event.content.startsWith(state.settings.prefix))
             {
@@ -3006,9 +3006,9 @@ public:
 
     // abort
     /++
-        Pointer to the global abort flag.
+        Pointer to the global abort bool.
      +/
-    Flag!"abort"* abort;
+    bool* abort;
 
     // connectionID
     /++
@@ -4195,7 +4195,7 @@ public:
     in (fiber, "Tried to send a test message with no fiber attached")
     {
         immutable line = replaceTokens(tokenedLine);
-        delay(plugin, delayBetween, Yes.yield);
+        delay(plugin, delayBetween, yield: true);
         chan(plugin.state, channelName, targetNickname ~ ": " ~ line);
     }
 
@@ -4210,7 +4210,7 @@ public:
     in (fiber, "Tried to send a prefixed test message with no fiber attached")
     {
         immutable line = replaceTokens(tokenedLine);
-        delay(plugin, delayBetween, Yes.yield);
+        delay(plugin, delayBetween, yield: true);
         chan(plugin.state, channelName, plugin.state.settings.prefix ~ line);
     }
 
@@ -4224,7 +4224,7 @@ public:
     in (fiber, "Tried to send a plain test message with no fiber attached")
     {
         immutable line = replaceTokens(tokenedLine);
-        delay(plugin, delayBetween, Yes.yield);
+        delay(plugin, delayBetween, yield: true);
         chan(plugin.state, channelName, line);
     }
 
@@ -4284,7 +4284,7 @@ public:
         const string file = __FILE__,
         const size_t line = __LINE__)
     {
-        immutable actual = this.lastMessage(Yes.strip);
+        immutable actual = this.lastMessage(strip: true);
         immutable expected = replaceTokens(tokenedExpected);
 
         if (actual != expected)
@@ -4335,7 +4335,7 @@ public:
     {
         import std.algorithm.searching : startsWith;
 
-        immutable actual = this.lastMessage(Yes.strip);
+        immutable actual = this.lastMessage(strip: true);
         immutable expectedHead = replaceTokens(tokenedExpected);
 
         if (!actual.startsWith(expectedHead))
@@ -4385,7 +4385,7 @@ public:
     {
         import std.algorithm.searching : endsWith;
 
-        immutable actual = this.lastMessage(Yes.strip);
+        immutable actual = this.lastMessage(strip: true);
         immutable expectedTail = replaceTokens(tokenedExpected);
 
         if (!actual.endsWith(expectedTail))
@@ -4435,7 +4435,7 @@ public:
     {
         import std.algorithm.searching : canFind;
 
-        immutable actual = this.lastMessage(Yes.strip);
+        immutable actual = this.lastMessage(strip: true);
         immutable expected = replaceTokens(tokenedExpected);
 
         if (!actual.canFind(expected))
@@ -4450,7 +4450,7 @@ public:
     /++
         The last message received from the other bot, stripped of effects.
      +/
-    auto lastMessage(const Flag!"strip" strip = Yes.strip)
+    auto lastMessage(const bool strip = true)
     {
         if (strip)
         {

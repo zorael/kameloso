@@ -34,7 +34,6 @@ import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 version(WithChanQueryService) {}
 else
@@ -239,7 +238,7 @@ void onTwitchChannelEvent(NotePlugin plugin, const ref IRCEvent event)
     [kameloso.pods.CoreSettings.eagerLookups|CoreSettings.eagerLookups] is true,
     as we'd collide with ChanQuery queries.
 
-    Passes `Yes.background` to [playbackNotes] to ensure it does low-priority
+    Passes `background: true` to [playbackNotes] to ensure it does low-priority
     background WHOIS queries.
  +/
 @(IRCEventHandler()
@@ -249,7 +248,7 @@ void onTwitchChannelEvent(NotePlugin plugin, const ref IRCEvent event)
 void onWhoReply(NotePlugin plugin, const ref IRCEvent event)
 {
     if (plugin.state.settings.eagerLookups) return;
-    playbackNotes(plugin, event, Yes.background);
+    playbackNotes(plugin, event, background: true);
 }
 
 
@@ -270,7 +269,7 @@ void onWhoReply(NotePlugin plugin, const ref IRCEvent event)
 void playbackNotes(
     NotePlugin plugin,
     const /*ref*/ IRCEvent event,
-    const Flag!"background" background = No.background)
+    const bool background = false)
 {
     const user = event.sender.nickname.length ?
         event.sender :
@@ -308,10 +307,11 @@ void playbackNotesImpl(
     NotePlugin plugin,
     const string channelName,
     const IRCUser user,
-    const Flag!"background" background)
+    const bool background)
 {
     import kameloso.plugins.common.mixins : WHOISFiberDelegate;
     import std.format : format;
+    import std.typecons : Flag, No, Yes;
 
     auto channelNotes = channelName in plugin.notes;
     if (!channelNotes) return;
@@ -342,7 +342,7 @@ void playbackNotesImpl(
             {
                 auto note = (*notes)[0];  // mutable
                 immutable timestampAsSysTime = SysTime.fromUnixTime(note.timestamp);
-                immutable duration = (now - timestampAsSysTime).timeSince!(7, 1)(No.abbreviate);
+                immutable duration = (now - timestampAsSysTime).timeSince!(7, 1)(abbreviate: false);
 
                 note.decrypt();
                 enum pattern = "<h>%s<h>! <h>%s<h> left note <b>%s<b> ago: %s";
@@ -358,7 +358,7 @@ void playbackNotesImpl(
                 foreach (/*const*/ note; *notes)
                 {
                     immutable timestampAsSysTime = SysTime.fromUnixTime(note.timestamp);
-                    immutable duration = (now - timestampAsSysTime).timeSince!(7, 1)(Yes.abbreviate);
+                    immutable duration = (now - timestampAsSysTime).timeSince!(7, 1)(abbreviate: true);
 
                     note.decrypt();
                     enum entryPattern = "<h>%s<h> %s ago: %s";
@@ -389,7 +389,7 @@ void playbackNotesImpl(
     }
 
     mixin WHOISFiberDelegate!(onSuccess, onFailure, Yes.alwaysLookup);
-    enqueueAndWHOIS(user.nickname, Yes.issueWhois, background);
+    enqueueAndWHOIS(user.nickname, issueWhois: true, background);
 }
 
 
@@ -604,7 +604,7 @@ auto selftest(NotePlugin plugin, Selftester s)
         import core.thread : Fiber;
 
         part(plugin.state, s.channelName);
-        await(plugin, IRCEvent.Type.SELFPART, Yes.yield);
+        await(plugin, IRCEvent.Type.SELFPART, yield: true);
 
         while (
             (s.fiber.payload.type != IRCEvent.Type.SELFPART) ||
@@ -616,7 +616,7 @@ auto selftest(NotePlugin plugin, Selftester s)
         unawait(plugin, IRCEvent.Type.SELFPART);
 
         join(plugin.state, s.channelName);
-        await(plugin, IRCEvent.Type.SELFJOIN, Yes.yield);
+        await(plugin, IRCEvent.Type.SELFJOIN, yield: true);
 
         while (
             (s.fiber.payload.type != IRCEvent.Type.SELFJOIN) ||

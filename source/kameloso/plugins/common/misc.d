@@ -19,7 +19,6 @@ import kameloso.plugins.common;
 import kameloso.common : logger;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 public:
 
@@ -68,7 +67,7 @@ auto applyCustomSettings(
 
         string slice = line;  // mutable
         immutable pluginstring = slice.advancePast(".");
-        immutable setting = slice.advancePast('=', Yes.inherit);
+        immutable setting = slice.advancePast('=', inherit: true);
         alias value = slice;
 
         try
@@ -600,7 +599,7 @@ unittest
 auto pluginFileBaseName(const string filename)
 in (filename.length, "Empty plugin filename passed to `pluginFileBaseName`")
 {
-    return pluginFilenameSlicerImpl(filename, No.getPluginName);
+    return pluginFilenameSlicerImpl(filename, getPluginName: false);
 }
 
 ///
@@ -657,7 +656,7 @@ unittest
 auto pluginNameOfFilename(const string filename)
 in (filename.length, "Empty plugin filename passed to `pluginNameOfFilename`")
 {
-    return pluginFilenameSlicerImpl(filename, Yes.getPluginName);
+    return pluginFilenameSlicerImpl(filename, getPluginName: true);
 }
 
 ///
@@ -700,7 +699,7 @@ unittest
         The name of the plugin or its "basename", based on its filename and the
         `getPluginName` parameter.
  +/
-private auto pluginFilenameSlicerImpl(const string filename, const Flag!"getPluginName" getPluginName)
+private auto pluginFilenameSlicerImpl(const string filename, const bool getPluginName)
 in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`")
 {
     import std.path : dirSeparator;

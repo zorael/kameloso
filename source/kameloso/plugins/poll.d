@@ -27,7 +27,6 @@ import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 
 // PollSettings
@@ -879,7 +878,7 @@ void generateEndFiber(
         }
 
         scope(exit) unawait(plugin, IRCEvent.Type.SELFJOIN);
-        await(plugin, IRCEvent.Type.SELFJOIN, Yes.yield);
+        await(plugin, IRCEvent.Type.SELFJOIN, yield: true);
 
         while (true)
         {

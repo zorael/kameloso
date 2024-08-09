@@ -53,7 +53,6 @@ private:
 import kameloso.plugins.common : IRCPluginState;
 import kameloso.irccolours : expandIRCTags, stripIRCTags;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 static import kameloso.common;
 
 version(unittest) import lu.conv : Enum;

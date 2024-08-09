@@ -167,8 +167,8 @@ void formatMessageMonochrome(Sink)
     (PrinterPlugin plugin,
     auto ref Sink sink,
     const ref IRCEvent event,
-    const Flag!"bellOnMention" bellOnMention,
-    const Flag!"bellOnError" bellOnError)
+    const bool bellOnMention,
+    const bool bellOnError)
 {
     import kameloso.irccolours : stripEffects;
     import lu.conv : Enum;
@@ -525,7 +525,7 @@ void formatMessageMonochrome(Sink)
     event.channel = "#channel";
 
     {
-        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        formatMessageMonochrome(plugin, sink, event, bellOnMention: false, bellOnError: false);
         immutable joinLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
@@ -539,7 +539,7 @@ void formatMessageMonochrome(Sink)
     event.content = "Harbl snarbl";
 
     {
-        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        formatMessageMonochrome(plugin, sink, event, bellOnMention: false, bellOnError: false);
         immutable chanLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
@@ -556,7 +556,7 @@ void formatMessageMonochrome(Sink)
 
     version(TwitchSupport)
     {{
-        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        formatMessageMonochrome(plugin, sink, event, bellOnMention: false, bellOnError: false);
         immutable twitchLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
@@ -578,7 +578,7 @@ void formatMessageMonochrome(Sink)
     event.aux[0] = "n1ckn4m3";
 
     {
-        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        formatMessageMonochrome(plugin, sink, event, bellOnMention: false, bellOnError: false);
         immutable accountLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
@@ -601,7 +601,7 @@ void formatMessageMonochrome(Sink)
     event.type = IRCEvent.Type.ERROR;
 
     {
-        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        formatMessageMonochrome(plugin, sink, event, bellOnMention: false, bellOnError: false);
         immutable errorLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
@@ -622,7 +622,7 @@ void formatMessageMonochrome(Sink)
     event.errors = string.init;
 
     {
-        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        formatMessageMonochrome(plugin, sink, event, bellOnMention: false, bellOnError: false);
         immutable queryLine = sink.data[11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
@@ -656,8 +656,8 @@ void formatMessageColoured(Sink)
     (PrinterPlugin plugin,
     auto ref Sink sink,
     const ref IRCEvent event,
-    const Flag!"bellOnMention" bellOnMention,
-    const Flag!"bellOnError" bellOnError)
+    const bool bellOnMention,
+    const bool bellOnError)
 {
     import kameloso.constants : DefaultColours;
     import kameloso.terminal.colours.defs : ANSICodeType, TerminalReset;
@@ -688,8 +688,6 @@ void formatMessageColoured(Sink)
     immutable typestring = rawTypestring.withoutTypePrefix;
     string content = event.content;  // mutable, don't strip
     bool shouldBell;
-
-    immutable bright = cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal;
 
     /++
         Outputs a terminal ANSI colour token based on the hash of the passed
@@ -737,8 +735,8 @@ void formatMessageColoured(Sink)
                     rgb.r,
                     rgb.g,
                     rgb.b,
-                    bright,
-                    cast(Flag!"normalise")plugin.printerSettings.normaliseTruecolour);
+                    brightTerminal: plugin.state.settings.brightTerminal,
+                    normalise: plugin.printerSettings.normaliseTruecolour);
                 coloured = true;
             }
         }
@@ -828,7 +826,7 @@ void formatMessageColoured(Sink)
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.sender.account.length)
             {
-                immutable code = bright ? Bright.account : Dark.account;
+                immutable code = plugin.state.settings.brightTerminal ? Bright.account : Dark.account;
                 sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.applyANSI(code, ANSICodeType.foreground);
                 .put(sink, " (", event.sender.account, ')');
@@ -851,7 +849,7 @@ void formatMessageColoured(Sink)
                     break;
 
                 default:
-                    immutable code = bright ? Bright.badge : Dark.badge;
+                    immutable code = plugin.state.settings.brightTerminal ? Bright.badge : Dark.badge;
                     sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.applyANSI(code, ANSICodeType.foreground);
                     .put(sink, " [", event.sender.badges, ']');
@@ -944,7 +942,7 @@ void formatMessageColoured(Sink)
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.target.account.length)
             {
-                immutable code = bright ? Bright.account : Dark.account;
+                immutable code = plugin.state.settings.brightTerminal ? Bright.account : Dark.account;
                 sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.applyANSI(code, ANSICodeType.foreground);
                 .put(sink, " (", event.target.account, ')');
@@ -957,7 +955,7 @@ void formatMessageColoured(Sink)
                 plugin.printerSettings.twitchBadges &&
                 event.target.badges.length)
             {
-                immutable code = bright ? Bright.badge : Dark.badge;
+                immutable code = plugin.state.settings.brightTerminal ? Bright.badge : Dark.badge;
                 sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.applyANSI(code, ANSICodeType.foreground);
                 .put(sink, " [", event.target.badges, ']');
@@ -972,8 +970,8 @@ void formatMessageColoured(Sink)
 
         scope(exit) sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
 
-        immutable TerminalForeground contentFgBase = bright ? Bright.content : Dark.content;
-        immutable TerminalForeground emoteFgBase = bright ? Bright.emote : Dark.emote;
+        immutable TerminalForeground contentFgBase = plugin.state.settings.brightTerminal ? Bright.content : Dark.content;
+        immutable TerminalForeground emoteFgBase = plugin.state.settings.brightTerminal ? Bright.emote : Dark.emote;
         immutable isEmote =
             (event.type == IRCEvent.Type.EMOTE) ||
             (event.type == IRCEvent.Type.SELFEMOTE);
@@ -1010,7 +1008,7 @@ void formatMessageColoured(Sink)
             {
                 content = highlightEmotes(
                     event,
-                    cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
+                    colourful: plugin.printerSettings.colourfulEmotes,
                     plugin.state.settings);
             }
         }
@@ -1064,7 +1062,7 @@ void formatMessageColoured(Sink)
         if (!isEmote) sink.put('"');
     }
 
-    immutable timestampCode = bright ? Timestamp.bright : Timestamp.dark;
+    immutable timestampCode = plugin.state.settings.brightTerminal ? Timestamp.bright : Timestamp.dark;
     sink.applyANSI(timestampCode, ANSICodeType.foreground);
     sink.put('[');
 
@@ -1079,11 +1077,11 @@ void formatMessageColoured(Sink)
         (event.type == IRCEvent.Type.TWITCH_ERROR) ||
         rawTypestring.startsWith("ERR_"))
     {
-        sink.applyANSI(bright ? Bright.error : Dark.error);
+        sink.applyANSI(plugin.state.settings.brightTerminal ? Bright.error : Dark.error);
     }
     else
     {
-        if (bright)
+        if (plugin.state.settings.brightTerminal)
         {
             immutable code = (event.type == IRCEvent.Type.QUERY) ? Bright.query : Bright.type;
             sink.applyANSI(code, ANSICodeType.foreground);
@@ -1110,7 +1108,7 @@ void formatMessageColoured(Sink)
 
     if (event.channel.length)
     {
-        immutable code = bright ? Bright.channel : Dark.channel;
+        immutable code = plugin.state.settings.brightTerminal ? Bright.channel : Dark.channel;
         sink.applyANSI(code, ANSICodeType.foreground);
         .put(sink, '[', event.channel, "] ");
     }
@@ -1137,7 +1135,7 @@ void formatMessageColoured(Sink)
         {
             /*if (content.length)*/ putContent();
             putTarget();
-            immutable code = bright ? Bright.content : Dark.content;
+            immutable code = plugin.state.settings.brightTerminal ? Bright.content : Dark.content;
             sink.applyANSI(code, ANSICodeType.foreground);
 
             if (event.aux[$-2].length)
@@ -1147,8 +1145,8 @@ void formatMessageColoured(Sink)
                 static Appender!(char[]) customEmoteSink;
                 scope(exit) customEmoteSink.clear();
 
-                immutable TerminalForeground highlight = bright ? Bright.highlight : Dark.highlight;
-                immutable TerminalForeground contentFgBase = bright ? Bright.content : Dark.content;
+                immutable TerminalForeground highlight = plugin.state.settings.brightTerminal ? Bright.highlight : Dark.highlight;
+                immutable TerminalForeground contentFgBase = plugin.state.settings.brightTerminal ? Bright.content : Dark.content;
 
                 // We can't know whether the replied-to event is an emote-only
                 // event or not, so just treat it as if it isn't and pass contentFgBase
@@ -1157,7 +1155,7 @@ void formatMessageColoured(Sink)
                     event.aux[$-2],
                     highlight,
                     contentFgBase,
-                    cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
+                    colourful: plugin.printerSettings.colourfulEmotes,
                     plugin.state.settings);
                 .put(sink, `: "`, customEmoteSink.data, '"');
 
@@ -1186,7 +1184,7 @@ void formatMessageColoured(Sink)
     if (!auxRange.empty)
     {
         enum pattern = " (%-(%s%|) (%))";
-        sink.applyANSI(bright ? Bright.aux : Dark.aux);
+        sink.applyANSI(plugin.state.settings.brightTerminal ? Bright.aux : Dark.aux);
 
         static if ((__VERSION__ >= 2099L) && (__VERSION__ <= 2102L))
         {
@@ -1205,7 +1203,7 @@ void formatMessageColoured(Sink)
     if (!countRange.empty)
     {
         enum pattern = " {%-(%s%|} {%)}";
-        sink.applyANSI(bright ? Bright.count : Dark.count);
+        sink.applyANSI(plugin.state.settings.brightTerminal ? Bright.count : Dark.count);
         sink.formattedWrite(pattern, countRange);
     }
 
@@ -1213,7 +1211,7 @@ void formatMessageColoured(Sink)
     {
         import lu.conv : toAlphaInto;
 
-        sink.applyANSI(bright ? Bright.num : Dark.num);
+        sink.applyANSI(plugin.state.settings.brightTerminal ? Bright.num : Dark.num);
         sink.put(" [#");
         event.num.toAlphaInto!(3, 3)(sink);
         sink.put(']');
@@ -1221,7 +1219,7 @@ void formatMessageColoured(Sink)
 
     if (event.errors.length)
     {
-        immutable code = bright ? Bright.error : Dark.error;
+        immutable code = plugin.state.settings.brightTerminal ? Bright.error : Dark.error;
         sink.applyANSI(code, ANSICodeType.foreground);
         .put(sink, " ! ", event.errors, " !");
     }
@@ -1330,7 +1328,7 @@ version(Colours)
 version(TwitchSupport)
 auto highlightEmotes(
     const ref IRCEvent event,
-    const Flag!"colourful" colourful,
+    const bool colourful,
     const CoreSettings settings)
 {
     import kameloso.constants : DefaultColours;
@@ -1429,7 +1427,7 @@ void highlightEmotesImpl(Sink)
     const string emotes,
     const TerminalForeground pre,
     const TerminalForeground post,
-    const Flag!"colourful" colourful,
+    const bool colourful,
     const CoreSettings settings)
 {
     import std.algorithm.iteration : splitter, uniq;
@@ -1549,7 +1547,7 @@ unittest
         immutable emotes = "212612:14-22/75828:24-29";
         immutable line = "Moody the god pownyFine pownyL";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
-            TerminalForeground.default_, No.colourful, darkSettings);
+            TerminalForeground.default_, colourful: false, darkSettings);
         assert((sink.data == "Moody the god \033[97mpownyFine\033[39m \033[97mpownyL\033[39m"), sink.data);
     }
     {
@@ -1557,7 +1555,7 @@ unittest
         immutable emotes = "25:41-45";
         immutable line = "whoever plays nintendo switch whisper me Kappa";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
-            TerminalForeground.default_, No.colourful, darkSettings);
+            TerminalForeground.default_, colourful: false, darkSettings);
         assert((sink.data == "whoever plays nintendo switch whisper me \033[97mKappa\033[39m"), sink.data);
     }
     {
@@ -1565,7 +1563,7 @@ unittest
         immutable emotes = "877671:8-17,19-28,30-39";
         immutable line = "NOOOOOO camillsCry camillsCry camillsCry";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
-            TerminalForeground.default_, No.colourful, darkSettings);
+            TerminalForeground.default_, colourful: false, darkSettings);
         assert((sink.data == "NOOOOOO \033[97mcamillsCry\033[39m " ~
             "\033[97mcamillsCry\033[39m \033[97mcamillsCry\033[39m"), sink.data);
     }
@@ -1574,7 +1572,7 @@ unittest
         immutable emotes = "822112:0-6,8-14,16-22";
         immutable line = "FortOne FortOne FortOne";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
-            TerminalForeground.default_, No.colourful, darkSettings);
+            TerminalForeground.default_, colourful: false, darkSettings);
         assert((sink.data == "\033[97mFortOne\033[39m \033[97mFortOne\033[39m " ~
             "\033[97mFortOne\033[39m"), sink.data);
     }
@@ -1583,7 +1581,7 @@ unittest
         immutable emotes = "141844:17-24,26-33,35-42/141073:9-15";
         immutable line = "@mugs123 cohhWow cohhBoop cohhBoop cohhBoop";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
-            TerminalForeground.default_, No.colourful, darkSettings);
+            TerminalForeground.default_, colourful: false, darkSettings);
         assert((sink.data == "@mugs123 \033[97mcohhWow\033[39m \033[97mcohhBoop\033[39m " ~
             "\033[97mcohhBoop\033[39m \033[97mcohhBoop\033[39m"), sink.data);
     }
@@ -1599,7 +1597,7 @@ unittest
             "twitch.amazon.com/prime | Click subscribe now to check if a " ~
             "free prime sub is available to use!";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
-            TerminalForeground.default_, No.colourful, brightSettings);
+            TerminalForeground.default_, colourful: false, brightSettings);
         assert((sink.data == highlitLine), sink.data);
     }
     {
@@ -1607,7 +1605,7 @@ unittest
         immutable emotes = "25:32-36";
         immutable line = "@kiwiskool but you’re a sub too Kappa";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
-            TerminalForeground.default_, No.colourful, brightSettings);
+            TerminalForeground.default_, colourful: false, brightSettings);
         assert((sink.data == "@kiwiskool but you’re a sub too \033[97mKappa\033[39m"), sink.data);
     }
     {
@@ -1615,7 +1613,7 @@ unittest
         immutable emotes = "425618:6-8,16-18/1:20-21";
         immutable line = "高所恐怖症 LUL なにぬねの LUL :)";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
-            TerminalForeground.default_, No.colourful, brightSettings);
+            TerminalForeground.default_, colourful: false, brightSettings);
         assert((sink.data == "高所恐怖症 \033[97mLUL\033[39m なにぬねの " ~
             "\033[97mLUL\033[39m \033[97m:)\033[39m"), sink.data);
     }
@@ -1624,7 +1622,7 @@ unittest
         immutable emotes = "425618:6-8,16-18/1:20-21";
         immutable line = "高所恐怖症 LUL なにぬねの LUL :)";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
-            TerminalForeground.default_, Yes.colourful, brightSettings);
+            TerminalForeground.default_, colourful: true, brightSettings);
         assert((sink.data == "高所恐怖症 \033[38;5;171mLUL\033[39m なにぬねの " ~
             "\033[38;5;171mLUL\033[39m \033[35m:)\033[39m"), sink.data);
     }
@@ -1633,7 +1631,7 @@ unittest
         immutable emotes = "212612:14-22/75828:24-29";
         immutable line = "Moody the god pownyFine pownyL";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
-            TerminalForeground.default_, Yes.colourful, brightSettings);
+            TerminalForeground.default_, colourful: true, brightSettings);
         assert((sink.data == "Moody the god \033[38;5;237mpownyFine\033[39m \033[38;5;159mpownyL\033[39m"), sink.data);
     }
     {
@@ -1641,7 +1639,7 @@ unittest
         immutable emotes = "25:41-45";
         immutable line = "whoever plays nintendo switch whisper me Kappa";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
-            TerminalForeground.default_, Yes.colourful, brightSettings);
+            TerminalForeground.default_, colourful: true, brightSettings);
         assert((sink.data == "whoever plays nintendo switch whisper me \033[38;5;49mKappa\033[39m"), sink.data);
     }
     {
@@ -1649,7 +1647,7 @@ unittest
         immutable emotes = "877671:8-17,19-28,30-39";
         immutable line = "NOOOOOO camillsCry camillsCry camillsCry";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
-            TerminalForeground.default_, Yes.colourful, brightSettings);
+            TerminalForeground.default_, colourful: true, brightSettings);
         assert((sink.data == "NOOOOOO \033[38;5;166mcamillsCry\033[39m " ~
             "\033[38;5;166mcamillsCry\033[39m \033[38;5;166mcamillsCry\033[39m"), sink.data);
     }

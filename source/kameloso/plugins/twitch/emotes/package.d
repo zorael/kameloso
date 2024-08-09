@@ -219,12 +219,11 @@ in (((channelName.length && id) ||
         if (emoteImports.length)
         {
             import kameloso.plugins.common.scheduling : delay;
-            import std.typecons : Flag, No, Yes;
             import core.time : seconds;
 
             // Still some left; repeat on remaining imports after a delay
             static immutable retryDelay = 5.seconds;
-            delay(plugin, retryDelay, Yes.yield);
+            delay(plugin, retryDelay, yield: true);
         }
     }
 

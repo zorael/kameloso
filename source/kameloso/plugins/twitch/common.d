@@ -21,7 +21,6 @@ private:
 import kameloso.plugins.twitch : TwitchPlugin;
 import kameloso.common : logger;
 import std.datetime.systime : SysTime;
-import std.typecons : Flag, No, Yes;
 
 package:
 

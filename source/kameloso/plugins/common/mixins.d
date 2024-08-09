@@ -59,7 +59,6 @@ mixin template WHOISFiberDelegate(
 {
     import kameloso.plugins.common : IRCPlugin;
     import std.traits : ParameterIdentifierTuple, isSomeFunction;
-    import std.typecons : Flag, No, Yes;
 
     static if (!isSomeFunction!onSuccess)
     {
@@ -320,8 +319,8 @@ mixin template WHOISFiberDelegate(
      +/
     void enqueueAndWHOIS(
         const string nickname,
-        const Flag!"issueWhois" issueWhois = Yes.issueWhois,
-        const Flag!"background" background = No.background)
+        const bool issueWhois = true,
+        const bool background = false)
     {
         import kameloso.plugins.common.scheduling : await;
         import kameloso.constants : BufferSize;
@@ -331,7 +330,6 @@ mixin template WHOISFiberDelegate(
         import lu.traits : TakesParams;
         import std.string : indexOf;
         import std.traits : arity;
-        import std.typecons : Flag, No, Yes;
         import core.thread : Fiber;
 
         version(TwitchSupport)
@@ -531,7 +529,6 @@ private:
     import kameloso.plugins.common : IRCPlugin;
     import kameloso.messaging : Message;
     import std.meta : AliasSeq;
-    import std.typecons : Flag, No, Yes;
     static import kameloso.messaging;
 
     version(unittest)

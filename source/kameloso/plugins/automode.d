@@ -26,7 +26,6 @@ import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 
 // AutomodeSettings
@@ -356,7 +355,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     string line = event.content.stripped;  // mutable
-    immutable verb = line.advancePast(' ', Yes.inherit);
+    immutable verb = line.advancePast(' ', inherit: true);
 
     switch (verb)
     {
@@ -375,7 +374,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
         while (mode.startsWith('+')) mode = mode[1..$];
         if (!mode.length) return sendMustSupplyMode();
 
-        modifyAutomode(plugin, Yes.add, nickname, event.channel, mode);
+        modifyAutomode(plugin, add: true, nickname, event.channel, mode);
         return sendAutomodeModified(nickname, mode);
 
     case "clear":
@@ -386,7 +385,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
         if (!nickname.length) goto default;
         //if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname();
 
-        modifyAutomode(plugin, No.add, nickname, event.channel);
+        modifyAutomode(plugin, add: false, nickname, event.channel);
         return sendAutomodeCleared(nickname);
 
     case "list":
@@ -420,7 +419,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
  +/
 void modifyAutomode(
     AutomodePlugin plugin,
-    const Flag!"add" add,
+    const bool add,
     const string nickname,
     const string channelName,
     const string mode = string.init)
@@ -541,7 +540,7 @@ void loadAutomodes(AutomodePlugin plugin)
     JSONStorage automodesJSON;
     automodesJSON.load(plugin.automodeFile);
     plugin.automodes = null;
-    plugin.automodes.populateFromJSON(automodesJSON, Yes.lowercaseKeys);
+    plugin.automodes.populateFromJSON(automodesJSON, lowercaseKeys: true);
     plugin.automodes.rehash();
 }
 

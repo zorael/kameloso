@@ -52,7 +52,6 @@ import dialect.defs;
 import lu.container : CircularBuffer;
 import std.algorithm.searching : startsWith;
 import std.meta : AliasSeq;
-import std.typecons : Flag, No, Yes;
 
 
 /++
@@ -110,7 +109,7 @@ struct Line
     ---
     string line = "This is a line";
     string expression = "s/s/z/g";
-    assert(line.sedReplace(expression, No.relaxSyntax) == "Thiz iz a line");
+    assert(line.sedReplace(expression, relaxSyntax: false) == "Thiz iz a line");
     ---
 
     Params:
@@ -125,7 +124,7 @@ struct Line
 auto sedReplace(
     const string line,
     const string expr,
-    const Flag!"relaxSyntax" relaxSyntax)
+    const bool relaxSyntax)
 in (line.length, "Tried to `sedReplace` an empty line")
 in ((expr.length >= 5), "Tried to `sedReplace` with an invalid-length expression")
 in (expr.startsWith('s'), "Tried to `sedReplace` with a non-expression expression")
@@ -149,67 +148,67 @@ unittest
 {
     {
         enum before = "abc 123 def 456";
-        immutable after = before.sedReplace("s/123/789/", No.relaxSyntax);
+        immutable after = before.sedReplace("s/123/789/", relaxSyntax: false);
         assert((after == "abc 789 def 456"), after);
     }
     {
         enum before = "I am a fish";
-        immutable after = before.sedReplace("s|a|e|g", No.relaxSyntax);
+        immutable after = before.sedReplace("s|a|e|g", relaxSyntax: false);
         assert((after == "I em e fish"), after);
     }
     {
         enum before = "Lorem ipsum dolor sit amet";
-        immutable after = before.sedReplace("s###g", No.relaxSyntax);
+        immutable after = before.sedReplace("s###g", relaxSyntax: false);
         assert((after == "Lorem ipsum dolor sit amet"), after);
     }
     {
         enum before = "高所恐怖症";
-        immutable after = before.sedReplace("s/高所/閉所/", No.relaxSyntax);
+        immutable after = before.sedReplace("s/高所/閉所/", relaxSyntax: false);
         assert((after == "閉所恐怖症"), after);
     }
     {
         enum before = "asdf/fdsa";
-        immutable after = before.sedReplace("s/\\//-/", No.relaxSyntax);
+        immutable after = before.sedReplace("s/\\//-/", relaxSyntax : false);
         assert((after == "asdf-fdsa"), after);
     }
     {
         enum before = "HARBL";
-        immutable after = before.sedReplace("s/A/_/", No.relaxSyntax);
+        immutable after = before.sedReplace("s/A/_/", relaxSyntax : false);
         assert((after == "H_RBL"), after);
     }
     {
         enum before = "there are four lights";
-        immutable after = before.sedReplace("s@ @_@g", No.relaxSyntax);
+        immutable after = before.sedReplace("s@ @_@g", relaxSyntax : false);
         assert((after == "there_are_four_lights"), after);
     }
     {
         enum before = "kameloso";
-        immutable after = before.sedReplace("s los bot ", No.relaxSyntax);
+        immutable after = before.sedReplace("s los bot ", relaxSyntax : false);
         assert((after == "kameboto"), after);
     }
     {
         enum before = "abc 123 def 456";
-        immutable after = before.sedReplace("s/123/789", Yes.relaxSyntax);
+        immutable after = before.sedReplace("s/123/789", relaxSyntax : true);
         assert((after == "abc 789 def 456"), after);
     }
     {
         enum before = "高所恐怖症";
-        immutable after = before.sedReplace("s/高所/閉所", Yes.relaxSyntax);
+        immutable after = before.sedReplace("s/高所/閉所", relaxSyntax : true);
         assert((after == "閉所恐怖症"), after);
     }
     {
         enum before = "asdf/fdsa";
-        immutable after = before.sedReplace("s/\\//-", Yes.relaxSyntax);
+        immutable after = before.sedReplace("s/\\//-", relaxSyntax : true);
         assert((after == "asdf-fdsa"), after);
     }
     {
         enum before = "HARBL";
-        immutable after = before.sedReplace("s/A/_/", Yes.relaxSyntax);
+        immutable after = before.sedReplace("s/A/_/", relaxSyntax : true);
         assert((after == "H_RBL"), after);
     }
     {
         enum before = "kameloso";
-        immutable after = before.sedReplace("s los bot", Yes.relaxSyntax);
+        immutable after = before.sedReplace("s los bot", relaxSyntax : true);
         assert((after == "kameboto"), after);
     }
 }
@@ -234,7 +233,7 @@ unittest
 auto sedReplaceImpl(char char_)
     (const string line,
     const string expr,
-    const Flag!"relaxSyntax" relaxSyntax)
+    const bool relaxSyntax)
 in (line.length, "Tried to `sedReplaceImpl` on an empty line")
 in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
 {
@@ -335,60 +334,60 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
 unittest
 {
     {
-        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/Hello D/Hullo C/", No.relaxSyntax);
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/Hello D/Hullo C/", relaxSyntax : false);
         assert((replaced == "Hullo C"), replaced);
     }
     {
-        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/g", No.relaxSyntax);
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/g", relaxSyntax : false);
         assert((replaced == "HeLLo D"), replaced);
     }
     {
-        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/", No.relaxSyntax);
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/", relaxSyntax : false);
         assert((replaced == "HeLlo D"), replaced);
     }
     {
-        immutable replaced = "I am a fish".sedReplaceImpl!'|'("s|fish|snek|g", No.relaxSyntax);
+        immutable replaced = "I am a fish".sedReplaceImpl!'|'("s|fish|snek|g", relaxSyntax : false);
         assert((replaced == "I am a snek"), replaced);
     }
     {
-        immutable replaced = "This is /a/a space".sedReplaceImpl!'/'("s/a\\//_/g", No.relaxSyntax);
+        immutable replaced = "This is /a/a space".sedReplaceImpl!'/'("s/a\\//_/g", relaxSyntax : false);
         assert((replaced == "This is /_a space"), replaced);
     }
     {
         immutable replaced = "This is INVALID"
-            .sedReplaceImpl!'#'("s#asdfasdf#asdfasdf#asdfafsd#g", No.relaxSyntax);
+            .sedReplaceImpl!'#'("s#asdfasdf#asdfasdf#asdfafsd#g", relaxSyntax : false);
         assert(!replaced.length, replaced);
     }
     {
-        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/Hello D/Hullo C", Yes.relaxSyntax);
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/Hello D/Hullo C", relaxSyntax : true);
         assert((replaced == "Hullo C"), replaced);
     }
     {
-        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/g", Yes.relaxSyntax);
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/g", relaxSyntax : true);
         assert((replaced == "HeLLo D"), replaced);
     }
     {
-        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L", Yes.relaxSyntax);
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L", relaxSyntax : true);
         assert((replaced == "HeLlo D"), replaced);
     }
     {
-        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/", Yes.relaxSyntax);
+        immutable replaced = "Hello D".sedReplaceImpl!'/'("s/l/L/", relaxSyntax : true);
         assert((replaced == "HeLlo D"), replaced);
     }
     {
-        immutable replaced = "This is INVALID".sedReplaceImpl!'#'("s#INVALID#valid##", Yes.relaxSyntax);
+        immutable replaced = "This is INVALID".sedReplaceImpl!'#'("s#INVALID#valid##", relaxSyntax : true);
         assert(!replaced.length, replaced);
     }
     {
-        immutable replaced = "snek".sedReplaceImpl!'/'("s/snek/", Yes.relaxSyntax);
+        immutable replaced = "snek".sedReplaceImpl!'/'("s/snek/", relaxSyntax : true);
         assert(!replaced.length, replaced);
     }
     {
-        immutable replaced = "snek".sedReplaceImpl!'/'("s/snek", Yes.relaxSyntax);
+        immutable replaced = "snek".sedReplaceImpl!'/'("s/snek", relaxSyntax : true);
         assert(!replaced.length, replaced);
     }
     {
-        immutable replaced = "hink".sedReplaceImpl!'/'("s/honk/henk/", Yes.relaxSyntax);
+        immutable replaced = "hink".sedReplaceImpl!'/'("s/honk/henk/", relaxSyntax : true);
         assert(!replaced.length, replaced);
     }
 }
@@ -478,7 +477,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 
                 immutable result = line.content.sedReplace(
                     event.content,
-                    cast(Flag!"relaxSyntax")plugin.sedReplaceSettings.relaxSyntax);
+                    relaxSyntax: plugin.sedReplaceSettings.relaxSyntax);
 
                 if (!result.length) continue;
 
@@ -523,7 +522,7 @@ void onWelcome(SedReplacePlugin plugin)
     {
         // delay immediately so the first purge only happens after the first
         // timeBetweenPurges duration has passed
-        delay(plugin, plugin.timeBetweenPurges, Yes.yield);
+        delay(plugin, plugin.timeBetweenPurges, yield: true);
 
         immutable nowInUnix = Clock.currTime.toUnixTime();
 
@@ -652,7 +651,7 @@ auto selftest(SedReplacePlugin plugin, Selftester s)
 
     // Should be no response
     static immutable delayDuration = 5.seconds;
-    delay(plugin, delayDuration, Yes.yield);
+    delay(plugin, delayDuration, yield: true);
     s.requireTriggeredByTimer();
 
     return true;
@@ -674,6 +673,7 @@ public:
 final class SedReplacePlugin : IRCPlugin
 {
 private:
+    import std.typecons : Flag, No, Yes;
     import core.time : seconds;
 
     /++

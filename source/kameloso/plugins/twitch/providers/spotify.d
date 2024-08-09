@@ -26,7 +26,6 @@ import kameloso.plugins.twitch.common;
 import kameloso.plugins.twitch.providers.common;
 
 import kameloso.common : logger;
-import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
 public:
@@ -98,7 +97,7 @@ A normal URL to any playlist you can modify will work fine.
 
     while (!channel.length)
     {
-        Flag!"benignAbort" benignAbort;
+        bool benignAbort;
 
         channel = readChannelName(
             numEmptyLinesEntered,
@@ -112,7 +111,7 @@ A normal URL to any playlist you can modify will work fine.
     creds.spotifyClientID = readNamedString(
         readOAuthIDMessage,
         32L,
-        No.passThroughEmptyString,
+        passThroughEmptyString: false,
         plugin.state.abort);
     if (*plugin.state.abort) return;
 
@@ -120,7 +119,7 @@ A normal URL to any playlist you can modify will work fine.
     creds.spotifyClientSecret = readNamedString(
         readOAuthSecretMessage,
         32L,
-        No.passThroughEmptyString,
+        passThroughEmptyString: false,
         plugin.state.abort);
     if (*plugin.state.abort) return;
 
@@ -131,7 +130,7 @@ A normal URL to any playlist you can modify will work fine.
         immutable playlistURL = readNamedString(
             readPlaylistMessage,
             0L,
-            No.passThroughEmptyString,
+            passThroughEmptyString: false,
             plugin.state.abort);
         if (*plugin.state.abort) return;
 
@@ -144,7 +143,7 @@ A normal URL to any playlist you can modify will work fine.
         {
             string slice = playlistURL;  // mutable
             slice.advancePast("spotify.com/playlist/");
-            creds.spotifyPlaylistID = slice.advancePast('?', Yes.inherit);
+            creds.spotifyPlaylistID = slice.advancePast('?', inherit: true);
         }
         else
         {
@@ -227,7 +226,7 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
             writeln();
             logger.warning("Aborting.");
             logger.trace();
-            *plugin.state.abort = Yes.abort;
+            *plugin.state.abort = true;
             return;
         }
         else if (!input.length)
@@ -497,7 +496,7 @@ auto addTrackToSpotifyPlaylist(
     TwitchPlugin plugin,
     ref Credentials creds,
     const string trackID,
-    const Flag!"recursing" recursing = No.recursing)
+    const bool recursing = false)
 in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
@@ -569,7 +568,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
             {
                 refreshSpotifyToken(plugin, creds);
                 saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-                return addTrackToSpotifyPlaylist(plugin, creds, trackID, Yes.recursing);
+                return addTrackToSpotifyPlaylist(plugin, creds, trackID, recursing: true);
             }
         }
 

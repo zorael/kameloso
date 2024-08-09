@@ -216,7 +216,7 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
             {
                 prettyformatImpl!(all, Yes.coloured)
                     (outbuffer,
-                    cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal,
+                    brightTerminal: kameloso.common.settings.brightTerminal,
                     thing,
                     widths.type+1,
                     widths.name);
@@ -229,7 +229,7 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
             // Brightness setting is irrelevant; pass No
             prettyformatImpl!(all, No.coloured)
                 (outbuffer,
-                No.brightTerminal,
+                brightTerminal: false,
                 thing,
                 widths.type+1,
                 widths.name);
@@ -291,7 +291,7 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
 void prettyformat(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
     (auto ref Sink sink,
-    const Flag!"brightTerminal" bright,
+    const bool brightTerminal,
     const auto ref Things things)
 {
     import std.meta : allSatisfy;
@@ -329,7 +329,7 @@ void prettyformat(Flag!"all" all = No.all,
     {
         prettyformatImpl!(all, coloured)
             (sink,
-            bright,
+            brightTerminal: brightTerminal,
             thing,
             widths.type+1,
             widths.name);
@@ -999,7 +999,7 @@ private void prettyformatOtherMemberImpl(Flag!"coloured" coloured, Sink)
 private void prettyformatImpl(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Thing)
     (auto ref Sink sink,
-    const Flag!"brightTerminal" bright,
+    const bool brightTerminal,
     const auto ref Thing thing,
     const uint typewidth,
     const uint namewidth)
@@ -1032,7 +1032,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
         import kameloso.terminal.colours.defs : F = TerminalForeground;
         import kameloso.terminal.colours : applyANSI;
 
-        immutable titleCode = bright ? F.black : F.white;
+        immutable titleCode = brightTerminal ? F.black : F.white;
         sink.applyANSI(titleCode);
         scope(exit) sink.applyANSI(F.default_);
     }
@@ -1081,7 +1081,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
                 args.memberstring = memberstring;
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
-                args.bright = bright;
+                args.bright = brightTerminal;
                 args.truncateAfter = all ? uint.max : stringTruncation;
                 args.value = content.to!string;
                 prettyformatStringMemberImpl!coloured(sink, args);
@@ -1109,7 +1109,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
                 args.truncated = !all && (content.length > arrayTruncation);
-                args.bright = bright;
+                args.bright = brightTerminal;
 
                 static if (isArray!T)
                 {
@@ -1202,7 +1202,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
                 args.aggregateType = aggregateType;
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
-                args.bright = bright;
+                args.bright = brightTerminal;
                 prettyformatAggregateMemberImpl!coloured(sink, args);
             }
             else
@@ -1213,7 +1213,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
                 args.memberstring = memberstring;
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
-                args.bright = bright;
+                args.bright = brightTerminal;
 
                 static if (isTrulyString!T)
                 {
@@ -1314,7 +1314,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
    char[char] cC                         ['k':'v', 'K':'V'](2)
 `;
 
-        sink.prettyformat!(No.all, No.coloured)(No.brightTerminal, s);
+        sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, s);
         sink.data.assertMultilineOpEquals(structNameSerialised);
         sink.clear();
 
@@ -1363,7 +1363,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
  string[string] aa2                        ["foo":"bar", "harbl":"snarbl"](2)
 `;
 
-        sink.prettyformat!(No.all, No.coloured)(No.brightTerminal, c1);
+        sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c1);
         sink.data.assertMultilineOpEquals(classNameSerialised);
         sink.clear();
     }
@@ -1399,7 +1399,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
           int fdsa                        -1
 `;
 
-        sink.prettyformat!(No.all, No.coloured)(No.brightTerminal, st1, st2);
+        sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, st1, st2);
         sink.data.assertMultilineOpEquals(st1st2Formatted);
         sink.clear();
     }
@@ -1419,7 +1419,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
 
             sink.clear();
             sink.reserve(256);  // ~239
-            sink.prettyformat!(No.all, Yes.coloured)(No.brightTerminal, s2);
+            sink.prettyformat!(No.all, Yes.coloured)(brightTerminal: false, s2);
 
             assert((sink.data.length > 12), "Empty sink after coloured fill");
 
@@ -1459,7 +1459,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
           int i                           42
 `;
 
-        sink.prettyformat!(No.all, No.coloured)(No.brightTerminal, c2);
+        sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c2);
         sink.data.assertMultilineOpEquals(cFormatted);
         sink.clear();
     }
@@ -1499,7 +1499,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
           int i                           -1
 `;
 
-        sink.prettyformat!(No.all, No.coloured)(No.brightTerminal, c4, c4.i3, c4.c3);
+        sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c4, c4.i3, c4.c3);
         sink.data.assertMultilineOpEquals(c4Formatted);
         //sink.clear();
     }
@@ -1536,14 +1536,14 @@ private void prettyformatImpl(Flag!"all" all = No.all,
             information that doesn't carry between program runs.
             Also those annotated [lu.uda.Hidden|Hidden].
         coloured = Whether to display in colours or not.
-        bright = Whether or not to format for a bright terminal background.
+        brightTerminal = Whether or not to format for a bright terminal background.
         things = Variadic list of structs to enumerate and format.
 
     Returns:
         String with the object formatted, as per the passed arguments.
  +/
 string prettyformat(Flag!"all" all = No.all, Flag!"coloured" coloured = Yes.coloured, Things...)
-    (const Flag!"brightTerminal" bright,
+    (const bool brightTerminal,
     const auto ref Things things) pure
 if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))  // must be a constraint
 {
@@ -1553,7 +1553,7 @@ if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))  // must be a con
     Appender!(char[]) sink;
     sink.reserve(BufferSize.prettyprintBufferPerObject * Things.length);
 
-    prettyformat!(all, coloured)(sink, bright, things);
+    prettyformat!(all, coloured)(sink, brightTerminal: brightTerminal, things);
     return sink.data;
 }
 
@@ -1580,7 +1580,7 @@ unittest
           int asdf                        42
 `;
 
-        immutable actual = prettyformat!(No.all, No.coloured)(No.brightTerminal, s);
+        immutable actual = prettyformat!(No.all, No.coloured)(brightTerminal: false, s);
         actual.assertMultilineOpEquals(expected);
     }
     {
@@ -1611,7 +1611,7 @@ unittest
        Nested nest                       <class> (null)
 `;
 
-        immutable actual = prettyformat!(No.all, No.coloured)(No.brightTerminal, c);
+        immutable actual = prettyformat!(No.all, No.coloured)(brightTerminal: false, c);
         actual.assertMultilineOpEquals(expected);
 
         c.nest = new Nested;
@@ -1624,7 +1624,7 @@ unittest
        Nested nest                       <class>
 `;
 
-        immutable actual2 = prettyformat!(No.all, No.coloured)(No.brightTerminal, c);
+        immutable actual2 = prettyformat!(No.all, No.coloured)(brightTerminal: false, c);
         actual2.assertMultilineOpEquals(expected2);
     }
     {
@@ -1650,7 +1650,7 @@ unittest
          bool hasReplays                  false
 `;
 
-        immutable actual = prettyformat!(No.all, No.coloured)(No.brightTerminal, state);
+        immutable actual = prettyformat!(No.all, No.coloured)(brightTerminal: false, state);
         actual.assertMultilineOpEquals(expected);
     }
 }

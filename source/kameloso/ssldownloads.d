@@ -19,7 +19,6 @@ version(Windows):
 private:
 
 import kameloso.kameloso : Kameloso;
-import std.typecons : Flag, No, Yes;
 
 public:
 
@@ -42,14 +41,14 @@ public:
             instead of v3.2.
 
     Returns:
-        `Yes.settingsTouched` if [kameloso.kameloso.Kameloso.settings|Kameloso.settings]
-        were touched and the configuration file should be updated; `No.settingsTouched` if not.
+        `true` if [kameloso.kameloso.Kameloso.settings|Kameloso.settings]
+        were touched and the configuration file should be updated; `false` if not.
  +/
 auto downloadWindowsSSL(
     Kameloso instance,
-    const Flag!"shouldDownloadCacert" shouldDownloadCacert,
-    const Flag!"shouldDownloadOpenSSL" shouldDownloadOpenSSL,
-    const Flag!"shouldDownloadOpenSSL1_1" shouldDownloadOpenSSL1_1)
+    const bool shouldDownloadCacert,
+    const bool shouldDownloadOpenSSL,
+    const bool shouldDownloadOpenSSL1_1)
 {
     import kameloso.common : logger;
     import std.path : buildNormalizedPath;
@@ -138,7 +137,7 @@ auto downloadWindowsSSL(
             cacertURL,
             "certificate bundle",
             instance.connSettings.caBundleFile);
-        if (*instance.abort) return No.settingsTouched;
+        if (*instance.abort) return false;
 
         if (result == 0)
         {
@@ -146,18 +145,18 @@ auto downloadWindowsSSL(
             {
                 enum cacertPattern = "File saved as <l>%s</>; configuration updated.";
                 logger.infof(cacertPattern, instance.connSettings.caBundleFile.doublyBackslashed);
-                return Yes.settingsTouched;
+                return true;
             }
             else
             {
                 enum cacertPattern = "File saved as <l>%s</>.";
                 logger.infof(cacertPattern, instance.connSettings.caBundleFile.doublyBackslashed);
-                return No.settingsTouched;  // let user supply --save
+                return false;  // let user supply --save
             }
         }
         else
         {
-            return No.settingsTouched;
+            return false;
         }
     }
 
@@ -269,7 +268,7 @@ auto downloadWindowsSSL(
         }
     }
 
-    Flag!"settingsTouched" retval;
+    bool retval;
 
     if (shouldDownloadCacert)
     {
@@ -289,7 +288,7 @@ auto downloadWindowsSSL(
         }
     }
 
-    if (*instance.abort) return retval;  // or No.settingsTouched?
+    if (*instance.abort) return retval;  // or false?
 
     if (shouldDownloadOpenSSL)
     {

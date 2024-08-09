@@ -21,7 +21,6 @@ private:
 
 import kameloso.plugins.common : IRCPlugin;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 import core.time : Duration;
 
@@ -84,7 +83,7 @@ in ((fiber !is null), "Tried to delay a null fiber")
 void delay(
     IRCPlugin plugin,
     const Duration duration,
-    const Flag!"yield" yield,
+    const bool yield,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to delay the current fiber outside of a fiber")
 {
@@ -257,7 +256,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a fiber to await `IRCEvent.T
 void await(
     IRCPlugin plugin,
     const IRCEvent.Type type,
-    const Flag!"yield" yield)
+    const bool yield)
 in (Fiber.getThis(), "Tried to `await` the current fiber outside of a fiber")
 in ((type != IRCEvent.Type.UNSET), "Tried to set up a fiber to await `IRCEvent.Type.UNSET`")
 {
@@ -318,7 +317,7 @@ in ((fiber !is null), "Tried to set up a null fiber to await events")
 void await(
     IRCPlugin plugin,
     const IRCEvent.Type[] types,
-    const Flag!"yield" yield)
+    const bool yield)
 in (Fiber.getThis(), "Tried to `await` the current fiber outside of a fiber")
 {
     foreach (immutable type; types)
@@ -416,7 +415,7 @@ private void unawaitImpl(Thing, AA)
     (Thing thing,
     ref AA aa,
     const IRCEvent.Type type,
-    const Flag!"fully" fully)
+    const bool fully)
 in ((thing !is null), "Tried to unlist a null " ~ Thing.stringof ~ " from awaiting events")
 in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
     " from awaiting `IRCEvent.Type.UNSET`")
@@ -483,7 +482,7 @@ void unawait(
     IRCPlugin plugin,
     Fiber fiber,
     const IRCEvent.Type type,
-    const Flag!"fully" fully = No.fully)
+    const bool fully = false)
 in (fiber, "Tried to call `unawait` with a null fiber")
 {
     return unawaitImpl(fiber, plugin.state.awaitingFibers, type, fully);
@@ -510,7 +509,7 @@ in (fiber, "Tried to call `unawait` with a null fiber")
 void unawait(
     IRCPlugin plugin,
     const IRCEvent.Type type,
-    const Flag!"fully" fully = No.fully)
+    const bool fully = false)
 in (Fiber.getThis(), "Tried to call `unawait` from outside a fiber")
 {
     return unawait(plugin, Fiber.getThis(), type, fully);
@@ -540,7 +539,7 @@ void unawait(
     IRCPlugin plugin,
     Fiber fiber,
     const IRCEvent.Type[] types,
-    const Flag!"fully" fully = No.fully)
+    const bool fully = false)
 in (fiber, "Tried to call `unawait` with a null fiber")
 {
     foreach (immutable type; types)
@@ -571,7 +570,7 @@ in (fiber, "Tried to call `unawait` with a null fiber")
 void unawait(
     IRCPlugin plugin,
     const IRCEvent.Type[] types,
-    const Flag!"fully" fully = No.fully)
+    const bool fully = false)
 in (Fiber.getThis(), "Tried to call `unawait` from outside a fiber")
 {
     foreach (immutable type; types)
@@ -603,7 +602,7 @@ void unawait(
     IRCPlugin plugin,
     void delegate(IRCEvent) dg,
     const IRCEvent.Type type,
-    const Flag!"fully" fully = No.fully)
+    const bool fully = false)
 in ((dg !is null), "Tried to call `unawait` with a null delegate")
 {
     return unawaitImpl(dg, plugin.state.awaitingDelegates, type, fully);
@@ -633,7 +632,7 @@ void unawait(
     IRCPlugin plugin,
     void delegate(IRCEvent) dg,
     const IRCEvent.Type[] types,
-    const Flag!"fully" fully = No.fully)
+    const bool fully = false)
 in ((dg !is null), "Tried to call `unawait` with a null delegate")
 {
     foreach (immutable type; types)

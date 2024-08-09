@@ -28,7 +28,6 @@ import kameloso.common : logger;
 import kameloso.messaging;
 import kameloso.thread : Sendable;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
 
@@ -695,7 +694,6 @@ void onAuthEnd(ConnectService service, const ref IRCEvent event)
 void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 {
     import std.algorithm.searching : endsWith;
-    import std.typecons : Flag, No, Yes;
 
     if ((service.state.server.daemon != IRCServer.Daemon.unset) ||
         !service.state.server.address.endsWith(".twitch.tv"))
@@ -929,7 +927,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             if (!rawCap.length) continue;
 
             string slice = rawCap;  // mutable
-            immutable cap = slice.advancePast('=', Yes.inherit);
+            immutable cap = slice.advancePast('=', inherit: true);
             immutable sub = slice;
 
             switch (cap)
@@ -1346,7 +1344,7 @@ void onWelcome(ConnectService service)
         ];
 
         scope(exit) unawait(service, endOfMotdEventTypes[]);
-        await(service, endOfMotdEventTypes[], Yes.yield);
+        await(service, endOfMotdEventTypes[], yield: true);
 
         version(TwitchSupport)
         {
@@ -1393,7 +1391,7 @@ void onWelcome(ConnectService service)
         {
             import kameloso.plugins.common.scheduling : delay;
 
-            delay(service, ConnectService.Timings.nickRegainPeriodicity, Yes.yield);
+            delay(service, ConnectService.Timings.nickRegainPeriodicity, yield: true);
 
             // Concatenate the verb once
             immutable squelchVerb = "squelch " ~ service.state.client.origNickname;
@@ -1413,7 +1411,7 @@ void onWelcome(ConnectService service)
                 enum properties = (Message.Property.quiet | Message.Property.background);
                 immutable message = "NICK " ~ service.state.client.origNickname;
                 raw(service.state, message, properties);
-                delay(service, ConnectService.Timings.nickRegainPeriodicity, Yes.yield);
+                delay(service, ConnectService.Timings.nickRegainPeriodicity, yield: true);
             }
 
             // All done
@@ -1640,8 +1638,8 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
 
     scope(exit) unawait(service, pingPongTypes[]);
     scope(exit) undelay(service);
-    await(service, pingPongTypes[], No.yield);
-    delay(service, pingMonitorPeriodicity, Yes.yield);
+    await(service, pingPongTypes[], yield: false);
+    delay(service, pingMonitorPeriodicity, yield: true);
 
     while (true)
     {
@@ -1675,7 +1673,7 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
                     {
                         logger.warning("Server is suspiciously quiet.");
                     }
-                    delay(service, briefWait, Yes.yield);
+                    delay(service, briefWait, yield: true);
                     continue;
                 }
                 else if (strikes == StrikeBreakpoints.ping)
@@ -1683,7 +1681,7 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
                     // Timeout. Send a preemptive ping
                     logger.warning("Sending preemptive ping.");
                     service.state.priorityMessages ~= ThreadMessage.ping(service.state.server.resolvedAddress);
-                    delay(service, timeToAllowForPingResponse, Yes.yield);
+                    delay(service, timeToAllowForPingResponse, yield: true);
                     continue;
                 }
                 else /*if (strikes > StrikeBreakpoints.ping)*/
@@ -1701,7 +1699,7 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
                 undelay(service);
                 immutable elapsed = (nowInUnix - lastPongTimestamp);
                 immutable remaining = (service.connectSettings.maxPingPeriodAllowed - elapsed);
-                delay(service, remaining.seconds, Yes.yield);
+                delay(service, remaining.seconds, yield: true);
             }
             continue;
 
@@ -1718,7 +1716,7 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
             assert(0, "Impossible case hit in pingMonitorDg");
         }
 
-        delay(service, pingMonitorPeriodicity, Yes.yield);
+        delay(service, pingMonitorPeriodicity, yield: true);
     }
 }
 
@@ -1985,7 +1983,7 @@ void setup(ConnectService service)
         header = String header describing the passed content payload.
         content = Message content.
  +/
-void onBusMessage(ConnectService service, const string header, shared Sendable content)
+void onBusMessage(ConnectService service, const string header, /*shared*/ Sendable content)
 {
     import kameloso.thread : Boxed;
 

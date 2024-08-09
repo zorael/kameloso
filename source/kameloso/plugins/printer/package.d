@@ -39,7 +39,6 @@ import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import kameloso.thread : Sendable;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 version(Colours) import kameloso.terminal.colours.defs : TerminalForeground;
 
@@ -307,8 +306,6 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         bool put;
 
-        alias BellOnMention = Flag!"bellOnMention";
-        alias BellOnError = Flag!"bellOnError";
 
         scope(exit) plugin.linebuffer.clear();
 
@@ -320,8 +317,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                     plugin,
                     plugin.linebuffer,
                     event,
-                    cast(BellOnMention)plugin.printerSettings.bellOnMention,
-                    cast(BellOnError)plugin.printerSettings.bellOnError);
+                    bellOnMention: plugin.printerSettings.bellOnMention,
+                    bellOnError: plugin.printerSettings.bellOnError);
                 put = true;
             }
         }
@@ -332,8 +329,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                 plugin,
                 plugin.linebuffer,
                 event,
-                cast(BellOnMention)plugin.printerSettings.bellOnMention,
-                cast(BellOnError)plugin.printerSettings.bellOnError);
+                bellOnMention: plugin.printerSettings.bellOnMention,
+                bellOnError: plugin.printerSettings.bellOnError);
         }
 
         writeln(plugin.linebuffer.data);
@@ -693,7 +690,7 @@ void initialise(PrinterPlugin plugin)
         {
             enum pattern = `Invalid <l>%s</>.<l>%s</> setting: "<l>%s</>" <t>(%s)`;
             logger.errorf(pattern, plugin.name, listName, definitions, e.msg);
-            *plugin.state.abort = Yes.abort;
+            *plugin.state.abort = true;
             return null;
         }
     }
@@ -732,7 +729,7 @@ void setup(PrinterPlugin plugin)
     }
 
     // Delay until next midnight, then every midnight thereafter
-    delay(plugin, untilNextMidnight, Yes.yield);
+    delay(plugin, untilNextMidnight, yield: true);
 
     while (true)
     {
@@ -773,7 +770,7 @@ void setup(PrinterPlugin plugin)
             }
         }
 
-        delay(plugin, untilNextMidnight, Yes.yield);
+        delay(plugin, untilNextMidnight, yield: true);
     }
 }
 
@@ -828,12 +825,11 @@ void teardown(PrinterPlugin plugin)
         header = String header describing the passed content payload.
         content = Message content.
  +/
-void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable content)
+void onBusMessage(PrinterPlugin plugin, const string header, /*shared*/ Sendable content)
 {
     import kameloso.common : logger;
     import kameloso.thread : Boxed;
     import lu.string : advancePast;
-    import std.typecons : Flag, No, Yes;
 
     if (header != "printer") return;
 
@@ -841,7 +837,7 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     string slice = message.payload;
-    immutable verb = slice.advancePast(' ', Yes.inherit);
+    immutable verb = slice.advancePast(' ', inherit: true);
     immutable target = slice;
 
     switch (verb)

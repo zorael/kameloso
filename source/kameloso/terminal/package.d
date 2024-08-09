@@ -15,7 +15,6 @@ module kameloso.terminal;
 private:
 
 import kameloso.constants : KamelosoInfo;
-import std.typecons : Flag, No, Yes;
 
 enum defaultTerminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
 

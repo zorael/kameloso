@@ -12,7 +12,6 @@ module kameloso.string;
 private:
 
 import dialect.defs : IRCClient;
-import std.typecons : Flag, No, Yes;
 
 public:
 
@@ -46,7 +45,7 @@ public:
 auto stripSeparatedPrefix(
     const string line,
     const string prefix,
-    const Flag!"demandSeparatingChars" demandSep = Yes.demandSeparatingChars) pure
+    const bool demandSeparatingChars = true) pure
 in (prefix.length, "Tried to strip separated prefix but no prefix was given")
 {
     import lu.string : advancePast, strippedLeft;
@@ -60,7 +59,7 @@ in (prefix.length, "Tried to strip separated prefix but no prefix was given")
     // the onus is on the caller that slice begins with prefix, else this will throw
     slice.advancePast(prefix);
 
-    if (demandSep)
+    if (demandSeparatingChars)
     {
         // Return the whole line, a non-match, if there are no separating characters
         // (at least one of the chars in separatingChars)
@@ -94,7 +93,7 @@ unittest
     assert((isnotabot == "kamelosois a bot"), isnotabot);
 
     immutable isabot = "kamelosois a bot"
-        .stripSeparatedPrefix("kameloso", No.demandSeparatingChars);
+        .stripSeparatedPrefix("kameloso", demandSeparatingChars: false);
     assert((isabot == "is a bot"), isabot);
 
     immutable doubles = "kameloso            is a snek"

@@ -10,7 +10,7 @@
     Example:
     ---
     immutable nameInColour = "kameloso".ircColour(IRCColour.red);
-    immutable nameInHashedColour = "kameloso".ircColourByHash(Yes.extendedOutgoingColours);
+    immutable nameInHashedColour = "kameloso".ircColourByHash(extendedOutgoingColours: true);
     immutable nameInBold = "kameloso".ircBold;
     ---
 
@@ -35,7 +35,6 @@ import kameloso.terminal.colours.defs :
 import dialect.common : IRCControlCharacter;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
-
 
 public:
 
@@ -378,7 +377,7 @@ unittest
  +/
 string ircColourByHash(
     const string word,
-    const Flag!"extendedOutgoingColours" extendedOutgoingColours) pure
+    const bool extendedOutgoingColours) pure
 in (word.length, "Tried to apply IRC colours by hash to a string but no string was given")
 {
     import std.array : Appender;
@@ -386,7 +385,7 @@ in (word.length, "Tried to apply IRC colours by hash to a string but no string w
     if (!word.length) return word;
 
     Appender!(char[]) sink;
-    ircColourByHashImpl(sink, word, extendedOutgoingColours);
+    ircColourByHashImpl(sink, word, extendedOutgoingColours: extendedOutgoingColours);
     return sink.data;
 }
 
@@ -406,7 +405,7 @@ in (word.length, "Tried to apply IRC colours by hash to a string but no string w
  +/
 dstring ircColourByHash(
     const dstring word,
-    const Flag!"extendedOutgoingColours" extendedOutgoingColours) pure
+    const bool extendedOutgoingColours) pure
 in (word.length, "Tried to apply IRC colours by hash to a dstring but no dstring was given")
 {
     import std.array : Appender;
@@ -414,7 +413,7 @@ in (word.length, "Tried to apply IRC colours by hash to a dstring but no dstring
     if (!word.length) return word;
 
     Appender!(dchar[]) sink;
-    ircColourByHashImpl(sink, word, extendedOutgoingColours);
+    ircColourByHashImpl(sink, word, extendedOutgoingColours: extendedOutgoingColours);
     return sink.data;
 }
 
@@ -426,22 +425,22 @@ unittest
     // Colour based on hash
 
     {
-        immutable actual = "kameloso".ircColourByHash(Yes.extendedOutgoingColours);
+        immutable actual = "kameloso".ircColourByHash(extendedOutgoingColours: true);
         immutable expected = I.colour ~ "23kameloso" ~ I.colour;
         assert((actual == expected), actual);
     }
     {
-        immutable actual = "kameloso^".ircColourByHash(Yes.extendedOutgoingColours);
+        immutable actual = "kameloso^".ircColourByHash(extendedOutgoingColours: true);
         immutable expected = I.colour ~ "56kameloso^" ~ I.colour;
         assert((actual == expected), actual);
     }
     {
-        immutable actual = "kameloso^11".ircColourByHash(Yes.extendedOutgoingColours);
+        immutable actual = "kameloso^11".ircColourByHash(extendedOutgoingColours: true);
         immutable expected = I.colour ~ "91kameloso^11" ~ I.colour;
         assert((actual == expected), actual);
     }
     {
-        immutable actual = "flerrp".ircColourByHash(Yes.extendedOutgoingColours);
+        immutable actual = "flerrp".ircColourByHash(extendedOutgoingColours: true);
         immutable expected = I.colour ~ "90flerrp" ~ I.colour;
         assert((actual == expected), actual);
     }
@@ -461,7 +460,7 @@ unittest
 private void ircColourByHashImpl(Sink, String)
     (ref Sink sink,
     const String word,
-    const Flag!"extendedOutgoingColours" extendedOutgoingColours) pure
+    const bool extendedOutgoingColours) pure
 {
     import lu.conv : toAlphaInto;
 
@@ -1291,8 +1290,8 @@ unittest
  +/
 auto expandIRCTags(T)
     (const T line,
-    const Flag!"extendedOutgoingColours" extendedOutgoingColours,
-    const Flag!"strip" strip) @system
+    const bool extendedOutgoingColours,
+    const bool strip) @system
 {
     import std.encoding : sanitize;
     import std.utf : UTFException;
@@ -1315,31 +1314,29 @@ auto expandIRCTags(T)
 ///
 @system unittest
 {
-    import std.typecons : Flag, No, Yes;
-
-    // See unit tests of other overloads for more No.strip tests
+    // See unit tests of other overloads for more `strip: false` tests
 
     {
         immutable line = "hello<b>hello<b>hello";
-        immutable expanded = line.expandIRCTags(Yes.extendedOutgoingColours, Yes.strip);
+        immutable expanded = line.expandIRCTags(extendedOutgoingColours: true, strip: true);
         immutable expected = "hellohellohello";
         assert((expanded == expected), expanded);
     }
     {
         immutable line = "hello<99,99<b>hiho</>";
-        immutable expanded = line.expandIRCTags(Yes.extendedOutgoingColours, Yes.strip);
+        immutable expanded = line.expandIRCTags(extendedOutgoingColours: true, strip: true);
         immutable expected = "hello<99,99hiho";
         assert((expanded == expected), expanded);
     }
     {
         immutable line = "hello<1>hellohello";
-        immutable expanded = line.expandIRCTags(Yes.extendedOutgoingColours, Yes.strip);
+        immutable expanded = line.expandIRCTags(extendedOutgoingColours: true, strip: true);
         immutable expected = "hellohellohello";
         assert((expanded == expected), expanded);
     }
     {
         immutable line = `hello\<h>hello<h>hello<h>hello`;
-        immutable expanded = line.expandIRCTags(Yes.extendedOutgoingColours, Yes.strip);
+        immutable expanded = line.expandIRCTags(extendedOutgoingColours: true, strip: true);
         immutable expected = "hello<h>hellohellohello";
         assert((expanded == expected), expanded);
     }
@@ -1371,7 +1368,7 @@ auto expandIRCTags(T)
     // Old
     enum pattern = "Quote %s #%s saved.";
     immutable message = plugin.state.settings.colouredOutgoing ?
-        pattern.format(id.ircColourByHash(Yes.extendedOutgoingColours), index.ircBold) :
+        pattern.format(id.ircColourByHash(extendedOutgoingColours: true), index.ircBold) :
         pattern.format(id, index);
     privmsg(plugin.state, event.channel, event.sender.nickname. message);
 
@@ -1391,10 +1388,10 @@ auto expandIRCTags(T)(const T line) @system
 {
     static import kameloso.common;
 
-    immutable extendedOutgoingColours =
-        cast(Flag!"extendedOutgoingColours")kameloso.common.settings.extendedOutgoingColours;
-    immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
-    return expandIRCTags(line, extendedOutgoingColours, strip);
+    return expandIRCTags(
+        line,
+        extendedOutgoingColours: kameloso.common.settings.extendedOutgoingColours,
+        strip: !kameloso.common.settings.colouredOutgoing);
 }
 
 ///
@@ -1519,7 +1516,7 @@ auto expandIRCTags(T)(const T line) @system
         immutable expanded = line.expandIRCTags;
         enum pattern = "Quote %s #%s saved.";
         immutable expected = pattern.format(
-            "zorael".ircColourByHash(Yes.extendedOutgoingColours),
+            "zorael".ircColourByHash(extendedOutgoingColours: true),
             "5".ircBold);
         assert((expanded == expected), expanded);
     }
@@ -1535,7 +1532,7 @@ auto expandIRCTags(T)(const T line) @system
         immutable expanded = line.expandIRCTags;
         enum pattern = "%s was already %s in #garderoben.";
         immutable expected = pattern.format(
-            "hirrsteff".ircColourByHash(Yes.extendedOutgoingColours),
+            "hirrsteff".ircColourByHash(extendedOutgoingColours: true),
             "whitelist".ircBold);
         assert((expanded == expected), expanded);
     }
@@ -1544,7 +1541,7 @@ auto expandIRCTags(T)(const T line) @system
         immutable expanded = line.expandIRCTags;
         immutable expected = text(
             "hello<h>hello",
-            "hello".ircColourByHash(Yes.extendedOutgoingColours),
+            "hello".ircColourByHash(extendedOutgoingColours: true),
             "hello");
         assert((expanded == expected), expanded);
     }
@@ -1564,14 +1561,12 @@ auto expandIRCTags(T)(const T line) @system
  +/
 auto stripIRCTags(T)(const T line) @system
 {
-    return expandIRCTags(line, No.extendedOutgoingColours, Yes.strip);
+    return expandIRCTags(line, extendedOutgoingColours: false, strip: true);
 }
 
 ///
 @system unittest
 {
-    import std.typecons : Flag, No, Yes;
-
     {
         immutable line = "hello<b>hello<b>hello";
         immutable expanded = line.stripIRCTags();
@@ -1618,8 +1613,8 @@ auto stripIRCTags(T)(const T line) @system
  +/
 private T expandIRCTagsImpl(T)
     (const T line,
-    const Flag!"extendedOutgoingColours" extendedOutgoingColours,
-    const Flag!"strip" strip = No.strip) pure @safe
+    const bool extendedOutgoingColours,
+    const bool strip = false) pure @safe
 {
     import std.array : Appender;
     import std.range : ElementEncodingType;

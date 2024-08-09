@@ -49,7 +49,6 @@ in (id, "Tried to get BTTV emotes with an unset ID")
     import kameloso.plugins.twitch.common : ErrorJSONException, UnexpectedJSONException;
     import std.conv : to;
     import std.json : JSONType, parseJSON;
-    import std.typecons : Flag, No, Yes;
 
     try
     {
@@ -189,7 +188,6 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
     import std.json : JSONType, parseJSON;
-    import std.typecons : Flag, No, Yes;
 
     enum url = "https://api.betterttv.net/3/cached/emotes/global";
 

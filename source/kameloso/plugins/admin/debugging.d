@@ -27,7 +27,6 @@ import kameloso.plugins.admin : AdminPlugin;
 
 import kameloso.messaging;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 package:
 
@@ -295,6 +294,7 @@ void onCommandStatusImpl(AdminPlugin plugin)
     import kameloso.common : logger;
     import kameloso.prettyprint : prettyprint;
     import std.stdio : stdout, writeln;
+    import std.typecons : Flag, No, Yes;
 
     if (plugin.state.settings.headless) return;
 
