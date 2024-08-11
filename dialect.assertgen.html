@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>dialect.assertgen (dialect.assertgen)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>dialect.assertgen</h1><div class="breadcrumbs"><a class="breadcrumb" href="dialect.html">dialect</a> </div><div><div class="documentation-comment synopsis"><div><p>Interactive assert statement generation from raw IRC strings, for use in the
+    source code <tt class="inline-code">unittest</tt> blocks.</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="dialect.assertgen.formatClientAssignment.html">formatClientAssignment</a><div class="simplified-prototype" style="max-width: 81ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">formatClientAssignment</span>(Sink sink, IRCClient client, IRCServer server)</div></dt><dd><div><p>Constructs statement lines for each changed field of an
+    <a class="xref" href="dialect.defs.IRCClient.html">IRCClient</a>, including instantiating a fresh one.</p></div></dd><dt><a href="dialect.assertgen.formatEventAssertBlock.html">formatEventAssertBlock</a><div class="simplified-prototype" style="max-width: 59ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">formatEventAssertBlock</span>(Sink sink, IRCEvent event)</div></dt><dd><div><p>Constructs assert statement blocks for each changed field of an
+    <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a>.</p></div></dd><dt><a href="dialect.assertgen.inputServerInformation.html">inputServerInformation</a><div class="simplified-prototype" style="max-width: 49ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">inputServerInformation</span>(IRCParser parser)</div></dt><dd><div><p>Asks the user to input server information via standard input.</p></div></dd></dl><div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="console">$ dub run :assertgen
+(...)<p>// Paste a raw event string and hit Enter to generate an assert block. Ctrl+C to exit.</p><p><i>@badge-info=subscriber/15;badges=subscriber/12;color=;display-name=tayk47_mom;emotes=;flags=;id=d6729804-2bf3-495d-80ce-a2fe8ed00a26;login=tayk47_mom;mod=0;msg-id=submysterygift;msg-param-mass-gift-count=1;msg-param-origin-id=49\s9d\s3e\s68\sca\s26\se9\s2a\s6e\s44\sd4\s60\s9b\s3d\saa\sb9\s4c\sad\s43\s5c;msg-param-sender-count=4;msg-param-sub-plan=1000;room-id=71092938;subscriber=1;system-msg=tayk47_mom\sis\sgifting\s1\sTier\s1\sSubs\sto\sxQcOW's\scommunity!\sThey've\sgifted\sa\stotal\sof\s4\sin\sthe\schannel!;tmi-sent-ts=1569013433362;user-id=224578549;user-type= :tmi.twitch.tv USERNOTICE #xqcow</i></p><p>{
+    immutable event = parser.toIRCEvent(&quot;@badge-info=subscriber/15;badges=subscriber/12;color=;display-name=tayk47_mom;emotes=;flags=;id=d6729804-2bf3-495d-80ce-a2fe8ed00a26;login=tayk47_mom;mod=0;msg-id=submysterygift;msg-param-mass-gift-count=1;msg-param-origin-id=49\\s9d\\s3e\\s68\\sca\\s26\\se9\\s2a\\s6e\\s44\\sd4\\s60\\s9b\\s3d\\saa\\sb9\\s4c\\sad\\s43\\s5c;msg-param-sender-count=4;msg-param-sub-plan=1000;room-id=71092938;subscriber=1;system-msg=tayk47_mom\\sis\\sgifting\\s1\\sTier\\s1\\sSubs\\sto\\sxQcOW's\\scommunity!\\sThey've\\sgifted\\sa\\stotal\\sof\\s4\\sin\\sthe\\schannel!;tmi-sent-ts=1569013433362;user-id=224578549;user-type= :tmi.twitch.tv USERNOTICE #xqcow&quot;);
+    with (event)
+    {
+        assert((type == IRCEvent.Type.TWITCH_BULKGIFT), Enum!(IRCEvent.Type).toString(type));
+        assert((sender.nickname == &quot;tayk47_mom&quot;), sender.nickname);
+        assert((sender.displayName == &quot;tayk47_mom&quot;), sender.displayName);
+        assert((sender.account == &quot;tayk47_mom&quot;), sender.account);
+        assert((sender.badges == &quot;subscriber/12&quot;), sender.badges);
+        assert((channel == &quot;#xqcow&quot;), channel);
+        assert((content == &quot;tayk47_mom is gifting 1 Tier 1 Subs to xQcOW's community! They've gifted a total of 4 in the channel!&quot;), content);
+        assert((aux == &quot;1000&quot;), aux);
+        assert((tags == &quot;badge-info=subscriber/15;badges=subscriber/12;color=;display-name=tayk47_mom;emotes=;flags=;id=d6729804-2bf3-495d-80ce-a2fe8ed00a26;login=tayk47_mom;mod=0;msg-
+id=submysterygift;msg-param-mass-gift-count=1;msg-param-origin-id=49\\s9d\\s3e\\s68\\sca\\s26\\se9\\s2a\\s6e\\s44\\sd4\\s60\\s9b\\s3d\\saa\\sb9\\s4c\\sad\\s43\\s5c;msg-param-sender-cou
+nt=4;msg-param-sub-plan=1000;room-id=71092938;subscriber=1;system-msg=tayk47_mom\\sis\\sgifting\\s1\\sTier\\s1\\sSubs\\sto\\sxQcOW's\\scommunity!\\sThey've\\sgifted\\sa\\stotal\\sof\\s
+4\\sin\\sthe\\schannel!;tmi-sent-ts=1569013433362;user-id=224578549;user-type=&quot;), tags);
+        assert((count == 1), count.to!string);
+        assert((altcount == 4), altcount.to!string);
+        assert((id == &quot;d6729804-2bf3-495d-80ce-a2fe8ed00a26&quot;), id);
+    }
+}</p></pre><p>These can be directly copy/pasted into the appropriate files in <tt class="inline-code">/tests</tt>.
+    They only carry state from the events pasted before it, but the changes made
+    are also expressed as asserts.</p><pre class="console">$ dub run :assertgen
+(...)<p>// Paste a raw event string and hit Enter to generate an assert block. Ctrl+C to exit.</p><p><i>@badge-info=;badges=;color=#5F9EA0;display-name=Zorael;emote-sets=0,185411,771823,1511983;user-id=22216721;user-type= :tmi.twitch.tv GLOBALUSERSTATE</i></p><p>{
+    immutable event = parser.toIRCEvent(&quot;@badge-info=;badges=;color=#5F9EA0;display-name=Zorael;emote-sets=0,185411,771823,1511983;user-id=22216721;user-type= :tmi.twitch.tv GLOBALUSERSTATE&quot;);
+    with (event)
+    {
+        assert((type == IRCEvent.Type.GLOBALUSERSTATE), Enum!(IRCEvent.Type).toString(type));
+        assert((sender.address == &quot;tmi.twitch.tv&quot;), sender.address);
+        assert((sender.class_ == IRCUser.Class.special), Enum!(IRCUser.Class).toString(sender.class_));
+        assert((target.nickname == &quot;zorael&quot;), target.nickname);
+        assert((target.displayName == &quot;Zorael&quot;), target.displayName);
+        assert((target.class_ == IRCUser.Class.admin), Enum!(IRCUser.Class).toString(target.class_));
+        assert((target.badges == &quot;*&quot;), target.badges);
+        assert((target.colour == &quot;5F9EA0&quot;), target.colour);
+        assert((tags == &quot;badge-info=;badges=;color=#5F9EA0;display-name=Zorael;emote-sets=0,185411,771823,1511983;user-id=22216721;user-type=&quot;), tags);
+    }
+}</p><p>with (parser.client)
+{
+    assert((displayName == &quot;Zorael&quot;), displayName);
+}</p></pre><p>This makes it easy to generate tests that verify wanted side-effects
+    incurred by events.</p></div></div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="dialect.html">dialect</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module current" href="dialect.assertgen.html">assertgen</a></li><li><a class="module" href="dialect.common.html">common</a></li><li><a class="module" href="dialect.defs.html">defs</a></li><li><a class="module" href="dialect.parsing.html">parsing</a></li><li><a class="module" href="dialect.postprocessors.html">postprocessors</a></li><li><a class="module" href="dialect.semver.html">semver</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
