@@ -640,8 +640,8 @@ auto processMessages(Kameloso instance)
                         pattern,
                         m.event.target.nickname,
                         m.caller,
-                        quiet: quiet,
-                        cast(bool)background);
+                        quiet,
+                        background);
                     // flush stdout with writeln later below
                 }
             }
