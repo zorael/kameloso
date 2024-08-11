@@ -8,7 +8,6 @@ on:
       - appveyor-*
       - dustmite-*
       - gh-pages
-      - onlinetests
 
   pull_request:
     branches-ignore:
@@ -17,17 +16,17 @@ on:
       - appveyor-*
       - dustmite-*
       - gh-pages
-      - onlinetests
 
 jobs:
   build:
     name: 'Everything'
     strategy:
       matrix:
-        os: [ ubuntu-latest, macOS-latest, windows-latest ]
-        dc: [ dmd-latest, dmd-2.087.0, ldc-latest, ldc-1.25.0 ]
-        exclude:
-          - { os: macOS-latest, dc: dmd-2.087.0 }
+        #os: [ ubuntu-latest, macOS-latest, windows-latest ]
+        os: [ ubuntu-latest, windows-latest ]
+        dc: [ dmd-latest, dmd-2.108.0, ldc-latest, ldc-1.38.0 ]
+        #exclude:
+          #- { os: macOS-latest, dc: dmd-2.108.0 }
 
     runs-on: ${{ matrix.os }}
     continue-on-error: false
@@ -58,7 +57,7 @@ jobs:
       run: dub build -c dev -b plain --arch=x86_64
 
     - name: 'Build: dev (release)'
-      if: matrix.dc != 'dmd-2.087.0'
+      if: matrix.dc != 'dmd-2.108.0'
       run: dub build -c dev -b release --arch=x86_64
 
     - name: 'Build: application (debug)'
@@ -68,7 +67,7 @@ jobs:
       run: dub build -b plain --arch=x86_64
 
     - name: 'Build: application (release)'
-      if: matrix.dc != 'dmd-2.087.0'
+      if: matrix.dc != 'dmd-2.108.0'
       run: dub build -b release --arch=x86_64
 
     - name: 'Generate documenation'
