@@ -174,14 +174,25 @@ in (id, "Tried to get 7tv emotes with an unset ID")
         }
          +/
 
-        if (const errorJSON = "error" in e.json)
+        const errorJSON = "error" in e.json;
+
+        if (errorJSON)
         {
-            if (errorJSON.str == "Unknown User")
+            switch (errorJSON.str)
             {
+            case "Unknown User":
                 // This should never happen but stop attempt if it does
                 return;
+
+            case "user not found":
+                // User has no user-specific 7tv emotes; benign failure
+                return;
+
+            default:
+                break;
             }
         }
+
         throw e;
     }
     catch (Exception e)
