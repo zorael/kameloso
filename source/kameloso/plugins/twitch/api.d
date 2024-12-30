@@ -541,7 +541,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         try
         {
             import lu.string : unquoted;
-            import std.json : parseJSON;
+            import std.json : JSONValue, parseJSON;
             import std.string : chomp;
 
             // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
@@ -572,6 +572,22 @@ in (url.length, "Tried to send an HTTP request without a URL")
             }
              +/
 
+            /+
+                Helper to get a string from a JSON object or return a fallback string.
+                Assumes the JSON is a dictionary with string keys and values.
+             +/
+            static auto getStringOrFallback(
+                const JSONValue json,
+                const string key,
+                const string fallback)
+            {
+                auto value = key in json;
+                return value ? (*value).str : fallback;
+            }
+
+            enum genericErrorString = "Error";
+            enum genericErrorMessageString = "An unspecified error occurred";
+
             immutable json = parseJSON(response.str);
             uint code = response.code;
             string status;
@@ -580,28 +596,25 @@ in (url.length, "Tried to send an HTTP request without a URL")
             if (immutable statusCodeJSON = "status_code" in json)
             {
                 code = cast(uint)(*statusCodeJSON).integer;
-                status = json["status"].str;
-                message = json["error"].str;
+                status = getStringOrFallback(json, "status", genericErrorString);
+                message = getStringOrFallback(json, "error", genericErrorMessageString);
+            }
+            else if (immutable errorJSON = "error" in json)
+            {
+                status = genericErrorString;
+                message = (*errorJSON).str;
             }
             else if (immutable statusJSON = "status" in json)
             {
                 import std.json : JSONException;
 
-                try
-                {
-                    code = cast(uint)(*statusJSON).integer;
-                    status = json["error"].str;
-                    message = json["message"].str;
-                }
-                catch (JSONException _)
-                {
-                    status = "Error";
-                    message = json["message"].str;
-                }
+                code = cast(uint)(*statusJSON).integer;
+                status = getStringOrFallback(json, "status", genericErrorString);
+                message = getStringOrFallback(json, "error", genericErrorMessageString);
             }
             else if (immutable messageJSON = "message" in json)
             {
-                status = "Error";
+                status = genericErrorString;
                 message = (*messageJSON).str;
             }
             else
@@ -616,8 +629,8 @@ in (url.length, "Tried to send an HTTP request without a URL")
                     }
                 }
 
-                status = "Error";
-                message = "An unspecified error occurred";
+                status = genericErrorString;
+                message = genericErrorMessageString;
             }
 
             enum pattern = "%3d %s: %s";
