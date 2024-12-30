@@ -322,19 +322,18 @@ void playbackNotesImpl(
 
         immutable now = Clock.currTime;
 
-        const string*[2] nicknameAndAccount =
+        const string[2] nicknameAndAccount =
         [
-            &user.nickname,
-            &user.account,
+            user.nickname,
+            user.account,
         ];
 
-        foreach (const idPtr; nicknameAndAccount[])
+        foreach (const id; nicknameAndAccount[])
         {
             import kameloso.plugins.common.misc : nameOf;
             import kameloso.time : timeSince;
             import std.datetime.systime : SysTime;
 
-            immutable id = *idPtr;
             auto notes = id in *channelNotes;
             if (!notes || !notes.length) continue;
 
