@@ -695,8 +695,18 @@ auto sendHTTPRequestImpl(
         ];
     }
 
-    auto authorizationHeader = "Authorization" in headers;
-    if (*authorizationHeader != authHeader) *authorizationHeader = authHeader;
+    if (!authHeader.length)
+    {
+        headers.remove("Authorization");
+    }
+    else if (auto authorizationHeader = "Authorization" in headers)
+    {
+        if (*authorizationHeader != authHeader) *authorizationHeader = authHeader;
+    }
+    else
+    {
+        headers["Authorization"] = authHeader;
+    }
 
     auto req = Request();
     //req.verbosity = 1;
