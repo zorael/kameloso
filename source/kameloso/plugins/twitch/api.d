@@ -540,6 +540,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
         try
         {
+            import kameloso.common : getOrFallback;
             import lu.string : unquoted;
             import std.json : JSONValue, parseJSON;
             import std.string : chomp;
@@ -572,19 +573,6 @@ in (url.length, "Tried to send an HTTP request without a URL")
             }
              +/
 
-            /+
-                Helper to get a string from a JSON object or return a fallback string.
-                Assumes the JSON is a dictionary with string keys and values.
-             +/
-            static auto getStringOrFallback(
-                const JSONValue json,
-                const string key,
-                const string fallback)
-            {
-                auto value = key in json;
-                return value ? (*value).str : fallback;
-            }
-
             enum genericErrorString = "Error";
             enum genericErrorMessageString = "An unspecified error occurred";
 
@@ -596,8 +584,8 @@ in (url.length, "Tried to send an HTTP request without a URL")
             if (immutable statusCodeJSON = "status_code" in json)
             {
                 code = cast(uint)(*statusCodeJSON).integer;
-                status = getStringOrFallback(json, "status", genericErrorString);
-                message = getStringOrFallback(json, "error", genericErrorMessageString);
+                status = getOrFallback(json, "status", genericErrorString);
+                message = getOrFallback(json, "error", genericErrorMessageString);
             }
             else if (immutable errorJSON = "error" in json)
             {
@@ -609,8 +597,8 @@ in (url.length, "Tried to send an HTTP request without a URL")
                 import std.json : JSONException;
 
                 code = cast(uint)(*statusJSON).integer;
-                status = getStringOrFallback(json, "status", genericErrorString);
-                message = getStringOrFallback(json, "error", genericErrorMessageString);
+                status = getOrFallback(json, "status", genericErrorString);
+                message = getOrFallback(json, "error", genericErrorMessageString);
             }
             else if (immutable messageJSON = "message" in json)
             {
