@@ -572,7 +572,9 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 )
 void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 {
-    if (!plugin.printerSettings.logs) return;
+    if (event.errors.length && plugin.printerSettings.logErrors) { /* Drop down */ }
+    else if (!plugin.printerSettings.logs) return;
+
     onLoggableEventImpl(plugin, event);
 }
 
@@ -781,7 +783,7 @@ void setup(PrinterPlugin plugin)
  +/
 void initResources(PrinterPlugin plugin)
 {
-    if (!plugin.printerSettings.logs) return;
+    if (!plugin.printerSettings.logs && !plugin.printerSettings.logErrors) return;
 
     if (!establishLogLocation(plugin.logDirectory, plugin.transient.naggedAboutDir))
     {
