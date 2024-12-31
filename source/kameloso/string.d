@@ -35,7 +35,7 @@ public:
         line = String line prefixed with `prefix`, potentially including
             separating characters.
         prefix = Prefix to strip.
-        demandSep = Makes it a necessity that `line` is followed
+        demandSeparatingChars = Makes it a necessity that `line` is followed
             by one of the prefix letters "`: !?;`". If it isn't, the `line` string
             will be returned as is.
 

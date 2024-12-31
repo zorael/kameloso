@@ -510,7 +510,7 @@ unittest
         r = Red value.
         g = Green value.
         b = Blue value.
-        bright = Whether the terminal has a bright background or not.
+        brightTerminal = Whether the terminal has a bright background or not.
         normalise = Whether or not to normalise colours so that they aren't too
             dark or too bright.
  +/
@@ -582,7 +582,7 @@ void applyTruecolour(Sink)
         r = Red value.
         g = Green value.
         b = Blue value.
-        bright = Whether the terminal has a bright background or not.
+        brightTerminal = Whether the terminal has a bright background or not.
         normalise = Whether or not to normalise colours so that they aren't too
             dark or too bright.
 

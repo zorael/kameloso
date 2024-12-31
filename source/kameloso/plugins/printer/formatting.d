@@ -970,8 +970,12 @@ void formatMessageColoured(Sink)
 
         scope(exit) sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
 
-        immutable TerminalForeground contentFgBase = plugin.state.settings.brightTerminal ? Bright.content : Dark.content;
-        immutable TerminalForeground emoteFgBase = plugin.state.settings.brightTerminal ? Bright.emote : Dark.emote;
+        immutable TerminalForeground contentFgBase = plugin.state.settings.brightTerminal ?
+            Bright.content :
+            Dark.content;
+        immutable TerminalForeground emoteFgBase = plugin.state.settings.brightTerminal ?
+            Bright.emote :
+            Dark.emote;
         immutable isEmote =
             (event.type == IRCEvent.Type.EMOTE) ||
             (event.type == IRCEvent.Type.SELFEMOTE);
@@ -1145,8 +1149,12 @@ void formatMessageColoured(Sink)
                 static Appender!(char[]) customEmoteSink;
                 scope(exit) customEmoteSink.clear();
 
-                immutable TerminalForeground highlight = plugin.state.settings.brightTerminal ? Bright.highlight : Dark.highlight;
-                immutable TerminalForeground contentFgBase = plugin.state.settings.brightTerminal ? Bright.content : Dark.content;
+                immutable TerminalForeground highlight = plugin.state.settings.brightTerminal ?
+                    Bright.highlight :
+                    Dark.highlight;
+                immutable TerminalForeground contentFgBase = plugin.state.settings.brightTerminal ?
+                    Bright.content :
+                    Dark.content;
 
                 // We can't know whether the replied-to event is an emote-only
                 // event or not, so just treat it as if it isn't and pass contentFgBase

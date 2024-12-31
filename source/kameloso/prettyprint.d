@@ -285,7 +285,7 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
             Also those annotated [lu.uda.Hidden|Hidden].
         coloured = Whether to display in colours or not.
         sink = Output range to write to.
-        bright = Whether or not to format for a bright terminal background.
+        brightTerminal = Whether or not to format for a bright terminal background.
         things = Variadic list of aggregate objects to enumerate and format.
  +/
 void prettyformat(Flag!"all" all = No.all,
