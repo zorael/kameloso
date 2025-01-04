@@ -681,26 +681,27 @@ struct ListenAttempt
     ---
 
     Params:
-        bufferSize = What size static array to use as buffer. Defaults to twice of
-            [kameloso.constants.BufferSize.socketReceive|BufferSize.socketReceive] for now.
         conn = [Connection] whose [std.socket.Socket|Socket] it reads from the server with.
         abort = Pointer to the "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.
         connectionLost = How many seconds may pass before we consider the connection lost.
             Optional, defaults to
             [kameloso.constants.Timeout.connectionLost|Timeout.connectionLost].
+        bufferSize = Size of the buffer to use for reading from the server.
+            Optional, defaults to
+            [kameloso.constants.BufferSize.socketReceive|BufferSize.socketReceive].
 
     Yields:
         [ListenAttempt]s with information about the line received in its member values.
  +/
-void listenFiber(size_t bufferSize = BufferSize.socketReceive*2)
-    (Connection conn,
+void listenFiber(
+    Connection conn,
     const bool* abort,
-    const int connectionLost = Timeout.connectionLost) @system
+    const int connectionLost = Timeout.connectionLost,
+    const size_t bufferSize = BufferSize.socketReceive) @system
 in ((conn.connected), "Tried to set up a listening fiber on a dead connection")
 in ((connectionLost > 0), "Tried to set up a listening fiber with connection timeout of <= 0")
 {
-    import kameloso.constants : BufferSize;
     import std.concurrency : yield;
     import std.datetime.systime : Clock;
     import std.socket : Socket, lastSocketError;
@@ -708,7 +709,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
     if (*abort) return;
 
-    ubyte[bufferSize] buffer;
+    auto buffer = new ubyte[bufferSize];
     long timeLastReceived = Clock.currTime.toUnixTime();
     size_t start;
 
