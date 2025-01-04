@@ -348,17 +348,17 @@ enum BufferSize
     /++
         The receive buffer size as set as a [std.socket.SocketOption|SocketOption].
      +/
-    socketOptionReceive = 2048,
+    socketOptionReceive = 8192,
 
     /++
         The send buffer size as set as a [std.socket.SocketOption|SocketOption].
      +/
-    socketOptionSend = 1024,
+    socketOptionSend = 8192,
 
     /++
         The actual buffer array size used when reading from the socket.
      +/
-    socketReceive = 2048,
+    socketReceive = 8192,
 
     /++
         The maximum number of queued outgoing lines to buffer. Anything above
