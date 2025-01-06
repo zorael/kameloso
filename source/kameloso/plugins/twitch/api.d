@@ -2134,7 +2134,7 @@ public:
 /++
     Fetches information about polls in the specified channel. If an ID string is
     supplied, it will be included in the query, otherwise all `"ACTIVE"` polls
-    are included in the returned JSON.
+    are included in the returned Voldemorts.
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
@@ -2145,7 +2145,7 @@ public:
         caller = Name of the calling function.
 
     Returns:
-        An arary of Voldemort `TwitchPoll` structs.
+        An array of Voldemort `TwitchPoll` structs.
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON.

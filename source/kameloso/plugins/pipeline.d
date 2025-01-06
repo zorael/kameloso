@@ -440,7 +440,7 @@ auto readFIFO(PipelinePlugin plugin)
         {
             import lu.string : advancePast;
 
-            line = line[1..$];  // skip the colon
+            line = line[1..$];  // skip the octothorpe
             immutable header = line.advancePast(' ', inherit: true);
             if (!header.length) continue;
 
