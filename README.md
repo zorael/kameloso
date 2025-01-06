@@ -95,13 +95,15 @@ Grab a prebuilt Windows or Linux binary from under [**Releases**](https://github
 
 ### Prerequisites
 
-The program can be built using the [**D**](https://dlang.org) reference compiler [**dmd**](https://dlang.org/download.html), with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases) and with the GCC-based [**gdc**](https://gdcproject.org/downloads). **dmd** compiles very fast, while **ldc** and **gdc** are slower at compiling but produce faster code. Additionally, the latter two support more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
+The program can be built using the [**D**](https://dlang.org) reference compiler [**dmd**](https://dlang.org/download.html) and with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). **dmd** offers *very* fast compilation, while **ldc** is slower at compiling but produces faster code. Additionally, **ldc** supports more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
-You will need a compiler based on D version **2.086** or later (May 2019). For **ldc** you require a minimum of version **1.18**, while for **gdc** you broadly need release series **12**.
+The GCC-based [**gdc**](https://gdcproject.org/downloads) currently cannot be used to build the bot due to compilation errors in dependency libraries. (This may/will hopefully change.)
 
-Some compiler versions exhibit bugs that may cause building to fail. If you run into errors when building, try updating to a newer compiler version.
+**Note**: Starting with `v4.0.0`, a more recent compiler version is required. This is to allow for use of named arguments, and to enable some compiler preview switches. You need a compiler based on D version **2.108** or later (April 2024). For **ldc** this translates to a minimum of version **1.38**.
 
-If your repositories (or other software sources) don't have compilers recent enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice. Mind that **gdc** is not available via this script.
+If your repositories (or other software sources) don't have compilers recent enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice.
+
+Releases of the bot prior to `v4.0.0` remain available for older compilers.
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it is included in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
 
