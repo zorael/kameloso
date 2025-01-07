@@ -540,7 +540,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
         try
         {
-            import kameloso.common : getOrFallback;
+            import lu.json : getOrFallback;
             import lu.string : unquoted;
             import std.json : JSONValue, parseJSON;
             import std.string : chomp;
