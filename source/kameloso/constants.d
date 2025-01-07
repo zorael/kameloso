@@ -381,7 +381,7 @@ enum BufferSize
     /++
         How many bytes to allocate for the stdout buffer, when we need to do so explicitly.
      +/
-    vbufStdout = 16_384,
+    vbufStdout = 32_768,
 
     /++
         How large to make [core.thread.fiber.Fiber|Fiber] stacks, so they don't
