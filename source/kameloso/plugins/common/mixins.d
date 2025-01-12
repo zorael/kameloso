@@ -147,7 +147,7 @@ mixin template WHOISFiberDelegate(
         import lu.traits : TakesParams;
         import std.algorithm.searching : canFind;
         import std.traits : arity;
-        import core.thread : Fiber;
+        import core.thread.fiber : Fiber;
 
         while (true)
         {
@@ -330,7 +330,7 @@ mixin template WHOISFiberDelegate(
         import lu.traits : TakesParams;
         import std.string : indexOf;
         import std.traits : arity;
-        import core.thread : Fiber;
+        import core.thread.fiber : Fiber;
 
         version(TwitchSupport)
         {
@@ -517,7 +517,8 @@ mixin template WHOISFiberDelegate(
 
     This merely makes it possible to use commands like
     `raw("PING :irc.freenode.net")` without having to import
-    [kameloso.messaging] and include the thread ID of the main thread in every
+    [kameloso.messaging] and pass the plugin's
+    [kameloso.plugins.common.IRCPluginState|IRCPluginState] in every
     call of the functions.
 
     Params:
@@ -865,7 +866,7 @@ private:
         "Error"))
     {
         /++
-            Generated `askToVerb` function. Asks the main thread to output text
+            Generated `askToVerb` function. Asks the main event loop to output text
             to the local terminal.
 
             No need for any annotation;

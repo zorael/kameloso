@@ -18,7 +18,7 @@ version(WithTwitchPlugin):
 private:
 
 import kameloso.plugins.twitch : TwitchPlugin;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 
 package:
 

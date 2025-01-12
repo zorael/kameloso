@@ -1091,7 +1091,7 @@ alias immediateline = immediate;
             [kameloso.logger.LogLevel|LogLevel] at which to log the message.
         state = Current [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             used for its [kameloso.plugins.common.IRCPluginState.messages|messages] array.
-        line = The text body to ask the main thread to display.
+        line = The text body to ask the main event loop to display.
  +/
 void askToOutputImpl(string askVerb)(IRCPluginState state, const string line)
 {
@@ -1127,8 +1127,8 @@ static if (__VERSION__ >= 2099L)
     {
         mixin(`
         /++
-            Sends a message to the main thread to print text using
-            the [KamelosoLogger] to the local terminal.
+            Leaves a message for the main event loop to print text using
+            the [kameloso.logger.KamelosoLogger] to the local terminal.
          +/
         alias ` ~ askVerb ~ ` = askToOutputImpl!"` ~ askVerb ~ `";
 `);
@@ -1142,19 +1142,23 @@ static if (__VERSION__ >= 2099L)
 else
 {
     /++
-        Sends a message to the main thread to [KamelosoLogger.trace] text to the local terminal.
+        Leaves a message for the main event loop to [kameloso.logger.KamelosoLogger.trace|trace]
+        text to the local terminal.
      +/
     alias askToTrace = askToOutputImpl!"askToTrace";
     /++
-        Sends a message to the main thread to [KamelosoLogger.log] text to the local terminal.
+        Leaves a message for the main event loop to [kameloso.logger.KamelosoLogger.log|log]
+        text to the local terminal.
      +/
     alias askToLog = askToOutputImpl!"askToLog";
     /++
-        Sends a message to the main thread to [KamelosoLogger.info] text to the local terminal.
+        Leaves a message for the main event loop to [kameloso.logger.KamelosoLogger.info|info]
+        text to the local terminal.
      +/
     alias askToInfo = askToOutputImpl!"askToInfo";
     /++
-        Sends a message to the main thread to [KamelosoLogger.warning] text to the local terminal.
+        Leaves a message for the main event loop to [kameloso.logger.KamelosoLogger.warning|warning]
+        text to the local terminal.
      +/
     alias askToWarn = askToOutputImpl!"askToWarn";
     /++
@@ -1162,19 +1166,22 @@ else
      +/
     alias askToWarning = askToWarn;
     /++
-        Sends a message to the main thread to [KamelosoLogger.error] text to the local terminal.
+        Leaves a message for the main event loop to [kameloso.logger.KamelosoLogger.error|error]
+        text to the local terminal.
      +/
     alias askToError = askToOutputImpl!"askToError";
     /++
-        Sends a message to the main thread to [KamelosoLogger.critical] text to the local terminal.
+        Leaves a message for the main event loop to [kameloso.logger.KamelosoLogger.critical|critical]
+        text to the local terminal.
      +/
     alias askToCritical = askToOutputImpl!"askToCritical";
     /++
-        Sends a message to the main thread to [KamelosoLogger.fatal] text to the local terminal.
+        Leaves a message for the main event loop to [kameloso.logger.KamelosoLogger.fatal|fatal]
+        text to the local terminal.
      +/
     alias askToFatal = askToOutputImpl!"askToFatal";
     /++
-        Sends a message to the main thread asking to print text to the local terminal.
+        Leaves a message for the main event loop asking to print text to the local terminal.
      +/
     alias askToWriteln = askToOutputImpl!"askToWriteln";
 }

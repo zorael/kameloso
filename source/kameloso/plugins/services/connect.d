@@ -28,7 +28,7 @@ import kameloso.common : logger;
 import kameloso.messaging;
 import kameloso.thread : Sendable;
 import dialect.defs;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 
 
 // ConnectSettings
@@ -1603,7 +1603,7 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
     if we haven't received one from the server for a while. This is to ensure
     that dead connections are properly detected.
 
-    Note: Must be called from within a [core.thread.Fiber.Fiber|Fiber].
+    Note: Must be called from within a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         service = The current [ConnectService].

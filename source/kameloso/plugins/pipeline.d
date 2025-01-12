@@ -403,7 +403,7 @@ auto isFIFO(const string filename)
 
 // readFIFO
 /++
-    Reads from the FIFO and sends messages to the main thread based upon what was read.
+    Reads from the FIFO and leaves a message for the main event loop based upon what was read.
     If something was indeed read, `true` is returned to signal to the caller that
     it should check for new messages.
 

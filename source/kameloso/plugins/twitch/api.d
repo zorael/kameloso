@@ -27,7 +27,7 @@ import kameloso.plugins.twitch.common;
 import kameloso.tables : HTTPVerb;
 import dialect.defs;
 import lu.container : MutexedAA;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 import core.time : Duration, seconds;
 
 package:
@@ -158,7 +158,7 @@ in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outsi
         [EmptyDataJSONException] also.
         [ErrorJSONException] if the delegate throws it and the JSON embedded
             contains an error code in the 400-499 range.
-        [Exception] if the delegate throws it and `endlessly` is not passed.
+        [object.Exception|Exception] if the delegate throws it and `endlessly` is not passed.
  +/
 private auto handleRetryDelegateException(
     Exception base,

@@ -81,7 +81,7 @@ void startChannelQueries(ChanQueryService service)
     import kameloso.messaging : Message, mode, raw;
     import std.datetime.systime : Clock;
     import std.string : representation;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
     import core.time : seconds;
 
     if (service.transient.querying) return;  // Try again next PING

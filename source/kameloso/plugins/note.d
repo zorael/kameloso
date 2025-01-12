@@ -600,7 +600,7 @@ auto selftest(NotePlugin plugin, Selftester s)
     void cycle()
     {
         import kameloso.plugins.common.scheduling : await, unawait;
-        import core.thread : Fiber;
+        import core.thread.fiber : Fiber;
 
         part(plugin.state, s.channelName);
         await(plugin, IRCEvent.Type.SELFPART, yield: true);

@@ -301,7 +301,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
     case "add":
         import kameloso.thread : CarryingFiber;
         import std.typecons : Tuple;
-        import core.thread : Fiber;
+        import core.thread.fiber : Fiber;
 
         if (!slice.length) goto default;
 

@@ -124,7 +124,7 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
     import kameloso.constants : BufferSize;
     import lu.string : strippedRight;
     import std.string : indexOf;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
     import core.time : seconds;
 
     immutable content = event.content.strippedRight;

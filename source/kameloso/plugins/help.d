@@ -50,16 +50,23 @@ import dialect.defs;
 /++
     Sends a list of all plugins' commands to the requesting user.
 
-    Plugins don't know about other plugins; the only thing they know of the
-    outside world is the thread ID of the main thread ID (stored in
-    [kameloso.plugins.common.IRCPluginState.mainThread|IRCPluginState.mainThread]).
-    As such, we can't easily query each plugin for their
-    [kameloso.plugins.common.IRCEventHandler.Command|IRCEventHandler.Command]-annotated
-    functions.
+    Plugins don't know about other plugins; the only way for them to communicate
+    with the outside world is by unidirectionally leaving messages in
+    [kameloso.plugins.common.IRCPluginState.messages|IRCPluginState.messages]
+    (and related arrays).
 
-    To work around this we construct a delegate that accepts an array of
-    [kameloso.plugins.common.IRCPlugin|IRCPlugins], and pass it to the main thread.
-    It will then invoke the delegate with the client-global `plugins` array as argument.
+    As such, we cannot from a plugin query other plugins for their
+    [kameloso.plugins.common.IRCEventHandler.Command|IRCEventHandler.Command]-annotated
+    functions, by design. Plugins should be self-contained.
+
+    To work around this we construct a delegate that accepts associative arrays of
+    [kameloso.plugins.common.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata],
+    and leave them as a message. These are constructed at compile-time based on
+    the event handlers in a plugin module.
+
+    The main event loop will then gather
+    [kameloso.plugins.common.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s
+    from all plugins and invoke the delegate with these "commands" arrays as argument.
 
     Once we have the list we format it nicely and send it back to the requester.
  +/
@@ -89,7 +96,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
     {
         import kameloso.thread : CarryingFiber;
         import lu.string : splitInto, stripped;
-        import core.thread : Fiber;
+        import core.thread.fiber : Fiber;
 
         auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);

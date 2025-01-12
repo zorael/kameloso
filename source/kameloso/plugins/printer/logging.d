@@ -66,7 +66,7 @@ public:
     /++
         Clears the buffer of lines.
 
-        Uses [kameloso.common.zero] to zero the buffer instead of merely invoking
+        Uses [lu.array.zero] to zero the buffer instead of merely invoking
         [std.array.Appender.clear|Appender.clear], to reduce the number of live pointers.
      +/
     void clear() @safe nothrow

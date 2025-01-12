@@ -705,7 +705,7 @@ void initialise(PrinterPlugin plugin)
 // setup
 /++
     Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
-    Loops (as a [core.thread.Fiber|Fiber] to print the date in `YYYY-MM-DD` format
+    Loops (as a [core.thread.fiber.Fiber|Fiber] to print the date in `YYYY-MM-DD` format
     to the screen and to any active log files upon day change.
  +/
 void setup(PrinterPlugin plugin)

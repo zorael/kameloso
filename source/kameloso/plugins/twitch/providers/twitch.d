@@ -27,7 +27,7 @@ import kameloso.plugins.twitch.providers.common;
 
 import kameloso.common : logger;
 import kameloso.terminal.colours.tags : expandTags;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 
 public:
 

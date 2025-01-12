@@ -58,7 +58,7 @@ import kameloso.thread : CarryingFiber;
 import dialect.defs;
 import std.traits : ParameterStorageClass;
 import std.typecons : Flag, No, Yes;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 
 public:
 
@@ -443,7 +443,7 @@ mixin template IRCPluginImpl(
     private import std.array : Appender;
     private import std.meta : AliasSeq;
     private import std.traits : getUDAs;
-    private import core.thread : Fiber;
+    private import core.thread.fiber : Fiber;
     private import core.time : Duration;
 
     version(unittest)
@@ -1039,7 +1039,7 @@ mixin template IRCPluginImpl(
             {
                 import kameloso.constants : BufferSize;
                 import kameloso.thread : carryingFiber;
-                import core.thread : Fiber;
+                import core.thread.fiber : Fiber;
 
                 auto fiber = carryingFiber(
                     () => call!(inFiber, SystemFun)(fun, event),
@@ -1744,7 +1744,7 @@ mixin template IRCPluginImpl(
                     TakesParams!(.` ~ funName ~ `, typeof(this)))
                 {
                     import kameloso.constants : BufferSize;
-                    import core.thread : Fiber;
+                    import core.thread.fiber : Fiber;
 
                     void ` ~ funName ~ `Dg()
                     {
@@ -2389,7 +2389,7 @@ auto filterSender(bool verbose = false)
 
     Params:
         permissionsRequired = The [Permissions] context in which this user should be filtered.
-        class_ = [IRCUser.Class] of the sender to filter.
+        class_ = [dialect.defs.IRCUser.Class|IRCUser.Class] of the sender to filter.
         whoisExpired = Whether or not the sender's WHOIS result has expired
             (and thus may be reissued).
 
@@ -2805,7 +2805,7 @@ private:
     import lu.container : RehashingAA;
     import std.array : Appender;
     import std.concurrency : Tid;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     /++
         Numeric ID of the current connection, to disambiguate between multiple
@@ -2981,7 +2981,7 @@ public:
 
     // previousWhoisTimestamps
     /++
-        A copy of the main thread's `previousWhoisTimestamps` associative arrays
+        A copy of the main `previousWhoisTimestamps` associative arrays
         of UNIX timestamps of when someone had a WHOIS query aimed at them, keyed
         by nickname.
      +/
@@ -3041,13 +3041,13 @@ public:
 
     // messages
     /++
-        Messages for the main thread to take action on.
+        Messages for the main event loop to take action on.
      +/
     Appender!(ThreadMessage[]) messages;
 
     // priorityMessages
     /++
-        Messages for the main thread to take action on with a higher priority.
+        Messages for the main event loop to take action on with a higher priority.
      +/
     Appender!(ThreadMessage[]) priorityMessages;
 
@@ -3409,7 +3409,7 @@ private auto replay(Plugin, Fun)
             {
                 import kameloso.constants : BufferSize;
                 import kameloso.thread : carryingFiber;
-                import core.thread : Fiber;
+                import core.thread.fiber : Fiber;
 
                 auto fiber = carryingFiber(
                     &call,
@@ -3646,8 +3646,8 @@ public:
 
     // _onEvent
     /++
-        Alias to make [kameloso.typecons.UnderscoreOpDispatcher] redirect calls to
-        [acceptedEventTypes] but by the name `onEvent`.
+        Alias to make the [lu.typecons.UnderscoreOpDispatcher|UnderscoreOpDispatcher]
+        redirect calls to [acceptedEventTypes] but by the name `onEvent`.
      +/
     alias _onEvent = acceptedEventTypes;
 
@@ -3673,8 +3673,8 @@ public:
 
     // _addCommand
     /++
-        Alias to make [kameloso.typecons.UnderscoreOpDispatcher] redirect calls to
-        [commands] but by the name `addCommand`.
+        Alias to make the [lu.typecons.UnderscoreOpDispatcher|UnderscoreOpDispatcher]
+        redirect calls to [commands] but by the name `addCommand`.
      +/
     alias _addCommand = commands;
 
@@ -3686,8 +3686,8 @@ public:
 
     // _addRegex
     /++
-        Alias to make [kameloso.typecons.UnderscoreOpDispatcher] redirect calls to
-        [regexes] but by the name `addRegex`.
+        Alias to make the [lu.typecons.UnderscoreOpDispatcher|UnderscoreOpDispatcher]
+        redirect calls to [regexes] but by the name `addRegex`.
      +/
     alias _addRegex = regexes;
 
@@ -3773,7 +3773,7 @@ public:
 
             Upon setting this the word is also converted to lowercase.
             Because we define this explicit function we need not rely on
-            [kameloso.typecons.UnderscoreOpDispatcher|UnderscoreOpDispatcher].
+            the [lu.typecons.UnderscoreOpDispatcher|UnderscoreOpDispatcher].
 
             Params:
                 word = New command word.
@@ -3812,8 +3812,8 @@ public:
 
         // _addSyntax
         /++
-            Alias to make [kameloso.typecons.UnderscoreOpDispatcher] redirect calls to
-            [syntaxes] but by the name `addSyntax`.
+            Alias to make the [lu.typecons.UnderscoreOpDispatcher|UndescoreOpDispatcher]
+            redirect calls to [syntaxes] but by the name `addSyntax`.
          +/
         alias _addSyntax = syntaxes;
 
@@ -3869,7 +3869,7 @@ public:
             The regular expression this [IRCEventHandler.Regex] embodies, in string form.
 
             Upon setting this a regex engine is also created. Because of this extra step we
-            cannot rely on [kameloso.typecons.UnderscoreOpDispatcher|UnderscoreOpDispatcher]
+            cannot rely on [lu.typecons.UnderscoreOpDispatcher|UnderscoreOpDispatcher]
             to redirect calls.
 
             Example:
@@ -3901,12 +3901,12 @@ public:
 
 // DeferredAction
 /++
-    Embodies the notion of an action a plugin defers to the main thread.
+    Embodies the notion of an action a plugin defers to the main event loop for later execution.
  +/
 interface DeferredAction
 {
 private:
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
 public:
     // context
@@ -3949,7 +3949,7 @@ private final class DeferredActionImpl(T) : DeferredAction
 {
 private:
     import kameloso.thread : CarryingFiber;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     /++
         Private context string.
@@ -4059,7 +4059,7 @@ public:
 
         Returns:
             A [kameloso.thread.CarryingFiber|CarryingFiber] in the guise of a
-            [core.thread.Fiber|Fiber].
+            [core.thread.fiber.Fiber|Fiber].
      +/
     Fiber fiber()
     {
@@ -4239,7 +4239,7 @@ public:
     void awaitReply()
     in (fiber, "Tried to await a test reply with no fiber attached")
     {
-        import core.thread : Fiber;
+        import core.thread.fiber : Fiber;
 
         do Fiber.yield();
         while (

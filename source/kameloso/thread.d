@@ -40,7 +40,7 @@ private:
 import kameloso.plugins.common : IRCPlugin;
 import std.meta : allSatisfy;
 import std.traits : isNumeric, isSomeFunction;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 import core.time : Duration;
 
 public:
@@ -57,7 +57,7 @@ public:
     Example:
     ---
     import std.datetime.systime : Clock;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     void dg() { /* ... */ }
 
@@ -416,9 +416,9 @@ final class Boxed(T) : Sendable
     Example:
     ---
     IRCEvent event;  // ...
-    mainThread.send(ThreadMessage.busMessage("header", boxed(event)));
-    mainThread.send(ThreadMessage.busMessage("other header", boxed("text payload")));
-    mainThread.send(ThreadMessage.busMessage("ladida", boxed(42)));
+    plugin.state.messages ~= ThreadMessage.busMessage("header", boxed(event));
+    plugin.state.messages ~= ThreadMessage.busMessage("other header", boxed("text payload"));
+    plugin.state.messages ~= ThreadMessage.busMessage("ladida", boxed(42));
     ---
 
     Params:
@@ -567,8 +567,8 @@ final class CarryingFiber(T) : Fiber
 
     /++
         Hijacks the invocation of the [core.thread.fiber.Fiber|Fiber] and injects
-        the string name of the calling function into the [caller] member before
-        calling the [core.thread.fiber.Fiber|Fiber]'s own `.call()`.
+        the string name of the calling function into the [CarryingFiber.caller|caller]
+        member before calling the [core.thread.fiber.Fiber|Fiber]'s own `.call()`.
 
         Params:
             caller = String name of the function calling this [CarryingFiber]
@@ -595,8 +595,8 @@ final class CarryingFiber(T) : Fiber
 
     /++
         Hijacks the invocation of the [core.thread.fiber.Fiber|Fiber] and injects
-        the string name of the calling function into the [caller] member before
-        calling the [core.thread.fiber.Fiber|Fiber]'s own `.call()`.
+        the string name of the calling function into the [CarryingFiber.caller]
+        member before calling the [core.thread.fiber.Fiber|Fiber]'s own `.call()`.
 
         Overload that takes a `T` `payload` to assign to its own internal
         [CarryingFiber.payload|this.payload].
@@ -629,8 +629,8 @@ final class CarryingFiber(T) : Fiber
         have been reset.
 
         Returns:
-            [Fiber.State.TERM] if the fiber has been reset; the state of the
-            underlying [core.thread.fiber.Fiber|Fiber] otherwise.
+            [core.thread.fiber.Fiber.State.TERM|Fiber.State.TERM] if the fiber has been
+            reset; the state of the underlying [core.thread.fiber.Fiber|Fiber] otherwise.
      +/
     auto state()
     {

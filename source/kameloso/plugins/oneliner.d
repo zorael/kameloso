@@ -553,7 +553,7 @@ void handleNewOneliner(
     import std.format : format;
     import std.typecons : Tuple;
     import std.uni : toLower;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     void sendNewUsage()
     {
@@ -632,7 +632,7 @@ void handleNewOneliner(
     Creates a new and empty oneliner.
 
     Uses [kameloso.plugins.common.defer|defer] to defer the creation to
-    the main thread, so that it can supply the list of existing commands across
+    the main event loop, so that it can supply the list of existing commands across
     all plugins and abort if the new trigger word would conflict with one.
 
     Params:
@@ -682,7 +682,7 @@ void newOnelinerImpl(
     void addNewOnelinerDg()
     {
         import kameloso.thread : CarryingFiber;
-        import core.thread : Fiber;
+        import core.thread.fiber : Fiber;
 
         auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);

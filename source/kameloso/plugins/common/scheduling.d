@@ -21,7 +21,7 @@ private:
 
 import kameloso.plugins.common : IRCPlugin;
 import dialect.defs;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 import core.time : Duration;
 
 public:

@@ -233,7 +233,7 @@ public:
     [dialect.defs.IRCEvent|IRCEvent] to be played back when the WHOIS results
     return, as well as a delegate that invokes the function that was originally
     to be called. Constructing a [kameloso.plugins.common.Replay|Replay] is
-    all wrapped in a function [kameloso.plugins.common.misc.enqueue|enqueue], with the
+    all wrapped in a function [kameloso.plugins.common.enqueue|enqueue], with the
     queue management handled behind the scenes.
 
     * [kameloso.plugins.common.IRCPluginState.hasPendingReplays|IRCPluginState.hasPendingReplays]
@@ -287,12 +287,12 @@ public:
 
     * [kameloso.plugins.common.IRCPluginState.deferredActions|IRCPluginState.deferredActions]
     is an array of [kameloso.plugins.common.DeferredAction|DeferredAction]s;
-    a way to defer the execution of a delegate or fiber to the main thread,
+    a way to defer the execution of a delegate or fiber to the main event loop,
     to be invoked with context only it has, such as knowledge of all plugins.
 
     * [kameloso.plugins.common.IRCPluginState.messages|IRCPluginState.messages]
     is an array of [kameloso.thread.ThreadMessage|ThreadMessage]s, used by
-    plugins to send messages up the stack to the main thread. These can
+    plugins to send messages up the stack to the main event loop. These can
     signal anything from "save configuration to file" to "quit the program".
 
     * [kameloso.plugins.common.IRCPluginState.priorityMessages|IRCPluginState.priorityMessages]
@@ -382,7 +382,8 @@ private:  // Module-level private.
     // MessagingProxy
     /++
         This mixin adds shorthand functions to proxy calls to
-        [kameloso.messaging] functions, *partially applied* with the main thread ID,
+        [kameloso.messaging] functions, *partially applied* with the plugin's
+        [kameloso.plugins.common.IRCPluginState|IRCPluginState] instance,
         so they can easily be called with knowledge only of the plugin symbol.
 
         ---
@@ -392,7 +393,7 @@ private:  // Module-level private.
         with (plugin)
         {
             chan("#d", "This is convenient");
-            query("kameloso", "No need to specify plugin.state.mainThread");
+            query("kameloso", "No need to specify plugin.state");
         }
         ---
      +/
@@ -1111,7 +1112,7 @@ void onWelcome(SeenPlugin plugin)
 {
     import kameloso.plugins.common.scheduling : await, delay;
     import kameloso.constants : BufferSize;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     loadSeen(plugin);
 

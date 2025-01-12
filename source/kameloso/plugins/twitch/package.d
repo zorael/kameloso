@@ -13,9 +13,9 @@
 
     Mind that the majority of the other plugins still work on Twitch, so you also have
     the [kameloso.plugins.counter|Counter] plugin for death counters, the
-    [kameloso.plugins.quotes|Quotes] plugin for streamer quotes, the
+    [kameloso.plugins.quote|Quote] plugin for streamer quotes, the
     [kameloso.plugins.timer|Timer] plugin for timed announcements, the
-    [kameloso.plugins.oneliners|Oneliners] plugin for oneliner commands, etc.
+    [kameloso.plugins.oneliner|Oneliner] plugin for oneliner commands, etc.
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#twitch,
@@ -213,7 +213,7 @@ import lu.container : MutexedAA, RehashingAA;
 import std.datetime.systime : SysTime;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 
 
 // Credentials
@@ -1052,7 +1052,8 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     /+
         Fetch the broadcaster's Twitch user through an API call and store it as
         a new IRCUser in the plugin.state.users AA, including its display name.
-        Additionally send the user to other plugins by way of a message to the main thread.
+        Additionally send the user to other plugins by way of a message to be
+        picked up by the main event loop.
      +/
     auto twitchUser = getTwitchUser(plugin, string.init, room.id);
     if (!twitchUser.nickname.length) return;  // No such user? Something is deeply wrong
@@ -3098,7 +3099,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
     This will validate the API access token and output to the terminal for how
     much longer it is valid. If it has expired, it will exit the program.
 
-    Note: Must be called from within a [core.thread.Fiber.Fiber|Fiber].
+    Note: Must be called from within a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [TwitchPlugin].
@@ -3287,7 +3288,7 @@ void complainAboutMissingTokens(const Exception base)
 
     This will save resources to disk periodically.
 
-    Note: Must be called from within a [core.thread.Fiber.Fiber|Fiber].
+    Note: Must be called from within a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [TwitchPlugin].
@@ -3906,7 +3907,7 @@ void onBusMessage(
         if (!plugin.transient.whispererRunning)
         {
             import kameloso.constants : BufferSize;
-            import core.thread : Fiber;
+            import core.thread.fiber : Fiber;
 
             void whispererDg()
             {

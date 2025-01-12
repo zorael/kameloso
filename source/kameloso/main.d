@@ -939,7 +939,7 @@ auto mainLoop(Kameloso instance)
     import lu.common : Next;
     import std.concurrency : Generator;
     import std.datetime.systime : Clock, SysTime;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     // Instantiate a Generator to read from the socket and yield lines
     auto listener = new Generator!ListenAttempt(() =>
@@ -1459,27 +1459,27 @@ void logPluginActionException(
 
     if (auto e = cast(AdvanceException)base)
     {
-        enum pattern = `AdvanceException %s.%s: tried to advance past "<t>%s</>" with "<l>%s</>"`;
-        logger.warningf(pattern, plugin.name, fun, e.haystack, e.needle);
+        enum pattern = `AdvanceException %s.%s: tried to advance past "<t>%s</>" with "<l>%s</>" <t>(%s:%d)`;
+        logger.warningf(pattern, plugin.name, fun, e.haystack, e.needle, e.file, e.line);
         if (event.raw.length) printEventDebugDetails(event, event.raw);
         version(PrintStacktraces) logger.trace(e.info);
     }
     else if (auto e = cast(UTFException)base)
     {
-        enum pattern = "UTFException %s.%s: <t>%s";
-        logger.warningf(pattern, plugin.name, fun, e.msg);
+        enum pattern = "UTFException %s.%s: <t>%s (%s:%d)";
+        logger.warningf(pattern, plugin.name, fun, e.msg, e.file, e.line);
         version(PrintStacktraces) logger.trace(e.info);
     }
     else if (auto e = cast(UnicodeException)base)
     {
-        enum pattern = "UnicodeException %s.%s: <t>%s";
-        logger.warningf(pattern, plugin.name, fun, e.msg);
+        enum pattern = "UnicodeException %s.%s: <t>%s (%s:%d)";
+        logger.warningf(pattern, plugin.name, fun, e.msg, e.file, e.line);
         version(PrintStacktraces) logger.trace(e.info);
     }
     else
     {
-        enum pattern = "Exception %s.%s: <t>%s";
-        logger.warningf(pattern, plugin.name, fun, base.msg);
+        enum pattern = "Exception %s.%s: <t>%s (%s:%d)";
+        logger.warningf(pattern, plugin.name, fun, base.msg, base.file, base.line);
         if (event.raw.length) printEventDebugDetails(event, event.raw);
         version(PrintStacktraces) logger.trace(base);
     }
@@ -1825,7 +1825,7 @@ void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
  +/
 void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
 {
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     Fiber[] expiredFibers;
 
@@ -2076,7 +2076,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
     import std.algorithm.iteration : uniq;
     import std.algorithm.sorting : sort;
     import std.range : chain;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     size_t[] toRemove;
     size_t[] toReset;
@@ -2212,7 +2212,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
  +/
 void processReadyReplays(Kameloso instance, IRCPlugin plugin)
 {
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     foreach (immutable i, replay; plugin.state.readyReplays)
     {
@@ -2395,7 +2395,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
 {
     import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     scope(exit) plugin.state.deferredActions.clear();
 

@@ -605,7 +605,7 @@ public:
         This happens after connection has been established.
 
         This merely calls
-        [kameloso.plugins.common.IRCPlugin.setupIRCPlugin.setup]
+        [kameloso.plugins.common.IRCPlugin.setup|IRCPlugin.setup]
         on each plugin.
 
         Don't setup disabled plugins.
@@ -650,7 +650,7 @@ public:
         foreach (ref plugin; this.plugins)
         {
             import std.exception : ErrnoException;
-            import core.thread : Fiber;
+            import core.thread.fiber : Fiber;
 
             if (!plugin.isEnabled) continue;
 

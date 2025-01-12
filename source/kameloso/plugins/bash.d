@@ -26,7 +26,7 @@ import kameloso.plugins.common.awareness : MinimalAuthentication;
 import requests.base : Response;
 import dialect.defs;
 import lu.container : MutexedAA;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 
 mixin MinimalAuthentication;
 mixin PluginRegistration!BashPlugin;

@@ -36,7 +36,7 @@ import kameloso.common : logger;
 import kameloso.messaging;
 import kameloso.thread : Sendable;
 import dialect.defs;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 import core.time : Duration;
 
 
@@ -1282,7 +1282,7 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 /++
     Implementation of cycling, called by [onCommandCycle].
 
-    Note: Must be called from within a [core.thread.Fiber.Fiber|Fiber].
+    Note: Must be called from within a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [AdminPlugin].
@@ -1768,7 +1768,6 @@ package auto parseTypesFromString(AdminPlugin plugin, const string definitions)
 /++
     Populates the array of what incoming types to prettyprint to the local terminal.
 
-    Do this here instead of in [setup], so it gets done before resolving.
     Gate it behind version `Debug` to be neat.
  +/
 version(Debug)

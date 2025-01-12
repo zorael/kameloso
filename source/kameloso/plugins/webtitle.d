@@ -27,7 +27,7 @@ import kameloso.plugins.common;
 import requests.base : Response;
 import dialect.defs;
 import lu.container : MutexedAA;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 
 
 // WebtitleSettings
@@ -124,8 +124,8 @@ static immutable descriptionExemptions =
 
     This function is annotated with
     [kameloso.plugins.common.Permissions.ignore|Permissions.ignore],
-    but we don't mix in [MinimalAuthentication|MinimalAuthentication]. Ideally
-    we would annotate it [kameloso.plugins.common.Permissions.anyone|Permissions.anyone],
+    but we don't mix in [kameloso.plugins.common.awareness.MinimalAuthentication|MinimalAuthentication].
+    Ideally we would annotate it [kameloso.plugins.common.Permissions.anyone|Permissions.anyone],
     but then *any* channel message would incur a user lookup, which
     is a bit much.
 

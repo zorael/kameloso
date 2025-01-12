@@ -25,7 +25,7 @@ import kameloso.plugins.common.awareness : MinimalAuthentication, UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 
 
 // TimerSettings
@@ -1372,7 +1372,7 @@ auto createTimerFiber(
     const string name)
 {
     import kameloso.constants : BufferSize;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     void createTimerDg()
     {

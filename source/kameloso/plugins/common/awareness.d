@@ -1358,10 +1358,10 @@ mixin template TwitchAwareness(
     // onTwitchAwarenessSenderCarryingEventMixin
     /++
         Proxies to
-        [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent|onTwitchAwarenessSenderCarryingEvent].
+        [kameloso.plugins.common.awareness.onTwitchAwarenessUserCarrierImpl|onTwitchAwarenessUserCarrierImpl].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent|onTwitchAwarenessSenderCarryingEvent]
+            [kameloso.plugins.common.awareness.onTwitchAwarenessUserCarrierImpl|onTwitchAwarenessUserCarrierImpl]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.CHAN)  // Catch these as we don't index people by WHO on Twitch
@@ -1406,7 +1406,7 @@ mixin template TwitchAwareness(
         we ensure we do our best to scrape the channels.
 
         See_Also:
-            [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent|onTwitchAwarenessSenderCarryingEvent]
+            [kameloso.plugins.common.awareness.onTwitchAwarenessUserCarrierImpl|onTwitchAwarenessUserCarrierImpl]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.TWITCH_BAN)
@@ -1439,7 +1439,7 @@ mixin template TwitchAwareness(
     do our best to scrape the channels.
 
     See_Also:
-        [kameloso.plugins.common.awareness.onTwitchAwarenessTargetCarryingEvent|onTwitchAwarenessTargetCarryingEvent]
+        [kameloso.plugins.common.awareness.onTwitchAwarenessTargetCarryingEventMixin|onTwitchAwarenessTargetCarryingEventMixin]
  +/
 version(TwitchSupport)
 void onTwitchAwarenessUserCarrierImpl(

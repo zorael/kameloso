@@ -26,7 +26,7 @@ import kameloso.plugins.twitch.common;
 import kameloso.plugins.twitch.providers.common;
 
 import kameloso.common : logger;
-import core.thread : Fiber;
+import core.thread.fiber : Fiber;
 
 public:
 

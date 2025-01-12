@@ -478,7 +478,7 @@ void generatePollFiber(
     import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import std.format : format;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     // Take into account people leaving or changing nicknames on non-Twitch servers
     // On Twitch NICKs and QUITs don't exist, and PARTs are unreliable.
@@ -863,7 +863,7 @@ void generateEndFiber(
     import kameloso.thread : CarryingFiber;
     import kameloso.constants : BufferSize;
     import std.datetime.systime : Clock;
-    import core.thread : Fiber;
+    import core.thread.fiber : Fiber;
 
     void endPollDg()
     {

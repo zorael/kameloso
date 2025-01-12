@@ -1038,7 +1038,7 @@ unittest
 // DurationStringException
 /++
     A normal [object.Exception|Exception] but where its type conveys the specific
-    context of a call to [abbreviatedDuration] having malformed arguments.
+    context of a call to [asAbbreviatedDuration] having malformed arguments.
  +/
 final class DurationStringException : Exception
 {
