@@ -119,10 +119,17 @@ in (((channelName.length && id) ||
     // Loop until the array is exhausted. Remove completed and/or failed imports.
     while (emoteImports.length)
     {
+        import kameloso.plugins.common.scheduling : delay;
         import std.algorithm.mutation : SwapStrategy, remove;
         import core.memory : GC;
+        import core.time : seconds;
 
+        static immutable initialDelay = 2.seconds;
+        static immutable retryOnErrorDelay = 5.seconds;
         size_t[] toRemove;
+
+        // Delay importing just a bit to cosmetically stagger the terminal output
+        delay(plugin, initialDelay, yield: true);
 
         foreach (immutable i, ref emoteImport; emoteImports)
         {
@@ -199,14 +206,15 @@ in (((channelName.length && id) ||
                         stdout.flush();
                     }
                 }
-
-                if (emoteImport.failures >= giveUpThreshold)
+                else if (emoteImport.failures >= giveUpThreshold)
                 {
                     // Failed too many times; flag it for deletion
                     toRemove ~= i;
                     atLeastOneImportFailed = true;
-                    continue;
+                    continue;  // skip the delay below
                 }
+
+                delay(plugin, retryOnErrorDelay, yield: true);
             }
         }
 
@@ -214,16 +222,6 @@ in (((channelName.length && id) ||
         {
             // Remove completed and/or successively failed imports
             emoteImports = emoteImports.remove!(SwapStrategy.unstable)(i);
-        }
-
-        if (emoteImports.length)
-        {
-            import kameloso.plugins.common.scheduling : delay;
-            import core.time : seconds;
-
-            // Still some left; repeat on remaining imports after a delay
-            static immutable retryDelay = 5.seconds;
-            delay(plugin, retryDelay, yield: true);
         }
     }
 
