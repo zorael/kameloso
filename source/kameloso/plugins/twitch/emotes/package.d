@@ -297,7 +297,7 @@ void embedCustomEmotes(
     if (sink.capacity == 0) sink.reserve(64);  // guesstimate
 
     immutable dline = content.strippedRight.to!dstring;
-    ptrdiff_t pos = dline.indexOf(' ');
+    ptrdiff_t spacePos = dline.indexOf(' ');
     dstring previousEmote;  // mutable
     size_t prev;
 
@@ -321,9 +321,9 @@ void embedCustomEmotes(
             pattern :
             pattern[1..$];
         immutable dwordEscaped = dword.replace(dchar(':'), dchar(';'));
-        immutable end = (pos == -1) ?
+        immutable end = (spacePos == -1) ?
             dline.length :
-            pos;
+            spacePos;
         sink.formattedWrite(slicedPattern, dwordEscaped, prev, end-1);
         previousEmote = dword;
     }
@@ -348,9 +348,9 @@ void embedCustomEmotes(
         if (dword == previousEmote)
         {
             enum pattern = ",%d-%d";
-            immutable end = (pos == -1) ?
+            immutable end = (spacePos == -1) ?
                 dline.length :
-                pos;
+                spacePos;
             sink.formattedWrite(pattern, prev, end-1);
             return;  // cannot return non-void from `void` function
         }
@@ -361,7 +361,7 @@ void embedCustomEmotes(
         }
     }
 
-    if (pos == -1)
+    if (spacePos == -1)
     {
         // No bounding space, check entire (one-word) line
         return checkWord(dline);
@@ -369,16 +369,16 @@ void embedCustomEmotes(
 
     while (true)
     {
-        if (pos > prev)
+        if (spacePos > prev)
         {
-            checkWord(dline[prev..pos]);
+            checkWord(dline[prev..spacePos]);
         }
 
-        prev = (pos + 1);
+        prev = (spacePos + 1);
         if (prev >= dline.length) return;
 
-        pos = dline.indexOf(' ', prev);
-        if (pos == -1)
+        spacePos = dline.indexOf(' ', prev);
+        if (spacePos == -1)
         {
             return checkWord(dline[prev..$]);
         }

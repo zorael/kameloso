@@ -706,17 +706,17 @@ in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`
     import std.string : indexOf;
 
     string slice = filename;  // mutable
-    size_t pos = slice.indexOf(dirSeparator);
+    size_t separatorPos = slice.indexOf(dirSeparator);
 
-    while (pos != -1)
+    while (separatorPos != -1)
     {
-        if (slice[pos+1..$] == "base.d")
+        if (slice[separatorPos+1..$] == "base.d")
         {
-            return getPluginName ? slice[0..pos] : slice;
+            return getPluginName ? slice[0..separatorPos] : slice;
         }
 
-        slice = slice[pos+1..$];
-        pos = slice.indexOf(dirSeparator);
+        slice = slice[separatorPos+1..$];
+        separatorPos = slice.indexOf(dirSeparator);
     }
 
     return getPluginName ? slice[0..$-2] : slice;
