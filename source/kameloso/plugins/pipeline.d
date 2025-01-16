@@ -440,6 +440,7 @@ auto readFIFO(PipelinePlugin plugin)
         {
             import lu.string : advancePast;
 
+            // Bus message
             line = line[1..$];  // skip the octothorpe
             immutable header = line.advancePast(' ', inherit: true);
             if (!header.length) continue;
@@ -448,11 +449,42 @@ auto readFIFO(PipelinePlugin plugin)
         }
         else if (line[0] == '<')
         {
+            // Faked event
             plugin.state.messages ~= ThreadMessage.fakeEvent(line[1..$]);
+        }
+        else if (line[0] == '!')
+        {
+            import lu.string : advancePast;
+
+            // Internal message, see kameloso.thread.ThreadMessage.MessageType
+            string subslice = line[1..$];  // mutable
+            immutable verb = subslice.advancePast(' ', inherit: true);
+            if (!verb.length) continue;
+
+            messageTypeSwitch:
+            switch (verb)
+            {
+            static foreach (immutable memberstring; __traits(allMembers, ThreadMessage.MessageType))
+            {
+                case memberstring:
+                    ThreadMessage message;
+                    mixin("message.type = ThreadMessage.MessageType.", memberstring, ";");
+                    message.content = subslice.advancePast(' ', inherit: true);
+                    message.payload = boxed(subslice);
+                    plugin.state.messages ~= message;
+                    break messageTypeSwitch;
+            }
+
+            default:
+                logger.error("Unknown message type: <l>" ~ verb);
+                break;
+            }
         }
         else
         {
             import kameloso.messaging : raw;
+
+            // Send piped string to the server as-is
             raw(plugin.state, line.strippedLeft);
         }
 
