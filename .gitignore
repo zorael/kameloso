@@ -36,6 +36,7 @@ callgrind*
 *.json
 /TODO
 /RELEASE.md
+/RED*
 
 # tracy
 /trace.tracy
@@ -53,3 +54,4 @@ callgrind*
 
 # project-specific
 /conf
+/dscan
