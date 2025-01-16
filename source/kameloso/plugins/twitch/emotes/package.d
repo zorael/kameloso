@@ -50,6 +50,7 @@ in (((channelName.length && id) ||
     "Tried to import custom channel-specific emotes with insufficient arguments")
 {
     import kameloso.common : logger;
+    import kameloso.plugins.common.scheduling : delay;
 
     alias GetEmoteFun = uint function(
         TwitchPlugin,
@@ -118,6 +119,10 @@ in (((channelName.length && id) ||
         ];
     }
 
+    // Delay importing just a bit to cosmetically stagger the terminal output
+    static immutable initialDelay = 2.seconds;
+    delay(plugin, initialDelay, yield: true);
+
     // Loop until the array is exhausted. Remove completed and/or failed imports.
     while (emoteImports.length)
     {
@@ -126,12 +131,7 @@ in (((channelName.length && id) ||
         import core.memory : GC;
         import core.time : seconds;
 
-        static immutable initialDelay = 2.seconds;
-        static immutable retryOnErrorDelay = 5.seconds;
         size_t[] toRemove;
-
-        // Delay importing just a bit to cosmetically stagger the terminal output
-        delay(plugin, initialDelay, yield: true);
 
         foreach (immutable i, ref emoteImport; emoteImports)
         {
@@ -212,6 +212,7 @@ in (((channelName.length && id) ||
                     continue;  // skip the delay below
                 }
 
+                static immutable retryOnErrorDelay = 3.seconds;
                 delay(plugin, retryOnErrorDelay, yield: true);
             }
         }
@@ -433,4 +434,4 @@ unittest
 
     This is used to stagger the imports so that they don't all happen at once.
  +/
-static immutable baseDelayBetweenImports = 2.seconds;
+static immutable baseDelayBetweenImports = 1.seconds;
