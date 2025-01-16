@@ -486,7 +486,7 @@ auto readFIFO(PipelinePlugin plugin)
             import kameloso.messaging : raw;
 
             // Send piped string to the server as-is
-            raw(plugin.state, line.strippedLeft);
+            raw(plugin.state, line);
         }
 
         shouldCheckMessages = true;
