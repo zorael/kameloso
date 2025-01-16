@@ -247,7 +247,7 @@ auto resolvePath(PipelinePlugin plugin)
 
             if (filename[$-2..$] == "-0")
             {
-                filename = filename[0..$-2] ~ "10";
+                filename = filename[0..$-2] ~ "-10";
             }
             else if (filename[$-3..$] == "-00")  // beyond -99
             {
