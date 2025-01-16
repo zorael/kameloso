@@ -416,11 +416,12 @@ auto isFIFO(const string filename)
  +/
 auto readFIFO(PipelinePlugin plugin)
 {
+    import kameloso.constants : BufferSize;
     import std.algorithm.iteration : splitter;
     import core.sys.posix.unistd : read;
 
-    enum bufferSize = 4096;
-    ubyte[bufferSize] buf;
+    static ubyte[] buf;
+    if (!buf.length) buf = new ubyte[BufferSize.socketOptionSend];
 
     immutable ptrdiff_t bytesRead = read(plugin.transient.fd, buf.ptr, buf.length);
     if (bytesRead <= 0) return false;   // 0 or -1
