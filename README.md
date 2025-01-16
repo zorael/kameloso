@@ -55,6 +55,7 @@ If there's anyone talking it should show on your screen.
 
 * [Getting started](#getting-started)
   * [Prerequisites](#prerequisites)
+    * [Compiler versions](#compiler-versions)
     * [SSL libraries on Windows](#ssl-libraries-on-windows)
   * [Downloading source](#downloading-source)
   * [Compiling](#compiling)
@@ -99,13 +100,15 @@ The program can be built using the [**D**](https://dlang.org) reference compiler
 
 The GCC-based [**gdc**](https://gdcproject.org/downloads) currently cannot be used to build the bot due to compilation errors in dependency libraries. (This may/will hopefully change.)
 
-**Note**: Starting with `v4.0.0`, a more recent compiler version is required. This is to allow for use of named arguments, and to enable some compiler preview switches. You need a compiler based on D version **2.108** or later (April 2024). For **ldc** this translates to a minimum of version **1.38**.
+The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it is included in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
+
+#### Compiler versions
+
+Starting with `v4.0.0`, a more recent compiler version is required. This is to allow for use of named arguments and to enable some compiler preview switches. You need a compiler based on D version **2.108** or later (April 2024). For **ldc** this translates to a minimum of version **1.38**.
 
 If your repositories (or other software sources) don't have compilers recent enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice.
 
 Releases of the bot prior to `v4.0.0` remain available for older compilers.
-
-The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it is included in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
 
 #### SSL libraries on Windows
 
