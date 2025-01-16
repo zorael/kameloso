@@ -583,11 +583,10 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onSelfjoin(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    const room = event.channel in plugin.rooms;
-    if (!room)
+    if (event.channel !in plugin.rooms)
     {
         // To be expected but may have been initialised elsewhere due to race
-        initRoom(plugin, event.channel);
+        cast(void)initRoom(plugin, event.channel);
     }
 }
 
@@ -600,12 +599,16 @@ void onSelfjoin(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     Params:
         plugin = The current [TwitchPlugin].
         channelName = The name of the channel we're supposedly joining.
+
+    Returns:
+        A pointer to the new [TwitchPlugin.Room].
  +/
-void initRoom(TwitchPlugin plugin, const string channelName)
+auto initRoom(TwitchPlugin plugin, const string channelName)
 in (channelName.length, "Tried to init Room with an empty channel string")
 {
     plugin.rooms[channelName] = TwitchPlugin.Room(channelName);
     plugin.rooms[channelName].lastNMessages.resize(TwitchPlugin.Room.messageMemory);
+    return channelName in plugin.rooms;
 }
 
 
@@ -651,8 +654,7 @@ void onUserstate(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         if (!room)
         {
             // Race...
-            initRoom(plugin, event.channel);
-            room = event.channel in plugin.rooms;
+            room = initRoom(plugin, event.channel);
         }
 
         if (!room.sawUserstate)
@@ -1039,8 +1041,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     if (!room)
     {
         // Race...
-        initRoom(plugin, event.channel);
-        room = event.channel in plugin.rooms;
+        room = initRoom(plugin, event.channel);
     }
     else
     {
