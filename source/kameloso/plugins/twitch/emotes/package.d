@@ -81,16 +81,18 @@ in (((channelName.length && id) ||
         import kameloso.plugins.twitch.emotes.seventv : get7tvEmotes;
 
         // Channel-specific emotes
-        customEmotes = channelName in plugin.customEmotesByChannel;
+        auto customChannelEmotes = channelName in plugin.customChannelEmotes;
 
-        if (!customEmotes)
+        if (!customChannelEmotes)
         {
             // Initialise it
-            //plugin.customEmotesByChannel[channelName] = new bool[dstring];  // fails with older compilers
-            plugin.customEmotesByChannel[channelName][dstring.init] = false;
-            customEmotes = channelName in plugin.customEmotesByChannel;
-            (*customEmotes).remove(dstring.init);
+            plugin.customChannelEmotes[channelName] = TwitchPlugin.CustomChannelEmotes.init;
+            customChannelEmotes = channelName in plugin.customChannelEmotes;
         }
+
+        customChannelEmotes.channelName = channelName;
+        customChannelEmotes.id = id;
+        customEmotes = &customChannelEmotes.emotes;
 
         emoteImports =
         [
@@ -240,14 +242,14 @@ in (((channelName.length && id) ||
     {
         customEmotes.rehash();
     }
-    else
+    /*else
     {
         if (channelName.length)
         {
-            // Nothing imported, may as well remove the AA
-            plugin.customEmotesByChannel.remove(channelName);
+            // Nothing imported, may as well remove the entry
+            plugin.customChannelEmotes.remove(channelName);
         }
-    }
+    }*/
 }
 
 

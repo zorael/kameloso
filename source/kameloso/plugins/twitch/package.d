@@ -1150,51 +1150,57 @@ version(TwitchCustomEmotesEverywhere)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
     .channelPolicy(ChannelPolicy.any)
-    .fiber(true)
+    //.fiber(true)
 )
 void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.plugins.twitch.emotes : baseDelayBetweenImports, importCustomEmotes;
     import kameloso.plugins.common.scheduling : delay;
+    import kameloso.constants : BufferSize;
     import std.algorithm.searching : canFind, countUntil;
     import std.conv : to;
+    import core.thread.fiber : Fiber;
 
     if (!plugin.twitchSettings.customEmotes) return;
 
     // Skip home channels, they're handled in onRoomState
     if (plugin.state.bot.homeChannels.canFind(event.channel)) return;
 
-    if (event.channel in plugin.customEmotesByChannel)
+    if (auto customChannelEmotes = event.channel in plugin.customChannelEmotes)
     {
-        // Already done
-        return;
-    }
-
-    /+
-        Stagger imports a bit.
-     +/
-    immutable guestIndex = plugin.state.bot.guestChannels.countUntil(event.channel);
-
-    if (guestIndex == -1)
-    {
-        // Channel joined via piped command or admin join command
-        immutable numHomesAndGuest = plugin.state.bot.homeChannels.length + plugin.state.bot.guestChannels.length;
-
-        if (plugin.transient.numCustomEmoteImports >= numHomesAndGuest)
+        if (customChannelEmotes.emotes.length)
         {
-            // All home and guest channels have already been imported; import this one immediately
-            return importCustomEmotes(plugin, event.channel, event.aux[0].to!uint);
+            // Already done
+            return;
         }
     }
 
-    immutable baseMultiplier = (guestIndex == -1) ?
-        (event.channel.hashOf % 5) + 5 :  // randomise a delay for non-guest channels
-        guestIndex;
-    immutable multiplier = plugin.state.bot.homeChannels.length + baseMultiplier;
-    immutable delayUntilImport = baseDelayBetweenImports * multiplier;
+    void importDg()
+    {
+        importCustomEmotes(plugin, event.channel, event.aux[0].to!uint);
+    }
 
-    delay(plugin, delayUntilImport, yield: true);
-    importCustomEmotes(plugin, event.channel, event.aux[0].to!uint);
+    uint delayMultiplier;
+    immutable guestIndex = plugin.state.bot.guestChannels.countUntil(event.channel);
+
+    if (guestIndex != -1)
+    {
+        // Channel joined via piped command or admin join command
+        delayMultiplier = cast(uint)(plugin.state.bot.homeChannels.length + guestIndex);
+    }
+    else
+    {
+        // Invent a delay based on the hash of the channel name
+        // padded by the number of home and guest channels
+        delayMultiplier = cast(uint)
+            (plugin.state.bot.homeChannels.length +
+            plugin.state.bot.guestChannels.length +
+            (event.channel.hashOf % 5));
+    }
+
+    Fiber importFiber = new Fiber(&importDg, BufferSize.fiberStack);
+    immutable delayUntilImport = baseDelayBetweenImports * delayMultiplier;
+    delay(plugin, importFiber, delayUntilImport);
 }
 
 
@@ -3604,7 +3610,8 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
     {
         import kameloso.plugins.twitch.emotes : embedCustomEmotes;
 
-        const customEmotes = event.channel in plugin.customEmotesByChannel;
+        const customChannelEmotes = event.channel in plugin.customChannelEmotes;
+        const customEmotes = customChannelEmotes ? &customChannelEmotes.emotes : null;
 
         // event.content is guaranteed to not be empty here
         embedCustomEmotes(
@@ -3863,14 +3870,54 @@ void reload(TwitchPlugin plugin)
         plugin.customGlobalEmotes = null;
         importCustomEmotes(plugin);
 
-        foreach (immutable channelName, const room; plugin.rooms)
+        foreach (immutable channelName, ref customEmotes; plugin.customChannelEmotes)
         {
             import kameloso.plugins.twitch.emotes : baseDelayBetweenImports;
             import kameloso.plugins.common.scheduling : delay;
+            import kameloso.constants : BufferSize;
+            import std.algorithm.searching : countUntil;
+            import core.thread.fiber : Fiber;
+            import core.time : seconds;
 
-            plugin.customEmotesByChannel.remove(channelName);
-            importCustomEmotes(plugin, channelName, room.id);
-            delay(plugin, baseDelayBetweenImports, yield: true);
+            //plugin.customChannelEmotes[channelName].emotes = null;
+            customEmotes.emotes = null;
+
+            void importDg()
+            {
+                // Can't reuse the customEmotes pointer as it changes while looping
+                importCustomEmotes(plugin, channelName, plugin.customChannelEmotes[channelName].id);
+            }
+
+            uint delayMultiplier;
+            immutable homeIndex = plugin.state.bot.homeChannels.countUntil(channelName);
+
+            if (homeIndex != -1)
+            {
+                delayMultiplier = cast(uint)homeIndex;
+            }
+            else
+            {
+                immutable guestIndex = plugin.state.bot.guestChannels.countUntil(channelName);
+
+                if (guestIndex != -1)
+                {
+                    // Channel joined via piped command or admin join command
+                    delayMultiplier = cast(uint)(plugin.state.bot.homeChannels.length + guestIndex);
+                }
+                else
+                {
+                    // Invent a delay based on the hash of the channel name
+                    // padded by the number of home and guest channels
+                    delayMultiplier = cast(uint)
+                        (plugin.state.bot.homeChannels.length +
+                        plugin.state.bot.guestChannels.length +
+                        (channelName.hashOf % 5));
+                }
+            }
+
+            Fiber importFiber = new Fiber(&importDg, BufferSize.fiberStack);
+            immutable delayUntilImport = baseDelayBetweenImports * delayMultiplier;
+            delay(plugin, importFiber, delayUntilImport);
         }
     }
 }
@@ -4471,10 +4518,33 @@ package:
     Room[string] rooms;
 
     /++
+        Custom emotes for a channel.
+
+        Made into a struct so we can keep track of the channel ID.
+     +/
+    static struct CustomChannelEmotes
+    {
+        /++
+            String name of the channel.
+         +/
+        string channelName;
+
+        /++
+            The channel's numerical Twitch ID.
+         +/
+        uint id;
+
+        /++
+            Emote AA.
+         +/
+        bool[dstring] emotes;
+    }
+
+    /++
         Custom channel-specific BetterTTV, FrankerFaceZ and 7tv emotes, as
         fetched via API calls.
      +/
-    bool[dstring][string] customEmotesByChannel;
+    CustomChannelEmotes[string] customChannelEmotes;
 
     /++
         Custom global BetterTTV, FrankerFaceZ and 7tv emotes, as fetched via API calls.
