@@ -1990,7 +1990,13 @@ void onBusMessage(ConnectService service, const string header, /*shared*/ Sendab
     if (header != "connect") return;
 
     auto message = cast(Boxed!string)content;
-    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    if (!message)
+    {
+        enum pattern = "The <l>%s</> plugin received an invalid bus message: expected type <l>%s";
+        logger.errorf(pattern, service.name, typeof(message).stringof);
+        return;
+    }
 
     if (message.payload == "auth")
     {

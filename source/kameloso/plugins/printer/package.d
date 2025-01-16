@@ -836,7 +836,13 @@ void onBusMessage(PrinterPlugin plugin, const string header, /*shared*/ Sendable
     if (header != "printer") return;
 
     auto message = cast(Boxed!string)content;
-    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    if (!message)
+    {
+        enum pattern = "The <l>%s</> plugin received an invalid bus message: expected type <l>%s";
+        logger.errorf(pattern, plugin.name, typeof(message).stringof);
+        return;
+    }
 
     string slice = message.payload;
     immutable verb = slice.advancePast(' ', inherit: true);

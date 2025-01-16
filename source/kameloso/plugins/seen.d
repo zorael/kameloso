@@ -1262,7 +1262,13 @@ void onBusMessage(SeenPlugin plugin, const string header, /*shared*/ Sendable co
     if (header != "seen") return;
 
     auto message = cast(Boxed!string)content;
-    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    if (!message)
+    {
+        enum pattern = "The <l>%s</> plugin received an invalid bus message: expected type <l>%s";
+        logger.errorf(pattern, plugin.name, typeof(message).stringof);
+        return;
+    }
 
     immutable verb = message.payload.strippedRight;
 
