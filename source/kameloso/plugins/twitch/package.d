@@ -1071,7 +1071,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         Additionally send the user to other plugins by way of a message to be
         picked up by the main event loop.
      +/
-    auto twitchUser = getTwitchUser(plugin, string.init, room.id);
+    const twitchUser = getTwitchUser(plugin, string.init, room.id);
     if (!twitchUser.nickname.length) return;  // No such user? Something is deeply wrong
 
     room.broadcasterDisplayName = twitchUser.displayName;
@@ -1182,7 +1182,7 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     // Skip home channels, they're handled in onRoomState
     if (plugin.state.bot.homeChannels.canFind(event.channel)) return;
 
-    if (auto customChannelEmotes = event.channel in plugin.customChannelEmotes)
+    if (const customChannelEmotes = event.channel in plugin.customChannelEmotes)
     {
         if (customChannelEmotes.emotes.length)
         {
@@ -2320,7 +2320,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
         .advancePast(':')
         .replace(':', ';');
 
-    auto thisEmoteCount = id in *channelcounts;
+    const thisEmoteCount = id in *channelcounts;
     if (!thisEmoteCount) return sendResults(0L);
 
     sendResults(*thisEmoteCount);
@@ -2443,9 +2443,9 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         return chan(plugin.state, event.channel, message);
     }
 
-    if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
+    if (const channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
     {
-        if (auto viewerTime = nickname in *channelViewerTimes)
+        if (const viewerTime = nickname in *channelViewerTimes)
         {
             import core.time : seconds;
 
