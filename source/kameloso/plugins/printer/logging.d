@@ -260,13 +260,13 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                     if (plugin.printerSettings.bufferedWrites)
                     {
-                        buffer.lines.put(plugin.linebuffer.data.idup);
+                        buffer.lines.put(plugin.linebuffer[].idup);
                         plugin.linebuffer.clear();
                     }
                     else
                     {
                         auto file = File(buffer.file, "a");
-                        file.writeln(plugin.linebuffer.data);
+                        file.writeln(plugin.linebuffer[]);
                     }
                 }
                 else /*if (raw)*/
@@ -319,7 +319,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                             brightTerminal: false,
                             event);
 
-                        errBuffer.lines.put(plugin.linebuffer.data.idup);
+                        errBuffer.lines.put(plugin.linebuffer[].idup);
 
                         if (event.sender.nickname.length || event.sender.address.length)
                         {
@@ -330,7 +330,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                                 brightTerminal: false,
                                 event.sender);
 
-                            errBuffer.lines.put(plugin.linebuffer.data.idup);
+                            errBuffer.lines.put(plugin.linebuffer[].idup);
                         }
 
                         if (event.target.nickname.length || event.target.address.length)
@@ -342,7 +342,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                                 brightTerminal: false,
                                 event.target);
 
-                            errBuffer.lines.put(plugin.linebuffer.data.idup);
+                            errBuffer.lines.put(plugin.linebuffer[].idup);
                         }
                     }
                     else /*version (!IncludeHeavyStuff)*/
@@ -383,7 +383,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                             brightTerminal: false,
                             event);
 
-                        errFile.writeln(plugin.linebuffer.data);
+                        errFile.writeln(plugin.linebuffer[]);
 
                         if (event.sender.nickname.length || event.sender.address.length)
                         {
@@ -394,7 +394,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                                 brightTerminal: false,
                                 event.sender);
 
-                            errFile.writeln(plugin.linebuffer.data);
+                            errFile.writeln(plugin.linebuffer[]);
                         }
 
                         if (event.target.nickname.length || event.target.address.length)
@@ -406,7 +406,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                                 brightTerminal: false,
                                 event.target);
 
-                            errFile.writeln(plugin.linebuffer.data);
+                            errFile.writeln(plugin.linebuffer[]);
                         }
                     }
                     else /*version (!IncludeHeavyStuff)*/
@@ -718,7 +718,7 @@ void flushLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     import std.file : FileException;
     import std.utf : UTFException;
 
-    if (!buffer.lines.data.length) return;
+    if (!buffer.lines[].length) return;
 
     try
     {
@@ -740,7 +740,7 @@ void flushLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         }
 
         // Write all in one go
-        auto lines = buffer.lines.data
+        auto lines = buffer.lines[]
             .map!sanitize
             .joiner("\n");
 

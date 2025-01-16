@@ -168,7 +168,7 @@ unittest
     enum properties = (Message.Property.quiet | Message.Property.background);
     chan(state, "#channel", "content", properties);
 
-    immutable m = state.outgoingMessages.data[0];
+    immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
         assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
@@ -310,7 +310,7 @@ unittest
 
     reply(state, event, "reply content");
 
-    immutable m = state.outgoingMessages.data[0];
+    immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
         assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
@@ -371,7 +371,7 @@ unittest
 
     query(state, "kameloso", "content");
 
-    immutable m = state.outgoingMessages.data[0];
+    immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
         assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
@@ -434,7 +434,7 @@ unittest
     {
         privmsg(state, "#channel", string.init, "content");
 
-        immutable m = state.outgoingMessages.data[0];
+        immutable m = state.outgoingMessages[][0];
         with (m.event)
         {
             assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
@@ -449,7 +449,7 @@ unittest
     {
         privmsg(state, string.init, "kameloso", "content");
 
-        immutable m = state.outgoingMessages.data[0];
+        immutable m = state.outgoingMessages[][0];
         with (m.event)
         {
             assert((type == IRCEvent.Type.QUERY), Enum!(IRCEvent.Type).toString(type));
@@ -524,7 +524,7 @@ unittest
     {
         emote(state, "#channel", "content");
 
-        immutable m = state.outgoingMessages.data[0];
+        immutable m = state.outgoingMessages[][0];
         with (m.event)
         {
             assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
@@ -539,7 +539,7 @@ unittest
     {
         emote(state, "kameloso", "content");
 
-        immutable m = state.outgoingMessages.data[0];
+        immutable m = state.outgoingMessages[][0];
         with (m.event)
         {
             assert((type == IRCEvent.Type.EMOTE), Enum!(IRCEvent.Type).toString(type));
@@ -596,7 +596,7 @@ unittest
 
     mode(state, "#channel", "+o", "content");
 
-    immutable m = state.outgoingMessages.data[0];
+    immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
         assert((type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(type));
@@ -647,7 +647,7 @@ unittest
 
     topic(state, "#channel", "content");
 
-    immutable m = state.outgoingMessages.data[0];
+    immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
         assert((type == IRCEvent.Type.TOPIC), Enum!(IRCEvent.Type).toString(type));
@@ -698,7 +698,7 @@ unittest
 
     invite(state, "#channel", "kameloso");
 
-    immutable m = state.outgoingMessages.data[0];
+    immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
         assert((type == IRCEvent.Type.INVITE), Enum!(IRCEvent.Type).toString(type));
@@ -748,7 +748,7 @@ unittest
 
     join(state, "#channel");
 
-    immutable m = state.outgoingMessages.data[0];
+    immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
         assert((type == IRCEvent.Type.JOIN), Enum!(IRCEvent.Type).toString(type));
@@ -801,7 +801,7 @@ unittest
 
     kick(state, "#channel", "kameloso", "content");
 
-    immutable m = state.outgoingMessages.data[0];
+    immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
         assert((type == IRCEvent.Type.KICK), Enum!(IRCEvent.Type).toString(type));
@@ -852,7 +852,7 @@ unittest
 
     part(state, "#channel", "reason");
 
-    immutable m = state.outgoingMessages.data[0];
+    immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
         assert((type == IRCEvent.Type.PART), Enum!(IRCEvent.Type).toString(type));
@@ -900,7 +900,7 @@ unittest
     enum properties = Message.Property.quiet;
     quit(state, "reason", properties);
 
-    immutable m = state.outgoingMessages.data[0];
+    immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
         assert((type == IRCEvent.Type.QUIT), Enum!(IRCEvent.Type).toString(type));
@@ -965,7 +965,7 @@ unittest
     enum properties = Message.Property.forced;
     whois(state, "kameloso", properties);
 
-    immutable m = state.outgoingMessages.data[0];
+    immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
         assert((type == IRCEvent.Type.RPL_WHOISACCOUNT), Enum!(IRCEvent.Type).toString(type));
@@ -1015,7 +1015,7 @@ unittest
 
     raw(state, "commands");
 
-    immutable m = state.outgoingMessages.data[0];
+    immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
         assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
@@ -1066,7 +1066,7 @@ unittest
 
     immediate(state, "commands");
 
-    immutable m = state.outgoingMessages.data[0];
+    immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
         assert((type == IRCEvent.Type.UNSET), Enum!(IRCEvent.Type).toString(type));
@@ -1230,7 +1230,7 @@ unittest
 
     foreach (immutable i; 0..expectedMessages.length)
     {
-        foreach (const message; state.messages.data)
+        foreach (const message; state.messages[])
         {
             assert((message.type == expectedLevels[i]),
                 Enum!(ThreadMessage.MessageType).toString(message.type));

@@ -229,11 +229,11 @@ unittest
     Appender!(char[]) sink;
 
     "kameloso".ircColourInto(sink, IRCColour.red, IRCColour.white);
-    assert((sink.data == I.colour ~ "04,00kameloso" ~ I.colour), sink.data);
+    assert((sink[] == I.colour ~ "04,00kameloso" ~ I.colour), sink[]);
     sink.clear();
 
     "harbl".ircColourInto(sink, IRCColour.green);
-    assert((sink.data == I.colour ~ "03harbl" ~ I.colour), sink.data);
+    assert((sink[] == I.colour ~ "03harbl" ~ I.colour), sink[]);
 }
 
 
@@ -265,7 +265,7 @@ in (line.length, "Tried to apply IRC colours to a string but no string was given
 
     sink.reserve(line.length + 7);  // Two colour tokens, four colour numbers and a comma
     line.ircColourInto(sink, fg, bg);
-    return sink.data;
+    return sink[];
 }
 
 ///
@@ -311,7 +311,7 @@ string ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
         (cast(int)bg).toAlphaInto!(2, 2)(sink);
     }
 
-    return sink.data;
+    return sink[];
 }
 
 ///
@@ -386,7 +386,7 @@ in (word.length, "Tried to apply IRC colours by hash to a string but no string w
 
     Appender!(char[]) sink;
     ircColourByHashImpl(sink, word, extendedOutgoingColours: extendedOutgoingColours);
-    return sink.data;
+    return sink[];
 }
 
 
@@ -414,7 +414,7 @@ in (word.length, "Tried to apply IRC colours by hash to a dstring but no dstring
 
     Appender!(dchar[]) sink;
     ircColourByHashImpl(sink, word, extendedOutgoingColours: extendedOutgoingColours);
-    return sink.data;
+    return sink[];
 }
 
 ///
@@ -1048,7 +1048,7 @@ private string mapColoursImpl(Flag!"strip" strip = No.strip)
         }
     }
 
-    return sink.data;
+    return sink[];
 }
 
 ///
@@ -1249,7 +1249,7 @@ private string mapEffectsImpl(Flag!"strip" strip, IRCControlCharacter mircToken,
         if (open) sink.applyANSI(TerminalReset.all);
     }
 
-    return sink.data;
+    return sink[];
 }
 
 ///
@@ -1880,8 +1880,8 @@ private T expandIRCTagsImpl(T)
     }
 
     // Return the line as-is if it didn't contain any tags
-    if (!sink.data.length) return line;
+    if (!sink[].length) return line;
 
     sink.put(asBytes[lastEnd..$]);
-    return sink.data;
+    return sink[];
 }

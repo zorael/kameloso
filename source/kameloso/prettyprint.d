@@ -242,7 +242,7 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
         }
     }
 
-    writeln(outbuffer.data);
+    writeln(outbuffer[]);
 
     /+
         writeln trusts stdout.flush, so we will too.
@@ -275,7 +275,7 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
 
     sink.prettyformat!(Yes.all, Yes.coloured)(foo);
     sink.prettyformat!(No.all, No.coloured)(bar);
-    writeln(sink.data);
+    writeln(sink[]);
     ---
 
     Params:
@@ -1315,7 +1315,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
 `;
 
         sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, s);
-        sink.data.assertMultilineOpEquals(structNameSerialised);
+        sink[].assertMultilineOpEquals(structNameSerialised);
         sink.clear();
 
         // Class copy
@@ -1364,7 +1364,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
 `;
 
         sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c1);
-        sink.data.assertMultilineOpEquals(classNameSerialised);
+        sink[].assertMultilineOpEquals(classNameSerialised);
         sink.clear();
     }
     {
@@ -1400,7 +1400,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
 `;
 
         sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, st1, st2);
-        sink.data.assertMultilineOpEquals(st1st2Formatted);
+        sink[].assertMultilineOpEquals(st1st2Formatted);
         sink.clear();
     }
     {
@@ -1421,23 +1421,23 @@ private void prettyformatImpl(Flag!"all" all = No.all,
             sink.reserve(256);  // ~239
             sink.prettyformat!(No.all, Yes.coloured)(brightTerminal: false, s2);
 
-            assert((sink.data.length > 12), "Empty sink after coloured fill");
+            assert((sink[].length > 12), "Empty sink after coloured fill");
 
-            assert(sink.data.indexOf("-- StructName2\n") != -1);  // Settings stripped
-            assert(sink.data.indexOf("int_") != -1);
-            assert(sink.data.indexOf("12345") != -1);
+            assert(sink[].indexOf("-- StructName2\n") != -1);  // Settings stripped
+            assert(sink[].indexOf("int_") != -1);
+            assert(sink[].indexOf("12345") != -1);
 
-            assert(sink.data.indexOf("string_") != -1);
-            assert(sink.data.indexOf(`"foo"`) != -1);
+            assert(sink[].indexOf("string_") != -1);
+            assert(sink[].indexOf(`"foo"`) != -1);
 
-            assert(sink.data.indexOf("bool_") != -1);
-            assert(sink.data.indexOf("true") != -1);
+            assert(sink[].indexOf("bool_") != -1);
+            assert(sink[].indexOf("true") != -1);
 
-            assert(sink.data.indexOf("float_") != -1);
-            assert(sink.data.indexOf("3.14") != -1);
+            assert(sink[].indexOf("float_") != -1);
+            assert(sink[].indexOf("3.14") != -1);
 
-            assert(sink.data.indexOf("double_") != -1);
-            assert(sink.data.indexOf("99.9") != -1);
+            assert(sink[].indexOf("double_") != -1);
+            assert(sink[].indexOf("99.9") != -1);
 
             sink.clear();
         }
@@ -1460,7 +1460,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
 `;
 
         sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c2);
-        sink.data.assertMultilineOpEquals(cFormatted);
+        sink[].assertMultilineOpEquals(cFormatted);
         sink.clear();
     }
     {
@@ -1500,7 +1500,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
 `;
 
         sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c4, c4.i3, c4.c3);
-        sink.data.assertMultilineOpEquals(c4Formatted);
+        sink[].assertMultilineOpEquals(c4Formatted);
         //sink.clear();
     }
 }
@@ -1554,7 +1554,7 @@ if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))  // must be a con
     sink.reserve(BufferSize.prettyprintBufferPerObject * Things.length);
 
     prettyformat!(all, coloured)(sink, brightTerminal: brightTerminal, things);
-    return sink.data;
+    return sink[];
 }
 
 ///

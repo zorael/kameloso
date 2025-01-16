@@ -286,9 +286,9 @@ void embedCustomEmotes(
 
     scope(exit)
     {
-        if (sink.data.length)
+        if (sink[].length)
         {
-            emotes ~= sink.data;
+            emotes ~= sink[];
             sink.clear();
         }
     }
@@ -316,7 +316,7 @@ void embedCustomEmotes(
         import std.format : formattedWrite;
 
         enum pattern = "/%s:%d-%d";
-        immutable slicedPattern = (emotes.length || sink.data.length) ?
+        immutable slicedPattern = (emotes.length || sink[].length) ?
             pattern :
             pattern[1..$];
         immutable dwordEscaped = dword.replace(dchar(':'), dchar(';'));

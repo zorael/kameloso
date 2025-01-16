@@ -247,7 +247,7 @@ string withANSI(
     sink.applyANSI(code, overrideType);
     sink.put(text);
     sink.applyANSI(TerminalReset.all);
-    return sink.data;
+    return sink[];
 }
 
 
@@ -268,7 +268,7 @@ string asANSI(const uint code) pure @safe nothrow
     Appender!(char[]) sink;
     sink.reserve(16);
     sink.applyANSI(code);
-    return sink.data;
+    return sink[];
 }
 
 
@@ -608,7 +608,7 @@ string asTruecolour(
     sink.applyTruecolour(r, g, b, brightTerminal: brightTerminal, normalise: normalise);
     sink.put(word);
     sink.applyANSI(TerminalReset.all);
-    return sink.data;
+    return sink[];
 }
 
 ///
@@ -733,7 +733,7 @@ string invert(
     // Add the remainder, from the last match to the end
     sink.put(slice);
 
-    return sink.data;
+    return sink[];
 }
 
 ///

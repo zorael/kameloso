@@ -372,7 +372,7 @@ public:
             }
         }
 
-        writeln(linebuffer.data);
+        writeln(linebuffer[]);
 
         () @trusted
         {
@@ -471,7 +471,7 @@ public:
             }
         }
 
-        linebuffer.put(messagebuffer.data.expandTags(logLevel, strip: !colours));
+        linebuffer.put(messagebuffer[].expandTags(logLevel, strip: !colours));
         finishLogMsg();
     }
 
@@ -504,7 +504,7 @@ public:
 
         beginLogMsg(logLevel);
         messagebuffer.formattedWrite(pattern, args);
-        linebuffer.put(messagebuffer.data.expandTags(logLevel, strip: !colours));
+        linebuffer.put(messagebuffer[].expandTags(logLevel, strip: !colours));
         finishLogMsg();
     }
 
@@ -535,7 +535,7 @@ public:
 
         beginLogMsg(logLevel);
         messagebuffer.formattedWrite!pattern(args);
-        linebuffer.put(messagebuffer.data.expandTags(logLevel, strip: !colours));
+        linebuffer.put(messagebuffer[].expandTags(logLevel, strip: !colours));
         finishLogMsg();
     }
 

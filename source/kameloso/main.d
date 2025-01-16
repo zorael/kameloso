@@ -91,7 +91,7 @@ enum gcOptions = ()
     // Tweak these numbers as we see fit
     // https://forum.dlang.org/post/uqqabgqnoqdqbwbglthg@forum.dlang.org
     sink.put("initReserve:8 minPoolSize:8 heapSizeFactor:1.002"); // incPoolSize:16
-    return sink.data.assumeUnique();
+    return sink[].assumeUnique();
 }();
 
 
@@ -799,15 +799,15 @@ auto processMessages(Kameloso instance)
                 &plugin.state.priorityMessages :
                 &plugin.state.messages;
 
-            if (!box.data.length) continue;
+            if (!(*box)[].length) continue;
 
             messageLoop:
-            for (size_t i; i<box.data.length; ++i)
+            for (size_t i; i<(*box)[].length; ++i)
             {
-                if (box.data[i].exhausted) continue messageLoop;
+                if ((*box)[][i].exhausted) continue messageLoop;
 
-                onThreadMessage(box.data[i]);
-                box.data[i].exhausted = true;
+                onThreadMessage((*box)[][i]);
+                (*box)[][i].exhausted = true;
 
                 if (!shouldStillContinue)
                 {
@@ -836,11 +836,11 @@ auto processMessages(Kameloso instance)
     outgoingMessageTop:
     foreach (plugin; instance.plugins)
     {
-        if (!plugin.state.outgoingMessages.data.length || !plugin.isEnabled) continue outgoingMessageTop;
+        if (!plugin.state.outgoingMessages[].length || !plugin.isEnabled) continue outgoingMessageTop;
 
         // No need to iterate with a for loop since the length shouldn't change in the middle of it
         outgoingMessageInner:
-        foreach (immutable i, ref message; plugin.state.outgoingMessages.data)
+        foreach (immutable i, ref message; plugin.state.outgoingMessages[])
         {
             if (message.exhausted) continue outgoingMessageInner;
 
@@ -1068,7 +1068,7 @@ auto mainLoop(Kameloso instance)
             // Tick the plugin, and flag to check for messages if it returns true
             shouldCheckMessages |= plugin.tick(elapsed);
 
-            if (plugin.state.deferredActions.data.length)
+            if (plugin.state.deferredActions[].length)
             {
                 try
                 {
@@ -2400,22 +2400,22 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
     scope(exit) plugin.state.deferredActions.clear();
 
     top:
-    for (size_t i = 0; i<plugin.state.deferredActions.data.length; ++i)
+    for (size_t i = 0; i<plugin.state.deferredActions[].length; ++i)
     {
         scope(exit)
         {
-            if (plugin.state.deferredActions.data[i].fiber.state == Fiber.State.TERM)
+            if (plugin.state.deferredActions[][i].fiber.state == Fiber.State.TERM)
             {
                 // Clean up
-                destroy(plugin.state.deferredActions.data[i].fiber);
+                destroy(plugin.state.deferredActions[][i].fiber);
                 //request.fiber = null;  // fiber is an accessor, cannot null it here
             }
 
-            destroy(plugin.state.deferredActions.data[i]);
-            plugin.state.deferredActions.data[i] = null;
+            destroy(plugin.state.deferredActions[][i]);
+            plugin.state.deferredActions[][i] = null;
         }
 
-        auto action = plugin.state.deferredActions.data[i];
+        auto action = plugin.state.deferredActions[][i];
 
         version(WantPeekCommandsHandler)
         {
@@ -2475,7 +2475,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                     {
                         import lu.string : strippedLeft;
 
-                        foreach (const line; sink.data.splitter('\n'))
+                        foreach (const line; sink[].splitter('\n'))
                         {
                             string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
                             if (lineslice.startsWith('#')) lineslice = lineslice[1..$];
@@ -2497,7 +2497,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
 
                         string[] allSettings;
 
-                        foreach (const line; sink.data.splitter('\n'))
+                        foreach (const line; sink[].splitter('\n'))
                         {
                             string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
                             if (!lineslice.startsWith('[')) allSettings ~= lineslice.advancePast(' ', inherit: true);
@@ -4336,11 +4336,11 @@ auto checkInitialisationMessages(
                 &plugin.state.priorityMessages :
                 &plugin.state.messages;
 
-            if (!box.data.length) continue;
+            if (!(*box)[].length) continue;
 
-            for (size_t i; i<box.data.length; ++i)
+            for (size_t i; i<(*box)[].length; ++i)
             {
-                onThreadMessage(box.data[i]);
+                onThreadMessage((*box)[][i]);
             }
 
             box.clear();

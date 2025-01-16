@@ -352,18 +352,18 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const bool strip) @sa
     }
 
     // Return the line as-is if it didn't contain any tags
-    if (!sink.data.length) return line;
+    if (!sink[].length) return line;
 
     sink.put(asBytes[lastEnd..$]);
 
     /+
         Since we can't manage to make this pure (because KamelosoLogger tints aren't),
-        we have to cheat and force sink.data to be unique and immutable.
+        we have to cheat and force sink[] to be unique and immutable.
      +/
     return () @trusted
     {
         import std.exception : assumeUnique;
-        return sink.data.assumeUnique();
+        return sink[].assumeUnique();
     }();
 }
 

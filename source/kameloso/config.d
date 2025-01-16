@@ -90,7 +90,7 @@ void printHelp(GetoptResult results)
     customGetoptFormatter(sink, results.options, pattern);
     sink.put("\nA dash (-) clears, so -C- translates to no channels, -A- to no account name, etc.\n");
 
-    writeln(sink.data);
+    writeln(sink[]);
 }
 
 
@@ -377,7 +377,7 @@ void manageConfigFile(
     ---
     Appender!(char[]) sink;
     sink.serialise(client, server, settings);
-    immutable configText = sink.data.justifiedEntryValueText;
+    immutable configText = sink[].justifiedEntryValueText;
     writeToDisk("kameloso.conf", configText, addBanner: true);
     ---
 
@@ -1285,7 +1285,7 @@ void writeConfigurationFile(
         }
     }
 
-    immutable justified = sink.data.assumeUnique().justifiedEntryValueText;
+    immutable justified = sink[].assumeUnique().justifiedEntryValueText;
     writeToDisk(filename, justified, addBanner: true);
 
     // Restore resource dir in case we aren't exiting

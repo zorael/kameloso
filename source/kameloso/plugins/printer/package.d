@@ -333,7 +333,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                 bellOnError: plugin.printerSettings.bellOnError);
         }
 
-        writeln(plugin.linebuffer.data);
+        writeln(plugin.linebuffer[]);
         if (plugin.state.settings.flush) stdout.flush();
     }
 

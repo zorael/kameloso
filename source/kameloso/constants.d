@@ -75,7 +75,7 @@ auto buildCompilerVersionString()
     sink.put('.');
     minor.toAlphaInto!(3, 3)(sink);
 
-    return sink.data.assumeUnique();
+    return sink[].assumeUnique();
 }
 
 
@@ -123,7 +123,7 @@ auto buildVersionString()
         }
     }
 
-    return sink.data.assumeUnique();
+    return sink[].assumeUnique();
 }
 
 

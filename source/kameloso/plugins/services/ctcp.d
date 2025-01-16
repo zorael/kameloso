@@ -311,7 +311,7 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
             }}
         }
 
-        return sink.data;
+        return sink[];
     }().assumeUnique();
 
     static assert((allCTCPTypes.length > responseSkeleton.length),

@@ -483,154 +483,154 @@ unittest
     {
         immutable dur = Duration.zero;
         dur.timeSinceInto(sink);
-        assert((sink.data == "0 seconds"), sink.data);
+        assert((sink[] == "0 seconds"), sink[]);
         sink.clear();
         dur.timeSinceInto(sink, abbreviate: true);
-        assert((sink.data == "0s"), sink.data);
+        assert((sink[] == "0s"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 3_141_519_265.msecs;
         dur.timeSinceInto!(4, 1)(sink, abbreviate: false,  roundUp: false);
-        assert((sink.data == "36 days, 8 hours and 38 minutes"), sink.data);
+        assert((sink[] == "36 days, 8 hours and 38 minutes"), sink[]);
         sink.clear();
         dur.timeSinceInto!(4, 1)(sink, abbreviate: true,  roundUp: false);
-        assert((sink.data == "36d 8h 38m"), sink.data);
+        assert((sink[] == "36d 8h 38m"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 3_141_519_265.msecs;
         dur.timeSinceInto!(4, 1)(sink, abbreviate: false, roundUp: true);
-        assert((sink.data == "36 days, 8 hours and 39 minutes"), sink.data);
+        assert((sink[] == "36 days, 8 hours and 39 minutes"), sink[]);
         sink.clear();
         dur.timeSinceInto!(4, 1)(sink, abbreviate: true, roundUp: true);
-        assert((sink.data == "36d 8h 39m"), sink.data);
+        assert((sink[] == "36d 8h 39m"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 3599.seconds;
         dur.timeSinceInto!(2, 1)(sink, abbreviate: false, roundUp: false);
-        assert((sink.data == "59 minutes"), sink.data);
+        assert((sink[] == "59 minutes"), sink[]);
         sink.clear();
         dur.timeSinceInto!(2, 1)(sink, abbreviate: true, roundUp: false);
-        assert((sink.data == "59m"), sink.data);
+        assert((sink[] == "59m"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 3599.seconds;
         dur.timeSinceInto!(2, 1)(sink, abbreviate: false, roundUp: true);
-        assert((sink.data == "60 minutes"), sink.data);
+        assert((sink[] == "60 minutes"), sink[]);
         sink.clear();
         dur.timeSinceInto!(2, 1)(sink, abbreviate: true, roundUp: true);
-        assert((sink.data == "60m"), sink.data);
+        assert((sink[] == "60m"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 3599.seconds;
         dur.timeSinceInto!(3, 1)(sink, abbreviate: false, roundUp: true);
-        assert((sink.data == "1 hour"), sink.data);
+        assert((sink[] == "1 hour"), sink[]);
         sink.clear();
         dur.timeSinceInto!(3, 1)(sink, abbreviate: true, roundUp: true);
-        assert((sink.data == "1h"), sink.data);
+        assert((sink[] == "1h"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 3.days + 35.minutes;
         dur.timeSinceInto!(4, 1)(sink, abbreviate: false, roundUp: false);
-        assert((sink.data == "3 days and 35 minutes"), sink.data);
+        assert((sink[] == "3 days and 35 minutes"), sink[]);
         sink.clear();
         dur.timeSinceInto!(4, 1)(sink, abbreviate: true, roundUp: false);
-        assert((sink.data == "3d 35m"), sink.data);
+        assert((sink[] == "3d 35m"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 3.days + 35.minutes;
         dur.timeSinceInto!(4, 2)(sink, abbreviate: false, roundUp: true);
-        assert((sink.data == "3 days and 1 hour"), sink.data);
+        assert((sink[] == "3 days and 1 hour"), sink[]);
         sink.clear();
         dur.timeSinceInto!(4, 2)(sink, abbreviate: true, roundUp: true);
-        assert((sink.data == "3d 1h"), sink.data);
+        assert((sink[] == "3d 1h"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 57.weeks + 1.days + 2.hours + 3.minutes + 4.seconds;
         dur.timeSinceInto!(7, 4)(sink, abbreviate: false);
-        assert((sink.data == "1 year, 1 month and 1 week"), sink.data);
+        assert((sink[] == "1 year, 1 month and 1 week"), sink[]);
         sink.clear();
         dur.timeSinceInto!(7, 4)(sink, abbreviate: true);
-        assert((sink.data == "1y 1m 1w"), sink.data);
+        assert((sink[] == "1y 1m 1w"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 4.seconds;
         dur.timeSinceInto!(7, 4)(sink, abbreviate: false);
-        assert((sink.data == "4 seconds"), sink.data);
+        assert((sink[] == "4 seconds"), sink[]);
         sink.clear();
         dur.timeSinceInto!(7, 4)(sink, abbreviate: true);
-        assert((sink.data == "4s"), sink.data);
+        assert((sink[] == "4s"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 2.hours + 28.minutes + 19.seconds;
         dur.timeSinceInto!(7, 1)(sink, abbreviate: false);
-        assert((sink.data == "2 hours and 28 minutes"), sink.data);
+        assert((sink[] == "2 hours and 28 minutes"), sink[]);
         sink.clear();
         dur.timeSinceInto!(7, 1)(sink, abbreviate: true);
-        assert((sink.data == "2h 28m"), sink.data);
+        assert((sink[] == "2h 28m"), sink[]);
         sink.clear();
     }
     {
         immutable dur = -1.minutes + -1.seconds;
         dur.timeSinceInto!(2, 0)(sink, abbreviate: false);
-        assert((sink.data == "-1 minute and 1 second"), sink.data);
+        assert((sink[] == "-1 minute and 1 second"), sink[]);
         sink.clear();
         dur.timeSinceInto!(2, 0)(sink, abbreviate: true);
-        assert((sink.data == "-1m 1s"), sink.data);
+        assert((sink[] == "-1m 1s"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 30.seconds;
         dur.timeSinceInto!(3, 1)(sink, abbreviate: false, roundUp: false);
-        assert((sink.data == "30 seconds"), sink.data);
+        assert((sink[] == "30 seconds"), sink[]);
         sink.clear();
         dur.timeSinceInto!(3, 1)(sink, abbreviate: true, roundUp: false);
-        assert((sink.data == "30s"), sink.data);
+        assert((sink[] == "30s"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 30.seconds;
         dur.timeSinceInto!(3, 1)(sink, abbreviate: false, roundUp: true);
-        assert((sink.data == "1 minute"), sink.data);
+        assert((sink[] == "1 minute"), sink[]);
         sink.clear();
         dur.timeSinceInto!(3, 1)(sink, abbreviate: true, roundUp: true);
-        assert((sink.data == "1m"), sink.data);
+        assert((sink[] == "1m"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 23.hours + 59.minutes + 59.seconds;
         dur.timeSinceInto!(5, 3)(sink, abbreviate: false, roundUp: true);
-        assert((sink.data == "1 day"), sink.data);
+        assert((sink[] == "1 day"), sink[]);
         sink.clear();
         dur.timeSinceInto!(5, 3)(sink, abbreviate: true, roundUp: true);
-        assert((sink.data == "1d"), sink.data);
+        assert((sink[] == "1d"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 6.days + 23.hours + 59.minutes;
         dur.timeSinceInto!(5, 4)(sink, abbreviate: false, roundUp: false);
-        assert((sink.data == "6 days"), sink.data);
+        assert((sink[] == "6 days"), sink[]);
         sink.clear();
         dur.timeSinceInto!(5, 4)(sink, abbreviate: true, roundUp: false);
-        assert((sink.data == "6d"), sink.data);
+        assert((sink[] == "6d"), sink[]);
         sink.clear();
     }
     {
         immutable dur = 6.days + 23.hours + 59.minutes;
         dur.timeSinceInto!(5, 4)(sink, abbreviate: false, roundUp: true);
-        assert((sink.data == "1 week"), sink.data);
+        assert((sink[] == "1 week"), sink[]);
         sink.clear();
         dur.timeSinceInto!(5, 4)(sink, abbreviate: true, roundUp: true);
-        assert((sink.data == "1w"), sink.data);
+        assert((sink[] == "1w"), sink[]);
         sink.clear();
     }
 }
@@ -679,7 +679,7 @@ string timeSince(uint numUnits = 7, uint truncateUnits = 0)
     Appender!(char[]) sink;
     sink.reserve(64);
     duration.timeSinceInto!(numUnits, truncateUnits)(sink, abbreviate, roundUp);
-    return sink.data;
+    return sink[];
 }
 
 ///

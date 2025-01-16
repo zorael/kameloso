@@ -1013,13 +1013,13 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             }
         }
 
-        if (capsToReq.data.length)
+        if (capsToReq[].length)
         {
             import std.algorithm.iteration : joiner;
             import std.conv : text;
 
             enum properties = Message.Property.quiet;
-            immutable message = text("CAP REQ :", capsToReq.data.joiner(" "));
+            immutable message = text("CAP REQ :", capsToReq[].joiner(" "));
             immediate(service.state, message, properties);
         }
         break;

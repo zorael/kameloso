@@ -1668,7 +1668,7 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
             caller,
             authorizationBearer,
             HTTPVerb.patch,
-            cast(ubyte[])sink.data,
+            cast(ubyte[])sink[],
             "application/json");
     }
 
@@ -2309,7 +2309,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
     immutable body_ = bodyPattern.format(
         room.id,
         escapedTitle,
-        sink.data,
+        sink[],
         durationString);
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
@@ -2550,7 +2550,7 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
             }
         }
 
-        return sink.data;
+        return sink[];
     }
 
     return retryDelegate(plugin, &getBotListDg);
@@ -2793,10 +2793,10 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 Subscription sub;
                 sub.total = total;
                 subs.put(sub);
-                return subs.data;
+                return subs[];
             }
 
-            if (!subs.capacity) subs.reserve(total);
+            if (!subs[].length) subs.reserve(total);
 
             retry = 0;
 
@@ -2825,7 +2825,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
         }
         while (after.length);
 
-        return subs.data;
+        return subs[];
     }
 
     return retryDelegate(plugin, &getSubscribersDg);

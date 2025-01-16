@@ -699,7 +699,7 @@ void listenFiber(
     const bool* abort,
     const int connectionLost = Timeout.connectionLost,
     const size_t bufferSize = BufferSize.socketReceive) @system
-in ((conn.connected), "Tried to set up a listening fiber on a dead connection")
+in (conn.connected, "Tried to set up a listening fiber on a dead connection")
 in ((connectionLost > 0), "Tried to set up a listening fiber with connection timeout of <= 0")
 {
     import std.concurrency : yield;

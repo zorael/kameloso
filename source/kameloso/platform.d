@@ -468,7 +468,7 @@ Pid exec(
         {
             import std.algorithm.searching : startsWith;
 
-            if (sink.data.length) sink.put(' ');
+            if (sink[].length) sink.put(' ');
 
             if (args[i].startsWith("-H") ||
                 args[i].startsWith("-C") ||
@@ -536,7 +536,7 @@ Pid exec(
             "/min",
             "powershell",
             "-c"
-        ] ~ arg0 ~ sink.data.idup;
+        ] ~ arg0 ~ sink[].idup;
         return spawnProcess(commandLine[]);
     }
     else

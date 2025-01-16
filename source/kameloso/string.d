@@ -282,7 +282,7 @@ auto replaceRandom(
     return () @trusted
     {
         import std.exception : assumeUnique;
-        return sink.data.length ? sink.data.assumeUnique() : line;
+        return sink[].length ? sink[].assumeUnique() : line;
     }();
 }
 
