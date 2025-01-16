@@ -37,7 +37,7 @@ package:
     See_Also:
         https://betterttv.com
  +/
-void getBTTVEmotes(
+uint getBTTVEmotes(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
     const uint id,
@@ -135,13 +135,17 @@ in (id, "Tried to get BTTV emotes with an unset ID")
             emoteMap[emote] = true;
         }
 
+        uint numAdded;
+
         foreach (const emoteJSON; sharedEmotesJSON.array)
         {
             immutable emote = emoteJSON["code"].str.to!dstring;
             emoteMap[emote] = true;
+            ++numAdded;
         }
 
         // All done
+        return numAdded;
     }
     catch (ErrorJSONException e)
     {
@@ -152,7 +156,7 @@ in (id, "Tried to get BTTV emotes with an unset ID")
             if (messageJSON && (messageJSON.str == "user not found"))
             {
                 // Benign
-                return;
+                return 0;
             }
             // Drop down
         }
@@ -179,7 +183,7 @@ in (id, "Tried to get BTTV emotes with an unset ID")
     See_Also:
         https://betterttv.com/emotes/global
  +/
-void getBTTVEmotesGlobal(
+uint getBTTVEmotesGlobal(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
     const uint _ = 0,
@@ -221,10 +225,15 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
         throw new UnexpectedJSONException(message, responseJSON);
     }
 
+    uint numAdded;
+
     foreach (immutable emoteJSON; responseJSON.array)
     {
         import std.conv : to;
         immutable emote = emoteJSON["code"].str.to!dstring;
         emoteMap[emote] = true;
+        ++numAdded;
     }
+
+    return numAdded;
 }

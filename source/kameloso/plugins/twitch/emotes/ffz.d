@@ -37,7 +37,7 @@ package:
     See_Also:
         https://www.frankerfacez.com
  +/
-void getFFZEmotes(
+uint getFFZEmotes(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
     const uint id,
@@ -163,6 +163,8 @@ in (id, "Tried to get FFZ emotes with an unset ID")
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
+        uint numAdded;
+
         foreach (immutable setJSON; (*setsJSON).object)
         {
             if (immutable emoticonsArrayJSON = "emoticons" in setJSON)
@@ -172,6 +174,7 @@ in (id, "Tried to get FFZ emotes with an unset ID")
                     import std.conv : to;
                     immutable emote = emoteJSON["name"].str.to!dstring;
                     emoteMap[emote] = true;
+                    ++numAdded;
                 }
 
                 // Probably all done as there only seems to be one set,
@@ -181,6 +184,7 @@ in (id, "Tried to get FFZ emotes with an unset ID")
         }
 
         // All done
+        return numAdded;
     }
     catch (ErrorJSONException e)
     {
@@ -190,7 +194,7 @@ in (id, "Tried to get FFZ emotes with an unset ID")
         if (messageJSON && (messageJSON.str == "No such room"))
         {
             // Benign
-            return;
+            return 0;
         }
         throw e;
     }
@@ -215,7 +219,7 @@ in (id, "Tried to get FFZ emotes with an unset ID")
     See_Also:
         https://www.frankerfacez.com
  +/
-void getFFZEmotesGlobal(
+uint getFFZEmotesGlobal(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
     const uint _ = 0,
@@ -324,6 +328,8 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
+        uint numAdded;
+
         foreach (immutable setJSON; (*setsJSON).object)
         {
             if (immutable emoticonsArrayJSON = "emoticons" in setJSON)
@@ -333,6 +339,7 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
                     import std.conv : to;
                     immutable emote = emoteJSON["name"].str.to!dstring;
                     emoteMap[emote] = true;
+                    ++numAdded;
                 }
 
                 // Probably all done as there only seems to be one set,
@@ -340,6 +347,8 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
                 //return;
             }
         }
+
+        return numAdded;
     }
     /*catch (ErrorJSONException e)
     {

@@ -37,7 +37,7 @@ package:
     See_Also:
         https://7tv.app
  +/
-void get7tvEmotes(
+uint get7tvEmotes(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
     const uint id,
@@ -149,19 +149,21 @@ in (id, "Tried to get 7tv emotes with an unset ID")
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        if (emoteSetJSON.type != JSONType.object) return;  // No emotes
+        if (emoteSetJSON.type != JSONType.object) return 0;  // No emotes
 
         immutable emotesJSON = "emotes" in *emoteSetJSON;
+        uint numAdded;
 
         foreach (immutable emoteJSON; emotesJSON.array)
         {
             import std.conv : to;
             immutable emoteName = emoteJSON["name"].str.to!dstring;
             emoteMap[emoteName] = true;
+            ++numAdded;
         }
 
         // All done
-        return;
+        return numAdded;
     }
     catch (ErrorJSONException e)
     {
@@ -182,11 +184,11 @@ in (id, "Tried to get 7tv emotes with an unset ID")
             {
             case "Unknown User":
                 // This should never happen but stop attempt if it does
-                return;
+                return 0;
 
             case "user not found":
                 // User has no user-specific 7tv emotes; benign failure
-                return;
+                return 0;
 
             default:
                 break;
@@ -216,7 +218,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
     See_Also:
         https://7tv.app
  +/
-void get7tvEmotesGlobal(
+uint get7tvEmotesGlobal(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
     const uint _ = 0,
@@ -289,10 +291,15 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
         throw new UnexpectedJSONException(message, responseJSON);
     }
 
+    uint numAdded;
+
     foreach (const emoteJSON; emotesJSON.array)
     {
         import std.conv : to;
         immutable emoteName = emoteJSON["name"].str.to!dstring;
         emoteMap[emoteName] = true;
+        ++numAdded;
     }
+
+    return numAdded;
 }

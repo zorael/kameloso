@@ -51,7 +51,7 @@ in (((channelName.length && id) ||
 {
     import kameloso.common : logger;
 
-    alias GetEmoteFun = void function(
+    alias GetEmoteFun = uint function(
         TwitchPlugin,
         ref bool[dstring],
         const uint,
@@ -136,17 +136,13 @@ in (((channelName.length && id) ||
             GC.disable();
             scope(exit) GC.enable();
 
-            immutable lengthBefore = customEmotes.length;
-
             try
             {
-                emoteImport.fun(plugin, *customEmotes, id, __FUNCTION__);
+                immutable numAdded = emoteImport.fun(plugin, *customEmotes, id, __FUNCTION__);
 
                 if (plugin.state.settings.trace)
                 {
-                    immutable deltaLength = (customEmotes.length - lengthBefore);
-
-                    if (deltaLength)
+                    if (numAdded)
                     {
                         version(assert) addedSomething = true;
 
@@ -154,12 +150,12 @@ in (((channelName.length && id) ||
                         {
                             enum pattern = "Successfully imported <l>%s</> emotes " ~
                                 "for channel <l>%s</> (<l>%d</>)";
-                            logger.infof(pattern, emoteImport.name, channelName, deltaLength);
+                            logger.infof(pattern, emoteImport.name, channelName, numAdded);
                         }
                         else
                         {
                             enum pattern = "Successfully imported global <l>%s</> emotes (<l>%d</>)";
-                            logger.infof(pattern, emoteImport.name, deltaLength);
+                            logger.infof(pattern, emoteImport.name, numAdded);
                         }
                     }
                     /*else
