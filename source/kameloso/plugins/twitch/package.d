@@ -1048,7 +1048,22 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         if (room.id) return;  // Already initialised? Double roomstate?
     }
 
-    room.id = event.aux[0].to!uint;  // Assign this before spending time in getTwitchUser
+    if (event.aux[0].length)
+    {
+        try
+        {
+            room.id = event.aux[0].to!uint;  // Assign this before spending time in getTwitchUser
+        }
+        catch (Exception _) {}  // gag and ignore, handle error below
+    }
+
+    if (!room.id) // || !event.aux[0].length)
+    {
+        // For some reason the room ID isn't in the event? Has happened at least twice
+        // Try to salvage the situation by querying the server with the username instead
+        const twitchUser = getTwitchUser(plugin, event.channel[1..$]);
+        room.id = twitchUser.id;
+    }
 
     /+
         Fetch the broadcaster's Twitch user through an API call and store it as
