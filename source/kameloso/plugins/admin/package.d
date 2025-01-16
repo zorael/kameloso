@@ -1807,7 +1807,7 @@ void onBusMessage(
     // Don't return if disabled, as it blocks us from re-enabling with verb set
     if (header != "admin") return;
 
-    auto message = cast(Boxed!string)content;
+    const message = cast(Boxed!string)content;
 
     if (!message)
     {

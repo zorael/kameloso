@@ -1989,7 +1989,7 @@ void onBusMessage(ConnectService service, const string header, /*shared*/ Sendab
 
     if (header != "connect") return;
 
-    auto message = cast(Boxed!string)content;
+    const message = cast(Boxed!string)content;
 
     if (!message)
     {

@@ -1261,7 +1261,7 @@ void onBusMessage(SeenPlugin plugin, const string header, /*shared*/ Sendable co
     if (!plugin.isEnabled) return;
     if (header != "seen") return;
 
-    auto message = cast(Boxed!string)content;
+    const message = cast(Boxed!string)content;
 
     if (!message)
     {

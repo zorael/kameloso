@@ -3944,7 +3944,7 @@ void onBusMessage(
 
     if (header != "twitch") return;
 
-    auto message = cast(Boxed!Message)content;
+    const message = cast(Boxed!Message)content;
 
     if (!message)
     {

@@ -835,7 +835,7 @@ void onBusMessage(PrinterPlugin plugin, const string header, /*shared*/ Sendable
 
     if (header != "printer") return;
 
-    auto message = cast(Boxed!string)content;
+    const message = cast(Boxed!string)content;
 
     if (!message)
     {
