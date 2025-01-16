@@ -4328,7 +4328,7 @@ auto checkInitialisationMessages(
         }
     }
 
-    foreach (immutable isPriority; trueThenFalse)
+    foreach (immutable isPriority; trueThenFalse[])
     {
         foreach (plugin; instance.plugins)
         {
