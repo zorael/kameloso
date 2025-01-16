@@ -868,7 +868,8 @@ void onBusMessage(PrinterPlugin plugin, const string header, /*shared*/ Sendable
         break;
 
     default:
-        logger.error("[printer] Unimplemented bus message verb: ", verb);
+        enum pattern = "[printer] Unimplemented bus message verb: <l>%s";
+        logger.errorf(pattern, verb);
         break;
     }
 }

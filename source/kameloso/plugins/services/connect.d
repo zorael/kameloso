@@ -1998,13 +1998,18 @@ void onBusMessage(ConnectService service, const string header, /*shared*/ Sendab
         return;
     }
 
-    if (message.payload == "auth")
+    immutable verb = message.payload;
+
+    switch (verb)
     {
+    case "auth":
         tryAuth(service);
-    }
-    else
-    {
-        logger.error("[connect] Unimplemented bus message verb: ", message.payload);
+        break;
+
+    default:
+        enum pattern = "[connect] Unimplemented bus message verb: <l>%s";
+        logger.errorf(pattern, verb);
+        break;
     }
 }
 

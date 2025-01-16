@@ -1284,7 +1284,8 @@ void onBusMessage(SeenPlugin plugin, const string header, /*shared*/ Sendable co
         break;
 
     default:
-        logger.error("[seen] Unimplemented bus message verb: <i>", verb);
+        enum pattern = "[seen] Unimplemented bus message verb: <l>%s";
+        logger.errorf(pattern, verb);
         break;
     }
 }
