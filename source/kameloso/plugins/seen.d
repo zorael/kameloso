@@ -1256,7 +1256,6 @@ static if (shouldImplementOnBusMessage)
 void onBusMessage(SeenPlugin plugin, const string header, /*shared*/ Sendable content)
 {
     import kameloso.thread : Boxed;
-    import lu.string : strippedRight;
 
     if (!plugin.isEnabled) return;
     if (header != "seen") return;
@@ -1270,13 +1269,10 @@ void onBusMessage(SeenPlugin plugin, const string header, /*shared*/ Sendable co
         return;
     }
 
-    immutable verb = message.payload.strippedRight;
+    immutable verb = message.payload;
 
     switch (verb)
     {
-    case "reload":
-        return .reload(plugin);
-
     case "save":
         updateAllObservedUsers(plugin);
         saveSeen(plugin);
