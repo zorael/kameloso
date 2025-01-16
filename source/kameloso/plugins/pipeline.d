@@ -514,7 +514,7 @@ auto tick(PipelinePlugin plugin, const Duration elapsed)
 {
     import core.time : msecs;
 
-    static immutable minimumTimeBetweenReads = 250.msecs;
+    static immutable minimumTimeBetweenReads = 100.msecs;
 
     if (plugin.transient.fd == -1) return false;  // ?
 
