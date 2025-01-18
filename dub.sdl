@@ -84,8 +84,6 @@ versions \
     "TwitchSupport" \
     "WithTwitchPlugin" \
     "TwitchWarnings" \
-    "TwitchPromoteEverywhere" \
-    "TwitchCustomEmotesEverywhere" \
     "OmniscientAdmin" \
     "OmniscientQueries" \
     "OmniscientSeen" \
@@ -149,8 +147,6 @@ configuration "dev" {
         "WantConcurrencyMessageLoop" \
         "IncludeHeavyStuff"
         //"Callgrind" \
-        //"TwitchPromoteEverywhere" \
-        //"TwitchCustomEmotesEverywhere" \
         //"OmniscientSeen" \
         //"OmniscientQueries" \
         //"OSXTMPDIR" \
@@ -174,8 +170,6 @@ configuration "dev-lowmem" {
         "WantConcurrencyMessageLoop" \
         "IncludeHeavyStuff"
         //"Callgrind" \
-        //"TwitchPromoteEverywhere" \
-        //"TwitchCustomEmotesEverywhere" \
         //"OmniscientSeen" \
         //"OmniscientQueries" \
         //"OSXTMPDIR" \
@@ -228,8 +222,6 @@ configuration "unittest" {
         "IncludeHeavyStuff" \
         "TraceWhois" \
         "TraceFibersAndDelegates" \
-        "TwitchPromoteEverywhere" \
-        "TwitchCustomEmotesEverywhere" \
         "BenchmarkHTTPRequests" \
         "TraceHTTPRequests" \
         "Selftests" \
@@ -252,8 +244,6 @@ configuration "unittest-lowmem" {
         "IncludeHeavyStuff" \
         "TraceWhois" \
         "TraceFibersAndDelegates" \
-        "TwitchPromoteEverywhere" \
-        "TwitchCustomEmotesEverywhere" \
         "BenchmarkHTTPRequests" \
         "TraceHTTPRequests" \
         "Selftests" \
