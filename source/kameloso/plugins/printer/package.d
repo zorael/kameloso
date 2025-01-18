@@ -232,13 +232,6 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
     if (plugin.printerSettings.hideBlacklistedUsers && (event.sender.class_ == IRCUser.Class.blacklist)) return;
 
-    version(Debug)
-    {
-        // Exclude types explicitly declared as to be excluded
-        immutable exclude = plugin.exclude.length && plugin.exclude.canFind(event.type);
-        if (exclude) return;
-    }
-
     /++
         Return whether or not the current event should be squelched based on
         if the passed channel, sender or target nickname has a squelchstamp
@@ -296,6 +289,13 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         import lu.string : strippedRight;
         import std.array : replace;
         import std.stdio : stdout, writeln;
+
+        version(Debug)
+        {
+            // Exclude types explicitly declared as to be excluded
+            immutable exclude = plugin.exclude.length && plugin.exclude.canFind(event.type);
+            if (exclude) return;
+        }
 
         // Strip bells so we don't get phantom noise
         // Strip right to get rid of trailing whitespace
