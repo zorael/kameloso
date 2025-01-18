@@ -437,8 +437,8 @@ void formatMessageMonochrome(Sink)
 
     if (!putQuotedTwitchMessage)
     {
-        if (event.target.nickname.length) putTarget();
         if (content.length) putContent();
+        if (event.target.nickname.length) putTarget();
     }
 
     // Base the range on the modified copy
@@ -1164,8 +1164,8 @@ void formatMessageColoured(Sink)
 
     if (!putQuotedTwitchMessage)
     {
-        if (event.target.nickname.length) putTarget();
         if (content.length) putContent();
+        if (event.target.nickname.length) putTarget();
     }
 
     // Base the range on the modified copy
