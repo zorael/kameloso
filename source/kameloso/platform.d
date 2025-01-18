@@ -450,9 +450,9 @@ Pid exec(
         string arg0 = args[0];  // mutable
         args = args[1..$];  // pop it
 
-        if (arg0.startsWith('.') || arg0.startsWith('/'))
+        if (arg0.startsWith('.') || arg0.startsWith('/') || arg0.startsWith('\\'))
         {
-            // Seems to be a full path
+            // Seems to be a valid path
         }
         else if ((arg0.length > 3) && (arg0[1] == ':'))
         {
