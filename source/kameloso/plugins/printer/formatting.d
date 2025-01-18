@@ -424,7 +424,9 @@ void formatMessageMonochrome(Sink)
 
     version(TwitchSupport)
     {
-        if (event.target.nickname.length && event.aux[0].length)
+        if (event.target.nickname.length &&
+            event.aux[0].length &&
+            (event.type != IRCEvent.Type.TWITCH_SUBGIFT))
         {
             /*if (content.length)*/ putContent();
             putTarget();
@@ -1116,7 +1118,8 @@ void formatMessageColoured(Sink)
     {
         if (event.content.length &&
             event.target.nickname.length &&
-            event.aux[0].length)
+            event.aux[0].length &&
+            (event.type != IRCEvent.Type.TWITCH_SUBGIFT))
         {
             /*if (content.length)*/ putContent();
             putTarget();
