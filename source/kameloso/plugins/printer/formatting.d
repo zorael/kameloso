@@ -1001,9 +1001,9 @@ void formatMessageColoured(Sink)
             version(TwitchSupport)
             {
                 content = highlightEmotes(
-                    event,
+                    event: event,
                     colourful: plugin.printerSettings.colourfulEmotes,
-                    plugin.state.settings);
+                    settings: plugin.state.settings);
             }
         }
 
@@ -1140,12 +1140,12 @@ void formatMessageColoured(Sink)
                 // We can't know whether the replied-to event is an emote-only
                 // event or not, so just treat it as if it isn't and pass contentFgBase
                 customEmoteSink.highlightEmotesImpl(
-                    event.aux[0],
-                    event.aux[$-2],
-                    highlight,
-                    contentFgBase,
+                    line: event.aux[0],
+                    emotes: event.aux[$-2],
+                    pre: highlight,
+                    post: contentFgBase,
                     colourful: plugin.printerSettings.colourfulEmotes,
-                    plugin.state.settings);
+                    settings: plugin.state.settings);
                 .put(sink, `: "`, customEmoteSink[], '"');
 
                 // Remove the custom emote definitions
