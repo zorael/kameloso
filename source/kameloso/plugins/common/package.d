@@ -724,7 +724,11 @@ mixin template IRCPluginImpl(
         string commandWordInEvent;
         string commandWordInEventLower;
         string contentSansCommandWordInEvent;
-        immutable channelIsAHome = state.bot.homeChannels.canFind(origEvent.channel);
+
+        immutable channelIsAHomeChannel = state.bot.homeChannels.canFind(origEvent.channel);
+        immutable channelIsAGuestChannel = !channelIsAHomeChannel ?
+            state.bot.guestChannels.canFind(origEvent.channel) :
+            false;
 
         // process
         /++
@@ -741,16 +745,17 @@ mixin template IRCPluginImpl(
                 import std.stdio : stdout, writeln, writefln;
 
                 writeln("-- ", uda.fqn, " @ ", Enum!(IRCEvent.Type).toString(event.type));
-                writeln("   ...", Enum!ChannelPolicy.toString(uda._channelPolicy));
+                writeln("   ...channelPolicy:", cast(uint)uda._channelPolicy);
                 if (state.settings.flush) stdout.flush();
             }
 
             if (event.channel.length)
             {
                 immutable channelMatch =
-                    (uda._channelPolicy == ChannelPolicy.home) ? channelIsAHome :
-                    (uda._channelPolicy == ChannelPolicy.guest) ? !channelIsAHome :
-                    /*(channelPolicy == ChannelPolicy.any) ?*/ true;
+                    (uda._channelPolicy & ChannelPolicy.home) ? channelIsAHomeChannel :
+                    (uda._channelPolicy & ChannelPolicy.guest) ? channelIsAGuestChannel :
+                    (uda._channelPolicy & ChannelPolicy.any) ? true :
+                    false;  // invalid values
 
                 if (!channelMatch)
                 {
@@ -2626,7 +2631,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
             immutable message = pattern.format(uda.fqn).idup;
             assert(0, message);
         }
-        else if ((type == IRCEvent.Type.ANY) && (uda.channelPolicy != ChannelPolicy.any))
+        else if ((type == IRCEvent.Type.ANY) && !(uda.channelPolicy & ChannelPolicy.any))
         {
             enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
                 "accepting `IRCEvent.Type.ANY` and is at the same time not annotated " ~
@@ -3509,18 +3514,18 @@ enum ChannelPolicy
         The annotated function will only be allowed to trigger if the event
         happened in a home channel, where applicable. Not all events carry channels.
      +/
-    home,
+    home = 1 << 0,
 
     /++
         The annotated function will only be allowed to trigger if the event
         happened in a guest channel, where applicable. Not all events carry channels.
      +/
-    guest,
+    guest = 1 << 1,
 
     /++
         The annotated function will be allowed to trigger regardless of channel.
      +/
-    any,
+    any = 1 << 2,
 }
 
 
