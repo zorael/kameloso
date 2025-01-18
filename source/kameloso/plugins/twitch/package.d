@@ -1174,7 +1174,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
-    .channelPolicy(ChannelPolicy.any)
+    .channelPolicy(~ChannelPolicy.home)  // on all but homes
     //.fiber(true)
 )
 void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
@@ -1182,14 +1182,11 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import kameloso.plugins.twitch.emotes : baseDelayBetweenImports, importCustomEmotes;
     import kameloso.plugins.common.scheduling : delay;
     import kameloso.constants : BufferSize;
-    import std.algorithm.searching : canFind, countUntil;
+    import std.algorithm.searching : countUntil;
     import std.conv : to;
     import core.thread.fiber : Fiber;
 
-    if (!plugin.twitchSettings.customEmotes) return;
-
-    // Skip home channels, they're handled in onRoomState
-    if (plugin.state.bot.homeChannels.canFind(event.channel)) return;
+    if (!plugin.twitchSettings.customEmotes || !plugin.twitchSettings.customEmotesEverywhere) return;
 
     if (const customChannelEmotes = event.channel in plugin.customChannelEmotes)
     {
