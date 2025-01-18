@@ -1129,6 +1129,7 @@ void formatMessageColoured(Sink)
 
                 static Appender!(char[]) customEmoteSink;
                 scope(exit) customEmoteSink.clear();
+                sink.reserve(event.content.length + 60);  // guesstimate
 
                 immutable TerminalForeground highlight = plugin.state.settings.brightTerminal ?
                     Bright.highlight :
