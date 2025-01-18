@@ -3533,6 +3533,10 @@ unittest
 /++
     Sorts a comma-separated list of badges so that a given badge is listed first.
 
+    Note: It does not sort the badges alphabetically, and as such multiple calls
+    may result in the order not ending up quite as imagined. Perform the procedure
+    in reverse if possible, to guarantee the last badge is the first.
+
     Params:
         badges = A reference to the comma-separated string of badges to sort in place.
         badge = The badge to bring to the front.
@@ -3593,6 +3597,29 @@ unittest
         string badges = "broadcaster/1,asdf/9999";
         bringBadgeToFront(badges, "asdf/");
         assert((badges == "asdf/9999,broadcaster/1"), badges);
+    }
+    {
+        string badges = "subscriber/91,broadcaster/1,sub-gifter/25";
+        bringBadgeToFront(badges, "vip/");
+        bringBadgeToFront(badges, "moderator/");
+        bringBadgeToFront(badges, "broadcaster/");
+        assert((badges == "broadcaster/1,subscriber/91,sub-gifter/25"), badges);
+    }
+    {
+        string badges = "f/1,b/2,d/3,c/4,a/5,e/6";
+        static immutable string[3] badgeOrder =
+        [
+            "a/",
+            "b/",
+            "c/",
+        ];
+
+        foreach_reverse (immutable badge; badgeOrder[])
+        {
+            bringBadgeToFront(badges, badge);
+        }
+
+        assert((badges == "a/5,b/2,c/4,f/1,d/3,e/6"), badges);
     }
 }
 
