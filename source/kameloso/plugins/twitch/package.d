@@ -158,6 +158,16 @@ public:
             Whether or not to import custom emotes.
          +/
         bool customEmotes = true;
+
+        /++
+            Whether or not to import and apply custom emotes in all channels.
+         +/
+        bool customEmotesEverywhere = false;
+
+        /++
+            Whether or not to promote users in all channels.
+         +/
+        bool promoteEverywhere = false;
     }
 }
 
@@ -1160,9 +1170,8 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 // onNonHomeRoomState
 /++
     Fetches custom BetterTV, FrankerFaceZ and 7tv emotes for a any non-home channel iff
-    version `TwitchCustomEmotesEverywhere`.
+    version the relevant configuration bool is set.
  +/
-version(TwitchCustomEmotesEverywhere)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
     .channelPolicy(ChannelPolicy.any)
@@ -3699,8 +3708,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         event with user input), embed them into the event's 'emotes` member.
 
         This is done only for events in home channels, unless the
-        `TwitchCustomEmotesEverywhere` version is defined, in which case it's
-        done for all events.
+        `customEmotesEverywhere` setting is enabled.
      +/
     immutable isEmotePossibleEventType = event.type.among!
         (IRCEvent.Type.CHAN,
@@ -3721,16 +3729,21 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         isEmotePossibleEventType &&
         (event.content.length || (event.target.nickname.length && event.aux[0].length));
 
-    version(TwitchCustomEmotesEverywhere)
+    bool isHomeChannel;
+    bool determinedWhetherHomeChannel;
+    bool shouldEmbedCustomEmotes;
+
+    if (plugin.twitchSettings.customEmotesEverywhere)
     {
         // Always embed regardless of channel
-        alias shouldEmbedCustomEmotes = eventCanContainCustomEmotes;
+        shouldEmbedCustomEmotes = eventCanContainCustomEmotes;
     }
     else
     {
         // Only embed if the event is in a home channel
-        immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
-        immutable shouldEmbedCustomEmotes = eventCanContainCustomEmotes && isHomeChannel;
+        isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
+        determinedWhetherHomeChannel = true;
+        shouldEmbedCustomEmotes = eventCanContainCustomEmotes && isHomeChannel;
     }
 
     if (shouldEmbedCustomEmotes)
@@ -3755,21 +3768,6 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 customEmotes: customEmotes ? *customEmotes : null,
                 customGlobalEmotes: plugin.customGlobalEmotes);
         }
-    }
-
-    version(TwitchPromoteEverywhere)
-    {
-        // No checks needed, always pass through and promote
-    }
-    else
-    {
-        version(TwitchCustomEmotesEverywhere)
-        {
-            // isHomeChannel was not declared above
-            immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
-        }
-
-        if (!isHomeChannel) return;
     }
 
     static void postprocessImpl(
@@ -3799,7 +3797,6 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
             {
                 // User is broadcaster but is not registered as staff
                 user.class_ = IRCUser.Class.staff;
-                return;
             }
         }
 
@@ -3832,8 +3829,18 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         }
     }
 
-    /*if (event.sender.nickname.length)*/ postprocessImpl(plugin, event.channel, event.sender);
-    if (event.target.nickname.length) postprocessImpl(plugin, event.channel, event.target);
+    if (!plugin.twitchSettings.promoteEverywhere && !determinedWhetherHomeChannel)
+    {
+        isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
+        determinedWhetherHomeChannel = true;
+    }
+
+    if (plugin.twitchSettings.promoteEverywhere ||
+        (determinedWhetherHomeChannel && isHomeChannel))
+    {
+        /*if (event.sender.nickname.length)*/ postprocessImpl(plugin, event.channel, event.sender);
+        if (event.target.nickname.length) postprocessImpl(plugin, event.channel, event.target);
+    }
 }
 
 
