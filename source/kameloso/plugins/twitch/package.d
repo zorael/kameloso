@@ -3599,13 +3599,29 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         return;
     }
 
+    /+
+        If the event is of a type that can contain custom emotes (which is any
+        event with user input), embed them into the event's 'emotes` member.
+
+        This is done only for events in home channels, unless the
+        `TwitchCustomEmotesEverywhere` version is defined, in which case it's
+        done for all events.
+     +/
     immutable isEmotePossibleEventType = event.type.among!
         (IRCEvent.Type.CHAN,
         IRCEvent.Type.EMOTE,
+        IRCEvent.Type.TWITCH_MILESTONE,
+        IRCEvent.Type.TWITCH_BITSBADGETIER,
+        IRCEvent.Type.TWITCH_CHEER,
+        IRCEvent.Type.CLEARMSG,
+        IRCEvent.Type.TWITCH_ANNOUNCEMENT,
+        IRCEvent.Type.TWITCH_DIRECTCHEER,
+        IRCEvent.Type.TWITCH_INTRO,
+        IRCEvent.Type.TWITCH_RITUAL,
         IRCEvent.Type.SELFCHAN,
         IRCEvent.Type.SELFEMOTE);
 
-    immutable eventCanContainEmotes =
+    immutable eventCanContainCustomEmotes =
         plugin.twitchSettings.customEmotes &&
         event.content.length &&
         isEmotePossibleEventType;
@@ -3613,16 +3629,16 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
     version(TwitchCustomEmotesEverywhere)
     {
         // Always embed regardless of channel
-        alias shouldEmbedEmotes = eventCanContainEmotes;
+        alias shouldEmbedCustomEmotes = eventCanContainCustomEmotes;
     }
     else
     {
         // Only embed if the event is in a home channel
         immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
-        immutable shouldEmbedEmotes = eventCanContainEmotes && isHomeChannel;
+        immutable shouldEmbedCustomEmotes = eventCanContainCustomEmotes && isHomeChannel;
     }
 
-    if (shouldEmbedEmotes)
+    if (shouldEmbedCustomEmotes)
     {
         import kameloso.plugins.twitch.emotes : embedCustomEmotes;
 

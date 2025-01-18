@@ -424,17 +424,7 @@ void formatMessageMonochrome(Sink)
 
     version(TwitchSupport)
     {
-        import std.algorithm.comparison : among;
-
-        immutable isEmotePossibleEventType = event.type.among!
-            (IRCEvent.Type.CHAN,
-            IRCEvent.Type.EMOTE,
-            IRCEvent.Type.SELFCHAN,
-            IRCEvent.Type.SELFEMOTE);
-
-        if (isEmotePossibleEventType &&
-            event.target.nickname.length &&
-            (event.aux[0].length))
+        if (event.target.nickname.length && event.aux[0].length)
         {
             /*if (content.length)*/ putContent();
             putTarget();
@@ -1124,16 +1114,7 @@ void formatMessageColoured(Sink)
 
     version(TwitchSupport)
     {
-        import std.algorithm.comparison : among;
-
-        immutable isEmotePossibleEventType = event.type.among!
-            (IRCEvent.Type.CHAN,
-            IRCEvent.Type.EMOTE,
-            IRCEvent.Type.SELFCHAN,
-            IRCEvent.Type.SELFEMOTE);
-
-        if (isEmotePossibleEventType &&
-            event.content.length &&
+        if (event.content.length &&
             event.target.nickname.length &&
             event.aux[0].length)
         {
