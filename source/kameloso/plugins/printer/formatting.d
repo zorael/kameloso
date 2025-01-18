@@ -1321,10 +1321,8 @@ auto highlightEmotes(
     const CoreSettings settings)
 {
     import kameloso.constants : DefaultColours;
-    import kameloso.terminal.colours : applyANSI;
     import std.array : Appender;
     import std.exception : assumeUnique;
-    import std.string : indexOf;
 
     alias Bright = EventPrintingBright;
     alias Dark = EventPrintingDark;
@@ -1333,61 +1331,31 @@ auto highlightEmotes(
 
     static Appender!(char[]) sink;
     scope(exit) sink.clear();
-    sink.reserve(event.content.length + 60);  // mostly +10
+    sink.reserve(event.content.length + 60);  // guesttimate, mostly +10
 
     immutable TerminalForeground highlight = settings.brightTerminal ?
         Bright.highlight :
         Dark.highlight;
-    immutable isEmoteOnly = !colourful && (event.tags.indexOf("emote-only=1") != -1);
 
-    with (IRCEvent.Type)
-    switch (event.type)
-    {
-    case EMOTE:
-    case SELFEMOTE:
-        if (isEmoteOnly)
-        {
-            // Just highlight the whole line, don't worry about resetting to fgBase
-            sink.applyANSI(highlight);
-            sink.put(event.content);
-            break;
-        }
+    immutable TerminalForeground contentFgBase = settings.brightTerminal ?
+        Bright.content :
+        Dark.content;
 
-        // Emote but mixed text and emotes OR we're doing colourful emotes
-        immutable TerminalForeground emoteFgBase = settings.brightTerminal ?
-            Bright.emote :
-            Dark.emote;
+    immutable TerminalForeground emoteFgBase = settings.brightTerminal ?
+        Bright.emote :
+        Dark.emote;
 
-        sink.highlightEmotesImpl(
-            event.content,
-            event.emotes,
-            highlight,
-            emoteFgBase,
-            colourful,
-            settings);
-        break;
+    immutable baseColour = (event.type == IRCEvent.Type.EMOTE) || (event.type == IRCEvent.Type.SELFEMOTE) ?
+        emoteFgBase :
+        contentFgBase;
 
-    default:
-        if (isEmoteOnly)
-        {
-            // / Emote only channel message, treat the same as an emote-only emote?
-            goto case EMOTE;
-        }
-
-        // Normal content, normal text, normal emotes
-        immutable TerminalForeground contentFgBase = settings.brightTerminal ?
-            Bright.content :
-            Dark.content;
-
-        sink.highlightEmotesImpl(
-            event.content,
-            event.emotes,
-            highlight,
-            contentFgBase,
-            colourful,
-            settings);
-        break;
-    }
+    sink.highlightEmotesImpl(
+        line: event.content,
+        emotes: event.emotes,
+        pre: highlight,
+        post: baseColour,
+        colourful: colourful,
+        settings: settings);
 
     return sink[].assumeUnique();
 }
