@@ -3691,8 +3691,8 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
     immutable eventCanContainCustomEmotes =
         plugin.twitchSettings.customEmotes &&
-        event.content.length &&
-        isEmotePossibleEventType;
+        isEmotePossibleEventType &&
+        (event.content.length || (event.target.nickname.length && event.aux[0].length));
 
     version(TwitchCustomEmotesEverywhere)
     {
