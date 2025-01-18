@@ -700,9 +700,10 @@ auto processMessages(Kameloso instance)
             break;
 
         default:
-            // No need to use Enum!(IRCEvent.Type) here, logger does it internally
+            import lu.conv : Enum;
+            // Using Enum here is not necessary but lowers compilation memory usage
             logger.error("<l>processMessages</>.<l>eventToServer</> missing case " ~
-                "for outgoing event type <l>", m.event.type);
+                "for outgoing event type <l>", Enum!(IRCEvent.Type).toString(m.event.type));
             break;
         }
 
