@@ -223,7 +223,6 @@ in (event.channel.length, "Tried to reply to a channel message but no channel wa
     version(TwitchSupport)
     {
         import kameloso.common : logger;
-        import lu.conv : Enum;
 
         if (state.server.daemon != IRCServer.Daemon.twitch) return sendNormally();
 
@@ -284,6 +283,7 @@ in (event.channel.length, "Tried to reply to a channel message but no channel wa
         }
         else
         {
+            import lu.conv : Enum;
             enum pattern = "Tried to <l>reply</> to an event of an unsupported type: <l>%s";
             logger.errorf(pattern, Enum!(IRCEvent.Type).toString(event.type));
         }

@@ -3715,18 +3715,18 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
         // event.content is guaranteed to not be empty here
         embedCustomEmotes(
-            event.content,
-            event.emotes,
-            customEmotes ? *customEmotes : null,
-            plugin.customGlobalEmotes);
+            content: event.content,
+            emotes: event.emotes,
+            customEmotes: customEmotes ? *customEmotes : null,
+            customGlobalEmotes: plugin.customGlobalEmotes);
 
         if (event.target.nickname.length && event.aux[0].length)
         {
             embedCustomEmotes(
-                event.aux[0],
-                event.aux[$-2],
-                customEmotes ? *customEmotes : null,
-                plugin.customGlobalEmotes);
+                content: event.aux[0],
+                emotes: event.aux[$-2],
+                customEmotes: customEmotes ? *customEmotes : null,
+                customGlobalEmotes: plugin.customGlobalEmotes);
         }
     }
 

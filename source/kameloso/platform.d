@@ -377,7 +377,7 @@ Pid exec(
                 immutable flag = slice.advancePast('=', inherit: true);
 
                 if (flag.among!(
-                    //"--setup-twitch",  // this only does the keygen, then exits
+                    //"--setup-twitch",  // this sets up the config file, then exits
                     "--get-cacert",
                     "--get-openssl",
                     "--internal-num-reexecs",
