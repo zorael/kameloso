@@ -3529,6 +3529,74 @@ unittest
 }
 
 
+// bringBadgeToFront
+/++
+    Sorts a comma-separated list of badges so that a given badge is listed first.
+
+    Params:
+        badges = A reference to the comma-separated string of badges to sort in place.
+        badge = The badge to bring to the front.
+ +/
+void bringBadgeToFront(ref string badges, const string badge) pure @safe
+{
+    import std.algorithm.iteration : splitter;
+    import std.algorithm.sorting : sort;
+    import std.array : array, join;
+
+    auto thisBadgeFirst(const string a, const string b)
+    {
+        import std.algorithm.searching : startsWith;
+        return a.startsWith(badge) && !b.startsWith(badge);
+    }
+
+    badges = badges
+        .splitter(',')
+        .array
+        .sort!thisBadgeFirst()
+        .join(',');
+}
+
+///
+unittest
+{
+    {
+        string badges = "subscriber/14,broadcaster/1";
+        bringBadgeToFront(badges, "broadcaster/");
+        assert((badges == "broadcaster/1,subscriber/14"), badges);
+    }
+    {
+        string badges = "broadcaster/1,broadcaster/1";
+        bringBadgeToFront(badges, "broadcaster/");
+        assert((badges == "broadcaster/1,broadcaster/1"), badges);
+    }
+    {
+        string badges = "vip/1,subscriber/14";
+        bringBadgeToFront(badges, "broadcaster/");
+        assert((badges == "vip/1,subscriber/14"), badges);
+    }
+    {
+        string badges;
+        bringBadgeToFront(badges, "broadcaster/");
+        assert(!badges.length, badges);
+    }
+    {
+        string badges = "hirfharf";
+        bringBadgeToFront(badges, "broadcaster/");
+        assert((badges == "hirfharf"), badges);
+    }
+    {
+        string badges = "subscriber/14,moderator/1";
+        bringBadgeToFront(badges, "moderator/");
+        assert((badges == "moderator/1,subscriber/14"), badges);
+    }
+    {
+        string badges = "broadcaster/1,asdf/9999";
+        bringBadgeToFront(badges, "asdf/");
+        assert((badges == "asdf/9999,broadcaster/1"), badges);
+    }
+}
+
+
 // setup
 /++
     Initialises the response bucket, else its internal [core.sync.mutex.Mutex|Mutex]
@@ -3716,6 +3784,24 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 user.badges,
                 plugin.twitchSettings.promoteModerators,
                 plugin.twitchSettings.promoteVIPs);
+
+            // Move some badges to the front of the string, in reverse order of importance
+            static immutable string[3] badgeOrder =
+            [
+                "vip/",
+                "moderator/",
+                "broadcaster/"
+            ];
+
+            foreach (immutable badge; badgeOrder[])
+            {
+                import std.string : indexOf;
+
+                if (user.badges.indexOf(badge) != -1)
+                {
+                    bringBadgeToFront(user.badges, badge);
+                }
+            }
         }
     }
 
