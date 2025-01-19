@@ -3691,7 +3691,6 @@ void teardown(TwitchPlugin plugin)
  +/
 void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
-    import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
 
     if (plugin.twitchSettings.mapWhispersToChannel && (event.type == IRCEvent.Type.QUERY))
@@ -3711,72 +3710,78 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         return;
     }
 
-    /+
-        If the event is of a type that can contain custom emotes (which is any
-        event with user input), embed them into the event's 'emotes` member.
-
-        This is done only for events in home channels, unless the
-        `customEmotesEverywhere` setting is enabled.
-     +/
-    immutable isEmotePossibleEventType = event.type.among!
-        (IRCEvent.Type.CHAN,
-        IRCEvent.Type.EMOTE,
-        IRCEvent.Type.TWITCH_MILESTONE,
-        IRCEvent.Type.TWITCH_BITSBADGETIER,
-        IRCEvent.Type.TWITCH_CHEER,
-        IRCEvent.Type.CLEARMSG,
-        IRCEvent.Type.TWITCH_ANNOUNCEMENT,
-        IRCEvent.Type.TWITCH_SUB,
-        IRCEvent.Type.TWITCH_DIRECTCHEER,
-        IRCEvent.Type.TWITCH_INTRO,
-        IRCEvent.Type.TWITCH_RITUAL,
-        IRCEvent.Type.SELFCHAN,
-        IRCEvent.Type.SELFEMOTE);
-
-    if (!isEmotePossibleEventType) return;
-
-    immutable eventCanContainCustomEmotes =
-        plugin.twitchSettings.customEmotes &&
-        (event.content.length || (event.target.nickname.length && event.aux[0].length));
-
     bool isHomeChannel;
     bool determinedWhetherHomeChannel;
-    bool shouldEmbedCustomEmotes;
 
-    if (plugin.twitchSettings.customEmotesEverywhere)
+    if (plugin.twitchSettings.customEmotes)
     {
-        // Always embed regardless of channel
-        shouldEmbedCustomEmotes = eventCanContainCustomEmotes;
-    }
-    else
-    {
-        // Only embed if the event is in a home channel
-        isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
-        determinedWhetherHomeChannel = true;
-        shouldEmbedCustomEmotes = eventCanContainCustomEmotes && isHomeChannel;
-    }
+        import std.algorithm.comparison : among;
 
-    if (shouldEmbedCustomEmotes)
-    {
-        import kameloso.plugins.twitch.emotes : embedCustomEmotes;
+        /+
+            If the event is of a type that can contain custom emotes (which is any
+            event with user input), embed them into the event's 'emotes` member.
 
-        const customChannelEmotes = event.channel in plugin.customChannelEmotes;
-        const customEmotes = customChannelEmotes ? &customChannelEmotes.emotes : null;
+            This is done only for events in home channels, unless the
+            `customEmotesEverywhere` setting is enabled.
+         +/
+        immutable isEmotePossibleEventType = event.type.among!
+            (IRCEvent.Type.CHAN,
+            IRCEvent.Type.EMOTE,
+            IRCEvent.Type.TWITCH_MILESTONE,
+            IRCEvent.Type.TWITCH_BITSBADGETIER,
+            IRCEvent.Type.TWITCH_CHEER,
+            IRCEvent.Type.CLEARMSG,
+            IRCEvent.Type.TWITCH_ANNOUNCEMENT,
+            IRCEvent.Type.TWITCH_SUB,
+            IRCEvent.Type.TWITCH_DIRECTCHEER,
+            IRCEvent.Type.TWITCH_INTRO,
+            IRCEvent.Type.TWITCH_RITUAL,
+            IRCEvent.Type.SELFCHAN,
+            IRCEvent.Type.SELFEMOTE);
 
-        // event.content is guaranteed to not be empty here
-        embedCustomEmotes(
-            content: event.content,
-            emotes: event.emotes,
-            customEmotes: customEmotes ? *customEmotes : null,
-            customGlobalEmotes: plugin.customGlobalEmotes);
+        immutable eventMayContainCustomEmotes =
+            (event.content.length || (event.target.nickname.length && event.aux[0].length));
 
-        if (event.target.nickname.length && event.aux[0].length)
+        if (isEmotePossibleEventType && eventMayContainCustomEmotes)
         {
-            embedCustomEmotes(
-                content: event.aux[0],
-                emotes: event.aux[$-2],
-                customEmotes: customEmotes ? *customEmotes : null,
-                customGlobalEmotes: plugin.customGlobalEmotes);
+            bool shouldEmbedCustomEmotes;
+
+            if (plugin.twitchSettings.customEmotesEverywhere)
+            {
+                // Always embed regardless of channel
+                shouldEmbedCustomEmotes = true;
+            }
+            else
+            {
+                // Only embed if the event is in a home channel
+                isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
+                determinedWhetherHomeChannel = true;
+                shouldEmbedCustomEmotes = isHomeChannel;
+            }
+
+            if (shouldEmbedCustomEmotes)
+            {
+                import kameloso.plugins.twitch.emotes : embedCustomEmotes;
+
+                const customChannelEmotes = event.channel in plugin.customChannelEmotes;
+                const customEmotes = customChannelEmotes ? &customChannelEmotes.emotes : null;
+
+                // event.content is guaranteed to not be empty here
+                embedCustomEmotes(
+                    content: event.content,
+                    emotes: event.emotes,
+                    customEmotes: customEmotes ? *customEmotes : null,
+                    customGlobalEmotes: plugin.customGlobalEmotes);
+
+                if (event.target.nickname.length && event.aux[0].length)
+                {
+                    embedCustomEmotes(
+                        content: event.aux[0],
+                        emotes: event.aux[$-2],
+                        customEmotes: customEmotes ? *customEmotes : null,
+                        customGlobalEmotes: plugin.customGlobalEmotes);
+                }
+            }
         }
     }
 
