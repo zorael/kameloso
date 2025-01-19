@@ -258,6 +258,22 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const bool strip) @sa
                     }
                     break tagswitch;
             }
+            else /*version(!Colours)*/
+            {
+                // Let everything pass through with no action taken
+                case 'l':
+                case 't':
+                case 'i':
+                case 'w':
+                case 'e':
+                case 'c':
+                case 'f':
+                case 'o':
+                    break;
+
+                case '/':
+                    break tagswitch;
+            }
 
             case 'h':
                 immutable closingHashMarkPos = wrappedIndexOf(asBytes[i+3..$], "</>");
@@ -317,7 +333,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const bool strip) @sa
                         sink.put(word);
                     }
                 }
-                else
+                else /*version(!Colours)*/
                 {
                     sink.put(word);
                 }
