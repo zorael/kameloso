@@ -669,7 +669,19 @@ auto handleGetopt(Kameloso instance) @system
         "internal-channel-override", &channelOverride,
     );
 
-    if (colourString.length) resolveFlagString(colourString, instance.settings.colours);
+    if (colourString.length)
+    {
+        immutable valueBefore = instance.settings.colours;
+        resolveFlagString(colourString, instance.settings.colours);
+        immutable valueAfter = instance.settings.colours;
+
+        if (valueBefore != valueAfter)
+        {
+            // Colours were probably disabled, so reinitialise the logger
+            destroy(kameloso.common.logger);
+            kameloso.common.logger = new KamelosoLogger(*instance.settings);
+        }
+    }
 
     /++
         Call getopt in a nested function so we can call it both to merely
