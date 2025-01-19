@@ -3785,45 +3785,18 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         }
     }
 
+    /++
+        Sort badges and infer user class based on them.
+
+        Sort first so early returns don't skip the sorting.
+     +/
     static void postprocessImpl(
         const TwitchPlugin plugin,
         const string channelName,
         ref IRCUser user)
     {
-        if (user.class_ >= IRCUser.Class.staff)
-        {
-            // User is already staff or higher, no need to promote
-            return;
-        }
-
-        if (user.class_ == IRCUser.Class.blacklist)
-        {
-            // Ignore blacklist for obvious reasons
-            return;
-        }
-
-        if (plugin.twitchSettings.promoteBroadcasters)
-        {
-            // Already ensured channel has length in parent function
-            assert(channelName.length, "Empty channelName in postprocess.postprocessImpl");
-
-            if ((user.class_ < IRCUser.Class.staff) &&
-                (user.nickname == channelName[1..$]))
-            {
-                // User is broadcaster but is not registered as staff
-                user.class_ = IRCUser.Class.staff;
-            }
-        }
-
         if (user.badges.length)
         {
-            // Infer class from the user's badge(s)
-            promoteUserFromBadges(
-                user.class_,
-                user.badges,
-                plugin.twitchSettings.promoteModerators,
-                plugin.twitchSettings.promoteVIPs);
-
             // Move some badges to the front of the string, in reverse order of importance
             static immutable string[3] badgeOrder =
             [
@@ -3841,6 +3814,41 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
                     bringBadgeToFront(user.badges, badge);
                 }
             }
+        }
+
+        if (user.class_ >= IRCUser.Class.staff)
+        {
+            // User is already staff or higher, no need to promote
+            return;
+        }
+
+        if (user.class_ == IRCUser.Class.blacklist)
+        {
+            // Ignore blacklist for obvious reasons
+            return;
+        }
+
+        if (plugin.twitchSettings.promoteBroadcasters)
+        {
+            // Already ensured channel has length in parent function
+            assert(channelName.length, "Empty channelName in postprocess.postprocessImpl");
+
+            if (user.nickname == channelName[1..$])
+            {
+                // User is broadcaster but is not registered as staff
+                user.class_ = IRCUser.Class.staff;
+                return;
+            }
+        }
+
+        if (user.badges.length)
+        {
+            // Infer class from the user's badge(s)
+            promoteUserFromBadges(
+                user.class_,
+                user.badges,
+                plugin.twitchSettings.promoteModerators,
+                plugin.twitchSettings.promoteVIPs);
         }
     }
 
