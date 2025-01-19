@@ -95,11 +95,7 @@ shared PluginRegistrationEntry[] registeredPlugins;
 // module constructor
 /++
     Module constructor that merely reserves space for [registeredPlugins] to grow into.
-
-    Only include this if the compiler is based on 2.095 or later, as the call to
-    [object.reserve|reserve] fails with those prior to that.
  +/
-static if (__VERSION__ >= 2095L)
 shared static this()
 {
     enum initialSize = 64;

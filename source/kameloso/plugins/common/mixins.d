@@ -933,34 +933,31 @@ unittest
         mixin IRCPluginImpl;
     }
 
-    static if (__VERSION__ >= 2097L)
+    static import kameloso.messaging;
+
+    MyPlugin2 plugin2 = new MyPlugin2(state);
+
+    foreach (immutable funstring; __traits(derivedMembers, kameloso.messaging))
     {
-        static import kameloso.messaging;
+        import std.algorithm.comparison : among;
+        import std.algorithm.searching : startsWith;
 
-        MyPlugin2 plugin2 = new MyPlugin2(state);
-
-        foreach (immutable funstring; __traits(derivedMembers, kameloso.messaging))
+        static if (funstring.among!(
+                "object",
+                "dialect",
+                "kameloso",
+                "Message") ||
+            funstring.startsWith("ask"))
         {
-            import std.algorithm.comparison : among;
-            import std.algorithm.searching : startsWith;
+            //pragma(msg, "ignoring " ~ funstring);
+        }
+        else static if (!__traits(compiles, { mixin("alias _ = plugin2.fromMixin." ~ funstring ~ ";"); }))
+        {
+            import std.format : format;
 
-            static if (funstring.among!(
-                    "object",
-                    "dialect",
-                    "kameloso",
-                    "Message") ||
-                funstring.startsWith("ask"))
-            {
-                //pragma(msg, "ignoring " ~ funstring);
-            }
-            else static if (!__traits(compiles, { mixin("alias _ = plugin2.fromMixin." ~ funstring ~ ";"); }))
-            {
-                import std.format : format;
-
-                enum pattern = "`MessagingProxy` is missing a wrapper for `kameloso.messaging.%s`";
-                enum message = pattern.format(funstring);
-                static assert(0, message);
-            }
+            enum pattern = "`MessagingProxy` is missing a wrapper for `kameloso.messaging.%s`";
+            enum message = pattern.format(funstring);
+            static assert(0, message);
         }
     }
 }

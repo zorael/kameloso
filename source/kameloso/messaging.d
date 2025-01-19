@@ -52,7 +52,9 @@ private:
 
 import kameloso.plugins.common : IRCPluginState;
 import kameloso.irccolours : expandIRCTags, stripIRCTags;
+import kameloso.thread : ThreadMessage;
 import dialect.defs;
+import std.meta : AliasSeq;
 static import kameloso.common;
 
 version(unittest) import lu.conv : Enum;
@@ -1107,84 +1109,32 @@ void askToOutputImpl(string askVerb)(IRCPluginState state, const string line)
 
     For older compilers, just provide the handwritten aliases.
  +/
-static if (__VERSION__ >= 2099L)
+private alias askLevels = AliasSeq!(
+    "askToTrace",
+    "askToLog",
+    "askToInfo",
+    "askToWarn",
+    "askToError",
+    "askToCritical",
+    "askToFatal",
+    "askToWriteln",
+);
+
+static foreach (immutable askVerb; askLevels)
 {
-    private import kameloso.thread : ThreadMessage;
-    private import std.meta : AliasSeq;
-
-    private alias askLevels = AliasSeq!(
-        "askToTrace",
-        "askToLog",
-        "askToInfo",
-        "askToWarn",
-        "askToError",
-        "askToCritical",
-        "askToFatal",
-        "askToWriteln",
-    );
-
-    static foreach (immutable askVerb; askLevels)
-    {
-        mixin(`
-        /++
-            Leaves a message for the main event loop to print text using
-            the [kameloso.logger.KamelosoLogger] to the local terminal.
-         +/
-        alias ` ~ askVerb ~ ` = askToOutputImpl!"` ~ askVerb ~ `";
+    mixin(`
+/++
+    Leaves a message for the main event loop to print text using
+    the [kameloso.logger.KamelosoLogger] to the local terminal.
+ +/
+alias ` ~ askVerb ~ ` = askToOutputImpl!"` ~ askVerb ~ `";
 `);
-    }
+}
 
-    /++
-        Simple alias to [askToWarn], because both spellings are right.
-     +/
-    alias askToWarning = askToWarn;
-}
-else
-{
-    /++
-        Leaves a message for the main event loop to [kameloso.logger.KamelosoLogger.trace|trace]
-        text to the local terminal.
-     +/
-    alias askToTrace = askToOutputImpl!"askToTrace";
-    /++
-        Leaves a message for the main event loop to [kameloso.logger.KamelosoLogger.log|log]
-        text to the local terminal.
-     +/
-    alias askToLog = askToOutputImpl!"askToLog";
-    /++
-        Leaves a message for the main event loop to [kameloso.logger.KamelosoLogger.info|info]
-        text to the local terminal.
-     +/
-    alias askToInfo = askToOutputImpl!"askToInfo";
-    /++
-        Leaves a message for the main event loop to [kameloso.logger.KamelosoLogger.warning|warning]
-        text to the local terminal.
-     +/
-    alias askToWarn = askToOutputImpl!"askToWarn";
-    /++
-        Simple alias to [askToWarn], because both spellings are right.
-     +/
-    alias askToWarning = askToWarn;
-    /++
-        Leaves a message for the main event loop to [kameloso.logger.KamelosoLogger.error|error]
-        text to the local terminal.
-     +/
-    alias askToError = askToOutputImpl!"askToError";
-    /++
-        Leaves a message for the main event loop to [kameloso.logger.KamelosoLogger.critical|critical]
-        text to the local terminal.
-     +/
-    alias askToCritical = askToOutputImpl!"askToCritical";
-    /++
-        Leaves a message for the main event loop to [kameloso.logger.KamelosoLogger.fatal|fatal]
-        text to the local terminal.
-     +/
-    alias askToFatal = askToOutputImpl!"askToFatal";
-    /++
-        Leaves a message for the main event loop asking to print text to the local terminal.
-     +/
-    alias askToWriteln = askToOutputImpl!"askToWriteln";
-}
+/++
+    Simple alias to [askToWarn], because both spellings are right.
+ +/
+alias askToWarning = askToWarn;
 
 unittest
 {

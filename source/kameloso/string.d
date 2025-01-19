@@ -310,16 +310,6 @@ unittest
         immutable number = replaced.advancePast(' ').to!int;
         assert(((number >= -20) && (number < -10)), number.to!string);
     }
-    /*{
-        static if (__VERSION__ > 2089L)
-        {
-            // Fails pre-2.090 with Error: signed integer overflow
-            enum line = "$random(-9223372036854775808..9223372036854775807) bottles of beer on the wall";
-            string replaced = line.replaceRandom();  // mutable
-            immutable number = replaced.advancePast(' ').to!long;
-            //assert(((number >= cast(long)-9223372036854775808) && (number < 9223372036854775807)), number.to!string);
-        }
-    }*/
     {
         // syntax error, no bounds given
         enum line = "$random() bottles of beer on the wall";

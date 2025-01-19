@@ -451,18 +451,7 @@ void formatMessageMonochrome(Sink)
     if (!auxRange.empty)
     {
         enum pattern = " (%-(%s%|) (%))";
-
-        static if ((__VERSION__ >= 2099L) && (__VERSION__ <= 2102L))
-        {
-            import std.array : array;
-            // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
-            // Seemingly only between 2.099 and 2.102
-            sink.formattedWrite(pattern, auxRange.array.dup);
-        }
-        else
-        {
-            sink.formattedWrite(pattern, auxRange);
-        }
+        sink.formattedWrite(pattern, auxRange);
     }
 
     auto countRange = event.count[].filter!(n => !n.isNull);
@@ -1184,18 +1173,7 @@ void formatMessageColoured(Sink)
     {
         enum pattern = " (%-(%s%|) (%))";
         sink.applyANSI(plugin.state.settings.brightTerminal ? Bright.aux : Dark.aux);
-
-        static if ((__VERSION__ >= 2099L) && (__VERSION__ <= 2102L))
-        {
-            import std.array : array;
-            // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
-            // Seemingly only between 2.099 and 2.102
-            sink.formattedWrite(pattern, auxRange.array.dup);
-        }
-        else
-        {
-            sink.formattedWrite(pattern, auxRange);
-        }
+        sink.formattedWrite(pattern, auxRange);
     }
 
     auto countRange = event.count[].filter!(n => !n.isNull);

@@ -80,12 +80,9 @@ enum gcOptions = ()
         sink.put("gc:precise ");
     }
 
-    static if (__VERSION__ >= 2098L)
+    version(ConcurrentGC)
     {
-        version(ConcurrentGC)
-        {
-            sink.put("fork:1 ");
-        }
+        sink.put("fork:1 ");
     }
 
     // Tweak these numbers as we see fit

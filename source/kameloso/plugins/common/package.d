@@ -2596,25 +2596,9 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
 
     assert(__ctfe, "udaSanityCheckCTFE called outside CTFE");
 
-    static if (__VERSION__ < 2106L)
-    {
-        /++
-            There's something wrong with how the assert message is printed from CTFE.
-            Work around it somewhat by prepending a backtick.
-
-            https://issues.dlang.org/show_bug.cgi?id=24036
-         +/
-        enum fix = "`";
-    }
-    else
-    {
-        // Fixed in 2.106.
-        enum fix = string.init;
-    }
-
     if (!uda.acceptedEventTypes.length)
     {
-        enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
             "but it is not declared to accept any `IRCEvent.Type`s";
         immutable message = pattern.format(uda.fqn).idup;
         assert(0, message);
@@ -2624,14 +2608,14 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
     {
         if (type == IRCEvent.Type.UNSET)
         {
-            enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+            enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                 "accepting `IRCEvent.Type.UNSET`, which is not a valid event type";
             immutable message = pattern.format(uda.fqn).idup;
             assert(0, message);
         }
         else if (type == IRCEvent.Type.PRIVMSG)
         {
-            enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+            enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                 "accepting `IRCEvent.Type.PRIVMSG`, which is not a valid event type. " ~
                 "Use `IRCEvent.Type.CHAN` and/or `IRCEvent.Type.QUERY` instead";
             immutable message = pattern.format(uda.fqn).idup;
@@ -2639,7 +2623,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
         }
         else if (type == IRCEvent.Type.WHISPER)
         {
-            enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+            enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                 "accepting `IRCEvent.Type.WHISPER`, which is not a valid event type. " ~
                 "Use `IRCEvent.Type.QUERY` instead";
             immutable message = pattern.format(uda.fqn).idup;
@@ -2647,7 +2631,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
         }
         else if ((type == IRCEvent.Type.ANY) && !(uda.channelPolicy & ChannelPolicy.any))
         {
-            enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+            enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                 "accepting `IRCEvent.Type.ANY` and is at the same time not annotated " ~
                 "`ChannelPolicy.any`, which is the only accepted combination";
             immutable message = pattern.format(uda.fqn).idup;
@@ -2663,7 +2647,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
             {
                 import lu.conv : Enum;
 
-                enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+                enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a `Command` and/or `Regex`, but is at the " ~
                     "same time accepting non-message `IRCEvent.Type.%s events`";
                 immutable message = pattern.format(
@@ -2682,14 +2666,14 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
 
             if (!command._word.length)
             {
-                enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+                enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a `Command` with an empty (or unspecified) trigger word";
                 immutable message = pattern.format(uda.fqn).idup;
                 assert(0, message);
             }
             else if (command._word.indexOf(' ') != -1)
             {
-                enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+                enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a `Command` whose trigger " ~
                     `word "%s" contains a space character`;
                 immutable message = pattern.format(uda.fqn, command._word).idup;
@@ -2704,7 +2688,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
         {
             if (!regex._expression.length)
             {
-                enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+                enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a `Regex` with an empty (or unspecified) expression";
                 immutable message = pattern.format(uda.fqn).idup;
                 assert(0, message);
@@ -2758,27 +2742,11 @@ auto assertSaneStorageClasses(
 
     assert(__ctfe, "`assertSaneStorageClasses` called outside CTFE");
 
-    static if (__VERSION__ < 2106L)
-    {
-        /++
-            There's something wrong with how the assert message is printed from CTFE.
-            Work around it somewhat by prepending a backtick.
-
-            https://issues.dlang.org/show_bug.cgi?id=24036
-         +/
-        enum fix = "`";
-    }
-    else
-    {
-        // Fixed in 2.106.
-        enum fix = string.init;
-    }
-
     if (inFiber)
     {
         if (storageClass & ParameterStorageClass.ref_)
         {
-            enum pattern = fix ~ "`%s` has a `%s` event handler annotated `.fiber(true)` " ~
+            enum pattern = "`%s` has a `%s` event handler annotated `.fiber(true)` " ~
                 "that takes an `IRCEvent` by `ref`, which is a combination prone " ~
                 "to memory corruption. Pass by value instead";
             immutable message = pattern.format(module_, typestring).idup;
@@ -2790,7 +2758,7 @@ auto assertSaneStorageClasses(
         if ((storageClass & ParameterStorageClass.ref_) ||
             (storageClass & ParameterStorageClass.out_))
         {
-            enum pattern = fix ~ "`%s` has a `%s` event handler that takes an " ~
+            enum pattern = "`%s` has a `%s` event handler that takes an " ~
                 "`IRCEvent` of an unsupported storage class; " ~
                 "may not be mutable `ref` or `out`";
             immutable message = pattern.format(module_, typestring).idup;
