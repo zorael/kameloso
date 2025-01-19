@@ -439,10 +439,9 @@ mixin template IRCPluginImpl(
         Permissions;
     private import kameloso.thread : Sendable;
     private import dialect.defs : IRCEvent, IRCServer, IRCUser;
-    private import lu.traits : getSymbolsByUDA;
     private import std.array : Appender;
     private import std.meta : AliasSeq;
-    private import std.traits : getUDAs;
+    private import std.traits : getSymbolsByUDA, getUDAs;
     private import core.thread.fiber : Fiber;
     private import core.time : Duration;
 
