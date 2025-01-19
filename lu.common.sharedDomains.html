@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>sharedDomains (lu.common.sharedDomains)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>sharedDomains</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.common.html">common</a> </div><div><div class="documentation-comment synopsis"><div><p>Calculates how many dot-separated suffixes two strings share.</p><p>This is useful to see to what extent two addresses are similar.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">pure @<span class="name" data-ident="safe">safe</span> @<span class="name" data-ident="nogc">nogc</span> nothrow </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">sharedDomains</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="one"><a href="#param-one">one</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="other"><a href="#param-other">other</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="caseSensitive"><a href="#param-caseSensitive">caseSensitive</a></span><span class="parameter-default-value">&#160;=&#160;true</span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-one"><a class="parameter-name" data-ident="one" href="#param-one">one</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>First domain string.</p></div></div></dd><dt id="param-other"><a class="parameter-name" data-ident="other" href="#param-other">other</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>Second domain string.</p></div></div></dd><dt id="param-caseSensitive"><a class="parameter-name" data-ident="caseSensitive" href="#param-caseSensitive">caseSensitive</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether or not comparison should be done on a
+            case-sensitive basis.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>The number of domains the two strings share.</p><p>TODO:
+        Support partial globs.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="type">int</span> <span class="hid">numDomains</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;irc.freenode.net&quot;</span>, <span class="str">&quot;leguin.freenode.net&quot;</span>);
+<span class="kwrd">assert</span>(<span class="hid">numDomains</span> == <span class="num">2</span>);  <span class="com">// freenode.net</span>
+
+<span class="type">int</span> <span class="hid">numDomains2</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;Portlane2.EU.GameSurge.net&quot;</span>, <span class="str">&quot;services.gamesurge.net&quot;</span>, <span class="hid">caseSensitive</span>:<span class="kwrd">false</span>);
+<span class="kwrd">assert</span>(<span class="hid">numDomains2</span> == <span class="num">2</span>);  <span class="com">// gamesurge.net</span></pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">conv</span> : <span class="hid">text</span>;
+
+<span class="kwrd">immutable</span> <span class="hid">n1</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;irc.freenode.net&quot;</span>, <span class="str">&quot;help.freenode.net&quot;</span>);
+<span class="kwrd">assert</span>((<span class="hid">n1</span> == <span class="num">2</span>), <span class="hid">n1</span>.<span class="hid">text</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">n2</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;irc.rizon.net&quot;</span>, <span class="str">&quot;services.rizon.net&quot;</span>);
+<span class="kwrd">assert</span>((<span class="hid">n2</span> == <span class="num">2</span>), <span class="hid">n2</span>.<span class="hid">text</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">n3</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;www.google.com&quot;</span>, <span class="str">&quot;www.yahoo.com&quot;</span>);
+<span class="kwrd">assert</span>((<span class="hid">n3</span> == <span class="num">1</span>), <span class="hid">n3</span>.<span class="hid">text</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">n4</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;www.google.se&quot;</span>, <span class="str">&quot;www.google.co.uk&quot;</span>);
+<span class="kwrd">assert</span>((<span class="hid">n4</span> == <span class="num">0</span>), <span class="hid">n4</span>.<span class="hid">text</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">n5</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;&quot;</span>, <span class="type">string</span>.<span class="hid">init</span>);
+<span class="kwrd">assert</span>((<span class="hid">n5</span> == <span class="num">0</span>), <span class="hid">n5</span>.<span class="hid">text</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">n6</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;irc.rizon.net&quot;</span>, <span class="str">&quot;rizon.net&quot;</span>);
+<span class="kwrd">assert</span>((<span class="hid">n6</span> == <span class="num">2</span>), <span class="hid">n6</span>.<span class="hid">text</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">n7</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;rizon.net&quot;</span>, <span class="str">&quot;rizon.net&quot;</span>);
+<span class="kwrd">assert</span>((<span class="hid">n7</span> == <span class="num">2</span>), <span class="hid">n7</span>.<span class="hid">text</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">n8</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;net&quot;</span>, <span class="str">&quot;net&quot;</span>);
+<span class="kwrd">assert</span>((<span class="hid">n8</span> == <span class="num">1</span>), <span class="hid">n8</span>.<span class="hid">text</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">n9</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;forum.dlang.org&quot;</span>, <span class="str">&quot;...&quot;</span>);
+<span class="kwrd">assert</span>((<span class="hid">n9</span> == <span class="num">0</span>), <span class="hid">n8</span>.<span class="hid">text</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">n10</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;blahrizon.net&quot;</span>, <span class="str">&quot;rizon.net&quot;</span>);
+<span class="kwrd">assert</span>((<span class="hid">n10</span> == <span class="num">1</span>), <span class="hid">n10</span>.<span class="hid">text</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">n11</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;rizon.net&quot;</span>, <span class="str">&quot;blahrizon.net&quot;</span>);
+<span class="kwrd">assert</span>((<span class="hid">n11</span> == <span class="num">1</span>), <span class="hid">n11</span>.<span class="hid">text</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">n12</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;rizon.net&quot;</span>, <span class="str">&quot;irc.rizon.net&quot;</span>);
+<span class="kwrd">assert</span>((<span class="hid">n12</span> == <span class="num">2</span>), <span class="hid">n12</span>.<span class="hid">text</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">n13</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;irc.gamesurge.net&quot;</span>, <span class="str">&quot;Stuff.GameSurge.net&quot;</span>, <span class="hid">caseSensitive</span>:<span class="kwrd">false</span>);
+<span class="kwrd">assert</span>((<span class="hid">n13</span> == <span class="num">2</span>), <span class="hid">n13</span>.<span class="hid">text</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">n14</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;irc.freenode.net&quot;</span>, <span class="str">&quot;irc.FREENODE.net&quot;</span>, <span class="hid">caseSensitive</span>:<span class="kwrd">false</span>);
+<span class="kwrd">assert</span>((<span class="hid">n14</span> == <span class="num">3</span>), <span class="hid">n14</span>.<span class="hid">text</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">n15</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;irc.SpotChat.org&quot;</span>, <span class="str">&quot;irc.FREENODE.net&quot;</span>, <span class="hid">caseSensitive</span>:<span class="kwrd">false</span>);
+<span class="kwrd">assert</span>((<span class="hid">n15</span> == <span class="num">0</span>), <span class="hid">n15</span>.<span class="hid">text</span>);</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.common.html">common</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="lu.common.FileExistsException.html">FileExistsException</a></li><li><a class="class" href="lu.common.FileTypeMismatchException.html">FileTypeMismatchException</a></li><li><a class="class" href="lu.common.ReturnValueException.html">ReturnValueException</a></li></ul><span class="type-separator">enums</span><ul><li><a class="enum" href="lu.common.Next.html">Next</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function current" href="lu.common.sharedDomains.html">sharedDomains</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
