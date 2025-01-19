@@ -782,8 +782,7 @@ mixin template IRCPluginImpl(
                 if (auxDirty) event.aux = origAux;  // copy back
             }
 
-            // Ignore all commands when in observer mode
-            if ((uda.commands.length || hasRegexes) && !state.settings.observerMode)
+            if (uda.commands.length || hasRegexes)
             {
                 import lu.string : strippedLeft;
 
@@ -937,7 +936,22 @@ mixin template IRCPluginImpl(
                     }
                 }
 
-                if (!commandMatch)
+                if (commandMatch)
+                {
+                    if (state.settings.observerMode)
+                    {
+                        static if (verbose)
+                        {
+                            writeln("   ...observer mode; skip");
+                            if (state.settings.flush) stdout.flush();
+                        }
+
+                        return NextStep.continue_;  // next function
+                    }
+
+                    // Drop down and continue
+                }
+                else /*if (!commandMatch)*/
                 {
                     // {Command,Regex} exist implicitly but neither matched; skip
                     static if (verbose)
