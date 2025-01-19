@@ -3715,15 +3715,17 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         IRCEvent.Type.TWITCH_CHEER,
         IRCEvent.Type.CLEARMSG,
         IRCEvent.Type.TWITCH_ANNOUNCEMENT,
+        IRCEvent.Type.TWITCH_SUB,
         IRCEvent.Type.TWITCH_DIRECTCHEER,
         IRCEvent.Type.TWITCH_INTRO,
         IRCEvent.Type.TWITCH_RITUAL,
         IRCEvent.Type.SELFCHAN,
         IRCEvent.Type.SELFEMOTE);
 
+    if (!isEmotePossibleEventType) return;
+
     immutable eventCanContainCustomEmotes =
         plugin.twitchSettings.customEmotes &&
-        isEmotePossibleEventType &&
         (event.content.length || (event.target.nickname.length && event.aux[0].length));
 
     bool isHomeChannel;
