@@ -287,6 +287,7 @@ void formatMessageMonochrome(Sink)
             switch (event.type)
             {
             case TWITCH_GIFTCHAIN:
+            case TWITCH_PAYFORWARD:
                 // Add more as they become apparent
                 sink.put(" <- ");
                 break;
@@ -424,9 +425,11 @@ void formatMessageMonochrome(Sink)
 
     version(TwitchSupport)
     {
+        import std.algorithm.comparison : among;
+
         if (event.target.nickname.length &&
             event.aux[0].length &&
-            (event.type != IRCEvent.Type.TWITCH_SUBGIFT))
+            !event.type.among!(IRCEvent.Type.TWITCH_SUBGIFT, IRCEvent.Type.TWITCH_PAYFORWARD))
         {
             /*if (content.length)*/ putContent();
             putTarget();
@@ -864,6 +867,7 @@ void formatMessageColoured(Sink)
             switch (event.type)
             {
             case TWITCH_GIFTCHAIN:
+            case TWITCH_PAYFORWARD:
                 // Add more as they become apparent
                 sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.put(" <- ");
@@ -1116,10 +1120,12 @@ void formatMessageColoured(Sink)
 
     version(TwitchSupport)
     {
+        import std.algorithm.comparison : among;
+
         if (event.content.length &&
             event.target.nickname.length &&
             event.aux[0].length &&
-            (event.type != IRCEvent.Type.TWITCH_SUBGIFT))
+            !event.type.among!(IRCEvent.Type.TWITCH_SUBGIFT, IRCEvent.Type.TWITCH_PAYFORWARD))
         {
             /*if (content.length)*/ putContent();
             putTarget();
