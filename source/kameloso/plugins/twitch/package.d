@@ -1121,7 +1121,10 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         void importEmotesDg()
         {
             import kameloso.plugins.twitch.emotes : importCustomEmotes;
-            importCustomEmotes(plugin, event.channel, room.id);
+            importCustomEmotes(
+                plugin: plugin,
+                channelName: event.channel,
+                id: room.id);
         }
 
         /+
@@ -1179,11 +1182,10 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.plugins.twitch.emotes : baseDelayBetweenImports, importCustomEmotes;
+    import kameloso.plugins.twitch.emotes : baseDelayBetweenImports;
     import kameloso.plugins.common.scheduling : delay;
     import kameloso.constants : BufferSize;
     import std.algorithm.searching : countUntil;
-    import std.conv : to;
     import core.thread.fiber : Fiber;
 
     if (!plugin.twitchSettings.customEmotes || !plugin.twitchSettings.customEmotesEverywhere) return;
@@ -1199,7 +1201,13 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     void importDg()
     {
-        importCustomEmotes(plugin, event.channel, event.aux[0].to!uint);
+        import kameloso.plugins.twitch.emotes : importCustomEmotes;
+        import std.conv : to;
+
+        importCustomEmotes(
+            plugin: plugin,
+            channelName: event.channel,
+            id: event.aux[0].to!uint);
     }
 
     uint delayMultiplier;
@@ -1207,11 +1215,14 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (guestIndex != -1)
     {
-        // Channel joined via piped command or admin join command
-        delayMultiplier = cast(uint)(plugin.state.bot.homeChannels.length + guestIndex);
+        // It's a guest channel
+        delayMultiplier = cast(uint)
+            (plugin.state.bot.homeChannels.length +
+            guestIndex);
     }
     else
     {
+        // Channel joined via piped command or admin join command
         // Invent a delay based on the hash of the channel name
         // padded by the number of home and guest channels
         delayMultiplier = cast(uint)
@@ -4036,7 +4047,10 @@ void reload(TwitchPlugin plugin)
             void importDg()
             {
                 // Can't reuse the customEmotes pointer as it changes while looping
-                importCustomEmotes(plugin, channelName, plugin.customChannelEmotes[channelName].id);
+                importCustomEmotes(
+                    plugin: plugin,
+                    channelName: channelName,
+                    id: plugin.customChannelEmotes[channelName].id);
             }
 
             uint delayMultiplier;
