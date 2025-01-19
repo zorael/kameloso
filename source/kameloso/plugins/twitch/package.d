@@ -1147,10 +1147,12 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             enum pattern = "The broadcaster-level access token for channel <l>%s</> has expired. " ~
                 "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
             logger.errorf(pattern, event.channel);
-            creds.broadcasterKey = string.init;
+
+            // Keep the old keys so the error message repeats next execution
+            /*creds.broadcasterKey = string.init;
             creds.broadcasterBearerToken = string.init;
             //creds.broadcasterKeyExpiry = 0;  // keep it for reference
-            saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+            saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);*/
         }
 
         try
