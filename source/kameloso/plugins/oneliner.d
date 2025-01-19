@@ -227,7 +227,11 @@ public:
 
         Oneliner oneliner;
         oneliner.trigger = json["trigger"].str;
-        oneliner.cooldown = cast(uint)json["cooldown"].integer;
+
+        if (const cooldownJSON = "cooldown" in json)
+        {
+            oneliner.cooldown = cast(uint)cooldownJSON.integer;
+        }
 
         if (const aliasJSON = "alias" in json)
         {
