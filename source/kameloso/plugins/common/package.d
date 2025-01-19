@@ -744,7 +744,10 @@ mixin template IRCPluginImpl(
                 import std.stdio : stdout, writeln, writefln;
 
                 writeln("-- ", uda.fqn, " @ ", Enum!(IRCEvent.Type).toString(event.type));
-                writeln("   ...channelPolicy:", cast(uint)uda._channelPolicy, " (home 1, guest 2, any 4)");
+                writeln("   ...channelPolicy (", cast(uint)uda._channelPolicy, ')',
+                    " home:",  cast(bool)(uda._channelPolicy & ChannelPolicy.home),
+                    " guest:", cast(bool)(uda._channelPolicy & ChannelPolicy.guest),
+                    " any:",   cast(bool)(uda._channelPolicy & ChannelPolicy.any));
                 if (state.settings.flush) stdout.flush();
             }
 
