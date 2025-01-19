@@ -3691,9 +3691,11 @@ void teardown(TwitchPlugin plugin)
  +/
 void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
+    import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
 
-    if (plugin.twitchSettings.mapWhispersToChannel && (event.type == IRCEvent.Type.QUERY))
+    if (plugin.twitchSettings.mapWhispersToChannel &&
+        event.type.among!(IRCEvent.Type.QUERY, IRCEvent.Type.SELFQUERY))
     {
         alias pred = (channelName, senderNickname) => (senderNickname == channelName[1..$]);
 
@@ -3715,8 +3717,6 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
     if (plugin.twitchSettings.customEmotes)
     {
-        import std.algorithm.comparison : among;
-
         /+
             If the event is of a type that can contain custom emotes (which is any
             event with user input), embed them into the event's 'emotes` member.
