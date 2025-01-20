@@ -1221,10 +1221,11 @@ private void prettyformatImpl(Flag!"all" all = No.all,
                 }
                 else static if (is(T == enum))
                 {
-                    import lu.conv : Enum;
-                    static if (__traits(compiles, Enum!T.toString(content)))
+                    import lu.conv : toString;
+
+                    static if (__traits(compiles, content.toString()))
                     {
-                        args.value = Enum!T.toString(content);
+                        args.value = content.toString();
                     }
                     else
                     {

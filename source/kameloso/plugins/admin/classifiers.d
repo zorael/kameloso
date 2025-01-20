@@ -51,11 +51,11 @@ void manageClassLists(
 
     void sendUsage()
     {
-        import lu.conv : Enum;
+        import lu.conv : toString;
         import std.format : format;
 
         enum pattern = "Usage: <b>%s%s<b> [add|del|list]";
-        immutable message = pattern.format(plugin.state.settings.prefix, Enum!(IRCUser.Class).toString(class_));
+        immutable message = pattern.format(plugin.state.settings.prefix, class_.toString());
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
@@ -102,12 +102,12 @@ void listList(
     const IRCUser.Class class_,
     const IRCEvent event = IRCEvent.init)
 {
-    import lu.conv : Enum;
+    import lu.conv : toString;
     import lu.json : JSONStorage;
     import std.format : format;
 
     immutable role = getNoun(NounForm.plural, class_);
-    immutable list = Enum!(IRCUser.Class).toString(class_);
+    immutable list = class_.toString();
 
     JSONStorage json;
     json.load(plugin.userFile);
@@ -611,14 +611,14 @@ auto alterAccountClassifier(
     const string channelName)
 {
     import kameloso.thread : ThreadMessage;
-    import lu.conv : Enum;
+    import lu.conv : toString;
     import lu.json : JSONStorage;
     import std.json : JSONValue;
 
     JSONStorage json;
     json.load(plugin.userFile);
 
-    immutable list = Enum!(IRCUser.Class).toString(class_);
+    immutable list = class_.toString();
 
     if (add)
     {

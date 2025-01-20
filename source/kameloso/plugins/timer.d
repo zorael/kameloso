@@ -599,7 +599,7 @@ void handleModifyTimer(
 
     void sendNewDescription(const Timer timer)
     {
-        import lu.conv : Enum;
+        import lu.conv : toString;
 
         enum pattern = "Timer \"<b>%s<b>\" modified to " ~
             "type <b>%s<b>, " ~
@@ -610,8 +610,8 @@ void handleModifyTimer(
             "stagger time <b>%s<b> seconds";
         immutable message = pattern.format(
             timer.name,
-            Enum!(Timer.TimerType).toString(timer.type),
-            Enum!(Timer.TimerCondition).toString(timer.condition),
+            timer.type.toString(),
+            timer.condition.toString(),
             timer.messageCountThreshold,
             timer.timeThreshold,
             timer.messageCountStagger,

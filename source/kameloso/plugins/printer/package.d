@@ -615,7 +615,7 @@ void onPing(PrinterPlugin plugin)
 void onISUPPORT(PrinterPlugin plugin)
 {
     import kameloso.common : logger;
-    import lu.conv : Enum;
+    import lu.conv : toString;
 
     if (plugin.transient.printedISUPPORT ||
         !plugin.state.server.network.length)
@@ -628,7 +628,7 @@ void onISUPPORT(PrinterPlugin plugin)
     logger.logf(
         pattern,
         plugin.state.server.network,
-        Enum!(IRCServer.Daemon).toString(plugin.state.server.daemon),
+        plugin.state.server.daemon.toString(),
         plugin.state.server.daemonstring);
 
     plugin.transient.printedISUPPORT = true;

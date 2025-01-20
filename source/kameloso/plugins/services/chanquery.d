@@ -361,9 +361,9 @@ void startChannelQueries(ChanQueryService service)
                 break;
 
             default:
-                import lu.conv : Enum;
+                import lu.conv : toString;
                 immutable message = "Unexpected event type triggered query fiber: " ~
-                    "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(thisFiber.payload.type) ~ '`';
+                    "`IRCEvent.Type." ~ thisFiber.payload.type.toString() ~ '`';
                 assert(0, message);
             }
         }

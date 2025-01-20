@@ -209,7 +209,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
             else
             static auto getSimpleUserLine(const IRCUser user)
             {
-                import lu.conv : Enum;
+                import lu.conv : toString;
                 import std.conv : text;
 
                 return text(
@@ -217,7 +217,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     user.ident, '@',
                     user.address, ':',
                     user.account, " -- ",
-                    Enum!(IRCUser.Class).toString(user.class_));//, "\n\n");
+                    user.class_.toString());//, "\n\n");
             }
 
             if (!errors)

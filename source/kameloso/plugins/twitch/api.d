@@ -464,12 +464,12 @@ in (url.length, "Tried to send an HTTP request without a URL")
     version(TraceHTTPRequests)
     {
         import kameloso.common : logger;
-        import lu.conv : Enum;
+        import lu.conv : toString;
 
         enum tracePattern = "%s: <i>%s<t> (%s)";
         logger.tracef(
             tracePattern,
-            Enum!HTTPVerb.toString(verb),
+            verb.toString(),
             url,
             caller);
     }

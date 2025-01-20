@@ -143,7 +143,7 @@ mixin template WHOISFiberDelegate(
         import kameloso.thread : CarryingFiber;
         import dialect.common : opEqualsCaseInsensitive;
         import dialect.defs : IRCEvent, IRCUser;
-        import lu.conv : Enum;
+        import lu.conv : toString;
         import lu.traits : TakesParams;
         import std.algorithm.searching : canFind;
         import std.traits : arity;
@@ -160,7 +160,7 @@ mixin template WHOISFiberDelegate(
 
             assert(whoisEventTypes[].canFind(whoisEvent.type),
                 "WHOIS fiber delegate was invoked with an unexpected event type: " ~
-                "`IRCEvent.Type." ~ Enum!(IRCEvent.Type).toString(whoisEvent.type) ~'`');
+                "`IRCEvent.Type." ~ whoisEvent.type.toString() ~'`');
 
             /++
                 Invoke `onSuccess`.

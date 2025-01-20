@@ -60,8 +60,9 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
     switch (event.type)
     {
     case CTCP_VERSION:
-        import lu.conv : Enum;
+        import lu.conv : toString;
         import std.system : os;
+
         /*  This metadata query is used to return the name and version of the
             client software in use. There is no specified format for the version
             string.
@@ -81,7 +82,7 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
             ", built ",
             cast(string)KamelosoInfo.built,
             ", running on ",
-            Enum!(typeof(os)).toString(os));
+            os.toString());
         break;
 
     case CTCP_FINGER:
@@ -214,9 +215,9 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
         break;
 
     default:
-        import lu.conv : Enum;
+        import lu.conv : toString;
         immutable message = "Missing `CTCP_` case entry for `IRCEvent.Type." ~
-            Enum!(IRCEvent.Type).toString(event.type) ~ '`';
+            event.type.toString() ~ '`';
         assert(0, message);
     }
 
@@ -299,9 +300,9 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
         {
             static foreach (immutable type; getUDAs!(sym, IRCEventHandler)[0].acceptedEventTypes)
             {{
-                import lu.conv : Enum;
+                import lu.conv : toString;
 
-                enum typestring = Enum!(IRCEvent.Type).toString(type);
+                enum typestring = type.toString();
 
                 static if (typestring.startsWith("CTCP_"))
                 {

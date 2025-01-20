@@ -450,9 +450,9 @@ auto processMessages(Kameloso instance)
             break;
 
         case teardown:
-            import lu.conv : Enum;
+            import lu.conv : toString;
             enum pattern = "onThreadMessage received unexpected message type: <l>%s";
-            logger.errorf(pattern, Enum!(ThreadMessage.MessageType).toString(message.type));
+            logger.errorf(pattern, message.type.toString());
             break;
         }
     }
@@ -697,10 +697,10 @@ auto processMessages(Kameloso instance)
             break;
 
         default:
-            import lu.conv : Enum;
+            import lu.conv : toString;
             // Using Enum here is not necessary but lowers compilation memory usage
             logger.error("<l>processMessages</>.<l>eventToServer</> missing case " ~
-                "for outgoing event type <l>", Enum!(IRCEvent.Type).toString(m.event.type));
+                "for outgoing event type <l>", m.event.type.toString());
             break;
         }
 
@@ -1183,12 +1183,12 @@ auto mainLoop(Kameloso instance)
             case returnSuccess:  // should never happen
             case unset:  // ditto
             case crash:  // ...
-                import lu.conv : Enum;
+                import lu.conv : toString;
                 import std.conv : text;
 
                 immutable message = text(
                     "`listenAttemptToNext` returned `",
-                    Enum!Next.toString(actionAfterListen),
+                    actionAfterListen.toString(),
                     "`");
                 assert(0, message);
             }
@@ -1423,13 +1423,10 @@ auto listenAttemptToNext(Kameloso instance, const ListenAttempt attempt)
 
     case unset:  // should never happen
     case prelisten:  // ditto
-        import lu.conv : Enum;
+        import lu.conv : toString;
         import std.conv : text;
 
-        immutable message = text(
-            "listener yielded `",
-            Enum!(ListenAttempt.ListenState).toString(attempt.state),
-            "` state");
+        immutable message = text("listener yielded `", attempt.state.toString(), "` state");
         assert(0, message);
     }
 }
@@ -1847,7 +1844,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
                     {
                         version(TraceFibersAndDelegates)
                         {
-                            import lu.conv : Enum;
+                            import lu.conv : toString;
 
                             enum pattern =
                                 "<l>%s</>.awaitingFibers[%d] " ~
@@ -1859,7 +1856,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
                                 pattern,
                                 plugin.name,
                                 i,
-                                Enum!(IRCEvent.Type).toString(event.type),
+                                event.type.toString(),
                                 carryingFiber.creator,
                                 carryingFiber.called+1);
                         }
@@ -1876,7 +1873,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
                     {
                         version(TraceFibersAndDelegates)
                         {
-                            import lu.conv : Enum;
+                            import lu.conv : toString;
 
                             enum pattern =
                                 "<l>%s</>.awaitingFibers[%d] " ~
@@ -1887,7 +1884,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
                                 pattern,
                                 plugin.name,
                                 i,
-                                Enum!(IRCEvent.Type).toString(event.type));
+                                event.type.toString());
                         }
 
                         fiber.call();
@@ -1939,10 +1936,10 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
 
                 version(TraceFibersAndDelegates)
                 {
-                    import lu.conv : Enum;
-
                     if (auto carryingFiber = cast(CarryingFiber!IRCEvent)fiber)
                     {
+                        import lu.conv : toString;
+
                         enum pattern = "<l>%s</>.expiredFibers[%d] " ~
                             "event type <l>%s</> " ~
                             "creator <l>%s</> " ~
@@ -1952,7 +1949,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
                             pattern,
                             plugin.name,
                             i,
-                            Enum!(IRCEvent.Type).toString(carryingFiber.payload.type),
+                            carryingFiber.payload.type.toString(),
                             carryingFiber.creator);
                     }
                     else
@@ -3749,9 +3746,9 @@ auto startBot(Kameloso instance)
         case noop:   // ditto
         case retry:  // ...
         case crash:  // ...
-            import lu.conv : Enum;
+            import lu.conv : toString;
             import std.conv : text;
-            assert(0, text("`tryResolve` returned `", Enum!Next.toString(actionAfterResolve), "`"));
+            assert(0, text("`tryResolve` returned `", actionAfterResolve.toString(), "`"));
         }
 
         /+
@@ -3834,9 +3831,9 @@ auto startBot(Kameloso instance)
         case noop:   // ...
         case retry:  // ...
         case crash:  // ...
-            import lu.conv : Enum;
+            import lu.conv : toString;
             import std.conv : text;
-            assert(0, text("`tryConnect` returned `", Enum!Next.toString(actionAfterConnect), "`"));
+            assert(0, text("`tryConnect` returned `", actionAfterConnect.toString(), "`"));
         }
 
         // Reinit with its own server.
@@ -4313,14 +4310,14 @@ auto checkInitialisationMessages(
             break;
 
         default:
-            import lu.conv : Enum;
+            import lu.conv : toString;
             import std.stdio : stdout;
 
             enum pattern = "checkInitialisationMessages.onThreadMessage " ~
                 "received unexpected message type: <t>%s";
             logger.errorf(
                 pattern,
-                Enum!(ThreadMessage.MessageType).toString(message.type));
+                message.type.toString());
             success = false;
             break;
         }
@@ -4462,9 +4459,9 @@ auto run(string[] args)
     case noop:   // ditto
     case retry:  // ...
     case crash:  // ...
-        import lu.conv : Enum;
+        import lu.conv : toString;
         import std.conv : text;
-        assert(0, text("`tryGetopt` returned `", Enum!Next.toString(actionAfterGetopt), "`"));
+        assert(0, text("`tryGetopt` returned `", actionAfterGetopt.toString(), "`"));
     }
 
     if (!instance.settings.headless || instance.settings.force)
@@ -4543,9 +4540,9 @@ auto run(string[] args)
     case noop:   // ...
     case retry:  // ...
     case crash:  // ...
-        import lu.conv : Enum;
+        import lu.conv : toString;
         import std.conv : text;
-        assert(0, text("`verifySettings` returned `", Enum!Next.toString(actionAfterVerification), "`"));
+        assert(0, text("`verifySettings` returned `", actionAfterVerification.toString(), "`"));
     }
 
     // Resolve resource and private key/certificate paths.

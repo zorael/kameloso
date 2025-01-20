@@ -171,7 +171,7 @@ void formatMessageMonochrome(Sink)
     const bool bellOnError)
 {
     import kameloso.irccolours : stripEffects;
-    import lu.conv : Enum;
+    import lu.conv : toString;
     import std.algorithm.comparison : equal;
     import std.algorithm.iteration : filter;
     import std.datetime : DateTime;
@@ -189,7 +189,7 @@ void formatMessageMonochrome(Sink)
         static assert(0, message);
     }
 
-    immutable typestring = Enum!(IRCEvent.Type).toString(event.type).withoutTypePrefix;
+    immutable typestring = event.type.toString().withoutTypePrefix;
     immutable content = stripEffects(event.content);
     bool shouldBell;
 
@@ -646,7 +646,7 @@ void formatMessageColoured(Sink)
     import kameloso.constants : DefaultColours;
     import kameloso.terminal.colours.defs : ANSICodeType, TerminalReset;
     import kameloso.terminal.colours : applyANSI;
-    import lu.conv : Enum;
+    import lu.conv : toString;
     import std.algorithm.iteration : filter;
     import std.algorithm.searching : startsWith;
     import std.datetime : DateTime;
@@ -668,7 +668,7 @@ void formatMessageColoured(Sink)
     alias Dark = EventPrintingDark;
     alias Timestamp = DefaultColours.TimestampColour;
 
-    immutable rawTypestring = Enum!(IRCEvent.Type).toString(event.type);
+    immutable rawTypestring = event.type.toString();
     immutable typestring = rawTypestring.withoutTypePrefix;
     string content = event.content;  // mutable, don't strip
     bool shouldBell;

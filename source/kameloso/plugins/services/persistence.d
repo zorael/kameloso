@@ -584,7 +584,7 @@ void reload(PersistenceService service)
  +/
 void reloadAccountClassifiersFromDisk(PersistenceService service)
 {
-    import lu.conv : Enum;
+    import lu.conv : toString;
     import lu.json : JSONStorage;
     import std.json : JSONException;
 
@@ -604,7 +604,7 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
 
     foreach (class_; classes)
     {
-        immutable list = Enum!(IRCUser.Class).toString(class_);
+        immutable list = class_.toString();
         const listFromJSON = list in json;
 
         if (!listFromJSON)

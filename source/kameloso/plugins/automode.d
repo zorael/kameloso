@@ -254,7 +254,7 @@ in (account.length, "Tried to apply automodes to an empty account")
 
 unittest
 {
-    import lu.conv : Enum;
+    import lu.conv : toString;
     import std.format : format;
 
     // Only tests the messenger mode call
@@ -264,7 +264,7 @@ unittest
     mode(state, "#channel", "+ov", "mydude");
     immutable m = state.outgoingMessages[][0];
 
-    assert((m.event.type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(m.event.type));
+    assert((m.event.type == IRCEvent.Type.MODE), m.event.type.toString());
     assert((m.event.channel == "#channel"), m.event.channel);
     assert((m.event.aux[0] == "+ov"), m.event.aux[0]);
     assert((m.event.content == "mydude"), m.event.content);

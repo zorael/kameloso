@@ -740,10 +740,10 @@ mixin template IRCPluginImpl(
         {
             static if (verbose)
             {
-                import lu.conv : Enum;
+                import lu.conv : toString;
                 import std.stdio : stdout, writeln, writefln;
 
-                writeln("-- ", uda.fqn, " @ ", Enum!(IRCEvent.Type).toString(event.type));
+                writeln("-- ", uda.fqn, " @ ", event.type.toString());
                 writeln("   ...channelPolicy (", cast(uint)uda._channelPolicy, ')',
                     " home:",  cast(bool)(uda._channelPolicy & ChannelPolicy.home),
                     " guest:", cast(bool)(uda._channelPolicy & ChannelPolicy.guest),
@@ -971,7 +971,7 @@ mixin template IRCPluginImpl(
                 static if (verbose)
                 {
                     writeln("   ...Permissions.",
-                        Enum!Permissions.toString(uda._permissionsRequired));
+                        uda._permissionsRequired.toString());
                     if (state.settings.flush) stdout.flush();
                 }
 
@@ -979,7 +979,7 @@ mixin template IRCPluginImpl(
 
                 static if (verbose)
                 {
-                    writeln("   ...allow result is ", Enum!FilterResult.toString(result));
+                    writeln("   ...allow result is ", result.toString());
                     if (state.settings.flush) stdout.flush();
                 }
 
@@ -2139,9 +2139,9 @@ auto prefixPolicyMatches(bool verbose)
 
     static if (verbose)
     {
-        import lu.conv : Enum;
+        import lu.conv : toString;
         import std.stdio : writefln, writeln;
-        writeln("...prefixPolicyMatches invoked! policy:", Enum!PrefixPolicy.toString(policy));
+        writeln("...prefixPolicyMatches invoked! policy:", policy.toString());
     }
 
     bool strippedDisplayName;
@@ -2311,13 +2311,13 @@ auto filterSender(bool verbose = false)
 
     static if (verbose)
     {
-        import lu.conv : Enum;
+        import lu.conv : toString;
         import std.stdio : writeln;
 
         writeln("filterSender of ", event.sender.nickname);
-        writeln("...permissions:", Enum!Permissions.toString(permissionsRequired));
+        writeln("...permissions:", permissionsRequired.toString());
         writeln("...account:", event.sender.account);
-        writeln("...class:", Enum!(IRCUser.Class).toString(event.sender.class_));
+        writeln("...class:", event.sender.class_.toString());
     }
 
     if (permissionsRequired == Permissions.ignore)
@@ -2359,7 +2359,7 @@ auto filterSender(bool verbose = false)
 
         static if (verbose)
         {
-            writeln("...filterSenderImpl verdict:", Enum!FilterResult.toString(verdict));
+            writeln("...filterSenderImpl verdict:", verdict.toString());
         }
 
         return verdict;
@@ -2383,7 +2383,7 @@ auto filterSender(bool verbose = false)
             immutable verdict = (whoisExpired && !isLogoutEvent) ?
                 FilterResult.whois :
                 FilterResult.fail;
-            static if (verbose) writeln(Enum!FilterResult.toString(verdict));
+            static if (verbose) writeln(verdict.toString());
             return verdict;
 
         case anyone:
@@ -2391,7 +2391,7 @@ auto filterSender(bool verbose = false)
             immutable verdict = (whoisExpired && !isLogoutEvent) ?
                 FilterResult.whois :
                 FilterResult.pass;
-            static if (verbose) writeln(Enum!FilterResult.toString(verdict));
+            static if (verbose) writeln(verdict.toString());
             return verdict;
 
         case ignore:
@@ -2602,7 +2602,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
     {
         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
             "but it is not declared to accept any `IRCEvent.Type`s";
-        immutable message = pattern.format(uda.fqn).idup;
+        immutable message = pattern.format(uda.fqn);
         assert(0, message);
     }
 
@@ -2612,7 +2612,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
         {
             enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                 "accepting `IRCEvent.Type.UNSET`, which is not a valid event type";
-            immutable message = pattern.format(uda.fqn).idup;
+            immutable message = pattern.format(uda.fqn);
             assert(0, message);
         }
         else if (type == IRCEvent.Type.PRIVMSG)
@@ -2620,7 +2620,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
             enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                 "accepting `IRCEvent.Type.PRIVMSG`, which is not a valid event type. " ~
                 "Use `IRCEvent.Type.CHAN` and/or `IRCEvent.Type.QUERY` instead";
-            immutable message = pattern.format(uda.fqn).idup;
+            immutable message = pattern.format(uda.fqn);
             assert(0, message);
         }
         else if (type == IRCEvent.Type.WHISPER)
@@ -2647,14 +2647,14 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
                 (type != IRCEvent.Type.SELFCHAN) &&
                 (type != IRCEvent.Type.SELFQUERY))
             {
-                import lu.conv : Enum;
+                import lu.conv : toString;
 
                 enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a `Command` and/or `Regex`, but is at the " ~
                     "same time accepting non-message `IRCEvent.Type.%s events`";
                 immutable message = pattern.format(
                     uda.fqn,
-                    Enum!(IRCEvent.Type).toString(type)).idup;
+                    type.toString());
                 assert(0, message);
             }
         }
@@ -3257,7 +3257,7 @@ private auto replay(Plugin, Fun)
 {
     void replayDg(Replay replay)
     {
-        import lu.conv : Enum;
+        import lu.conv : toString;
         import std.algorithm.searching : startsWith;
 
         version(ExplainReplay)
@@ -3274,10 +3274,10 @@ private auto replay(Plugin, Fun)
             logger.logf(
                 pattern,
                 plugin.name,
-                Enum!Permissions.toString(replay.permissionsRequired),
+                replay.permissionsRequired.toString(),
                 caller,
                 replay.event.sender.nickname,
-                Enum!(IRCUser.Class).toString(replay.event.sender.class_));
+                replay.event.sender.class_.toString());
         }
 
         version(ExplainReplay)
@@ -3295,10 +3295,10 @@ private auto replay(Plugin, Fun)
             logger.logf(
                 pattern,
                 plugin.name,
-                Enum!Permissions.toString(replay.permissionsRequired),
+                replay.permissionsRequired.toString(),
                 caller,
                 replay.event.sender.nickname,
-                Enum!(IRCUser.Class).toString(replay.event.sender.class_));
+                replay.event.sender.class_.toString());
         }
 
         with (Permissions)

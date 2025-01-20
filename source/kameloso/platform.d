@@ -48,11 +48,11 @@ public:
  +/
 auto currentEnvironment()
 {
-    import lu.conv : Enum;
+    import lu.conv : toString;
     import std.process : environment;
     import std.system : os;
 
-    enum osName = Enum!(typeof(os)).toString(os);
+    enum osName = os.toString();
 
     version(Windows)
     {

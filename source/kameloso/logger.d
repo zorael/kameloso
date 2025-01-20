@@ -98,7 +98,7 @@ final class KamelosoLogger
 private:
     import kameloso.pods : CoreSettings;
     import kameloso.terminal.colours.tags : expandTags;
-    import lu.conv : Enum;
+    import lu.conv : toString;
     import std.array : Appender;
     import std.format : format;
     import std.traits : EnumMembers;
@@ -271,9 +271,9 @@ public:
         static foreach (const lv; EnumMembers!LogLevel)
         {
             mixin(
-"auto " ~ Enum!LogLevel.toString(lv) ~ "tint() const pure @safe nothrow @nogc
+"auto " ~ lv.toString() ~ "tint() const pure @safe nothrow @nogc
 {
-    return tintImpl!(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ");
+    return tintImpl!(LogLevel." ~ lv.toString() ~ ");
 }");
         }
 
@@ -306,7 +306,7 @@ public:
         {
             static if (lv != LogLevel.off)
             {
-                mixin("alias " ~ Enum!LogLevel.toString(lv) ~ "tint = offtint;");
+                mixin("alias " ~ lv.toString() ~ "tint = offtint;");
             }
         }
 
@@ -554,21 +554,21 @@ public:
     static foreach (const lv; EnumMembers!LogLevel)
     {
         mixin(
-"void " ~ Enum!LogLevel.toString(lv) ~ "(Args...)(auto ref Args args)
+"void " ~ lv.toString() ~ "(Args...)(auto ref Args args)
 {
-    if (!headless) printImpl(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ", args);
+    if (!headless) printImpl(LogLevel." ~ lv.toString() ~ ", args);
     " ~ ((lv == LogLevel.fatal) ? fatalErrorMixin : string.init) ~ "
 }
 
-void " ~ Enum!LogLevel.toString(lv) ~ "f(Args...)(const string pattern, auto ref Args args)
+void " ~ lv.toString() ~ "f(Args...)(const string pattern, auto ref Args args)
 {
-    if (!headless) printfImpl(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ", pattern, args);
+    if (!headless) printfImpl(LogLevel." ~ lv.toString() ~ ", pattern, args);
     " ~ ((lv == LogLevel.fatal) ? fatalErrorMixin : string.init) ~ "
 }
 
-void " ~ Enum!LogLevel.toString(lv) ~ "f(string pattern, Args...)(auto ref Args args)
+void " ~ lv.toString() ~ "f(string pattern, Args...)(auto ref Args args)
 {
-    if (!headless) printfImpl!pattern(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ", args);
+    if (!headless) printfImpl!pattern(LogLevel." ~ lv.toString() ~ ", args);
     " ~ ((lv == LogLevel.fatal) ? fatalErrorMixin : string.init) ~ "
 }");
     }

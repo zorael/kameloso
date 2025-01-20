@@ -735,7 +735,7 @@ void handleModifyOneliner(
     const ref IRCEvent event,
     /*const*/ string slice)
 {
-    import lu.conv : Enum;
+    import lu.conv : toString;
     import lu.string : SplitResults, splitInto;
     import std.format : format;
     import std.uni : toLower;
@@ -775,7 +775,7 @@ void handleModifyOneliner(
         immutable message = pattern.format(
             plugin.state.settings.prefix,
             oneliner.trigger,
-            Enum!(Oneliner.OnelinerType).toString(oneliner.type),
+            oneliner.type.toString(),
             oneliner.cooldown);
         chan(plugin.state, event.channel, message);
     }
@@ -1291,14 +1291,14 @@ void listCommands(
         }
         else
         {
-            import lu.conv : Enum;
+            import lu.conv : toString;
 
             enum pattern = "Oneliner <b>%s%s<b> has %d responses and is of type <b>%s<b>.";
             immutable message = pattern.format(
                 plugin.state.settings.prefix,
                 oneliner.trigger,
                 oneliner.responses.length,
-                Enum!(Oneliner.OnelinerType).toString(oneliner.type));
+                oneliner.type.toString());
             sendOneliner(plugin, event, message);
         }
     }

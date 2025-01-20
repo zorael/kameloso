@@ -2015,11 +2015,11 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
         if (endedPoll.status != Status.active)
         {
-            import lu.conv : Enum;
+            import lu.conv : toString;
             import std.format : format;
 
             enum pattern = "Poll ended; status %s";
-            immutable message = pattern.format(Enum!Status.toString(endedPoll.status));
+            immutable message = pattern.format(endedPoll.status.toString());
             chan(plugin.state, event.channel, message);
         }
         else
@@ -3466,84 +3466,84 @@ void promoteUserFromBadges(
 ///
 unittest
 {
-    import lu.conv : Enum;
+    import lu.conv : toString;
 
     {
         enum badges = "subscriber/12,sub-gift-leader/1";
         auto class_ = IRCUser.Class.anyone;
         promoteUserFromBadges(class_, badges, false, false);
         enum expected = IRCUser.Class.registered;
-        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+        assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "premium/1";
         auto class_ = IRCUser.Class.anyone;
         promoteUserFromBadges(class_, badges, false, false);
         enum expected = IRCUser.Class.anyone;
-        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+        assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "subscriber/12,vip/1";
         auto class_ = IRCUser.Class.anyone;
         promoteUserFromBadges(class_, badges, false, false);
         enum expected = IRCUser.Class.registered;  // because promoteVIPs false
-        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+        assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "subscriber/12,vip/1";
         auto class_ = IRCUser.Class.anyone;
         promoteUserFromBadges(class_, badges, true, true);
         enum expected = IRCUser.Class.elevated;
-        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+        assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "moderator/1,subscriber/3012";
         auto class_ = IRCUser.Class.anyone;
         promoteUserFromBadges(class_, badges, true, true);
         enum expected = IRCUser.Class.operator;
-        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+        assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "moderator/1,subscriber/3012";
         auto class_ = IRCUser.Class.anyone;
         promoteUserFromBadges(class_, badges, false, true);
         enum expected = IRCUser.Class.registered;
-        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+        assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "broadcaster/1,subscriber/12,partner/1";
         auto class_ = IRCUser.Class.anyone;
         promoteUserFromBadges(class_, badges, false, true);
         enum expected = IRCUser.Class.registered;  // not staff because broadcasters are identified elsewhere
-        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+        assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "moderator/1";  // no comma splitter test
         auto class_ = IRCUser.Class.anyone;
         promoteUserFromBadges(class_, badges, true, true);
         enum expected = IRCUser.Class.operator;
-        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+        assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "subscriber/1";
         auto class_ = IRCUser.Class.operator;
         promoteUserFromBadges(class_, badges, true, true);
         enum expected = IRCUser.Class.operator;
-        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+        assert((class_ == expected), class_.toString());
     }
     {
         enum badges = string.init;
         auto class_ = IRCUser.Class.staff;
         promoteUserFromBadges(class_, badges, true, true);
         enum expected = IRCUser.Class.staff;
-        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+        assert((class_ == expected), class_.toString());
     }
     {
         enum badges = string.init;
         auto class_ = IRCUser.Class.anyone;
         promoteUserFromBadges(class_, badges, false, false);
         enum expected = IRCUser.Class.anyone;
-        assert((class_ == expected), Enum!(IRCUser.Class).toString(class_));
+        assert((class_ == expected), class_.toString());
     }
 }
 
@@ -4167,9 +4167,9 @@ void onBusMessage(
     }
     else
     {
-        import lu.conv : Enum;
+        import lu.conv : toString;
         enum pattern = "Unknown message type <l>%s</> sent as TwitchPlugin bus message";
-        logger.errorf(pattern, Enum!(IRCEvent.Type).toString(message.payload.event.type));
+        logger.errorf(pattern, message.payload.event.type.toString());
     }
 }
 

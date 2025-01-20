@@ -163,7 +163,7 @@ void onCommandShowUser(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandWhoami(AdminPlugin plugin, const ref IRCEvent event)
 {
-    import lu.conv : Enum;
+    import lu.conv : toString;
     import std.format : format;
 
     immutable account = event.sender.account.length ? event.sender.account : "*";
@@ -176,7 +176,7 @@ void onCommandWhoami(AdminPlugin plugin, const ref IRCEvent event)
             event.sender.nickname,
             account,
             event.sender.hostmask,
-            Enum!(IRCUser.Class).toString(event.sender.class_),
+            event.sender.class_.toString(),
             event.channel);
     }
     else
@@ -186,7 +186,7 @@ void onCommandWhoami(AdminPlugin plugin, const ref IRCEvent event)
             event.sender.nickname,
             account,
             event.sender.hostmask,
-            Enum!(IRCUser.Class).toString(event.sender.class_));
+            event.sender.class_.toString());
     }
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
