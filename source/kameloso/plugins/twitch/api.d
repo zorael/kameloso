@@ -584,8 +584,8 @@ in (url.length, "Tried to send an HTTP request without a URL")
             if (immutable statusCodeJSON = "status_code" in json)
             {
                 code = cast(uint)(*statusCodeJSON).integer;
-                status = getOrFallback(json, "status", genericErrorString);
-                message = getOrFallback(json, "error", genericErrorMessageString);
+                status = json.getOrFallback("status", genericErrorString);
+                message = json.getOrFallback("error", genericErrorMessageString);
             }
             else if (immutable errorJSON = "error" in json)
             {
@@ -597,8 +597,8 @@ in (url.length, "Tried to send an HTTP request without a URL")
                 import std.json : JSONException;
 
                 code = cast(uint)(*statusJSON).integer;
-                status = getOrFallback(json, "status", genericErrorString);
-                message = getOrFallback(json, "error", genericErrorMessageString);
+                status = json.getOrFallback("status", genericErrorString);
+                message = json.getOrFallback("error", genericErrorMessageString);
             }
             else if (immutable messageJSON = "message" in json)
             {

@@ -220,6 +220,7 @@ public:
      +/
     static auto fromJSON(const JSONValue json)
     {
+        import lu.json : getOrFallback;
         import core.memory : GC;
 
         GC.disable();
@@ -228,15 +229,9 @@ public:
         Oneliner oneliner;
         oneliner.trigger = json["trigger"].str;
 
-        if (const cooldownJSON = "cooldown" in json)
-        {
-            oneliner.cooldown = cast(uint)cooldownJSON.integer;
-        }
-
-        if (const aliasJSON = "alias" in json)
-        {
-            oneliner.alias_ = aliasJSON.str;
-        }
+        // Be careful with cooldown and alias since they were not in the original JSON scheme
+        oneliner.cooldown = json.getOrFallback("cooldown", Oneliner.init.cooldown);
+        oneliner.alias_ = json.getOrFallback("alias");
 
         switch (json["type"].integer)
         {

@@ -259,6 +259,7 @@ public:
      +/
     static auto fromJSON(const JSONValue json)
     {
+        import lu.json : getOrFallback;
         import core.memory : GC;
 
         GC.disable();
@@ -277,11 +278,8 @@ public:
             TimerCondition.both :
             TimerCondition.either;
 
-        // Compatibility with older versions, remove later
-        if (const suspendedJSON = "suspended" in json)
-        {
-            timer.suspended = suspendedJSON.boolean;
-        }
+        // Be careful with suspended since it was not in the original JSON scheme
+        timer.suspended = json.getOrFallback("suspended", false);
 
         foreach (const lineJSON; json["lines"].array)
         {
