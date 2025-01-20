@@ -2628,7 +2628,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
             enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                 "accepting `IRCEvent.Type.WHISPER`, which is not a valid event type. " ~
                 "Use `IRCEvent.Type.QUERY` instead";
-            immutable message = pattern.format(uda.fqn).idup;
+            immutable message = pattern.format(uda.fqn);
             assert(0, message);
         }
         else if ((type == IRCEvent.Type.ANY) && !(uda.channelPolicy & ChannelPolicy.any))
@@ -2636,7 +2636,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
             enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                 "accepting `IRCEvent.Type.ANY` and is at the same time not annotated " ~
                 "`ChannelPolicy.any`, which is the only accepted combination";
-            immutable message = pattern.format(uda.fqn).idup;
+            immutable message = pattern.format(uda.fqn);
             assert(0, message);
         }
 
@@ -2670,7 +2670,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
             {
                 enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a `Command` with an empty (or unspecified) trigger word";
-                immutable message = pattern.format(uda.fqn).idup;
+                immutable message = pattern.format(uda.fqn);
                 assert(0, message);
             }
             else if (command._word.indexOf(' ') != -1)
@@ -2678,7 +2678,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
                 enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a `Command` whose trigger " ~
                     `word "%s" contains a space character`;
-                immutable message = pattern.format(uda.fqn, command._word).idup;
+                immutable message = pattern.format(uda.fqn, command._word);
                 assert(0, message);
             }
         }
@@ -2692,7 +2692,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
             {
                 enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a `Regex` with an empty (or unspecified) expression";
-                immutable message = pattern.format(uda.fqn).idup;
+                immutable message = pattern.format(uda.fqn);
                 assert(0, message);
             }
         }
