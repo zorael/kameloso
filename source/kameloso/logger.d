@@ -417,8 +417,19 @@ public:
             }
             else static if (is(T == enum))
             {
-                import lu.conv : Enum;
-                messagebuffer.put(Enum!T.toString(arg));
+                import lu.conv : toString;
+
+                static if (__traits(compiles, arg.toString()))
+                {
+                    // Preferable
+                    messagebuffer.put(arg.toString());
+                }
+                else
+                {
+                    import std.conv : to;
+                    // Fallback
+                    messagebuffer.put(arg.to!string);
+                }
             }
             else static if (isAggregateType!T && is(typeof(T.toString)))
             {

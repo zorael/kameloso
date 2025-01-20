@@ -114,10 +114,19 @@ void put(Flag!"colours" colours = No.colours, Sink, Args...)
         }
         else static if (is(T == enum))
         {
-            import lu.conv : Enum;
-            import std.traits : Unqual;
+            import lu.conv : toString;
 
-            sink.put(Enum!(Unqual!T).toString(arg));
+            static if (__traits(compiles, arg.toString()))
+            {
+                // Preferable
+                sink.put(arg.toString());
+            }
+            else
+            {
+                import std.conv : to;
+                // Fallback
+                sink.put(arg.to!string);
+            }
         }
         else static if (is(T : bool))
         {
@@ -145,6 +154,15 @@ unittest
 
     .put(sink, "abc", long.min, "def", 456, true);
     assert((sink[] == "abc-9223372036854775808def456true"), sink[]);
+    sink.clear();
+
+    enum E { has = 1, duplicate = 1, values = 1 }
+    .put(sink, E.has, E.duplicate, E.values);
+    assert((sink[] == "hashashas"), sink[]);  // Not ideal but at least it compiles
+    sink.clear();
+
+    .put(sink, 3.14);
+    assert((sink[] == "3.14"), sink[]);
 }
 
 
