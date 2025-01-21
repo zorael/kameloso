@@ -2699,14 +2699,14 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
             immutable message = pattern.format(uda.fqn);
             assert(0, message);
         }
-        else if ((type == IRCEvent.Type.ANY) && !(uda.channelPolicy & ChannelPolicy.any))
+        /*else if ((type == IRCEvent.Type.ANY) && !(uda.channelPolicy & ChannelPolicy.any))
         {
             enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                 "accepting `IRCEvent.Type.ANY` and is at the same time not annotated " ~
                 "`ChannelPolicy.any`, which is the only accepted combination";
             immutable message = pattern.format(uda.fqn);
             assert(0, message);
-        }
+        }*/
 
         if (uda.commands.length || uda.regexes.length)
         {
