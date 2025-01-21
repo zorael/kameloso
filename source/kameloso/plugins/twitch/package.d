@@ -659,8 +659,7 @@ void onUserstate(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import std.string : indexOf;
 
-    if ((event.target.badges.indexOf("moderator/") != -1) ||
-        (event.target.badges.indexOf("broadcaster/") != -1))
+    void registerOpMod()
     {
         if (auto channel = event.channel in plugin.state.channels)
         {
@@ -676,15 +675,35 @@ void onUserstate(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
                 channel.mods['o'][plugin.state.client.nickname] = true;
             }
         }
+        else
+        {
+            // When can this happen?
+        }
+    }
+
+    if (event.target.class_ >= IRCUser.Class.operator)
+    {
+        // All is well
+        registerOpMod();
+    }
+    else if (
+        !plugin.twitchSettings.promoteBroadcasters &&
+        (event.target.badges.indexOf("broadcaster/") != -1))
+    {
+        // All is also well
+        registerOpMod();
+    }
+    else if (
+        !plugin.twitchSettings.promoteModerators &&
+        (event.target.badges.indexOf("moderator/") != -1))
+    {
+        // Likewise
+        registerOpMod();
     }
     else
     {
-        auto room = event.channel in plugin.rooms;
-        if (!room)
-        {
-            // Race...
-            room = initRoom(plugin, event.channel);
-        }
+        // It's a home channel yet we don't seem to be a moderator
+        auto room = getRoom(plugin, event.channel);
 
         if (!room.sawUserstate)
         {
