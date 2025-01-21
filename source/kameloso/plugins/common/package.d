@@ -385,6 +385,19 @@ public:
      +/
     void initialise() @system;
 
+    // putUser
+    /++
+        Inherits a user into the plugin's state.
+
+        Params:
+            user = [dialect.defs.IRCUser|IRCUser] to inherit.
+            channel = The channel context of the user.
+
+        See_Also:
+            [kameloso.plugins.common.IRCPluginImpl.putUser]
+     +/
+    void putUser(const IRCUser user, const string channel) @system;
+
     version(Selftests)
     {
         import std.typecons : Ternary;
@@ -2125,6 +2138,32 @@ mixin template IRCPluginImpl(
                 static assert(0, message);
             }
         }
+    }
+
+    // putUser
+    /++
+        Inherits a user, by default into a plugin's state.
+
+        Params:
+            user = The user to inherit.
+            channel = The channel context of the user.
+     +/
+    pragma(inline, true)
+    override public void putUser(const IRCUser user, const string channel) @system
+    {
+        putUserImpl(user);
+    }
+
+    // putUserImpl
+    /++
+        Puts a user into the plugin's state.
+
+        Params:
+            user = The user to inherit.
+     +/
+    private void putUserImpl(const IRCUser user) @system
+    {
+        state.users[user.nickname] = user;
     }
 }
 

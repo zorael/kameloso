@@ -383,24 +383,17 @@ auto processMessages(Kameloso instance)
 
         case putUser:
             import kameloso.thread : Boxed;
+            import std.datetime.systime : Clock;
 
             auto boxedUser = cast(Boxed!IRCUser)message.payload;
             assert(boxedUser, "Incorrectly cast message payload: " ~ typeof(boxedUser).stringof);
 
             auto user = boxedUser.payload;
+            user.updated = Clock.currTime.toUnixTime();
 
             foreach (plugin; instance.plugins)
             {
-                if (auto existingUser = user.nickname in plugin.state.users)
-                {
-                    immutable prevClass = existingUser.class_;
-                    *existingUser = user;
-                    existingUser.class_ = prevClass;
-                }
-                else
-                {
-                    plugin.state.users[user.nickname] = user;
-                }
+                plugin.putUser(user, message.content);
             }
             break;
 
