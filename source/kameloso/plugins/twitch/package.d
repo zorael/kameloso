@@ -3717,7 +3717,7 @@ void teardown(TwitchPlugin plugin)
 
     Additionally embeds custom BTTV/FrankerFaceZ/7tv emotes into the event.
  +/
-void postprocess(TwitchPlugin plugin, ref IRCEvent event)
+bool postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
     import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
@@ -3735,14 +3735,17 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
             event.target = IRCUser.init;
         }
     }
-    else if (!event.sender.nickname.length || !event.channel.length)
+    else if (!event.channel.length)
     {
-        return;
+        return false;
     }
 
     bool isHomeChannel;
     bool determinedWhetherHomeChannel;
 
+    /+
+        Embed custom emotes.
+     +/
     if (plugin.twitchSettings.customEmotes)
     {
         /+
@@ -3815,14 +3818,22 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
     /++
         Sort badges and infer user class based on them.
-
         Sort first so early returns don't skip the sorting.
      +/
-    static void postprocessImpl(
-        const TwitchPlugin plugin,
+    static bool postprocessImpl(
+        /*const*/ TwitchPlugin plugin,
+        const IRCEvent event,
         const string channelName,
         ref IRCUser user)
     {
+        import kameloso.thread : ThreadMessage, boxed;
+
+        if (user.class_ == IRCUser.Class.blacklist)
+        {
+            // Ignore blacklist for obvious reasons
+            return false;
+        }
+
         if (user.badges.length)
         {
             // Move some badges to the front of the string, in reverse order of importance
@@ -3847,13 +3858,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         if (user.class_ >= IRCUser.Class.staff)
         {
             // User is already staff or higher, no need to promote
-            return;
-        }
-
-        if (user.class_ == IRCUser.Class.blacklist)
-        {
-            // Ignore blacklist for obvious reasons
-            return;
+            return false;
         }
 
         if (plugin.twitchSettings.promoteBroadcasters)
@@ -3863,21 +3868,40 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
             if (user.nickname == channelName[1..$])
             {
-                // User is broadcaster but is not registered as staff
+                // User is channel owner but is not registered as staff
                 user.class_ = IRCUser.Class.staff;
-                return;
+                plugin.state.messages ~= ThreadMessage.putUser(event.channel, boxed(user));
+                return true;
             }
         }
 
-        if (user.badges.length)
+        enum minimumTimeBetweenPromotions = 10;  // seconds
+        immutable deltaTime = (event.time - user.updated);
+
+        if (deltaTime < minimumTimeBetweenPromotions)
         {
-            // Infer class from the user's badge(s)
+            // It was updated reently, no need to re-promote
+            return false;
+        }
+        else if (user.badges.length)
+        {
+            /+
+                Infer class from the user's badge(s).
+                There's no sense in skipping this if promote{Moderators,VIPs} are false
+                since it also always promotes subscribers.
+             +/
             promoteUserFromBadges(
                 user.class_,
                 user.badges,
+                //plugin.twitchSettings.promoteBroadcasters,
                 plugin.twitchSettings.promoteModerators,
                 plugin.twitchSettings.promoteVIPs);
+
+            plugin.state.messages ~= ThreadMessage.putUser(event.channel, boxed(user));
+            return true;
         }
+
+        return false;
     }
 
     if (!plugin.twitchSettings.promoteEverywhere && !determinedWhetherHomeChannel)
@@ -3889,9 +3913,42 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
     if (plugin.twitchSettings.promoteEverywhere ||
         (determinedWhetherHomeChannel && isHomeChannel))
     {
-        /*if (event.sender.nickname.length)*/ postprocessImpl(plugin, event.channel, event.sender);
-        if (event.target.nickname.length) postprocessImpl(plugin, event.channel, event.target);
+        /+
+            Badges may change on some events, and the promotion hysteresis in
+            `postprocessImpl` may prevent it from becoming picked up.
+            Reset the user's updated timestamp to force a re-promotion.
+         +/
+        if (event.type.among!
+            (IRCEvent.Type.TWITCH_SUB,
+            IRCEvent.Type.TWITCH_SUBUPGRADE,
+            IRCEvent.Type.TWITCH_SUBGIFT,
+            IRCEvent.Type.TWITCH_BITSBADGETIER,
+            IRCEvent.Type.TWITCH_EXTENDSUB))
+        {
+            event.sender.updated = 1L;
+        }
+        else if (event.type.among!
+            (IRCEvent.Type.TWITCH_GIFTRECEIVED))
+        {
+            event.target.updated = 1L;
+        }
+
+        bool shouldCheckMessages;
+
+        if (event.sender.nickname.length)
+        {
+            shouldCheckMessages |= postprocessImpl(plugin, event, event.channel, event.sender);
+        }
+
+        if (event.target.nickname.length)
+        {
+            shouldCheckMessages |= postprocessImpl(plugin, event, event.channel, event.target);
+        }
+
+        return shouldCheckMessages;
     }
+
+    return false;
 }
 
 
