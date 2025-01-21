@@ -447,7 +447,6 @@ in (url.length, "Tried to send an HTTP request without a URL")
     version(TraceHTTPRequests)
     {
         import kameloso.common : logger;
-        import lu.conv : Enum;
 
         enum pattern = "get: <i>%s<t> (%s)";
         logger.tracef(

@@ -486,7 +486,6 @@ void delist(
     const string channelName,
     const IRCEvent event = IRCEvent.init)
 {
-    import lu.conv : Enum;
     import std.format : format;
 
     if (!account.length)

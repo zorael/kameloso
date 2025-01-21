@@ -285,7 +285,7 @@ in (event.channel.length, "Tried to reply to a channel message but no channel wa
         }
         else
         {
-            import lu.conv : Enum;
+            import lu.conv : toString;
             enum pattern = "Tried to <l>reply</> to an event of an unsupported type: <l>%s";
             logger.errorf(pattern, event.type.toString());
         }

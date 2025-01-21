@@ -221,7 +221,6 @@ void onCommandPrintEventsImpl(
 {
     import kameloso.plugins.admin : parseTypesFromString;
     import kameloso.common : logger;
-    import lu.conv : Enum;
     import std.algorithm.iteration : map;
     import std.format : format;
 

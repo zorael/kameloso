@@ -710,6 +710,7 @@ void onGlobalUserstate(TwitchPlugin plugin)
 void onSelfpart(TwitchPlugin plugin, const ref IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
+
     if (!room) return;
 
     if (room.stream.live)

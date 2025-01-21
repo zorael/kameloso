@@ -2002,8 +2002,6 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
         {
             version(TraceFibersAndDelegates)
             {
-                import lu.conv : Enum;
-
                 enum pattern = "<l>%s</>.scheduledDelegates[%d] " ~
                     "creator <l>%s";
 
