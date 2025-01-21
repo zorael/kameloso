@@ -303,8 +303,11 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
         service.hostmaskNicknameAccountCache.remove(event.sender.nickname);
     }
 
-    service.users.remove(event.sender.nickname);
-    service.userClassChannelCache.remove(event.sender.nickname);
+    foreach (immutable channelName, channelUsers; service.channelUserCache.aaOf)
+    {
+        channelUsers.remove(event.sender.nickname);
+        if (event.sender.account.length) channelUsers.remove(event.sender.account);
+    }
 }
 
 
@@ -428,7 +431,6 @@ void onWhoReply(PersistenceService service, const ref IRCEvent event)
  +/
 void reload(PersistenceService service)
 {
-    service.users.rehash();
     reloadAccountClassifiersFromDisk(service);
     if (service.state.settings.preferHostmasks) reloadHostmasksFromDisk(service);
 }
@@ -450,7 +452,7 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
     JSONStorage json;
     json.load(service.userFile);
 
-    service.channelUsers = null;
+    service.channelUserClassDefinitions = null;
 
     static immutable classes =
     [
@@ -482,12 +484,12 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
 
                 foreach (immutable userJSON; channelAccountJSON.array)
                 {
-                    auto theseUsers = channelName in service.channelUsers;
+                    auto theseUsers = channelName in service.channelUserClassDefinitions;
 
                     if (!theseUsers)
                     {
-                        service.channelUsers[channelName] = (IRCUser.Class[string]).init;
-                        theseUsers = channelName in service.channelUsers;
+                        service.channelUserClassDefinitions[channelName] = (IRCUser.Class[string]).init;
+                        theseUsers = channelName in service.channelUserClassDefinitions;
                     }
 
                     (*theseUsers)[userJSON.str] = class_;
