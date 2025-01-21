@@ -585,40 +585,42 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
     Registers a new [TwitchPlugin.Room] as we join a channel, so there's
     always a state struct available.
 
-    Simply passes on execution to [initRoom].
+    Simply invokes [getRoom] and discards the reuslts.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFJOIN)
     .channelPolicy(ChannelPolicy.home)
 )
-void onSelfjoin(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onSelfjoin(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    if (event.channel !in plugin.rooms)
-    {
-        // To be expected but may have been initialised elsewhere due to race
-        cast(void)initRoom(plugin, event.channel);
-    }
+    cast(void)getRoom(plugin, event.channel);
 }
 
 
-// initRoom
+// getRoom
 /++
-    Registers a new [TwitchPlugin.Room] as we join a channel, so there's
-    always a state struct available.
+    Retrieves the pointer to a [TwitchPlugin.Room] by name, creating it first
+    if one doesn't exist.
 
     Params:
         plugin = The current [TwitchPlugin].
-        channelName = The name of the channel we're supposedly joining.
+        channelName = The name of the channel to retrieve.
 
     Returns:
-        A pointer to the new [TwitchPlugin.Room].
+        A pointer to a [TwitchPlugin.Room], newly-created or otherwise.
  +/
-auto initRoom(TwitchPlugin plugin, const string channelName)
-in (channelName.length, "Tried to init Room with an empty channel string")
+auto getRoom(TwitchPlugin plugin, const string channelName)
 {
-    plugin.rooms[channelName] = TwitchPlugin.Room(channelName);
-    plugin.rooms[channelName].lastNMessages.resize(TwitchPlugin.Room.messageMemory);
-    return channelName in plugin.rooms;
+    auto room = channelName in plugin.rooms;
+
+    if (!room)
+    {
+        plugin.rooms[channelName] = TwitchPlugin.Room(channelName);
+        room = channelName in plugin.rooms;
+        room.lastNMessages.resize(TwitchPlugin.Room.messageMemory);
+    }
+
+    return room;
 }
 
 
