@@ -3425,16 +3425,23 @@ void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream s
 void promoteUserFromBadges(
     ref IRCUser.Class class_,
     const string badges,
+    //const bool promoteBroadcasters,
     const bool promoteModerators,
     const bool promoteVIPs) pure @safe
 {
     import std.string : indexOf;
+    import std.algorithm.comparison : among;
     import std.algorithm.iteration : splitter;
 
     if (class_ >= IRCUser.Class.operator) return;  // already as high as we go
 
     foreach (immutable badge; badges.splitter(','))
     {
+        if (!badge.length) continue;
+
+        // Optimise this a bit because it's such a hotspot
+        if (!badge[0].among!('s', 'v', 'm', /*'b'*/)) continue;
+
         immutable slashPos = badge.indexOf('/');
         if (!slashPos) break;  // something's wrong
 
@@ -3460,7 +3467,7 @@ void promoteUserFromBadges(
             if (promoteModerators && (class_ < IRCUser.Class.operator))
             {
                 class_ = IRCUser.Class.operator;
-                return;  // We don't go any higher than moderator here
+                return;  // We don't go any higher than moderator until we uncomment the below
             }
             break;  // as above
 
@@ -3468,7 +3475,7 @@ void promoteUserFromBadges(
             // This is already done by comparing the user's name to the channel
             // name in the calling function.
 
-            if (class_ < IRCUser.Class.staff)
+            if (promoteBroadcasters && (class_ < IRCUser.Class.staff))
             {
                 class_ = IRCUser.Class.staff;
             }
