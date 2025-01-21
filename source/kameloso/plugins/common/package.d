@@ -1835,6 +1835,16 @@ mixin template IRCPluginImpl(
         static if (__traits(compiles, { alias _ = .tick; }))
         {
             import lu.traits : TakesParams;
+            import std.traits : ReturnType;
+
+            static if (!is(ReturnType!(.tick) == bool))
+            {
+                import std.format : format;
+
+                enum pattern = "`%s.tick` returns `%s` and not `bool`";
+                enum message = pattern.format(module_, ReturnType!(.tick).stringof);
+                static assert(0, message);
+            }
 
             if (!this.isEnabled) return false;
 
