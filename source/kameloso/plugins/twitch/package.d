@@ -446,40 +446,119 @@ mixin PluginRegistration!(TwitchPlugin, -5.priority);
 
 // onAnyMessage
 /++
-    Bells on any message, if the [TwitchSettings.bellOnMessage] setting is set.
-    Also counts emotes for `ecount` and records active viewers.
+    Bells on certain messages depending on the current settings.
 
     Belling is useful with small audiences so you don't miss messages, but
     obviously only makes sense when run locally.
  +/
 @(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.QUERY)
-    .onEvent(IRCEvent.Type.EMOTE)
-    .onEvent(IRCEvent.Type.SELFCHAN)
-    .onEvent(IRCEvent.Type.SELFEMOTE)
+    .onEvent(IRCEvent.Type.ANY)
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
 void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 {
+    import std.algorithm.comparison : among;
+
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
-    if (plugin.twitchSettings.bellOnMessage)
+    // Surely only events that carry content are interesting
+    if (!event.content.length) return;
+
+    bool activityDetected;
+    bool shouldBell;
+    bool canSkipImportantCheck;
+
+    // bellOnMessage check
+    if (event.type.among!
+        (IRCEvent.Type.CHAN,
+        IRCEvent.Type.EMOTE,
+        IRCEvent.Type.QUERY))
+    {
+        activityDetected = (event.type != IRCEvent.Type.QUERY);
+        shouldBell = plugin.twitchSettings.bellOnMessage;
+        canSkipImportantCheck = true;
+    }
+
+    // bellOnImportant check
+    if (!canSkipImportantCheck && event.type.among!
+        (IRCEvent.Type.TWITCH_SUB,
+        IRCEvent.Type.TWITCH_SUBGIFT,
+        IRCEvent.Type.TWITCH_CHEER,
+        IRCEvent.Type.TWITCH_DIRECTCHEER,
+        IRCEvent.Type.TWITCH_REWARDGIFT,
+        IRCEvent.Type.TWITCH_GIFTCHAIN,
+        IRCEvent.Type.TWITCH_BULKGIFT,
+        IRCEvent.Type.TWITCH_SUBUPGRADE,
+        IRCEvent.Type.TWITCH_CHARITY,
+        IRCEvent.Type.TWITCH_BITSBADGETIER,
+        IRCEvent.Type.TWITCH_RITUAL,
+        IRCEvent.Type.TWITCH_EXTENDSUB,
+        IRCEvent.Type.TWITCH_GIFTRECEIVED,
+        IRCEvent.Type.TWITCH_PAYFORWARD,
+        IRCEvent.Type.TWITCH_RAID,
+        IRCEvent.Type.TWITCH_CROWDCHANT,
+        IRCEvent.Type.TWITCH_ANNOUNCEMENT,
+        IRCEvent.Type.TWITCH_INTRO,
+        IRCEvent.Type.TWITCH_MILESTONE))
+    {
+        activityDetected = true;
+        shouldBell |= plugin.twitchSettings.bellOnImportant;
+    }
+
+    if (shouldBell)
     {
         import std.stdio : stdout, write;
         write(plugin.transient.bell);
         stdout.flush();
     }
 
-    if (event.type == IRCEvent.Type.QUERY)
+    if (activityDetected)
     {
-        // Ignore queries for the rest of this function
-        return;
-    }
+        // Record viewer as active
+        if (auto room = event.channel in plugin.rooms)
+        {
+            if (room.stream.live)
+            {
+                room.stream.activeViewers[event.sender.nickname] = true;
+            }
 
-    // ecount!
+            room.lastNMessages.put(event);
+        }
+    }
+}
+
+
+// onEmoteBearingMessage
+/++
+    Increments emote counters.
+
+    Update the annotation as we learn of more events that can carry emotes.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.EMOTE)
+    .onEvent(IRCEvent.Type.TWITCH_MILESTONE)
+    .onEvent(IRCEvent.Type.TWITCH_BITSBADGETIER)
+    .onEvent(IRCEvent.Type.TWITCH_CHEER)
+    .onEvent(IRCEvent.Type.TWITCH_ANNOUNCEMENT)
+    .onEvent(IRCEvent.Type.TWITCH_SUB)
+    .onEvent(IRCEvent.Type.TWITCH_DIRECTCHEER)
+    .onEvent(IRCEvent.Type.TWITCH_INTRO)
+    .onEvent(IRCEvent.Type.TWITCH_RITUAL)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .onEvent(IRCEvent.Type.SELFEMOTE)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(ChannelPolicy.home)
+    .chainable(true)
+)
+void onEmoteBearingMessage(TwitchPlugin plugin, const ref IRCEvent event)
+{
+    import std.algorithm.comparison : among;
+
+    if (event.sender.class_ == IRCUser.Class.blacklist) return;
+
     if (plugin.twitchSettings.ecount && event.emotes.length)
     {
         import lu.string : advancePast;
@@ -489,22 +568,22 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 
         auto channelcount = event.channel in plugin.ecount;
 
+        if (!channelcount)
+        {
+            plugin.ecount[event.channel] = RehashingAA!(long[string]).init;
+            plugin.ecount[event.channel][string.init] = 0L;
+            channelcount = event.channel in plugin.ecount;
+            (*channelcount).remove(string.init);
+        }
+
         foreach (immutable emotestring; event.emotes.splitter('/'))
         {
             if (!emotestring.length) continue;
 
-            if (!channelcount)
-            {
-                plugin.ecount[event.channel] = RehashingAA!(long[string]).init;
-                plugin.ecount[event.channel][string.init] = 0L;
-                channelcount = event.channel in plugin.ecount;
-                (*channelcount).remove(string.init);
-            }
-
             string slice = emotestring;  // mutable
             immutable id = slice.advancePast(':');
-
             auto thisEmoteCount = id in *channelcount;
+
             if (!thisEmoteCount)
             {
                 (*channelcount)[id] = 0L;
@@ -514,68 +593,6 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
             *thisEmoteCount += slice.count(',') + 1;
             plugin.transient.ecountDirty = true;
         }
-    }
-
-    // Record viewer as active
-    if (auto room = event.channel in plugin.rooms)
-    {
-        if (room.stream.live)
-        {
-            room.stream.activeViewers[event.sender.nickname] = true;
-        }
-
-        room.lastNMessages.put(event);
-    }
-}
-
-
-// onImportant
-/++
-    Bells on any important event, like subscriptions, cheers and raids, if the
-    [TwitchSettings.bellOnImportant] setting is set.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.TWITCH_SUB)
-    .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
-    .onEvent(IRCEvent.Type.TWITCH_CHEER)
-    .onEvent(IRCEvent.Type.TWITCH_DIRECTCHEER)
-    .onEvent(IRCEvent.Type.TWITCH_REWARDGIFT)
-    .onEvent(IRCEvent.Type.TWITCH_GIFTCHAIN)
-    .onEvent(IRCEvent.Type.TWITCH_BULKGIFT)
-    .onEvent(IRCEvent.Type.TWITCH_SUBUPGRADE)
-    .onEvent(IRCEvent.Type.TWITCH_CHARITY)
-    .onEvent(IRCEvent.Type.TWITCH_BITSBADGETIER)
-    .onEvent(IRCEvent.Type.TWITCH_RITUAL)
-    .onEvent(IRCEvent.Type.TWITCH_EXTENDSUB)
-    .onEvent(IRCEvent.Type.TWITCH_GIFTRECEIVED)
-    .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
-    .onEvent(IRCEvent.Type.TWITCH_RAID)
-    .onEvent(IRCEvent.Type.TWITCH_CROWDCHANT)
-    .onEvent(IRCEvent.Type.TWITCH_ANNOUNCEMENT)
-    .onEvent(IRCEvent.Type.TWITCH_INTRO)
-    .onEvent(IRCEvent.Type.TWITCH_MILESTONE)
-    .permissionsRequired(Permissions.ignore)
-    .channelPolicy(ChannelPolicy.home)
-    .chainable(true)
-)
-void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
-{
-    if (event.sender.class_ == IRCUser.Class.blacklist) return;
-
-    // Record viewer as active
-    if (auto room = event.channel in plugin.rooms)
-    {
-        if (room.stream.live)
-        {
-            room.stream.activeViewers[event.sender.nickname] = true;
-        }
-    }
-
-    if (plugin.twitchSettings.bellOnImportant)
-    {
-        import std.stdio : stdout, write;
-        write(plugin.transient.bell);
-        stdout.flush();
     }
 }
 
