@@ -165,10 +165,13 @@ public:
         Params:
             event = The [dialect.defs.IRCEvent|IRCEvent] in flight.
 
+        Returns:
+            Boolean of whether messages should be checked.
+
         See_Also:
             [kameloso.plugins.common.IRCPluginImpl.postprocess]
      +/
-    void postprocess(ref IRCEvent event) @system;
+    bool postprocess(ref IRCEvent event) @system;
 
     // onEvent
     /++
@@ -1465,28 +1468,40 @@ mixin template IRCPluginImpl(
 
         Params:
             event = The [dialect.defs.IRCEvent|IRCEvent] in flight.
+
+        Returns:
+            Boolean of whether messages should be checked.
      +/
-    override public void postprocess(ref IRCEvent event) @system
+    override public bool postprocess(ref IRCEvent event) @system
     {
         static if (__traits(compiles, { alias _ = .postprocess; }))
         {
             import lu.traits : TakesParams;
 
-            if (!this.isEnabled) return;
+            if (!this.isEnabled) return true;
 
             static if (
                 is(typeof(.postprocess)) &&
                 is(typeof(.postprocess) == function) &&
                 TakesParams!(.postprocess, typeof(this), IRCEvent))
             {
-                import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
+                import std.traits : ParameterStorageClass, ParameterStorageClassTuple, ReturnType;
 
                 alias SC = ParameterStorageClass;
                 alias paramClasses = ParameterStorageClassTuple!(.postprocess);
 
+                static if (!is(ReturnType!(.postprocess) == bool))
+                {
+                    import std.format : format;
+
+                    enum pattern = "`%s.postprocess` returns `%s` and not `bool`";
+                    enum message = pattern.format(module_, ReturnType!(.postprocess).stringof);
+                    static assert(0, message);
+                }
+
                 static if (paramClasses[1] & SC.ref_)
                 {
-                    .postprocess(this, event);
+                    return .postprocess(this, event);
                 }
                 else
                 {
@@ -1507,6 +1522,10 @@ mixin template IRCPluginImpl(
                 enum message = pattern.format(module_, stringOfTypeOf!(.postprocess));
                 static assert(0, message);
             }
+        }
+        else
+        {
+            return false;
         }
     }
 
