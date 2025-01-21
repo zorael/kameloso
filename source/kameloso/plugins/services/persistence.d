@@ -884,10 +884,17 @@ private:
     RehashingAA!(IRCUser[string][string]) channelUserCache;
 
     /++
-        Associative array of users. Replaces
-        [kameloso.plugins.common.IRCPluginState.users|IRCPluginState.users].
+        Inherits a user into the cache.
      +/
-    RehashingAA!(IRCUser[string]) users;
+    public override void putUser(const IRCUser user, const string channel)
+    {
+        if (channel.length)
+        {
+            channelUserCache[channel][user.nickname] = user;
+        }
+
+        putUserImpl(user);
+    }
 
     mixin IRCPluginImpl;
 }
