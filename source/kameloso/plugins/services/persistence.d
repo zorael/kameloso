@@ -41,81 +41,7 @@ import dialect.defs;
 
     Merely leverages [postprocessCommon].
  +/
-void postprocess(PersistenceService service, ref IRCEvent event)
-{
-    with (IRCEvent.Type)
-    switch (event.type)
-    {
-    case ERR_WASNOSUCHNICK:
-    case ERR_NOSUCHNICK:
-    case RPL_LOGGEDIN:
-    case ERR_NICKNAMEINUSE:
-        // Invalid user or inapplicable, don't complete it
-        return;
-
-    case NICK:
-    case SELFNICK:
-        import dialect.semver : DialectSemVer;
-
-        // Clone the stored sender into a new stored target.
-        static if (
-            (DialectSemVer.major <= 2) &&
-            (DialectSemVer.minor == 0) &&
-            (DialectSemVer.patch <= 4))
-        {
-            // dialect does this itself in newer versions,
-            // but do it manually for older ones
-            immutable savedTargetNick = event.target.nickname;
-            event.target = event.sender;
-            event.target.nickname = savedTargetNick;
-        }
-
-        static void dropUserPrivileges(ref IRCUser user)
-        {
-            // Drop all privileges
-            user.class_ = IRCUser.Class.anyone;
-            user.account = string.init;
-            user.updated = 1L;  // must not be 0L
-        }
-
-        if (service.state.settings.preferHostmasks)
-        {
-            dropUserPrivileges(event.target);
-        }
-
-        if (const stored = event.sender.nickname in service.users)
-        {
-            // Don't delete the old user yet.
-            service.users[event.target.nickname] = *stored;
-            auto newUser = event.target.nickname in service.users;
-            newUser.nickname = event.target.nickname;
-
-            if (service.state.settings.preferHostmasks)
-            {
-                dropUserPrivileges(*newUser);
-            }
-        }
-
-        if (!service.state.settings.preferHostmasks)
-        {
-            if (const channelName = event.sender.nickname in service.userClassChannelCache)
-            {
-                service.userClassChannelCache[event.target.nickname] = *channelName;
-            }
-        }
-        goto default;
-
-    default:
-        return postprocessCommon(service, event);
-    }
-}
-
-
-// postprocessCommon
-/++
-    Postprocessing implementation common for service and hostmasks mode.
- +/
-void postprocessCommon(PersistenceService service, ref IRCEvent event)
+auto postprocess(PersistenceService service, ref IRCEvent event)
 {
     static void postprocessImpl(PersistenceService service, ref IRCEvent event, ref IRCUser user)
     {
@@ -125,295 +51,225 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         if (!user.nickname.length || (user.nickname == "*")) return;
 
         /++
-            Returns the recorded "account" of a user. For use in hostmasks mode.
+            Attempt to resolve a user class.
          +/
-        static string getAccount(PersistenceService service, const IRCUser user)
-        {
-            if (const cachedAccount = user.nickname in service.hostmaskNicknameAccountCache)
-            {
-                return *cachedAccount;
-            }
-
-            foreach (const storedUser; service.hostmaskUsers)
-            {
-                import dialect.common : matchesByMask;
-
-                if (!storedUser.account.length) continue;
-
-                if (matchesByMask(user, storedUser))
-                {
-                    service.hostmaskNicknameAccountCache[user.nickname] = storedUser.account;
-                    return storedUser.account;
-                }
-            }
-
-            return string.init;
-        }
-
-        /++
-            Tries to apply any permanent class for a user in a channel, and if
-            none available, tries to set one that seems to apply based on what
-            the user looks like.
-         +/
-        static void applyClassifiers(
+        static void resolveClass(
             PersistenceService service,
             const ref IRCEvent event,
             ref IRCUser user)
+        in ((service.state.server.daemon == IRCServer.Daemon.twitch),
+            "`persistence.postprocessCommon.resolveClass` should not be called on Twitch")
         {
-            if ((user.class_ == IRCUser.Class.admin) && (user.account != "*"))
-            {
-                // Do nothing, admin is permanent and program-wide
-                // unless it's someone logging out
-                return;
-            }
+            user.updated = event.time;
 
             if (service.state.settings.preferHostmasks && !user.account.length)
             {
-                user.account = getAccount(service, user);
-                if (user.account.length) user.updated = event.time;
-            }
+                if (const cachedAccount = user.nickname in service.hostmaskNicknameAccountCache)
+                {
+                    user.account = *cachedAccount;
+                }
+                else
+                {
+                    foreach (const storedUser; service.hostmaskUsers)
+                    {
+                        import dialect.common : matchesByMask;
 
-            bool set;
+                        if (!storedUser.account.length) continue;
+
+                        if (matchesByMask(user, storedUser))
+                        {
+                            service.hostmaskNicknameAccountCache[user.nickname] = storedUser.account;
+                            user.account = storedUser.account;
+                        }
+                    }
+                }
+
+                // Drop down
+            }
 
             if (!user.account.length || (user.account == "*"))
             {
                 // No account means it's just a random
                 user.class_ = IRCUser.Class.anyone;
-                set = true;
             }
             else if (service.state.bot.admins.canFind(user.account))
             {
                 // admin discovered
                 user.class_ = IRCUser.Class.admin;
-                return;
             }
             else if (event.channel.length)
             {
-                if (const classAccounts = event.channel in service.channelUsers)
+                /+
+                    Look up from class definitions (from file).
+                 +/
+                if (const userClassesForChannel = event.channel in service.channelUserClassDefinitions)
                 {
-                    if (const definedClass = user.account in *classAccounts)
+                    if (const class_ = user.account in *userClassesForChannel)
                     {
-                        // Permanent class is defined, so apply it
-                        user.class_ = *definedClass;
-                        set = true;
+                        // Channel and user combination exists
+                        user.class_ = *class_;
                     }
                 }
             }
-
-            if (!set)
+            else
             {
-                // All else failed, consider it a random registered or anyone, depending on server
-                user.class_ = (service.state.server.daemon == IRCServer.Daemon.twitch) ?
-                    IRCUser.Class.anyone :
-                    IRCUser.Class.registered;
+                // All else failed, consider it a random registered (since account.length > 0)
+                user.class_ = user.account.length ?
+                    IRCUser.Class.registered :
+                    IRCUser.Class.anyone;
             }
-
-            // Record this channel as being the one the current class_ applies to.
-            // That way we only have to look up a class_ when the channel has changed.
-            service.userClassChannelCache[user.nickname] = event.channel;
         }
 
-        // Save cache lookups so we don't do them more than once.
-        string* cachedChannel;
-        auto stored = user.nickname in service.users;
+        /++
+            Drop all privileges from a user.
+         +/
+        static void dropAllPrivileges(ref IRCUser user)
+        {
+            user.class_ = IRCUser.Class.anyone;
+            user.account = string.init;
+            user.updated = 1L;  // must not be 0L
+        }
+
+        /++
+            Fetch a user by an identifier from cache, creating it if one doesn't exist.
+         +/
+        auto fetchUserFromCache(const string userIdentifier, out bool shouldMeldWithUser)
+        {
+            auto channelUsers = event.channel in service.channelUserCache;
+
+            if (!channelUsers)
+            {
+                // Channel doesn't exist, create everything
+                service.channelUserCache[event.channel] = null;  // FIXME: RehashingAA quirk
+                service.channelUserCache[event.channel][userIdentifier] = user;
+                return userIdentifier in service.channelUserCache[event.channel];
+            }
+            else
+            {
+                if (auto channelUser = userIdentifier in *channelUsers)
+                {
+                    // Channel and user combination exists
+                    shouldMeldWithUser = true;
+                    return channelUser;
+                }
+                else
+                {
+                    // Channel exists but user doesn't
+                    (*channelUsers)[userIdentifier] = user;
+                    return userIdentifier in *channelUsers;
+                }
+            }
+        }
+
+        if (user.class_ == IRCUser.Class.admin)
+        {
+            if (user.account != "*") return;
+            user.class_ = IRCUser.Class.anyone;
+        }
+
+        immutable userIdentifier = (user.account == "*") ? user.nickname : user.account;
+        immutable serverIsTwitch = (service.state.server.daemon == IRCServer.Daemon.twitch);
+        bool shouldMeldWithUser;
+
+        auto stored = fetchUserFromCache(userIdentifier, shouldMeldWithUser);
+        const old = *stored;
+
+        if (shouldMeldWithUser)
+        {
+            import lu.meld : MeldingStrategy, meldInto;
+
+            user.meldInto!(MeldingStrategy.aggressive)(*stored);
+            stored.class_ = old.class_;
+            stored.updated = old.updated;
+        }
 
         if (service.state.settings.preferHostmasks)
         {
             // Ignore any account that may have been parsed
-            user.account = string.init;
-        }
-        else /*if (!service.state.settings.preferHostmasks)*/
-        {
-            if (service.state.server.daemon != IRCServer.Daemon.twitch)
-            {
-                // Apply class here on events that carry new account information.
-
-                with (IRCEvent.Type)
-                switch (event.type)
-                {
-                case JOIN:
-                case RPL_WHOISACCOUNT:
-                case RPL_WHOISUSER:
-                case RPL_WHOISREGNICK:
-                    applyClassifiers(service, event, user);
-                    break;
-
-                case ACCOUNT:
-                    if (stored && stored.account.length && (user.account == "*"))
-                    {
-                        event.aux[0] = stored.account;
-                    }
-                    goto case RPL_WHOISACCOUNT;
-
-                default:
-                    if ((user.account.length && (user.account != "*")) ||
-                        (stored && !stored.account.length))
-                    {
-                        // Unexpected event bearing new account
-                        // These can be whatever if the "account-tag" capability is set
-                        goto case RPL_WHOISACCOUNT;
-                    }
-                    break;
-                }
-            }
+            stored.account = string.init;
         }
 
-        if (!stored)
+        if (!serverIsTwitch)
         {
-            service.users[user.nickname] = user;
-            stored = user.nickname in service.users;
-        }
-        else
-        {
-            import lu.meld : MeldingStrategy, meldInto;
-            // Meld into the stored user, and store the union in the event
-            // Skip if the current stored is just a direct copy of user
-            // Store initial class and restore after meld. The origin user.class_
-            // can ever only be IRCUser.Class.unset UNLESS altered in the switch above.
-            // Additionally snapshot the .updated value and restore it after melding
+            // Apply class here on events that carry new account information.
 
-            version(TwitchSupport)
+            with (IRCEvent.Type)
+            switch (event.type)
             {
-                if (service.state.server.daemon == IRCServer.Daemon.twitch)
+            case RPL_WHOISACCOUNT:
+            case RPL_WHOISREGNICK:
+            case RPL_ENDOFWHOIS:
+            case RPL_WHOISUSER:
+                resolveClass(service, event, *stored);
+                break;
+
+            case NICK:
+            case SELFNICK:
+                if (user.class_ != IRCUser.Class.admin)
                 {
-                    if (!event.channel.length)
-                    {
-                        stored.badges = string.init;
-                    }
-                    else if (stored.badges.length && !user.badges.length)
-                    {
-                        // The current user doesn't have any badges and the stored one
-                        // does, potentially for a different channel. Look it up and
-                        // save the AA lookup pointer for later checks, in case we
-                        // have to do this again down below.
+                    dropAllPrivileges(*stored);
+                    resolveClass(service, event, *stored);
+                }
+                break;
 
-                        /*const*/ cachedChannel = stored.nickname in service.userClassChannelCache;
+            case ACCOUNT:
+                if (user.account == "*")
+                {
+                    // An account of "*" means the user logged out of services
+                    // It's not strictly true but consider him/her as unknown again.
+                    dropAllPrivileges(*stored);
 
-                        if (!cachedChannel || (*cachedChannel != event.channel))
-                        {
-                            // Current event has no badges but the stored one has
-                            // and for a different channel. Clear them.
-                            stored.badges = string.init;
-                        }
+                    if (old.account.length)
+                    {
+                        // Keep the previous account in aux[0] if it was known
+                        event.aux[0] = old.account;
                     }
                 }
-            }
 
-            immutable preMeldClass = stored.class_;
-            immutable preMeldUpdated = stored.updated;
-            user.meldInto!(MeldingStrategy.aggressive)(*stored);
-            stored.updated = preMeldUpdated;
+                resolveClass(service, event, *stored);
+                break;
 
-            if (stored.class_ == IRCUser.Class.unset)
-            {
-                // The class was not changed, restore the previously saved one
-                stored.class_ = preMeldClass;
-            }
-        }
+            case JOIN:
+                resolveClass(service, event, *stored);
+                break;
 
-        if (service.state.server.daemon != IRCServer.Daemon.twitch)
-        {
-            if (!service.state.settings.preferHostmasks)
-            {
-                with (IRCEvent.Type)
-                switch (event.type)
+            case ERR_WASNOSUCHNICK:
+            case ERR_NOSUCHNICK:
+            case RPL_LOGGEDIN:
+            case ERR_NICKNAMEINUSE:
+                // Invalid user or unapplicable, ignore
+                return;
+
+            default:
+                if (!old.account.length && user.account.length && (user.account != "*"))
                 {
-                case RPL_WHOISACCOUNT:
-                case RPL_WHOISREGNICK:
-                case RPL_ENDOFWHOIS:
-                    // Record updated timestamp; this is the end of a WHOIS
-                    stored.updated = event.time;
-                    break;
-
-                case ACCOUNT:
-                case JOIN:
-                    if (stored.account == "*")
-                    {
-                        // An account of "*" means the user logged out of services
-                        // It's not strictly true but consider him/her as unknown again.
-                        stored.account = string.init;
-                        stored.class_ = IRCUser.Class.anyone;
-                        stored.updated = 1L;  // To facilitate melding
-                        service.userClassChannelCache.remove(stored.nickname);
-                    }
-                    else
-                    {
-                        // Record updated timestamp; new account known
-                        stored.updated = event.time;
-                    }
-                    break;
-
-                default:
-                    break;
+                    // Unexpected event bearing new account
+                    // These can be whatever if the "account-tag" capability is set
+                    resolveClass(service, event, *stored);
                 }
+                break;
             }
-            else /*if (service.state.settings.preferHostmasks)*/
-            {
-                if (event.type == IRCEvent.Type.RPL_ENDOFWHOIS)
-                {
-                    // As above
-                    stored.updated = event.time;
-                }
-            }
+
+            stored.class_ = (stored.account.length && (stored.account != "*")) ?
+                IRCUser.Class.registered :
+                IRCUser.Class.anyone;
         }
 
         version(TwitchSupport)
         {
-            // Clear badges if it has the empty placeholder asterisk
-            if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
-                (stored.badges == "*"))
+            if (serverIsTwitch)
             {
-                stored.badges = string.init;
-            }
-        }
-
-        if ((stored.class_ == IRCUser.Class.admin) && (stored.account != "*"))
-        {
-            // Do nothing, admin is permanent and program-wide
-            // unless it's someone logging out
-        }
-        else if (!event.channel.length)
-        {
-            // Not in a channel. Additionally not an admin
-            // Default to registered if the user has an account, except on Twitch
-            // postprocess in twitch/base.d will assign class as per badges
-
-            if (service.state.server.daemon == IRCServer.Daemon.twitch)
-            {
-                version(TwitchSupport)
+                // Clear badges if it has the empty placeholder asterisk
+                if (stored.badges == "*")
                 {
-                    // This needs to be versioned because IRCUser.badges isn't
-                    // available if not version TwitchSupport
-                    stored.class_ = IRCUser.Class.anyone;
-                    //stored.badges = string.init;  // already done above on cache hit
+                    stored.badges = string.init;
                 }
-            }
-            else if (stored.account.length && (stored.account != "*"))
-            {
-                stored.class_ = IRCUser.Class.registered;
-            }
-            else
-            {
-                stored.class_ = IRCUser.Class.anyone;
-            }
 
-            service.userClassChannelCache.remove(user.nickname);
-        }
-        else /*if (channel.length)*/
-        {
-            // Non-admin, channel present. Perform a new cache lookup if none was
-            // previously made, otherwise reuse the earlier hit.
-
-            if (!cachedChannel)
-            {
-                /*const*/ cachedChannel = stored.nickname in service.userClassChannelCache;
-            }
-
-            if (!cachedChannel || (*cachedChannel != event.channel))
-            {
-                // User has no cached channel. Alternatively, user's cached channel
-                // is different from this one; class likely differs.
-                applyClassifiers(service, event, *stored);
+                // Users should never be unset
+                if (stored.class_ == IRCUser.Class.unset)
+                {
+                    stored.class_ = IRCUser.Class.anyone;
+                }
             }
         }
 
@@ -423,6 +279,9 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
     postprocessImpl(service, event, event.sender);
     postprocessImpl(service, event, event.target);
+
+    // Nothing in here should warrant a further message check
+    return false;
 }
 
 
@@ -1004,9 +863,10 @@ private:
     @Resource string hostmasksFile = KamelosoFilenames.hostmasks;
 
     /++
-        Associative array of permanent user classifications, per account and channel name.
+        Associative array of permanent user classifications, per account and
+        channel name, read from file.
      +/
-    RehashingAA!(IRCUser.Class[string])[string] channelUsers;
+    RehashingAA!(IRCUser.Class[string])[string] channelUserClassDefinitions;
 
     /++
         Hostmask definitions as read from file. Should be considered read-only.
@@ -1019,9 +879,9 @@ private:
     RehashingAA!(string[string]) hostmaskNicknameAccountCache;
 
     /++
-        Associative array of which channel the latest class lookup for an account related to.
+        Cache of users by channel and nickname.
      +/
-    RehashingAA!(string[string]) userClassChannelCache;
+    RehashingAA!(IRCUser[string][string]) channelUserCache;
 
     /++
         Associative array of users. Replaces
