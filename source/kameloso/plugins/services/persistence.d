@@ -43,6 +43,12 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 {
     import std.algorithm.comparison : among;
 
+    if (service.state.server.daemon == IRCServer.Daemon.unset)
+    {
+        // Too early to do anything meaningful, and it throws off Twitch detection
+        return false;
+    }
+
     if (event.type.among!
         (IRCEvent.Type.ERR_WASNOSUCHNICK,
         IRCEvent.Type.ERR_NOSUCHNICK,
