@@ -434,14 +434,30 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 
     This is normally done as part of user awareness, but we're not mixing that
     in so we have to reinvent it.
+
+    Purges old cache entries every 12 hours.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
+    .fiber(true)
 )
 void onWelcome(PersistenceService service)
 {
+    import kameloso.plugins.common.scheduling : delay;
+    import core.time : hours;
+
     reloadAccountClassifiersFromDisk(service);
     if (service.state.settings.preferHostmasks) reloadHostmasksFromDisk(service);
+
+    static immutable cacheEntryAgeCheckPeriodicity = 1.hours;
+    enum cacheEntryMaxAgeSeconds = 12 * 3600;  // 12 hours
+
+    while (true)
+    {
+        // Delay first so we don't purge immediately after loading
+        delay(service, cacheEntryAgeCheckPeriodicity, yield: true);
+        purgeOldCacheEntries(service, cacheEntryMaxAgeSeconds);
+    }
 }
 
 
@@ -517,6 +533,140 @@ void onWhoReply(PersistenceService service, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : catchUser;
     catchUser(service, event.target);
+}
+
+
+// purgeOldCacheEntries
+/++
+    Walks the channel-user cache and removes entries older than a certain age.
+    Additionally removes channels with no users, and nicknames from the nickname
+    account map that are not found in any channel.
+
+    Params:
+        service = The current [PersistenceService].
+        cacheEntryMaxAgeSeconds = The maximum age of a cache entry in seconds;
+            older than which will be removed.
+ +/
+void purgeOldCacheEntries(
+    PersistenceService service,
+    const long cacheEntryMaxAgeSeconds)
+{
+    import std.datetime.systime : Clock;
+    debug import std.stdio;
+
+    immutable now = Clock.currTime.toUnixTime();
+
+    foreach (ref channelUsers; service.channelUserCache.aaOf)
+    {
+        // Array of keys to remove, since we can't mutate the AA while foreaching it
+        string[] toRemove;
+
+        foreach (const user; channelUsers)
+        {
+            immutable secondsSinceUserUpdate = (now - user.updated);
+            if (secondsSinceUserUpdate > cacheEntryMaxAgeSeconds) toRemove ~= user.nickname;
+        }
+
+        // Remove the keys
+        foreach (immutable nickname; toRemove)
+        {
+            channelUsers.remove(nickname);
+        }
+    }
+
+    // Array of keys to remove, as above
+    string[] channelsToRemoveFromCache;
+
+    foreach (immutable channelName, const channelUsers; service.channelUserCache.aaOf)
+    {
+        if (!channelUsers.length) channelsToRemoveFromCache ~= channelName;
+    }
+
+    foreach (const channelName; channelsToRemoveFromCache)
+    {
+        debug writeln("Purging ", channelName, " from cache");
+        service.channelUserCache.remove(channelName);
+    }
+
+    // Array of keys to remove, as above
+    string[] nicknamesToRemoveFromMap;
+
+    accountMapForeach:
+    foreach (immutable nickname, const account; service.nicknameAccountMap.aaOf)
+    {
+        foreach (channelUsers; service.channelUserCache.aaOf)
+        {
+            foreach (const user; channelUsers)
+            {
+                if (user.account == account) continue accountMapForeach;
+            }
+        }
+
+        // No matches found in any channel, else it would have continued accountMapForeach
+        nicknamesToRemoveFromMap ~= nickname;
+    }
+
+    // Remove the keys
+    foreach (immutable nickname; nicknamesToRemoveFromMap)
+    {
+        debug writeln("puring ", nickname, " from map");
+        service.nicknameAccountMap.remove(nickname);
+    }
+}
+
+///
+unittest
+{
+    import std.datetime.systime : Clock;
+
+    immutable nowInUnix = Clock.currTime.toUnixTime();
+
+    IRCPluginState state;
+    auto service = new PersistenceService(state);
+
+    IRCUser user1;
+    user1.nickname = "foo";
+    user1.account = "foo";
+    user1.updated = nowInUnix;
+
+    IRCUser user2;
+    user2.nickname = "bar";
+    user2.account = "bar";
+    user2.updated = nowInUnix - 3600;
+
+    IRCUser user3;
+    user3.nickname = "baz";
+    user3.account = "BAZ";
+    user3.updated = nowInUnix - 6*3600;
+
+    service.channelUserCache.aaOf["#channel1"]["foo"] = user1;
+    service.channelUserCache.aaOf["#channel1"]["bar"] = user2;
+    service.channelUserCache.aaOf["#channel1"]["baz"] = user3;
+    service.channelUserCache.aaOf["#channel2"]["foo"] = user1;
+    service.channelUserCache.aaOf["#channel2"]["bar"] = user2;
+    service.channelUserCache.aaOf["#channel3"]["baz"] = user3;
+
+    service.nicknameAccountMap["foo"] = "foo";
+    service.nicknameAccountMap["bar"] = "bar";
+    service.nicknameAccountMap["baz"] = "BAZ";
+
+    assert(service.channelUserCache["#channel1"].length == 3);
+    assert(service.channelUserCache["#channel2"].length == 2);
+    assert(service.channelUserCache["#channel3"].length == 1);
+    assert(service.nicknameAccountMap.length == 3);
+
+    service.purgeOldCacheEntries(5*3600);
+
+    assert("foo" in service.channelUserCache["#channel1"]);
+    assert("bar" in service.channelUserCache["#channel1"]);
+    assert("baz" !in service.channelUserCache["#channel1"]);
+    assert("foo" in service.channelUserCache["#channel2"]);
+    assert("bar" in service.channelUserCache["#channel2"]);
+    assert("#channel3" !in service.channelUserCache);
+
+    assert("foo" in service.nicknameAccountMap);
+    assert("bar" in service.nicknameAccountMap);
+    assert("baz" !in service.nicknameAccountMap);
 }
 
 
