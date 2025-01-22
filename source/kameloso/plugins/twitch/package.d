@@ -3717,7 +3717,7 @@ void teardown(TwitchPlugin plugin)
 
     Additionally embeds custom BTTV/FrankerFaceZ/7tv emotes into the event.
  +/
-bool postprocess(TwitchPlugin plugin, ref IRCEvent event)
+auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
     import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
@@ -3828,6 +3828,8 @@ bool postprocess(TwitchPlugin plugin, ref IRCEvent event)
     {
         import kameloso.thread : ThreadMessage, boxed;
 
+        if (!user.nickname.length) return false;
+
         if (user.class_ == IRCUser.Class.blacklist)
         {
             // Ignore blacklist for obvious reasons
@@ -3934,17 +3936,8 @@ bool postprocess(TwitchPlugin plugin, ref IRCEvent event)
         }
 
         bool shouldCheckMessages;
-
-        if (event.sender.nickname.length)
-        {
-            shouldCheckMessages |= postprocessImpl(plugin, event, event.channel, event.sender);
-        }
-
-        if (event.target.nickname.length)
-        {
-            shouldCheckMessages |= postprocessImpl(plugin, event, event.channel, event.target);
-        }
-
+        shouldCheckMessages |= postprocessImpl(plugin, event, event.channel, event.sender);
+        shouldCheckMessages |= postprocessImpl(plugin, event, event.channel, event.target);
         return shouldCheckMessages;
     }
 
