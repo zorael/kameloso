@@ -389,8 +389,8 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                     stored.badges = string.init;
                 }
 
-                // Users should never be unset
-                if (stored.class_ == IRCUser.Class.unset)
+                // Users should never be unset in the context of a channel
+                if (event.channel.length && (stored.class_ == IRCUser.Class.unset))
                 {
                     stored.class_ = IRCUser.Class.anyone;
                 }
