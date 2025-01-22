@@ -530,8 +530,8 @@ void reloadHostmasksFromDisk(PersistenceService service)
     string[string] accountByHostmask;
     accountByHostmask.populateFromJSON(hostmasksJSON);
 
-    service.hostmaskUsers = null;
-    service.hostmaskNicknameAccountCache = null;
+    service.hostmaskDefinitions = null;
+    service.nicknameAccountMap = null;
 
     foreach (immutable hostmask, immutable account; accountByHostmask)
     {
@@ -565,13 +565,13 @@ void reloadHostmasksFromDisk(PersistenceService service)
         {
             auto user = IRCUser(hostmask);
             user.account = account;
-            service.hostmaskUsers ~= user;
+            service.hostmaskDefinitions ~= user;
 
             if (user.nickname.length && (user.nickname.indexOf('*') == -1))
             {
                 // Nickname has length and is not a glob
                 // (adding a glob to hostmaskUsers is okay)
-                service.hostmaskNicknameAccountCache[user.nickname] = user.account;
+                service.nicknameAccountMap[user.nickname] = user.account;
             }
         }
         catch (Exception e)
@@ -873,12 +873,12 @@ private:
     /++
         Hostmask definitions as read from file. Should be considered read-only.
      +/
-    IRCUser[] hostmaskUsers;
+    IRCUser[] hostmaskDefinitions;
 
     /++
-        Cached nicknames matched to defined hostmasks.
+        Cached nicknames matched to accounts.
      +/
-    RehashingAA!(string[string]) hostmaskNicknameAccountCache;
+    RehashingAA!(string[string]) nicknameAccountMap;
 
     /++
         Cache of users by channel and nickname.
