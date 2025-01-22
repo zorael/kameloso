@@ -384,14 +384,21 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             if (serverIsTwitch)
             {
                 // Clear badges if it has the empty placeholder asterisk
-                if (stored.badges == "*")
-                {
-                    stored.badges = string.init;
-                }
+                if (stored.badges == "*") stored.badges = string.init;
 
-                // Users should never be unset in the context of a channel
-                if (event.channel.length && (stored.class_ == IRCUser.Class.unset))
+                if (stored.class_ != IRCUser.Class.admin)
                 {
+                    import std.algorithm.searching : canFind;
+
+                    // We can't really throttle this...
+                    if (service.state.bot.admins.canFind(stored.account))
+                    {
+                        stored.class_ = IRCUser.Class.admin;
+                    }
+                }
+                else if (event.channel.length && (stored.class_ == IRCUser.Class.unset))
+                {
+                    // Users should never be unset in the context of a channel
                     stored.class_ = IRCUser.Class.anyone;
                 }
             }
