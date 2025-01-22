@@ -38,17 +38,77 @@ import dialect.defs;
     fleshes out the [dialect.defs.IRCEvent.sender|IRCEvent.sender] and/or
     [dialect.defs.IRCEvent.target|IRCEvent.target] fields, so that things like
     account names that are only sent sometimes carry over.
-
-    Merely leverages [postprocessCommon].
  +/
 auto postprocess(PersistenceService service, ref IRCEvent event)
 {
-    static void postprocessImpl(PersistenceService service, ref IRCEvent event, ref IRCUser user)
-    {
-        import std.algorithm.searching : canFind;
+    import std.algorithm.comparison : among;
 
+    if (event.type.among!
+        (IRCEvent.Type.ERR_WASNOSUCHNICK,
+        IRCEvent.Type.ERR_NOSUCHNICK,
+        IRCEvent.Type.RPL_LOGGEDIN,
+        IRCEvent.Type.ERR_NICKNAMEINUSE))
+    {
+        // Not applicable event, ignore
+        return false;
+    }
+
+    /++
+        Nested implementation function so we can properly handle the sender and
+        target separately.
+     +/
+    static void postprocessImpl(
+        PersistenceService service,
+        ref IRCEvent event,
+        ref IRCUser user,
+        const bool isTarget)
+    {
         // Ignore server events and certain pre-registration events where our nick is unknown
         if (!user.nickname.length || (user.nickname == "*")) return;
+
+        /++
+            Resolves an account name for a user by looking them up in the
+            nickname-account map and the hostmask definitions.
+         +/
+        static void resolveAccount(
+            PersistenceService service,
+            ref IRCUser user,
+            const long time)
+        {
+            if (user.account.length || (user.account == "*")) return;
+
+            // Check nickname-account map.
+            if (const cachedAccount = user.nickname in service.nicknameAccountMap)
+            {
+                // hit
+                user.account = *cachedAccount;
+                user.updated = time;
+                return;
+            }
+
+            if (service.state.settings.preferHostmasks)
+            {
+                /+
+                    No match, and we're in hostmask mode.
+                    Look up the nickname in the definitions (from file).
+                 +/
+                foreach (const definition; service.hostmaskDefinitions)
+                {
+                    import dialect.common : matchesByMask;
+
+                    if (!definition.account.length) continue;  // Malformed entry
+
+                    if (matchesByMask(user, definition))
+                    {
+                        // hit
+                        service.nicknameAccountMap[user.nickname] = definition.account;
+                        user.account = definition.account;
+                        user.updated = time;
+                        return;
+                    }
+                }
+            }
+        }
 
         /++
             Attempt to resolve a user class.
@@ -57,34 +117,17 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             PersistenceService service,
             const ref IRCEvent event,
             ref IRCUser user)
-        in ((service.state.server.daemon == IRCServer.Daemon.twitch),
+        in ((service.state.server.daemon != IRCServer.Daemon.twitch),
             "`persistence.postprocessCommon.resolveClass` should not be called on Twitch")
         {
+            import std.algorithm.searching : canFind;
+
             user.updated = event.time;
 
-            if (service.state.settings.preferHostmasks && !user.account.length)
+            if (user.class_ == IRCUser.Class.admin)
             {
-                if (const cachedAccount = user.nickname in service.hostmaskNicknameAccountCache)
-                {
-                    user.account = *cachedAccount;
-                }
-                else
-                {
-                    foreach (const storedUser; service.hostmaskUsers)
-                    {
-                        import dialect.common : matchesByMask;
-
-                        if (!storedUser.account.length) continue;
-
-                        if (matchesByMask(user, storedUser))
-                        {
-                            service.hostmaskNicknameAccountCache[user.nickname] = storedUser.account;
-                            user.account = storedUser.account;
-                        }
-                    }
-                }
-
-                // Drop down
+                // Admins are always admins, unless they're logging out
+                if (user.account != "*") return;
             }
 
             if (!user.account.length || (user.account == "*"))
@@ -102,9 +145,9 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                 /+
                     Look up from class definitions (from file).
                  +/
-                if (const userClassesForChannel = event.channel in service.channelUserClassDefinitions)
+                if (const userClasses = event.channel in service.channelUserClassDefinitions)
                 {
-                    if (const class_ = user.account in *userClassesForChannel)
+                    if (const class_ = user.account in *userClasses)
                     {
                         // Channel and user combination exists
                         user.class_ = *class_;
@@ -121,60 +164,104 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
         }
 
         /++
-            Drop all privileges from a user.
+            Drop all privileges from a user, in all channels.
          +/
-        static void dropAllPrivileges(ref IRCUser user)
+        static void dropAllPrivileges(
+            PersistenceService service,
+            const string nickname,
+            const bool classToo)
         {
-            user.class_ = IRCUser.Class.anyone;
-            user.account = string.init;
-            user.updated = 1L;  // must not be 0L
+            foreach (immutable channelName, ref channelUsers; service.channelUserCache.aaOf)
+            {
+                if (auto channelUser = nickname in channelUsers)
+                {
+                    channelUser.account = string.init;
+                    channelUser.updated = 1L;  // must not be 0L
+                    if (classToo) channelUser.class_ = IRCUser.Class.anyone;
+                }
+            }
         }
 
         /++
-            Fetch a user by an identifier from cache, creating it if one doesn't exist.
+            Fetch a user by nickname from cache, creating it if one doesn't exist.
          +/
-        auto fetchUserFromCache(const string userIdentifier, out bool shouldMeldWithUser)
+        static auto establishUserInCache(
+            PersistenceService service,
+            const ref IRCEvent event,
+            const IRCUser user,
+            out bool foundExisting)
         {
             auto channelUsers = event.channel in service.channelUserCache;
 
             if (!channelUsers)
             {
                 // Channel doesn't exist, create everything
-                service.channelUserCache[event.channel] = null;  // FIXME: RehashingAA quirk
-                service.channelUserCache[event.channel][userIdentifier] = user;
-                return userIdentifier in service.channelUserCache[event.channel];
+                service.channelUserCache.aaOf[event.channel][user.nickname] = user;
+                return user.nickname in service.channelUserCache[event.channel];
             }
             else
             {
-                if (auto channelUser = userIdentifier in *channelUsers)
+                if (auto channelUser = user.nickname in *channelUsers)
                 {
                     // Channel and user combination exists
-                    shouldMeldWithUser = true;
+                    foundExisting = true;
                     return channelUser;
                 }
                 else
                 {
                     // Channel exists but user doesn't
-                    (*channelUsers)[userIdentifier] = user;
-                    return userIdentifier in *channelUsers;
+                    (*channelUsers)[user.nickname] = user;
+                    return user.nickname in *channelUsers;
                 }
             }
         }
 
-        if (user.class_ == IRCUser.Class.admin)
+        /++
+            Updates a user's entry in all channels to propagte account changes.
+         +/
+        static void propagateUserAccount(
+            PersistenceService service,
+            const IRCUser user)
         {
-            if (user.account != "*") return;
-            user.class_ = IRCUser.Class.anyone;
+            if (user.account == "*")
+            {
+                // An account of "*" means the user logged out of services.
+                service.nicknameAccountMap.remove(user.nickname);
+                dropAllPrivileges(service, user.nickname, classToo: true);
+                return;
+            }
+
+            if (user.account.length)
+            {
+                service.nicknameAccountMap[user.nickname] = user.account;
+            }
+            else
+            {
+                service.nicknameAccountMap.remove(user.nickname);
+            }
+
+            foreach (ref channelUsers; service.channelUserCache.aaOf)
+            {
+                if (auto channelUser = user.nickname in channelUsers)
+                {
+                    channelUser.account = user.account;
+                }
+            }
         }
 
-        immutable userIdentifier = (user.account == "*") ? user.nickname : user.account;
         immutable serverIsTwitch = (service.state.server.daemon == IRCServer.Daemon.twitch);
-        bool shouldMeldWithUser;
+        string nicknameToRemove;  /// Nickname to remove from all channels at the end of the function
+        bool cachedEntryShouldMeldWithUser;
 
-        auto stored = fetchUserFromCache(userIdentifier, shouldMeldWithUser);
+        auto stored = establishUserInCache(
+            service,
+            event,
+            user,
+            foundExisting: cachedEntryShouldMeldWithUser);
+
         const old = *stored;
 
-        if (shouldMeldWithUser)
+        if (cachedEntryShouldMeldWithUser)
         {
             import lu.meld : MeldingStrategy, meldInto;
 
@@ -183,16 +270,18 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             stored.updated = old.updated;
         }
 
-        if (service.state.settings.preferHostmasks)
-        {
-            // Ignore any account that may have been parsed
-            stored.account = string.init;
-        }
-
         if (!serverIsTwitch)
         {
-            // Apply class here on events that carry new account information.
+            if (service.state.settings.preferHostmasks &&
+                (stored.account != old.account))
+            {
+                // Ignore any new account that may have been parsed
+                stored.account = string.init;
+            }
 
+            /+
+                Try to divine class and/or account from the event.
+             +/
             with (IRCEvent.Type)
             switch (event.type)
             {
@@ -200,51 +289,80 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             case RPL_WHOISREGNICK:
             case RPL_ENDOFWHOIS:
             case RPL_WHOISUSER:
+                resolveAccount(service, *stored, event.time);
+                if (stored.account != old.account) propagateUserAccount(service, *stored);
                 resolveClass(service, event, *stored);
                 break;
 
             case NICK:
             case SELFNICK:
-                if (user.class_ != IRCUser.Class.admin)
+                /+
+                    This event has two users; a sender pre-nick chang and a
+                    target post-nick change. We only want to do this once for
+                    the event, so only do it for the target.
+                 +/
+                if (!isTarget) break;
+
+                // Add new nickname-account mapping
+                if (stored.account.length)
                 {
-                    dropAllPrivileges(*stored);
+                    service.nicknameAccountMap[stored.nickname] = stored.account;
+                }
+
+                // Remove old nickname-account mapping
+                service.nicknameAccountMap.remove(event.sender.nickname);
+
+                foreach (ref channelUsers; service.channelUserCache.aaOf)
+                {
+                    // Remove the old user from all channels
+                    channelUsers.remove(event.sender.nickname);
+                }
+
+                //dropAllPrivileges(service, *stored, classToo: false);
+                if (!stored.account.length) resolveAccount(service, *stored, event.time);
+                if (stored.account != old.account) propagateUserAccount(service, *stored);
+                resolveClass(service, event, *stored);
+                break;
+
+            case QUIT:
+                // This removes the user entry from both the cache and the nickname-account map
+                nicknameToRemove = stored.nickname;
+                break;
+
+            case ACCOUNT:
+                if (stored.account == "*")
+                {
+                    // An account of "*" means the user logged out of services.
+                    // It's not strictly true but consider him/her as unknown again.
+                    service.nicknameAccountMap.remove(stored.nickname);
+                    dropAllPrivileges(service, stored.nickname, classToo: true);
+
+                    if (old.account.length)
+                    {
+                        // Store the previous account in aux[0] if it was known
+                        event.aux[0] = old.account;
+                    }
+                }
+                else if (stored.account != old.account)
+                {
+                    // New account
+                    propagateUserAccount(service, *stored);
                     resolveClass(service, event, *stored);
                 }
                 break;
 
-            case ACCOUNT:
-                if (user.account == "*")
-                {
-                    // An account of "*" means the user logged out of services
-                    // It's not strictly true but consider him/her as unknown again.
-                    dropAllPrivileges(*stored);
-
-                    if (old.account.length)
-                    {
-                        // Keep the previous account in aux[0] if it was known
-                        event.aux[0] = old.account;
-                    }
-                }
-
-                resolveClass(service, event, *stored);
-                break;
-
             case JOIN:
+                // JOINs may carry account
+                if (stored.account != old.account) propagateUserAccount(service, *stored);
                 resolveClass(service, event, *stored);
                 break;
-
-            case ERR_WASNOSUCHNICK:
-            case ERR_NOSUCHNICK:
-            case RPL_LOGGEDIN:
-            case ERR_NICKNAMEINUSE:
-                // Invalid user or unapplicable, ignore
-                return;
 
             default:
-                if (!old.account.length && user.account.length && (user.account != "*"))
+                if (stored.account != old.account)
                 {
                     // Unexpected event bearing new account
                     // These can be whatever if the "account-tag" capability is set
+                    propagateUserAccount(service, *stored);
                     resolveClass(service, event, *stored);
                 }
                 break;
@@ -275,60 +393,25 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 
         // Inject the modified user into the event
         user = *stored;
+
+        // Remove the user from all channels on QUIT. Do this after the user = *stored blit
+        if (nicknameToRemove.length)
+        {
+            foreach (immutable channelName, ref channelUsers; service.channelUserCache.aaOf)
+            {
+                channelUsers.remove(nicknameToRemove);
+            }
+
+            // Also remove the user from the nickname-account map
+            service.nicknameAccountMap.remove(nicknameToRemove);
+        }
     }
 
-    postprocessImpl(service, event, event.sender);
-    postprocessImpl(service, event, event.target);
+    postprocessImpl(service, event, event.sender, isTarget: false);
+    postprocessImpl(service, event, event.target, isTarget: true);
 
     // Nothing in here should warrant a further message check
     return false;
-}
-
-
-// onQuit
-/++
-    Removes a user's [dialect.defs.IRCUser|IRCUser] entry from the `users`
-    associative array of the current [PersistenceService]'s
-    [kameloso.plugins.common.IRCPluginState|IRCPluginState] upon them disconnecting.
-
-    Additionally from the nickname-channel cache.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.QUIT)
-)
-void onQuit(PersistenceService service, const ref IRCEvent event)
-{
-    if (service.state.settings.preferHostmasks)
-    {
-        service.hostmaskNicknameAccountCache.remove(event.sender.nickname);
-    }
-
-    foreach (immutable channelName, channelUsers; service.channelUserCache.aaOf)
-    {
-        channelUsers.remove(event.sender.nickname);
-        if (event.sender.account.length) channelUsers.remove(event.sender.account);
-    }
-}
-
-
-// onNick
-/++
-    Removes old user entries when someone changes nickname. The old nickname
-    no longer exists and the storage arrays should reflect that.
-
-    Annotated [kameloso.plugins.common.Timing.cleanup|Timing.cleanup] to
-    delay execution.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.NICK)
-    .onEvent(IRCEvent.Type.SELFNICK)
-    .when(Timing.cleanup)
-)
-void onNick(PersistenceService service, const ref IRCEvent event)
-{
-    // onQuit already does everything this function wants to do.
-    // Do not move the old user to the new one, as this is done in postprocess.
-    onQuit(service, event);
 }
 
 
