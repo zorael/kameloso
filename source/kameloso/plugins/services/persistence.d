@@ -887,6 +887,10 @@ private:
 
     /++
         Inherits a user into the cache.
+
+        Params:
+            user = The [dialect.defs.IRCUser|IRCUser] to inherit.
+            channel = The channel to inherit the user into.
      +/
     public override void putUser(const IRCUser user, const string channel)
     {
