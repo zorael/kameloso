@@ -45,6 +45,14 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 
     if (service.state.server.daemon == IRCServer.Daemon.unset)
     {
+        import std.algorithm.searching : endsWith;
+
+        if ((event.type == IRCEvent.Type.RPL_WELCOME) &&
+            service.state.server.address.endsWith(".twitch.tv"))
+        {
+            event.target.class_ = IRCUser.Class.anyone;
+        }
+
         // Too early to do anything meaningful, and it throws off Twitch detection
         return false;
     }
