@@ -450,7 +450,9 @@ void formatMessageMonochrome(Sink)
             !event.type.among!
                 (IRCEvent.Type.TWITCH_SUBGIFT,
                 IRCEvent.Type.TWITCH_PAYFORWARD,
-                IRCEvent.Type.RPL_WHOISSERVER))
+                IRCEvent.Type.RPL_WHOISSERVER,
+                IRCEvent.Type.RPL_WHOISACTUALLY,
+                IRCEvent.Type.ACCOUNT))
         {
             /*if (content.length)*/ putContent();
             putTarget();
@@ -1138,7 +1140,9 @@ void formatMessageColoured(Sink)
             !event.type.among!
                 (IRCEvent.Type.TWITCH_SUBGIFT,
                 IRCEvent.Type.TWITCH_PAYFORWARD,
-                IRCEvent.Type.RPL_WHOISSERVER))
+                IRCEvent.Type.RPL_WHOISSERVER,
+                IRCEvent.Type.RPL_WHOISACTUALLY,
+                IRCEvent.Type.ACCOUNT))
         {
             /*if (content.length)*/ putContent();
             putTarget();
