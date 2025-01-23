@@ -78,19 +78,18 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
          +/
         if (!user.nickname.length || (user.nickname == "*")) return;
 
-        immutable serverIsTwitch = (service.state.server.daemon == IRCServer.Daemon.twitch);
-        bool storedUserExisted;  // out parameter
-        bool removeStoredAtEnd;
-
         version(TwitchSupport)
         {
-            if (serverIsTwitch)
+            if (service.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 // Clear badges if it has the empty placeholder asterisk
                 // Do this before melding so that it doesn't overwrite the stored value
                 if (user.badges == "*") user.badges = string.init;
             }
         }
+
+        bool storedUserExisted;  // out parameter
+        string userToRemove;  /// Nickname of user to remove from all caches at the end
 
         auto stored = establishUserInCache(
             service,
@@ -99,7 +98,6 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             createIfNoneExist: true,
             foundExisting: storedUserExisted);
 
-        const old = *stored;
         IRCUser* global;
 
         if (event.channel.length)
@@ -117,6 +115,8 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             (*global).meldInto!(MeldingStrategy.conservative)(*stored);
         }
 
+        const old = *stored;
+
         if (storedUserExisted)
         {
             // Fill in the blanks aggresssively, but restore class and updated
@@ -125,7 +125,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             stored.updated = old.updated;
         }
 
-        if (!serverIsTwitch)
+        if (service.state.server.daemon != IRCServer.Daemon.twitch)
         {
             if (service.state.settings.preferHostmasks &&
                 (stored.account != old.account))
@@ -159,20 +159,27 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                  +/
                 if (!isTarget) break;
 
+                if (!storedUserExisted)
+                {
+                    // The nick event target is blank. This should always be the case.
+                    // We could meld but we could also just copy and change the nickname.
+                    //event.sender.meld!(MeldingStrategy.conservative)(*stored);
+                    *stored = event.sender;
+                    stored.nickname = old.nickname;
+                }
+                else if (event.sender.account.length)
+                {
+                    // Just in case the above is somehow false
+                    stored.account = event.sender.account;
+                }
+
                 if (stored.account.length)
                 {
-                    // Add new nickname-account mapping
                     service.nicknameAccountMap[stored.nickname] = stored.account;
                 }
 
-                // Remove old nickname-account mapping
-                service.nicknameAccountMap.remove(event.sender.nickname);
-
-                foreach (ref channelUsers; service.channelUserCache.aaOf)
-                {
-                    // Remove the old user from all channels
-                    channelUsers.remove(event.sender.nickname);
-                }
+                // Remove old user at the end of the function
+                userToRemove = event.sender.nickname;
 
                 if (!stored.account.length) resolveAccount(service, *stored, event.time);
                 if (stored.account != old.account) propagateUserAccount(service, *stored);
@@ -181,7 +188,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 
             case QUIT:
                 // This removes the user entry from both the cache and the nickname-account map
-                removeStoredAtEnd = true;
+                userToRemove = stored.nickname;
                 break;
 
             case ACCOUNT:
@@ -230,7 +237,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 
         version(TwitchSupport)
         {
-            if (serverIsTwitch)
+            if (service.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 if (stored.class_ != IRCUser.Class.admin)
                 {
@@ -256,24 +263,25 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
         user = *stored;
 
         /+
-            Mutually exclusively either remove the stored user from all caches
-            OR update the global user with it.
+            Mutually exclusively either remove a user (by its name) from all caches
+            OR update its corresponding global user. If no user is to be removed,
+            the stored user will be cloned into the global user.
          +/
-        if (removeStoredAtEnd)
+        if (userToRemove.length)
         {
-            foreach (immutable channelName, ref channelUsers; service.channelUserCache.aaOf)
+            foreach (ref channelUsers; service.channelUserCache.aaOf)
             {
-                channelUsers.remove(stored.nickname);
+                channelUsers.remove(userToRemove);
             }
 
             if (auto channellessUsers = string.init in service.channelUserCache)
             {
                 // channelUserCache[string.init] should always exist but just in case
-                (*channellessUsers).remove(stored.nickname);
+                (*channellessUsers).remove(userToRemove);
             }
 
             // Also remove the user from the nickname-account map
-            service.nicknameAccountMap.remove(stored.nickname);
+            service.nicknameAccountMap.remove(userToRemove);
         }
         else if (global)
         {
