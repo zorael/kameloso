@@ -790,7 +790,6 @@ void purgeOldCacheEntries(
 
     foreach (const channelName; channelsToRemoveFromCache)
     {
-        debug writeln("Purging ", channelName, " from cache");
         service.channelUserCache.remove(channelName);
     }
 
@@ -815,7 +814,6 @@ void purgeOldCacheEntries(
     // Remove the keys
     foreach (immutable nickname; nicknamesToRemoveFromMap)
     {
-        debug writeln("puring ", nickname, " from map");
         service.nicknameAccountMap.remove(nickname);
     }
 }
