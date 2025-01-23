@@ -572,13 +572,11 @@ void propagateUserAccount(
         context = The context to use as key to the cache section to update;
             may be a channel for a channel-specific update, or an empty string
             for a global update.
-        nickname = The nickname of the user to update.
  +/
 void updateUser(
     PersistenceService service,
     /*const*/ IRCUser user,
-    const string context,
-    const string nickname)
+    const string context)
 {
     if (!context.length && (user.class_ != IRCUser.Class.admin))
     {
@@ -589,7 +587,7 @@ void updateUser(
     if (auto cachedUsers = context in service.channelUserCache)
     {
         // Channel exists
-        if (auto cachedUser = nickname in *cachedUsers)
+        if (auto cachedUser = user.nickname in *cachedUsers)
         {
             import lu.meld : MeldingStrategy, meldInto;
             user.meldInto!(MeldingStrategy.aggressive)(*cachedUser);
@@ -597,19 +595,19 @@ void updateUser(
         else
         {
             // but user doesn't
-            (*cachedUsers)[nickname] = user;
+            (*cachedUsers)[user.nickname] = user;
         }
     }
     else
     {
         // Neither channel nor user exists
-        service.channelUserCache.aaOf[context][nickname] = user;
+        service.channelUserCache.aaOf[context][user.nickname] = user;
     }
 
     if (context.length)
     {
         // Recurse to update the user in the global cache
-        return updateUser(service, user, string.init, nickname);
+        return updateUser(service, user, string.init);
     }
 }
 
@@ -723,7 +721,7 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
             propagateUserAccount(service, user);
         }
 
-        updateUser(service, user, event.channel, nickname);
+        updateUser(service, user, event.channel);
     }
 }
 
@@ -740,7 +738,7 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
 )
 void onWhoReply(PersistenceService service, const ref IRCEvent event)
 {
-    updateUser(service, event.target, event.channel, event.target.nickname);
+    updateUser(service, event.target, event.channel);
 }
 
 
@@ -1348,7 +1346,7 @@ private:
      +/
     public override void putUser(const IRCUser user, const string context)
     {
-        .updateUser(this, user, context, user.nickname);
+        .updateUser(this, user, context);
     }
 
     mixin IRCPluginImpl;
