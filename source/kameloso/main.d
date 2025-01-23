@@ -28,15 +28,19 @@ import kameloso.plugins.common : IRCPlugin;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
 
-version(DigitalMars)
+version(WantConcurrencyMessageLoop)
 {
-    version(D_Optimized)
+    version(DigitalMars)
     {
-        enum optimisedMessage1 = "Warning: optimised (release) builds are prone " ~
-            "to memory corruption and crashes when compiled with dmd.";
-        enum optimisedMessage2 = "Please use ldc instead for optimised builds.";
-        pragma(msg, optimisedMessage1);
-        pragma(msg, optimisedMessage2);
+        version(D_Optimized)
+        {
+            enum optimisedMessage1 = "Warning: optimised (release) builds using " ~
+                "concurrency messages (version `WantConcurrencyMessageLoop`) " ~
+                "are prone to memory corruption and crashes when compiled with dmd.";
+            enum optimisedMessage2 = "Please use ldc instead for optimised builds.";
+            pragma(msg, optimisedMessage1);
+            pragma(msg, optimisedMessage2);
+        }
     }
 }
 
