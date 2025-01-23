@@ -915,7 +915,7 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
         IRCUser.Class.blacklist,
     ];
 
-    foreach (class_; classes)
+    foreach (const class_; classes)
     {
         immutable list = class_.toString();
         const listFromJSON = list in json;
@@ -932,19 +932,18 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
             {
                 import std.algorithm.searching : startsWith;
 
-                if (channelName.startsWith('<')) continue;
+                if (channelName.startsWith('<')) continue;  // example placeholder, skip
 
                 foreach (immutable userJSON; channelAccountJSON.array)
                 {
-                    auto theseUsers = channelName in service.channelUserClassDefinitions;
-
-                    if (!theseUsers)
+                    if (auto channelUsers = channelName in service.channelUserClassDefinitions.aaOf)
                     {
-                        service.channelUserClassDefinitions[channelName] = (IRCUser.Class[string]).init;
-                        theseUsers = channelName in service.channelUserClassDefinitions;
+                        (*channelUsers)[userJSON.str] = class_;
                     }
-
-                    (*theseUsers)[userJSON.str] = class_;
+                    else
+                    {
+                        service.channelUserClassDefinitions.aaOf[channelName][userJSON.str] = class_;
+                    }
                 }
             }
         }
@@ -976,16 +975,19 @@ void reloadHostmasksFromDisk(PersistenceService service)
     import lu.json : JSONStorage, populateFromJSON;
 
     JSONStorage hostmasksJSON;
-    //hostmasksJSON.reset();
     hostmasksJSON.load(service.hostmasksFile);
 
     string[string] accountByHostmask;
     accountByHostmask.populateFromJSON(hostmasksJSON);
 
-    service.hostmaskDefinitions = null;
+    /+
+        The nickname-account map is used elsewhere too, so ideally we wouldn't
+        reset it here, but we need to ensure it's in sync with the hostmask definitions.
+     +/
     service.nicknameAccountMap = null;
+    service.hostmaskDefinitions = null;
 
-    foreach (immutable hostmask, immutable account; accountByHostmask)
+    foreach (immutable hostmask, const account; accountByHostmask)
     {
         import kameloso.string : doublyBackslashed;
         import dialect.common : isValidHostmask;
@@ -1023,6 +1025,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
             {
                 // Nickname has length and is not a glob
                 // (adding a glob to hostmaskUsers is okay)
+                // Overwrite any existing entry
                 service.nicknameAccountMap[user.nickname] = user.account;
             }
         }
@@ -1116,7 +1119,7 @@ void initAccountResources(PersistenceService service)
         assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.to!string);
     }+/
 
-    static immutable string[5] listTypes =
+    static immutable string[5] listTypesInOrder =
     [
         "staff",
         "operator",
@@ -1125,7 +1128,7 @@ void initAccountResources(PersistenceService service)
         "blacklist",
     ];
 
-    foreach (liststring; listTypes[])
+    foreach (liststring; listTypesInOrder[])
     {
         alias examplePlaceholderKey = PersistenceService.Placeholder.channel;
         auto listJSON = liststring in json;
@@ -1134,26 +1137,21 @@ void initAccountResources(PersistenceService service)
         {
             json[liststring] = null;
             json[liststring].object = null;
+            listJSON = liststring in json;
 
-            //listJSON = liststring in json;
-            //(*listJSON)[examplePlaceholderKey] = null;  // Doesn't work with older compilers
-            //(*listJSON)[examplePlaceholderKey].array = null;  // ditto
-            //auto listPlaceholder = examplePlaceholderKey in *listJSON;
-            //listPlaceholder.array ~= JSONValue("<nickname1>");  // ditto
-            //listPlaceholder.array ~= JSONValue("<nickname2>");  // ditto
+            (*listJSON)[examplePlaceholderKey] = null;
+            (*listJSON)[examplePlaceholderKey].array = null;
 
-            json[liststring][examplePlaceholderKey] = null;
-            json[liststring][examplePlaceholderKey].array = null;
-            json[liststring][examplePlaceholderKey].array ~= JSONValue("<nickname1>");
-            json[liststring][examplePlaceholderKey].array ~= JSONValue("<nickname2>");
+            auto listPlaceholder = examplePlaceholderKey in *listJSON;
+            listPlaceholder.array ~= JSONValue("<nickname1>");
+            listPlaceholder.array ~= JSONValue("<nickname2>");
         }
         else /*if (listJSON)*/
         {
             if ((listJSON.object.length > 1) &&
                 (examplePlaceholderKey in *listJSON))
             {
-                //listJSON.object.remove(examplePlaceholderKey);  // ditto
-                json[liststring].object.remove(examplePlaceholderKey);
+                listJSON.object.remove(examplePlaceholderKey);
             }
 
             try
@@ -1161,8 +1159,7 @@ void initAccountResources(PersistenceService service)
                 foreach (immutable channelName, ref channelAccountsJSON; listJSON.object)
                 {
                     if (channelName == examplePlaceholderKey) continue;
-                    //channelAccountsJSON = deduplicate((*listJSON)[channelName]);  // ditto
-                    json[liststring][channelName] = deduplicate(json[liststring][channelName]);
+                    channelAccountsJSON = deduplicate((*listJSON)[channelName]);
                 }
             }
             catch (JSONException e)
@@ -1182,8 +1179,7 @@ void initAccountResources(PersistenceService service)
     }
 
     // Force staff, operator and whitelist to appear before blacklist in the .json
-    static immutable order = [ "staff", "operator", "elevated", "whitelist", "blacklist" ];
-    json.save!(JSONStorage.KeyOrderStrategy.inGivenOrder)(service.userFile, order);
+    json.save!(JSONStorage.KeyOrderStrategy.inGivenOrder)(service.userFile, listTypesInOrder);
 }
 
 
@@ -1319,16 +1315,20 @@ private:
     /++
         Associative array of permanent user classifications, per account and
         channel name, read from file.
+
+        Should be considered read-only outside of the initialising functions.
      +/
-    RehashingAA!(IRCUser.Class[string])[string] channelUserClassDefinitions;
+    RehashingAA!(IRCUser.Class[string][string]) channelUserClassDefinitions;
 
     /++
-        Hostmask definitions as read from file. Should be considered read-only.
+        Hostmask definitions as read from file.
+
+        Should be considered read-only outside of the initialising functions.
      +/
     IRCUser[] hostmaskDefinitions;
 
     /++
-        Cached nicknames matched to accounts.
+        Map of nicknames to accounts, for easy lookup.
      +/
     RehashingAA!(string[string]) nicknameAccountMap;
 
