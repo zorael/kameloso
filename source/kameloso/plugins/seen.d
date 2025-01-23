@@ -183,7 +183,6 @@ public:
         void delegate(IRCEvent)[][] awaitingDelegates;
         ScheduledFiber[] scheduledFibers;
         ScheduledDelegate[] scheduledDelegates;
-        long[string] previousWhoisTimestamps;
         Update updates;
         bool* abort;
         DeferredAction[] deferredActions;
@@ -268,10 +267,6 @@ public:
 
     * [kameloso.plugins.common.IRCPluginState.scheduledDelegates|IRCPluginState.scheduledDelegates]
     is likewise an array of delegates, to be triggered at a later point in time.
-
-    * [kameloso.plugins.common.IRCPluginState.previousWhoisTimestamps|IRCPluginState.previousWhoisTimestamps]
-    if an associative array of UNIX timestamps keyed by nickname strings.
-    These represent when last a WHOIS was issued for the nickname.
 
     * [kameloso.plugins.common.IRCPluginState.updates|IRCPluginState.updates]
     is a bitfield which represents what aspect of the bot was *changed*
