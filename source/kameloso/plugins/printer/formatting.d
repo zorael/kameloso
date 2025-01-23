@@ -447,7 +447,10 @@ void formatMessageMonochrome(Sink)
 
         if (event.target.nickname.length &&
             event.aux[0].length &&
-            !event.type.among!(IRCEvent.Type.TWITCH_SUBGIFT, IRCEvent.Type.TWITCH_PAYFORWARD))
+            !event.type.among!
+                (IRCEvent.Type.TWITCH_SUBGIFT,
+                IRCEvent.Type.TWITCH_PAYFORWARD,
+                IRCEvent.Type.RPL_WHOISSERVER))
         {
             /*if (content.length)*/ putContent();
             putTarget();
@@ -1132,7 +1135,10 @@ void formatMessageColoured(Sink)
         if (event.content.length &&
             event.target.nickname.length &&
             event.aux[0].length &&
-            !event.type.among!(IRCEvent.Type.TWITCH_SUBGIFT, IRCEvent.Type.TWITCH_PAYFORWARD))
+            !event.type.among!
+                (IRCEvent.Type.TWITCH_SUBGIFT,
+                IRCEvent.Type.TWITCH_PAYFORWARD,
+                IRCEvent.Type.RPL_WHOISSERVER))
         {
             /*if (content.length)*/ putContent();
             putTarget();
