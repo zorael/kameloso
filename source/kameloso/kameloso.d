@@ -26,7 +26,7 @@ private:
     import kameloso.pods : ConnectionSettings, CoreSettings, IRCBot;
     import dialect.defs : IRCClient, IRCServer;
     import dialect.parsing : IRCParser;
-    import lu.container : Buffer;
+    import lu.container : Buffer, RehashingAA;
     import std.algorithm.comparison : among;
     import std.typecons : Flag, No, Yes;
 
@@ -241,7 +241,7 @@ public:
         An associative array of when a nickname was last issued a WHOIS query for,
         UNIX timestamps by nickname key, for hysteresis and rate-limiting.
      +/
-    long[string] previousWhoisTimestamps;
+    RehashingAA!(long[string]) previousWhoisTimestamps;
 
     // parser
     /++
