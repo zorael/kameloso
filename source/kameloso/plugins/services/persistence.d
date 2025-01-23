@@ -563,6 +563,9 @@ void propagateUserAccount(
     Update a user in the cache, melding the new user into the existing one if
     it exists, or creating it if it doesn't.
 
+    If a channel context is passed, the function recurses with an empty context
+    to update the user in the global cache as well.
+
     Params:
         service = The current [PersistenceService].
         user = The [dialect.defs.IRCUser|IRCUser] to update.
@@ -573,10 +576,16 @@ void propagateUserAccount(
  +/
 void updateUser(
     PersistenceService service,
-    const IRCUser user,
+    /*const*/ IRCUser user,
     const string context,
     const string nickname)
 {
+    if (!context.length && (user.class_ != IRCUser.Class.admin))
+    {
+        // When saving to the global cache, only admins should have a class
+        user.class_ = IRCUser.Class.anyone;
+    }
+
     if (auto cachedUsers = context in service.channelUserCache)
     {
         // Channel exists
