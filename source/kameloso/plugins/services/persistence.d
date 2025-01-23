@@ -1335,14 +1335,11 @@ private:
 
         Params:
             user = The [dialect.defs.IRCUser|IRCUser] to inherit.
-            channel = The channel to inherit the user into.
+            context = The channel context to inherit the user into.
      +/
-    public override void putUser(const IRCUser user, const string channel)
+    public override void putUser(const IRCUser user, const string context)
     {
-        if (channel.length)
-        {
-            updateUser(this, user, channel, user.nickname);
-        }
+        .updateUser(this, user, context, user.nickname);
     }
 
     mixin IRCPluginImpl;
