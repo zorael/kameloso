@@ -906,7 +906,7 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
 
     service.channelUserClassDefinitions = null;
 
-    static immutable classes =
+    static immutable IRCUser.Class[5] classes =
     [
         IRCUser.Class.staff,
         IRCUser.Class.operator,
@@ -915,7 +915,7 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
         IRCUser.Class.blacklist,
     ];
 
-    foreach (const class_; classes)
+    foreach (const class_; classes[])
     {
         immutable list = class_.toString();
         const listFromJSON = list in json;
