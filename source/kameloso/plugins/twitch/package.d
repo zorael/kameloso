@@ -3877,7 +3877,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             }
         }
 
-        enum minimumTimeBetweenPromotions = 10;  // seconds
+        enum minimumTimeBetweenPromotions = 30;  // seconds
         immutable deltaTime = (event.time - user.updated);
 
         if (deltaTime < minimumTimeBetweenPromotions)
