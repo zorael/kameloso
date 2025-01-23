@@ -3036,14 +3036,6 @@ public:
         }
     }
 
-    // previousWhoisTimestamps
-    /++
-        A copy of the main `previousWhoisTimestamps` associative arrays
-        of UNIX timestamps of when someone had a WHOIS query aimed at them, keyed
-        by nickname.
-     +/
-    RehashingAA!(long[string]) previousWhoisTimestamps;
-
     // updates
     /++
         Bitfield of in what way the plugin state was altered during postprocessing
@@ -3203,6 +3195,7 @@ void enqueue(Plugin, Fun)
 in ((event != IRCEvent.init), "Tried to `enqueue` with an init IRCEvent")
 in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 {
+    import kameloso.constants : Timeout;
     import std.traits : isSomeFunction;
 
     static if (!is(Plugin : IRCPlugin))
@@ -3254,24 +3247,18 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
             caller;
     }
 
-    if (const previousWhoisTimestamp = user.nickname in plugin.state.previousWhoisTimestamps)
+    immutable timeSinceUpdate = (event.time - user.updated);
+
+    if ((timeSinceUpdate < Timeout.whoisRetry) && (timeSinceUpdate > Timeout.whoisGracePeriod))
     {
-        import kameloso.constants : Timeout;
-
-        //immutable nowInUnix = Clock.currTime.toUnixTime();  // safe to reuse event.time?
-        immutable delta = (event.time - *previousWhoisTimestamp);
-
-        if ((delta < Timeout.whoisRetry) && (delta > Timeout.whoisGracePeriod))
+        version(ExplainReplay)
         {
-            version(ExplainReplay)
-            {
-                import kameloso.common : logger;
-                enum pattern = "<i>%s</> plugin <w>NOT</> queueing an event to be replayed " ~
-                    "on behalf of <i>%s</>; delta time <i>%d</> is too small";
-                logger.logf(pattern, plugin.name, callerSlice, delta);
-            }
-            return;
+            import kameloso.common : logger;
+            enum pattern = "<i>%s</> plugin <w>NOT</> queueing an event to be replayed " ~
+                "on behalf of <i>%s</>; delta time <i>%d</> is too small";
+            logger.logf(pattern, plugin.name, callerSlice, timeSinceUpdate);
         }
+        return;
     }
 
     version(ExplainReplay)

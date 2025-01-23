@@ -614,7 +614,7 @@ auto processMessages(Kameloso instance)
             import std.datetime.systime : Clock;
 
             immutable nowInUnix = Clock.currTime.toUnixTime();
-            immutable then = instance.previousWhoisTimestamps.get(m.event.target.nickname, 0);
+            immutable then = m.event.target.updated;
             immutable hysteresis = force ? 1 : Timeout.whoisRetry;
 
             version(TraceWhois)
@@ -650,7 +650,6 @@ auto processMessages(Kameloso instance)
                 }
 
                 line = "WHOIS " ~ m.event.target.nickname;
-                propagateWhoisTimestamp(instance, m.event.target.nickname, nowInUnix);
             }
             else
             {
@@ -1137,7 +1136,6 @@ auto mainLoop(Kameloso instance)
         if ((nowInUnix % 86_400) == 0)
         {
             instance.previousWhoisTimestamps = null;
-            propagateWhoisTimestamps(instance);
         }
 
         // Walk it and process the yielded lines
@@ -4159,52 +4157,6 @@ void echoQuitMessage(Kameloso instance, const string reason) @safe
     {
         import kameloso.irccolours : stripEffects;
         logger.trace("--> QUIT :", reason.stripEffects);
-    }
-}
-
-
-// propagateWhoisTimestamp
-/++
-    Propagates a single update to the the [kameloso.kameloso.Kameloso.previousWhoisTimestamps]
-    associative array to all plugins.
-
-    Params:
-        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
-        nickname = Nickname whose WHOIS timestamp to propagate.
-        nowInUnix = UNIX WHOIS timestamp.
- +/
-void propagateWhoisTimestamp(
-    Kameloso instance,
-    const string nickname,
-    const long nowInUnix) @system
-{
-    instance.previousWhoisTimestamps[nickname] = nowInUnix;
-
-    foreach (plugin; instance.plugins)
-    {
-        plugin.state.previousWhoisTimestamps[nickname] = nowInUnix;
-    }
-}
-
-
-// propagateWhoisTimestamps
-/++
-    Propagates the [kameloso.kameloso.Kameloso.previousWhoisTimestamps]
-    associative array to all plugins.
-
-    Makes a copy of it before passing it onwards; this way, plugins cannot
-    modify the original.
-
-    Params:
-        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
- +/
-void propagateWhoisTimestamps(Kameloso instance) @system
-{
-    auto copy = instance.previousWhoisTimestamps.dup;  // mutable
-
-    foreach (plugin; instance.plugins)
-    {
-        plugin.state.previousWhoisTimestamps = copy;
     }
 }
 
