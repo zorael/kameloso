@@ -411,7 +411,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                 event.sender.nickname,
                 event.target.nickname);
 
-        if (shouldSquelch || plugin.printerSettings.filterWhois)
+        if (shouldSquelch && plugin.printerSettings.filterWhois)
         {
             break;
         }
@@ -517,7 +517,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                     event.sender.nickname,
                     event.target.nickname);
 
-            if (shouldSquelch || plugin.printerSettings.filterMost)
+            if (shouldSquelch && plugin.printerSettings.filterMost)
             {
                 break;
             }
