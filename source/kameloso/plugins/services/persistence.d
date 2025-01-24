@@ -153,10 +153,30 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             {
             case RPL_WHOISACCOUNT:
             case RPL_WHOISREGNICK:
-            case RPL_ENDOFWHOIS:
             case RPL_WHOISUSER:
                 resolveAccount(service, *stored, event.time);
-                goto default;  // to propagagte account and resolve class
+                goto default;  // to propagate account and resolve class
+
+            case RPL_ENDOFWHOIS:
+                /+
+                    This event is the last in a WHOIS sequence and doesn't really
+                    carry any new and interesting information.
+                    If the user wasn't logged into an account, the above cases
+                    will never have been hit and the account never had an attempt
+                    to be resolved manually. So if the account is known, stop here,
+                    otherwise goto the RPL_WHOISACCOUNT case and resolveAccount.
+                 +/
+                if (user.account.length && (user.account != "*"))
+                {
+                    // Resolved already
+                    break;
+                }
+                else
+                {
+                    // No account was resolved, so try to resolve it manually
+                    resolveAccount(service, *stored, event.time);
+                    goto default;  // to propagate account and resolve class
+                }
 
             case NICK:
             case SELFNICK:
