@@ -140,7 +140,8 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                 (stored.account != old.account))
             {
                 // Ignore any new account that may have been parsed and melded from user
-                stored.account = string.init;
+                // We only want accounts we resolve in here
+                stored.account = old.account;
             }
 
             /+
