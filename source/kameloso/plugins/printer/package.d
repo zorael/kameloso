@@ -75,7 +75,7 @@ public:
             /++
                 Whether or not two users on the same account should be coloured identically.
              +/
-            bool colourByAccount = true;
+            bool colourByAccount = false;
         }
     }
 
