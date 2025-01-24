@@ -1337,14 +1337,14 @@ void onWelcome(ConnectService service)
             service.state.updates |= typeof(service.state.updates).settings;
         }
 
-        static immutable IRCEvent.Type[2] endOfMotdEventTypes =
+        static immutable IRCEvent.Type[2] endOfMOTDEventTypes =
         [
             IRCEvent.Type.RPL_ENDOFMOTD,
             IRCEvent.Type.ERR_NOMOTD,
         ];
 
-        scope(exit) unawait(service, endOfMotdEventTypes[]);
-        await(service, endOfMotdEventTypes[], yield: true);
+        scope(exit) unawait(service, endOfMOTDEventTypes[]);
+        await(service, endOfMOTDEventTypes[], yield: true);
 
         version(TwitchSupport)
         {
@@ -1383,14 +1383,33 @@ void onWelcome(ConnectService service)
             }
         }
     }
-    else
+    else /*if (!service.state.server.address.endsWith(".twitch.tv"))*/
     {
-        // Not on Twitch
+        import kameloso.plugins.common.scheduling : delay;
+        import kameloso.constants : BufferSize;
+        import core.thread.fiber : Fiber;
+
+        /+
+            If the server doesn't issue an end-of-MOTD event, the bot will softlock
+            and channels will never be joined. So as a backup, call onEndOfMOTD
+            after a timeout, forcing the bot to continue. Internally onEndOfMOTD
+            will return early if it has already been invoked once.
+         +/
+        void endOfMOTDDg()
+        {
+            if (!service.transient.sawEndOfMOTD)
+            {
+                logger.warning("Server did not issue an end-of-MOTD event; forcing continuation.");
+                onEndOfMOTD(service);
+            }
+        }
+
+        Fiber endOfMOTDFiber = new Fiber(&endOfMOTDDg, BufferSize.fiberStack);
+        delay(service, endOfMOTDFiber, ConnectService.Timings.endOfMOTDTimeout);
+
         if (service.connectSettings.regainNickname && !service.state.bot.hasGuestNickname &&
             (service.state.client.nickname != service.state.client.origNickname))
         {
-            import kameloso.plugins.common.scheduling : delay;
-
             delay(service, ConnectService.Timings.nickRegainPeriodicity, yield: true);
 
             // Concatenate the verb once
@@ -1461,7 +1480,7 @@ void onQuit(ConnectService service, const ref IRCEvent event)
 }
 
 
-// onEndOfMotd
+// onEndOfMOTD
 /++
     Joins channels and prints some Twitch warnings on end of MOTD.
 
@@ -1472,8 +1491,13 @@ void onQuit(ConnectService service, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
 )
-void onEndOfMotd(ConnectService service)
+void onEndOfMOTD(ConnectService service)
 {
+    // Make sure this function is only processed once
+    if (service.transient.sawEndOfMOTD) return;
+
+    service.transient.sawEndOfMOTD = true;
+
     // Gather information about ourselves
     if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
         !service.state.client.ident.length)
@@ -2096,6 +2120,12 @@ private:
            Number of capabilities requested but still not awarded.
          +/
         uint requestedCapabilitiesRemaining;
+
+        /++
+            Whether or not we have seen end-of-MOTD events, signifying a
+            successful registration and login.
+         +/
+        bool sawEndOfMOTD;
     }
 
     /++
@@ -2128,6 +2158,12 @@ private:
             After how much time we should check whether or not we managed to join all channels.
          +/
         static immutable channelCheckDelay = 60.seconds;
+
+        /++
+            How long to wait for an end-of-MOTD event before we assume the server
+            doesn't support it.
+         +/
+        static immutable endOfMOTDTimeout = 15.seconds;
     }
 
     /++
