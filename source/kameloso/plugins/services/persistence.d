@@ -476,10 +476,10 @@ void resolveClass(
 
     user.updated = time;
 
-    if (user.class_ == IRCUser.Class.admin)
+    if ((user.class_ == IRCUser.Class.admin) && (user.account != "*"))
     {
         // Admins are always admins, unless they're logging out
-        if (user.account != "*") return;
+        return;
     }
 
     if (!user.account.length || (user.account == "*"))
@@ -495,11 +495,11 @@ void resolveClass(
     else if (context.length)
     {
         /+
-            Look up from class definitions (from file).
+            Look up from class definitions (from file) in this channel context.
          +/
-        if (const userClasses = context in service.channelUserClassDefinitions)
+        if (const definedUserClasses = context in service.channelUserClassDefinitions)
         {
-            if (const class_ = user.account in *userClasses)
+            if (const class_ = user.account in *definedUserClasses)
             {
                 // Channel and user combination exists
                 user.class_ = *class_;
@@ -508,10 +508,9 @@ void resolveClass(
     }
     else
     {
-        // All else failed, consider it a random registered (since account.length > 0)
-        user.class_ = user.account.length ?
-            IRCUser.Class.registered :
-            IRCUser.Class.anyone;
+        // account has length but there is no channel context
+        // --> can at most be registered (or admin, but we ruled that out)
+        user.class_ = IRCUser.Class.registered;
     }
 }
 
