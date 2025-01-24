@@ -156,9 +156,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             case RPL_ENDOFWHOIS:
             case RPL_WHOISUSER:
                 resolveAccount(service, *stored, event.time);
-                if (stored.account != old.account) propagateUserAccount(service, *stored);
-                resolveClass(service, *stored, context: string.init, event.time);
-                break;
+                goto default;  // to propagagte account and resolve class
 
             case NICK:
             case SELFNICK:
@@ -183,18 +181,9 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                     stored.account = event.sender.account;
                 }
 
-                if (stored.account.length)
-                {
-                    service.nicknameAccountMap[stored.nickname] = stored.account;
-                }
-
-                // Remove old user at the end of the function
-                userToRemove = event.sender.nickname;
-
-                if (!stored.account.length) resolveAccount(service, *stored, event.time);
-                if (stored.account != old.account) propagateUserAccount(service, *stored);
-                resolveClass(service, *stored, context: event.channel, event.time);
-                break;
+                userToRemove = event.sender.nickname;  // Remove old user at the end of the function
+                resolveAccount(service, *stored, event.time);
+                goto default;  // to propagagte account and resolve class
 
             case QUIT:
                 // This removes the user entry from both the cache and the nickname-account map
@@ -214,26 +203,17 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                         // Store the previous account in aux[0] if it was known
                         event.aux[0] = old.account;
                     }
+                    break;
                 }
-                else if (stored.account != old.account)
-                {
-                    // New account
-                    propagateUserAccount(service, *stored);
-                    resolveClass(service, *stored, context: event.channel, event.time);
-                }
-                break;
+                goto default;  // to propagagte account and resolve class
 
-            case JOIN:
-                // JOINs may carry account depending on server capabilities
-                if (stored.account != old.account) propagateUserAccount(service, *stored);
-                resolveClass(service, *stored, context: event.channel, event.time);
-                break;
-
+            //case JOIN:  // JOINs may carry account depending on server capabilities
             default:
                 if (stored.account != old.account)
                 {
-                    // Unexpected event bearing new account
+                    // Event bearing new account
                     // These can be whatever if the "account-tag" capability is set
+                    // event.channel may be empty here if we jumped from a RPL_WHOIS* case
                     propagateUserAccount(service, *stored);
                     resolveClass(service, *stored, context: event.channel, event.time);
                 }
