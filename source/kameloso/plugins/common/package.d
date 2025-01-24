@@ -3144,6 +3144,12 @@ struct Replay
      +/
     long timestamp;
 
+    // acted
+    /++
+        A WHOIS query was issued for this event.
+     +/
+    bool acted;
+
     /++
         Creates a new [Replay] with a timestamp of the current time.
 

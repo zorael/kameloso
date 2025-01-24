@@ -2275,8 +2275,21 @@ void processPendingReplays(Kameloso instance, IRCPlugin plugin)
 
     immutable nowInUnix = Clock.currTime.toUnixTime();
 
-    foreach (immutable nickname, replaysForNickname; plugin.state.pendingReplays)
+    foreach (immutable nickname, ref replaysForNickname; plugin.state.pendingReplays)
     {
+        bool proceed;
+
+        foreach (const replay; replaysForNickname)
+        {
+            if (!replay.acted)
+            {
+                proceed = true;
+                break;
+            }
+        }
+
+        if (!proceed) continue;
+
         version(TraceWhois)
         {
             import std.stdio : writef, writefln, writeln;
@@ -2324,6 +2337,11 @@ void processPendingReplays(Kameloso instance, IRCPlugin plugin)
         {
             import std.stdio : stdout;
             if (instance.settings.flush) stdout.flush();
+        }
+
+        foreach (ref replay; replaysForNickname)
+        {
+            replay.acted = true;
         }
     }
 }
