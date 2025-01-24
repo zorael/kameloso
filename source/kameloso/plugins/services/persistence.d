@@ -372,6 +372,9 @@ auto establishUserInCache(
     Attempts to resolve the account of a user by looking it up in the various
     related caches.
 
+    Adds the user's nickname to the nickname-account map if the nickname does
+    not already exist in it.
+
     The user has its `updated` member set to the passed `time` value.
 
     Params:
@@ -380,6 +383,10 @@ auto establishUserInCache(
             resolve, taken by `ref`.
         time = The time to set [dialect.defs.IRCUser.account|user.account] to;
             generally the current UNIX time.
+
+    See_Also:
+        [resolveClass]
+        [PersistenceService.nicknameAccountMap]
  +/
 void resolveAccount(
     PersistenceService service,
@@ -390,18 +397,18 @@ void resolveAccount(
 
     if (user.account.length || (user.account == "*")) return;
 
-    // Check nickname-account map.
+    /+
+        Check nickname-account map.
+     +/
     if (const cachedAccount = user.nickname in service.nicknameAccountMap)
     {
         // hit
         user.account = *cachedAccount;
-        return;
     }
-
-    if (service.state.settings.preferHostmasks)
+    else if (service.state.settings.preferHostmasks)
     {
         /+
-            No match, and we're in hostmask mode.
+            No map match, and we're in hostmask mode.
             Look up the nickname in the definitions (from file).
          +/
         foreach (const definition; service.hostmaskDefinitions)
@@ -418,6 +425,14 @@ void resolveAccount(
                 return;
             }
         }
+    }
+    else
+    {
+        /+
+            No map match and we're not in hostmask mode.
+            Add a map entry.
+         +/
+        service.nicknameAccountMap[user.nickname] = user.account;
     }
 }
 
