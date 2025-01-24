@@ -269,11 +269,14 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                 channelUsers.remove(userToRemove);
             }
 
-            if (auto globalUsers = string.init in service.channelUserCache)
-            {
-                // channelUserCache[string.init] should always exist but just in case
-                (*globalUsers).remove(userToRemove);
-            }
+            /+
+                If there's no event.channel, the global user is created as
+                stored is created. If there is an event.channel, the global user
+                is created shortly after as a second step.
+                So we can logically assume string.init to always be in channelUserCache
+                and there's no need to be careful about indexing it.
+             +/
+            service.channelUserCache[string.init].remove(userToRemove);
 
             // Also remove the user from the nickname-account map
             service.nicknameAccountMap.remove(userToRemove);
