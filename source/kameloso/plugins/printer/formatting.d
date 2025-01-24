@@ -723,7 +723,7 @@ void formatMessageColoured(Sink)
         This is for Twitch servers that assign such values to users' messages.
         By catching it we can honour the setting by tinting users accordingly.
      +/
-    void colourUserTruecolour(const IRCUser user)
+    void colourUserTruecolour(const IRCUser user, const bool byAccount = false)
     {
         bool coloured;
 
@@ -752,7 +752,7 @@ void formatMessageColoured(Sink)
         {
             immutable name = user.isServer ?
                 user.address :
-                ((user.account.length && plugin.printerSettings.colourByAccount) ?
+                ((user.account.length && (byAccount || plugin.printerSettings.colourByAccount)) ?
                     user.account :
                     user.nickname);
 
@@ -798,8 +798,8 @@ void formatMessageColoured(Sink)
                     .put(sink, '/', event.sender.class_);
                 }
 
-                if ((event.sender.displayName != event.sender.nickname) &&
-                    !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
+                if ((event.sender.displayName != event.sender.account) &&
+                    !event.sender.displayName.asLowerCase.equal(event.sender.account))
                 {
                     if (!plugin.printerSettings.classNames)
                     {
@@ -807,8 +807,8 @@ void formatMessageColoured(Sink)
                     }
 
                     sink.put(" (");
-                    colourUserTruecolour(event.sender);
-                    sink.put(event.sender.nickname);
+                    colourUserTruecolour(event.sender, byAccount: true);
+                    sink.put(event.sender.account);
                     sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.put(')');
                 }
@@ -833,10 +833,16 @@ void formatMessageColoured(Sink)
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.sender.account.length)
             {
-                immutable code = plugin.state.settings.brightTerminal ? Bright.account : Dark.account;
+                if (!plugin.printerSettings.classNames)
+                {
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                }
+
+                sink.put(" (");
+                colourUserTruecolour(event.sender, byAccount: true);
+                sink.put(event.sender.account);
                 sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
-                sink.applyANSI(code, ANSICodeType.foreground);
-                .put(sink, " (", event.sender.account, ')');
+                sink.put(')');
             }
         }
 
@@ -908,8 +914,8 @@ void formatMessageColoured(Sink)
                     .put(sink, '/', event.target.class_);
                 }
 
-                if ((event.target.displayName != event.target.nickname) &&
-                    !event.target.displayName.asLowerCase.equal(event.target.nickname))
+                if ((event.target.displayName != event.target.account) &&
+                    !event.target.displayName.asLowerCase.equal(event.target.account))
                 {
                     if (!plugin.printerSettings.classNames)
                     {
@@ -917,8 +923,8 @@ void formatMessageColoured(Sink)
                     }
 
                     sink.put(" (");
-                    colourUserTruecolour(event.target);
-                    sink.put(event.target.nickname);
+                    colourUserTruecolour(event.target, byAccount: true);
+                    sink.put(event.target.account);
                     sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.put(')');
                 }
@@ -950,10 +956,16 @@ void formatMessageColoured(Sink)
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.target.account.length)
             {
-                immutable code = plugin.state.settings.brightTerminal ? Bright.account : Dark.account;
+                if (!plugin.printerSettings.classNames)
+                {
+                    sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
+                }
+
+                sink.put(" (");
+                colourUserTruecolour(event.target, byAccount: true);
+                sink.put(event.target.account);
                 sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
-                sink.applyANSI(code, ANSICodeType.foreground);
-                .put(sink, " (", event.target.account, ')');
+                sink.put(')');
             }
         }
 
