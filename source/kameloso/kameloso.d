@@ -236,12 +236,12 @@ public:
      +/
     ConnectionSettings connSettings;
 
-    // previousWhoisTimestamps
+    // whoisHistory
     /++
         An associative array of when a nickname was last issued a WHOIS query for,
         UNIX timestamps by nickname key, for hysteresis and rate-limiting.
      +/
-    RehashingAA!(long[string]) previousWhoisTimestamps;
+    RehashingAA!(long[string]) whoisHistory;
 
     // parser
     /++

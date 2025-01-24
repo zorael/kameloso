@@ -1414,7 +1414,6 @@ mixin template IRCPluginImpl(
         this.state.scheduledFibers = null;
         this.state.scheduledDelegates = null;
         this.state.nextScheduledTimestamp = long.max;
-        //this.state.previousWhoisTimestamps = null;  // keep
         this.state.updates = IRCPluginState.Update.nothing;
 
         foreach (immutable i, ref _; this.tupleof)

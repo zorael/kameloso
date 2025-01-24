@@ -1135,11 +1135,11 @@ auto mainLoop(Kameloso instance)
             }
         }
 
-        // Once every 24h, clear the `previousWhoisTimestamps` AA.
+        // Once every 24h, clear the `whoisHistory` AA.
         // That should be enough to stop it from being a memory leak.
         if ((nowInUnix % 86_400) == 0)
         {
-            instance.previousWhoisTimestamps = null;
+            instance.whoisHistory = null;
         }
 
         // Walk it and process the yielded lines
@@ -1697,15 +1697,15 @@ void processLineFromServer(
 
         case QUIT:
             // Remove users from the WHOIS history when they quit the server.
-            instance.previousWhoisTimestamps.remove(event.sender.nickname);
+            instance.whoisHistory.remove(event.sender.nickname);
             break;
 
         case NICK:
             // Transfer WHOIS history timestamp when a user changes its nickname.
-            if (const timestamp = event.sender.nickname in instance.previousWhoisTimestamps)
+            if (const timestamp = event.sender.nickname in instance.whoisHistory)
             {
-                instance.previousWhoisTimestamps[event.target.nickname] = *timestamp;
-                instance.previousWhoisTimestamps.remove(event.sender.nickname);
+                instance.whoisHistory[event.target.nickname] = *timestamp;
+                instance.whoisHistory.remove(event.sender.nickname);
             }
             break;
 
@@ -2292,7 +2292,7 @@ void processPendingReplays(Kameloso instance, IRCPlugin plugin)
             }
         }
 
-        immutable lastWhois = instance.previousWhoisTimestamps.get(nickname, 0L);
+        immutable lastWhois = instance.whoisHistory.get(nickname, 0L);
 
         if ((nowInUnix - lastWhois) > Timeout.whoisRetry)
         {
@@ -2304,12 +2304,9 @@ void processPendingReplays(Kameloso instance, IRCPlugin plugin)
                 }
             }
 
-            /*instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
-                quiet: instance.settings.hideOutgoing));
-            propagateWhoisTimestamp(instance, nickname, nowInUnix);*/
-
             enum properties = (Message.Property.forced | Message.Property.quiet);
             whois(plugin.state, nickname, properties);
+            instance.whoisHistory[nickname] = nowInUnix;
         }
         else
         {
@@ -3600,7 +3597,7 @@ auto startBot(Kameloso instance)
             instance.throttle.reset();
 
             // Clear WHOIS history
-            instance.previousWhoisTimestamps = null;
+            instance.whoisHistory = null;
 
             // Reset the server but keep the address and port
             immutable addressSnapshot = instance.parser.server.address;
