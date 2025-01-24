@@ -258,6 +258,9 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             Mutually exclusively either remove a user (by its name) from all caches
             OR update its corresponding global user. If no user is to be removed,
             the stored user will be cloned into the global user.
+
+            If there's no global user, that means the user *is* the global user
+            and event.channel is empty.
          +/
         if (userToRemove.length)
         {
@@ -275,7 +278,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             // Also remove the user from the nickname-account map
             service.nicknameAccountMap.remove(userToRemove);
         }
-        else if (global)
+        else if (global)  // alternatively if (event.channel.length)
         {
             // There's no point melding since the stored user should be a superset
             // of the values of the global channel-less one.
@@ -283,6 +286,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 
             if (global.class_ != IRCUser.Class.admin)
             {
+                // No channel context for global users; reset class
                 global.class_ = IRCUser.Class.anyone;
             }
 
@@ -318,6 +322,9 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
         have been created and the return value will be a pointer to it.
         If none was found and `createIfNoneExist` is `false`, the return value
         will be `null`.
+
+    See_Also:
+        [PersistenceService.channelUserCache]
  +/
 auto establishUserInCache(
     PersistenceService service,
@@ -451,6 +458,10 @@ void resolveAccount(
         context = The channel context in which to resolve the class.
         time = The time to set [dialect.defs.IRCUser.class_|user.class_] to;
             generally the current UNIX time.
+
+    See_Also:
+        [resolveAccount]
+        [PersistenceService.channelUserClassDefinitions]
  +/
 void resolveClass(
     PersistenceService service,
@@ -511,6 +522,9 @@ void resolveClass(
         nickname = The nickname of the user to drop privileges from.
         classToo = Whether to also drop the class of the user, resetting it to
             [dialect.defs.IRCUser.Class.anyone|IRCUser.Class.anyone].
+
+    See_Also:
+        [PersistenceService.channelUserCache]
  +/
 void dropAllPrivileges(
     PersistenceService service,
@@ -520,9 +534,9 @@ void dropAllPrivileges(
     {
         if (auto channelUser = nickname in channelUsers)
         {
+            channelUser.class_ = IRCUser.Class.anyone;
             channelUser.account = string.init;
             channelUser.updated = 1L;  // must not be 0L to meld properly
-            channelUser.class_ = IRCUser.Class.anyone;
         }
     }
 }
@@ -541,6 +555,7 @@ void dropAllPrivileges(
 
     See_Also:
         [dropAllPrivileges]
+        [PersistenceService.nicknameAccountMap]
  +/
 void propagateUserAccount(
     PersistenceService service,
@@ -587,6 +602,9 @@ void propagateUserAccount(
         context = The context to use as key to the cache section to update;
             may be a channel for a channel-specific update, or an empty string
             for a global update.
+
+    See_Also:
+        [PersistenceService.channelUserCache]
  +/
 void updateUser(
     PersistenceService service,
