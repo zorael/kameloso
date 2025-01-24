@@ -269,10 +269,10 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                 channelUsers.remove(userToRemove);
             }
 
-            if (auto channellessUsers = string.init in service.channelUserCache)
+            if (auto globalUsers = string.init in service.channelUserCache)
             {
                 // channelUserCache[string.init] should always exist but just in case
-                (*channellessUsers).remove(userToRemove);
+                (*globalUsers).remove(userToRemove);
             }
 
             // Also remove the user from the nickname-account map
