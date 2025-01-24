@@ -108,16 +108,20 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
         if (event.channel.length)
         {
             // A channel was specified, but also look for a global channel-less entry
-            bool noop;
+            bool globalUserExisted;
+
             global = establishUserInCache(
                 service,
                 user,
                 string.init,
                 createIfNoneExist: true,
-                foundExisting: noop);
+                foundExisting: globalUserExisted);
 
-            // Fill in the blanks, conservatively
-            (*global).meldInto!(MeldingStrategy.conservative)(*stored);
+            if (globalUserExisted)
+            {
+                // Fill in the blanks, conservatively
+                (*global).meldInto!(MeldingStrategy.conservative)(*stored);
+            }
         }
 
         const old = *stored;
