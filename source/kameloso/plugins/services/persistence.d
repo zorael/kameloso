@@ -139,8 +139,10 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             if (service.state.settings.preferHostmasks &&
                 (stored.account != old.account))
             {
-                // Ignore any new account that may have been parsed and melded from user
-                // We only want accounts we resolve in here
+                /+
+                    Ignore any new account that may have been parsed and melded from user.
+                    We only want accounts we resolve in here.
+                 +/
                 stored.account = old.account;
             }
 
@@ -181,7 +183,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             case NICK:
             case SELFNICK:
                 /+
-                    This event has two users; a sender pre-nick chang and a
+                    This event has two users; a sender pre-nick change and a
                     target post-nick change. We only want to do this once for
                     the event, so only do it for the target.
                  +/
@@ -189,8 +191,10 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 
                 if (!storedUserExisted)
                 {
-                    // The nick event target is blank. This should always be the case.
-                    // We could meld but we could also just copy and change the nickname.
+                    /+
+                        The nick event target is blank. This should always be the case.
+                        We could meld but we could also just copy and change the nickname.
+                     +/
                     //event.sender.meld!(MeldingStrategy.conservative)(*stored);
                     *stored = event.sender;
                     stored.nickname = old.nickname;
@@ -203,7 +207,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 
                 userToRemove = event.sender.nickname;  // Remove old user at the end of the function
                 resolveAccount(service, *stored, event.time);
-                goto default;  // to propagagte account and resolve class
+                goto default;  // to propagate account and resolve class
 
             case QUIT:
                 // This removes the user entry from both the cache and the nickname-account map
@@ -213,8 +217,10 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             case ACCOUNT:
                 if (stored.account == "*")
                 {
-                    // An account of "*" means the user logged out of services.
-                    // It's not strictly true but consider him/her as unknown again.
+                    /+
+                        An account of "*" means the user logged out of services.
+                        It's not strictly true but consider him/her as unknown again.
+                     +/
                     service.nicknameAccountMap.remove(stored.nickname);
                     dropAllPrivileges(service, stored.nickname);
 
@@ -225,15 +231,17 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                     }
                     break;
                 }
-                goto default;  // to propagagte account and resolve class
+                goto default;  // to propagate account and resolve class
 
             //case JOIN:  // JOINs may carry account depending on server capabilities
             default:
                 if (stored.account != old.account)
                 {
-                    // Event bearing new account
-                    // These can be whatever if the "account-tag" capability is set
-                    // event.channel may be empty here if we jumped from a RPL_WHOIS* case
+                    /+
+                        Event bearing new account.
+                        These can be whatever if the "account-tag" capability is set.
+                        event.channel may be empty here if we jumped from a RPL_WHOIS* case.
+                     +/
                     propagateUserAccount(service, *stored);
                     resolveClass(service, *stored, context: event.channel, event.time);
                 }
