@@ -219,12 +219,6 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                 }
                 break;
             }
-
-            if ((stored.class_ == IRCUser.Class.anyone) &&
-                (stored.account.length && (stored.account != "*")))
-            {
-                stored.class_ = IRCUser.Class.registered;
-            }
         }
 
         version(TwitchSupport)
