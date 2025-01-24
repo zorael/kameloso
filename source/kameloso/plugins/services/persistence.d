@@ -219,6 +219,18 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                 }
                 break;
             }
+
+            // Ensure sane classes
+            if (((stored.class_ == IRCUser.Class.anyone) ||
+                (stored.class_ == IRCUser.Class.unset)) &&
+                stored.account.length && (stored.account != "*"))
+            {
+                stored.class_ = IRCUser.Class.registered;
+            }
+            else if (stored.class_ == IRCUser.Class.unset)
+            {
+                stored.class_ = IRCUser.Class.anyone;
+            }
         }
 
         version(TwitchSupport)
@@ -237,9 +249,9 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                     }
                 }
 
-                if (event.channel.length && (stored.class_ == IRCUser.Class.unset))
+                if (stored.class_ == IRCUser.Class.unset)
                 {
-                    // Users should never be unset in the context of a channel
+                    // Users should never be unset
                     stored.class_ = IRCUser.Class.anyone;
                 }
             }
