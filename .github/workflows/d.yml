@@ -57,7 +57,6 @@ jobs:
       run: dub build -c dev -b plain --arch=x86_64
 
     - name: 'Build: dev (release)'
-      if: matrix.dc != 'dmd-2.108.0'
       run: dub build -c dev -b release --arch=x86_64
 
     - name: 'Build: application (debug)'
@@ -67,11 +66,9 @@ jobs:
       run: dub build -b plain --arch=x86_64
 
     - name: 'Build: application (release)'
-      if: matrix.dc != 'dmd-2.108.0'
       run: dub build -b release --arch=x86_64
 
     - name: 'Build: docs'
-      if: matrix.dc != 'dmd-2.108.0'
       run: dub build -b docs
 
     - name: 'Generate documenation'
