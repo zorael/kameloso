@@ -70,6 +70,10 @@ jobs:
       if: matrix.dc != 'dmd-2.108.0'
       run: dub build -b release --arch=x86_64
 
+    - name: 'Build: docs'
+      if: matrix.dc != 'dmd-2.108.0'
+      run: dub build -b docs
+
     - name: 'Generate documenation'
       if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()
       run: |
