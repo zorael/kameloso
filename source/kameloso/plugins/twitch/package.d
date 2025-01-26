@@ -3363,17 +3363,17 @@ void startSaver(TwitchPlugin plugin)
 in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
 {
     import kameloso.plugins.common.scheduling : delay;
+    import lu.array : pruneAA;
     import core.time : hours;
 
     // How often to save `ecount`s and viewer times, to ward against losing information to crashes.
     static immutable savePeriodicity = 2.hours;
 
-    // Delay initially
-    delay(plugin, savePeriodicity, yield: true);
-
     // Periodically save ecounts and viewer times
     while (true)
     {
+        delay(plugin, savePeriodicity, yield: true);
+
         if (plugin.twitchSettings.ecount &&
             plugin.transient.ecountDirty &&
             plugin.ecount.length)
@@ -3392,7 +3392,9 @@ in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
             plugin.transient.viewerTimesDirty = false;
         }
 
-        delay(plugin, savePeriodicity, yield: true);
+        // Remove empty entries from the channel names cache
+        // This will make the postprocessing routine reattempt lookups
+        pruneAA(plugin.channelNamesByID);
     }
 }
 
