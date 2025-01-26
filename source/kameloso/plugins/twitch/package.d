@@ -1092,6 +1092,9 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (event.aux[0].length)
     {
+        // Cache channel name by its numeric ID
+        plugin.channelNamesByID[event.aux[0]] = event.channel;
+
         try
         {
             room.id = event.aux[0].to!uint;  // Assign this before spending time in getTwitchUser
@@ -1220,6 +1223,9 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import kameloso.plugins.common.scheduling : delay;
     import std.algorithm.searching : countUntil;
     import std.conv : to;
+
+    // Cache channel name by its numeric ID
+    if (event.aux[0].length) plugin.channelNamesByID[event.aux[0]] = event.channel;
 
     if (!plugin.twitchSettings.customEmotes || !plugin.twitchSettings.customEmotesEverywhere) return;
 
@@ -3822,9 +3828,9 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
      +/
     static bool postprocessImpl(
         /*const*/ TwitchPlugin plugin,
-        const IRCEvent event,
-        const string channelName,
-        ref IRCUser user)
+        ref IRCEvent event,
+        ref IRCUser user,
+        const bool isTarget)
     {
         import kameloso.thread : ThreadMessage, boxed;
 
@@ -3857,6 +3863,16 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             }
         }
 
+        if (!isTarget && event.aux[$-4].length)
+        {
+            // Seems to be a shared message
+            if (const channelFromID = event.aux[$-4] in plugin.channelNamesByID)
+            {
+                // Found channel name in cache
+                event.aux[$-3] = *channelFromID;
+            }
+        }
+
         if (user.class_ >= IRCUser.Class.staff)
         {
             // User is already staff or higher, no need to promote
@@ -3866,9 +3882,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
         if (plugin.twitchSettings.promoteBroadcasters)
         {
             // Already ensured channel has length in parent function
-            assert(channelName.length, "Empty channelName in postprocess.postprocessImpl");
-
-            if (user.nickname == channelName[1..$])
+            if (user.nickname == event.channel[1..$])
             {
                 // User is channel owner but is not registered as staff
                 user.class_ = IRCUser.Class.staff;
@@ -3882,7 +3896,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
         if (deltaTime < minimumTimeBetweenPromotions)
         {
-            // It was updated reently, no need to re-promote
+            // It was updated recently, no need to re-promote
             return false;
         }
         else if (user.badges.length)
@@ -3936,8 +3950,8 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
         }
 
         bool shouldCheckMessages;
-        shouldCheckMessages |= postprocessImpl(plugin, event, event.channel, event.sender);
-        shouldCheckMessages |= postprocessImpl(plugin, event, event.channel, event.target);
+        shouldCheckMessages |= postprocessImpl(plugin, event, event.sender, isTarget: false);
+        shouldCheckMessages |= postprocessImpl(plugin, event, event.target, isTarget: true);
         return shouldCheckMessages;
     }
 
@@ -4858,6 +4872,11 @@ package:
         API keys and tokens, keyed by channel.
      +/
     Credentials[string] secretsByChannel;
+
+    /++
+        Channel names cached by their numeric user IDs.
+     +/
+    string[string] channelNamesByID;
 
     /++
         Associative array of responses from async HTTP queries.
