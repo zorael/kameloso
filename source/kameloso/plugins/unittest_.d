@@ -66,21 +66,26 @@ version(TwitchSupport)
 )
 void onCommand(UnittestPlugin plugin, const ref IRCEvent event)
 {
-    with (plugin)
+    //with (plugin)  // https://github.com/dlang-community/D-Scanner/issues/931
+
+    void onSuccess(IRCUser user)
     {
-        void onSuccess(IRCUser user)
+        with (plugin)
         {
             chan(event.channel, "success:" ~ user.account);
         }
+    }
 
-        void onFailure()
+    void onFailure()
+    {
+        with (plugin)
         {
             chan(event.channel, "failure");
         }
-
-        mixin WHOISFiberDelegate!(onSuccess, onFailure, Yes.alwaysLookup);
-        enqueueAndWHOIS(event.sender.nickname);
     }
+
+    mixin WHOISFiberDelegate!(onSuccess, onFailure, Yes.alwaysLookup);
+    enqueueAndWHOIS(event.sender.nickname);
 }
 
 
