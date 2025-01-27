@@ -434,7 +434,15 @@ void formatMessageMonochrome(Sink)
 
     sink.put("] ");
 
-    if (event.channel.length) .put(sink, '[', event.channel, "] ");
+    if (event.channel.length)
+    {
+        .put(sink, '[', event.channel, "] ");
+
+        if (event.subchannel.length && (event.subchannel != event.channel))
+        {
+            .put(sink, "< [", event.subchannel, "] ");
+        }
+    }
 
     putSender();
 
@@ -1132,9 +1140,25 @@ void formatMessageColoured(Sink)
 
     if (event.channel.length)
     {
-        immutable code = plugin.state.settings.brightTerminal ? Bright.channel : Dark.channel;
-        sink.applyANSI(code, ANSICodeType.foreground);
+        immutable channelCode = plugin.state.settings.brightTerminal ?
+            Bright.channel :
+            Dark.channel;
+
+        sink.applyANSI(channelCode, ANSICodeType.foreground);
         .put(sink, '[', event.channel, "] ");
+
+        if (event.subchannel.length && (event.subchannel != event.channel))
+        {
+            immutable arrowCode = plugin.state.settings.brightTerminal ?
+                Bright.content :
+                Dark.content;
+
+            sink.applyANSI(arrowCode, ANSICodeType.foreground);
+            .put(sink, "< ");
+
+            sink.applyANSI(channelCode, ANSICodeType.foreground);
+            .put(sink, '[', event.subchannel, "] ");
+        }
     }
 
     putSender();
