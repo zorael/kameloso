@@ -69,6 +69,7 @@ jobs:
       run: dub build -b release --arch=x86_64
 
     - name: 'Build: docs'
+      if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()
       run: dub build -b docs
 
     - name: 'Generate documenation'
