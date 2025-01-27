@@ -3868,10 +3868,20 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
         if (!isTarget && event.aux[$-4].length)
         {
             // Shared message; event.aux[$-4] is the foreign channel ID
-            if (const channelFromID = event.aux[$-4] in plugin.channelNamesByID)
+            immutable sharedChannelID = event.aux[$-4];
+
+            if (const channelFromID = sharedChannelID in plugin.channelNamesByID)
             {
-                // Found channel name in cache; insert into event.aux[$-3]
-                if (channelFromID.length) event.aux[$-3] = *channelFromID;
+                if (channelFromID.length)
+                {
+                    if (*channelFromID != event.channel)
+                    {
+                        // Found channel name in cache; insert into event.subchannel
+                        event.subchannel = *channelFromID;
+                    }
+
+                    event.aux[$-4] = string.init;  // it's noisy
+                }
             }
             else
             {
@@ -3889,13 +3899,18 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                     immutable twitchUser = getTwitchUser(
                         plugin,
                         givenName: string.init,
-                        id: event.aux[$-4].to!uint);
+                        id: sharedChannelID.to!uint);
 
                     if (twitchUser.nickname.length)
                     {
                         immutable channelName = '#' ~ twitchUser.nickname;
-                        plugin.channelNamesByID[event.aux[$-4]] = channelName;
-                        event.aux[$-3] = channelName;
+                        plugin.channelNamesByID[sharedChannelID] = channelName;
+                        event.subchannel = channelName;
+                    }
+                    else
+                    {
+                        // Failed for some reason; reset and try again next time
+                        plugin.channelNamesByID.remove(sharedChannelID);
                     }
                 }
 
@@ -3903,7 +3918,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 delay(plugin, getChannelNameFiber, Duration.zero);
 
                 // Set an empty string so we don't do this again before the results are in
-                plugin.channelNamesByID[event.aux[$-4]] = string.init;
+                plugin.channelNamesByID[sharedChannelID] = string.init;
             }
         }
 
