@@ -730,11 +730,11 @@ void setup(PrinterPlugin plugin)
         return (now.nextMidnight - now);
     }
 
-    // Delay until next midnight, then every midnight thereafter
-    delay(plugin, untilNextMidnight, yield: true);
-
     while (true)
     {
+        // Delay until next midnight
+        delay(plugin, untilNextMidnight, yield: true);
+
         if (plugin.isEnabled)
         {
             if (plugin.printerSettings.monitor && plugin.printerSettings.daybreaks)
@@ -749,6 +749,7 @@ void setup(PrinterPlugin plugin)
 
                 if (plugin.buffers.length)
                 {
+                    import lu.array : pruneAA;
                     import std.datetime.systime : Clock;
                     import core.time : weeks;
 
@@ -756,23 +757,12 @@ void setup(PrinterPlugin plugin)
                     // Remove any remaining buffers that are too old
                     static immutable discardAge = 1.weeks;
                     immutable now = Clock.currTime;
-                    string[] toRemove;
 
-                    foreach (immutable key, const remainingBuffer; plugin.buffers)
-                    {
-                        immutable age = (now - remainingBuffer.creationTime);
-                        if (age > discardAge) toRemove ~= key;
-                    }
-
-                    foreach (immutable key; toRemove)
-                    {
-                        plugin.buffers.remove(key);
-                    }
+                    alias pred = (buffer) => (now - buffer.creationTime) > discardAge;
+                    pruneAA!pred(plugin.buffers);
                 }
             }
         }
-
-        delay(plugin, untilNextMidnight, yield: true);
     }
 }
 

@@ -826,43 +826,21 @@ void purgeOldCacheEntries(
     PersistenceService service,
     const long cacheEntryMaxAgeSeconds)
 {
+    import lu.array : pruneAA;
     import std.datetime.systime : Clock;
-    debug import std.stdio;
 
     immutable now = Clock.currTime.toUnixTime();
 
     foreach (ref channelUsers; service.channelUserCache.aaOf)
     {
-        // Array of keys to remove, since we can't mutate the AA while foreaching it
-        string[] toRemove;
-
-        foreach (const user; channelUsers)
-        {
-            immutable secondsSinceUserUpdate = (now - user.updated);
-            if (secondsSinceUserUpdate > cacheEntryMaxAgeSeconds) toRemove ~= user.nickname;
-        }
-
-        // Remove the keys
-        foreach (immutable nickname; toRemove)
-        {
-            channelUsers.remove(nickname);
-        }
+        alias userTooOldPred = (user) => (now - user.updated) > cacheEntryMaxAgeSeconds;
+        pruneAA!userTooOldPred(channelUsers);
     }
 
-    // Array of keys to remove, as above
-    string[] channelsToRemoveFromCache;
+    alias emptyChannelPred = (channelUsers) => !channelUsers.length;
+    pruneAA!emptyChannelPred(service.channelUserCache.aaOf);
 
-    foreach (immutable channelName, const channelUsers; service.channelUserCache.aaOf)
-    {
-        if (!channelUsers.length) channelsToRemoveFromCache ~= channelName;
-    }
-
-    foreach (const channelName; channelsToRemoveFromCache)
-    {
-        service.channelUserCache.remove(channelName);
-    }
-
-    // Array of keys to remove, as above
+    // Array of keys to remove. A bit too complex for pruneAA
     string[] nicknamesToRemoveFromMap;
 
     accountMapForeach:
