@@ -473,9 +473,7 @@ mixin template WHOISFiberDelegate(
         await(_context, fiber, whoisEventTypes[]);
 
         string slice = nickname;  // mutable
-        immutable nicknamePart = (slice.indexOf('!') != -1) ?
-            slice.advancePast('!') :
-            slice;
+        immutable nicknamePart = slice.advancePast('!', inherit: true);
 
         version(WithPrinterPlugin)
         {
