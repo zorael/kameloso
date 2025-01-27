@@ -485,6 +485,8 @@ mixin template WHOISFiberDelegate(
 
         if (issueWhois)
         {
+            import kameloso.messaging : Message;
+
             if (background)
             {
                 // Need Property.forced to not miss events
