@@ -3896,6 +3896,18 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 {
                     import std.conv : to;
 
+                    if (plugin.state.settings.trace)
+                    {
+                        enum pattern = "Querying server for channel name of user ID <l>%s</>...";
+                        logger.infof(pattern, sharedChannelID);
+                    }
+
+                    scope(failure)
+                    {
+                        // getTwitchUser throws if the user ID is invalid
+                        plugin.channelNamesByID.remove(sharedChannelID);
+                    }
+
                     immutable twitchUser = getTwitchUser(
                         plugin,
                         givenName: string.init,
@@ -3906,10 +3918,21 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                         immutable channelName = '#' ~ twitchUser.nickname;
                         plugin.channelNamesByID[sharedChannelID] = channelName;
                         event.subchannel = channelName;
+
+                        if (plugin.state.settings.trace)
+                        {
+                            enum pattern = "Resolved channel <l>%s</> from user ID <l>%s</>.";
+                            logger.infof(pattern, channelName, sharedChannelID);
+                        }
                     }
                     else
                     {
-                        // Failed for some reason; reset and try again next time
+                        /+
+                            Query failed for some reason yet didn't throw?
+                            This should never really happen.
+                            Reset by removing the placeholder entry in the cache
+                            so we can try again later.
+                         +/
                         plugin.channelNamesByID.remove(sharedChannelID);
                     }
                 }
