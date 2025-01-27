@@ -1169,7 +1169,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         alias multiplier = homeIndex;
         immutable delayUntilImport = baseDelayBetweenImports * multiplier;
 
-        Fiber importEmotesFiber = new Fiber(&importEmotesDg, BufferSize.fiberStack);
+        auto importEmotesFiber = new Fiber(&importEmotesDg, BufferSize.fiberStack);
         delay(plugin, importEmotesFiber, delayUntilImport);
     }
 
@@ -3147,9 +3147,9 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
         }
     }
 
-    Fiber uptimeMonitorFiber = new Fiber(&uptimeMonitorDg, BufferSize.fiberStack);
-    Fiber chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
-    Fiber cacheFollowersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
+    auto uptimeMonitorFiber = new Fiber(&uptimeMonitorDg, BufferSize.fiberStack);
+    auto chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
+    auto cacheFollowersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
 
     // Detach by delaying zero seconds
     delay(plugin, uptimeMonitorFiber, Duration.zero);
@@ -4257,7 +4257,7 @@ void reload(TwitchPlugin plugin)
                 }
             }
 
-            Fiber importFiber = new Fiber(&importDg, BufferSize.fiberStack);
+            auto importFiber = new Fiber(&importDg, BufferSize.fiberStack);
             immutable delayUntilImport = baseDelayBetweenImports * delayMultiplier;
             delay(plugin, importFiber, delayUntilImport);
         }
@@ -4323,7 +4323,7 @@ void onBusMessage(
                 }
             }
 
-            Fiber whispererFiber = new Fiber(&whispererDg, BufferSize.fiberStack);
+            auto whispererFiber = new Fiber(&whispererDg, BufferSize.fiberStack);
             whispererFiber.call();
         }
     }

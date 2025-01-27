@@ -165,7 +165,7 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
         emote(plugin.state, event.channel, "dances :D/-<");
     }
 
-    Fiber danceFiber = new Fiber(&danceDg, BufferSize.fiberStack);
+    auto danceFiber = new Fiber(&danceDg, BufferSize.fiberStack);
     danceFiber.call();
 }
 

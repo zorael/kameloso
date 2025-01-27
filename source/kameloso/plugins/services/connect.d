@@ -1404,7 +1404,7 @@ void onWelcome(ConnectService service)
             }
         }
 
-        Fiber endOfMOTDFiber = new Fiber(&endOfMOTDDg, BufferSize.fiberStack);
+        auto endOfMOTDFiber = new Fiber(&endOfMOTDDg, BufferSize.fiberStack);
         delay(service, endOfMOTDFiber, ConnectService.Timings.endOfMOTDTimeout);
 
         if (service.connectSettings.regainNickname && !service.state.bot.hasGuestNickname &&

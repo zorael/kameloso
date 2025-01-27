@@ -1121,7 +1121,7 @@ void onWelcome(SeenPlugin plugin)
         }
     }
 
-    Fiber saveFiber = new Fiber(&saveDg, BufferSize.fiberStack);
+    auto saveFiber = new Fiber(&saveDg, BufferSize.fiberStack);
     delay(plugin, saveFiber, plugin.timeBetweenSaves);
 
     // Use an awaiting delegate to report seen users, to avoid it being repeated

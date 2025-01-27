@@ -1263,7 +1263,7 @@ void startTimerMonitor(TimerPlugin plugin)
         }
     }
 
-    Fiber startMonitorFiber = new Fiber(&startMonitorDg, BufferSize.fiberStack);
+    auto startMonitorFiber = new Fiber(&startMonitorDg, BufferSize.fiberStack);
     startMonitorFiber.call();
 }
 
