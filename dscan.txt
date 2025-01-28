@@ -1,0 +1,8 @@
+# Regex expressions for use with the output of dscanner
+
+config\.d.+Variable backupServer is never modified
+irccolours\.d.+Variable open is never modified
+net\.d.+Variable EAI_NODATA is never used
+poll\.d.+Variable choicesVoldemort is never modified
+Variable benignAbort is never modified
+Variable .+UserExisted is never modified
