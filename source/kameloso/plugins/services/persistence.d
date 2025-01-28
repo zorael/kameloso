@@ -61,7 +61,8 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
         (IRCEvent.Type.ERR_WASNOSUCHNICK,
         IRCEvent.Type.ERR_NOSUCHNICK,
         IRCEvent.Type.RPL_LOGGEDIN,
-        IRCEvent.Type.ERR_NICKNAMEINUSE))
+        IRCEvent.Type.ERR_NICKNAMEINUSE,
+        IRCEvent.Type.ERR_BANONCHAN))
     {
         // Ignore
         return false;
