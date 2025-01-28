@@ -3896,11 +3896,11 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 {
                     import std.conv : to;
 
-                    if (plugin.state.settings.trace)
+                    /*if (plugin.state.settings.trace)
                     {
                         enum pattern = "Querying server for channel name of user ID <l>%s</>...";
                         logger.infof(pattern, sharedChannelID);
-                    }
+                    }*/
 
                     scope(failure)
                     {
