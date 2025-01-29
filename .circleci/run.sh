@@ -40,7 +40,7 @@ install_and_activate_compiler() {
     local compiler compiler_version_ext compiler_build
 
     compiler="$1"
-    [[ "$2" ]] && compiler_version_ext="-$2" || compiler_version_ext=""
+    [[ $# -gt 1 ]] && compiler_version_ext="-$2" || compiler_version_ext=""
     compiler_build="${compiler}${compiler_version_ext}"
 
     source "$(CURL_USER_AGENT=\"$CURL_USER_AGENT\" bash install.sh "$compiler_build" --activate)"
@@ -62,7 +62,7 @@ build() {
 
     compiler_switch="--compiler=$1"
     arch_switch="--arch=$2"
-    [[ "$3" ]] && build_ext="-$3" || build_ext=""
+    [[ $# -gt 2 ]] && build_ext="-$3" || build_ext=""
 
     shift 2  # shift away compiler and arch
     shift 1 || true  # shift away build extension iff supplied
