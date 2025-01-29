@@ -15,8 +15,6 @@ jobs:
       - run:
           name: Build and test (ldc)
           command: ./.circleci/run.sh build-ldc
-      - store_artifacts:
-          path: ./artifacts
 
 workflows:
   version: 2

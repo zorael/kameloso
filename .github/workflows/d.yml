@@ -62,9 +62,9 @@ jobs:
     - name: 'Build: application (release)'
       run: dub build --nodeps -b release -c application
 
-    - name: 'Build: docs'
+    - name: 'Run dscan'
       if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()
-      run: dub build --nodeps -b docs    -c dev
+      run: dmd -run dscan.d
 
     - name: 'Generate documenation'
       if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()
