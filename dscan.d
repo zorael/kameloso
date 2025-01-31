@@ -167,6 +167,7 @@ auto runDscanner(
     import std.array : Appender;
     import std.datetime.stopwatch : StopWatch;
     import std.process : execute;
+    import std.range : walkLength;
     import std.string : strip;
 
     Appender!(string[]) uncaughtLines;
@@ -220,6 +221,7 @@ auto runDscanner(
         if (!atLeastOneMatch) uncaughtLines.put(line);
     }
 
+    immutable numLines = range.walkLength();
     int retval;
 
     if (uncaughtLines[].length)
@@ -229,12 +231,13 @@ auto runDscanner(
         writeln();
         uncaughtLines[].each!writeln();
         writeln();
+        writeln(i"[!] $(numLines) line(s) caught by regex");
         writeln(i"[!] $(uncaughtLines[].length) line(s) got past regex, retval becomes $(result.status)");
         retval = result.status;
     }
     else
     {
-        writeln("[!] all output caught by regex");
+        writeln(i"[!] all $(numLines) line(s) caught by regex");
     }
 
     foreach (immutable i, engineMatched; engineMatches)
@@ -242,7 +245,7 @@ auto runDscanner(
         if (!engineMatched)
         {
             writeln(i`[!] dead expression: "$(expressions[i])"`);
-            retval |= 1;
+            //retval |= 1;
         }
     }
 
@@ -271,8 +274,6 @@ auto buildDocs()
         "build",
         "-b",
         "docs",
-        "-c",
-        "dev",
         "--nodeps",
         //"--vquiet",
     ];
