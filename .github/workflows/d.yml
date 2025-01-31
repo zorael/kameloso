@@ -22,11 +22,8 @@ jobs:
     name: 'Everything'
     strategy:
       matrix:
-        #os: [ ubuntu-latest, macOS-latest, windows-latest ]
-        os: [ ubuntu-latest, windows-latest ]
+        os: [ ubuntu-latest, macOS-latest, windows-latest ]
         dc: [ dmd-latest, dmd-2.108.0, ldc-latest, ldc-1.38.0 ]
-        #exclude:
-          #- { os: macOS-latest, dc: dmd-2.108.0 }
 
     runs-on: ${{ matrix.os }}
     continue-on-error: false
@@ -66,7 +63,7 @@ jobs:
       if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()
       run: dmd -run dscan.d
 
-    - name: 'Generate documenation'
+    - name: 'Generate documentation'
       if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()
       run: |
         git clone https://github.com/zorael/dialect.git
