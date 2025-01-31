@@ -397,11 +397,11 @@ in (word.length, "Tried to apply IRC colours by hash to a string but no string w
     in IRC messages.
 
     Params:
-        word = `dstring`` to tint.
+        word = `dstring` to tint.
         extendedOutgoingColours = Whether or not to use extended colours (16-98).
 
     Returns:
-        The passed `dstring`` encased within IRC colour coding.
+        The passed `dstring` encased within IRC colour coding.
  +/
 dstring ircColourByHash(
     const dstring word,
