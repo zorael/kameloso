@@ -2,8 +2,8 @@
 
 set -uexo pipefail
 
-#DMD_VERSION="2.098.0"
-#LDC_VERSION="1.28.0"
+#DMD_VERSION="2.108.0"
+#LDC_VERSION="1.38.0"
 CURL_USER_AGENT="CirleCI $(curl --version | head -n 1)"
 
 update_repos() {
@@ -54,6 +54,7 @@ clone_and_add() {
     if [[ ! -d "$repo" ]]; then
         git clone "https://github.com/zorael/${repo}.git"
         dub add-local "$repo"
+        dub upgrade
     fi
 }
 
