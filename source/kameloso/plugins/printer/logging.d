@@ -72,7 +72,7 @@ public:
     void clear() @safe nothrow
     {
         import lu.array : zero;
-        lines.zero();
+        lines.zero('\0');
     }
 
     /++
