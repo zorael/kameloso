@@ -666,16 +666,26 @@ void updateUser(
     /*const*/ IRCUser user,
     const string context)
 {
-    if (!context.length && (user.class_ != IRCUser.Class.admin))
+    version(TwitchSupport)
+    static void resetUser(IRCUser* user)
     {
-        // When saving to the global cache, only admins should have a class
-        user.class_ = IRCUser.Class.anyone;
+        // Global users should never have channel-specific badges
+        user.badges = string.init;
+
+        if (user.class_ != IRCUser.Class.admin)
+        {
+            // admin is sticky but otherwise reset class
+            user.class_ = IRCUser.Class.anyone;
+        }
     }
 
     if (auto cachedUsers = context in service.channelUserCache)
     {
         // Channel exists
-        if (auto cachedUser = user.nickname in *cachedUsers)
+
+        auto cachedUser = user.nickname in *cachedUsers;
+
+        if (cachedUser)
         {
             import lu.meld : MeldingStrategy, meldInto;
             user.meldInto!(MeldingStrategy.aggressive)(*cachedUser);
@@ -685,17 +695,37 @@ void updateUser(
             // but user doesn't
             (*cachedUsers)[user.nickname] = user;
         }
+
+        version(TwitchSupport)
+        {
+            if (!context.length)
+            {
+                // Reset global users so they don't have channel-specific badges
+                if (!cachedUser) cachedUser = user.nickname in *cachedUsers;
+                resetUser(cachedUser);
+            }
+        }
     }
     else
     {
         // Neither channel nor user exists
         service.channelUserCache.aaOf[context][user.nickname] = user;
+
+        version(TwitchSupport)
+        {
+            if (!context.length)
+            {
+                // As above
+                auto cachedUser = user.nickname in service.channelUserCache[context];
+                resetUser(cachedUser);
+            }
+        }
     }
 
     if (context.length)
     {
         // Recurse to update the user in the global cache
-        return updateUser(service, user, string.init);
+        return updateUser(service, user, context: string.init);
     }
 }
 
