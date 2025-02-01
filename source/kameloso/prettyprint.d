@@ -1259,7 +1259,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
 ///
 @system unittest
 {
-    import kameloso.common : assertMultilineOpEquals;
+    import lu.assert_ : assertMultilineEquals;
     import std.array : Appender;
     import std.string : indexOf;
 
@@ -1316,7 +1316,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
 `;
 
         sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, s);
-        sink[].assertMultilineOpEquals(structNameSerialised);
+        sink[].assertMultilineEquals(structNameSerialised);
         sink.clear();
 
         // Class copy
@@ -1365,7 +1365,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
 `;
 
         sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c1);
-        sink[].assertMultilineOpEquals(classNameSerialised);
+        sink[].assertMultilineEquals(classNameSerialised);
         sink.clear();
     }
     {
@@ -1401,7 +1401,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
 `;
 
         sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, st1, st2);
-        sink[].assertMultilineOpEquals(st1st2Formatted);
+        sink[].assertMultilineEquals(st1st2Formatted);
         sink.clear();
     }
     {
@@ -1461,7 +1461,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
 `;
 
         sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c2);
-        sink[].assertMultilineOpEquals(cFormatted);
+        sink[].assertMultilineEquals(cFormatted);
         sink.clear();
     }
     {
@@ -1501,7 +1501,7 @@ private void prettyformatImpl(Flag!"all" all = No.all,
 `;
 
         sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c4, c4.i3, c4.c3);
-        sink[].assertMultilineOpEquals(c4Formatted);
+        sink[].assertMultilineEquals(c4Formatted);
         //sink.clear();
     }
 }
@@ -1561,7 +1561,7 @@ if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))  // must be a con
 ///
 unittest
 {
-    import kameloso.common : assertMultilineOpEquals;
+    import lu.assert_ : assertMultilineEquals;
 
     // Rely on the main unit tests of the output range version of prettyformat
     {
@@ -1582,7 +1582,7 @@ unittest
 `;
 
         immutable actual = prettyformat!(No.all, No.coloured)(brightTerminal: false, s);
-        actual.assertMultilineOpEquals(expected);
+        actual.assertMultilineEquals(expected);
     }
     {
         class Nested
@@ -1613,7 +1613,7 @@ unittest
 `;
 
         immutable actual = prettyformat!(No.all, No.coloured)(brightTerminal: false, c);
-        actual.assertMultilineOpEquals(expected);
+        actual.assertMultilineEquals(expected);
 
         c.nest = new Nested;
         enum expected2 =
@@ -1626,7 +1626,7 @@ unittest
 `;
 
         immutable actual2 = prettyformat!(No.all, No.coloured)(brightTerminal: false, c);
-        actual2.assertMultilineOpEquals(expected2);
+        actual2.assertMultilineEquals(expected2);
     }
     {
         struct Reparse {}
@@ -1652,6 +1652,6 @@ unittest
 `;
 
         immutable actual = prettyformat!(No.all, No.coloured)(brightTerminal: false, state);
-        actual.assertMultilineOpEquals(expected);
+        actual.assertMultilineEquals(expected);
     }
 }
