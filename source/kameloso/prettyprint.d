@@ -82,6 +82,7 @@ public:
         Things = Variadic list of aggregates to introspect.
  +/
 private template Widths(Flag!"all" all, Things...)
+if (Things.length > 0)
 {
 private:
     import std.algorithm.comparison : max;
