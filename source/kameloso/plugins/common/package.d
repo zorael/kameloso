@@ -3861,7 +3861,7 @@ public:
 
         // _addSyntax
         /++
-            Alias to make the [lu.typecons.UnderscoreOpDispatcher|UndescoreOpDispatcher]
+            Alias to make the [lu.typecons.UnderscoreOpDispatcher|UnderscoreOpDispatcher]
             redirect calls to [syntaxes] but by the name `addSyntax`.
          +/
         alias _addSyntax = syntaxes;

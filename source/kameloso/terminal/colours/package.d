@@ -619,7 +619,7 @@ unittest
     immutable name = "blarbhl".asTruecolour(255, 255, 255, brightTerminal: false, normalise: false);
     immutable alsoName = "%c[38;2;%d;%d;%dm%s%c[0m"
         .format(cast(char)TerminalToken.format, 255, 255, 255,
-           "blarbhl", cast(char)TerminalToken.format);
+            "blarbhl", cast(char)TerminalToken.format);
 
     assert((name == alsoName), alsoName);
 }
@@ -1016,7 +1016,6 @@ in (word.length, "Tried to get colour by hash but no word was given")
 {
     return getColourByHashImpl(word, settings.brightTerminal, settings.extendedColours);
 }
-
 
 ///
 unittest

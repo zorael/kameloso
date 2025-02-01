@@ -2375,6 +2375,7 @@ version(WithOnelinerPlugin)
     version = WantPeekCommandsHandler;
 }
 
+
 // processDeferredActions
 /++
     Iterates through a plugin's array of [kameloso.plugins.common.DeferredAction|DeferredAction]s.
@@ -4213,7 +4214,6 @@ void prettyPrintStartScreen(const Kameloso instance, const string arg0)
         notifyAboutIncompleteConfiguration(instance.settings.configFile, arg0);
     }
 }
-
 
 
 // checkInitialisationMessages

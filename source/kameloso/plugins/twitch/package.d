@@ -3313,7 +3313,6 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
 }
 
 
-
 // complainAboutMissingTokens
 /++
     Helper function to complain about missing Twitch authorisation tokens..

@@ -79,11 +79,11 @@ public:
 /++
     Does three things upon [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME];
 
-    1. Sets up the FIFO pipe, resolving the filename and creating it.
-    2. Prints the usage text.
-    3. Lastly, endlessly loops (as a [core.thread.fiber.Fiber|Fiber]) and checks once per
-       hour if the FIFO has disappeared, and recreates it if so. This is to allow
-       for recovery from the FIFO being deleted.
+    1.  Sets up the FIFO pipe, resolving the filename and creating it.
+    2.  Prints the usage text.
+    3.  Lastly, endlessly loops (as a [core.thread.fiber.Fiber|Fiber]) and checks once per
+        hour if the FIFO has disappeared, and recreates it if so. This is to allow
+        for recovery from the FIFO being deleted.
 
     Initialises the FIFO *here*, where we know our nickname (we don't in .initialise).
  +/

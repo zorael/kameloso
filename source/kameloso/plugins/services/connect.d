@@ -2117,7 +2117,7 @@ private:
         bool serverSupportsWHOIS = true;
 
         /++
-           Number of capabilities requested but still not awarded.
+            Number of capabilities requested but still not awarded.
          +/
         uint requestedCapabilitiesRemaining;
 

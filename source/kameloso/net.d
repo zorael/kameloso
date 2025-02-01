@@ -355,7 +355,7 @@ public:
                 throw new SSLException(message);
             }
 
-            // Unsure what thi scould be so just rethrow it
+            // Unsure what this could be so just rethrow it
             throw e;
         }
 
