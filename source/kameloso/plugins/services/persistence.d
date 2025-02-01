@@ -120,22 +120,20 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 
             if (globalUserExisted)
             {
+                version(none)
                 version(TwitchSupport)
                 {
-                    /+
-                        Badges are channel-specific, so any such in the global
-                        user would be left over from a different channel and
-                        should be ignored.
-                     +/
-                    global.badges = string.init;
-
-                    if (global.class_ != IRCUser.Class.blacklist)
+                    if (global.badges.length && (global.badges != "*"))
                     {
-                        /+
-                            We're doing a conservative meld so this is probably
-                            not necessary, but just in case.
-                         +/
-                        global.class_ = IRCUser.Class.anyone;
+                        import std.format : format;
+
+                        enum pattern = "The global '%s' user has badges '%s' when it should be empty";
+                        immutable message = pattern.format(global.nickname, global.badges);
+                        event.errors = event.errors.length ?
+                            " | " ~ message :
+                            message;
+
+                        global.badges = string.init;
                     }
                 }
 
@@ -344,6 +342,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             if (global.class_ != IRCUser.Class.admin)
             {
                 // No channel context for global users; reset class
+                // admin is sticky though
                 global.class_ = IRCUser.Class.anyone;
             }
 
