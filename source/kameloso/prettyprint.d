@@ -29,7 +29,7 @@
 
     Distance between types, member names and member values are deduced automatically
     based on how long they are (in terms of characters). If it doesn't line up,
-    its a bug.
+    it's a bug.
 
     See_Also:
         [kameloso.terminal.colours]
@@ -288,8 +288,11 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
         brightTerminal = Whether or not to format for a bright terminal background.
         things = Variadic list of aggregate objects to enumerate and format.
  +/
-void prettyformat(Flag!"all" all = No.all,
-    Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
+void prettyformat(
+    Flag!"all" all = No.all,
+    Flag!"coloured" coloured = Yes.coloured,
+    Sink,
+    Things...)
     (auto ref Sink sink,
     const bool brightTerminal,
     const auto ref Things things)
@@ -846,7 +849,8 @@ private struct FormatAggregateMemberArguments
         args = Argument aggregate for easier passing.
  +/
 private void prettyformatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
-    (auto ref Sink sink, const FormatAggregateMemberArguments args)
+    (auto ref Sink sink,
+    const FormatAggregateMemberArguments args)
 {
     import std.format : formattedWrite;
 
@@ -996,8 +1000,11 @@ private void prettyformatOtherMemberImpl(Flag!"coloured" coloured, Sink)
         typewidth = The width with which to pad type names, to align properly.
         namewidth = The width with which to pad variable names, to align properly.
  +/
-private void prettyformatImpl(Flag!"all" all = No.all,
-    Flag!"coloured" coloured = Yes.coloured, Sink, Thing)
+private void prettyformatImpl(
+    Flag!"all" all = No.all,
+    Flag!"coloured" coloured = Yes.coloured,
+    Sink,
+    Thing)
     (auto ref Sink sink,
     const bool brightTerminal,
     const auto ref Thing thing,
@@ -1543,7 +1550,10 @@ private void prettyformatImpl(Flag!"all" all = No.all,
     Returns:
         String with the object formatted, as per the passed arguments.
  +/
-string prettyformat(Flag!"all" all = No.all, Flag!"coloured" coloured = Yes.coloured, Things...)
+string prettyformat(
+    Flag!"all" all = No.all,
+    Flag!"coloured" coloured = Yes.coloured,
+    Things...)
     (const bool brightTerminal,
     const auto ref Things things) pure
 if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))  // must be a constraint

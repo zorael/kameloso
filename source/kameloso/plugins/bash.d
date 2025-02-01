@@ -653,7 +653,7 @@ void teardown(BashPlugin plugin)
 
     if (plugin.transient.workerTid != Tid.init)
     {
-       plugin.transient.workerTid.prioritySend(true);
+        plugin.transient.workerTid.prioritySend(true);
     }
 }
 
