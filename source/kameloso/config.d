@@ -570,8 +570,8 @@ public:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
-        [lu.common.Next.continue_|Next.continue_] or
-        [lu.common.Next.returnSuccess|Next.returnSuccess] depending on whether
+        [lu.misc.Next.continue_|Next.continue_] or
+        [lu.misc.Next.returnSuccess|Next.returnSuccess] depending on whether
         the arguments chosen mean the program should proceed or not.
 
     Throws:
@@ -583,7 +583,7 @@ auto handleGetopt(Kameloso instance) @system
     import kameloso.configreader : readConfigInto;
     import kameloso.logger : KamelosoLogger;
     import kameloso.terminal : applyTerminalOverrides;
-    import lu.common : Next;
+    import lu.misc : Next;
     import lu.objmanip : replaceMembers;
     static import kameloso.common;
     static import std.getopt;

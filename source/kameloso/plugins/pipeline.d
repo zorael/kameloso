@@ -94,7 +94,7 @@ public:
 void onWelcome(PipelinePlugin plugin)
 {
     import kameloso.plugins.common.scheduling : delay;
-    import lu.common : ReturnValueException;
+    import lu.misc : ReturnValueException;
     import core.time : minutes;
 
     void initRoutine()
@@ -176,12 +176,12 @@ void printUsageText(PipelinePlugin plugin, const bool reinit)
         A filename to use for the FIFO.
 
     Throws:
-        [lu.common.FileExistsException|FileExistsException] if a FIFO with
+        [lu.misc.FileExistsException|FileExistsException] if a FIFO with
         the same filename already exists, suggesting concurrent conflicting
         instances of the program (or merely a zombie FIFO after a crash),
         and a new filename could not be invented.
 
-        [lu.common.FileTypeMismatchException|FileTypeMismatchException] if a file or directory
+        [lu.misc.FileTypeMismatchException|FileTypeMismatchException] if a file or directory
         exists with the same name as the FIFO we want to create, and a new
         filename could not be invented.
  +/
@@ -251,7 +251,7 @@ auto resolvePath(PipelinePlugin plugin)
             }
             else if (filename[$-3..$] == "-00")  // beyond -99
             {
-                import lu.common : FileExistsException, FileTypeMismatchException;
+                import lu.misc : FileExistsException, FileTypeMismatchException;
                 import core.sys.posix.sys.stat : S_ISFIFO;
 
                 // Don't infinitely loop, should realistically never happen though
@@ -311,13 +311,13 @@ auto initialiseFIFO(PipelinePlugin plugin)
         filename = String filename of FIFO to create.
 
     Throws:
-        [lu.common.ReturnValueException|ReturnValueException] if the FIFO
+        [lu.misc.ReturnValueException|ReturnValueException] if the FIFO
         could not be created.
  +/
 void createFIFOFile(const string filename)
 in (filename.length, "Tried to create a FIFO with an empty filename")
 {
-    import lu.common : ReturnValueException;
+    import lu.misc : ReturnValueException;
     import std.process : execute;
 
     // Try more than once in case there are competing instances of the program
@@ -567,7 +567,7 @@ void teardown(PipelinePlugin plugin)
  +/
 void reload(PipelinePlugin plugin)
 {
-    import lu.common : ReturnValueException;
+    import lu.misc : ReturnValueException;
     import std.file : exists;
 
     if (plugin.transient.fifoFilename.exists && plugin.transient.fifoFilename.isFIFO)

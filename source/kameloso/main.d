@@ -225,7 +225,7 @@ void signalHandler(int sig) nothrow @nogc @system
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
-        A [lu.common.Next|Next] value, signaling to the caller whether the bot
+        A [lu.misc.Next|Next] value, signaling to the caller whether the bot
         should exit or not.
  +/
 auto processMessages(Kameloso instance)
@@ -235,7 +235,7 @@ auto processMessages(Kameloso instance)
     import kameloso.messaging : Message;
     import kameloso.tables : trueThenFalse;
     import kameloso.thread : ThreadMessage;
-    import lu.common : Next;
+    import lu.misc : Next;
     import core.time : MonoTime, msecs;
 
     auto next = Next.continue_;
@@ -919,18 +919,18 @@ auto processMessages(Kameloso instance)
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
-        [lu.common.Next.returnFailure|Next.returnFailure] if circumstances mean
+        [lu.misc.Next.returnFailure|Next.returnFailure] if circumstances mean
         the bot should exit with a non-zero exit code,
-        [lu.common.Next.returnSuccess|Next.returnSuccess] if it should exit by
+        [lu.misc.Next.returnSuccess|Next.returnSuccess] if it should exit by
         returning `0`,
-        [lu.common.Next.retry|Next.retry] if the bot should reconnect to the server.
-        [lu.common.Next.continue_|Next.continue_] is never returned.
+        [lu.misc.Next.retry|Next.retry] if the bot should reconnect to the server.
+        [lu.misc.Next.continue_|Next.continue_] is never returned.
  +/
 auto mainLoop(Kameloso instance)
 {
     import kameloso.constants : Timeout;
     import kameloso.net : ListenAttempt, SocketSendException, listenFiber;
-    import lu.common : Next;
+    import lu.misc : Next;
     import std.concurrency : Generator;
     import std.datetime.systime : Clock, SysTime;
     import core.thread.fiber : Fiber;
@@ -1325,7 +1325,7 @@ auto sendLines(Kameloso instance)
 // listenAttemptToNext
 /++
     Translates the [kameloso.net.ListenAttempt.State|ListenAttempt.State]
-    received from a [std.concurrency.Generator|Generator] into a [lu.common.Next|Next],
+    received from a [std.concurrency.Generator|Generator] into a [lu.misc.Next|Next],
     while also providing warnings and error messages.
 
     Params:
@@ -1333,11 +1333,11 @@ auto sendLines(Kameloso instance)
         attempt = The [kameloso.net.ListenAttempt|ListenAttempt] to map the `.state` value of.
 
     Returns:
-        A [lu.common.Next|Next] describing what action [mainLoop] should take next.
+        A [lu.misc.Next|Next] describing what action [mainLoop] should take next.
  +/
 auto listenAttemptToNext(Kameloso instance, const ListenAttempt attempt)
 {
-    import lu.common : Next;
+    import lu.misc : Next;
 
     // Handle the attempt; switch on its state
     with (ListenAttempt.ListenState)
@@ -2704,7 +2704,7 @@ void resetSignals() nothrow @nogc
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
-        [lu.common.Next|Next].* depending on what action the calling site should take.
+        [lu.misc.Next|Next].* depending on what action the calling site should take.
  +/
 auto tryGetopt(Kameloso instance)
 {
@@ -2712,7 +2712,7 @@ auto tryGetopt(Kameloso instance)
     import kameloso.config : handleGetopt;
     import kameloso.configreader : ConfigurationFileReadFailureException;
     import kameloso.string : doublyBackslashed;
-    import lu.common : FileTypeMismatchException, Next;
+    import lu.misc : FileTypeMismatchException, Next;
     import lu.serialisation : DeserialisationException;
     import std.conv : ConvException;
     import std.getopt : GetOptException;
@@ -2788,8 +2788,8 @@ auto tryGetopt(Kameloso instance)
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
-        [lu.common.Next.continue_|Next.continue_] if connection succeeded,
-        [lu.common.Next.returnFailure|Next.returnFailure] if connection failed
+        [lu.misc.Next.continue_|Next.continue_] if connection succeeded,
+        [lu.misc.Next.returnFailure|Next.returnFailure] if connection failed
         and the program should exit.
  +/
 auto tryConnect(Kameloso instance)
@@ -2800,7 +2800,7 @@ auto tryConnect(Kameloso instance)
         Timeout;
     import kameloso.net : ConnectionAttempt, connectFiber;
     import kameloso.thread : interruptibleSleep;
-    import lu.common : Next;
+    import lu.misc : Next;
     import std.concurrency : Generator;
 
     auto connector = new Generator!ConnectionAttempt(() =>
@@ -2871,7 +2871,7 @@ auto tryConnect(Kameloso instance)
             continue;
 
         case preconnect:
-            import lu.common : sharedDomains;
+            import lu.misc : sharedDomains;
             import std.socket : AddressException, AddressFamily;
 
             string resolvedHost;  // mutable
@@ -3094,15 +3094,15 @@ auto tryConnect(Kameloso instance)
         firstConnect = Whether or not this is the first time we're attempting a connection.
 
     Returns:
-        [lu.common.Next.continue_|Next.continue_] if resolution succeeded,
-        [lu.common.Next.returnFailure|Next.returnFailure] if it failed and the
+        [lu.misc.Next.continue_|Next.continue_] if resolution succeeded,
+        [lu.misc.Next.returnFailure|Next.returnFailure] if it failed and the
         program should exit.
  +/
 auto tryResolve(Kameloso instance, const bool firstConnect)
 {
     import kameloso.constants : Timeout;
     import kameloso.net : ResolveAttempt, resolveFiber;
-    import lu.common : Next;
+    import lu.misc : Next;
     import std.concurrency : Generator;
 
     auto resolver = new Generator!ResolveAttempt(() =>
@@ -3274,12 +3274,12 @@ void setDefaultDirectories(ref CoreSettings settings) @safe
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
-        [lu.common.Next.returnFailure|Next.returnFailure] if the program should exit,
-        [lu.common.Next.continue_|Next.continue_] otherwise.
+        [lu.misc.Next.returnFailure|Next.returnFailure] if the program should exit,
+        [lu.misc.Next.continue_|Next.continue_] otherwise.
  +/
 auto verifySettings(Kameloso instance)
 {
-    import lu.common : Next;
+    import lu.misc : Next;
 
     if (!instance.settings.force)
     {
@@ -3463,7 +3463,7 @@ auto startBot(Kameloso instance)
     import kameloso.string : doublyBackslashed;
     import kameloso.terminal : TerminalToken, isTerminal;
     import dialect.parsing : IRCParser;
-    import lu.common : Next;
+    import lu.misc : Next;
     import std.algorithm.comparison : among;
 
     // Save a backup snapshot of the client, for restoring upon reconnections
@@ -3502,7 +3502,7 @@ auto startBot(Kameloso instance)
             {
                 import kameloso.platform : exec;
                 import kameloso.terminal : isTerminal, resetTerminalTitle, setTerminalTitle;
-                import lu.common : ReturnValueException;
+                import lu.misc : ReturnValueException;
                 import std.process : ProcessException;
 
                 if (!instance.settings.headless)
@@ -4122,7 +4122,7 @@ void printSummary(const Kameloso instance) @safe
 struct RunState
 {
 private:
-    import lu.common : Next;
+    import lu.misc : Next;
 
 public:
     /++
@@ -4331,7 +4331,7 @@ auto run(string[] args)
     import kameloso.constants : ShellReturnValue;
     import kameloso.logger : KamelosoLogger;
     import kameloso.string : doublyBackslashed, replaceTokens;
-    import lu.common : Next;
+    import lu.misc : Next;
     import std.algorithm.comparison : among;
     import std.conv : ConvException;
     import std.exception : ErrnoException;

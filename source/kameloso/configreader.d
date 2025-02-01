@@ -103,7 +103,7 @@ if (allSatisfy!(isStruct, T))  // must be a constraint
         The contents of the supplied file.
 
     Throws:
-        [lu.common.FileTypeMismatchException|FileTypeMismatchException] if the
+        [lu.misc.FileTypeMismatchException|FileTypeMismatchException] if the
         configuration file is a directory, a character file or any other non-file
         type we can't write to.
 
@@ -120,7 +120,7 @@ auto configurationText(const string configFile) @safe
     }
     else if (!configFile.isFile)
     {
-        import lu.common : FileTypeMismatchException;
+        import lu.misc : FileTypeMismatchException;
         throw new FileTypeMismatchException(
             "Configuration file is not a file",
             configFile,

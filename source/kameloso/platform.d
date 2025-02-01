@@ -327,7 +327,7 @@ auto openInBrowser(const string url)
         On Posix, it either exits the program or it throws.
 
     Throws:
-        On Posix, [lu.common.ReturnValueException|ReturnValueException] on failure.
+        On Posix, [lu.misc.ReturnValueException|ReturnValueException] on failure.
         On Windows, [std.process.ProcessException|ProcessException] on failure.
  +/
 Pid exec(
@@ -429,7 +429,7 @@ Pid exec(
 
     version(Posix)
     {
-        import lu.common : ReturnValueException;
+        import lu.misc : ReturnValueException;
         import std.process : execvp;
 
         immutable retval = execvp(args[0], args);
