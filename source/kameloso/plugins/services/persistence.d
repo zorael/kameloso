@@ -60,29 +60,104 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
     import lu.meld : MeldingStrategy, meldInto;
     import std.algorithm.comparison : among;
 
-    if (service.state.server.daemon == IRCServer.Daemon.unset)
+    /++
+        Ensures a user exists in the global cache, conservatively melding it
+        into the passed user if it does, inserting the passed user into the
+        cache if it doesn't.
+     +/
+    static auto syncUserWithGlobal(PersistenceService service, ref IRCUser user, ref string errors)
     {
-        if (event.type == IRCEvent.Type.RPL_WELCOME)
+        bool globalUserExisted;
+
+        auto global = establishUserInCache(
+            service,
+            user,
+            string.init,
+            createIfNoneExist: true,
+            foundExisting: globalUserExisted);
+
+        if (globalUserExisted)
         {
-            event.target.class_ = IRCUser.Class.anyone;
+            import lu.meld : MeldingStrategy, meldInto;
+
+            version(none)
+            version(TwitchSupport)
+            {
+                if (global.badges.length && (global.badges != "*"))
+                {
+                    import std.format : format;
+
+                    enum pattern = "The global '%s' user has badges '%s' when it should be empty";
+                    immutable message = pattern.format(global.nickname, global.badges);
+                    errors = errors.length ?
+                        " | " ~ message :
+                        message;
+
+                    global.badges = string.init;
+                }
+            }
+
+            // Fill in the blanks, conservatively
+            (*global).meldInto!(MeldingStrategy.conservative)(user);
         }
 
-        // Too early to do anything meaningful, and it throws off Twitch detection
-        return false;
+        return global;
     }
 
-    /+
-        Some events may carry invalid users, or are otherwise simply not applicable here.
+    /++
+        Compares the user account to the array of administrators and sets the
+        user class accordingly.
+
+        If the class is `unset`, it is raised to `anyone`.
      +/
-    if (event.type.among!
-        (IRCEvent.Type.ERR_WASNOSUCHNICK,
-        IRCEvent.Type.ERR_NOSUCHNICK,
-        IRCEvent.Type.RPL_LOGGEDIN,
-        IRCEvent.Type.ERR_NICKNAMEINUSE,
-        IRCEvent.Type.ERR_BANONCHAN))
+    static void discoverAdmin(PersistenceService service, ref IRCUser user)
     {
-        // Ignore
-        return false;
+        if (user.class_ == IRCUser.Class.admin)
+        {
+            // admin is sticky
+            return;
+        }
+        else
+        {
+            import std.algorithm.searching : canFind;
+
+            // We can't really throttle this, but maybe it pales in
+            // comparison to all the AA lookups we're doing
+            if (service.state.bot.admins.canFind(user.account))
+            {
+                user.class_ = IRCUser.Class.admin;
+                return;
+            }
+        }
+
+        if (user.class_ == IRCUser.Class.unset)
+        {
+            // Users should never be unset
+            user.class_ = IRCUser.Class.anyone;
+        }
+    }
+
+    /++
+        Ensures that the sender and target of an event are in sync with the global
+        cache, and that they don't have any channel-specific values set.
+     +/
+    static void syncEventUsersWithGlobals(
+        PersistenceService service,
+        ref IRCEvent event)
+    {
+        IRCUser*[2] users = [ &event.sender, &event.target ];
+
+        foreach (user; users[])
+        {
+            if (!user.nickname.length) continue;
+
+            // Clear badges before syncing so channel-specific badges don't leak
+            // into the global user
+            version(TwitchSupport) user.badges = string.init;
+
+            discoverAdmin(service, *user);
+            syncUserWithGlobal(service, *user, errors: event.errors);
+        }
     }
 
     /++
@@ -121,43 +196,9 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             createIfNoneExist: true,
             foundExisting: storedUserExisted);
 
-        IRCUser* global;
-
-        if (event.channel.length)
-        {
-            // A channel was specified, but also look for a global channel-less entry
-            bool globalUserExisted;
-
-            global = establishUserInCache(
-                service,
-                user,
-                string.init,
-                createIfNoneExist: true,
-                foundExisting: globalUserExisted);
-
-            if (globalUserExisted)
-            {
-                version(none)
-                version(TwitchSupport)
-                {
-                    if (global.badges.length && (global.badges != "*"))
-                    {
-                        import std.format : format;
-
-                        enum pattern = "The global '%s' user has badges '%s' when it should be empty";
-                        immutable message = pattern.format(global.nickname, global.badges);
-                        event.errors = event.errors.length ?
-                            " | " ~ message :
-                            message;
-
-                        global.badges = string.init;
-                    }
-                }
-
-                // Fill in the blanks, conservatively
-                (*global).meldInto!(MeldingStrategy.conservative)(*stored);
-            }
-        }
+        auto global = event.channel.length ?
+            syncUserWithGlobal(service, *stored, errors: event.errors) :
+            null;
 
         const old = *stored;
 
@@ -295,28 +336,11 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                 stored.class_ = IRCUser.Class.anyone;
             }
         }
-
-        version(TwitchSupport)
+        else /*if (service.state.server.daemon != IRCServer.Daemon.twitch)*/
         {
-            if (service.state.server.daemon == IRCServer.Daemon.twitch)
+            version(TwitchSupport)
             {
-                if (stored.class_ != IRCUser.Class.admin)
-                {
-                    import std.algorithm.searching : canFind;
-
-                    // We can't really throttle this, but maybe it pales in
-                    // comparison to all the AA lookups we're doing
-                    if (service.state.bot.admins.canFind(stored.account))
-                    {
-                        stored.class_ = IRCUser.Class.admin;
-                    }
-                }
-
-                if (stored.class_ == IRCUser.Class.unset)
-                {
-                    // Users should never be unset
-                    stored.class_ = IRCUser.Class.anyone;
-                }
+                discoverAdmin(service, *stored);
             }
         }
 
@@ -365,6 +389,72 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 
             // Global users should never have channel-specific badges
             version(TwitchSupport) global.badges = string.init;
+        }
+    }
+
+    if (service.state.server.daemon == IRCServer.Daemon.unset)
+    {
+        if (event.type == IRCEvent.Type.RPL_WELCOME)
+        {
+            event.target.class_ = IRCUser.Class.anyone;
+        }
+
+        // Too early to do anything meaningful, and it throws off Twitch detection
+        return false;
+    }
+
+    /+
+        Some events may carry invalid users, or are otherwise simply not applicable here.
+     +/
+    if (event.type.among!
+        (IRCEvent.Type.ERR_WASNOSUCHNICK,
+        IRCEvent.Type.ERR_NOSUCHNICK,
+        IRCEvent.Type.RPL_LOGGEDIN,
+        IRCEvent.Type.ERR_NICKNAMEINUSE,
+        IRCEvent.Type.ERR_BANONCHAN))
+    {
+        // Ignore
+        return false;
+    }
+
+    /+
+        If there is a channel, check if it's a channel we should be postprocessing
+        fully. If not, do the bare minimum and then return false.
+     +/
+    if (event.channel.length)
+    {
+        import std.algorithm.searching : canFind;
+
+        with (ChannelPolicy)
+        final switch (service.persistenceSettings.omniscienceLevel)
+        {
+        case home:
+            // omniscienceLevel requires a home channel
+            if (!service.state.bot.homeChannels.canFind(event.channel))
+            {
+                syncEventUsersWithGlobals(service, event);
+                return false;
+            }
+
+            // Drop down
+            break;
+
+        case guest:
+            // omniscienceLevel requires a guest channel or higher
+            if (!service.state.bot.homeChannels.canFind(event.channel) &&
+                !service.state.bot.guestChannels.canFind(event.channel))
+            {
+                syncEventUsersWithGlobals(service, event);
+                return false;
+            }
+
+            // Drop down
+            break;
+
+        case any:
+            // omniscienceLevel is okay with any channel
+            // Drop down
+            break;
         }
     }
 
