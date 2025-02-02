@@ -80,6 +80,9 @@
  +/
 module kameloso.net;
 
+version(Windows) version = WindowsPlatform;
+version(unittest) version = WindowsPlatform;
+
 private:
 
 import kameloso.constants : BufferSize, Timeout;
@@ -1560,7 +1563,7 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
     Returns:
         `true` if OpenSSL is installed, `false` if not.
  +/
-version(Windows)
+version(WindowsPlatform)
 auto openSSLIsInstalled() @system
 {
     import requests.ssl_adapter : openssl;
