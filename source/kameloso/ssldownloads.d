@@ -14,7 +14,10 @@
  +/
 module kameloso.ssldownloads;
 
-version(Windows):
+version(Windows) version = WindowsPlatform;
+version(unittest) version = WindowsPlatform;
+
+version(WindowsPlatform):
 
 private:
 
@@ -69,6 +72,7 @@ auto downloadWindowsSSL(
             "-c",
             "Invoke-WebRequest '" ~ url ~ "' -OutFile '" ~ saveAs ~ "'",
         ];
+
         immutable result = execute(command[]);
 
         if (result.status != 0)
@@ -134,9 +138,10 @@ auto downloadWindowsSSL(
 
         enum cacertURL = "https://curl.se/ca/cacert.pem";
         immutable result = downloadFile(
-            cacertURL,
-            "certificate bundle",
-            instance.connSettings.caBundleFile);
+            url: cacertURL,
+            what: "certificate bundle",
+            saveAs: instance.connSettings.caBundleFile);
+
         if (*instance.abort) return false;
 
         if (result == 0)
@@ -166,95 +171,137 @@ auto downloadWindowsSSL(
         import std.json : JSONException;
         import std.process : ProcessException;
 
+        version(Win64)
+        {
+            immutable head = shouldDownloadOpenSSL1_1 ?
+                "Win64OpenSSL_Light-1_1" :
+                "Win64OpenSSL_Light-3_";
+        }
+        else version(Win32)
+        {
+            immutable head = shouldDownloadOpenSSL1_1 ?
+                "Win32OpenSSL_Light-1_1" :
+                "Win32OpenSSL_Light-3_";
+        }
+        else version(AArch64)
+        {
+            // Untested, might work?
+            immutable head = shouldDownloadOpenSSL1_1 ?
+                "Win64ARMOpenSSL_Light-1_1" :
+                "Win64ARMOpenSSL_Light-3_";
+        }
+        else version(unittest)
+        {
+            enum head = string.init;
+        }
+        else
+        {
+            static assert(0, "Unsupported platform, please file a bug.");
+        }
+
         immutable temporaryDir = buildNormalizedPath(tempDir, "kameloso");
         mkdirRecurse(temporaryDir);
 
         enum jsonURL = "https://raw.githubusercontent.com/slproweb/opensslhashes/master/win32_openssl_hashes.json";
         immutable jsonFile = buildNormalizedPath(temporaryDir, "win32_openssl_hashes.json");
-        immutable result = downloadFile(jsonURL, "manifest", jsonFile);
+        immutable manifestResult = downloadFile(
+            url: jsonURL,
+            what: "manifest",
+            saveAs: jsonFile);
+
         if (*instance.abort) return;
-        if (result != 0) return;
+        if (manifestResult != 0) return;
 
         try
         {
             import std.file : readText;
             import std.json : parseJSON;
+            import std.process : execute;
 
-            version(Win64)
-            {
-                immutable head = shouldDownloadOpenSSL1_1 ?
-                    "Win64OpenSSL_Light-1_1" :
-                    "Win64OpenSSL_Light-3_2";
-            }
-            else version(Win32)
-            {
-                immutable head = shouldDownloadOpenSSL1_1 ?
-                    "Win32OpenSSL_Light-1_1" :
-                    "Win32OpenSSL_Light-3_2";
-            }
-            else version(AArch64)
-            {
-                // Untested, might work?
-                immutable head = shouldDownloadOpenSSL1_1 ?
-                    "Win64ARMOpenSSL_Light-1_1" :
-                    "Win64ARMOpenSSL_Light-3_2";
-            }
-            else
-            {
-                static assert(0, "Unsupported platform, please file a bug.");
-            }
+            string topFilename;
+            uint topVersionMinor;
+            uint topVersionPatch;
 
             const hashesJSON = parseJSON(readText(jsonFile));
 
-            foreach (immutable filename, fileEntryJSON; hashesJSON["files"].object)
+            /+
+                Figure out the latest version by the numbers in the filenames.
+             +/
+            foreach (immutable filename, _; hashesJSON["files"].object)
             {
                 import std.algorithm.searching : endsWith, startsWith;
 
                 if (filename.startsWith(head) && filename.endsWith(".msi"))
                 {
-                    import std.process : execute;
+                    import lu.string : advancePast;
+                    import std.conv : to;
 
-                    immutable msi = buildNormalizedPath(temporaryDir, filename);
-                    immutable downloadResult = downloadFile(fileEntryJSON["url"].str, "OpenSSL installer", msi);
-                    if (*instance.abort) return;
-                    if (downloadResult != 0) break;
+                    string slice = filename[head.length..$];  // mutable
+                    immutable versionMinor = slice.advancePast('_').to!uint;
+                    immutable versionPatch = slice.advancePast('_').to!uint;
 
-                    immutable string[3] command =
-                    [
-                        "msiexec",
-                        "/i",
-                        msi,
-                    ];
-
-                    logger.info("Launching <l>OpenSSL</> installer.");
-                    immutable result = execute(command[]);
-
-                    if (result.status != 0)
+                    if (versionMinor > topVersionMinor)
                     {
-                        enum errorPattern = "Installation process exited with status <l>%d";
-                        logger.errorf(errorPattern, result.status);
-
-                        version(PrintStacktraces)
-                        {
-                            import std.stdio : stdout, writeln;
-                            import std.string : chomp;
-
-                            immutable output = result.output.chomp;
-
-                            if (output.length)
-                            {
-                                writeln(output);
-                                stdout.flush();
-                            }
-                        }
+                        topFilename = filename;
+                        topVersionMinor = versionMinor;
+                        topVersionPatch = versionPatch;
                     }
-                    return;
+                    else if (
+                        (versionMinor == topVersionMinor) &&
+                        (versionPatch > topVersionPatch))
+                    {
+                        topFilename = filename;
+                        topVersionPatch = versionPatch;
+                    }
                 }
             }
 
-            // If we're here, we couldn't find anything in the json
-            // Drop down
-            logger.error("Could not find <l>OpenSSL</> .msi to download");
+            if (!topFilename.length)
+            {
+                // We couldn't find anything in the json
+                logger.error("Could not find <l>OpenSSL</> .msi to download");
+                return;
+            }
+
+            const topFileEntryJSON = hashesJSON["files"][topFilename];
+            immutable msiPath = buildNormalizedPath(temporaryDir, topFilename);
+            immutable downloadResult = downloadFile(
+                url: topFileEntryJSON["url"].str,
+                what: "OpenSSL installer",
+                saveAs: msiPath);
+
+            if (*instance.abort) return;
+            if (downloadResult != 0) return;
+
+            immutable string[3] command =
+            [
+                "msiexec",
+                "/i",
+                msiPath,
+            ];
+
+            logger.info("Launching <l>OpenSSL</> installer.");
+            immutable msiExecResult = execute(command[]);
+
+            if (msiExecResult.status != 0)
+            {
+                enum errorPattern = "Installation process exited with status <l>%d";
+                logger.errorf(errorPattern, msiExecResult.status);
+
+                version(PrintStacktraces)
+                {
+                    import std.stdio : stdout, writeln;
+                    import std.string : chomp;
+
+                    immutable output = msiExecResult.output.chomp;
+
+                    if (output.length)
+                    {
+                        writeln(output);
+                        stdout.flush();
+                    }
+                }
+            }
         }
         catch (JSONException e)
         {
@@ -288,7 +335,7 @@ auto downloadWindowsSSL(
         }
     }
 
-    if (*instance.abort) return retval;  // or false?
+    if (*instance.abort) return false;
 
     if (shouldDownloadOpenSSL)
     {
@@ -301,7 +348,8 @@ auto downloadWindowsSSL(
         }
         else
         {
-            downloadOpenSSL();
+            // Downloading OpenSSL is not cause for a settings update
+            /*retval |=*/ downloadOpenSSL();
         }
     }
 
