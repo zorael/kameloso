@@ -273,7 +273,9 @@ void formatMessageMonochrome(Sink)
         version(TwitchSupport)
         {
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                plugin.printerSettings.twitchBadges && event.sender.badges.length)
+                plugin.printerSettings.twitchBadges &&
+                event.sender.badges.length &&
+                (event.sender.badges != "*"))
             {
                 with (IRCEvent.Type)
                 switch (event.type)
@@ -363,7 +365,9 @@ void formatMessageMonochrome(Sink)
         version(TwitchSupport)
         {
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                plugin.printerSettings.twitchBadges && event.target.badges.length)
+                plugin.printerSettings.twitchBadges &&
+                event.target.badges.length &&
+                (event.target.badges != "*"))
             {
                 .put(sink, " [", event.target.badges, ']');
             }
@@ -858,7 +862,8 @@ void formatMessageColoured(Sink)
         {
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
                 plugin.printerSettings.twitchBadges &&
-                event.sender.badges.length)
+                event.sender.badges.length &&
+                (event.sender.badges != "*"))
             {
                 with (IRCEvent.Type)
                 switch (event.type)
@@ -981,7 +986,8 @@ void formatMessageColoured(Sink)
         {
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
                 plugin.printerSettings.twitchBadges &&
-                event.target.badges.length)
+                event.target.badges.length &&
+                (event.target.badges != "*"))
             {
                 immutable code = plugin.state.settings.brightTerminal ? Bright.badge : Dark.badge;
                 sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
