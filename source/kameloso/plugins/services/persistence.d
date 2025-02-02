@@ -31,6 +31,23 @@ import kameloso.common : logger;
 import dialect.defs;
 
 
+// PersistenceSettings
+/++
+    Settings for the Persistence service.
+ +/
+@Settings struct PersistenceSettings
+{
+private:
+    import lu.uda : Unserialisable;
+
+public:
+    /++
+        To what level the service should monitor and record users in channels.
+     +/
+    @Unserialisable ChannelPolicy omniscienceLevel = ChannelPolicy.any;
+}
+
+
 // postprocess
 /++
     Hijacks a reference to a [dialect.defs.IRCEvent|IRCEvent] after parsing and
@@ -1395,6 +1412,11 @@ private:
          +/
         account2 = "<account2>",
     }
+
+    /++
+        All Persistence settings gathered.
+     +/
+    PersistenceSettings persistenceSettings;
 
     /++
         File with user definitions.
