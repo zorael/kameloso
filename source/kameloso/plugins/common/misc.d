@@ -34,8 +34,11 @@ public:
 
     Params:
         plugins = Array of all [kameloso.plugins.common.IRCPlugin|IRCPlugin]s.
+        settings = Pointer to a [kameloso.pods.CoreSettings|CoreSettings] struct.
         customSettings = Array of custom settings to apply to plugins' own
             setting, in the string forms of "`plugin.setting=value`".
+        toPluginsOnly = Whether to apply settings to the core settings struct
+            as well, or only to the plugins.
 
     Returns:
         `true` if no setting name mismatches occurred, `false` if it did.
@@ -45,7 +48,9 @@ public:
  +/
 auto applyCustomSettings(
     IRCPlugin[] plugins,
-    const string[] customSettings)
+    ref CoreSettings settings,
+    const string[] customSettings,
+    const bool toPluginsOnly)
 {
     import lu.objmanip : SetMemberException;
     import lu.string : advancePast;
@@ -78,11 +83,12 @@ auto applyCustomSettings(
                 import kameloso.logger : KamelosoLogger;
                 import lu.objmanip : setMemberByName;
                 import std.algorithm.comparison : among;
-                static import kameloso.common;
+
+                if (toPluginsOnly) continue top;
 
                 immutable success = value.length ?
-                    kameloso.common.settings.setMemberByName(setting, value) :
-                    kameloso.common.settings.setMemberByName(setting, true);
+                    settings.setMemberByName(setting, value) :
+                    settings.setMemberByName(setting, true);
 
                 if (!success)
                 {
@@ -99,12 +105,12 @@ auto applyCustomSettings(
                         "headless",
                         "flush"))
                     {
-                        logger = new KamelosoLogger(kameloso.common.settings);
+                        logger = new KamelosoLogger(settings);
                     }
 
                     foreach (plugin; plugins)
                     {
-                        plugin.state.settings = kameloso.common.settings;
+                        plugin.state.settings = settings;
 
                         // No need to flag as updated when we update here manually
                         //plugin.state.updates |= typeof(plugin.state.updates).settings;
@@ -202,7 +208,13 @@ unittest
         "myplugin.d=99.99",
     ];
 
-    cast(void)applyCustomSettings([ plugin ], newSettings);
+    CoreSettings coreSettings;
+
+    cast(void)applyCustomSettings(
+        [ plugin ],
+        settings: coreSettings,
+        customSettings: newSettings,
+        toPluginsOnly: true);
 
     const ps = (cast(MyPlugin)plugin).myPluginSettings;
 

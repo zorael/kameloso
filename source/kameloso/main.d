@@ -2568,11 +2568,11 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                 import kameloso.plugins.common.misc : applyCustomSettings;
 
                 immutable expression = action.context;
-
-                // Borrow settings from the first plugin. It's taken by value
                 immutable success = applyCustomSettings(
                     instance.plugins,
-                    [ expression ]);
+                    *instance.settings,
+                    [ expression ],
+                    toPluginsOnly: false);  // include settings
 
                 fiber.payload[0] = success;
                 fiber.call(action.creator);

@@ -548,7 +548,11 @@ public:
             }
         }
 
-        immutable allCustomSuccess = applyCustomSettings(this.plugins, this.customSettings);
+        immutable allCustomSuccess = applyCustomSettings(
+            this.plugins,
+            *this.settings,
+            this.customSettings,
+            toPluginsOnly: true);  // Don't overwrite changes to the instance settings
 
         if (!allCustomSuccess)
         {
