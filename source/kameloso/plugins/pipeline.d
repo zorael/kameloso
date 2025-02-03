@@ -35,17 +35,6 @@ import dialect.defs;
 import core.time : Duration;
 
 
-/+
-    For storage location of the FIFO it makes sense to default to /tmp;
-    Posix defines a variable `$TMPDIR`, which should take precedence.
-    However, this supposedly makes the file really difficult to access on macOS
-    where it translates to some really long, programmatically generated path.
-    macOS naturally does support /tmp though. So shrug and version it to
-    default-ignore `$TMPDIR` on macOS but obey it on other platforms.
- +/
-//version = OSXTMPDIR;
-
-
 // PipelineSettings
 /++
     All settings for a [PipelinePlugin], aggregated.
@@ -64,14 +53,30 @@ public:
     /++
         Whether or not to place the FIFO in the working directory. If false, it
         will be saved in `/tmp` or wherever `$TMPDIR` points. If macOS, then there
-        only if version `OSXTMPDIR`.
+        only if [PipelineSettings.useTMPDIR] is true.
      +/
     bool fifoInWorkingDir = false;
 
-    /++
-        Custom path to use as FIFO filename, specified with `--set pipeline.path=[...]`.
-     +/
-    @Unserialisable string path;
+    @Unserialisable
+    {
+        /++
+            Custom path to use as FIFO filename, specified with `--set pipeline.path=[...]`.
+         +/
+        string path;
+
+        /++
+            Whether ot not to obey `$TMPDIR` on macOS. If false, the FIFO will be saved
+            in `/tmp` regardless of `$TMPDIR`. If true, `$TMPDIR` will be obeyed.
+
+            For storage location of the FIFO it makes sense to default to /tmp;
+            Posix defines a variable `$TMPDIR`, which should take precedence.
+            However, this supposedly makes the file really difficult to access on macOS
+            where it translates to some really long, programmatically generated path.
+            macOS naturally does support /tmp though. So shrug and version it to
+            default-ignore `$TMPDIR` on macOS but obey it on other platforms.
+         +/
+        bool useTMPDIR = false;
+    }
 }
 
 
@@ -198,40 +203,28 @@ auto resolvePath(PipelinePlugin plugin)
     else
     {
         import std.conv : text;
-        import std.path : buildNormalizedPath;
 
         filename = text(plugin.state.client.nickname, '@', plugin.state.server.address);
 
         if (!plugin.pipelineSettings.fifoInWorkingDir)
         {
+            import std.path : buildNormalizedPath;
+            import std.process : environment;
+
             // See notes at the top of the module.
             version(OSX)
             {
-                version(OSXTMPDIR)
-                {
-                    enum useTMPDIR = true;
-                }
-                else
-                {
-                    enum useTMPDIR = false;
-                }
+                immutable useTMPDIR = plugin.pipelineSettings.useTMPDIR;
             }
             else // Implicitly not Windows since Posix-only plugin
             {
                 enum useTMPDIR = true;
             }
 
-            static if (useTMPDIR)
-            {
-                import std.process : environment;
-                immutable tempdir = environment.get("TMPDIR", "/tmp");
-            }
-            else
-            {
-                enum tempdir = "/tmp";
-            }
-
-            filename = buildNormalizedPath(tempdir, filename);
+            immutable tempDir = useTMPDIR ?
+                environment.get("TMPDIR", "/tmp") :
+                "/tmp";
+            filename = buildNormalizedPath(tempDir, filename);
         }
     }
 

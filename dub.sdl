@@ -90,7 +90,6 @@ versions \
     "PrintStacktraces" \
     "ExplainReplay" \
     "GCStatsOnExit" \
-    "OSXTMPDIR" \
     "TraceWhois" \
     "IncludeHeavyStuff" \
     "BenchmarkHTTPRequests" \
@@ -149,7 +148,6 @@ configuration "dev" {
         //"Callgrind" \
         //"OmniscientSeen" \
         //"OmniscientQueries" \
-        //"OSXTMPDIR" \
         //"TraceWhois" \
         //"BenchmarkHTTPRequests" \
 }
@@ -172,7 +170,6 @@ configuration "dev-lowmem" {
         //"Callgrind" \
         //"OmniscientSeen" \
         //"OmniscientQueries" \
-        //"OSXTMPDIR" \
         //"TraceWhois" \
         //"BenchmarkHTTPRequests" \
         //"TraceHTTPRequests" \
@@ -224,8 +221,7 @@ configuration "unittest" {
         "TraceFibersAndDelegates" \
         "BenchmarkHTTPRequests" \
         "TraceHTTPRequests" \
-        "Selftests" \
-        "OSXTMPDIR"
+        "Selftests"
 }
 
 configuration "unittest-lowmem" {
@@ -246,6 +242,5 @@ configuration "unittest-lowmem" {
         "TraceFibersAndDelegates" \
         "BenchmarkHTTPRequests" \
         "TraceHTTPRequests" \
-        "Selftests" \
-        "OSXTMPDIR"
+        "Selftests"
 }
