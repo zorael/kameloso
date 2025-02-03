@@ -173,26 +173,24 @@ auto downloadWindowsSSL(
 
         version(Win64)
         {
-            immutable head = shouldDownloadOpenSSL1_1 ?
-                "Win64OpenSSL_Light-1_1" :
-                "Win64OpenSSL_Light-3_";
+            enum arch = "INTEL";
+            enum bits = 64;
         }
         else version(Win32)
         {
-            immutable head = shouldDownloadOpenSSL1_1 ?
-                "Win32OpenSSL_Light-1_1" :
-                "Win32OpenSSL_Light-3_";
+            enum arch = "INTEL";
+            enum bits = 32;
         }
         else version(AArch64)
         {
             // Untested, might work?
-            immutable head = shouldDownloadOpenSSL1_1 ?
-                "Win64ARMOpenSSL_Light-1_1" :
-                "Win64ARMOpenSSL_Light-3_";
+            enum arch = "ARM";
+            enum bits = 64;
         }
         else version(unittest)
         {
-            enum head = string.init;
+            enum arch = string.init;
+            enum bits = int.init;
         }
         else
         {
@@ -222,37 +220,47 @@ auto downloadWindowsSSL(
             uint topVersionMinor;
             uint topVersionPatch;
 
-            const hashesJSON = parseJSON(readText(jsonFile));
+            const manifestJSON = parseJSON(readText(jsonFile));
+            const fileEntriesJSON = "files" in manifestJSON;
 
             /+
-                Figure out the latest version by the numbers in the filenames.
+                Figure out the latest version by finding the entry with the
+                highest values in the "basever" string in its JSON.
              +/
-            foreach (immutable filename, _; hashesJSON["files"].object)
+            foreach (immutable filename, const fileEntryJSON; (*fileEntriesJSON).object)
             {
-                import std.algorithm.searching : endsWith, startsWith;
+                import lu.string : advancePast;
+                import std.conv : to;
 
-                if (filename.startsWith(head) && filename.endsWith(".msi"))
+                if ((fileEntryJSON["arch"].str != arch) || (fileEntryJSON["bits"].integer != bits)) continue;
+
+                immutable versionString = fileEntryJSON["basever"].str;
+                string slice = versionString;  // mutable
+
+                // "basever": "1.1.1"
+                // "basever": "3.3.2"
+                // "basever": "3.4.0"
+
+                // Could use formattedRead but where's the elegance in that
+                immutable versionMajor = slice.advancePast('.').to!uint;
+
+                if (shouldDownloadOpenSSL1_1 && (versionMajor != 1)) continue;
+
+                immutable versionMinor = slice.advancePast('.').to!uint;
+                immutable versionPatch = slice.to!uint;
+
+                if (versionMinor > topVersionMinor)
                 {
-                    import lu.string : advancePast;
-                    import std.conv : to;
-
-                    string slice = filename[head.length..$];  // mutable
-                    immutable versionMinor = slice.advancePast('_').to!uint;
-                    immutable versionPatch = slice.advancePast('_').to!uint;
-
-                    if (versionMinor > topVersionMinor)
-                    {
-                        topFilename = filename;
-                        topVersionMinor = versionMinor;
-                        topVersionPatch = versionPatch;
-                    }
-                    else if (
-                        (versionMinor == topVersionMinor) &&
-                        (versionPatch > topVersionPatch))
-                    {
-                        topFilename = filename;
-                        topVersionPatch = versionPatch;
-                    }
+                    topFilename = filename;
+                    topVersionMinor = versionMinor;
+                    topVersionPatch = versionPatch;
+                }
+                else if (
+                    (versionMinor == topVersionMinor) &&
+                    (versionPatch > topVersionPatch))
+                {
+                    topFilename = filename;
+                    topVersionPatch = versionPatch;
                 }
             }
 
@@ -263,7 +271,7 @@ auto downloadWindowsSSL(
                 return;
             }
 
-            const topFileEntryJSON = hashesJSON["files"][topFilename];
+            const topFileEntryJSON = (*fileEntriesJSON)[topFilename];
             immutable msiPath = buildNormalizedPath(temporaryDir, topFilename);
             immutable downloadResult = downloadFile(
                 url: topFileEntryJSON["url"].str,
