@@ -587,6 +587,7 @@ auto handleGetopt(Kameloso instance) @system
     import kameloso.configreader : readConfigInto;
     import kameloso.logger : KamelosoLogger;
     import kameloso.misc : printVersionInfo;
+    import kameloso.plugins.common.misc : applyCustomSettings;
     import kameloso.terminal : applyTerminalOverrides;
     import lu.misc : Next;
     import lu.objmanip : replaceMembers;
@@ -1008,6 +1009,12 @@ auto handleGetopt(Kameloso instance) @system
 
     // No need to catch the return value, only used for --help
     cast(void)callGetopt(args, quiet: true);
+
+    cast(void)applyCustomSettings(
+        null,
+        *instance.settings,
+        instance.customSettings,
+        toPluginsOnly: false);  // include settings
 
     // Save the user from themselves. (A receive timeout of 0 breaks all sorts of things.)
     if (instance.connSettings.receiveTimeout == 0)

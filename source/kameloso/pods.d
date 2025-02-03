@@ -181,6 +181,12 @@ public:
             (but process other events).
          +/
         bool observerMode;
+
+        // callgrind
+        /++
+            Enables callgrind dumps for profiling.
+         +/
+        bool callgrind;
     }
 }
 

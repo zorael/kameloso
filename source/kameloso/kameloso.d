@@ -336,18 +336,6 @@ public:
      +/
     string[] customSettings;
 
-    version(Callgrind)
-    {
-        // callgrindRunning
-        /++
-            Flag to keep record of whether or not the program is run under the
-            Callgrind profiler.
-
-            Assume it is until proven otherwise.
-         +/
-        bool callgrindRunning = true;
-    }
-
     // connectionID
     /++
         Numeric ID of the current connection, to disambiguate between multiple

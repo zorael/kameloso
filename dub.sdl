@@ -96,8 +96,7 @@ versions \
     "ThreadedSSLFree" \
     "TraceFibersAndDelegates" \
     "WantConcurrencyMessageLoop" \
-    "WantAdminStatePrinter" \
-    "Callgrind"
+    "WantAdminStatePrinter"
 */
 
 configuration "application" {
@@ -145,7 +144,6 @@ configuration "dev" {
         "GCStatsOnExit" \
         "WantConcurrencyMessageLoop" \
         "IncludeHeavyStuff"
-        //"Callgrind" \
         //"OmniscientSeen" \
         //"OmniscientQueries" \
         //"TraceWhois" \
@@ -167,7 +165,6 @@ configuration "dev-lowmem" {
         "GCStatsOnExit" \
         "WantConcurrencyMessageLoop" \
         "IncludeHeavyStuff"
-        //"Callgrind" \
         //"OmniscientSeen" \
         //"OmniscientQueries" \
         //"TraceWhois" \

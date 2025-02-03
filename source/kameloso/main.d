@@ -3893,42 +3893,54 @@ auto startBot(Kameloso instance)
         attempt.silentExit = false;
 
         /+
-            If version Callgrind, do a callgrind dump before the main loop starts,
-            and then once again on disconnect. That way the dump won't contain
-            uninteresting profiling about resolving and connecting and such.
+            If `instance.settings.callgrind` is true, do a callgrind dump
+            before the main loop starts, and then once again on disconnect.
+            That way the dump won't contain uninteresting profiling about
+            resolving IPs and connecting and such.
          +/
-        version(Callgrind)
+        void dumpCallgrind(const bool skipSuccessCheck = false)
         {
-            void dumpCallgrind()
+            import std.algorithm.searching : startsWith;
+            import std.conv : to;
+            import std.process : execute, thisProcessID;
+            import std.stdio : stdout, writeln;
+            import std.string : chomp;
+
+            immutable string[3] dumpCommand =
+            [
+                "callgrind_control",
+                "-d",
+                thisProcessID.to!string,
+            ];
+
+            logger.log("<i>$</> callgrind_control -d <i>", thisProcessID);
+
+            immutable result = execute(dumpCommand[]);
+
+            if (skipSuccessCheck) return;
+
+            instance.settings.callgrind = !result.output.startsWith("Error: Callgrind task with PID");
+
+            if (!instance.settings.callgrind)
             {
-                import std.algorithm.searching : startsWith;
-                import std.conv : to;
-                import std.process : execute, thisProcessID;
-                import std.stdio : stdout, writeln;
-                import std.string : chomp;
+                logger.warning("Callgrind not detected.");
 
-                immutable dumpCommand =
-                [
-                    "callgrind_control",
-                    "-d",
-                    thisProcessID.to!string,
-                ];
-
-                logger.info("$ callgrind_control -d ", thisProcessID);
-                immutable result = execute(dumpCommand);
-                writeln(result.output.chomp);
-                if (instance.settings.flush) stdout.flush();
-                instance.callgrindRunning = !result.output.startsWith("Error: Callgrind task with PID");
+                foreach (plugin; instance.plugins)
+                {
+                    // Update plugins so they don't re-enable this
+                    plugin.state.settings.callgrind = false;
+                }
             }
-
-            if (instance.callgrindRunning)
-            {
-                // Dump now and on scope exit
-                dumpCallgrind();
-            }
-
-            scope(exit) if (instance.callgrindRunning) dumpCallgrind();
         }
+
+        if (instance.settings.callgrind)
+        {
+            // --set core.callgrind=true, dump
+            dumpCallgrind();
+        }
+
+        // Also dump at scope exit
+        scope(exit) if (instance.settings.callgrind) dumpCallgrind(skipSuccessCheck: true);
 
         version(WantConcurrencyMessageLoop)
         {
