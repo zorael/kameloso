@@ -3233,7 +3233,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 
                 version(PrintStacktraces)
                 {
-                    import kameloso.common: printStacktrace;
+                    import kameloso.misc: printStacktrace;
                     printStacktrace();
                 }
             }

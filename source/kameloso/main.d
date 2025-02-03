@@ -3515,7 +3515,7 @@ auto startBot(Kameloso instance)
 
                     version(GCStatsOnExit)
                     {
-                        import kameloso.common : printGCStats;
+                        import kameloso.misc : printGCStats;
                         printGCStats();
                     }
 
@@ -4191,7 +4191,7 @@ void echoQuitMessage(Kameloso instance, const string reason) @safe
  +/
 void prettyPrintStartScreen(const Kameloso instance, const string arg0)
 {
-    import kameloso.common : printVersionInfo;
+    import kameloso.misc : printVersionInfo;
     import kameloso.prettyprint : prettyprint;
     import kameloso.string : replaceTokens;
     import std.stdio : stdout, writeln;
@@ -4754,7 +4754,7 @@ auto run(string[] args)
 
         version(GCStatsOnExit)
         {
-            import kameloso.common : printGCStats;
+            import kameloso.misc : printGCStats;
             printGCStats();
         }
 

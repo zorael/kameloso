@@ -161,7 +161,7 @@ void onMessage(WebtitlePlugin plugin, const ref IRCEvent event)
     Parses a message to see if the message contains one or more URLs.
     Implementation function.
 
-    It uses a simple state machine in [kameloso.common.findURLs|findURLs] to
+    It uses a simple state machine in [kameloso.misc.findURLs|findURLs] to
     exhaustively try to look up every URL returned by it.
 
     Params:
@@ -170,7 +170,7 @@ void onMessage(WebtitlePlugin plugin, const ref IRCEvent event)
  +/
 void onMessageImpl(WebtitlePlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.common : findURLs;
+    import kameloso.misc : findURLs;
     import lu.string : strippedLeft;
     import std.algorithm.searching : startsWith;
 

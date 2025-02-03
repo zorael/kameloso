@@ -346,7 +346,7 @@ mixin template WHOISFiberDelegate(
 
                     version(PrintStacktraces)
                     {
-                        import kameloso.common: printStacktrace;
+                        import kameloso.misc: printStacktrace;
                         printStacktrace();
                     }
                 }

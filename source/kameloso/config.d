@@ -120,7 +120,7 @@ void verboselyWriteConfig(
 
     if (!instance.settings.headless)
     {
-        import kameloso.common : printVersionInfo;
+        import kameloso.misc : printVersionInfo;
         import std.stdio : stdout, writeln;
 
         printVersionInfo();
@@ -172,7 +172,7 @@ void verboselyWriteConfig(
  +/
 void printSettings(Kameloso instance) @system
 {
-    import kameloso.common : printVersionInfo;
+    import kameloso.misc : printVersionInfo;
     import kameloso.plugins.common.misc : applyCustomSettings;
     import kameloso.prettyprint : prettyprint;
     import std.stdio : stdout, writeln;
@@ -579,9 +579,9 @@ public:
  +/
 auto handleGetopt(Kameloso instance) @system
 {
-    import kameloso.common : printVersionInfo, settings;
     import kameloso.configreader : readConfigInto;
     import kameloso.logger : KamelosoLogger;
+    import kameloso.misc : printVersionInfo;
     import kameloso.terminal : applyTerminalOverrides;
     import lu.misc : Next;
     import lu.objmanip : replaceMembers;

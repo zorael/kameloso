@@ -1865,7 +1865,7 @@ void onBusMessage(
         }
 
         case "gc.stats":
-            import kameloso.common : printGCStats;
+            import kameloso.misc : printGCStats;
             if (plugin.state.settings.headless) return;
             return printGCStats();
 
