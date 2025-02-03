@@ -69,7 +69,7 @@ mixin template WHOISFiberDelegate(
         import std.format : format;
 
         enum pattern = "First parameter of `%s` is not a success function";
-        enum message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(parentFunction);
         static assert(0, message);
     }
     else static if (!isSomeFunction!onFailure && !is(typeof(onFailure) == typeof(null)))
@@ -77,7 +77,7 @@ mixin template WHOISFiberDelegate(
         import std.format : format;
 
         enum pattern = "Second parameter of `%s` is not a failure function";
-        enum message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(parentFunction);
         static assert(0, message);
     }
 
@@ -87,7 +87,7 @@ mixin template WHOISFiberDelegate(
         mixin MixinConstraints!(MixinScope.function_, "WHOISFiberDelegate");
     }
 
-    alias paramNames = ParameterIdentifierTuple!(mixin(__FUNCTION__));
+    alias paramNames = ParameterIdentifierTuple!(mixin(parentFunction));
 
     static if ((paramNames.length == 0) || !is(typeof(mixin(paramNames[0])) : IRCPlugin))
     {
@@ -95,7 +95,7 @@ mixin template WHOISFiberDelegate(
 
         enum pattern = "`WHOISFiberDelegate` should be mixed into the context of an event handler. " ~
             "(First parameter of `%s` is not an `IRCPlugin` subclass)";
-        enum message = pattern.format(__FUNCTION__);
+        enum message = pattern.format(parentFunction);
         static assert(0, message);
     }
     else
@@ -113,7 +113,7 @@ mixin template WHOISFiberDelegate(
 
     static if (!alwaysLookup && !__traits(compiles, { alias _ = .hasUserAwareness; }))
     {
-        pragma(msg, "Warning: `" ~ __FUNCTION__ ~ "` mixes in `WHOISFiberDelegate` " ~
+        pragma(msg, "Warning: `" ~ parentFunction ~ "` mixes in `WHOISFiberDelegate` " ~
             "but its parent module does not mix in `UserAwareness`");
     }
 
@@ -194,7 +194,7 @@ mixin template WHOISFiberDelegate(
                     enum pattern = "Unsupported signature of success function/delegate " ~
                         "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`";
                     enum message = pattern.format(
-                        __FUNCTION__,
+                        parentFunction,
                         typeof(onSuccess).stringof,
                         __traits(identifier, onSuccess));
                     static assert(0, message);
@@ -232,7 +232,7 @@ mixin template WHOISFiberDelegate(
                         enum pattern = "Unsupported signature of failure function/delegate " ~
                             "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`";
                         enum message = pattern.format(
-                            __FUNCTION__,
+                            parentFunction,
                             typeof(onFailure).stringof,
                             __traits(identifier, onFailure));
                         static assert(0, message);
