@@ -15,6 +15,8 @@
  +/
 module kameloso.plugins.common.mixins;
 
+debug version = Debug;
+
 private:
 
 import dialect.defs;
@@ -59,6 +61,8 @@ mixin template WHOISFiberDelegate(
 {
     import kameloso.plugins.common : IRCPlugin;
     import std.traits : ParameterIdentifierTuple, isSomeFunction;
+
+    enum parentFunction = __FUNCTION__;
 
     static if (!isSomeFunction!onSuccess)
     {
@@ -338,11 +342,13 @@ mixin template WHOISFiberDelegate(
             {
                 // Define Twitch queries as always succeeding, since WHOIS isn't applicable
 
-                version(TwitchWarnings)
+                version(Debug)
                 {
                     import kameloso.common : logger;
 
-                    logger.warning("Tried to enqueue and WHOIS on Twitch");
+                    // Warn about it though, since it's a programming error
+                    enum pattern = "<l>%s</> tried to enqueue and WHOIS <l>%s</> on Twitch";
+                    logger.warningf(pattern, parentFunction, nickname);
 
                     version(PrintStacktraces)
                     {

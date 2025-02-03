@@ -52,6 +52,8 @@
  +/
 module kameloso.plugins.common;
 
+debug version = Debug;
+
 private:
 
 import kameloso.thread : CarryingFiber;
@@ -3219,11 +3221,12 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            version(TwitchWarnings)
+            version(Debug)
             {
                 import kameloso.common : logger;
 
-                logger.warning(caller, " tried to WHOIS on Twitch");
+                enum pattern = "<l>%s</> tried to WHOIS on Twitch";
+                logger.warningf(pattern, caller);
 
                 version(IncludeHeavyStuff)
                 {
