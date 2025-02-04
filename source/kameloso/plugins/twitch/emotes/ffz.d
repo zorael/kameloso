@@ -39,7 +39,8 @@ package:
  +/
 uint getFFZEmotes(
     TwitchPlugin plugin,
-    ref bool[dstring] emoteMap,
+    //ref bool[dstring] emoteMap,
+    bool[string]* emoteMap2,
     const uint id,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
@@ -172,8 +173,10 @@ in (id, "Tried to get FFZ emotes with an unset ID")
                 foreach (immutable emoteJSON; emoticonsArrayJSON.array)
                 {
                     import std.conv : to;
-                    immutable emote = emoteJSON["name"].str.to!dstring;
-                    emoteMap[emote] = true;
+                    /*immutable emote = emoteJSON["name"].str.to!dstring;
+                    emoteMap[emote] = true;*/
+                    immutable emoteName = emoteJSON["name"].str;
+                    (*emoteMap2)[emoteName] = true;
                     ++numAdded;
                 }
 
@@ -221,7 +224,8 @@ in (id, "Tried to get FFZ emotes with an unset ID")
  +/
 uint getFFZEmotesGlobal(
     TwitchPlugin plugin,
-    ref bool[dstring] emoteMap,
+    //ref bool[dstring] emoteMap,
+    bool[string]* emoteMap2,
     const uint _ = 0,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
@@ -337,8 +341,10 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
                 foreach (immutable emoteJSON; emoticonsArrayJSON.array)
                 {
                     import std.conv : to;
-                    immutable emote = emoteJSON["name"].str.to!dstring;
-                    emoteMap[emote] = true;
+                    /*immutable emote = emoteJSON["name"].str.to!dstring;
+                    emoteMap[emote] = true;*/
+                    immutable emoteName = emoteJSON["name"].str;
+                    (*emoteMap2)[emoteName] = true;
                     ++numAdded;
                 }
 

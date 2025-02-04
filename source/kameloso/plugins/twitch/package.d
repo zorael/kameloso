@@ -1224,6 +1224,16 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import std.algorithm.searching : countUntil;
     import std.conv : to;
 
+    if (event.type != IRCEvent.Type.ROOMSTATE)
+    {
+        debug import std.stdio;
+        debug import kameloso.prettyprint;
+        import std.typecons;
+        writeln("WRONG TYPE");
+        prettyprint!(Yes.all)(event);
+        assert(0);
+    }
+
     // Cache channel name by its numeric ID
     if (event.aux[0].length) plugin.channelNamesByID[event.aux[0]] = event.channel;
 
@@ -1259,7 +1269,7 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     importCustomEmotes(
         plugin: plugin,
-        channelName: event.channel,
+        channelName: event.channel.idup,
         id: event.aux[0].to!uint);
 }
 
@@ -4879,6 +4889,11 @@ package:
             Emote AA.
          +/
         bool[dstring] emotes;
+
+        /++
+            Emote AA.
+         +/
+        bool[string] emotes2;
     }
 
     /++
@@ -4891,6 +4906,7 @@ package:
         Custom global BetterTTV, FrankerFaceZ and 7tv emotes, as fetched via API calls.
      +/
     bool[dstring] customGlobalEmotes;
+    bool[string] customGlobalEmotes2;
 
     /++
         The Twitch application ID for the kameloso bot.

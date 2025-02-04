@@ -39,7 +39,8 @@ package:
  +/
 uint getBTTVEmotes(
     TwitchPlugin plugin,
-    ref bool[dstring] emoteMap,
+    //ref bool[dstring] emoteMap,
+    bool[string]* emoteMap2,
     const uint id,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getBTTVEmotes` from outside a fiber")
@@ -131,16 +132,20 @@ in (id, "Tried to get BTTV emotes with an unset ID")
 
         foreach (const emoteJSON; channelEmotesJSON.array)
         {
-            immutable emote = emoteJSON["code"].str.to!dstring;
-            emoteMap[emote] = true;
+            /*immutable emote = emoteJSON["code"].str.to!dstring;
+            emoteMap[emote] = true;*/
+            immutable emoteName = emoteJSON["code"].str;
+            (*emoteMap2)[emoteName] = true;
         }
 
         uint numAdded;
 
         foreach (const emoteJSON; sharedEmotesJSON.array)
         {
-            immutable emote = emoteJSON["code"].str.to!dstring;
-            emoteMap[emote] = true;
+            /*immutable emote = emoteJSON["code"].str.to!dstring;
+            emoteMap[emote] = true;*/
+            immutable emoteName = emoteJSON["code"].str;
+            (*emoteMap2)[emoteName] = true;
             ++numAdded;
         }
 
@@ -185,7 +190,8 @@ in (id, "Tried to get BTTV emotes with an unset ID")
  +/
 uint getBTTVEmotesGlobal(
     TwitchPlugin plugin,
-    ref bool[dstring] emoteMap,
+    //ref bool[dstring] emoteMap,
+    bool[string]* emoteMap2,
     const uint _ = 0,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
@@ -230,8 +236,10 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
     foreach (immutable emoteJSON; responseJSON.array)
     {
         import std.conv : to;
-        immutable emote = emoteJSON["code"].str.to!dstring;
-        emoteMap[emote] = true;
+        /*immutable emote = emoteJSON["code"].str.to!dstring;
+        emoteMap[emote] = true;*/
+        immutable emoteName = emoteJSON["code"].str;
+        (*emoteMap2)[emoteName] = true;
         ++numAdded;
     }
 

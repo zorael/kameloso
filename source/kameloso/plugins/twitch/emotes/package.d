@@ -54,7 +54,7 @@ in (((channelName.length && id) ||
 
     alias GetEmoteFun = uint function(
         TwitchPlugin,
-        ref bool[dstring],
+        bool[string]*,
         const uint,
         const string);
 
@@ -71,7 +71,7 @@ in (((channelName.length && id) ||
     enum giveUpThreshold = failureReportPoint * 3;
 
     EmoteImport[] emoteImports;
-    bool[dstring]* customEmotes;
+    bool[string] collectedEmotes;
     bool atLeastOneImportFailed;
     version(assert) bool addedSomething;
 
@@ -93,7 +93,6 @@ in (((channelName.length && id) ||
 
         customChannelEmotes.channelName = channelName;
         customChannelEmotes.id = id;
-        customEmotes = &customChannelEmotes.emotes;
 
         emoteImports =
         [
@@ -109,8 +108,6 @@ in (((channelName.length && id) ||
         import kameloso.plugins.twitch.emotes.seventv : get7tvEmotesGlobal;
 
         // Global emotes
-        customEmotes = &plugin.customGlobalEmotes;
-
         emoteImports =
         [
             EmoteImport(&getBTTVEmotesGlobal, "BetterTTV"),
@@ -140,7 +137,11 @@ in (((channelName.length && id) ||
 
             try
             {
-                immutable numAdded = emoteImport.fun(plugin, *customEmotes, id, __FUNCTION__);
+                immutable numAdded = emoteImport.fun(
+                    plugin,
+                    &collectedEmotes,
+                    id,
+                    __FUNCTION__);
 
                 if (plugin.state.settings.trace)
                 {
@@ -229,7 +230,7 @@ in (((channelName.length && id) ||
         if (addedSomething)
         {
             enum message = "Custom emotes were imported but the resulting AA is empty";
-            assert(customEmotes.length, message);
+            assert(collectedEmotes.length, message);
         }
     }
 
@@ -239,10 +240,30 @@ in (((channelName.length && id) ||
         logger.error(message);
     }
 
-    if (customEmotes.length)
+    if (channelName.length)
     {
-        customEmotes.rehash();
+        debug import std.stdio;
+        import std.conv : to;
+
+        auto channelEmotes = channelName in plugin.customChannelEmotes;
+        channelEmotes.emotes = collectedEmotes.to!(bool[dstring]);
+
+        writeln(channelName, ':', channelEmotes.emotes.length);
+        writeln(channelEmotes.emotes);
     }
+    else
+    {
+        debug import std.stdio;
+        import lu.meld : meldInto;
+        import std.conv : to;
+
+        auto dstringAA = collectedEmotes.to!(bool[dstring]);
+        dstringAA.meldInto(plugin.customGlobalEmotes);
+
+        writeln("global:", plugin.customGlobalEmotes.length);
+        writeln(plugin.customGlobalEmotes);
+    }
+
     /*else
     {
         if (channelName.length)
@@ -280,20 +301,22 @@ void embedCustomEmotes(
     import std.conv : to;
     import std.string : indexOf;
 
-    static Appender!(char[]) sink;
+    debug import std.stdio;
+
+    static Appender!(dchar[]) dsink;
 
     if (!customEmotes.length && !customGlobalEmotes.length) return;
 
     scope(exit)
     {
-        if (sink[].length)
+        if (dsink[].length)
         {
-            emotes ~= sink[];
-            sink.clear();
+            emotes ~= dsink[].to!string;
+            dsink.clear();
         }
     }
 
-    if (sink.capacity == 0) sink.reserve(64);  // guesstimate
+    if (dsink.capacity == 0) dsink.reserve(64);  // guesstimate
 
     immutable dline = content.strippedRight.to!dstring;
     ptrdiff_t spacePos = dline.indexOf(' ');
@@ -312,18 +335,19 @@ void embedCustomEmotes(
 
     void appendEmote(const dstring dword)
     {
+        writeln("---------------------------------------- appending emote:", dword);
         import std.array : replace;
         import std.format : formattedWrite;
 
-        enum pattern = "/%s:%d-%d";
-        immutable slicedPattern = (emotes.length || sink[].length) ?
+        enum pattern = "/%s:%d-%d"d;
+        immutable slicedPattern = (emotes.length || dsink[].length) ?
             pattern :
             pattern[1..$];
         immutable dwordEscaped = dword.replace(dchar(':'), dchar(';'));
         immutable end = (spacePos == -1) ?
             dline.length :
             spacePos;
-        sink.formattedWrite(slicedPattern, dwordEscaped, prev, end-1);
+        dsink.formattedWrite(slicedPattern, dwordEscaped, prev, end-1);
         previousEmote = dword;
     }
 
@@ -346,11 +370,11 @@ void embedCustomEmotes(
 
         if (dword == previousEmote)
         {
-            enum pattern = ",%d-%d";
+            enum pattern = ",%d-%d"d;
             immutable end = (spacePos == -1) ?
                 dline.length :
                 spacePos;
-            sink.formattedWrite(pattern, prev, end-1);
+            dsink.formattedWrite(pattern, prev, end-1);
             return;  // cannot return non-void from `void` function
         }
 

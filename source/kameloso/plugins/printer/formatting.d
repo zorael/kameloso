@@ -1451,6 +1451,9 @@ void highlightEmotesImpl(Sink)
     import std.conv : to;
     import std.range.primitives : isOutputRange;
 
+    sink.put(line);
+    if(line.length) return;
+
     static if (!isOutputRange!(Sink, char[]))
     {
         import std.format : format;

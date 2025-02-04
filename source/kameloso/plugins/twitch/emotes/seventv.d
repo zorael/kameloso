@@ -39,7 +39,8 @@ package:
  +/
 uint get7tvEmotes(
     TwitchPlugin plugin,
-    ref bool[dstring] emoteMap,
+    //ref bool[dstring] emoteMap,
+    bool[string]* emoteMap2,
     const uint id,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `get7tvEmotes` from outside a fiber")
@@ -48,13 +49,14 @@ in (id, "Tried to get 7tv emotes with an unset ID")
     import kameloso.plugins.twitch.api : sendHTTPRequest;
     import kameloso.plugins.twitch.common : ErrorJSONException, UnexpectedJSONException;
     import std.conv : to;
+    import std.encoding : sanitize;
     import std.json : JSONType, parseJSON;
 
     try
     {
         immutable url = "https://7tv.io/v3/users/twitch/" ~ id.to!string;
         immutable response = sendHTTPRequest(plugin, url, caller);
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(sanitize(response.str));
 
         /+
         {
@@ -156,9 +158,8 @@ in (id, "Tried to get 7tv emotes with an unset ID")
 
         foreach (immutable emoteJSON; emotesJSON.array)
         {
-            import std.conv : to;
-            immutable emoteName = emoteJSON["name"].str.to!dstring;
-            emoteMap[emoteName] = true;
+            immutable emoteName = emoteJSON["name"].str;
+            (*emoteMap2)[emoteName] = true;
             ++numAdded;
         }
 
@@ -220,18 +221,20 @@ in (id, "Tried to get 7tv emotes with an unset ID")
  +/
 uint get7tvEmotesGlobal(
     TwitchPlugin plugin,
-    ref bool[dstring] emoteMap,
+    //ref bool[dstring] emoteMap,
+    bool[string]* emoteMap2,
     const uint _ = 0,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
     import kameloso.plugins.twitch.common : UnexpectedJSONException;
+    import std.encoding : sanitize;
     import std.json : JSONType, parseJSON;
 
     enum url = "https://7tv.io/v3/emote-sets/global";
     immutable response = sendHTTPRequest(plugin, url, caller);
-    immutable responseJSON = parseJSON(response.str);
+    immutable responseJSON = parseJSON(sanitize(response.str));
 
     /+
     {
@@ -296,8 +299,10 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
     foreach (const emoteJSON; emotesJSON.array)
     {
         import std.conv : to;
-        immutable emoteName = emoteJSON["name"].str.to!dstring;
-        emoteMap[emoteName] = true;
+        /*immutable emoteName = emoteJSON["name"].str.to!dstring;
+        emoteMap[emoteName] = true;*/
+        immutable emoteName = emoteJSON["name"].str;
+        (*emoteMap2)[emoteName] = true;
         ++numAdded;
     }
 
