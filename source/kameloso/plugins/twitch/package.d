@@ -1268,8 +1268,6 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     void importDg()
     {
-        immutable delayUntilImport = baseDelayBetweenImports * delayMultiplier;
-        delay(plugin, delayUntilImport, yield: true);
 
         importCustomEmotes(
             plugin: plugin,
@@ -1278,7 +1276,8 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     auto importFiber = new Fiber(&importDg, BufferSize.fiberStack);
-    importFiber.call();
+    immutable delayUntilImport = baseDelayBetweenImports * delayMultiplier;
+    delay(plugin, importFiber, delayUntilImport);
 }
 
 
