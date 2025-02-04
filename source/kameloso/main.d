@@ -3902,7 +3902,7 @@ auto startBot(Kameloso instance)
         {
             import std.algorithm.searching : startsWith;
             import std.conv : to;
-            import std.process : execute, thisProcessID;
+            import std.process : ProcessException, execute, thisProcessID;
             import std.stdio : stdout, writeln;
             import std.string : chomp;
 
@@ -3915,16 +3915,27 @@ auto startBot(Kameloso instance)
 
             logger.log("<i>$</> callgrind_control -d <i>", thisProcessID);
 
-            immutable result = execute(dumpCommand[]);
+            try
+            {
+                immutable result = execute(dumpCommand[]);
 
-            if (skipSuccessCheck) return;
+                if (skipSuccessCheck) return;
 
-            instance.settings.callgrind = !result.output.startsWith("Error: Callgrind task with PID");
+                if ((result.status != 0) ||
+                    result.output.startsWith("Error: Callgrind task with PID"))
+                {
+                    instance.settings.callgrind = false;
+                    logger.warning("Not running under Callgrind.");
+                }
+            }
+            catch (ProcessException e)
+            {
+                logger.warning("No <l>callgrind_control</> tool found.");
+                instance.settings.callgrind = false;
+            }
 
             if (!instance.settings.callgrind)
             {
-                logger.warning("Callgrind not detected.");
-
                 foreach (plugin; instance.plugins)
                 {
                     // Update plugins so they don't re-enable this
