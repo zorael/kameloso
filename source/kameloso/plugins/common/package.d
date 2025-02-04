@@ -661,7 +661,7 @@ mixin template IRCPluginImpl(
         See_Also:
             [kameloso.plugins.common.IRCPluginImpl.onEvent|IRCPluginImpl.onEvent]
      +/
-    private void onEventImpl(/*const ref*/ IRCEvent origEvent) @system
+    private void onEventImpl(/*const*/ IRCEvent origEvent) @system
     {
         import kameloso.plugins.common : Timing;
         import std.algorithm.searching : canFind;
