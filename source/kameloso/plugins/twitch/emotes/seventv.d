@@ -154,6 +154,14 @@ in (id, "Tried to get 7tv emotes with an unset ID")
         if (emoteSetJSON.type != JSONType.object) return 0;  // No emotes
 
         immutable emotesJSON = "emotes" in *emoteSetJSON;
+
+        if (!emotesJSON || (emotesJSON.type != JSONType.array))
+        {
+            enum message = "`get7tvEmotes` response has unexpected JSON " ~
+                `(emotesJSON is not JSONType.array)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
         uint numAdded;
 
         foreach (immutable emoteJSON; emotesJSON.array)
