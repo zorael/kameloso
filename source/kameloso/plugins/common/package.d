@@ -21,7 +21,7 @@
                 .policy(PrefixPolicy.prefixed)
         )
     )
-    void onFoo(FooPlugin plugin, const ref IRCEvent event)
+    void onFoo(FooPlugin plugin, const /*ref*/ IRCEvent event)
     {
         // ...
     }
@@ -185,7 +185,7 @@ public:
         See_Also:
             [kameloso.plugins.common.IRCPluginImpl.onEvent]
      +/
-    void onEvent(const ref IRCEvent event) @system;
+    void onEvent(const /*ref*/ IRCEvent event) @system;
 
     // initResources
     /++
@@ -606,7 +606,7 @@ mixin template IRCPluginImpl(
             `true` if the event should be allowed to trigger, `false` if not.
      +/
     pragma(inline, true)
-    private FilterResult allow(const ref IRCEvent event, const Permissions permissionsRequired) @system
+    private FilterResult allow(const /*ref*/ IRCEvent event, const Permissions permissionsRequired) @system
     {
         import kameloso.plugins.common : allowImpl;
         return allowImpl!(cast(bool)debug_)(this, event, permissionsRequired);
@@ -630,7 +630,7 @@ mixin template IRCPluginImpl(
             [kameloso.plugins.common.IRCPluginImpl.onEventImpl|IRCPluginImpl.onEventImpl]
      +/
     pragma(inline, true)
-    override public void onEvent(const ref IRCEvent event) @system
+    override public void onEvent(const /*ref*/ IRCEvent event) @system
     {
         onEventImpl(event);
     }
@@ -670,7 +670,7 @@ mixin template IRCPluginImpl(
         /++
             Calls the passed function pointer, appropriately.
          +/
-        void call(bool inFiber, Fun)(scope Fun fun, const ref IRCEvent event) scope
+        void call(bool inFiber, Fun)(scope Fun fun, const /*ref*/ IRCEvent event) scope
         {
             import lu.traits : TakesParams;
             import std.traits : ParameterStorageClass, ParameterStorageClassTuple, Parameters, arity;
@@ -2372,7 +2372,7 @@ auto prefixPolicyMatches(bool verbose)
         [filterSenderImpl]
  +/
 auto filterSender(bool verbose = false)
-    (const ref IRCEvent event,
+    (const /*ref*/ IRCEvent event,
     const Permissions permissionsRequired,
     const bool preferHostmasks) @safe
 {
@@ -2574,7 +2574,7 @@ auto filterSenderImpl(
  +/
 auto allowImpl(bool verbose = false)
     (IRCPlugin plugin,
-    const ref IRCEvent event,
+    const /*ref*/ IRCEvent event,
     const Permissions permissionsRequired) @safe
 {
     if (permissionsRequired == Permissions.ignore) return FilterResult.pass;
@@ -3163,7 +3163,7 @@ struct Replay
      +/
     this(
         void delegate(Replay) dg,
-        const ref IRCEvent event,
+        const /*ref*/ IRCEvent event,
         const Permissions permissionsRequired,
         const string caller) pure @safe nothrow @nogc
     {
@@ -3194,7 +3194,7 @@ struct Replay
  +/
 void enqueue(Plugin, Fun)
     (Plugin plugin,
-    const ref IRCEvent event,
+    const /*ref*/ IRCEvent event,
     const Permissions permissionsRequired,
     const bool inFiber,
     Fun fun,

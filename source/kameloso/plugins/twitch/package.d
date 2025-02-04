@@ -457,7 +457,7 @@ mixin PluginRegistration!(TwitchPlugin, -5.priority);
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
+void onAnyMessage(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import std.algorithm.comparison : among;
 
@@ -553,7 +553,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onEmoteBearingMessage(TwitchPlugin plugin, const ref IRCEvent event)
+void onEmoteBearingMessage(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import std.algorithm.comparison : among;
 
@@ -608,7 +608,7 @@ void onEmoteBearingMessage(TwitchPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.SELFJOIN)
     .channelPolicy(ChannelPolicy.home)
 )
-void onSelfjoin(TwitchPlugin plugin, const ref IRCEvent event)
+void onSelfjoin(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     cast(void)getRoom(plugin, event.channel);
 }
@@ -745,7 +745,7 @@ void onGlobalUserstate(TwitchPlugin plugin)
     .onEvent(IRCEvent.Type.SELFPART)
     .channelPolicy(ChannelPolicy.home)
 )
-void onSelfpart(TwitchPlugin plugin, const ref IRCEvent event)
+void onSelfpart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
 
@@ -790,7 +790,7 @@ void onSelfpart(TwitchPlugin plugin, const ref IRCEvent event)
             .description("Reports how long the streamer has been streaming.")
     )
 )
-void onCommandUptime(TwitchPlugin plugin, const ref IRCEvent event)
+void onCommandUptime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     const room = event.channel in plugin.rooms;
     assert(room, "Tried to process `onCommandUptime` on a nonexistent room");
@@ -1215,7 +1215,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
     .channelPolicy(~ChannelPolicy.home)  // on all but homes
-    .fiber(true)
+    //.fiber(true)
 )
 void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
@@ -1223,6 +1223,8 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import kameloso.plugins.common.scheduling : delay;
     import std.algorithm.searching : countUntil;
     import std.conv : to;
+    import core.thread.fiber : Fiber;
+    import kameloso.constants : BufferSize;
 
     if (event.type != IRCEvent.Type.ROOMSTATE)
     {
@@ -1264,13 +1266,19 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             plugin.state.bot.guestChannels.length +
             (event.channel.hashOf % 5));
 
-    immutable delayUntilImport = baseDelayBetweenImports * delayMultiplier;
-    delay(plugin, delayUntilImport, yield: true);
+    void importDg()
+    {
+        immutable delayUntilImport = baseDelayBetweenImports * delayMultiplier;
+        delay(plugin, delayUntilImport, yield: true);
 
-    importCustomEmotes(
-        plugin: plugin,
-        channelName: event.channel.idup,
-        id: event.aux[0].to!uint);
+        importCustomEmotes(
+            plugin: plugin,
+            channelName: event.channel.idup,
+            id: event.aux[0].to!uint);
+    }
+
+    auto importFiber = new Fiber(&importDg, BufferSize.fiberStack);
+    importFiber.call();
 }
 
 
@@ -1489,7 +1497,7 @@ void onCommandVanish(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
+void onCommandRepeat(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : advancePast, stripped;
     import std.algorithm.searching : count;
@@ -2304,7 +2312,7 @@ void onEndOfMOTD(TwitchPlugin plugin)
             .addSyntax("$command [emote]")
     )
 )
-void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
+void onCommandEcount(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : advancePast;
     import std.array : replace;

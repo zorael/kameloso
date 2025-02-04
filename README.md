@@ -568,7 +568,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 The dependency we use to create secure connections in turn requires [**OpenSSL**](https://www.openssl.org) to be installed. It is *the* standard library for such on every major platform -- except for Windows, which has its own solution in the form of Windows Secure Channel.
 
-Run the program with the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows v3.4.\* _(Light)_**](https://slproweb.com/products/Win32OpenSSL.html). When asked, make sure to opt to *install to Windows system directories*. This is a one-time setup.
+Run the program with the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows v3.\*.\* _(Light)_**](https://slproweb.com/products/Win32OpenSSL.html). When asked, make sure to opt to *install to Windows system directories*. This is a one-time setup.
 
 #### Certificate authority bundle
 
