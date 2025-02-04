@@ -382,7 +382,7 @@ void startChannelQueries(ChanQueryService service)
     .onEvent(IRCEvent.Type.SELFJOIN)
     .channelPolicy(omniscientChannelPolicy)
 )
-void onSelfjoin(ChanQueryService service, const ref IRCEvent event)
+void onSelfjoin(ChanQueryService service, const /*ref*/ IRCEvent event)
 {
     service.channelStates[event.channel] = ChannelState.unset;
 }
@@ -398,7 +398,7 @@ void onSelfjoin(ChanQueryService service, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.SELFKICK)
     .channelPolicy(omniscientChannelPolicy)
 )
-void onSelfpart(ChanQueryService service, const ref IRCEvent event)
+void onSelfpart(ChanQueryService service, const /*ref*/ IRCEvent event)
 {
     service.channelStates.remove(event.channel);
 }
@@ -414,7 +414,7 @@ void onSelfpart(ChanQueryService service, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.RPL_TOPIC)
     .channelPolicy(omniscientChannelPolicy)
 )
-void onTopic(ChanQueryService service, const ref IRCEvent event)
+void onTopic(ChanQueryService service, const /*ref*/ IRCEvent event)
 {
     service.channelStates[event.channel] |= ChannelState.topicKnown;
 }
@@ -465,7 +465,7 @@ void onMyInfo(ChanQueryService service)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_NOSUCHCHANNEL)
 )
-void onNoSuchChannel(ChanQueryService service, const ref IRCEvent event)
+void onNoSuchChannel(ChanQueryService service, const /*ref*/ IRCEvent event)
 {
     service.channelStates.remove(event.channel);
 }

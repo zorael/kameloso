@@ -563,7 +563,7 @@ void handleNewTimer(
  +/
 void handleModifyTimer(
     TimerPlugin plugin,
-    const ref IRCEvent event,
+    const /*ref*/ IRCEvent event,
     /*const*/ string slice)
 {
     import lu.string : splitInto;
@@ -744,7 +744,7 @@ void handleModifyTimer(
  +/
 void handleDelTimer(
     TimerPlugin plugin,
-    const ref IRCEvent event,
+    const /*ref*/ IRCEvent event,
     /*const*/ string slice)
 {
     import lu.string : SplitResults, splitInto;
@@ -1006,7 +1006,7 @@ void handleAddToTimer(
  +/
 void handleListTimers(
     TimerPlugin plugin,
-    const ref IRCEvent event)
+    const /*ref*/ IRCEvent event)
 {
     import std.format : format;
 
@@ -1075,7 +1075,7 @@ void handleListTimers(
  +/
 void handleSuspendTimer(
     TimerPlugin plugin,
-    const ref IRCEvent event,
+    const /*ref*/ IRCEvent event,
     /*const*/ string slice,
     const bool suspend)
 {
@@ -1142,7 +1142,7 @@ void handleSuspendTimer(
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
 )
-void onAnyMessage(TimerPlugin plugin, const ref IRCEvent event)
+void onAnyMessage(TimerPlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 

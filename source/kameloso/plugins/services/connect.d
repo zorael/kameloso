@@ -152,7 +152,7 @@ enum Progress
     .onEvent(IRCEvent.Type.SELFKICK)
     .channelPolicy(ChannelPolicy.any)
 )
-void onSelfpart(ConnectService service, const ref IRCEvent event)
+void onSelfpart(ConnectService service, const /*ref*/ IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 
@@ -434,7 +434,7 @@ version(TwitchSupport)
     .onEvent(IRCEvent.Type.SELFJOIN)
     .channelPolicy(ChannelPolicy.any)
 )
-void onSelfjoin(ConnectService service, const ref IRCEvent event)
+void onSelfjoin(ConnectService service, const /*ref*/ IRCEvent event)
 {
     if (service.state.server.daemon == IRCServer.Daemon.twitch)
     {
@@ -457,7 +457,7 @@ void onSelfjoin(ConnectService service, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_NEEDPONG)
 )
-void onToConnectType(ConnectService service, const ref IRCEvent event)
+void onToConnectType(ConnectService service, const /*ref*/ IRCEvent event)
 {
     enum properties = Message.Property.quiet;
     immediate(service.state, event.content, properties);
@@ -476,7 +476,7 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
 )
-void onPing(ConnectService service, const ref IRCEvent event)
+void onPing(ConnectService service, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
     immutable target = event.content.length ? event.content : event.sender.address;
@@ -667,7 +667,7 @@ void tryAuth(ConnectService service)
     .onEvent(IRCEvent.Type.AUTH_SUCCESS)
     .onEvent(IRCEvent.Type.AUTH_FAILURE)
 )
-void onAuthEnd(ConnectService service, const ref IRCEvent event)
+void onAuthEnd(ConnectService service, const /*ref*/ IRCEvent event)
 {
     service.transient.progress.authentication = Progress.finished;
 
@@ -691,7 +691,7 @@ void onAuthEnd(ConnectService service, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.NOTICE)
 )
-void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
+void onTwitchAuthFailure(ConnectService service, const /*ref*/ IRCEvent event)
 {
     import std.algorithm.searching : endsWith;
 
@@ -871,7 +871,7 @@ void onPassMismatch(ConnectService service)
     .onEvent(IRCEvent.Type.INVITE)
     .channelPolicy(ChannelPolicy.any)
 )
-void onInvite(ConnectService service, const ref IRCEvent event)
+void onInvite(ConnectService service, const /*ref*/ IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite)
     {
@@ -895,7 +895,7 @@ void onInvite(ConnectService service, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CAP)
 )
-void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
+void onCapabilityNegotiation(ConnectService service, const /*ref*/ IRCEvent event)
 {
     // http://ircv3.net/irc
     // https://blog.irccloud.com/ircv3
@@ -1465,7 +1465,7 @@ void onSelfnickSuccessOrFailure(ConnectService service)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.QUIT)
 )
-void onQuit(ConnectService service, const ref IRCEvent event)
+void onQuit(ConnectService service, const /*ref*/ IRCEvent event)
 {
     if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
         service.connectSettings.regainNickname &&
@@ -1545,7 +1545,7 @@ void onEndOfMOTD(ConnectService service)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WHOISUSER)
 )
-void onWHOISUser(ConnectService service, const ref IRCEvent event)
+void onWHOISUser(ConnectService service, const /*ref*/ IRCEvent event)
 {
     if (event.target.nickname != service.state.client.nickname) return;
 
@@ -1566,7 +1566,7 @@ void onWHOISUser(ConnectService service, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ISUPPORT)
 )
-void onISUPPORT(ConnectService service, const ref IRCEvent event)
+void onISUPPORT(ConnectService service, const /*ref*/ IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 
@@ -1606,7 +1606,7 @@ void onReconnect(ConnectService service)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
 )
-void onUnknownCommand(ConnectService service, const ref IRCEvent event)
+void onUnknownCommand(ConnectService service, const /*ref*/ IRCEvent event)
 {
     if (service.transient.serverSupportsWHOIS &&
         !service.state.settings.preferHostmasks &&

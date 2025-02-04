@@ -177,7 +177,7 @@ shared static this()
             .addSyntax("$command [optional timezone]")
     )
 )
-void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
+void onCommandTime(TimePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : stripped;
     import std.datetime.systime : Clock;
@@ -462,7 +462,7 @@ unittest
             .addSyntax("$command [timezone string]")
     )
 )
-void onCommandSetZone(TimePlugin plugin, const ref IRCEvent event)
+void onCommandSetZone(TimePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : stripped;
     import std.format : format;

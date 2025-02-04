@@ -203,7 +203,7 @@ public:
             .hidden(true)
     )
 )
-void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
+void onCommandPoll(PollPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.time : DurationStringException, asAbbreviatedDuration, timeSince;
     import lu.string : stripped;
@@ -980,7 +980,7 @@ void onWelcome(PollPlugin plugin)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFJOIN)
 )
-void onSelfjoin(PollPlugin plugin, const ref IRCEvent event)
+void onSelfjoin(PollPlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (event.channel in plugin.state.channels) return;
 
@@ -1003,7 +1003,7 @@ void onSelfjoin(PollPlugin plugin, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFPART)
 )
-void onSelfpart(PollPlugin plugin, const ref IRCEvent event)
+void onSelfpart(PollPlugin plugin, const /*ref*/ IRCEvent event)
 {
     plugin.state.channels.remove(event.channel);
 }

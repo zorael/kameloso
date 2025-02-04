@@ -110,7 +110,7 @@ version(Debug)
     .channelPolicy(ChannelPolicy.any)
     .chainable(true)
 )
-void onAnyEvent(AdminPlugin plugin, const ref IRCEvent event)
+void onAnyEvent(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (plugin.state.settings.headless) return;
     onAnyEventImpl(plugin, event);
@@ -138,7 +138,7 @@ version(Debug)
             .addSyntax("$command [nickname] [nickname] ...")
     )
 )
-void onCommandShowUser(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandShowUser(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (plugin.state.settings.headless) return;
     onCommandShowUserImpl(plugin, event);
@@ -161,7 +161,7 @@ void onCommandShowUser(AdminPlugin plugin, const ref IRCEvent event)
             .description("Replies with what we know of the inquiring user.")
     )
 )
-void onCommandWhoami(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandWhoami(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.conv : toString;
     import std.format : format;
@@ -212,7 +212,7 @@ void onCommandWhoami(AdminPlugin plugin, const ref IRCEvent event)
             .description("Saves current configuration.")
     )
 )
-void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandSave(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
 
@@ -267,7 +267,7 @@ version(Debug)
             .addSyntax("$command [raw string]")
     )
 )
-void onCommandSudo(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandSudo(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     onCommandSudoImpl(plugin, event);
 }
@@ -294,7 +294,7 @@ void onCommandSudo(AdminPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command [optional quit reason]")
     )
 )
-void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandQuit(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     quit(plugin.state, event.content);
 }
@@ -631,7 +631,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
  +/
 void delChannel(
     AdminPlugin plugin,
-    const ref IRCEvent event,
+    const /*ref*/ IRCEvent event,
     const string rawChannel,
     const bool delFromHomes)
 in (rawChannel.length, "Tried to delete a home but the channel string was empty")
@@ -705,7 +705,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
             .addSyntax("$command list")
     )
 )
-void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandWhitelist(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     manageClassLists(plugin, event, IRCUser.Class.whitelist);
 }
@@ -734,7 +734,7 @@ void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command list")
     )
 )
-void onCommandElevated(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandElevated(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     manageClassLists(plugin, event, IRCUser.Class.elevated);
 }
@@ -760,7 +760,7 @@ void onCommandElevated(AdminPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command list")
     )
 )
-void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandOperator(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     manageClassLists(plugin, event, IRCUser.Class.operator);
 }
@@ -786,7 +786,7 @@ void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command list")
     )
 )
-void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandStaff(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     manageClassLists(plugin, event, IRCUser.Class.staff);
 }
@@ -814,7 +814,7 @@ void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command list")
     )
 )
-void onCommandBlacklist(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandBlacklist(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     manageClassLists(plugin, event, IRCUser.Class.blacklist);
 }
@@ -837,7 +837,7 @@ void onCommandBlacklist(AdminPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command [optional plugin name]")
     )
 )
-void onCommandReload(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandReload(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
     import std.conv : text;
@@ -869,7 +869,7 @@ version(Debug)
             .description("[debug] Toggles a flag to print all incoming events raw.")
     )
 )
-void onCommandPrintRaw(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandPrintRaw(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     onCommandPrintRawImpl(plugin, event);
 }
@@ -894,7 +894,7 @@ version(Debug)
             .description("[debug] Toggles a flag to print all incoming events as individual bytes.")
     )
 )
-void onCommandPrintBytes(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandPrintBytes(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     onCommandPrintBytesImpl(plugin, event);
 }
@@ -920,7 +920,7 @@ version(Debug)
             .description("[debug] Toggles a flag to prettyprint all incoming events.")
     )
 )
-void onCommandPrintEvents(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandPrintEvents(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     onCommandPrintEventsImpl(plugin, event.content, event);
 }
@@ -945,7 +945,7 @@ void onCommandPrintEvents(AdminPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command [channel] [optional key]")
     )
 )
-void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandJoin(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : splitInto, stripped;
 
@@ -981,7 +981,7 @@ void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command [channel]")
     )
 )
-void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandPart(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : splitInto, stripped;
 
@@ -1210,7 +1210,7 @@ void onCommandSummary(AdminPlugin plugin)
     )
 )
 version(Debug)
-void onCommandFake(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandFake(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
     plugin.state.messages ~= ThreadMessage.fakeEvent(event.content);
@@ -1352,7 +1352,7 @@ in (Fiber.getThis(), "Tried to call `cycle` from outside a fiber")
             .hidden(true)
     )
 )
-void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandMask(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : SplitResults, advancePast, splitInto, stripped;
     import std.format : format;
@@ -1419,7 +1419,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
         plugin = The current [AdminPlugin].
         event = The instigating [dialect.defs.IRCEvent|IRCEvent].
  +/
-void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
+void listHostmaskDefinitions(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
@@ -1491,7 +1491,7 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command [optional quit message]")
     )
 )
-void onCommandReconnect(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandReconnect(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : ThreadMessage, boxed;
     import lu.string : stripped;
@@ -1521,7 +1521,7 @@ version(Posix)
             .addSyntax("$command [optional quit message]")
     )
 )
-void onCommandReexec(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandReexec(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : ThreadMessage, boxed;
     import lu.string : stripped;
@@ -1550,7 +1550,7 @@ version(Debug)
             .addSyntax("$command [header] [content]")
     )
 )
-void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandBus(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : splitInto, stripped;
 

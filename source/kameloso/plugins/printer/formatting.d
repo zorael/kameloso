@@ -184,7 +184,7 @@ unittest
 void formatMessageMonochrome(Sink)
     (PrinterPlugin plugin,
     auto ref Sink sink,
-    const ref IRCEvent event,
+    const /*ref*/ IRCEvent event,
     const bool bellOnMention,
     const bool bellOnError)
 {
@@ -674,7 +674,7 @@ version(Colours)
 void formatMessageColoured(Sink)
     (PrinterPlugin plugin,
     auto ref Sink sink,
-    const ref IRCEvent event,
+    const /*ref*/ IRCEvent event,
     const bool bellOnMention,
     const bool bellOnError)
 {
@@ -1374,7 +1374,7 @@ unittest
 version(Colours)
 version(TwitchSupport)
 auto highlightEmotes(
-    const ref IRCEvent event,
+    const /*ref*/ IRCEvent event,
     const bool colourful,
     const CoreSettings settings)
 {
@@ -1450,9 +1450,6 @@ void highlightEmotesImpl(Sink)
     import std.array : Appender;
     import std.conv : to;
     import std.range.primitives : isOutputRange;
-
-    sink.put(line);
-    if(line.length) return;
 
     static if (!isOutputRange!(Sink, char[]))
     {

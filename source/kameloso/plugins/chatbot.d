@@ -72,7 +72,7 @@ import dialect.defs;
             .hidden(true)
     )
 )
-void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
+void onCommandSay(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     string message;  // mutable
 

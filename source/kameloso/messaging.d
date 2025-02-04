@@ -202,7 +202,7 @@ unittest
  +/
 void reply(
     ref IRCPluginState state,
-    const ref IRCEvent event,
+    const /*ref*/ IRCEvent event,
     const string content,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)

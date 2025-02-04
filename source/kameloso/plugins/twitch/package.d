@@ -2133,7 +2133,7 @@ void onCommandNuke(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         .toLower;
     if (!phraseToLower.length) return sendUsage();
 
-    auto deleteEvent(const ref IRCEvent storedEvent)
+    auto deleteEvent(const /*ref*/ IRCEvent storedEvent)
     {
         version(PrintStacktraces)
         void printStacktrace(Exception e)

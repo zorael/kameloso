@@ -116,7 +116,7 @@ void initResources(AutomodePlugin plugin)
     .onEvent(IRCEvent.Type.RPL_WHOISUSER)
     .permissionsRequired(Permissions.ignore)
 )
-void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
+void onAccountInfo(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
@@ -182,7 +182,7 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
 )
-void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
+void onJoin(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (event.sender.account.length)
     {
@@ -485,7 +485,7 @@ in ((!add || mode.length), "Tried to add an empty automode")
             .description("Forces the bot to attempt to apply automodes.")
     )
 )
-void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
+void onCommandOp(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 {
     //if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
@@ -553,7 +553,7 @@ void loadAutomodes(AutomodePlugin plugin)
     .onEvent(IRCEvent.Type.MODE)
     .channelPolicy(ChannelPolicy.home)
 )
-void onMode(AutomodePlugin plugin, const ref IRCEvent event)
+void onMode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 

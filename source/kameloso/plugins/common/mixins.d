@@ -39,7 +39,7 @@ public:
 
     Example:
     ---
-    void onSuccess(const ref IRCEvent successEvent) { /* ... */ }
+    void onSuccess(const /*ref*/ IRCEvent successEvent) { /* ... */ }
     void onFailure(const IRCUser failureUser) { /* .. */ }
 
     mixin WHOISFiberDelegate!(onSuccess, onFailure);

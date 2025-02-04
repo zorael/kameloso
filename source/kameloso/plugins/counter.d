@@ -484,7 +484,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
 )
-void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
+void onCounterWord(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.string : stripSeparatedPrefix;
     import lu.string : stripped, strippedLeft, strippedRight;
@@ -713,7 +713,7 @@ void onWelcome(CounterPlugin plugin)
 auto formatMessage(
     CounterPlugin plugin,
     const string pattern,
-    const ref IRCEvent event,
+    const /*ref*/ IRCEvent event,
     const Counter counter,
     const long step = long.init)
 {

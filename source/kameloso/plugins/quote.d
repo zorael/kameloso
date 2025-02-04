@@ -148,7 +148,7 @@ public:
             .addSyntax("$header Elsewhere: $command [nickname] [#index]")
     )
 )
-void onCommandQuote(QuotePlugin plugin, const ref IRCEvent event)
+void onCommandQuote(QuotePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import dialect.common : isValidNickname;
     import lu.string : stripped, unquoted;
@@ -288,7 +288,7 @@ void onCommandQuote(QuotePlugin plugin, const ref IRCEvent event)
             .addSyntax("Elsewhere: $command [nickname] [new quote]")
     )
 )
-void onCommandAddQuote(QuotePlugin plugin, const ref IRCEvent event)
+void onCommandAddQuote(QuotePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : stripped, strippedRight, unquoted;
     import std.format : format;
@@ -379,7 +379,7 @@ void onCommandAddQuote(QuotePlugin plugin, const ref IRCEvent event)
             .addSyntax("Elsewhere: $command [nickname] [index] [new quote text]")
     )
 )
-void onCommandModQuote(QuotePlugin plugin, const ref IRCEvent event)
+void onCommandModQuote(QuotePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : SplitResults, splitInto, stripped, strippedRight, unquoted;
     import std.conv : ConvException, to;
@@ -499,7 +499,7 @@ void onCommandModQuote(QuotePlugin plugin, const ref IRCEvent event)
             .addSyntax("$command [source nickname] [target nickname]")
     )
 )
-void onCommandMergeQuotes(QuotePlugin plugin, const ref IRCEvent event)
+void onCommandMergeQuotes(QuotePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import dialect.common : isValidNickname;
     import lu.string : SplitResults, plurality, splitInto, stripped;
@@ -574,7 +574,7 @@ void onCommandMergeQuotes(QuotePlugin plugin, const ref IRCEvent event)
             .addSyntax("Elsewhere: $command [nickname] [index]")
     )
 )
-void onCommandDelQuote(QuotePlugin plugin, const ref IRCEvent event)
+void onCommandDelQuote(QuotePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : SplitResults, splitInto, stripped;
     import std.algorithm.mutation : SwapStrategy, remove;
@@ -853,7 +853,7 @@ private:
      +/
     static void sendIndexOutOfRange(
         QuotePlugin plugin,
-        const ref IRCEvent event,
+        const /*ref*/ IRCEvent event,
         const ptrdiff_t indexGiven,
         const size_t upperBound)
     {
@@ -873,7 +873,7 @@ private:
      +/
     static void sendInvalidNickname(
         QuotePlugin plugin,
-        const ref IRCEvent event,
+        const /*ref*/ IRCEvent event,
         const string nickname)
     {
         enum pattern = "Invalid nickname: <h>%s<h>";
@@ -892,7 +892,7 @@ private:
      +/
     static void sendNoQuotesForNickname(
         QuotePlugin plugin,
-        const ref IRCEvent event,
+        const /*ref*/ IRCEvent event,
         const string nickname)
     {
         string possibleDisplayName = nickname;  // mutable
@@ -921,7 +921,7 @@ private:
      +/
     static void sendIndexMustBePositiveNumber(
         QuotePlugin plugin,
-        const ref IRCEvent event)
+        const /*ref*/ IRCEvent event)
     {
         enum message = "Index must be a positive number.";
         chan(plugin.state, event.channel, message);

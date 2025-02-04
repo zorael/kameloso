@@ -570,7 +570,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     .channelPolicy(ChannelPolicy.any)
     .chainable(true)
 )
-void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
+void onLoggableEvent(PrinterPlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (event.errors.length && plugin.printerSettings.logErrors) { /* Drop down */ }
     else if (!plugin.printerSettings.logs) return;

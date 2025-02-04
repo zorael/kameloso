@@ -154,7 +154,7 @@ public:
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
 )
-void onJoinOrAccount(NotePlugin plugin, const ref IRCEvent event)
+void onJoinOrAccount(NotePlugin plugin, const /*ref*/ IRCEvent event)
 {
     version(TwitchSupport)
     {
@@ -182,7 +182,7 @@ void onJoinOrAccount(NotePlugin plugin, const ref IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onChannelMessage(NotePlugin plugin, const ref IRCEvent event)
+void onChannelMessage(NotePlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (plugin.noteSettings.playBackOnAnyActivity ||
         (plugin.state.server.daemon == IRCServer.Daemon.twitch))
@@ -219,7 +219,7 @@ version(TwitchSupport)
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onTwitchChannelEvent(NotePlugin plugin, const ref IRCEvent event)
+void onTwitchChannelEvent(NotePlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
@@ -245,7 +245,7 @@ void onTwitchChannelEvent(NotePlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.RPL_WHOREPLY)
     .channelPolicy(ChannelPolicy.home)
 )
-void onWhoReply(NotePlugin plugin, const ref IRCEvent event)
+void onWhoReply(NotePlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (plugin.state.settings.eagerLookups) return;
     playbackNotes(plugin, event, background: true);
@@ -414,7 +414,7 @@ void playbackNotesImpl(
             .addSyntax("$command [nickname] [note text]")
     )
 )
-void onCommandAddNote(NotePlugin plugin, const ref IRCEvent event)
+void onCommandAddNote(NotePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
     import lu.string : SplitResults, splitInto, stripped;

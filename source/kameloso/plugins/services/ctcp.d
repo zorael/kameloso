@@ -47,7 +47,7 @@ import dialect.defs;
     .onEvent(IRCEvent.Type.CTCP_AVATAR)
     .onEvent(IRCEvent.Type.CTCP_LAG)
 )
-void onCTCPs(CTCPService service, const ref IRCEvent event)
+void onCTCPs(CTCPService service, const /*ref*/ IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo;
     import std.conv : text;
@@ -267,7 +267,7 @@ unittest
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CTCP_CLIENTINFO)
 )
-void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
+void onCTCPClientinfo(CTCPService service, const /*ref*/ IRCEvent event)
 {
     import dialect.common : I = IRCControlCharacter;
     import std.exception : assumeUnique;
