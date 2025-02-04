@@ -254,15 +254,6 @@ in (((channelName.length && id) ||
         dstringAA.meldInto(plugin.customGlobalEmotes);
         plugin.customGlobalEmotes.rehash();
     }
-
-    /*else
-    {
-        if (channelName.length)
-        {
-            // Nothing imported, may as well remove the entry
-            plugin.customChannelEmotes.remove(channelName);
-        }
-    }*/
 }
 
 
