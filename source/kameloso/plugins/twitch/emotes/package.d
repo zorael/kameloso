@@ -243,6 +243,7 @@ in (((channelName.length && id) ||
         import std.conv : to;
         auto channelEmotes = channelName in plugin.customChannelEmotes;
         channelEmotes.emotes = collectedEmotes.to!(bool[dstring]);
+        channelEmotes.emotes.rehash();
     }
     else
     {
@@ -251,6 +252,7 @@ in (((channelName.length && id) ||
 
         auto dstringAA = collectedEmotes.to!(bool[dstring]);
         dstringAA.meldInto(plugin.customGlobalEmotes);
+        plugin.customGlobalEmotes.rehash();
     }
 
     /*else
