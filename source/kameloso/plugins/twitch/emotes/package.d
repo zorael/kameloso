@@ -65,8 +65,6 @@ in (((channelName.length && id) ||
         uint failures;
     }
 
-    scope(exit) if (channelName.length) ++plugin.transient.numCustomEmoteImports;
-
     enum failureReportPoint = 5;
     enum giveUpThreshold = failureReportPoint * 3;
 

@@ -4221,7 +4221,6 @@ void reload(TwitchPlugin plugin)
     {
         import kameloso.plugins.twitch.emotes : importCustomEmotes;
 
-        plugin.transient.numCustomEmoteImports = 0;
         plugin.customGlobalEmotes = null;
         importCustomEmotes(plugin);
 
@@ -4718,12 +4717,6 @@ package:
             Whether or not a delegate sending whispers is currently running.
          +/
         bool whispererRunning;
-
-        /++
-            For home many channels custom emotes have been imported, successfully
-            or unsuccessfully.
-         +/
-        uint numCustomEmoteImports;
     }
 
     /++
