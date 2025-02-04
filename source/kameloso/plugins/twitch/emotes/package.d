@@ -290,8 +290,6 @@ void embedCustomEmotes(
     import std.conv : to;
     import std.string : indexOf;
 
-    debug import std.stdio;
-
     static Appender!(dchar[]) dsink;
 
     if (!customEmotes.length && !customGlobalEmotes.length) return;
@@ -324,7 +322,6 @@ void embedCustomEmotes(
 
     void appendEmote(const dstring dword)
     {
-        writeln("---------------------------------------- appending emote:", dword);
         import std.array : replace;
         import std.format : formattedWrite;
 
