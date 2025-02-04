@@ -659,6 +659,12 @@ void onUserstate(TwitchPlugin plugin, const IRCEvent event)
 {
     import std.string : indexOf;
 
+    version(MemoryCorruptionHunt)
+    {
+        import std.algorithm.searching : canFind;
+        assert(__traits(getAttributes, mixin(__FUNCTION__))[0].acceptedEventTypes.canFind(event.type));
+    }
+
     void registerOpMod()
     {
         if (auto channel = event.channel in plugin.state.channels)
@@ -1086,6 +1092,12 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
     import kameloso.thread : ThreadMessage, boxed;
     import std.conv : to;
 
+    version(MemoryCorruptionHunt)
+    {
+        import std.algorithm.searching : canFind;
+        assert(__traits(getAttributes, mixin(__FUNCTION__))[0].acceptedEventTypes.canFind(event.type));
+    }
+
     auto room = getRoom(plugin, event.channel);
 
     if (room.id) return;  // Already initialised? Double roomstate?
@@ -1226,14 +1238,10 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
     import core.thread.fiber : Fiber;
     import kameloso.constants : BufferSize;
 
-    if (event.type != IRCEvent.Type.ROOMSTATE)
+    version(MemoryCorruptionHunt)
     {
-        debug import std.stdio;
-        debug import kameloso.prettyprint;
-        import std.typecons;
-        writeln("WRONG TYPE");
-        prettyprint!(Yes.all)(event);
-        assert(0);
+        import std.algorithm.searching : canFind;
+        assert(__traits(getAttributes, mixin(__FUNCTION__))[0].acceptedEventTypes.canFind(event.type));
     }
 
     // Cache channel name by its numeric ID

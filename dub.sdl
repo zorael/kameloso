@@ -143,6 +143,7 @@ configuration "dev" {
         "ExplainReplay" \
         "GCStatsOnExit" \
         "WantConcurrencyMessageLoop" \
+        "MemoryCorruptionHunt" \
         "IncludeHeavyStuff"
         //"OmniscientSeen" \
         //"OmniscientQueries" \
@@ -164,6 +165,7 @@ configuration "dev-lowmem" {
         "ExplainReplay" \
         "GCStatsOnExit" \
         "WantConcurrencyMessageLoop" \
+        "MemoryCorruptionHunt" \
         "IncludeHeavyStuff"
         //"OmniscientSeen" \
         //"OmniscientQueries" \
@@ -183,6 +185,7 @@ configuration "selftest" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "MemoryCorruptionHunt" \
         "IncludeHeavyStuff"
 }
 
@@ -198,6 +201,7 @@ configuration "selftest-lowmem" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "MemoryCorruptionHunt" \
         "IncludeHeavyStuff"
 }
 
@@ -218,6 +222,7 @@ configuration "unittest" {
         "TraceFibersAndDelegates" \
         "BenchmarkHTTPRequests" \
         "TraceHTTPRequests" \
+        "MemoryCorruptionHunt" \
         "Selftests"
 }
 
@@ -239,5 +244,6 @@ configuration "unittest-lowmem" {
         "TraceFibersAndDelegates" \
         "BenchmarkHTTPRequests" \
         "TraceHTTPRequests" \
+        "MemoryCorruptionHunt" \
         "Selftests"
 }
