@@ -242,26 +242,17 @@ in (((channelName.length && id) ||
 
     if (channelName.length)
     {
-        debug import std.stdio;
         import std.conv : to;
-
         auto channelEmotes = channelName in plugin.customChannelEmotes;
         channelEmotes.emotes = collectedEmotes.to!(bool[dstring]);
-
-        writeln(channelName, ':', channelEmotes.emotes.length);
-        writeln(channelEmotes.emotes);
     }
     else
     {
-        debug import std.stdio;
         import lu.meld : meldInto;
         import std.conv : to;
 
         auto dstringAA = collectedEmotes.to!(bool[dstring]);
         dstringAA.meldInto(plugin.customGlobalEmotes);
-
-        writeln("global:", plugin.customGlobalEmotes.length);
-        writeln(plugin.customGlobalEmotes);
     }
 
     /*else

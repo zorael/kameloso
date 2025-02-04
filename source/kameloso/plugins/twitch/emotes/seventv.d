@@ -29,7 +29,7 @@ package:
 
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        emoteMap = Reference to the `bool[dstring]` associative array to store
+        emoteMap = Pointer to the `bool[string]` associative array to store
             the fetched emotes in.
         id = Numeric Twitch user/channel ID.
         caller = Name of the calling function.
@@ -39,8 +39,7 @@ package:
  +/
 uint get7tvEmotes(
     TwitchPlugin plugin,
-    //ref bool[dstring] emoteMap,
-    bool[string]* emoteMap2,
+    bool[string]* emoteMap,
     const uint id,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `get7tvEmotes` from outside a fiber")
@@ -167,7 +166,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
         foreach (immutable emoteJSON; emotesJSON.array)
         {
             immutable emoteName = emoteJSON["name"].str;
-            (*emoteMap2)[emoteName] = true;
+            (*emoteMap)[emoteName] = true;
             ++numAdded;
         }
 
@@ -219,7 +218,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
 
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        emoteMap = Reference to the `bool[dstring]` associative array to store
+        emoteMap = Pointer to the `bool[string]` associative array to store
             the fetched emotes in.
         _ = Unused, for signature compatibility with [get7tvEmotes].
         caller = Name of the calling function.
@@ -229,8 +228,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
  +/
 uint get7tvEmotesGlobal(
     TwitchPlugin plugin,
-    //ref bool[dstring] emoteMap,
-    bool[string]* emoteMap2,
+    bool[string]* emoteMap,
     const uint _ = 0,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
@@ -306,11 +304,8 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 
     foreach (const emoteJSON; emotesJSON.array)
     {
-        import std.conv : to;
-        /*immutable emoteName = emoteJSON["name"].str.to!dstring;
-        emoteMap[emoteName] = true;*/
         immutable emoteName = emoteJSON["name"].str;
-        (*emoteMap2)[emoteName] = true;
+        (*emoteMap)[emoteName] = true;
         ++numAdded;
     }
 

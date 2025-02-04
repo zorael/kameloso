@@ -29,7 +29,7 @@ package:
 
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        emoteMap = Reference to the `bool[dstring]` associative array to store
+        emoteMap = Pointer to the `bool[string]` associative array to store
             the fetched emotes in.
         id = Numeric Twitch user/channel ID.
         caller = Name of the calling function.
@@ -39,8 +39,7 @@ package:
  +/
 uint getBTTVEmotes(
     TwitchPlugin plugin,
-    //ref bool[dstring] emoteMap,
-    bool[string]* emoteMap2,
+    bool[string]* emoteMap,
     const uint id,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getBTTVEmotes` from outside a fiber")
@@ -132,20 +131,16 @@ in (id, "Tried to get BTTV emotes with an unset ID")
 
         foreach (const emoteJSON; channelEmotesJSON.array)
         {
-            /*immutable emote = emoteJSON["code"].str.to!dstring;
-            emoteMap[emote] = true;*/
             immutable emoteName = emoteJSON["code"].str;
-            (*emoteMap2)[emoteName] = true;
+            (*emoteMap)[emoteName] = true;
         }
 
         uint numAdded;
 
         foreach (const emoteJSON; sharedEmotesJSON.array)
         {
-            /*immutable emote = emoteJSON["code"].str.to!dstring;
-            emoteMap[emote] = true;*/
             immutable emoteName = emoteJSON["code"].str;
-            (*emoteMap2)[emoteName] = true;
+            (*emoteMap)[emoteName] = true;
             ++numAdded;
         }
 
@@ -180,7 +175,7 @@ in (id, "Tried to get BTTV emotes with an unset ID")
 
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        emoteMap = Reference to the `bool[dstring]` associative array to store
+        emoteMap = Pointer to the `bool[string]` associative array to store
             the fetched emotes in.
         _ = Unused, for signature compatibility with [getBTTVEmotes].
         caller = Name of the calling function.
@@ -190,8 +185,7 @@ in (id, "Tried to get BTTV emotes with an unset ID")
  +/
 uint getBTTVEmotesGlobal(
     TwitchPlugin plugin,
-    //ref bool[dstring] emoteMap,
-    bool[string]* emoteMap2,
+    bool[string]* emoteMap,
     const uint _ = 0,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
@@ -235,11 +229,8 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
 
     foreach (immutable emoteJSON; responseJSON.array)
     {
-        import std.conv : to;
-        /*immutable emote = emoteJSON["code"].str.to!dstring;
-        emoteMap[emote] = true;*/
         immutable emoteName = emoteJSON["code"].str;
-        (*emoteMap2)[emoteName] = true;
+        (*emoteMap)[emoteName] = true;
         ++numAdded;
     }
 

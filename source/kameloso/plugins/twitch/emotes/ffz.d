@@ -29,7 +29,7 @@ package:
 
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        emoteMap = Reference to the `bool[dstring]` associative array to store
+        emoteMap = Pointer to the `bool[string]` associative array to store
             the fetched emotes in.
         id = Numeric Twitch user/channel ID.
         caller = Name of the calling function.
@@ -39,8 +39,7 @@ package:
  +/
 uint getFFZEmotes(
     TwitchPlugin plugin,
-    //ref bool[dstring] emoteMap,
-    bool[string]* emoteMap2,
+    bool[string]* emoteMap,
     const uint id,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
@@ -170,13 +169,17 @@ in (id, "Tried to get FFZ emotes with an unset ID")
         {
             if (immutable emoticonsArrayJSON = "emoticons" in setJSON)
             {
+                if (!emoticonsArrayJSON || (emoticonsArrayJSON.type != JSONType.array))
+                {
+                    enum message = "`getFFZEmotes` response has unexpected JSON " ~
+                        `(emoticonsArrayJSON is null or not an array)`;
+                    throw new UnexpectedJSONException(message, responseJSON);
+                }
+
                 foreach (immutable emoteJSON; emoticonsArrayJSON.array)
                 {
-                    import std.conv : to;
-                    /*immutable emote = emoteJSON["name"].str.to!dstring;
-                    emoteMap[emote] = true;*/
                     immutable emoteName = emoteJSON["name"].str;
-                    (*emoteMap2)[emoteName] = true;
+                    (*emoteMap)[emoteName] = true;
                     ++numAdded;
                 }
 
@@ -214,7 +217,7 @@ in (id, "Tried to get FFZ emotes with an unset ID")
 
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        emoteMap = Reference to the `bool[dstring]` associative array to store
+        emoteMap = Pointer to the `bool[string]` associative array to store
             the fetched emotes in.
         _ = Unused, for signature compatibility with [getFFZEmotes].
         caller = Name of the calling function.
@@ -224,8 +227,7 @@ in (id, "Tried to get FFZ emotes with an unset ID")
  +/
 uint getFFZEmotesGlobal(
     TwitchPlugin plugin,
-    //ref bool[dstring] emoteMap,
-    bool[string]* emoteMap2,
+    bool[string]* emoteMap,
     const uint _ = 0,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
@@ -338,13 +340,17 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
         {
             if (immutable emoticonsArrayJSON = "emoticons" in setJSON)
             {
+                if (!emoticonsArrayJSON || (emoticonsArrayJSON.type != JSONType.array))
+                {
+                    enum message = "`getFFZEmotesGlobal` response has unexpected JSON " ~
+                        `(emoticonsArrayJSON is null or not an array)`;
+                    throw new UnexpectedJSONException(message, responseJSON);
+                }
+
                 foreach (immutable emoteJSON; emoticonsArrayJSON.array)
                 {
-                    import std.conv : to;
-                    /*immutable emote = emoteJSON["name"].str.to!dstring;
-                    emoteMap[emote] = true;*/
                     immutable emoteName = emoteJSON["name"].str;
-                    (*emoteMap2)[emoteName] = true;
+                    (*emoteMap)[emoteName] = true;
                     ++numAdded;
                 }
 
