@@ -554,7 +554,7 @@ private:
     .channelPolicy(omniscientChannelPolicy)
     .chainable(true)
 )
-void onSomeAction(SeenPlugin plugin, const /*ref*/ IRCEvent event)
+void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 {
     /+
         Updates the user's timestamp to the current time, both sender and target.
@@ -655,7 +655,7 @@ void onSomeAction(SeenPlugin plugin, const /*ref*/ IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.QUIT)
 )
-void onQuit(SeenPlugin plugin, const /*ref*/ IRCEvent event)
+void onQuit(SeenPlugin plugin, const IRCEvent event)
 {
     if (auto seenTimestamp = event.sender.nickname in plugin.seenUsers)
     {
@@ -675,7 +675,7 @@ void onQuit(SeenPlugin plugin, const /*ref*/ IRCEvent event)
     .permissionsRequired(Permissions.ignore)
     .chainable(true)
 )
-void onNick(SeenPlugin plugin, const /*ref*/ IRCEvent event)
+void onNick(SeenPlugin plugin, const IRCEvent event)
 {
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
@@ -697,7 +697,7 @@ void onNick(SeenPlugin plugin, const /*ref*/ IRCEvent event)
     .onEvent(IRCEvent.Type.RPL_WHOREPLY)
     .channelPolicy(omniscientChannelPolicy)
 )
-void onWHOReply(SeenPlugin plugin, const /*ref*/ IRCEvent event)
+void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 {
     updateUser(plugin, event.target.nickname, event.time);
 }
@@ -721,7 +721,7 @@ void onWHOReply(SeenPlugin plugin, const /*ref*/ IRCEvent event)
     .onEvent(IRCEvent.Type.RPL_NAMREPLY)
     .channelPolicy(omniscientChannelPolicy)
 )
-void onNamesReply(SeenPlugin plugin, const /*ref*/ IRCEvent event)
+void onNamesReply(SeenPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.iteration : splitter;
 
@@ -822,7 +822,7 @@ void onNamesReply(SeenPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandSeen(SeenPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
 {
     import kameloso.time : timeSince;
     import dialect.common : isValidNickname;

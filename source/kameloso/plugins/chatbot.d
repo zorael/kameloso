@@ -72,7 +72,7 @@ import dialect.defs;
             .hidden(true)
     )
 )
-void onCommandSay(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 {
     string message;  // mutable
 
@@ -119,7 +119,7 @@ void onCommandSay(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     //.fiber(true)
 )
-void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
+void onDance(ChatbotPlugin plugin, const IRCEvent event)
 {
     import kameloso.constants : BufferSize;
     import lu.string : strippedRight;

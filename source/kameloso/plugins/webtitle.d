@@ -147,7 +147,7 @@ static immutable descriptionExemptions =
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
 )
-void onMessage(WebtitlePlugin plugin, const /*ref*/ IRCEvent event)
+void onMessage(WebtitlePlugin plugin, const IRCEvent event)
 {
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
     if (event.sender.class_ < plugin.webtitleSettings.minimumPermissionsNeeded) return;
@@ -168,7 +168,7 @@ void onMessage(WebtitlePlugin plugin, const /*ref*/ IRCEvent event)
         plugin = The current [WebtitlePlugin].
         event = The [dialect.defs.IRCEvent|IRCEvent] that instigated the lookup.
  +/
-void onMessageImpl(WebtitlePlugin plugin, const /*ref*/ IRCEvent event)
+void onMessageImpl(WebtitlePlugin plugin, const IRCEvent event)
 {
     import kameloso.misc : findURLs;
     import lu.string : strippedLeft;
@@ -217,7 +217,7 @@ void onMessageImpl(WebtitlePlugin plugin, const /*ref*/ IRCEvent event)
  +/
 void lookupURLs(
     WebtitlePlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     /*const*/ string[] urls)
 {
     import kameloso.plugins.common.scheduling : delay;
@@ -395,7 +395,7 @@ in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber"
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
 )
-void onEndOfMotd(WebtitlePlugin plugin, const /*ref*/ IRCEvent event)
+void onEndOfMotd(WebtitlePlugin plugin, const IRCEvent event)
 {
     import std.algorithm.comparison : max;
 

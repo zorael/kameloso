@@ -43,7 +43,7 @@ package:
  +/
 void manageClassLists(
     AdminPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     const IRCUser.Class class_)
 {
     import lu.string : advancePast, stripped;
@@ -700,7 +700,7 @@ void modifyHostmaskDefinition(
     const bool add,
     const string account,
     const string mask,
-    const /*ref*/ IRCEvent event)
+    const IRCEvent event)
 in ((!add || account.length), "Tried to add a hostmask with no account to map it to")
 in (mask.length, "Tried to add an empty hostmask definition")
 {

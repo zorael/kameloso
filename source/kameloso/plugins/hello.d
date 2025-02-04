@@ -15,7 +15,7 @@ import dialect.defs;
             .description("Says hello.")
     )
 )
-void onCommandHello(HelloPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandHello(HelloPlugin plugin, const IRCEvent event)
 {
     chan(plugin.state, event.channel, "Hello World!");
 }

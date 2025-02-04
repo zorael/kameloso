@@ -336,7 +336,7 @@ public:
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onOneliner(OnelinerPlugin plugin, const /*ref*/ IRCEvent event)
+void onOneliner(OnelinerPlugin plugin, const IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
     import kameloso.string : replaceRandom;
@@ -484,7 +484,7 @@ void onOneliner(OnelinerPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandModifyOneliner(OnelinerPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandModifyOneliner(OnelinerPlugin plugin, const IRCEvent event)
 {
     import lu.string : advancePast, stripped;
     import std.uni : toLower;
@@ -544,7 +544,7 @@ void onCommandModifyOneliner(OnelinerPlugin plugin, const /*ref*/ IRCEvent event
  +/
 void handleNewOneliner(
     OnelinerPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     /*const*/ string slice)
 {
     import kameloso.thread : CarryingFiber;
@@ -727,7 +727,7 @@ void newOnelinerImpl(
  +/
 void handleModifyOneliner(
     OnelinerPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     /*const*/ string slice)
 {
     import lu.conv : toString;
@@ -827,7 +827,7 @@ void handleModifyOneliner(
  +/
 void handleAddToOneliner(
     OnelinerPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     /*const*/ string slice,
     const string verb)
 {
@@ -1016,7 +1016,7 @@ void handleAddToOneliner(
  +/
 void handleDelFromOneliner(
     OnelinerPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     /*const*/ string slice)
 {
     import lu.string : advancePast;
@@ -1150,7 +1150,7 @@ void handleDelFromOneliner(
  +/
 void handleAliasOneliner(
     OnelinerPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     /*const*/ string slice)
 {
     import lu.string : SplitResults, splitInto;
@@ -1235,7 +1235,7 @@ void handleAliasOneliner(
             .description("Lists all available oneliners.")
     )
 )
-void onCommandCommands(OnelinerPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandCommands(OnelinerPlugin plugin, const IRCEvent event)
 {
     listCommands(plugin, event, includeAliases: false);
 }
@@ -1253,7 +1253,7 @@ void onCommandCommands(OnelinerPlugin plugin, const /*ref*/ IRCEvent event)
  +/
 void listCommands(
     OnelinerPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     const bool includeAliases,
     /*const*/ string slice = string.init)
 {
@@ -1420,7 +1420,7 @@ void loadOneliners(OnelinerPlugin plugin)
  +/
 void sendOneliner(
     OnelinerPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     const string message)
 {
     version(TwitchSupport)

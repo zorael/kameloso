@@ -129,7 +129,7 @@ public:
     See_Also:
         [flushAllLogsImpl]
  +/
-void onLoggableEventImpl(PrinterPlugin plugin, const /*ref*/ IRCEvent event)
+void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
 {
     import kameloso.plugins.printer.formatting : formatMessageMonochrome;
     import std.algorithm.searching : canFind;
@@ -160,7 +160,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const /*ref*/ IRCEvent event)
      +/
     static void writeEventToFile(
         PrinterPlugin plugin,
-        const /*ref*/ IRCEvent event,
+        const IRCEvent event,
         const string key,
         const string givenPath = string.init,
         const bool intoSubdir = true,

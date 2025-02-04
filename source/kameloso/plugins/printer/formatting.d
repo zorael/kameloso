@@ -184,7 +184,7 @@ unittest
 void formatMessageMonochrome(Sink)
     (PrinterPlugin plugin,
     auto ref Sink sink,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     const bool bellOnMention,
     const bool bellOnError)
 {
@@ -674,7 +674,7 @@ version(Colours)
 void formatMessageColoured(Sink)
     (PrinterPlugin plugin,
     auto ref Sink sink,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     const bool bellOnMention,
     const bool bellOnError)
 {
@@ -1374,7 +1374,7 @@ unittest
 version(Colours)
 version(TwitchSupport)
 auto highlightEmotes(
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     const bool colourful,
     const CoreSettings settings)
 {

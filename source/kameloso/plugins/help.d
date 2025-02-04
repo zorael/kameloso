@@ -84,7 +84,7 @@ import dialect.defs;
             .addSyntax("$command [prefixed command]")
     )
 )
-void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 {
     import std.typecons : Tuple;
 
@@ -266,7 +266,7 @@ void sendMessage(
 void sendCommandHelpImpl(
     HelpPlugin plugin,
     const string otherPluginName,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     const string commandString,
     const IRCPlugin.CommandMetadata command)
 {
@@ -334,7 +334,7 @@ void sendCommandHelpImpl(
  +/
 void sendFullPluginListing(
     HelpPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     /*const*/ IRCPlugin.CommandMetadata[string][string] allPluginCommands)
 {
     import kameloso.constants : KamelosoInfo;
@@ -388,7 +388,7 @@ void sendFullPluginListing(
 void sendSpecificPluginListing(
     HelpPlugin plugin,
     const string pluginName,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     /*const*/ IRCPlugin.CommandMetadata[string][string] allPluginCommands)
 {
     import lu.string : stripped;
@@ -450,7 +450,7 @@ void sendPluginCommandHelp(
     HelpPlugin plugin,
     const string pluginName,
     const string commandName,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     const IRCPlugin.CommandMetadata[string][string] allPluginCommands)
 {
     import std.format : format;
@@ -501,7 +501,7 @@ void sendPluginCommandHelp(
 void sendOnlyCommandHelp(
     HelpPlugin plugin,
     const string commandString,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     const IRCPlugin.CommandMetadata[string][string] allPluginCommands)
 {
     import std.algorithm.searching : startsWith;

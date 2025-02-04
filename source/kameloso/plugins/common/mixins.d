@@ -39,7 +39,7 @@ public:
 
     Example:
     ---
-    void onSuccess(const /*ref*/ IRCEvent successEvent) { /* ... */ }
+    void onSuccess(const IRCEvent successEvent) { /* ... */ }
     void onFailure(const IRCUser failureUser) { /* .. */ }
 
     mixin WHOISFiberDelegate!(onSuccess, onFailure);
@@ -584,7 +584,7 @@ private:
      +/
     pragma(inline, true)
     void reply(
-        const /*ref*/ IRCEvent event,
+        const IRCEvent event,
         const string content,
         const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)

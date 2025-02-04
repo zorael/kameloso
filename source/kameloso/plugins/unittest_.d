@@ -64,7 +64,7 @@ version(TwitchSupport)
             .addSyntax("$command test command syntax")
     )
 )
-void onCommand(UnittestPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommand(UnittestPlugin plugin, const IRCEvent event)
 {
     //with (plugin)  // https://github.com/dlang-community/D-Scanner/issues/931
 
@@ -104,7 +104,7 @@ void onCommand(UnittestPlugin plugin, const /*ref*/ IRCEvent event)
             .description("Test regex description")
     )
 )
-void onRegex(UnittestPlugin _, const /*ref*/ IRCEvent _2)
+void onRegex(UnittestPlugin _, const IRCEvent _2)
 {
     // ...
 }

@@ -106,7 +106,7 @@ version(MatchByStringComparison)
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
 )
-void onAnyMessage(SamePlugin plugin, const /*ref*/ IRCEvent event)
+void onAnyMessage(SamePlugin plugin, const IRCEvent event)
 {
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
@@ -137,7 +137,7 @@ version(MatchWithRegex)
             .description("Same.")
     )
 )
-void onAnyMessageRegex(SamePlugin plugin, const /*ref*/ IRCEvent event)
+void onAnyMessageRegex(SamePlugin plugin, const IRCEvent event)
 {
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 

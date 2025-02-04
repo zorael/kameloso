@@ -457,7 +457,7 @@ mixin PluginRegistration!(TwitchPlugin, -5.priority);
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onAnyMessage(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onAnyMessage(TwitchPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.comparison : among;
 
@@ -553,7 +553,7 @@ void onAnyMessage(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onEmoteBearingMessage(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onEmoteBearingMessage(TwitchPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.comparison : among;
 
@@ -608,7 +608,7 @@ void onEmoteBearingMessage(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     .onEvent(IRCEvent.Type.SELFJOIN)
     .channelPolicy(ChannelPolicy.home)
 )
-void onSelfjoin(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onSelfjoin(TwitchPlugin plugin, const IRCEvent event)
 {
     cast(void)getRoom(plugin, event.channel);
 }
@@ -655,7 +655,7 @@ auto getRoom(TwitchPlugin plugin, const string channelName)
     .onEvent(IRCEvent.Type.USERSTATE)
     .channelPolicy(ChannelPolicy.home)
 )
-void onUserstate(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onUserstate(TwitchPlugin plugin, const IRCEvent event)
 {
     import std.string : indexOf;
 
@@ -745,7 +745,7 @@ void onGlobalUserstate(TwitchPlugin plugin)
     .onEvent(IRCEvent.Type.SELFPART)
     .channelPolicy(ChannelPolicy.home)
 )
-void onSelfpart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onSelfpart(TwitchPlugin plugin, const IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
 
@@ -790,7 +790,7 @@ void onSelfpart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .description("Reports how long the streamer has been streaming.")
     )
 )
-void onCommandUptime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandUptime(TwitchPlugin plugin, const IRCEvent event)
 {
     const room = event.channel in plugin.rooms;
     assert(room, "Tried to process `onCommandUptime` on a nonexistent room");
@@ -924,7 +924,7 @@ void reportStreamTime(
             .addSyntax("$command [optional nickname]")
     )
 )
-void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
 {
     import lu.string : advancePast, stripped;
     import std.algorithm.comparison : among;
@@ -1081,7 +1081,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     .fiber(true)
 )
-void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onRoomState(TwitchPlugin plugin, const IRCEvent event)
 {
     import kameloso.thread : ThreadMessage, boxed;
     import std.conv : to;
@@ -1217,7 +1217,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     .channelPolicy(~ChannelPolicy.home)  // on all but homes
     //.fiber(true)
 )
-void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
 {
     import kameloso.plugins.twitch.emotes : baseDelayBetweenImports, importCustomEmotes;
     import kameloso.plugins.common.scheduling : delay;
@@ -1308,7 +1308,7 @@ void onNonHomeRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
 {
     import kameloso.plugins.common.misc : idOf;
     import lu.string : SplitResults, splitInto, stripped;
@@ -1458,7 +1458,7 @@ void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandVanish(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandVanish(TwitchPlugin plugin, const IRCEvent event)
 {
     try
     {
@@ -1496,7 +1496,7 @@ void onCommandVanish(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandRepeat(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandRepeat(TwitchPlugin plugin, const IRCEvent event)
 {
     import lu.string : advancePast, stripped;
     import std.algorithm.searching : count;
@@ -1557,7 +1557,7 @@ void onCommandRepeat(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .description("Reports the number of subscribers of the current channel.")
     )
 )
-void onCommandSubs(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandSubs(TwitchPlugin plugin, const IRCEvent event)
 {
     import std.format : format;
 
@@ -1611,7 +1611,7 @@ void onCommandSubs(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
 {
     import lu.string : advancePast, stripped;
     import std.format : format;
@@ -1917,7 +1917,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandStartPoll(TwitchPlugin plugin, const IRCEvent event)
 {
     import kameloso.time : DurationStringException, asAbbreviatedDuration;
     import lu.string : splitWithQuotes;
@@ -2033,7 +2033,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandEndPoll(TwitchPlugin plugin, const IRCEvent event)
 {
     import std.json : JSONType;
 
@@ -2111,7 +2111,7 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .addSyntax("$command [word or phrase]")
     )
 )
-void onCommandNuke(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
 {
     import lu.string : plurality, stripped, unquoted;
     import std.uni : toLower;
@@ -2132,7 +2132,7 @@ void onCommandNuke(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         .toLower;
     if (!phraseToLower.length) return sendUsage();
 
-    auto deleteEvent(const /*ref*/ IRCEvent storedEvent)
+    auto deleteEvent(const IRCEvent storedEvent)
     {
         version(PrintStacktraces)
         void printStacktrace(Exception e)
@@ -2311,7 +2311,7 @@ void onEndOfMOTD(TwitchPlugin plugin)
             .addSyntax("$command [emote]")
     )
 )
-void onCommandEcount(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandEcount(TwitchPlugin plugin, const IRCEvent event)
 {
     import lu.string : advancePast;
     import std.array : replace;
@@ -2419,7 +2419,7 @@ void onCommandEcount(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandWatchtime(TwitchPlugin plugin, const IRCEvent event)
 {
     import kameloso.time : timeSince;
     import lu.string : advancePast, stripped;
@@ -2550,7 +2550,7 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandSetTitle(TwitchPlugin plugin, const IRCEvent event)
 {
     import lu.string : stripped, unquoted;
     import std.array : replace;
@@ -2607,7 +2607,7 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .addSyntax("$command")
     )
 )
-void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandSetGame(TwitchPlugin plugin, const IRCEvent event)
 {
     import lu.string : stripped, unquoted;
     import std.array : replace;
@@ -2703,7 +2703,7 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .addSyntax("$command [commercial duration; valid values are 30, 60, 90, 120, 150 and 180]")
     )
 )
-void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandCommercial(TwitchPlugin plugin, const IRCEvent event)
 {
     import lu.string : stripped;
     import std.algorithm.comparison : among;

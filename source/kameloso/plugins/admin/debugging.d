@@ -42,7 +42,7 @@ package:
     If [kameloso.plugins.admin.AdminPlugin.printBytes|AdminPlugin.printBytes] is set by way of
     invoking [kameloso.plugins.admin.onCommandPrintBytes|onCommandPrintBytes], prints all incoming server strings byte by byte.
  +/
-void onAnyEventImpl(AdminPlugin plugin, const /*ref*/ IRCEvent event)
+void onAnyEventImpl(AdminPlugin plugin, const IRCEvent event)
 {
     import std.stdio : stdout, write, writefln, writeln;
 
@@ -97,7 +97,7 @@ void onAnyEventImpl(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     It basically prints the matching [dialect.defs.IRCUser|IRCUser].
  +/
-void onCommandShowUserImpl(AdminPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandShowUserImpl(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.prettyprint : prettyprint;
     import std.algorithm.iteration : splitter;
@@ -151,7 +151,7 @@ void onCommandShowUsersImpl(AdminPlugin plugin)
 
     You need basic knowledge of IRC server strings to use this.
  +/
-void onCommandSudoImpl(AdminPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandSudoImpl(AdminPlugin plugin, const IRCEvent event)
 {
     raw(plugin.state, event.content);
 }
@@ -163,7 +163,7 @@ void onCommandSudoImpl(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     This is for debugging purposes.
  +/
-void onCommandPrintRawImpl(AdminPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandPrintRawImpl(AdminPlugin plugin, const IRCEvent event)
 {
     import std.conv : text;
     import std.format : format;
@@ -184,7 +184,7 @@ void onCommandPrintRawImpl(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     This is for debugging purposes.
  +/
-void onCommandPrintBytesImpl(AdminPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandPrintBytesImpl(AdminPlugin plugin, const IRCEvent event)
 {
     import std.conv : text;
     import std.format : format;
@@ -217,7 +217,7 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 void onCommandPrintEventsImpl(
     AdminPlugin plugin,
     const string input,
-    const /*ref*/ IRCEvent event)
+    const IRCEvent event)
 {
     import kameloso.plugins.admin : parseTypesFromString;
     import kameloso.common : logger;

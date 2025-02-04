@@ -100,7 +100,7 @@ struct BashLookupResult
             .addSyntax("$command [optional bash quote number]")
     )
 )
-void onCommandBash(BashPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandBash(BashPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.searching : startsWith;
     import std.string : isNumeric;
@@ -135,7 +135,7 @@ void onCommandBash(BashPlugin plugin, const /*ref*/ IRCEvent event)
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
 )
-void onEndOfMotd(BashPlugin plugin, const /*ref*/ IRCEvent event)
+void onEndOfMotd(BashPlugin plugin, const IRCEvent event)
 {
     import std.concurrency : Tid, spawn;
 
@@ -164,7 +164,7 @@ void onEndOfMotd(BashPlugin plugin, const /*ref*/ IRCEvent event)
 void lookupQuote(
     BashPlugin plugin,
     const string quoteID,
-    const /*ref*/ IRCEvent event)
+    const IRCEvent event)
 {
     import kameloso.plugins.common.scheduling : delay;
     import kameloso.common : logger;

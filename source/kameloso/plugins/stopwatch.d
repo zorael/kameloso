@@ -64,7 +64,7 @@ import dialect.defs;
             .hidden(true)
     )
 )
-void onCommandStopwatch(StopwatchPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandStopwatch(StopwatchPlugin plugin, const IRCEvent event)
 {
     import lu.string : advancePast, stripped, strippedLeft;
     import std.datetime.systime : Clock;

@@ -403,7 +403,7 @@ unittest
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
 )
-void onMessage(SedReplacePlugin plugin, const /*ref*/ IRCEvent event)
+void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 {
     import lu.string : stripped;
     import std.algorithm.searching : startsWith;
@@ -552,7 +552,7 @@ void onWelcome(SedReplacePlugin plugin)
     .onEvent(IRCEvent.Type.JOIN)
     .channelPolicy(ChannelPolicy.home)
 )
-void onJoin(SedReplacePlugin plugin, const /*ref*/ IRCEvent event)
+void onJoin(SedReplacePlugin plugin, const IRCEvent event)
 {
     initPrevlines(plugin, event.channel, event.sender.nickname);
 }
@@ -566,7 +566,7 @@ void onJoin(SedReplacePlugin plugin, const /*ref*/ IRCEvent event)
     .onEvent(IRCEvent.Type.PART)
     .channelPolicy(ChannelPolicy.home)
 )
-void onPart(SedReplacePlugin plugin, const /*ref*/ IRCEvent event)
+void onPart(SedReplacePlugin plugin, const IRCEvent event)
 {
     if (auto channelLines = event.channel in plugin.prevlines)
     {
@@ -582,7 +582,7 @@ void onPart(SedReplacePlugin plugin, const /*ref*/ IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.QUIT)
 )
-void onQuit(SedReplacePlugin plugin, const /*ref*/ IRCEvent event)
+void onQuit(SedReplacePlugin plugin, const IRCEvent event)
 {
     foreach (ref channelLines; plugin.prevlines)
     {

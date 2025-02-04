@@ -884,7 +884,7 @@ void onWelcome(PersistenceService service)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_NAMREPLY)
 )
-void onNamesReply(PersistenceService service, const /*ref*/ IRCEvent event)
+void onNamesReply(PersistenceService service, const IRCEvent event)
 {
     import kameloso.irccolours : stripColours;
     import dialect.common : IRCControlCharacter, stripModesign;
@@ -961,7 +961,7 @@ void onNamesReply(PersistenceService service, const /*ref*/ IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WHOREPLY)
 )
-void onWhoReply(PersistenceService service, const /*ref*/ IRCEvent event)
+void onWhoReply(PersistenceService service, const IRCEvent event)
 {
     updateUser(service, event.target, event.channel);
 }

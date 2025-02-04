@@ -1763,7 +1763,7 @@ void processLineFromServer(
             iterate and process.
         event = The triggering const [dialect.defs.IRCEvent|IRCEvent].
  +/
-void processAwaitingDelegates(IRCPlugin plugin, const /*ref*/ IRCEvent event)
+void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
 {
     /++
         Handle awaiting delegates of a specified type.
@@ -1813,7 +1813,7 @@ void processAwaitingDelegates(IRCPlugin plugin, const /*ref*/ IRCEvent event)
             [core.thread.fiber.Fiber|Fiber]s to iterate and process.
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
  +/
-void processAwaitingFibers(IRCPlugin plugin, const /*ref*/ IRCEvent event)
+void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 {
     import core.thread.fiber : Fiber;
 
@@ -3985,7 +3985,7 @@ auto startBot(Kameloso instance)
             initialised or if it was only ever set to `void`.
  +/
 void printEventDebugDetails(
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     const string raw,
     const bool eventWasInitialised = true)
 {

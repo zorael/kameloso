@@ -351,7 +351,7 @@ unittest
             .addSyntax("$command list")
     )
 )
-void onCommandTimer(TimerPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandTimer(TimerPlugin plugin, const IRCEvent event)
 {
     import lu.string : advancePast, stripped;
     import std.format : format;
@@ -413,7 +413,7 @@ void onCommandTimer(TimerPlugin plugin, const /*ref*/ IRCEvent event)
  +/
 void handleNewTimer(
     TimerPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     /*const*/ string slice)
 {
     import kameloso.time : DurationStringException, asAbbreviatedDuration;
@@ -563,7 +563,7 @@ void handleNewTimer(
  +/
 void handleModifyTimer(
     TimerPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     /*const*/ string slice)
 {
     import lu.string : splitInto;
@@ -744,7 +744,7 @@ void handleModifyTimer(
  +/
 void handleDelTimer(
     TimerPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     /*const*/ string slice)
 {
     import lu.string : SplitResults, splitInto;
@@ -841,7 +841,7 @@ void handleDelTimer(
  +/
 void handleModifyTimerLines(
     TimerPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     /*const*/ string slice,
     const bool insert)
 {
@@ -948,7 +948,7 @@ void handleModifyTimerLines(
  +/
 void handleAddToTimer(
     TimerPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     /*const*/ string slice)
 {
     import lu.string : advancePast, unquoted;
@@ -1006,7 +1006,7 @@ void handleAddToTimer(
  +/
 void handleListTimers(
     TimerPlugin plugin,
-    const /*ref*/ IRCEvent event)
+    const IRCEvent event)
 {
     import std.format : format;
 
@@ -1075,7 +1075,7 @@ void handleListTimers(
  +/
 void handleSuspendTimer(
     TimerPlugin plugin,
-    const /*ref*/ IRCEvent event,
+    const IRCEvent event,
     /*const*/ string slice,
     const bool suspend)
 {
@@ -1142,7 +1142,7 @@ void handleSuspendTimer(
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
 )
-void onAnyMessage(TimerPlugin plugin, const /*ref*/ IRCEvent event)
+void onAnyMessage(TimerPlugin plugin, const IRCEvent event)
 {
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
@@ -1295,7 +1295,7 @@ void onWelcome(TimerPlugin plugin)
     .onEvent(IRCEvent.Type.SELFJOIN)
     .channelPolicy(ChannelPolicy.home)
 )
-void onSelfjoin(TimerPlugin plugin, const /*ref*/ IRCEvent event)
+void onSelfjoin(TimerPlugin plugin, const IRCEvent event)
 {
     handleSelfjoin(plugin, event.channel, force: false);
 }
