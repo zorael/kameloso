@@ -659,11 +659,7 @@ void onUserstate(TwitchPlugin plugin, const IRCEvent event)
 {
     import std.string : indexOf;
 
-    version(MemoryCorruptionHunt)
-    {
-        import std.algorithm.searching : canFind;
-        assert(__traits(getAttributes, mixin(__FUNCTION__))[0].acceptedEventTypes.canFind(event.type));
-    }
+    mixin(memoryCorruptionCheck);
 
     void registerOpMod()
     {
@@ -1092,11 +1088,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
     import kameloso.thread : ThreadMessage, boxed;
     import std.conv : to;
 
-    version(MemoryCorruptionHunt)
-    {
-        import std.algorithm.searching : canFind;
-        assert(__traits(getAttributes, mixin(__FUNCTION__))[0].acceptedEventTypes.canFind(event.type));
-    }
+    mixin(memoryCorruptionCheck);
 
     auto room = getRoom(plugin, event.channel);
 
@@ -1238,11 +1230,7 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
     import core.thread.fiber : Fiber;
     import kameloso.constants : BufferSize;
 
-    version(MemoryCorruptionHunt)
-    {
-        import std.algorithm.searching : canFind;
-        assert(__traits(getAttributes, mixin(__FUNCTION__))[0].acceptedEventTypes.canFind(event.type));
-    }
+    mixin(memoryCorruptionCheck);
 
     // Cache channel name by its numeric ID
     if (event.aux[0].length) plugin.channelNamesByID[event.aux[0]] = event.channel;

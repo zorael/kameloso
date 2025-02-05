@@ -156,6 +156,8 @@ void onSelfpart(ConnectService service, const IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 
+    mixin(memoryCorruptionCheck);
+
     version(TwitchSupport)
     {
         if (service.state.server.daemon == IRCServer.Daemon.twitch)
@@ -436,6 +438,8 @@ version(TwitchSupport)
 )
 void onSelfjoin(ConnectService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (service.state.server.daemon == IRCServer.Daemon.twitch)
     {
         service.currentActualChannels[event.channel] = true;
@@ -459,6 +463,8 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 )
 void onToConnectType(ConnectService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     enum properties = Message.Property.quiet;
     immediate(service.state, event.content, properties);
 }
@@ -479,6 +485,9 @@ void onToConnectType(ConnectService service, const IRCEvent event)
 void onPing(ConnectService service, const IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
+
+    mixin(memoryCorruptionCheck);
+
     immutable target = event.content.length ? event.content : event.sender.address;
     service.state.priorityMessages ~= ThreadMessage.pong(target);
 }
@@ -669,6 +678,8 @@ void tryAuth(ConnectService service)
 )
 void onAuthEnd(ConnectService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     service.transient.progress.authentication = Progress.finished;
 
     if (service.transient.progress.registration == Progress.finished)
@@ -694,6 +705,8 @@ void onAuthEnd(ConnectService service, const IRCEvent event)
 void onTwitchAuthFailure(ConnectService service, const IRCEvent event)
 {
     import std.algorithm.searching : endsWith;
+
+    mixin(memoryCorruptionCheck);
 
     if ((service.state.server.daemon != IRCServer.Daemon.unset) ||
         !service.state.server.address.endsWith(".twitch.tv"))
@@ -772,10 +785,12 @@ void onTwitchAuthFailure(ConnectService service, const IRCEvent event)
     .onEvent(IRCEvent.Type.ERR_NICKNAMEINUSE)
     .onEvent(IRCEvent.Type.ERR_NICKCOLLISION)
 )
-void onNickInUse(ConnectService service)
+void onNickInUse(ConnectService service, const IRCEvent event)
 {
     import std.conv : to;
     import std.random : uniform;
+
+    mixin(memoryCorruptionCheck);
 
     if (service.transient.progress.registration == Progress.inProgress)
     {
@@ -801,8 +816,10 @@ void onNickInUse(ConnectService service)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
 )
-void onBadNick(ConnectService service)
+void onBadNick(ConnectService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (service.transient.progress.registration == Progress.inProgress)
     {
         // Mid-registration and invalid nickname; abort
@@ -873,6 +890,8 @@ void onPassMismatch(ConnectService service)
 )
 void onInvite(ConnectService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (!service.connectSettings.joinOnInvite)
     {
         enum message = "Invited, but <i>joinOnInvite</> is set to false.";
@@ -1295,10 +1314,12 @@ void onSASLFailure(ConnectService service)
     .onEvent(IRCEvent.Type.RPL_WELCOME)
     .fiber(true)
 )
-void onWelcome(ConnectService service)
+void onWelcome(ConnectService service, const IRCEvent event)
 {
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : endsWith;
+
+    mixin(memoryCorruptionCheck);
 
     service.transient.progress.registration = Progress.finished;
     service.transient.renameDuringRegistration = string.init;
@@ -1400,7 +1421,7 @@ void onWelcome(ConnectService service)
             if (!service.transient.sawEndOfMOTD)
             {
                 logger.warning("Server did not issue an end-of-MOTD event; forcing continuation.");
-                onEndOfMOTD(service);
+                onEndOfMOTD(service, event);
             }
         }
 
@@ -1449,9 +1470,12 @@ version(WithPrinterPlugin)
     .onEvent(IRCEvent.Type.SELFNICK)
     .onEvent(IRCEvent.Type.ERR_NICKNAMEINUSE)
 )
-void onSelfnickSuccessOrFailure(ConnectService service)
+void onSelfnickSuccessOrFailure(ConnectService service, const IRCEvent event)
 {
     import kameloso.thread : ThreadMessage, boxed;
+
+    mixin(memoryCorruptionCheck);
+
     auto message = ThreadMessage.busMessage("printer", boxed("unsquelch " ~ service.state.client.origNickname));
     service.state.messages ~= message;
 
@@ -1467,6 +1491,8 @@ void onSelfnickSuccessOrFailure(ConnectService service)
 )
 void onQuit(ConnectService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
         service.connectSettings.regainNickname &&
         (event.sender.nickname == service.state.client.origNickname))
@@ -1491,8 +1517,10 @@ void onQuit(ConnectService service, const IRCEvent event)
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
 )
-void onEndOfMOTD(ConnectService service)
+void onEndOfMOTD(ConnectService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     // Make sure this function is only processed once
     if (service.transient.sawEndOfMOTD) return;
 
@@ -1547,6 +1575,8 @@ void onEndOfMOTD(ConnectService service)
 )
 void onWHOISUser(ConnectService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (event.target.nickname != service.state.client.nickname) return;
 
     if (service.state.client.ident != event.target.ident)
@@ -1569,6 +1599,8 @@ void onWHOISUser(ConnectService service, const IRCEvent event)
 void onISUPPORT(ConnectService service, const IRCEvent event)
 {
     import std.algorithm.searching : canFind;
+
+    mixin(memoryCorruptionCheck);
 
     if (event.aux[].canFind("CODEPAGES"))
     {
@@ -1608,6 +1640,8 @@ void onReconnect(ConnectService service)
 )
 void onUnknownCommand(ConnectService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (service.transient.serverSupportsWHOIS &&
         !service.state.settings.preferHostmasks &&
         (event.aux[0] == "WHOIS"))

@@ -74,7 +74,7 @@ enum ChannelState : ubyte
     .onEvent(IRCEvent.Type.PING)
     .fiber(true)
 )
-void startChannelQueries(ChanQueryService service)
+void startChannelQueries(ChanQueryService service, const IRCEvent event)
 {
     import kameloso.plugins.common.scheduling : await, delay, unawait, undelay;
     import kameloso.thread : CarryingFiber, ThreadMessage, boxed;
@@ -83,6 +83,8 @@ void startChannelQueries(ChanQueryService service)
     import std.string : representation;
     import core.thread.fiber : Fiber;
     import core.time : seconds;
+
+    mixin(memoryCorruptionCheck);
 
     if (service.transient.querying) return;  // Try again next PING
 
@@ -384,6 +386,7 @@ void startChannelQueries(ChanQueryService service)
 )
 void onSelfjoin(ChanQueryService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     service.channelStates[event.channel] = ChannelState.unset;
 }
 
@@ -400,6 +403,7 @@ void onSelfjoin(ChanQueryService service, const IRCEvent event)
 )
 void onSelfpart(ChanQueryService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     service.channelStates.remove(event.channel);
 }
 
@@ -416,6 +420,7 @@ void onSelfpart(ChanQueryService service, const IRCEvent event)
 )
 void onTopic(ChanQueryService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     service.channelStates[event.channel] |= ChannelState.topicKnown;
 }
 
@@ -431,11 +436,13 @@ void onTopic(ChanQueryService service, const IRCEvent event)
     .channelPolicy(omniscientChannelPolicy)
     .fiber(true)
 )
-void onEndOfNames(ChanQueryService service)
+void onEndOfNames(ChanQueryService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (!service.transient.querying && service.transient.queriedAtLeastOnce)
     {
-        startChannelQueries(service);
+        startChannelQueries(service, event);
     }
 }
 
@@ -448,11 +455,14 @@ void onEndOfNames(ChanQueryService service)
     .onEvent(IRCEvent.Type.RPL_MYINFO)
     .fiber(true)
 )
-void onMyInfo(ChanQueryService service)
+void onMyInfo(ChanQueryService service, const IRCEvent event)
 {
     import kameloso.plugins.common.scheduling : delay;
+
+    mixin(memoryCorruptionCheck);
+
     delay(service, service.timeBeforeInitialQueries, yield: true);
-    startChannelQueries(service);
+    startChannelQueries(service, event);
 }
 
 
@@ -467,6 +477,7 @@ void onMyInfo(ChanQueryService service)
 )
 void onNoSuchChannel(ChanQueryService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     service.channelStates.remove(event.channel);
 }
 

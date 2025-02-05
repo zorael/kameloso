@@ -850,10 +850,12 @@ void updateUser(
     .onEvent(IRCEvent.Type.RPL_WELCOME)
     .fiber(true)
 )
-void onWelcome(PersistenceService service)
+void onWelcome(PersistenceService service, const IRCEvent event)
 {
     import kameloso.plugins.common.scheduling : delay;
     import core.time : hours;
+
+    mixin(memoryCorruptionCheck);
 
     reloadAccountClassifiersFromDisk(service);
     if (service.state.settings.preferHostmasks) reloadHostmasksFromDisk(service);
@@ -892,6 +894,8 @@ void onNamesReply(PersistenceService service, const IRCEvent event)
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : canFind;
     import std.string : indexOf;
+
+    mixin(memoryCorruptionCheck);
 
     if (service.state.server.daemon == IRCServer.Daemon.twitch)
     {
@@ -963,6 +967,7 @@ void onNamesReply(PersistenceService service, const IRCEvent event)
 )
 void onWhoReply(PersistenceService service, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     updateUser(service, event.target, event.channel);
 }
 
