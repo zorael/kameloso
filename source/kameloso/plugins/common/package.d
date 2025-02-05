@@ -4221,6 +4221,9 @@ else enum memoryCorruptionCheckConstraintsDefault = false;  /// ditto
 
     Returns:
         A string that can be mixed into a function to add the check.
+
+    See_Also:
+        [memoryCorruptionCheckImpl]
  +/
 auto memoryCorruptionCheck(
     const string eventParamName = "event",
@@ -4232,7 +4235,7 @@ auto memoryCorruptionCheck(
         import std.conv : to;
 
         immutable udaIndexString = udaIndex.to!string;
-        enum prelude = "import kameloso.plugins.common;";
+        enum prelude = "static import kameloso.plugins.common;";
 
         immutable constraintsString = constraints ?
     "
@@ -4245,7 +4248,7 @@ auto memoryCorruptionCheck(
         static assert(0, message);
     }
 
-    static if (udaIndexOf!(mixin(__FUNCTION__), IRCEventHandler) != " ~ udaIndexString ~ ")
+    static if (udaIndexOf!(mixin(__FUNCTION__), kameloso.plugins.common.IRCEventHandler) != " ~ udaIndexString ~ ")
     {
         enum message = \"`memoryCorruptionCheck` must be mixed into a function \" ~
             \"annotated with an `IRCEventHandler` (at UDA index `" ~ udaIndexString ~ "`)\";
@@ -4256,29 +4259,55 @@ auto memoryCorruptionCheck(
 
         immutable checkString =
     "
-    import lu.conv : toString;
+    static immutable _uda = __traits(getAttributes, mixin(__FUNCTION__))[" ~ udaIndexString ~ "];
+    kameloso.plugins.common.memoryCorruptionCheckImpl(" ~ eventParamName ~ ", _uda);";
+
+        return "{\n    " ~ prelude ~ constraintsString ~ checkString ~ "\n}";
+    }
+    else
+    {
+        return string.init;
+    }
+}
+
+
+// memoryCorruptionCheckImpl
+/++
+    Implementation of the memory corruption check.
+
+    This part can safely be a function instead of a mixin string.
+
+    Params:
+        event = The event to check.
+        uda = The [IRCEventHandler] UDA to check against.
+ +/
+version(MemoryCorruptionChecks)
+void memoryCorruptionCheckImpl(const IRCEvent event, const IRCEventHandler uda) pure @safe
+{
     import std.algorithm.searching : canFind;
 
-    static immutable uda = __traits(getAttributes, mixin(__FUNCTION__))[" ~ udaIndexString ~ "];
-
-    if (!uda.acceptedEventTypes.canFind(" ~ eventParamName ~ ".type))
+    if (!uda.acceptedEventTypes.canFind(IRCEvent.Type.ANY) &&
+        !uda.acceptedEventTypes.canFind(event.type))
     {
-        immutable message = __FUNCTION__ ~
-            \" was called with unexpected event type: \" ~ " ~ eventParamName ~ ".type.toString();
+        import lu.conv : toString;
+        import std.format : format;
+
+        enum pattern = "Event handler `%s` was called with an unexpected event type: %s";
+        immutable message = pattern.format(__FUNCTION__, event.type.toString());
         assert(0, message);
     }
 
-    static if (uda.commands.length)
+    if (uda.commands.length)
     {
         import std.uni : toLower;
 
-        if (!" ~ eventParamName ~ ".aux[$-1].length)
+        if (!event.aux[$-1].length)
         {
-            enum message = \"No command word found in " ~ eventParamName ~ ".aux\";
+            enum message = "No command word found in event.aux[$-1]";
             assert(0, message);
         }
 
-        immutable wordLower = " ~ eventParamName ~ ".aux[$-1].toLower();
+        immutable wordLower = event.aux[$-1].toLower();
         bool hit;
 
         foreach (const command; uda.commands)
@@ -4292,17 +4321,13 @@ auto memoryCorruptionCheck(
 
         if (!hit)
         {
-            immutable message = \"Command word not found in the UDA annotation of \" ~
-                __FUNCTION__ ~ \": \" ~ wordLower;
+            import std.format : format;
+
+            enum pattern = "Event handler `%s` was called with a command word `%s` " ~
+                "not found in the UDA annotation of it";
+            immutable message = pattern.format(__FUNCTION__, wordLower);
             assert(0, message);
         }
-    }";
-
-        return "{\n    " ~ prelude ~ constraintsString ~ checkString ~ "\n}";
-    }
-    else
-    {
-        return string.init;
     }
 }
 
