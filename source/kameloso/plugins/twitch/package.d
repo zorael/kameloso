@@ -461,6 +461,8 @@ void onAnyMessage(TwitchPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.comparison : among;
 
+    mixin(memoryCorruptionCheck);
+
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     // Surely only events that carry content are interesting
@@ -557,6 +559,8 @@ void onEmoteBearingMessage(TwitchPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.comparison : among;
 
+    mixin(memoryCorruptionCheck);
+
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     if (plugin.twitchSettings.ecount && event.emotes.length)
@@ -610,6 +614,7 @@ void onEmoteBearingMessage(TwitchPlugin plugin, const IRCEvent event)
 )
 void onSelfjoin(TwitchPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     cast(void)getRoom(plugin, event.channel);
 }
 
@@ -727,9 +732,11 @@ void onUserstate(TwitchPlugin plugin, const IRCEvent event)
     .onEvent(IRCEvent.Type.GLOBALUSERSTATE)
     .fiber(true)
 )
-void onGlobalUserstate(TwitchPlugin plugin)
+void onGlobalUserstate(TwitchPlugin plugin, const IRCEvent event)
 {
     import kameloso.plugins.twitch.emotes : importCustomEmotes;
+
+    mixin(memoryCorruptionCheck);
 
     // dialect sets the display name during parsing
     //assert(plugin.state.client.displayName == event.target.displayName);
@@ -749,6 +756,8 @@ void onGlobalUserstate(TwitchPlugin plugin)
 )
 void onSelfpart(TwitchPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     auto room = event.channel in plugin.rooms;
 
     if (!room) return;
@@ -794,6 +803,8 @@ void onSelfpart(TwitchPlugin plugin, const IRCEvent event)
 )
 void onCommandUptime(TwitchPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     const room = event.channel in plugin.rooms;
     assert(room, "Tried to process `onCommandUptime` on a nonexistent room");
 
@@ -931,6 +942,8 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
     import lu.string : advancePast, stripped;
     import std.algorithm.comparison : among;
     import std.algorithm.searching : startsWith;
+
+    mixin(memoryCorruptionCheck);
 
     auto room = event.channel in plugin.rooms;
     assert(room, "Tried to look up follow age in a nonexistent room");
@@ -1313,6 +1326,8 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
+    mixin(memoryCorruptionCheck);
+
     void sendUsage()
     {
         enum pattern = "Usage: %s%s [name of streamer] [optional number of times to spam]";
@@ -1457,6 +1472,8 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
 )
 void onCommandVanish(TwitchPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     try
     {
         cast(void)timeoutUser(plugin, event.channel, event.sender.id, 1);
@@ -1500,6 +1517,8 @@ void onCommandRepeat(TwitchPlugin plugin, const IRCEvent event)
     import std.algorithm.comparison : min;
     import std.conv : ConvException, to;
     import std.format : format;
+
+    mixin(memoryCorruptionCheck);
 
     void sendUsage()
     {
@@ -1558,6 +1577,8 @@ void onCommandSubs(TwitchPlugin plugin, const IRCEvent event)
 {
     import std.format : format;
 
+    mixin(memoryCorruptionCheck);
+
     const room = event.channel in plugin.rooms;
     assert(room, "Tried to get the subscriber count of a channel for which there existed no room");
 
@@ -1614,6 +1635,8 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.string : indexOf;
     import core.time : seconds;
+
+    mixin(memoryCorruptionCheck);
 
     /+
         The minimum amount of time in seconds that must have passed between
@@ -1922,6 +1945,8 @@ void onCommandStartPoll(TwitchPlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.json : JSONType;
 
+    mixin(memoryCorruptionCheck);
+
     void sendUsage()
     {
         import std.format : format;
@@ -2034,6 +2059,8 @@ void onCommandEndPoll(TwitchPlugin plugin, const IRCEvent event)
 {
     import std.json : JSONType;
 
+    mixin(memoryCorruptionCheck);
+
     try
     {
         const polls = getPolls(plugin, event.channel);
@@ -2112,6 +2139,8 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
 {
     import lu.string : plurality, stripped, unquoted;
     import std.uni : toLower;
+
+    mixin(memoryCorruptionCheck);
 
     void sendUsage()
     {
@@ -2254,11 +2283,13 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
     .fiber(true)
 )
-void onEndOfMOTD(TwitchPlugin plugin)
+void onEndOfMOTD(TwitchPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.comparison : max;
     import std.algorithm.searching : startsWith;
     import std.concurrency : spawn;
+
+    mixin(memoryCorruptionCheck);
 
     // Concatenate the Bearer and OAuth headers once.
     // This has to be done *after* connect's register
@@ -2314,6 +2345,8 @@ void onCommandEcount(TwitchPlugin plugin, const IRCEvent event)
     import std.array : replace;
     import std.format : format;
     import std.conv  : to;
+
+    mixin(memoryCorruptionCheck);
 
     if (!plugin.twitchSettings.ecount) return;
 
@@ -2423,6 +2456,8 @@ void onCommandWatchtime(TwitchPlugin plugin, const IRCEvent event)
     import std.algorithm.searching : startsWith;
     import std.format : format;
     import core.time : Duration;
+
+    mixin(memoryCorruptionCheck);
 
     if (!plugin.twitchSettings.watchtime) return;
 
@@ -2553,6 +2588,8 @@ void onCommandSetTitle(TwitchPlugin plugin, const IRCEvent event)
     import std.array : replace;
     import std.format : format;
 
+    mixin(memoryCorruptionCheck);
+
     immutable unescapedTitle = event.content.stripped;
 
     if (!unescapedTitle.length)
@@ -2612,6 +2649,8 @@ void onCommandSetGame(TwitchPlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.string : isNumeric;
     import std.uri : encodeComponent;
+
+    mixin(memoryCorruptionCheck);
 
     immutable unescapedGameName = event.content.stripped;
 
@@ -2706,6 +2745,8 @@ void onCommandCommercial(TwitchPlugin plugin, const IRCEvent event)
     import std.algorithm.comparison : among;
     import std.algorithm.searching : endsWith;
     import std.format : format;
+
+    mixin(memoryCorruptionCheck);
 
     string lengthString = event.content.stripped;  // mutable
     if (lengthString.endsWith('s')) lengthString = lengthString[0..$-1];
@@ -2897,9 +2938,10 @@ void initialise(TwitchPlugin plugin)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_MYINFO)
 )
-void onMyInfo(TwitchPlugin plugin)
+void onMyInfo(TwitchPlugin plugin, const IRCEvent event)
 {
     // Load ecounts and such.
+    mixin(memoryCorruptionCheck);
     loadResources(plugin);
 }
 
