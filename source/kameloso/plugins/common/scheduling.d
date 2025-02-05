@@ -420,24 +420,30 @@ in ((thing !is null), "Tried to unlist a null " ~ Thing.stringof ~ " from awaiti
 in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
     " from awaiting `IRCEvent.Type.UNSET`")
 {
-    import std.algorithm.mutation : SwapStrategy, remove;
-
     void removeForType(const IRCEvent.Type type)
     {
-        size_t[] toRemove;
+        import std.algorithm.mutation : SwapStrategy, remove;
+        import std.array : Appender;
+
+        static Appender!(size_t[]) toRemove;
+
+        scope(exit)
+        {
+            if (toRemove[].length) toRemove.clear();
+        }
 
         foreach (immutable i, awaitingThing; aa[type])
         {
             if (awaitingThing is thing)
             {
-                toRemove ~= i;
+                toRemove.put(i);
                 if (!fully) break;
             }
         }
 
-        if (toRemove.length)
+        if (toRemove[].length)
         {
-            foreach_reverse (immutable i; toRemove)
+            foreach_reverse (immutable i; toRemove[])
             {
                 aa[type] = aa[type].remove!(SwapStrategy.unstable)(i);
             }

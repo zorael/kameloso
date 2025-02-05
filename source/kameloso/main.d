@@ -1994,7 +1994,14 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 void processScheduledDelegates(IRCPlugin plugin, const long nowInHnsecs)
 in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an unset timestamp")
 {
-    size_t[] toRemove;
+    import std.array : Appender;
+
+    static Appender!(size_t[]) toRemove;
+
+    scope(exit)
+    {
+        if (toRemove[].length) toRemove.clear();
+    }
 
     foreach (immutable i, scheduledDg; plugin.state.scheduledDelegates)
     {
@@ -2030,18 +2037,16 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
             scheduledDg.dg = null;
         }
 
-        toRemove ~= i;  // Always removed a scheduled delegate after processing
+        toRemove.put(i);  // Always removed a scheduled delegate after processing
     }
 
     // Clean up processed delegates
-    foreach_reverse (immutable i; toRemove)
+    foreach_reverse (immutable i; toRemove[])
     {
         import std.algorithm.mutation : SwapStrategy, remove;
         plugin.state.scheduledDelegates = plugin.state.scheduledDelegates
             .remove!(SwapStrategy.unstable)(i);
     }
-
-    toRemove = null;
 }
 
 
@@ -2063,11 +2068,18 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
     import kameloso.thread : CarryingFiber;
     import std.algorithm.iteration : uniq;
     import std.algorithm.sorting : sort;
+    import std.array : Appender;
     import std.range : chain;
     import core.thread.fiber : Fiber;
 
-    size_t[] toRemove;
-    size_t[] toReset;
+    static Appender!(size_t[]) toRemove;
+    static Appender!(size_t[]) toReset;
+
+    scope(exit)
+    {
+        if (toRemove[].length) toRemove.clear();
+        if (toReset[].length) toReset.clear();
+    }
 
     /+
         Walk through the scheduled fibers and call them if their timestamp is up.
@@ -2135,7 +2147,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
                 Don't necessarily reset it though, as it may be referenced to
                 elsewhere too. Evaluate that below.
              +/
-            toRemove ~= i;
+            toRemove.put(i);
         }
     }
 
@@ -2150,18 +2162,18 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         {
             if (carryingFiber.state == Fiber.State.TERM)
             {
-                toReset ~= i;
+                toReset.put(i);
             }
         }
     }
 
     // No need to continue if there's nothing to do
-    if (!toRemove.length && !toReset.length) return;
+    if (!toRemove[].length && !toReset[].length) return;
 
     /+
         Sort the indices so we can walk them in reverse order.
      +/
-    auto indexRange = chain(toRemove, toReset)
+    auto indexRange = chain(toRemove[], toReset[])
         .sort!((a, b) => a < b)
         .uniq;
 
@@ -2174,7 +2186,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : canFind;
 
-        if (toReset.canFind(i))
+        if (toReset[].canFind(i))
         {
             if (auto carryingFiber = cast(CarryingFiber!IRCEvent)plugin.state.scheduledFibers[i].fiber)
             {
