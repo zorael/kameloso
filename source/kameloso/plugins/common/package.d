@@ -688,6 +688,7 @@ mixin template IRCPluginImpl(
                         module_,
                         Fun.stringof), "0");
                 }
+
                 fun(this, event);
             }
             else static if (
@@ -707,6 +708,7 @@ mixin template IRCPluginImpl(
                         module_,
                         Fun.stringof), "0");
                 }
+
                 fun(event);
             }
             else static if (arity!fun == 0)

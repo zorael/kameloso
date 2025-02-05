@@ -1222,7 +1222,6 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
     .channelPolicy(~ChannelPolicy.home)  // on all but homes
-    //.fiber(true)
 )
 void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
 {
@@ -1267,7 +1266,6 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
 
     void importDg()
     {
-
         importCustomEmotes(
             plugin: plugin,
             channelName: event.channel.idup,
