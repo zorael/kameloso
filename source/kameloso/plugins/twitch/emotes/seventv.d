@@ -47,6 +47,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
     import kameloso.plugins.twitch.common : ErrorJSONException, UnexpectedJSONException;
+    import lu.conv : toString;
     import std.conv : to;
     import std.encoding : sanitize;
     import std.json : JSONType, parseJSON;
@@ -136,8 +137,8 @@ in (id, "Tried to get 7tv emotes with an unset ID")
 
         if (responseJSON.type != JSONType.object)
         {
-            enum message = "`get7tvEmotes` response has unexpected JSON " ~
-                "(wrong JSON type)";
+            // toString doesn't work due to duplicate values in the enum
+            immutable message = "Wrong JSON type: " ~ responseJSON.type.to!string;
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
@@ -145,8 +146,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
 
         if (!emoteSetJSON)
         {
-            enum message = "`get7tvEmotes` response has unexpected JSON " ~
-                `(no "emote_set" key)`;
+            enum message = `No "emote_set" key`;
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
@@ -154,10 +154,9 @@ in (id, "Tried to get 7tv emotes with an unset ID")
 
         immutable emotesJSON = "emotes" in *emoteSetJSON;
 
-        if (!emotesJSON || (emotesJSON.type != JSONType.array))
+        if (!emotesJSON)
         {
-            enum message = "`get7tvEmotes` response has unexpected JSON " ~
-                `(emotesJSON is not JSONType.array)`;
+            enum message = `No "emotes" key`;
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
@@ -286,8 +285,10 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 
     if (responseJSON.type != JSONType.object)
     {
-        enum message = "`get7tvEmotesGlobal` response has unexpected JSON " ~
-            "(wrong JSON type)";
+        import std.conv : to;
+
+        // toString doesn't work due to duplicate values in the enum
+        immutable message = "Wrong JSON type: " ~ responseJSON.type.to!string;
         throw new UnexpectedJSONException(message, responseJSON);
     }
 
@@ -295,8 +296,7 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 
     if (!emotesJSON)
     {
-        enum message = "`get7tvEmotesGlobal` response has unexpected JSON " ~
-            `(no "emotes" key)`;
+        enum message = `No "emotes" key`;
         throw new UnexpectedJSONException(message, responseJSON);
     }
 

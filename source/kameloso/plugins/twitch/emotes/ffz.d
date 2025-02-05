@@ -149,8 +149,10 @@ in (id, "Tried to get FFZ emotes with an unset ID")
 
         if (responseJSON.type != JSONType.object)
         {
-            enum message = "`getFFZEmotes` response has unexpected JSON " ~
-                "(wrong JSON type)";
+            import std.conv : to;
+
+            // toString doesn't work due to duplicate values in the enum
+            immutable message = "Wrong JSON type: " ~ responseJSON.type.to!string;
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
@@ -158,8 +160,7 @@ in (id, "Tried to get FFZ emotes with an unset ID")
 
         if (!setsJSON)
         {
-            enum message = "`getFFZEmotes` response has unexpected JSON " ~
-                `(no "sets" key)`;
+            enum message = `No "sets" key`;
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
@@ -169,10 +170,9 @@ in (id, "Tried to get FFZ emotes with an unset ID")
         {
             if (immutable emoticonsArrayJSON = "emoticons" in setJSON)
             {
-                if (!emoticonsArrayJSON || (emoticonsArrayJSON.type != JSONType.array))
+                if (!emoticonsArrayJSON)
                 {
-                    enum message = "`getFFZEmotes` response has unexpected JSON " ~
-                        `(emoticonsArrayJSON is null or not an array)`;
+                    enum message = `No "emoticons" key`;
                     throw new UnexpectedJSONException(message, responseJSON);
                 }
 
@@ -320,8 +320,10 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
 
         if (responseJSON.type != JSONType.object)
         {
-            enum message = "`getFFZEmotesGlobal` response has unexpected JSON " ~
-                "(wrong JSON type)";
+            import std.conv : to;
+
+            // toString doesn't work due to duplicate values in the enum
+            immutable message = "Wrong JSON type: " ~ responseJSON.type.to!string;
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
@@ -329,8 +331,7 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
 
         if (!setsJSON)
         {
-            enum message = "`getFFZEmotesGlobal` response has unexpected JSON " ~
-                `(no "sets" key)`;
+            enum message = `No "sets" key`;
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
@@ -340,10 +341,9 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
         {
             if (immutable emoticonsArrayJSON = "emoticons" in setJSON)
             {
-                if (!emoticonsArrayJSON || (emoticonsArrayJSON.type != JSONType.array))
+                if (!emoticonsArrayJSON)
                 {
-                    enum message = "`getFFZEmotesGlobal` response has unexpected JSON " ~
-                        `(emoticonsArrayJSON is null or not an array)`;
+                    enum message = `No "emoticons" key`;
                     throw new UnexpectedJSONException(message, responseJSON);
                 }
 

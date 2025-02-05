@@ -113,8 +113,10 @@ in (id, "Tried to get BTTV emotes with an unset ID")
 
         if (responseJSON.type != JSONType.object)
         {
-            enum message = "`getBTTVEmotes` response has unexpected JSON " ~
-                "(wrong JSON type)";
+            import std.conv : to;
+
+            // toString doesn't work due to duplicate values in the enum
+            immutable message = "Wrong JSON type: " ~ responseJSON.type.to!string;
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
@@ -122,12 +124,17 @@ in (id, "Tried to get BTTV emotes with an unset ID")
 
         if (!channelEmotesJSON)
         {
-            enum message = "`getBTTVEmotes` response has unexpected JSON " ~
-                `(no "channelEmotes" key)`;
+            enum message = `No "channelEmotes" key`;
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
         immutable sharedEmotesJSON = "sharedEmotes" in responseJSON;
+
+        if (!sharedEmotesJSON)
+        {
+            enum message = `No "sharedEmotes" key`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
 
         foreach (const emoteJSON; channelEmotesJSON.array)
         {
@@ -220,8 +227,10 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
     if (responseJSON.type != JSONType.array)
     {
         import kameloso.plugins.twitch.common : UnexpectedJSONException;
-        enum message = "`getBTTVEmotesGlobal` response has unexpected JSON " ~
-            "(wrong JSON type)";
+        import std.conv : to;
+
+        // toString doesn't work due to duplicate values in the enum
+        immutable message = "Wrong JSON type: " ~ responseJSON.type.to!string;
         throw new UnexpectedJSONException(message, responseJSON);
     }
 
