@@ -1081,133 +1081,136 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
     .channelPolicy(ChannelPolicy.home)
-    .fiber(true)
 )
 void onRoomState(TwitchPlugin plugin, const IRCEvent event)
 {
+    import kameloso.constants : BufferSize;
     import kameloso.thread : ThreadMessage, boxed;
     import std.conv : to;
+    import core.thread.fiber : Fiber;
 
     mixin(memoryCorruptionCheck);
 
     auto room = getRoom(plugin, event.channel);
-
     if (room.id) return;  // Already initialised? Double roomstate?
 
-    if (event.aux[0].length)
-    {
-        // Cache channel name by its numeric ID
-        plugin.channelNamesByID[event.aux[0]] = event.channel;
+    // Cache channel name by its numeric ID
+    plugin.channelNamesByID[event.aux[0]] = event.channel;
 
-        try
+    try
+    {
+        room.id = event.aux[0].to!uint;  // Assign this before spending time in getTwitchUser
+    }
+    catch (Exception _) {}  // gag and ignore,, fetch user below
+
+    void onRoomStateDg()
+    {
+        if (!room.id) // || !event.aux[0].length)
         {
-            room.id = event.aux[0].to!uint;  // Assign this before spending time in getTwitchUser
-        }
-        catch (Exception _) {}  // gag and ignore, handle error below
-    }
-
-    if (!room.id) // || !event.aux[0].length)
-    {
-        // For some reason the room ID isn't in the event? Has happened at least twice
-        // Try to salvage the situation by querying the server with the username instead
-        const twitchUser = getTwitchUser(plugin, event.channel[1..$]);
-        room.id = twitchUser.id;
-    }
-
-    /+
-        Fetch the broadcaster's Twitch user through an API call and store it as
-        a new IRCUser in the plugin.state.users AA, including its display name.
-        Additionally send the user to other plugins by way of a message to be
-        picked up by the main event loop.
-     +/
-    const twitchUser = getTwitchUser(plugin, string.init, room.id);
-    if (!twitchUser.nickname.length) return;  // No such user? Something is deeply wrong
-
-    room.broadcasterDisplayName = twitchUser.displayName;
-    auto storedUser = twitchUser.nickname in plugin.state.users;
-
-    if (!storedUser)
-    {
-        // Forge a new IRCUser
-        auto newUser = IRCUser(
-            twitchUser.nickname,
-            twitchUser.nickname,
-            twitchUser.nickname ~ ".tmi.twitch.tv");
-        newUser.account = newUser.nickname;
-        newUser.class_ = IRCUser.Class.anyone;
-        newUser.displayName = twitchUser.displayName;
-        newUser.id = twitchUser.id;
-        plugin.state.users[newUser.nickname] = newUser;
-        storedUser = newUser.nickname in plugin.state.users;
-    }
-
-    IRCUser userCopy = *storedUser;  // dereference and blit
-    plugin.state.messages ~= ThreadMessage.putUser(string.init, boxed(userCopy));
-
-    /+
-        Start room monitors for the channel. We can assume they have not already
-        been started, as room was either null or room.id was set above.
-     +/
-    startRoomMonitors(plugin, event.channel);
-
-    if (plugin.twitchSettings.customEmotes)
-    {
-        import kameloso.plugins.twitch.emotes : baseDelayBetweenImports;
-        import kameloso.plugins.common.scheduling : delay;
-        import kameloso.constants : BufferSize;
-        import std.algorithm.searching : countUntil;
-
-        void importEmotesDg()
-        {
-            import kameloso.plugins.twitch.emotes : importCustomEmotes;
-            importCustomEmotes(
-                plugin: plugin,
-                channelName: event.channel,
-                id: room.id);
+            // For some reason the room ID isn't in the event? Has happened at least twice
+            // Try to salvage the situation by querying the server with the username instead
+            const twitchUser = getTwitchUser(plugin, event.channel[1..$]);
+            room.id = twitchUser.id;
         }
 
         /+
-            Stagger imports a bit.
+            Fetch the broadcaster's Twitch user through an API call and store it as
+            a new IRCUser in the plugin.state.users AA, including its display name.
+            Additionally send the user to other plugins by way of a message to be
+            picked up by the main event loop.
          +/
-        immutable homeIndex = plugin.state.bot.homeChannels.countUntil(event.channel);
-        alias multiplier = homeIndex;
-        immutable delayUntilImport = baseDelayBetweenImports * multiplier;
+        const twitchUser = getTwitchUser(plugin, string.init, room.id);
+        if (!twitchUser.nickname.length) return;  // No such user? Something is deeply wrong
 
-        auto importEmotesFiber = new Fiber(&importEmotesDg, BufferSize.fiberStack);
-        delay(plugin, importEmotesFiber, delayUntilImport);
+        room.broadcasterDisplayName = twitchUser.displayName;
+        auto storedUser = twitchUser.nickname in plugin.state.users;
+
+        if (!storedUser)
+        {
+            // Forge a new IRCUser
+            auto newUser = IRCUser(
+                twitchUser.nickname,
+                twitchUser.nickname,
+                twitchUser.nickname ~ ".tmi.twitch.tv");
+            newUser.account = newUser.nickname;
+            newUser.class_ = IRCUser.Class.anyone;
+            newUser.displayName = twitchUser.displayName;
+            newUser.id = twitchUser.id;
+            plugin.state.users[newUser.nickname] = newUser;
+            storedUser = newUser.nickname in plugin.state.users;
+        }
+
+        IRCUser userCopy = *storedUser;  // dereference and blit
+        plugin.state.messages ~= ThreadMessage.putUser(string.init, boxed(userCopy));
+
+        /+
+            Start room monitors for the channel. We can assume they have not already
+            been started, as room was either null or room.id was set above.
+         +/
+        startRoomMonitors(plugin, event.channel);
+
+        if (plugin.twitchSettings.customEmotes)
+        {
+            import kameloso.plugins.twitch.emotes : baseDelayBetweenImports;
+            import kameloso.plugins.common.scheduling : delay;
+            import kameloso.constants : BufferSize;
+            import std.algorithm.searching : countUntil;
+
+            void importEmotesDg()
+            {
+                import kameloso.plugins.twitch.emotes : importCustomEmotes;
+                importCustomEmotes(
+                    plugin: plugin,
+                    channelName: event.channel,
+                    id: room.id);
+            }
+
+            /+
+                Stagger imports a bit.
+             +/
+            immutable homeIndex = plugin.state.bot.homeChannels.countUntil(event.channel);
+            alias multiplier = homeIndex;
+            immutable delayUntilImport = baseDelayBetweenImports * multiplier;
+
+            auto importEmotesFiber = new Fiber(&importEmotesDg, BufferSize.fiberStack);
+            delay(plugin, importEmotesFiber, delayUntilImport);
+        }
+
+        auto creds = event.channel in plugin.secretsByChannel;
+
+        if (creds && creds.broadcasterKey.length)
+        {
+            void onExpiryDg()
+            {
+                enum pattern = "The broadcaster-level access token for channel <l>%s</> has expired. " ~
+                    "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
+                logger.errorf(pattern, event.channel);
+
+                // Keep the old keys so the error message repeats next execution
+                /*creds.broadcasterKey = string.init;
+                creds.broadcasterBearerToken = string.init;
+                //creds.broadcasterKeyExpiry = 0;  // keep it for reference
+                saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);*/
+            }
+
+            try
+            {
+                import std.datetime.systime : SysTime;
+                generateExpiryReminders(
+                    plugin,
+                    SysTime.fromUnixTime(creds.broadcasterKeyExpiry),
+                    "The broadcaster-level authorisation token for channel <l>" ~ event.channel ~ "</>",
+                    &onExpiryDg);
+            }
+            catch (InvalidCredentialsException _)
+            {
+                onExpiryDg();
+            }
+        }
     }
 
-    auto creds = event.channel in plugin.secretsByChannel;
-
-    if (creds && creds.broadcasterKey.length)
-    {
-        void onExpiryDg()
-        {
-            enum pattern = "The broadcaster-level access token for channel <l>%s</> has expired. " ~
-                "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
-            logger.errorf(pattern, event.channel);
-
-            // Keep the old keys so the error message repeats next execution
-            /*creds.broadcasterKey = string.init;
-            creds.broadcasterBearerToken = string.init;
-            //creds.broadcasterKeyExpiry = 0;  // keep it for reference
-            saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);*/
-        }
-
-        try
-        {
-            import std.datetime.systime : SysTime;
-            generateExpiryReminders(
-                plugin,
-                SysTime.fromUnixTime(creds.broadcasterKeyExpiry),
-                "The broadcaster-level authorisation token for channel <l>" ~ event.channel ~ "</>",
-                &onExpiryDg);
-        }
-        catch (InvalidCredentialsException _)
-        {
-            onExpiryDg();
-        }
-    }
+    auto onRoomStateFiber = new Fiber(&onRoomStateDg, BufferSize.fiberStack);
+    onRoomStateFiber.call();
 }
 
 
