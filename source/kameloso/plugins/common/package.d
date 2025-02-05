@@ -4238,17 +4238,17 @@ auto memoryCorruptionCheck(
     "
     import lu.traits : udaIndexOf;
 
-    static if (udaIndexOf!(mixin(__FUNCTION__), IRCEventHandler) != " ~ udaIndexString ~ ")
-    {
-        enum message = \"`memoryCorruptionCheck` must be mixed into a function \" ~
-            \"annotated with an `IRCEventHandler` (at UDA index `" ~ udaIndexString ~ "`)\";
-        static assert(0, message);
-    }
-
     static if (!__traits(compiles, " ~ eventParamName ~ ".type))
     {
         enum message = \"`memoryCorruptionCheck` must be mixed into a function \" ~
             \"with an `IRCEvent` parameter named `" ~ eventParamName ~ "`\";
+        static assert(0, message);
+    }
+
+    static if (udaIndexOf!(mixin(__FUNCTION__), IRCEventHandler) != " ~ udaIndexString ~ ")
+    {
+        enum message = \"`memoryCorruptionCheck` must be mixed into a function \" ~
+            \"annotated with an `IRCEventHandler` (at UDA index `" ~ udaIndexString ~ "`)\";
         static assert(0, message);
     }
     " :
@@ -4259,16 +4259,46 @@ auto memoryCorruptionCheck(
     import lu.conv : toString;
     import std.algorithm.searching : canFind;
 
-    if (!__traits(getAttributes, mixin(__FUNCTION__))[" ~ udaIndexString ~ "]
-        .acceptedEventTypes
-        .canFind(" ~ eventParamName ~ ".type))
+    static immutable uda = __traits(getAttributes, mixin(__FUNCTION__))[" ~ udaIndexString ~ "];
+
+    if (!uda.acceptedEventTypes.canFind(" ~ eventParamName ~ ".type))
     {
         immutable message = __FUNCTION__ ~
             \" was called with unexpected event type: \" ~ " ~ eventParamName ~ ".type.toString();
         assert(0, message);
+    }
+
+    static if (uda.commands.length)
+    {
+        import std.uni : toLower;
+
+        if (!" ~ eventParamName ~ ".aux[$-1].length)
+        {
+            enum message = \"No command word found in " ~ eventParamName ~ ".aux\";
+            assert(0, message);
+        }
+
+        immutable wordLower = " ~ eventParamName ~ ".aux[$-1].toLower();
+        bool hit;
+
+        foreach (const command; uda.commands)
+        {
+            if (command._word == wordLower)
+            {
+                hit = true;
+                break;
+            }
+        }
+
+        if (!hit)
+        {
+            immutable message = \"Command word not found in the UDA annotation of \" ~
+                __FUNCTION__ ~ \": \" ~ wordLower;
+            assert(0, message);
+        }
     }";
 
-        return "{\n" ~ prelude ~ constraintsString ~ checkString ~ "\n}";
+        return "{\n    " ~ prelude ~ constraintsString ~ checkString ~ "\n}";
     }
     else
     {
