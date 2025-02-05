@@ -65,8 +65,8 @@ in (((channelName.length && id) ||
         uint failures;
     }
 
-    enum failureReportPoint = 5;
-    enum giveUpThreshold = failureReportPoint * 3;
+    enum failureReportPoint = 3;
+    enum giveUpThreshold = failureReportPoint + 2;
 
     EmoteImport[] emoteImports;
     bool[string] collectedEmotes;
