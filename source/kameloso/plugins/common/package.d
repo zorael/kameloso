@@ -1082,8 +1082,15 @@ mixin template IRCPluginImpl(
                 import kameloso.thread : carryingFiber;
                 import core.thread.fiber : Fiber;
 
+                void fiberDg()
+                {
+                    call!(inFiber, SystemFun)(fun, event);
+                }
+
+                scope scopeFiberDg = &fiberDg;
+
                 auto fiber = carryingFiber(
-                    () => call!(inFiber, SystemFun)(fun, event),
+                    scopeFiberDg,
                     event,
                     BufferSize.fiberStack);
                 fiber.creator = uda.fqn;
