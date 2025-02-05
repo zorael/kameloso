@@ -70,8 +70,6 @@ in (((channelName.length && id) ||
 
     EmoteImport[] emoteImports;
     bool[string] collectedEmotes;
-    bool atLeastOneImportFailed;
-    version(assert) bool addedSomething;
 
     if (channelName.length)
     {
@@ -118,9 +116,55 @@ in (((channelName.length && id) ||
     static immutable initialDelay = 2.seconds;
     delay(plugin, initialDelay, yield: true);
 
+    void reportSuccess(const string emoteImportName, const uint numAdded)
+    {
+        if (numAdded)
+        {
+            if (channelName.length)
+            {
+                enum pattern = "Successfully imported <l>%s</> emotes " ~
+                    "for channel <l>%s</> (<l>%d</>)";
+                logger.infof(pattern, emoteImportName, channelName, numAdded);
+            }
+            else
+            {
+                enum pattern = "Successfully imported global <l>%s</> emotes (<l>%d</>)";
+                logger.infof(pattern, emoteImportName, numAdded);
+            }
+        }
+        /*else
+        {
+            if (channelName.length)
+            {
+                enum pattern = "No <l>%s</> emotes for channel <l>%s</>.";
+                logger.infof(pattern, emoteImportName, channelName);
+            }
+            else
+            {
+                enum pattern = "No global <l>%s</> emotes.";
+                logger.infof(pattern, emoteImportName);
+            }
+        }*/
+    }
+
+    void reportFailure(const string emoteImportName)
+    {
+        if (channelName.length)
+        {
+            enum pattern = "Failed to import <l>%s</> emotes for channel <l>%s</>.";
+            logger.warningf(pattern, emoteImportName, channelName);
+        }
+        else
+        {
+            enum pattern = "Failed to import global <l>%s</> emotes.";
+            logger.warningf(pattern, emoteImportName);
+        }
+    }
+
     // Loop until the array is exhausted. Remove completed and/or failed imports.
     while (emoteImports.length)
     {
+        import kameloso.plugins.twitch.common : UnexpectedJSONException;
         import kameloso.plugins.common.scheduling : delay;
         import std.algorithm.mutation : SwapStrategy, remove;
         import core.memory : GC;
@@ -144,38 +188,21 @@ in (((channelName.length && id) ||
 
                 if (plugin.state.settings.trace)
                 {
-                    if (numAdded)
-                    {
-                        version(assert) addedSomething = true;
-
-                        if (channelName.length)
-                        {
-                            enum pattern = "Successfully imported <l>%s</> emotes " ~
-                                "for channel <l>%s</> (<l>%d</>)";
-                            logger.infof(pattern, emoteImport.name, channelName, numAdded);
-                        }
-                        else
-                        {
-                            enum pattern = "Successfully imported global <l>%s</> emotes (<l>%d</>)";
-                            logger.infof(pattern, emoteImport.name, numAdded);
-                        }
-                    }
-                    /*else
-                    {
-                        if (channelName.length)
-                        {
-                            enum pattern = "No <l>%s</> emotes for channel <l>%s</>.";
-                            logger.infof(pattern, emoteImport.name, channelName);
-                        }
-                        else
-                        {
-                            enum pattern = "No global <l>%s</> emotes.";
-                            logger.infof(pattern, emoteImport.name);
-                        }
-                    }*/
+                    reportSuccess(emoteImport.name, numAdded);
                 }
 
                 // Success; flag it for deletion
+                toRemove ~= i;
+                continue;
+            }
+            catch (UnexpectedJSONException _)
+            {
+                if (plugin.state.settings.trace)
+                {
+                    reportFailure(emoteImport.name);
+                }
+
+                // Unlikely to succeed later; flag it for deletion
                 toRemove ~= i;
                 continue;
             }
@@ -186,16 +213,7 @@ in (((channelName.length && id) ||
                 // Report failure once but keep trying
                 if (emoteImport.failures == failureReportPoint)
                 {
-                    if (channelName.length)
-                    {
-                        enum pattern = "Failed to import <l>%s</> emotes for channel <l>%s</>.";
-                        logger.warningf(pattern, emoteImport.name, channelName);
-                    }
-                    else
-                    {
-                        enum pattern = "Failed to import global <l>%s</> emotes.";
-                        logger.warningf(pattern, emoteImport.name);
-                    }
+                    reportFailure(emoteImport.name);
 
                     version(PrintStacktraces)
                     {
@@ -208,7 +226,6 @@ in (((channelName.length && id) ||
                 {
                     // Failed too many times; flag it for deletion
                     toRemove ~= i;
-                    atLeastOneImportFailed = true;
                     continue;  // skip the delay below
                 }
 
@@ -219,24 +236,9 @@ in (((channelName.length && id) ||
 
         foreach_reverse (immutable i; toRemove)
         {
-            // Remove completed and/or successively failed imports
+            // Remove completed and/or repeatedly failing imports
             emoteImports = emoteImports.remove!(SwapStrategy.unstable)(i);
         }
-    }
-
-    version(assert)
-    {
-        if (addedSomething)
-        {
-            enum message = "Custom emotes were imported but the resulting AA is empty";
-            assert(collectedEmotes.length, message);
-        }
-    }
-
-    if (atLeastOneImportFailed)
-    {
-        enum message = "Some custom emotes failed to import.";
-        logger.error(message);
     }
 
     if (channelName.length)
