@@ -127,6 +127,7 @@ in (((channelName.length && id) ||
         import core.time : seconds;
 
         size_t[] toRemove;
+        toRemove.reserve(emoteImports.length);
 
         foreach (immutable i, ref emoteImport; emoteImports)
         {
