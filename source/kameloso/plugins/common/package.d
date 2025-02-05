@@ -4179,6 +4179,133 @@ void defer(T)
 }
 
 
+// memoryCorruptionCheckConstraintsDefault
+/++
+    Whether or not to add constraints to the [memoryCorruptionCheck] mixin string
+    to ensure it is mixed into an appropriate environment.
+
+    This becomes the default value for the `constraints` parameter of [memoryCorruptionCheck].
+    It is set to `true` in the `unittest` configuration and `false` otherwise.
+ +/
+version(unittest) enum memoryCorruptionCheckConstraintsDefault = true;
+else enum memoryCorruptionCheckConstraintsDefault = false;  /// ditto
+
+
+// memoryCorruptionCheck
+/++
+    Mixin that adds a check to ensure that the event type of the event being
+    handled is one of the expected types for the function it is mixed into.
+
+    Assumes that it is mixed into a function. (This cannot be statically checked
+    and will return in a compile-time error if false.)
+
+    If version `MemoryCorruptionChecks` is not declared it is a no-op and returns
+    an empty string.
+
+    Params:
+        eventParamName = (Optional) Name of the parameter that holds the event;
+            default "event".
+        udaIndex = (Optional) Index of the `IRCEventHandler` UDA to check for; default 0.
+        constraints = (Optional) Whether or not to add constraints to the string
+            to ensure it is mixed into an appropriate environment; defaults to
+            the value of [memoryCorruptionCheckConstraintsDefault].
+
+    Returns:
+        A string that can be mixed into a function to add the check.
+ +/
+auto memoryCorruptionCheck(
+    const string eventParamName = "event",
+    const size_t udaIndex = 0,
+    const bool constraints = memoryCorruptionCheckConstraintsDefault)
+{
+    version(MemoryCorruptionChecks)
+    {
+        import std.conv : to;
+
+        immutable udaIndexString = udaIndex.to!string;
+        enum prelude = "import kameloso.plugins.common;";
+
+        immutable constraintsString = constraints ?
+    "
+    import lu.traits : udaIndexOf;
+
+    static if (udaIndexOf!(mixin(__FUNCTION__), IRCEventHandler) != " ~ udaIndexString ~ ")
+    {
+        enum message = \"`memoryCorruptionCheck` must be mixed into a function \" ~
+            \"annotated with an `IRCEventHandler` (at UDA index `" ~ udaIndexString ~ "`)\";
+        static assert(0, message);
+    }
+
+    static if (!__traits(compiles, " ~ eventParamName ~ ".type))
+    {
+        enum message = \"`memoryCorruptionCheck` must be mixed into a function \" ~
+            \"with an `IRCEvent` parameter named `" ~ eventParamName ~ "`\";
+        static assert(0, message);
+    }
+    " :
+    string.init;
+
+        immutable checkString =
+    "
+    import lu.conv : toString;
+    import std.algorithm.searching : canFind;
+
+    if (!__traits(getAttributes, mixin(__FUNCTION__))[" ~ udaIndexString ~ "]
+        .acceptedEventTypes
+        .canFind(" ~ eventParamName ~ ".type))
+    {
+        immutable message = __FUNCTION__ ~
+            \" was called with unexpected event type: \" ~ " ~ eventParamName ~ ".type.toString();
+        assert(0, message);
+    }";
+
+        return "{\n" ~ prelude ~ constraintsString ~ checkString ~ "\n}";
+    }
+    else
+    {
+        return string.init;
+    }
+}
+
+
+version(unittest)
+{
+    // memoryCorruptionCheckTestDefaultName
+    /++
+        Test function for [memoryCorruptionCheck] with default parameters.
+     +/
+    @(IRCEventHandler())
+    private void memoryCorruptionCheckTestDefaultName(IRCEvent event)
+    {
+
+        mixin(memoryCorruptionCheck(constraints: true));
+    }
+
+
+    // memoryCorruptionCheckTestCustomName
+    /++
+        Test function for [memoryCorruptionCheck] with a custom event parameter name.
+     +/
+    @(IRCEventHandler())
+    private void memoryCorruptionCheckTestCustomName(IRCEvent blarp)
+    {
+        mixin(memoryCorruptionCheck(eventParamName: "blarp"));
+    }
+
+
+    // memoryCorruptionCheckTestCustomIndex
+    /++
+        Test function for [memoryCorruptionCheck] with a custom UDA index.
+     +/
+    @123
+    @(IRCEventHandler())
+    private void memoryCorruptionCheckTestCustomNameCustomIndex(IRCEvent hirr)
+    {
+        mixin(memoryCorruptionCheck(eventParamName: "hirr", udaIndex: 1));
+    }
+}
+
+
 // Selftester
 /++
     Helper struct to aid in testing plugins.
