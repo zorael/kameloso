@@ -1022,12 +1022,6 @@ void loadSeen(SeenPlugin plugin)
     import std.json : JSONException, parseJSON;
     import core.memory : GC;
 
-    if (plugin.state.settings.callgrind)
-    {
-        // Loading is too slow under callgrind and there's a chance it will disconnect
-        return;
-    }
-
     GC.disable();
     scope(exit) GC.enable();
 
@@ -1074,15 +1068,10 @@ void saveSeen(SeenPlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File;
 
-    if (!plugin.state.settings.callgrind)
-    {
-        if (!plugin.seenUsers.length) return;
+    if (!plugin.seenUsers.length) return;
 
-        // This often takes too long when run under callgrind with a large array
-        auto file = File(plugin.seenFile, "w");
-        file.writeln(JSONValue(plugin.seenUsers.aaOf).toPrettyString);
-        //file.flush();
-    }
+    auto file = File(plugin.seenFile, "w");
+    file.writeln(JSONValue(plugin.seenUsers.aaOf).toPrettyString);
 }
 
 
@@ -1170,15 +1159,11 @@ void teardown(SeenPlugin plugin)
 // initResources
 /++
     Read and write the file of seen people to disk, ensuring that it's there.
-
-    Return early if we seem to be running under Callgrind.
  +/
 void initResources(SeenPlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
-
-    if (plugin.state.settings.callgrind) return;
 
     JSONStorage json;
 
