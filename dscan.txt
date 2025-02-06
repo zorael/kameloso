@@ -6,5 +6,4 @@ net\.d.+Variable EAI_NODATA is never used
 poll\.d.+Variable choicesVoldemort is never modified
 Variable benignAbort is never modified
 Variable .+UserExisted is never modified
-Parameter event is never used.
-unittest_\.d.+Parameter _2 is never used.
+common/package\.d.+Parameter event is never used.
