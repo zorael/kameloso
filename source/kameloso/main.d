@@ -4048,6 +4048,9 @@ void printEventDebugDetails(
             // Offending line included in event, in raw
             prettyprint!(Yes.all)(event);
 
+            logger.trace("channel:");
+            prettyprint(event.channel);
+
             if (event.sender != IRCUser.init)
             {
                 logger.trace("sender:");
