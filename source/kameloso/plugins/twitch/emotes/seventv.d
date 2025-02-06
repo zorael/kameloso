@@ -40,7 +40,7 @@ package:
 uint get7tvEmotes(
     TwitchPlugin plugin,
     bool[string]* emoteMap,
-    const uint id,
+    const ulong id,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `get7tvEmotes` from outside a fiber")
 in (id, "Tried to get 7tv emotes with an unset ID")
@@ -227,7 +227,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
 uint get7tvEmotesGlobal(
     TwitchPlugin plugin,
     bool[string]* emoteMap,
-    const uint _ = 0,
+    const ulong _ = 0,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 {

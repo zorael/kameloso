@@ -1137,7 +1137,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         An associative array of [std.json.JSONValue|JSONValue]s keyed by nickname string,
         containing followers.
  +/
-auto getFollowers(TwitchPlugin plugin, const uint id)
+auto getFollowers(TwitchPlugin plugin, const ulong id)
 in (Fiber.getThis(), "Tried to call `getFollowers` from outside a fiber")
 in (id, "Tried to get followers with an unset ID")
 {
@@ -1436,7 +1436,7 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
 auto getTwitchUser(
     TwitchPlugin plugin,
     const string givenName,
-    const uint id = 0,
+    const ulong id = 0,
     const bool searchByDisplayName = false)
 in (Fiber.getThis(), "Tried to call `getTwitchUser` from outside a fiber")
 in ((givenName.length || id),
@@ -1449,7 +1449,7 @@ in ((givenName.length || id),
     {
         string nickname;
         string displayName;
-        uint id;
+        ulong id;
     }
 
     User user;
@@ -1496,7 +1496,7 @@ in ((givenName.length || id),
 
         user.nickname = userJSON["login"].str;
         user.displayName = userJSON["display_name"].str;
-        user.id = userJSON["id"].str.to!uint;
+        user.id = userJSON["id"].str.to!ulong;
         return user;
     }
 
@@ -1523,7 +1523,7 @@ in ((givenName.length || id),
 auto getTwitchGame(
     TwitchPlugin plugin,
     const string name,
-    const uint id = 0)
+    const ulong id = 0)
 in (Fiber.getThis(), "Tried to call `getTwitchGame` from outside a fiber")
 in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor game ID")
 {
@@ -1531,7 +1531,7 @@ in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor ga
 
     static struct Game
     {
-        uint id;
+        ulong id;
         string name;
     }
 
@@ -1551,7 +1551,7 @@ in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor ga
         }
          */
 
-        return Game(gameJSON["id"].str.to!uint, gameJSON["name"].str);
+        return Game(gameJSON["id"].str.to!ulong, gameJSON["name"].str);
     }
 
     return retryDelegate(plugin, &getTwitchGameDg);
@@ -1597,7 +1597,7 @@ in (channelName.length, "Tried to change a the channel title with an empty chann
 void setChannelGame(
     TwitchPlugin plugin,
     const string channelName,
-    const uint gameID,
+    const ulong gameID,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `setChannelGame` from outside a fiber")
 in (gameID, "Tried to set the channel game with an empty channel name string")
@@ -1623,7 +1623,7 @@ private void modifyChannelImpl(
     TwitchPlugin plugin,
     const string channelName,
     const string title,
-    const uint gameID,
+    const ulong gameID,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `modifyChannel` from outside a fiber")
 in (channelName.length, "Tried to modify a channel with an empty channel name string")
@@ -1705,7 +1705,7 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
 
     static struct Channel
     {
-        uint gameID;
+        ulong gameID;
         string gameName;
         string[] tags;
         string title;
@@ -1734,7 +1734,7 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
          +/
 
         Channel channel;
-        channel.gameID = gameDataJSON["game_id"].str.to!uint;
+        channel.gameID = gameDataJSON["game_id"].str.to!ulong;
         channel.gameName = gameDataJSON["game_name"].str;
         channel.tags = gameDataJSON["tags"].array
             .map!(tagJSON => tagJSON.str)
@@ -1935,7 +1935,7 @@ public:
     /++
         Twitch numeric ID of the broadcaster in whose channel the poll is held.
      +/
-    uint broadcasterID;
+    ulong broadcasterID;
 
     /++
         Twitch username of broadcaster.
@@ -2064,7 +2064,7 @@ public:
         TwitchPoll poll;
         poll.pollID = json["id"].str;
         poll.title = json["title"].str;
-        poll.broadcasterID = json["broadcaster_id"].str.to!uint;
+        poll.broadcasterID = json["broadcaster_id"].str.to!ulong;
         poll.broadcasterLogin = json["broadcaster_login"].str;
         poll.broadcasterDisplayName = json["broadcaster_name"].str;
         poll.channelPointsVotingEnabled = json["channel_points_voting_enabled"].boolean;
@@ -2631,12 +2631,12 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             }
              */
 
-            auto stream = TwitchPlugin.Room.Stream(streamJSON["id"].str.to!uint);
+            auto stream = TwitchPlugin.Room.Stream(streamJSON["id"].str.to!ulong);
             stream.live = true;
-            stream.userID = streamJSON["user_id"].str.to!uint;
+            stream.userID = streamJSON["user_id"].str.to!ulong;
             stream.userLogin = streamJSON["user_login"].str;
             stream.userDisplayName = streamJSON["user_name"].str;
-            stream.gameID = streamJSON["game_id"].str.to!uint;
+            stream.gameID = streamJSON["game_id"].str.to!ulong;
             stream.gameName = streamJSON["game_name"].str;
             stream.title = streamJSON["title"].str;
             stream.startTime = SysTime.fromISOExtString(streamJSON["started_at"].str);
@@ -2706,7 +2706,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
         {
             string name;
             string displayName;
-            uint id;
+            ulong id;
         }
 
         static struct Subscription
@@ -2803,11 +2803,11 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             foreach (immutable subJSON; dataJSON.array)
             {
                 Subscription sub;
-                sub.user.id = subJSON["user_id"].str.to!uint;
+                sub.user.id = subJSON["user_id"].str.to!ulong;
                 sub.user.name = subJSON["user_login"].str;
                 sub.user.displayName = subJSON["user_name"].str;
                 sub.wasGift = subJSON["is_gift"].boolean;
-                sub.gifter.id = subJSON["gifter_id"].str.to!uint;
+                sub.gifter.id = subJSON["gifter_id"].str.to!ulong;
                 sub.gifter.name = subJSON["gifter_login"].str;
                 sub.gifter.displayName = subJSON["gifter_name"].str;
                 if (number == 0) sub.total = total;
@@ -2992,7 +2992,7 @@ in (channelName.length, "Tried to delete a message without providing a channel n
 auto timeoutUser(
     TwitchPlugin plugin,
     const string channelName,
-    const uint userID,
+    const ulong userID,
     const uint durationSeconds,
     const string reason = string.init,
     const string caller = __FUNCTION__)
@@ -3009,9 +3009,9 @@ in (userID, "Tried to timeout a user with an unset user ID")
 
     static struct Timeout
     {
-        uint broadcasterID;
-        uint moderatorID;
-        uint userID;
+        ulong broadcasterID;
+        ulong moderatorID;
+        ulong userID;
         string createdAt;
         string endTime;
         uint code;
@@ -3069,9 +3069,9 @@ in (userID, "Tried to timeout a user with an unset user ID")
         }
 
         Timeout timeout;
-        timeout.broadcasterID = (*dataJSON)["broadcaster_id"].str.to!uint;
-        timeout.moderatorID = (*dataJSON)["moderator_id"].str.to!uint;
-        timeout.userID = (*dataJSON)["user_id"].str.to!uint;
+        timeout.broadcasterID = (*dataJSON)["broadcaster_id"].str.to!ulong;
+        timeout.moderatorID = (*dataJSON)["moderator_id"].str.to!ulong;
+        timeout.userID = (*dataJSON)["user_id"].str.to!ulong;
         timeout.createdAt = (*dataJSON)["created_at"].str;
         timeout.endTime = (*dataJSON)["end_time"].str;
         timeout.code = response.code;
@@ -3105,7 +3105,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
  +/
 auto sendWhisper(
     TwitchPlugin plugin,
-    const uint userID,
+    const ulong userID,
     const string unescapedMessage,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")

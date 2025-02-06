@@ -364,7 +364,7 @@ void onOneliner(OnelinerPlugin plugin, const IRCEvent event)
     string slice = event.content[plugin.state.settings.prefix.length..$];  // mutable
     if (!slice.length) return;
 
-    auto channelOneliners = event.channel in plugin.onelinersByChannel;  // mustn't be const
+    auto channelOneliners = event.channel.name in plugin.onelinersByChannel;  // mustn't be const
     if (!channelOneliners) return;
 
     immutable triggerCased = slice.advancePast(' ', inherit: true);  // mutable
@@ -409,7 +409,7 @@ void onOneliner(OnelinerPlugin plugin, const IRCEvent event)
     immutable args = slice.splitWithQuotes();
 
     string line = response  // mutable
-        .replace("$channel", event.channel)
+        .replace("$channel", event.channel.name)
         .replace("$sender", nameOf(event.sender))
         .replace("$bot", nameOf(plugin, plugin.state.client.nickname))
         .replace("$senderNickname", event.sender.nickname)
@@ -441,8 +441,8 @@ void onOneliner(OnelinerPlugin plugin, const IRCEvent event)
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
             line = line
-                .replace("$streamer", nameOf(plugin, event.channel[1..$]))
-                .replace("$streamerAccount", event.channel[1..$]);
+                .replace("$streamer", nameOf(plugin, event.channel.name[1..$]))
+                .replace("$streamerAccount", event.channel.name[1..$]);
         }
     }
 
@@ -495,7 +495,7 @@ void onCommandModifyOneliner(OnelinerPlugin plugin, const IRCEvent event)
 
         enum pattern = "Usage: <b>%s%s<b> [new|insert|add|alias|modify|edit|del|list] ...";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     if (!event.content.length) return sendUsage();
@@ -558,27 +558,27 @@ void handleNewOneliner(
     {
         enum pattern = "Usage: <b>%s%s new<b> [trigger] [type] [optional cooldown]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendMustBeRandomOrOrdered()
     {
         enum message = "Oneliner type must be one of <b>random<b> or <b>ordered<b>";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendCooldownMustBeValidPositiveDurationString()
     {
         enum message = "Oneliner cooldown must be in the hour-minute-seconds form of <b>*h*m*s<b> " ~
             "and may not have negative values.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendOnelinerAlreadyExists(const string trigger)
     {
         enum pattern = `A oneliner with the trigger word "<b>%s<b>" already exists.`;
         immutable message = pattern.format(trigger);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string trigger;  // mutable
@@ -590,7 +590,7 @@ void handleNewOneliner(
 
     trigger = Oneliner.stripPrefix(trigger, plugin.state.settings.prefix).toLower();
 
-    const channelTriggers = event.channel in plugin.onelinersByChannel;
+    const channelTriggers = event.channel.name in plugin.onelinersByChannel;
     if (channelTriggers && (trigger in *channelTriggers))
     {
         return sendOnelinerAlreadyExists(trigger);
@@ -619,7 +619,7 @@ void handleNewOneliner(
 
     newOnelinerImpl(
         plugin,
-        event.channel,
+        event.channel.name,
         trigger,
         type,
         cooldownSeconds);
@@ -739,27 +739,27 @@ void handleModifyOneliner(
     {
         enum pattern = "Usage: <b>%s%s modify<b> [trigger] [type] [optional cooldown]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendMustBeRandomOrOrdered()
     {
         enum message = "Oneliner type must be one of <b>random<b> or <b>ordered<b>";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendCooldownMustBeValidPositiveDurationString()
     {
         enum message = "Oneliner cooldown must be in the hour-minute-seconds form of <b>*h*m*s<b> " ~
             "and may not have negative values.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoSuchOneliner(const string trigger)
     {
         enum pattern = "No such oneliner: <b>%s%s<b>";
         immutable message = pattern.format(plugin.state.settings.prefix, trigger);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNewDescription(const Oneliner oneliner)
@@ -772,7 +772,7 @@ void handleModifyOneliner(
             oneliner.trigger,
             oneliner.type.toString(),
             oneliner.cooldown);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string trigger;  // mutable
@@ -782,7 +782,7 @@ void handleModifyOneliner(
 
     if (!typestring.length) return sendNewUsage();
 
-    auto channelOneliners = event.channel in plugin.onelinersByChannel;
+    auto channelOneliners = event.channel.name in plugin.onelinersByChannel;
     if (!channelOneliners) return sendNoSuchOneliner(trigger);
 
     trigger = Oneliner.stripPrefix(trigger, plugin.state.settings.prefix).toLower;
@@ -842,14 +842,14 @@ void handleAddToOneliner(
             "Usage: <b>%s%s insert<b> [trigger] [position] [text]" :
             "Usage: <b>%s%s edit<b> [trigger] [position] [new text]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendAddUsage()
     {
         enum pattern = "Usage: <b>%s%s add<b> [existing trigger] [text]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoSuchOneliner(const string trigger)
@@ -857,44 +857,44 @@ void handleAddToOneliner(
         // Sent from more than one place so might as well make it a nested function
         enum pattern = "No such oneliner: <b>%s%s<b>";
         immutable message = pattern.format(plugin.state.settings.prefix, trigger);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendResponseIndexOutOfBounds(const size_t pos, const size_t upperBounds)
     {
         enum pattern = "Oneliner response index <b>%d<b> is out of bounds. <b>[0..%d]<b>";
         immutable message = pattern.format(pos, upperBounds);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendPositionNotPositive()
     {
         enum message = "Position passed is not a positive number.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendPositionNaN()
     {
         enum message = "Position passed is not a number.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendOnelinerInserted()
     {
         enum message = "Oneliner line inserted.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendOnelinerAdded()
     {
         enum message = "Oneliner line added.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendOnelinerModified()
     {
         enum message = "Oneliner line modified.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     enum Action
@@ -912,7 +912,7 @@ void handleAddToOneliner(
     {
         trigger = Oneliner.stripPrefix(trigger, plugin.state.settings.prefix).toLower;
 
-        auto channelOneliners = event.channel in plugin.onelinersByChannel;
+        auto channelOneliners = event.channel.name in plugin.onelinersByChannel;
         if (!channelOneliners) return sendNoSuchOneliner(trigger);
 
         auto oneliner = trigger in *channelOneliners;
@@ -1028,7 +1028,7 @@ void handleDelFromOneliner(
     {
         enum pattern = "Usage: <b>%s%s del<b> [trigger] [optional position]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoSuchOneliner(const string trigger)
@@ -1036,28 +1036,28 @@ void handleDelFromOneliner(
         // Sent from more than one place so might as well make it a nested function
         enum pattern = "No such oneliner: <b>%s%s<b>";
         immutable message = pattern.format(plugin.state.settings.prefix, trigger);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendOnelinerEmpty(const string trigger)
     {
         enum pattern = "Oneliner <b>%s<b> is empty and has no responses to remove.";
         immutable message = pattern.format(trigger);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendResponseIndexOutOfBounds(const size_t pos, const size_t upperBounds)
     {
         enum pattern = "Oneliner response index <b>%d<b> is out of bounds. <b>[0..%d]<b>";
         immutable message = pattern.format(pos, upperBounds);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendLineRemoved(const string trigger, const size_t pos)
     {
         enum pattern = "Oneliner response <b>%s<b>#%d removed.";
         immutable message = pattern.format(trigger, pos);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendRemoved(const string trigger, const bool alias_)
@@ -1066,7 +1066,7 @@ void handleDelFromOneliner(
             "Oneliner alias <b>%s%s<b> removed." :
             "Oneliner <b>%s%s<b> removed.";
         immutable message = pattern.format(plugin.state.settings.prefix, trigger);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     if (!slice.length) return sendDelUsage();
@@ -1074,7 +1074,7 @@ void handleDelFromOneliner(
     immutable rawTrigger = slice.advancePast(' ', inherit: true);
     immutable trigger = Oneliner.stripPrefix(rawTrigger, plugin.state.settings.prefix).toLower;
 
-    auto channelOneliners = event.channel in plugin.onelinersByChannel;
+    auto channelOneliners = event.channel.name in plugin.onelinersByChannel;
     if (!channelOneliners) return sendNoSuchOneliner(trigger);
 
     auto oneliner = trigger in *channelOneliners;
@@ -1162,33 +1162,33 @@ void handleAliasOneliner(
     {
         enum pattern = "Usage: <b>%s%s alias<b> [trigger] [existing trigger to alias]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendYouMustSupplyAlias()
     {
         enum message = "You must supply a oneliner trigger word to make an alias of.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoSuchOneliner(const string trigger)
     {
         enum pattern = "No such oneliner: <b>%s%s<b>";
         immutable message = pattern.format(plugin.state.settings.prefix, trigger);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendOnelinerAlreadyExists(const string trigger)
     {
         enum pattern = `A oneliner with the trigger word "<b>%s<b>" already exists.`;
         immutable message = pattern.format(trigger);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendCannotAliasAlias()
     {
         enum message = "Cannot alias an alias oneliner.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string trigger;  // mutable
@@ -1200,7 +1200,7 @@ void handleAliasOneliner(
 
     trigger = Oneliner.stripPrefix(trigger, plugin.state.settings.prefix).toLower();
 
-    const channelTriggers = event.channel in plugin.onelinersByChannel;
+    const channelTriggers = event.channel.name in plugin.onelinersByChannel;
     if (!channelTriggers) return sendNoSuchOneliner(alias_);
     if (trigger in *channelTriggers) return sendOnelinerAlreadyExists(trigger);
 
@@ -1210,7 +1210,7 @@ void handleAliasOneliner(
 
     newOnelinerImpl(
         plugin,
-        event.channel,
+        event.channel.name,
         trigger,
         Oneliner.OnelinerType.alias_,
         0,
@@ -1298,7 +1298,7 @@ void listCommands(
         }
     }
 
-    const channelOneliners = event.channel in plugin.onelinersByChannel;
+    const channelOneliners = event.channel.name in plugin.onelinersByChannel;
     if (!channelOneliners || !channelOneliners.length) return sendNoCommandsAvailable();
 
     immutable triggerLower = slice.stripped.toLower;
@@ -1432,7 +1432,7 @@ void sendOneliner(
         }
     }
 
-    chan(plugin.state, event.channel, message);
+    chan(plugin.state, event.channel.name, message);
 }
 
 

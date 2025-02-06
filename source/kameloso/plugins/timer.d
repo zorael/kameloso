@@ -360,7 +360,7 @@ void onCommandTimer(TimerPlugin plugin, const IRCEvent event)
     {
         enum pattern = "Usage: <b>%s%s<b> [new|modify|add|del|suspend|resume|list] ...";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string slice = event.content.stripped;  // mutable
@@ -426,19 +426,19 @@ void handleNewTimer(
         enum pattern = "Usage: <b>%s%s new<b> [name] [type] [condition] [message count threshold] " ~
             "[time threshold] [optional stagger message count] [optional stagger time]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendBadNumerics()
     {
         enum message = "Arguments for threshold and stagger values must all be positive numbers.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendZeroedConditions()
     {
         enum message = "A timer cannot have a message threshold *and* a time threshold of zero.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     Timer timer;
@@ -487,7 +487,7 @@ void handleNewTimer(
 
     default:
         enum message = "Type must be one of <b>random<b> or <b>ordered<b>.";
-        return chan(plugin.state, event.channel, message);
+        return chan(plugin.state, event.channel.name, message);
     }
 
     switch (condition)
@@ -502,7 +502,7 @@ void handleNewTimer(
 
     default:
         enum message = "Condition must be one of <b>both<b> or <b>either<b>.";
-        return chan(plugin.state, event.channel, message);
+        return chan(plugin.state, event.channel.name, message);
     }
 
     try
@@ -518,7 +518,7 @@ void handleNewTimer(
     }
     catch (DurationStringException e)
     {
-        return chan(plugin.state, event.channel, e.msg);
+        return chan(plugin.state, event.channel.name, e.msg);
     }
 
     if ((timer.messageCountThreshold < 0) ||
@@ -533,14 +533,14 @@ void handleNewTimer(
         return sendZeroedConditions();
     }
 
-    auto channel = event.channel in plugin.channels;
+    auto channel = event.channel.name in plugin.channels;
     assert(channel, "Tried to create a timer in a channel with no IRCChannel in plugin.channels");
 
     timer.lastMessageCount = channel.messageCount;
     timer.lastTimestamp = event.time;
-    timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
-    plugin.timersByChannel[event.channel][timer.name] = timer;
-    channel.timerPointers[timer.name] = &plugin.timersByChannel[event.channel][timer.name];
+    timer.fiber = createTimerFiber(plugin, event.channel.name, timer.name);
+    plugin.timersByChannel[event.channel.name][timer.name] = timer;
+    channel.timerPointers[timer.name] = &plugin.timersByChannel[event.channel.name][timer.name];
     saveTimers(plugin);
 
     // Start monitor if not already running
@@ -548,7 +548,7 @@ void handleNewTimer(
 
     enum appendPattern = "New timer added! Use <b>%s%s add<b> to add lines.";
     immutable message = appendPattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-    chan(plugin.state, event.channel, message);
+    chan(plugin.state, event.channel.name, message);
 }
 
 
@@ -574,25 +574,25 @@ void handleModifyTimer(
         enum pattern = "Usage: <b>%s%s modify<b> [name] [type] [condition] [message count threshold] " ~
             "[time threshold] [optional stagger message count] [optional stagger time]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendBadNumerics()
     {
         enum message = "Arguments for threshold and stagger values must all be positive numbers.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendZeroedConditions()
     {
         enum message = "A timer cannot have a message threshold *and* a time threshold of zero.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoSuchTimer()
     {
         enum message = "There is no timer by that name.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNewDescription(const Timer timer)
@@ -614,7 +614,7 @@ void handleModifyTimer(
             timer.timeThreshold,
             timer.messageCountStagger,
             timer.timeStagger);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string name;
@@ -635,7 +635,7 @@ void handleModifyTimer(
 
     if (!typestring.length) return sendModifyUsage();
 
-    auto channelTimers = event.channel in plugin.timersByChannel;
+    auto channelTimers = event.channel.name in plugin.timersByChannel;
     if (!channelTimers) return sendNoSuchTimer();
 
     auto timer = name in *channelTimers;
@@ -660,7 +660,7 @@ void handleModifyTimer(
 
     default:
         enum message = "Type must be one of <b>random<b> or <b>ordered<b>.";
-        return chan(plugin.state, event.channel, message);
+        return chan(plugin.state, event.channel.name, message);
     }
 
     if (conditionString.length)
@@ -677,7 +677,7 @@ void handleModifyTimer(
 
         default:
             enum message = "Condition must be one of <b>both<b> or <b>either<b>.";
-            return chan(plugin.state, event.channel, message);
+            return chan(plugin.state, event.channel.name, message);
         }
     }
 
@@ -695,12 +695,12 @@ void handleModifyTimer(
         }
         catch (DurationStringException e)
         {
-            return chan(plugin.state, event.channel, e.msg);
+            return chan(plugin.state, event.channel.name, e.msg);
         }
         catch (ConvException _)
         {
             enum message = "Message count threshold must be a positive number.";
-            return chan(plugin.state, event.channel, message);
+            return chan(plugin.state, event.channel.name, message);
         }
     }
 
@@ -716,7 +716,7 @@ void handleModifyTimer(
         return sendZeroedConditions();
     }
 
-    if (const channel = event.channel in plugin.channels)
+    if (const channel = event.channel.name in plugin.channels)
     {
         // Reset the message count and timestamp
         timer.lastMessageCount = channel.messageCount;
@@ -754,18 +754,18 @@ void handleDelTimer(
     {
         enum pattern = "Usage: <b>%s%s del<b> [timer name] [optional line number]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoSuchTimer()
     {
         enum message = "There is no timer by that name.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     if (!slice.length) return sendDelUsage();
 
-    auto channel = event.channel in plugin.channels;
+    auto channel = event.channel.name in plugin.channels;
     if (!channel) return sendNoSuchTimer();
 
     string name;  // mutable
@@ -786,19 +786,19 @@ void handleDelTimer(
         // Don't remove no-timer channels from plugin.channels;
         // they're still channels without them
 
-        auto channelTimers = event.channel in plugin.timersByChannel;
+        auto channelTimers = event.channel.name in plugin.timersByChannel;
         (*channelTimers).remove(name);
-        if (!channelTimers.length) plugin.timersByChannel.remove(event.channel);
+        if (!channelTimers.length) plugin.timersByChannel.remove(event.channel.name);
 
         saveTimers(plugin);
         enum message = "Timer removed.";
-        return chan(plugin.state, event.channel, message);
+        return chan(plugin.state, event.channel.name, message);
 
     case match:
         import std.conv : ConvException, to;
 
         // Remove the specified lines position
-        auto channelTimers = event.channel in plugin.timersByChannel;
+        auto channelTimers = event.channel.name in plugin.timersByChannel;
         if (!channelTimers) return sendNoSuchTimer();
 
         auto timer = name in *channelTimers;
@@ -814,12 +814,12 @@ void handleDelTimer(
 
             enum pattern = "Line removed from timer <b>%s<b>. Lines remaining: <b>%d<b>";
             immutable message = pattern.format(name, timer.lines.length);
-            return chan(plugin.state, event.channel, message);
+            return chan(plugin.state, event.channel.name, message);
         }
         catch (ConvException _)
         {
             enum message = "Argument for which line to remove must be a number.";
-            return chan(plugin.state, event.channel, message);
+            return chan(plugin.state, event.channel.name, message);
         }
 
     case overrun:
@@ -855,27 +855,27 @@ void handleModifyTimerLines(
         {
             enum pattern = "Usage: <b>%s%s insert<b> [timer name] [position] [timer text]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
         else
         {
             enum pattern = "Usage: <b>%s%s edit<b> [timer name] [position] [new timer text]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
     }
 
     void sendNoSuchTimer()
     {
         enum message = "There is no timer by that name.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendOutOfRange(const size_t upperBound)
     {
         enum pattern = "Line position out of range; valid is <b>[0..%d]<b> (inclusive).";
         immutable message = pattern.format(upperBound);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string name;  // mutable
@@ -883,10 +883,10 @@ void handleModifyTimerLines(
     immutable results = slice.splitInto(name, linePosString);
     if (results != SplitResults.overrun) return sendInsertUsage();
 
-    auto channel = event.channel in plugin.channels;
+    auto channel = event.channel.name in plugin.channels;
     if (!channel) return sendNoSuchTimer();
 
-    auto channelTimers = event.channel in plugin.timersByChannel;
+    auto channelTimers = event.channel.name in plugin.timersByChannel;
     if (!channelTimers) return sendNoSuchTimer();
 
     auto timer = name in *channelTimers;
@@ -895,7 +895,7 @@ void handleModifyTimerLines(
     void destroyUpdateSave()
     {
         destroy(timer.fiber);
-        timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
+        timer.fiber = createTimerFiber(plugin, event.channel.name, timer.name);
         saveTimers(plugin);
     }
 
@@ -917,7 +917,7 @@ void handleModifyTimerLines(
 
             enum pattern = "Line added to timer <b>%s<b>.";
             immutable message = pattern.format(name);
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
         else
         {
@@ -926,13 +926,13 @@ void handleModifyTimerLines(
 
             enum pattern = "Line <b>#%d<b> of timer <b>%s<b> edited.";
             immutable message = pattern.format(linePos, name);
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
     }
     catch (ConvException _)
     {
         enum message = "Position argument must be a number.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 }
 
@@ -958,23 +958,23 @@ void handleAddToTimer(
     {
         enum pattern = "Usage: <b>%s%s add<b> [existing timer name] [new timer line]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoSuchTimer()
     {
         enum noSuchTimerPattern = "No such timer is defined. Add a new one with <b>%s%s new<b>.";
         immutable noSuchTimerMessage = noSuchTimerPattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, noSuchTimerMessage);
+        chan(plugin.state, event.channel.name, noSuchTimerMessage);
     }
 
     immutable name = slice.advancePast(' ', inherit: true);
     if (!slice.length) return sendAddUsage();
 
-    auto channel = event.channel in plugin.channels;
+    auto channel = event.channel.name in plugin.channels;
     if (!channel) return sendNoSuchTimer();
 
-    auto channelTimers = event.channel in plugin.timersByChannel;
+    auto channelTimers = event.channel.name in plugin.timersByChannel;
     if (!channelTimers) return sendNoSuchTimer();
 
     auto timer = name in *channelTimers;
@@ -983,7 +983,7 @@ void handleAddToTimer(
     void destroyUpdateSave()
     {
         destroy(timer.fiber);
-        timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
+        timer.fiber = createTimerFiber(plugin, event.channel.name, timer.name);
         saveTimers(plugin);
     }
 
@@ -992,7 +992,7 @@ void handleAddToTimer(
 
     enum pattern = "Line added to timer <b>%s<b>.";
     immutable message = pattern.format(name);
-    chan(plugin.state, event.channel, message);
+    chan(plugin.state, event.channel.name, message);
 }
 
 
@@ -1013,24 +1013,24 @@ void handleListTimers(
     void sendNoTimersForChannel()
     {
         enum message = "There are no timers registered for this channel.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoSuchTimer()
     {
         enum message = "There is no timer by that name.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
-    const channel = event.channel in plugin.channels;
+    const channel = event.channel.name in plugin.channels;
     if (!channel) return sendNoTimersForChannel();
 
-    auto channelTimers = event.channel in plugin.timersByChannel;
+    auto channelTimers = event.channel.name in plugin.timersByChannel;
     if (!channelTimers) return sendNoTimersForChannel();
 
     enum headerPattern = "Current timers for channel <b>%s<b>:";
-    immutable headerMessage = headerPattern.format(event.channel);
-    chan(plugin.state, event.channel, headerMessage);
+    immutable headerMessage = headerPattern.format(event.channel.name);
+    chan(plugin.state, event.channel.name, headerMessage);
 
     foreach (const timer; *channelTimers)
     {
@@ -1057,7 +1057,7 @@ void handleListTimers(
             timer.suspended,
         );
 
-        chan(plugin.state, event.channel, timerMessage);
+        chan(plugin.state, event.channel.name, timerMessage);
     }
 }
 
@@ -1090,23 +1090,23 @@ void handleSuspendTimer(
             plugin.state.settings.prefix,
             event.aux[$-1],
             verb);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoSuchTimer()
     {
         enum message = "There is no timer by that name.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string name;  // mutable
     immutable results = slice.splitInto(name);
     if (results != SplitResults.match) return sendUsage();
 
-    auto channel = event.channel in plugin.channels;
+    auto channel = event.channel.name in plugin.channels;
     if (!channel) return sendNoSuchTimer();
 
-    auto channelTimers = event.channel in plugin.timersByChannel;
+    auto channelTimers = event.channel.name in plugin.timersByChannel;
     if (!channelTimers) return sendNoSuchTimer();
 
     auto timer = name in *channelTimers;
@@ -1122,12 +1122,12 @@ void handleSuspendTimer(
             plugin.state.settings.prefix,
             event.aux[$-1],
             name);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
     else
     {
         enum message = "Timer resumed!";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 }
 
@@ -1146,13 +1146,13 @@ void onAnyMessage(TimerPlugin plugin, const IRCEvent event)
 {
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
-    auto channel = event.channel in plugin.channels;
+    auto channel = event.channel.name in plugin.channels;
 
     if (!channel)
     {
         // Race...
-        handleSelfjoin(plugin, event.channel, force: false);
-        channel = event.channel in plugin.channels;
+        handleSelfjoin(plugin, event.channel.name, force: false);
+        channel = event.channel.name in plugin.channels;
     }
 
     ++channel.messageCount;
@@ -1297,7 +1297,7 @@ void onWelcome(TimerPlugin plugin)
 )
 void onSelfjoin(TimerPlugin plugin, const IRCEvent event)
 {
-    handleSelfjoin(plugin, event.channel, force: false);
+    handleSelfjoin(plugin, event.channel.name, force: false);
 }
 
 

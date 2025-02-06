@@ -72,7 +72,7 @@ void onCommand(UnittestPlugin plugin, const IRCEvent event)
     {
         with (plugin)
         {
-            chan(event.channel, "success:" ~ user.account);
+            chan(event.channel.name, "success:" ~ user.account);
         }
     }
 
@@ -80,7 +80,7 @@ void onCommand(UnittestPlugin plugin, const IRCEvent event)
     {
         with (plugin)
         {
-            chan(event.channel, "failure");
+            chan(event.channel.name, "failure");
         }
     }
 

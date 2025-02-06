@@ -438,13 +438,13 @@ void formatMessageMonochrome(Sink)
 
     sink.put("] ");
 
-    if (event.channel.length)
+    if (event.channel.name.length)
     {
-        .put(sink, '[', event.channel, "] ");
+        .put(sink, '[', event.channel.name, "] ");
 
-        if (event.subchannel.length && (event.subchannel != event.channel))
+        if (event.subchannel.name.length && (event.subchannel.name != event.channel.name))
         {
-            .put(sink, "< [", event.subchannel, "] ");
+            .put(sink, "< [", event.subchannel.name, "] ");
         }
     }
 
@@ -458,7 +458,7 @@ void formatMessageMonochrome(Sink)
         import std.algorithm.comparison : among;
 
         if (event.target.nickname.length &&
-            event.aux[0].length &&
+            event.altcontent.length &&
             !event.type.among!
                 (IRCEvent.Type.TWITCH_SUBGIFT,
                 IRCEvent.Type.TWITCH_PAYFORWARD,
@@ -468,9 +468,8 @@ void formatMessageMonochrome(Sink)
         {
             /*if (content.length)*/ putContent();
             putTarget();
-            .put(sink, `: "`, event.aux[0], '"');
+            .put(sink, `: "`, event.altcontent, '"');
             putQuotedTwitchMessage = true;
-            auxCopy[0] = string.init;
             auxCopy[$-2] = string.init;
         }
     }
@@ -541,7 +540,7 @@ void formatMessageMonochrome(Sink)
     }
 
     event.type = IRCEvent.Type.JOIN;
-    event.channel = "#channel";
+    event.channel.name = "#channel";
 
     {
         formatMessageMonochrome(plugin, sink, event, bellOnMention: false, bellOnError: false);
@@ -591,7 +590,7 @@ void formatMessageMonochrome(Sink)
     plugin.state.server.daemon = IRCServer.Daemon.inspircd;
     event.sender.class_ = IRCUser.Class.anyone;
     event.type = IRCEvent.Type.ACCOUNT;
-    event.channel = string.init;
+    event.channel.name = string.init;
     event.content = string.init;
     //event.sender.account = "n1ckn4m3";
     event.aux[0] = "n1ckn4m3";
@@ -634,7 +633,7 @@ void formatMessageMonochrome(Sink)
 
     plugin.printerSettings.classNames = false;
     event.type = IRCEvent.Type.CHAN;
-    event.channel = "#nickname";
+    event.channel.name = "#nickname";
     event.num = 0;
     event.count = typeof(IRCEvent.count).init;
     event.aux = typeof(IRCEvent.aux).init;
@@ -1144,16 +1143,16 @@ void formatMessageColoured(Sink)
 
     sink.put("] ");
 
-    if (event.channel.length)
+    if (event.channel.name.length)
     {
         immutable channelCode = plugin.state.settings.brightTerminal ?
             Bright.channel :
             Dark.channel;
 
         sink.applyANSI(channelCode, ANSICodeType.foreground);
-        .put(sink, '[', event.channel, "] ");
+        .put(sink, '[', event.channel.name, "] ");
 
-        if (event.subchannel.length && (event.subchannel != event.channel))
+        if (event.subchannel.name.length && (event.subchannel.name != event.channel.name))
         {
             immutable arrowCode = plugin.state.settings.brightTerminal ?
                 Bright.content :
@@ -1178,7 +1177,7 @@ void formatMessageColoured(Sink)
 
         if (event.content.length &&
             event.target.nickname.length &&
-            event.aux[0].length &&
+            event.altcontent.length &&
             !event.type.among!
                 (IRCEvent.Type.TWITCH_SUBGIFT,
                 IRCEvent.Type.TWITCH_PAYFORWARD,
@@ -1209,7 +1208,7 @@ void formatMessageColoured(Sink)
                 // We can't know whether the replied-to event is an emote-only
                 // event or not, so just treat it as if it isn't and pass contentFgBase
                 customEmoteSink.highlightEmotesImpl(
-                    line: event.aux[0],
+                    line: event.altcontent,
                     emotes: event.aux[$-2],
                     pre: highlight,
                     post: contentFgBase,
@@ -1223,7 +1222,7 @@ void formatMessageColoured(Sink)
             else
             {
                 // No emotes embedded, probably not a home or no custom emotes for channel
-                .put(sink, `: "`, event.aux[0], '"');
+                .put(sink, `: "`, event.altcontent, '"');
             }
 
             putQuotedTwitchMessage = true;

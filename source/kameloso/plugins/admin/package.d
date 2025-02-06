@@ -169,7 +169,7 @@ void onCommandWhoami(AdminPlugin plugin, const IRCEvent event)
     immutable account = event.sender.account.length ? event.sender.account : "*";
     string message;  // mutable
 
-    if (event.channel.length)
+    if (event.channel.name.length)
     {
         enum pattern = "You are <h>%s<h>@<b>%s<b> (%s), class:<b>%s<b> in the scope of <b>%s<b>.";
         message = pattern.format(
@@ -189,7 +189,7 @@ void onCommandWhoami(AdminPlugin plugin, const IRCEvent event)
             event.sender.class_.toString());
     }
 
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
 }
 
 
@@ -217,7 +217,7 @@ void onCommandSave(AdminPlugin plugin, const IRCEvent event)
     import kameloso.thread : ThreadMessage;
 
     enum message = "Saving configuration to disk.";
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     plugin.state.messages ~= ThreadMessage.save;
 }
 
@@ -334,7 +334,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
     {
         enum pattern = "Usage: <b>%s%s<b> [add|del|list] [channel]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     if (!event.content.length) return sendUsage();
@@ -353,7 +353,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
     case "list":
         enum pattern = "Current home channels: %-(<b>%s<b>, %)<b>";
         immutable message = pattern.format(plugin.state.bot.homeChannels);
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
 
     default:
         return sendUsage();
@@ -395,7 +395,7 @@ void onCommandGuest(AdminPlugin plugin, const IRCEvent event)
     {
         enum pattern = "Usage: <b>%s%s<b> [add|del|list] [channel]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     if (!event.content.length) return sendUsage();
@@ -414,7 +414,7 @@ void onCommandGuest(AdminPlugin plugin, const IRCEvent event)
     case "list":
         enum pattern = "Current guest channels: %-(<b>%s<b>, %)<b>";
         immutable message = pattern.format(plugin.state.bot.homeChannels);
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
 
     default:
         return sendUsage();
@@ -459,20 +459,20 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         immutable message = addAsHome ?
             "We are already in that home channel." :
             "We are already in that guest channel.";
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     void sendChannelIsAlreadyAHome()
     {
         immutable message = "That channel is already a home channel.";
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     immutable channelName = rawChannel.stripped.toLower();
     if (!channelName.isValidChannel(plugin.state.server))
     {
         enum message = "Invalid channel name.";
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     immutable channelIsHome = plugin.state.bot.homeChannels.canFind(channelName);
@@ -500,7 +500,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
     immutable addedMessage = addAsHome ?
         "Home channel added." :
         "Guest channel added.";
-    privmsg(plugin.state, event.channel, event.sender.nickname, addedMessage);
+    privmsg(plugin.state, event.channel.name, event.sender.nickname, addedMessage);
 
     if (addAsHome)
     {
@@ -554,7 +554,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
             assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
             assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
 
-            if (thisFiber.payload.channel == channelName) break inner;
+            if (thisFiber.payload.channel.name == channelName) break inner;
 
             // Different channel; yield fiber, wait for another event
             Fiber.yield();
@@ -565,8 +565,8 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         void undoChannelAppend()
         {
             immutable existingIndex = addAsHome ?
-                plugin.state.bot.homeChannels.countUntil(followupEvent.channel) :
-                plugin.state.bot.guestChannels.countUntil(followupEvent.channel);
+                plugin.state.bot.homeChannels.countUntil(followupEvent.channel.name) :
+                plugin.state.bot.guestChannels.countUntil(followupEvent.channel.name);
 
             if (existingIndex != -1)
             {
@@ -606,7 +606,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 
         default:
             enum message = "Failed to join channel.";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
             undoChannelAppend();
             // scopeguard unawaits
             return;
@@ -653,7 +653,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
         enum pattern = "Channel <b>%s<b> was not listed as a %s channel.";
         immutable what = delFromHomes ? "home" : "guest";
         immutable message = pattern.format(channelName, what);
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     if (delFromHomes)
@@ -670,14 +670,14 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
     plugin.state.updates |= typeof(plugin.state.updates).bot;
     part(plugin.state, channelName);
 
-    if (channelName != event.channel)
+    if (channelName != event.channel.name)
     {
         // We didn't just leave the channel, so we can report success
         // Otherwise we get ERR_CANNOTSENDTOCHAN
         immutable message = delFromHomes ?
             "Home channel removed." :
             "Guest channel removed.";
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 }
 
@@ -845,7 +845,7 @@ void onCommandReload(AdminPlugin plugin, const IRCEvent event)
     immutable message = event.content.length ?
         text("Reloading plugin \"<b>", event.content, "<b>\".") :
         "Reloading plugins.";
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     plugin.state.messages ~= ThreadMessage.reload(event.content);
 }
 
@@ -952,7 +952,7 @@ void onCommandJoin(AdminPlugin plugin, const IRCEvent event)
     if (!event.content.length)
     {
         enum message = "No channels to join supplied...";
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     string slice = event.content.stripped;  // mutable
@@ -988,7 +988,7 @@ void onCommandPart(AdminPlugin plugin, const IRCEvent event)
     if (!event.content.length)
     {
         enum message = "No channels to part supplied...";
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     string slice = event.content.stripped;  // mutable
@@ -1032,7 +1032,7 @@ void onCommandSet(AdminPlugin plugin, const IRCEvent event)
         immutable message = thisFiber.payload[0] ?
             "Setting changed." :
             "Invalid syntax or plugin/setting name.";
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     defer!Payload(plugin, &setSettingDg, event.content);
@@ -1081,7 +1081,7 @@ void onCommandGet(AdminPlugin plugin, const IRCEvent event)
         if (!pluginName.length)
         {
             enum message = "Invalid plugin.";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
         else if (setting.length)
         {
@@ -1092,16 +1092,16 @@ void onCommandGet(AdminPlugin plugin, const IRCEvent event)
                 "%s.%s=\"%s\"" :
                 "%s.%s=%s";
             immutable message = pattern.format(pluginName, setting, value);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
         else if (value.length)
         {
-            privmsg(plugin.state, event.channel, event.sender.nickname, value);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, value);
         }
         else
         {
             enum message = "Invalid setting.";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
     }
 
@@ -1242,14 +1242,14 @@ void onCommandCycle(AdminPlugin plugin, const IRCEvent event)
     import std.conv : ConvException;
 
     string slice = event.content.stripped;  // mutable
-    if (!slice.length) return cycle(plugin, event.channel);
+    if (!slice.length) return cycle(plugin, event.channel.name);
 
     immutable channelName = slice.advancePast(' ', inherit: true);
 
     if (channelName !in plugin.state.channels)
     {
         enum message = "I am not in that channel.";
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     if (!slice.length) return cycle(plugin, channelName);
@@ -1269,11 +1269,11 @@ void onCommandCycle(AdminPlugin plugin, const IRCEvent event)
 
         enum pattern = `"<b>%s<b>" is not a valid number for seconds to delay.`;
         immutable message = pattern.format(slice);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
     catch (DurationStringException e)
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname, e.msg);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, e.msg);
     }
 }
 
@@ -1313,7 +1313,7 @@ in (Fiber.getThis(), "Tried to call `cycle` from outside a fiber")
 
         const partEvent = thisFiber.payload;
 
-        if (partEvent.channel != channelName)
+        if (partEvent.channel.name != channelName)
         {
             // Wrong channel, wait for the next SELFPART
             Fiber.yield();
@@ -1360,14 +1360,14 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
     if (!plugin.state.settings.preferHostmasks)
     {
         enum message = "This bot is not currently configured to use hostmasks for authentication.";
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [add|del|list] [args...]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     string slice = event.content.stripped;  // mutable
@@ -1384,7 +1384,7 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
         {
             enum pattern = "Usage: <b>%s%s add<b> [account] [hostmask]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            return privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
 
         return modifyHostmaskDefinition(plugin, add: true, account, mask, event);
@@ -1397,7 +1397,7 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
         {
             enum pattern = "Usage: <b>%s%s del<b> [hostmask]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            return privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
 
         return modifyHostmaskDefinition(plugin, add: false, string.init, slice, event);
@@ -1455,7 +1455,7 @@ void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
 
             enum pattern = "Current hostmasks: <b>%s<b>";
             immutable message = pattern.format(aa);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
     }
     else
@@ -1468,7 +1468,7 @@ void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
         }
         else
         {
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
     }
 }
@@ -1564,7 +1564,7 @@ void onCommandBus(AdminPlugin plugin, const IRCEvent event)
 
         enum pattern = "Usage: <b>%s<b> [header] [content...]";
         immutable message = pattern.format(event.aux[$-1]);
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     onCommandBusImpl(plugin, header, slice);
@@ -1618,7 +1618,7 @@ void onCommandSelftest(AdminPlugin plugin, const IRCEvent event)
             immutable start = MonoTime.currTime;
 
             enum message = "Running self-tests. This may take several minutes.";
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
 
             string[] succeeded;
             string[] failed;
@@ -1671,7 +1671,7 @@ void onCommandSelftest(AdminPlugin plugin, const IRCEvent event)
 
             enum completePattern = "Self-tests completed in <b>%s<b>.";
             immutable completeMessage = completePattern.format(elapsed);
-            chan(plugin.state, event.channel, completeMessage);
+            chan(plugin.state, event.channel.name, completeMessage);
 
             if (succeeded.length)
             {
@@ -1679,7 +1679,7 @@ void onCommandSelftest(AdminPlugin plugin, const IRCEvent event)
                 immutable successMessage = successPattern.format(
                     succeeded.length,
                     succeeded);
-                chan(plugin.state, event.channel, successMessage);
+                chan(plugin.state, event.channel.name, successMessage);
             }
 
             if (failed.length)
@@ -1688,7 +1688,7 @@ void onCommandSelftest(AdminPlugin plugin, const IRCEvent event)
                 immutable failureMessage = failurePattern.format(
                     failed.length,
                     failed);
-                chan(plugin.state, event.channel, failureMessage);
+                chan(plugin.state, event.channel.name, failureMessage);
             }
 
             if (skipped.length)
@@ -1698,7 +1698,7 @@ void onCommandSelftest(AdminPlugin plugin, const IRCEvent event)
                 immutable skippedMessage = skippedPattern.format(
                     skipped.length,
                     skipped.length.plurality("plugin was", "plugins were"));
-                chan(plugin.state, event.channel, skippedMessage);
+                chan(plugin.state, event.channel.name, skippedMessage);
             }
         }
 
@@ -1712,11 +1712,11 @@ void onCommandSelftest(AdminPlugin plugin, const IRCEvent event)
         immutable message = pattern.format(
             plugin.state.settings.prefix,
             event.aux[0]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
         return;
     }
 
-    defer!Payload(plugin, &selftestDgOuter, event.channel, event.content);
+    defer!Payload(plugin, &selftestDgOuter, event.channel.name, event.content);
 }
 
 

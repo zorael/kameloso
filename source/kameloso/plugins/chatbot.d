@@ -100,7 +100,7 @@ void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
         message = "Say what?";
     }
 
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
 }
 
 
@@ -156,13 +156,13 @@ void onDance(ChatbotPlugin plugin, const IRCEvent event)
         import kameloso.plugins.common.scheduling : delay;
         import kameloso.messaging : emote;
 
-        emote(plugin.state, event.channel, "dances :D-<");
+        emote(plugin.state, event.channel.name, "dances :D-<");
         delay(plugin, timeBetweenDances, yield: true);
 
-        emote(plugin.state, event.channel, "dances :D|-<");
+        emote(plugin.state, event.channel.name, "dances :D|-<");
         delay(plugin, timeBetweenDances, yield: true);
 
-        emote(plugin.state, event.channel, "dances :D/-<");
+        emote(plugin.state, event.channel.name, "dances :D/-<");
     }
 
     auto danceFiber = new Fiber(&danceDg, BufferSize.fiberStack);

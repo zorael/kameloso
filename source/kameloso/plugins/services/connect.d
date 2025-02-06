@@ -162,11 +162,11 @@ void onSelfpart(ConnectService service, const IRCEvent event)
     {
         if (service.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            service.currentActualChannels.remove(event.channel);
+            service.currentActualChannels.remove(event.channel.name);
         }
     }
 
-    if (service.state.bot.homeChannels.canFind(event.channel))
+    if (service.state.bot.homeChannels.canFind(event.channel.name))
     {
         logger.warning("Leaving a home...");
     }
@@ -442,7 +442,7 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
 
     if (service.state.server.daemon == IRCServer.Daemon.twitch)
     {
-        service.currentActualChannels[event.channel] = true;
+        service.currentActualChannels[event.channel.name] = true;
     }
 }
 
@@ -899,7 +899,7 @@ void onInvite(ConnectService service, const IRCEvent event)
         return;
     }
 
-    join(service.state, event.channel);
+    join(service.state, event.channel.name);
 }
 
 

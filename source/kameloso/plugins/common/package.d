@@ -744,9 +744,9 @@ mixin template IRCPluginImpl(
         string commandWordInEventLower;
         string contentSansCommandWordInEvent;
 
-        immutable channelIsAHomeChannel = state.bot.homeChannels.canFind(origEvent.channel);
+        immutable channelIsAHomeChannel = state.bot.homeChannels.canFind(origEvent.channel.name);
         immutable channelIsAGuestChannel = !channelIsAHomeChannel ?
-            state.bot.guestChannels.canFind(origEvent.channel) :
+            state.bot.guestChannels.canFind(origEvent.channel.name) :
             false;
 
         // process
@@ -771,7 +771,7 @@ mixin template IRCPluginImpl(
                 if (state.settings.flush) stdout.flush();
             }
 
-            if (event.channel.length)
+            if (event.channel.name.length)
             {
                 immutable channelMatch =
                     (uda._channelPolicy & ChannelPolicy.home) ? channelIsAHomeChannel :
@@ -783,7 +783,7 @@ mixin template IRCPluginImpl(
                 {
                     static if (verbose)
                     {
-                        writeln("   ...ignore non-matching channel ", event.channel);
+                        writeln("   ...ignore non-matching channel ", event.channel.name);
                         if (state.settings.flush) stdout.flush();
                     }
 
@@ -2624,7 +2624,7 @@ void sanitiseEvent(ref IRCEvent event)
     import std.encoding : sanitize;
 
     event.raw = sanitize(event.raw);
-    event.channel = sanitize(event.channel);
+    event.channel.name = sanitize(event.channel.name);
     event.content = sanitize(event.content);
     event.tags = sanitize(event.tags);
     event.errors = sanitize(event.errors);
@@ -4490,7 +4490,7 @@ public:
 
         do Fiber.yield();
         while (
-            (fiber.payload.channel != channelName) ||
+            (fiber.payload.channel.name != channelName) ||
             (fiber.payload.sender.nickname != targetNickname));
     }
 

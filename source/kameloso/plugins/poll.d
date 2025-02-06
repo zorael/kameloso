@@ -220,7 +220,7 @@ void onCommandPoll(PollPlugin plugin, const IRCEvent event)
         if (event.sender.class_ < IRCUser.Class.operator)
         {
             enum message = "You are not authorised to start new polls.";
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
         else
         {
@@ -228,47 +228,47 @@ void onCommandPoll(PollPlugin plugin, const IRCEvent event)
 
             enum pattern = "Usage: <b>%s%s<b> [duration] [choice1] [choice2] ...";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
     }
 
     void sendNoOngoingPoll()
     {
         enum message = "There is no ongoing poll.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendPollAborted()
     {
         enum message = "Poll aborted.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendSyntaxHelp()
     {
         enum message = "Need one duration and at least two choices.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendMalformedDuration()
     {
         enum message = "Malformed duration.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNegativeDuration()
     {
         enum message = "Duration must not be negative.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNeedTwoUniqueChoices()
     {
         enum message = "Need at least two unique poll choices.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
-    const currentPoll = event.channel in plugin.channelPolls;
+    const currentPoll = event.channel.name in plugin.channelPolls;
 
     switch (event.content)
     {
@@ -293,19 +293,19 @@ void onCommandPoll(PollPlugin plugin, const IRCEvent event)
 
     case "status":
         if (!currentPoll) return sendNoOngoingPoll();
-        return reportStatus(plugin, event.channel, *currentPoll);
+        return reportStatus(plugin, event.channel.name, *currentPoll);
 
     case "abort":
         if (!currentPoll) return sendNoOngoingPoll();
 
-        plugin.channelPolls.remove(event.channel);
+        plugin.channelPolls.remove(event.channel.name);
         return sendPollAborted();
 
     case "end":
         if (!currentPoll) return sendNoOngoingPoll();
 
-        reportEndResults(plugin, event.channel, *currentPoll);
-        plugin.channelPolls.remove(event.channel);
+        reportEndResults(plugin, event.channel.name, *currentPoll);
+        plugin.channelPolls.remove(event.channel.name);
         return;
 
     default:
@@ -333,11 +333,11 @@ void onCommandPoll(PollPlugin plugin, const IRCEvent event)
     }
     catch (DurationStringException e)
     {
-        return chan(plugin.state, event.channel, e.msg);
+        return chan(plugin.state, event.channel.name, e.msg);
     }
     catch (Exception e)
     {
-        chan(plugin.state, event.channel, e.msg);
+        chan(plugin.state, event.channel.name, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
         return;
     }
@@ -347,7 +347,7 @@ void onCommandPoll(PollPlugin plugin, const IRCEvent event)
         return sendNegativeDuration();
     }
 
-    auto choicesVoldemort = getPollChoices(plugin, event.channel, slice);  // must be mutable
+    auto choicesVoldemort = getPollChoices(plugin, event.channel.name, slice);  // must be mutable
     if (!choicesVoldemort.success) return;
 
     if (choicesVoldemort.choices.length < 2)
@@ -364,17 +364,17 @@ void onCommandPoll(PollPlugin plugin, const IRCEvent event)
         .keys
         .sort
         .release;
-    plugin.channelPolls[event.channel] = poll;
+    plugin.channelPolls[event.channel.name] = poll;
 
-    generatePollFiber(plugin, event.channel, poll);
-    generateVoteReminders(plugin, event.channel, poll);
-    generateEndFiber(plugin, event.channel, poll);
+    generatePollFiber(plugin, event.channel.name, poll);
+    generateVoteReminders(plugin, event.channel.name, poll);
+    generateEndFiber(plugin, event.channel.name, poll);
 
     immutable timeInWords = duration.timeSince!(7, 0);
     enum pattern = "<b>Voting commenced!<b> Please place your vote for one of: " ~
         "%-(<b>%s<b>, %)<b> (%s)";  // extra <b> needed outside of %-(%s, %)
     immutable message = pattern.format(poll.sortedChoices, timeInWords);
-    chan(plugin.state, event.channel, message);
+    chan(plugin.state, event.channel.name, message);
 }
 
 
@@ -558,7 +558,7 @@ void generatePollFiber(
                 import lu.string : stripped;
                 import std.uni : toLower;
 
-                if (thisEvent.channel != channelName) break;
+                if (thisEvent.channel.name != channelName) break;
 
                 immutable vote = thisEvent.content.stripped.toLower;
 
@@ -885,7 +885,7 @@ void generateEndFiber(
             auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
             assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
-            if (thisFiber.payload.channel == channelName)
+            if (thisFiber.payload.channel.name == channelName)
             {
                 return reportEndResults(plugin, channelName, *currentPoll);
             }
@@ -982,10 +982,10 @@ void onWelcome(PollPlugin plugin)
 )
 void onSelfjoin(PollPlugin plugin, const IRCEvent event)
 {
-    if (event.channel in plugin.state.channels) return;
+    if (event.channel.name in plugin.state.channels) return;
 
-    plugin.state.channels[event.channel] = IRCChannel.init;
-    plugin.state.channels[event.channel].name = event.channel;
+    plugin.state.channels[event.channel.name] = IRCChannel.init;
+    plugin.state.channels[event.channel.name].name = event.channel.name;
 }
 
 
@@ -1005,7 +1005,7 @@ void onSelfjoin(PollPlugin plugin, const IRCEvent event)
 )
 void onSelfpart(PollPlugin plugin, const IRCEvent event)
 {
-    plugin.state.channels.remove(event.channel);
+    plugin.state.channels.remove(event.channel.name);
 }
 
 

@@ -112,7 +112,7 @@ void onCommandBash(BashPlugin plugin, const IRCEvent event)
 
         enum pattern = "Usage: <b>%s%s<b> [optional bash quote number]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     if (event.sender.class_ < plugin.bashSettings.minimumPermissionsNeeded) return;
@@ -177,13 +177,13 @@ void lookupQuote(
     void sendNoQuoteFound()
     {
         enum message = "No such <b>bash.org<b> quote found.";
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     void sendFailedToFetch()
     {
         enum message = "Failed to fetch <b>bash.org<b> quote.";
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     immutable url = quoteID.length ?
@@ -229,7 +229,7 @@ void lookupQuote(
 
         // Seems okay, send it
         immutable message = "[<b>bash.org<b>] #" ~ result.quoteID;
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
 
         foreach (const line; result.lines)
         {
@@ -253,7 +253,7 @@ void lookupQuote(
             }
 
             if (!correctedLine.length) correctedLine = line;
-            privmsg(plugin.state, event.channel, event.sender.nickname, correctedLine);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, correctedLine);
         }
     }
 

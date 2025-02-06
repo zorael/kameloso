@@ -407,7 +407,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             updateSquelchstamp(
                 plugin,
                 event.time,
-                event.channel,
+                event.channel.name,
                 event.sender.nickname,
                 event.target.nickname);
 
@@ -513,7 +513,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                 updateSquelchstamp(
                     plugin,
                     event.time,
-                    event.channel,
+                    event.channel.name,
                     event.sender.nickname,
                     event.target.nickname);
 

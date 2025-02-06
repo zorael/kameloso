@@ -116,7 +116,7 @@ void onCommandShowUserImpl(AdminPlugin plugin, const IRCEvent event)
 
             enum pattern = "No such user: <4>%s<c>";
             immutable message = pattern.format(username);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
     }
 }
@@ -174,7 +174,7 @@ void onCommandPrintRawImpl(AdminPlugin plugin, const IRCEvent event)
 
     enum pattern = "Printing raw: <b>%s<b>";
     immutable message = pattern.format(plugin.adminSettings.printRaw);
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
 }
 
 
@@ -195,7 +195,7 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const IRCEvent event)
 
     enum pattern = "Printing bytes: <b>%s<b>";
     immutable message = pattern.format(plugin.adminSettings.printBytes);
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
 }
 
 
@@ -236,7 +236,7 @@ void onCommandPrintEventsImpl(
         else
         {
             enum message = "Printing event types: <b>(disabled)<b>";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
 
         plugin.eventTypesToPrint[] = false;
@@ -259,7 +259,7 @@ void onCommandPrintEventsImpl(
         {
             enum pattern = "Printing event types: <b>%s<b>";
             immutable message = pattern.format(input);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
     }
     else
@@ -273,7 +273,7 @@ void onCommandPrintEventsImpl(
         {
             enum pattern = "Invalid event types: <b>%s<b>";
             immutable message = pattern.format(input);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
     }
 }

@@ -488,8 +488,8 @@ auto processMessages(Kameloso instance)
         {
         case CHAN:
             /*enum pattern = "PRIVMSG %s :";
-            prelude = pattern.format(m.event.channel);*/
-            prelude = text("PRIVMSG ", m.event.channel, " :");
+            prelude = pattern.format(m.event.channel.name);*/
+            prelude = text("PRIVMSG ", m.event.channel.name, " :");
             lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
             break;
 
@@ -516,7 +516,7 @@ auto processMessages(Kameloso instance)
         case EMOTE:
             immutable emoteTarget = m.event.target.nickname.length ?
                 m.event.target.nickname :
-                m.event.channel;
+                m.event.channel.name;
 
             version(TwitchSupport)
             {
@@ -542,32 +542,32 @@ auto processMessages(Kameloso instance)
         case MODE:
             import lu.string : strippedRight;
             /*enum pattern = "MODE %s %s %s";
-            line = pattern.format(m.event.channel, m.event.aux[0], m.event.content.strippedRight);*/
-            line = text("MODE ", m.event.channel, ' ', m.event.aux[0], ' ', m.event.content.strippedRight);
+            line = pattern.format(m.event.channel.name, m.event.aux[0], m.event.content.strippedRight);*/
+            line = text("MODE ", m.event.channel.name, ' ', m.event.aux[0], ' ', m.event.content.strippedRight);
             break;
 
         case TOPIC:
             /*enum pattern = "TOPIC %s :%s";
-            line = pattern.format(m.event.channel, m.event.content);*/
-            line = text("TOPIC ", m.event.channel, " :", m.event.content);
+            line = pattern.format(m.event.channel.name, m.event.content);*/
+            line = text("TOPIC ", m.event.channel.name, " :", m.event.content);
             break;
 
         case INVITE:
             /*enum pattern = "INVITE %s %s";
-            line = pattern.format(m.event.channel, m.event.target.nickname);*/
-            line = text("INVITE ", m.event.channel, ' ', m.event.target.nickname);
+            line = pattern.format(m.event.channel.name, m.event.target.nickname);*/
+            line = text("INVITE ", m.event.channel.name, ' ', m.event.target.nickname);
             break;
 
         case JOIN:
             if (m.event.aux[0].length)
             {
                 // Key, assume only one channel
-                line = text("JOIN ", m.event.channel, ' ', m.event.aux[0]);
+                line = text("JOIN ", m.event.channel.name, ' ', m.event.aux[0]);
             }
             else
             {
                 prelude = "JOIN ";
-                lines = m.event.channel.splitLineAtPosition(',', maxIRCLineLength-prelude.length);
+                lines = m.event.channel.name.splitLineAtPosition(',', maxIRCLineLength-prelude.length);
             }
             break;
 
@@ -576,8 +576,8 @@ auto processMessages(Kameloso instance)
                 " :" ~ m.event.content :
                 string.init;
             /*enum pattern = "KICK %s %s%s";
-            line = pattern.format(m.event.channel, m.event.target.nickname, reason);*/
-            line = text("KICK ", m.event.channel, ' ', m.event.target.nickname, reason);
+            line = pattern.format(m.event.channel.name, m.event.target.nickname, reason);*/
+            line = text("KICK ", m.event.channel.name, ' ', m.event.target.nickname, reason);
             break;
 
         case PART:
@@ -588,14 +588,14 @@ auto processMessages(Kameloso instance)
                 // Reason given, assume only one channel
                 line = text(
                     "PART ",
-                    m.event.channel,
+                    m.event.channel.name,
                     " :",
                     m.event.content.replaceTokens(instance.parser.client));
             }
             else
             {
                 prelude = "PART ";
-                lines = m.event.channel.splitLineAtPosition(',', maxIRCLineLength-prelude.length);
+                lines = m.event.channel.name.splitLineAtPosition(',', maxIRCLineLength-prelude.length);
             }
             break;
 
@@ -604,7 +604,7 @@ auto processMessages(Kameloso instance)
             break;
 
         case PRIVMSG:
-            if (m.event.channel.length)
+            if (m.event.channel.name.length)
             {
                 goto case CHAN;
             }
@@ -1680,7 +1680,7 @@ void processLineFromServer(
 
                 // Send faster in home channels. Assume we're a mod and won't be throttled.
                 // (There's no easy way to tell from here.)
-                if (event.channel.length && instance.bot.homeChannels.canFind(event.channel))
+                if (event.channel.name.length && instance.bot.homeChannels.canFind(event.channel.name))
                 {
                     instance.throttleline(instance.fastbuffer, dryRun: true, sendFaster: true);
                 }

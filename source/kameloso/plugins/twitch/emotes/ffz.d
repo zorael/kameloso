@@ -40,7 +40,7 @@ package:
 uint getFFZEmotes(
     TwitchPlugin plugin,
     bool[string]* emoteMap,
-    const uint id,
+    const ulong id,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
 in (id, "Tried to get FFZ emotes with an unset ID")
@@ -228,7 +228,7 @@ in (id, "Tried to get FFZ emotes with an unset ID")
 uint getFFZEmotesGlobal(
     TwitchPlugin plugin,
     bool[string]* emoteMap,
-    const uint _ = 0,
+    const ulong _ = 0,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
 {

@@ -43,7 +43,7 @@ public:
 void importCustomEmotes(
     TwitchPlugin plugin,
     const string channelName = string.init,
-    const uint id = 0)
+    const ulong id = 0)
 in (Fiber.getThis(), "Tried to call `importCustomEmotes` from outside a fiber")
 in (((channelName.length && id) ||
     (!channelName.length && !id)),
@@ -55,7 +55,7 @@ in (((channelName.length && id) ||
     alias GetEmoteFun = uint function(
         TwitchPlugin,
         bool[string]*,
-        const uint,
+        const ulong,
         const string);
 
     static struct EmoteImport

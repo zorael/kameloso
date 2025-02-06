@@ -215,46 +215,46 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
     {
         enum pattern = "Usage: <b>%s%s<b> [add|del|format|list] [counter word]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendFormatUsage()
     {
         enum pattern = "Usage: <b>%s%s format<b> [counter word] [one of ?, +, - and =] [format pattern]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendMustBeUniqueAndMayNotContain()
     {
         enum message = "Counter words must be unique and may not contain any of " ~
             "the following characters: [<b>+-=?<b>]";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendCounterAlreadyExists()
     {
         enum message = "A counter with that name already exists.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoSuchCounter()
     {
         enum message = "No such counter available.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendCounterRemoved(const string word)
     {
         enum pattern = "Counter <b>%s<b> removed.";
         immutable message = pattern.format(word);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoCountersActive()
     {
         enum message = "No counters currently active in this channel.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendCountersList(const string[] counters)
@@ -263,33 +263,33 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
         immutable arrayPattern = "%-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)<b>";
         immutable list = arrayPattern.format(counters);
         immutable message = pattern.format(list);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendFormatPatternUpdated()
     {
         enum message = "Format pattern updated.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendFormatPatternReset()
     {
         enum message = "Format pattern reset.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendCurrentFormatPattern(const string mod, const string customPattern)
     {
         enum pattern = `Current <b>%s<b> format pattern: "<b>%s<b>"`;
         immutable message = pattern.format(mod, customPattern);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoFormatPattern(const string word)
     {
         enum pattern = "Counter <b>%s<b> does not have a custom format pattern.";
         immutable message = pattern.format(word);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string slice = event.content.stripped;  // mutable
@@ -310,7 +310,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
             return sendMustBeUniqueAndMayNotContain();
         }
 
-        if ((event.channel in plugin.counters) && (slice in plugin.counters[event.channel]))
+        if ((event.channel.name in plugin.counters) && (slice in plugin.counters[event.channel.name]))
         {
             return sendCounterAlreadyExists();
         }
@@ -330,7 +330,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
                 {
                     enum pattern = `Counter word "<b>%s<b>" conflicts with a command of the <b>%s<b> plugin.`;
                     immutable message = pattern.format(slice, pluginName);
-                    chan(plugin.state, event.channel, message);
+                    chan(plugin.state, event.channel.name, message);
                     return true;
                 }
             }
@@ -349,26 +349,26 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
             if (triggerConflicts(thisFiber.payload[0])) return;
             else if (triggerConflicts(thisFiber.payload[1])) return;
 
-            plugin.counters[event.channel][slice] = Counter(slice);
+            plugin.counters[event.channel.name][slice] = Counter(slice);
             saveCounters(plugin);
 
             enum pattern = "Counter <b>%s<b> added! Access it with <b>%s%s<b>.";
             immutable message = pattern.format(slice, plugin.state.settings.prefix, slice);
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
 
-        defer!Payload(plugin, &addCounterDg, event.channel);
+        defer!Payload(plugin, &addCounterDg, event.channel.name);
         break;
 
     case "remove":
     case "del":
         if (!slice.length) goto default;
 
-        auto channelCounters = event.channel in plugin.counters;
+        auto channelCounters = event.channel.name in plugin.counters;
         if (!channelCounters || (slice !in *channelCounters)) return sendNoSuchCounter();
 
         (*channelCounters).remove(slice);
-        if (!channelCounters.length) plugin.counters.remove(event.channel);
+        if (!channelCounters.length) plugin.counters.remove(event.channel.name);
         saveCounters(plugin);
 
         return sendCounterRemoved(slice);
@@ -402,7 +402,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
             return sendFormatUsage();
         }
 
-        auto channelCounters = event.channel in plugin.counters;
+        auto channelCounters = event.channel.name in plugin.counters;
         if (!channelCounters) return sendNoSuchCounter();
 
         auto counter = word in *channelCounters;
@@ -460,8 +460,8 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
         }
 
     case "list":
-        if (event.channel !in plugin.counters) return sendNoCountersActive();
-        return sendCountersList(plugin.counters[event.channel].keys);
+        if (event.channel.name !in plugin.counters) return sendNoCountersActive();
+        return sendCountersList(plugin.counters[event.channel.name].keys);
 
     default:
         return sendUsage();
@@ -503,7 +503,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
             counter.patternQuery,
             event,
             counter);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendCounterModified(const Counter counter, const long step)
@@ -519,7 +519,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
             event,
             counter,
             abs(step));
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendCounterAssigned(const Counter counter, const long step)
@@ -532,20 +532,20 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
             event,
             counter,
             step);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendInputIsNaN(const string input)
     {
         enum pattern = "<b>%s<b> is not a number.";
         immutable message = pattern.format(input);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendMustSpecifyNumber()
     {
         enum message = "You must specify a number to set the count to.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string slice = event.content.stripped;  // mutable
@@ -583,7 +583,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 
     if (!slice.length) return;
 
-    auto channelCounters = event.channel in plugin.counters;
+    auto channelCounters = event.channel.name in plugin.counters;
     if (!channelCounters) return;
 
     ptrdiff_t signPos;
@@ -735,7 +735,7 @@ auto formatMessage(
         .replace("$signedstep", signedStep())
         .replace("$count", counter.count.to!string)
         .replace("$word", counter.word)
-        .replace("$channel", event.channel)
+        .replace("$channel", event.channel.name)
         .replace("$senderNickname", event.sender.nickname)
         .replace("$sender", nameOf(event.sender))
         .replace("$botNickname", plugin.state.client.nickname)
@@ -747,8 +747,8 @@ auto formatMessage(
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
             line = line
-                .replace("$streamerAccount", event.channel[1..$])
-                .replace("$streamer", nameOf(plugin, event.channel[1..$]));
+                .replace("$streamerAccount", event.channel.name[1..$])
+                .replace("$streamer", nameOf(plugin, event.channel.name[1..$]));
         }
     }
 

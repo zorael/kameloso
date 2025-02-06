@@ -56,7 +56,7 @@ void manageClassLists(
 
         enum pattern = "Usage: <b>%s%s<b> [add|del|list]";
         immutable message = pattern.format(plugin.state.settings.prefix, class_.toString());
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     if (!event.content.length)
@@ -71,13 +71,13 @@ void manageClassLists(
     switch (verb)
     {
     case "add":
-        return lookupEnlist(plugin, slice, class_, event.channel, event);
+        return lookupEnlist(plugin, slice, class_, event.channel.name, event);
 
     case "del":
-        return delist(plugin, slice, class_, event.channel, event);
+        return delist(plugin, slice, class_, event.channel.name, event);
 
     case "list":
-        return listList(plugin, event.channel, class_, event);
+        return listList(plugin, event.channel.name, class_, event);
 
     default:
         return sendUsage();
@@ -125,7 +125,7 @@ void listList(
         {
             enum pattern = "Current %s in <b>%s<b>: %-(<h>%s<h>, %)<h>";
             immutable message = pattern.format(role, channelName, userlist);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
         else
         {
@@ -139,7 +139,7 @@ void listList(
         {
             enum pattern = "There are no %s in <b>%s<b>.";
             immutable message = pattern.format(role, channelName);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
         else
         {
@@ -201,7 +201,7 @@ void lookupEnlist(
             case success:
                 enum pattern = "Added <h>%s<h> as <b>%s<b> in %s.";
                 immutable message = pattern.format(id, role, channelName);
-                privmsg(plugin.state, event.channel, event.sender.nickname, message);
+                privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
                 break;
 
             case noSuchAccount:
@@ -211,7 +211,7 @@ void lookupEnlist(
             case alreadyInList:
                 enum pattern = "<h>%s<h> was already <b>%s<b> in %s.";
                 immutable message = pattern.format(id, role, channelName);
-                privmsg(plugin.state, event.channel, event.sender.nickname, message);
+                privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
                 break;
             }
         }
@@ -279,7 +279,7 @@ void lookupEnlist(
         {
             // IRC report
             enum message = "No nickname supplied.";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
         else
         {
@@ -297,7 +297,7 @@ void lookupEnlist(
             // IRC report
             enum pattern = "Invalid nickname/account: <4>%s<c>";
             immutable message = pattern.format(specified);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
         else
         {
@@ -494,7 +494,7 @@ void delist(
         {
             // IRC report
             enum message = "No account specified.";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
         else
         {
@@ -526,13 +526,13 @@ void delist(
         case noSuchChannel:
             enum pattern = "<h>%s<h> isn't <b>%s<b> in %s.";
             immutable message = pattern.format(account, role, channelName);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
             break;
 
         case success:
             enum pattern = "Removed <h>%s<h> as <b>%s<b> in %s.";
             immutable message = pattern.format(account, role, channelName);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
             break;
         }
     }
@@ -745,7 +745,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
                 import std.format : format;
                 enum pattern = `Invalid hostmask: "<b>%s<b>"; must be in the form "<b>nickname!ident@address.tld<b>".`;
                 immutable message = pattern.format(mask);
-                privmsg(plugin.state, event.channel, event.sender.nickname, message);
+                privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
             }
             else
             {
@@ -765,7 +765,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
         {
             enum pattern = `Added hostmask "<b>%s<b>", mapped to account <h>%s<h>.`;
             immutable message = pattern.format(mask, account);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
         else
         {
@@ -793,7 +793,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
             {
                 enum pattern = `Removed hostmask "<b>%s<b>".`;
                 immutable message = pattern.format(mask);
-                privmsg(plugin.state, event.channel, event.sender.nickname, message);
+                privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
             }
             // Drop down to save
         }
@@ -803,7 +803,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
             {
                 enum pattern = `No such hostmask "<b>%s<b>" on file.`;
                 immutable message = format(pattern, mask);
-                privmsg(plugin.state, event.channel, event.sender.nickname, message);
+                privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
             }
             else
             {

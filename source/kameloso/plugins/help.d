@@ -242,7 +242,7 @@ void sendMessage(
 
     privmsg(
         plugin.state,
-        (plugin.helpSettings.repliesInQuery ? string.init : event.channel),
+        (plugin.helpSettings.repliesInQuery ? string.init : event.channel.name),
         event.sender.nickname,
         content,
         properties,

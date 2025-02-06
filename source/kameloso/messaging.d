@@ -114,7 +114,7 @@ struct Message
     Params:
         state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
-        channelName = Channel in which to send the message.
+        channelName = Name of channel in which to send the message.
         content = Message body content to send.
         properties = Custom message properties, such as [Message.Property.quiet]
             and [Message.Property.forced].
@@ -131,7 +131,7 @@ in (channelName.length, "Tried to send a channel message but no channel was give
     Message m;
 
     m.event.type = IRCEvent.Type.CHAN;
-    m.event.channel = channelName;
+    m.event.channel.name = channelName;
     m.properties = properties;
     m.caller = caller;
 
@@ -174,7 +174,7 @@ unittest
     with (m.event)
     {
         assert((type == IRCEvent.Type.CHAN), type.toString());
-        assert((channel == "#channel"), channel);
+        assert((channel.name == "#channel"), channel.name);
         assert((content == "content"), content);
         //assert(m.properties & Message.Property.fast);
     }
@@ -206,7 +206,7 @@ void reply(
     const string content,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
-in (event.channel.length, "Tried to reply to a channel message but no channel was given")
+in (event.channel.name.length, "Tried to reply to a channel message but no channel was given")
 {
     /++
         Just pass it onto [privmsg].
@@ -215,7 +215,7 @@ in (event.channel.length, "Tried to reply to a channel message but no channel wa
     {
         privmsg(
             state,
-            event.channel,
+            event.channel.name,
             event.sender.nickname,
             content,
             properties,
@@ -257,13 +257,13 @@ in (event.channel.length, "Tried to reply to a channel message but no channel wa
             Message m;
 
             m.event.type = IRCEvent.Type.CHAN;
-            m.event.channel = event.channel;
+            m.event.channel.name = event.channel.name;
             m.event.content = content.stripIRCTags;
             m.event.tags = "reply-parent-msg-id=" ~ event.id;
             m.properties = properties;
             m.caller = caller;
 
-            if (auto channel = m.event.channel in state.channels)
+            if (auto channel = m.event.channel.name in state.channels)
             {
                 if (auto ops = 'o' in channel.mods)
                 {
@@ -306,7 +306,7 @@ unittest
     IRCEvent event;
     event.type = IRCEvent.Type.CHAN;
     event.sender.nickname = "kameloso";
-    event.channel = "#channel";
+    event.channel.name = "#channel";
     event.content = "content";
     event.id = "some-reply-id";
 
@@ -395,7 +395,7 @@ unittest
     Params:
         state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
-        channel = Channel in which to send the message, if applicable.
+        channelName = Name of channel in which to send the message, if applicable.
         nickname = Nickname of user to which to send the message, if applicable.
         content = Message body content to send.
         properties = Custom message properties, such as [Message.Property.quiet]
@@ -404,18 +404,18 @@ unittest
  +/
 void privmsg(
     ref IRCPluginState state,
-    const string channel,
+    const string channelName,
     const string nickname,
     const string content,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
-in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel nor nickname was given")
+in ((channelName.length || nickname.length), "Tried to send a PRIVMSG but no channel nor nickname was given")
 {
     immutable expandedContent = content.expandIRCTags;
 
-    if (channel.length)
+    if (channelName.length)
     {
-        return chan(state, channel, expandedContent, properties, caller);
+        return chan(state, channelName, expandedContent, properties, caller);
     }
     else if (nickname.length)
     {
@@ -440,7 +440,7 @@ unittest
         with (m.event)
         {
             assert((type == IRCEvent.Type.CHAN), type.toString());
-            assert((channel == "#channel"), channel);
+            assert((channel.name == "#channel"), channel.name);
             assert((content == "content"), content);
             assert(!target.nickname.length, target.nickname);
             assert(m.properties == Message.Property.init);
@@ -455,7 +455,7 @@ unittest
         with (m.event)
         {
             assert((type == IRCEvent.Type.QUERY), type.toString());
-            assert(!channel.length, channel);
+            assert(!channel.name.length, channel.name);
             assert((target.nickname == "kameloso"), target.nickname);
             assert((content == "content"), content);
             assert(m.properties == Message.Property.init);
@@ -496,7 +496,7 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
 
     if (state.server.chantypes.indexOf(emoteTarget[0]) != -1)
     {
-        m.event.channel = emoteTarget;
+        m.event.channel.name = emoteTarget;
     }
     else
     {
@@ -530,7 +530,7 @@ unittest
         with (m.event)
         {
             assert((type == IRCEvent.Type.EMOTE), type.toString());
-            assert((channel == "#channel"), channel);
+            assert((channel.name == "#channel"), channel.name);
             assert((content == "content"), content);
             assert(!target.nickname.length, target.nickname);
             assert(m.properties == Message.Property.init);
@@ -545,7 +545,7 @@ unittest
         with (m.event)
         {
             assert((type == IRCEvent.Type.EMOTE), type.toString());
-            assert(!channel.length, channel);
+            assert(!channel.name.length, channel.name);
             assert((target.nickname == "kameloso"), target.nickname);
             assert((content == "content"), content);
             assert(m.properties == Message.Property.init);
@@ -563,7 +563,7 @@ unittest
     Params:
         state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
-        channel = Channel to change the modes of.
+        channelName = Name of channel to change the modes of.
         modes = Mode characters to apply to the channel.
         content = Target of mode change, if applicable.
         properties = Custom message properties, such as [Message.Property.quiet]
@@ -572,17 +572,17 @@ unittest
  +/
 void mode(
     ref IRCPluginState state,
-    const string channel,
+    const string channelName,
     const const(char)[] modes,
     const string content = string.init,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
-in (channel.length, "Tried to set a mode but no channel was given")
+in (channelName.length, "Tried to set a mode but no channel was given")
 {
     Message m;
 
     m.event.type = IRCEvent.Type.MODE;
-    m.event.channel = channel;
+    m.event.channel.name = channelName;
     m.event.aux[0] = modes.idup;
     m.event.content = content.expandIRCTags;
     m.properties = properties;
@@ -602,7 +602,7 @@ unittest
     with (m.event)
     {
         assert((type == IRCEvent.Type.MODE), type.toString());
-        assert((channel == "#channel"), channel);
+        assert((channel.name == "#channel"), channel.name);
         assert((content == "content"), content);
         assert((aux[0] == "+o"), aux[0]);
         assert(m.properties == Message.Property.init);
@@ -617,7 +617,7 @@ unittest
     Params:
         state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
-        channel = Channel whose topic to change.
+        channelName = Name of channel whose topic to change.
         content = Topic body text.
         properties = Custom message properties, such as [Message.Property.quiet]
             and [Message.Property.forced].
@@ -625,16 +625,16 @@ unittest
  +/
 void topic(
     ref IRCPluginState state,
-    const string channel,
+    const string channelName,
     const string content,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
-in (channel.length, "Tried to set a topic but no channel was given")
+in (channelName.length, "Tried to set a topic but no channel was given")
 {
     Message m;
 
     m.event.type = IRCEvent.Type.TOPIC;
-    m.event.channel = channel;
+    m.event.channel.name = channelName;
     m.event.content = content.expandIRCTags;
     m.properties = properties;
     m.caller = caller;
@@ -653,7 +653,7 @@ unittest
     with (m.event)
     {
         assert((type == IRCEvent.Type.TOPIC), type.toString());
-        assert((channel == "#channel"), channel);
+        assert((channel.name == "#channel"), channel.name);
         assert((content == "content"), content);
         assert(m.properties == Message.Property.init);
     }
@@ -667,7 +667,7 @@ unittest
     Params:
         state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
-        channel = Channel to which to invite the user.
+        channelName = Name of channel to which to invite the user.
         nickname = Nickname of user to invite.
         properties = Custom message properties, such as [Message.Property.quiet]
             and [Message.Property.forced].
@@ -675,17 +675,17 @@ unittest
  +/
 void invite(
     ref IRCPluginState state,
-    const string channel,
+    const string channelName,
     const string nickname,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
-in (channel.length, "Tried to send an invite but no channel was given")
+in (channelName.length, "Tried to send an invite but no channel was given")
 in (nickname.length, "Tried to send an invite but no nickname was given")
 {
     Message m;
 
     m.event.type = IRCEvent.Type.INVITE;
-    m.event.channel = channel;
+    m.event.channel.name = channelName;
     m.event.target.nickname = nickname;
     m.properties = properties;
     m.caller = caller;
@@ -704,7 +704,7 @@ unittest
     with (m.event)
     {
         assert((type == IRCEvent.Type.INVITE), type.toString());
-        assert((channel == "#channel"), channel);
+        assert((channel.name == "#channel"), channel.name);
         assert((target.nickname == "kameloso"), target.nickname);
         assert(m.properties == Message.Property.init);
     }
@@ -718,7 +718,7 @@ unittest
     Params:
         state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
-        channel = Channel to join.
+        channelName = Name of channel to join.
         key = Channel key to join the channel with, if it's locked.
         properties = Custom message properties, such as [Message.Property.quiet]
             and [Message.Property.forced].
@@ -726,16 +726,16 @@ unittest
  +/
 void join(
     ref IRCPluginState state,
-    const string channel,
+    const string channelName,
     const string key = string.init,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
-in (channel.length, "Tried to join a channel but no channel was given")
+in (channelName.length, "Tried to join a channel but no channel was given")
 {
     Message m;
 
     m.event.type = IRCEvent.Type.JOIN;
-    m.event.channel = channel;
+    m.event.channel.name = channelName;
     m.event.aux[0] = key;
     m.properties = properties;
     m.caller = caller;
@@ -754,7 +754,7 @@ unittest
     with (m.event)
     {
         assert((type == IRCEvent.Type.JOIN), type.toString());
-        assert((channel == "#channel"), channel);
+        assert((channel.name == "#channel"), channel.name);
         assert(m.properties == Message.Property.init);
     }
 }
@@ -767,7 +767,7 @@ unittest
     Params:
         state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
-        channel = Channel from which to kick the user.
+        channelName = Name of channel from which to kick the user.
         nickname = Nickname of user to kick.
         reason = Optionally the reason behind the kick.
         properties = Custom message properties, such as [Message.Property.quiet]
@@ -776,18 +776,18 @@ unittest
  +/
 void kick(
     ref IRCPluginState state,
-    const string channel,
+    const string channelName,
     const string nickname,
     const string reason = string.init,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
-in (channel.length, "Tried to kick someone but no channel was given")
+in (channelName.length, "Tried to kick someone but no channel was given")
 in (nickname.length, "Tried to kick someone but no nickname was given")
 {
     Message m;
 
     m.event.type = IRCEvent.Type.KICK;
-    m.event.channel = channel;
+    m.event.channel.name = channelName;
     m.event.target.nickname = nickname;
     m.event.content = reason.expandIRCTags;
     m.properties = properties;
@@ -807,7 +807,7 @@ unittest
     with (m.event)
     {
         assert((type == IRCEvent.Type.KICK), type.toString());
-        assert((channel == "#channel"), channel);
+        assert((channel.name == "#channel"), channel.name);
         assert((content == "content"), content);
         assert((target.nickname == "kameloso"), target.nickname);
         assert(m.properties == Message.Property.init);
@@ -822,7 +822,7 @@ unittest
     Params:
         state = The current plugin's [kameloso.plugins.common.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
-        channel = Channel to leave.
+        channelName = Name of channel to leave.
         reason = Optionally, reason behind leaving.
         properties = Custom message properties, such as [Message.Property.quiet]
             and [Message.Property.forced].
@@ -830,16 +830,16 @@ unittest
  +/
 void part(
     ref IRCPluginState state,
-    const string channel,
+    const string channelName,
     const string reason = string.init,
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
-in (channel.length, "Tried to part a channel but no channel was given")
+in (channelName.length, "Tried to part a channel but no channel was given")
 {
     Message m;
 
     m.event.type = IRCEvent.Type.PART;
-    m.event.channel = channel;
+    m.event.channel.name = channelName;
     m.event.content = reason.length ? reason.expandIRCTags : state.bot.partReason;
     m.properties = properties;
     m.caller = caller;
@@ -858,7 +858,7 @@ unittest
     with (m.event)
     {
         assert((type == IRCEvent.Type.PART), type.toString());
-        assert((channel == "#channel"), channel);
+        assert((channel.name == "#channel"), channel.name);
         assert((content == "reason"), content);
         assert(m.properties == Message.Property.init);
     }

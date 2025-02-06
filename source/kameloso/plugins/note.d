@@ -281,10 +281,10 @@ void playbackNotes(
         return;
     }
 
-    if (event.channel.length)
+    if (event.channel.name.length)
     {
         // Try channel notes first, then drop down to private notes
-        playbackNotesImpl(plugin, event.channel, user, background);
+        playbackNotesImpl(plugin, event.channel.name, user, background);
     }
 
     // Private notes
@@ -426,13 +426,13 @@ void onCommandAddNote(NotePlugin plugin, const IRCEvent event)
 
         enum pattern = "Usage: <b>%s%s<b> [nickname] [note text]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
     void sendNoBotMessages()
     {
         enum message = "You cannot leave me a message; it would never be replayed.";
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
 
     }
 
@@ -450,11 +450,11 @@ void onCommandAddNote(NotePlugin plugin, const IRCEvent event)
     note.line = slice;
     note.encrypt();
 
-    plugin.notes[event.channel][target] ~= note;
+    plugin.notes[event.channel.name][target] ~= note;
     saveNotes(plugin);
 
     enum message = "Note saved.";
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
 }
 
 
@@ -607,7 +607,7 @@ auto selftest(NotePlugin plugin, Selftester s)
 
         while (
             (s.fiber.payload.type != IRCEvent.Type.SELFPART) ||
-            (s.fiber.payload.channel != s.channelName))
+            (s.fiber.payload.channel.name != s.channelName))
         {
             Fiber.yield();
         }
@@ -619,7 +619,7 @@ auto selftest(NotePlugin plugin, Selftester s)
 
         while (
             (s.fiber.payload.type != IRCEvent.Type.SELFJOIN) ||
-            (s.fiber.payload.channel != s.channelName))
+            (s.fiber.payload.channel.name != s.channelName))
         {
             Fiber.yield();
         }

@@ -192,11 +192,11 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
         auto stored = establishUserInCache(
             service,
             user,
-            event.channel,
+            event.channel.name,
             createIfNoneExist: true,
             foundExisting: storedUserExisted);
 
-        auto global = event.channel.length ?
+        auto global = event.channel.name.length ?
             syncUserWithGlobal(service, *stored, errors: event.errors) :
             null;
 
@@ -316,10 +316,10 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                     /+
                         Event bearing new account.
                         These can be whatever if the "account-tag" capability is set.
-                        event.channel may be empty here if we jumped from a RPL_WHOIS* case.
+                        event.channel.name may be empty here if we jumped from a RPL_WHOIS* case.
                      +/
                     propagateUserAccount(service, *stored);
-                    resolveClass(service, *stored, context: event.channel, event.time);
+                    resolveClass(service, *stored, context: event.channel.name, event.time);
                 }
                 break;
             }
@@ -353,7 +353,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             the stored user will be cloned into the global user.
 
             If there's no global user, that means the user *is* the global user
-            and event.channel is empty.
+            and event.channel.name is empty.
          +/
         if (userToRemove.length)
         {
@@ -363,8 +363,8 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             }
 
             /+
-                If there's no event.channel, the global user is created as
-                stored is created. If there is an event.channel, the global user
+                If there's no event.channel.name, the global user is created as
+                stored is created. If there is an event.channel.name, the global user
                 is created shortly after as a second step.
                 So we can logically assume string.init to always be in channelUserCache
                 and there's no need to be careful about indexing it.
@@ -421,7 +421,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
         If there is a channel, check if it's a channel we should be postprocessing
         fully. If not, do the bare minimum and then return false.
      +/
-    if (event.channel.length)
+    if (event.channel.name.length)
     {
         import std.algorithm.searching : canFind;
 
@@ -430,7 +430,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
         {
         case home:
             // omniscienceLevel requires a home channel
-            if (!service.state.bot.homeChannels.canFind(event.channel))
+            if (!service.state.bot.homeChannels.canFind(event.channel.name))
             {
                 syncEventUsersWithGlobals(service, event);
                 return false;
@@ -441,8 +441,8 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 
         case guest:
             // omniscienceLevel requires a guest channel or higher
-            if (!service.state.bot.homeChannels.canFind(event.channel) &&
-                !service.state.bot.guestChannels.canFind(event.channel))
+            if (!service.state.bot.homeChannels.canFind(event.channel.name) &&
+                !service.state.bot.guestChannels.canFind(event.channel.name))
             {
                 syncEventUsersWithGlobals(service, event);
                 return false;
@@ -950,7 +950,7 @@ void onNamesReply(PersistenceService service, const IRCEvent event)
             propagateUserAccount(service, user);
         }
 
-        updateUser(service, user, event.channel);
+        updateUser(service, user, event.channel.name);
     }
 }
 
@@ -968,7 +968,7 @@ void onNamesReply(PersistenceService service, const IRCEvent event)
 void onWhoReply(PersistenceService service, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
-    updateUser(service, event.target, event.channel);
+    updateUser(service, event.target, event.channel.name);
 }
 
 

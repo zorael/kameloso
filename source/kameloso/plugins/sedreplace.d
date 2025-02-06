@@ -417,17 +417,17 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
     {
         Line line = Line(string_, event.time);  // implicit ctor
 
-        auto channelLines = event.channel in plugin.prevlines;
+        auto channelLines = event.channel.name in plugin.prevlines;
         if (!channelLines)
         {
-            initPrevlines(plugin, event.channel, event.sender.nickname);
-            channelLines = event.channel in plugin.prevlines;
+            initPrevlines(plugin, event.channel.name, event.sender.nickname);
+            channelLines = event.channel.name in plugin.prevlines;
         }
 
         auto senderLines = event.sender.nickname in *channelLines;
         if (!senderLines)
         {
-            initPrevlines(plugin, event.channel, event.sender.nickname);
+            initPrevlines(plugin, event.channel.name, event.sender.nickname);
             senderLines = event.sender.nickname in *channelLines;
         }
 
@@ -451,7 +451,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
         }
 
         case DelimiterCharacters[0]:
-            auto channelLines = event.channel in plugin.prevlines;
+            auto channelLines = event.channel.name in plugin.prevlines;
             if (!channelLines) return;  // Don't save
 
             auto senderLines = event.sender.nickname in *channelLines;
@@ -483,7 +483,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 
                 enum pattern = "<h>%s<h> | %s";
                 immutable message = pattern.format(event.sender.nickname, result);
-                chan(plugin.state, event.channel, message);
+                chan(plugin.state, event.channel.name, message);
 
                 // Record as last even if there are more lines
                 return recordLineAsLast(result);
@@ -554,7 +554,7 @@ void onWelcome(SedReplacePlugin plugin)
 )
 void onJoin(SedReplacePlugin plugin, const IRCEvent event)
 {
-    initPrevlines(plugin, event.channel, event.sender.nickname);
+    initPrevlines(plugin, event.channel.name, event.sender.nickname);
 }
 
 
@@ -568,7 +568,7 @@ void onJoin(SedReplacePlugin plugin, const IRCEvent event)
 )
 void onPart(SedReplacePlugin plugin, const IRCEvent event)
 {
-    if (auto channelLines = event.channel in plugin.prevlines)
+    if (auto channelLines = event.channel.name in plugin.prevlines)
     {
         (*channelLines).remove(event.sender.nickname);
     }

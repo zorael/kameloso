@@ -501,8 +501,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
     }
 
     if (!plugin.printerSettings.logGuestChannels &&
-        event.channel.length &&
-        !plugin.state.bot.homeChannels.canFind(event.channel))
+        event.channel.name.length &&
+        !plugin.state.bot.homeChannels.canFind(event.channel.name))
     {
         // Not logging all channels and this is not a home.
         return;
@@ -581,11 +581,11 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
     }
 
     default:
-        if (event.channel.length &&
+        if (event.channel.name.length &&
             (event.sender.nickname.length || (event.type == MODE)))
         {
             // Channel message, or specialcased server-sent MODEs
-            writeEventToFile(plugin, event, event.channel);
+            writeEventToFile(plugin, event, event.channel.name);
         }
         else if (event.sender.nickname.length)
         {

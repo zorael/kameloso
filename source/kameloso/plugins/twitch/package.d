@@ -402,7 +402,7 @@ public:
     /++
         Twitch numerical ID of follower.
      +/
-    uint id;
+    ulong id;
 
     // fromJSON
     /++
@@ -519,7 +519,7 @@ void onAnyMessage(TwitchPlugin plugin, const IRCEvent event)
     if (activityDetected)
     {
         // Record viewer as active
-        if (auto room = event.channel in plugin.rooms)
+        if (auto room = event.channel.name in plugin.rooms)
         {
             if (room.stream.live)
             {
@@ -570,13 +570,13 @@ void onEmoteBearingMessage(TwitchPlugin plugin, const IRCEvent event)
         import std.algorithm.searching : count;
         import std.conv : to;
 
-        auto channelcount = event.channel in plugin.ecount;
+        auto channelcount = event.channel.name in plugin.ecount;
 
         if (!channelcount)
         {
-            plugin.ecount[event.channel] = RehashingAA!(long[string]).init;
-            plugin.ecount[event.channel][string.init] = 0L;
-            channelcount = event.channel in plugin.ecount;
+            plugin.ecount[event.channel.name] = RehashingAA!(long[string]).init;
+            plugin.ecount[event.channel.name][string.init] = 0L;
+            channelcount = event.channel.name in plugin.ecount;
             (*channelcount).remove(string.init);
         }
 
@@ -615,7 +615,7 @@ void onEmoteBearingMessage(TwitchPlugin plugin, const IRCEvent event)
 void onSelfjoin(TwitchPlugin plugin, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
-    cast(void)getRoom(plugin, event.channel);
+    cast(void)getRoom(plugin, event.channel.name);
 }
 
 
@@ -668,7 +668,7 @@ void onUserstate(TwitchPlugin plugin, const IRCEvent event)
 
     void registerOpMod()
     {
-        if (auto channel = event.channel in plugin.state.channels)
+        if (auto channel = event.channel.name in plugin.state.channels)
         {
             if (auto ops = 'o' in channel.mods)
             {
@@ -710,7 +710,7 @@ void onUserstate(TwitchPlugin plugin, const IRCEvent event)
     else
     {
         // It's a home channel yet we don't seem to be a moderator
-        auto room = getRoom(plugin, event.channel);
+        auto room = getRoom(plugin, event.channel.name);
 
         if (!room.sawUserstate)
         {
@@ -718,7 +718,7 @@ void onUserstate(TwitchPlugin plugin, const IRCEvent event)
             room.sawUserstate = true;
             enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
                 "Consider elevating it to such to avoid being as rate-limited.";
-            logger.warningf(pattern, event.channel);
+            logger.warningf(pattern, event.channel.name);
         }
     }
 }
@@ -758,7 +758,7 @@ void onSelfpart(TwitchPlugin plugin, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
 
-    auto room = event.channel in plugin.rooms;
+    auto room = event.channel.name in plugin.rooms;
 
     if (!room) return;
 
@@ -776,7 +776,7 @@ void onSelfpart(TwitchPlugin plugin, const IRCEvent event)
         room.stream = TwitchPlugin.Room.Stream.init;
     }
 
-    plugin.rooms.remove(event.channel);
+    plugin.rooms.remove(event.channel.name);
 }
 
 
@@ -805,7 +805,7 @@ void onCommandUptime(TwitchPlugin plugin, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
 
-    const room = event.channel in plugin.rooms;
+    const room = event.channel.name in plugin.rooms;
     assert(room, "Tried to process `onCommandUptime` on a nonexistent room");
 
     reportStreamTime(plugin, *room);
@@ -945,7 +945,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
 
     mixin(memoryCorruptionCheck);
 
-    auto room = event.channel in plugin.rooms;
+    auto room = event.channel.name in plugin.rooms;
     assert(room, "Tried to look up follow age in a nonexistent room");
 
     string slice = event.content.stripped;  // mutable
@@ -957,7 +957,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
     void sendNoSuchUser(const string name)
     {
         immutable message = "No such user: " ~ name;
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void reportFollowAge(const Follower follower)
@@ -993,13 +993,13 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
         {
             enum pattern = "%s has been a follower for %s, since %s.";
             immutable message = pattern.format(follower.displayName, timeline, datestamp);
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
         else
         {
             enum pattern = "You have been a follower for %s, since %s.";
             immutable message = pattern.format(timeline, datestamp);
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
     }
 
@@ -1014,13 +1014,13 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
 
             enum pattern = "%s is currently not a follower.";
             immutable message = pattern.format(user.displayName);
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
         else
         {
             // Assume the user is asking about itself
             enum message = "You are currently not a follower.";
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
     }
 
@@ -1104,11 +1104,11 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
 
     mixin(memoryCorruptionCheck);
 
-    auto room = getRoom(plugin, event.channel);
+    auto room = getRoom(plugin, event.channel.name);
     if (room.id) return;  // Already initialised? Double roomstate?
 
     // Cache channel name by its numeric ID
-    plugin.channelNamesByID[event.aux[0]] = event.channel;
+    plugin.channelNamesByID[event.aux[0]] = event.channel.name;
 
     try
     {
@@ -1122,7 +1122,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
         {
             // For some reason the room ID isn't in the event? Has happened at least twice
             // Try to salvage the situation by querying the server with the username instead
-            const twitchUser = getTwitchUser(plugin, event.channel[1..$]);
+            const twitchUser = getTwitchUser(plugin, event.channel.name[1..$]);
             room.id = twitchUser.id;
         }
 
@@ -1160,7 +1160,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
             Start room monitors for the channel. We can assume they have not already
             been started, as room was either null or room.id was set above.
          +/
-        startRoomMonitors(plugin, event.channel);
+        startRoomMonitors(plugin, event.channel.name);
 
         if (plugin.twitchSettings.customEmotes)
         {
@@ -1174,14 +1174,14 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
                 import kameloso.plugins.twitch.emotes : importCustomEmotes;
                 importCustomEmotes(
                     plugin: plugin,
-                    channelName: event.channel,
+                    channelName: event.channel.name,
                     id: room.id);
             }
 
             /+
                 Stagger imports a bit.
              +/
-            immutable homeIndex = plugin.state.bot.homeChannels.countUntil(event.channel);
+            immutable homeIndex = plugin.state.bot.homeChannels.countUntil(event.channel.name);
             alias multiplier = homeIndex;
             immutable delayUntilImport = baseDelayBetweenImports * multiplier;
 
@@ -1189,7 +1189,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
             delay(plugin, importEmotesFiber, delayUntilImport);
         }
 
-        auto creds = event.channel in plugin.secretsByChannel;
+        auto creds = event.channel.name in plugin.secretsByChannel;
 
         if (creds && creds.broadcasterKey.length)
         {
@@ -1197,7 +1197,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
             {
                 enum pattern = "The broadcaster-level access token for channel <l>%s</> has expired. " ~
                     "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
-                logger.errorf(pattern, event.channel);
+                logger.errorf(pattern, event.channel.name);
 
                 // Keep the old keys so the error message repeats next execution
                 /*creds.broadcasterKey = string.init;
@@ -1212,7 +1212,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
                 generateExpiryReminders(
                     plugin,
                     SysTime.fromUnixTime(creds.broadcasterKeyExpiry),
-                    "The broadcaster-level authorisation token for channel <l>" ~ event.channel ~ "</>",
+                    "The broadcaster-level authorisation token for channel <l>" ~ event.channel.name ~ "</>",
                     &onExpiryDg);
             }
             catch (InvalidCredentialsException _)
@@ -1248,11 +1248,11 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
     mixin(memoryCorruptionCheck);
 
     // Cache channel name by its numeric ID
-    if (event.aux[0].length) plugin.channelNamesByID[event.aux[0]] = event.channel;
+    if (event.aux[0].length) plugin.channelNamesByID[event.aux[0]] = event.channel.name;
 
     if (!plugin.twitchSettings.customEmotes || !plugin.twitchSettings.customEmotesEverywhere) return;
 
-    if (const customChannelEmotes = event.channel in plugin.customChannelEmotes)
+    if (const customChannelEmotes = event.channel.name in plugin.customChannelEmotes)
     {
         if (customChannelEmotes.emotes.length)
         {
@@ -1264,7 +1264,7 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
     /+
         Delay Fiber.getThis() first and then import
      +/
-    immutable guestIndex = plugin.state.bot.guestChannels.countUntil(event.channel);
+    immutable guestIndex = plugin.state.bot.guestChannels.countUntil(event.channel.name);
 
     immutable delayMultiplier = (guestIndex != -1) ?
         // It's a guest channel
@@ -1275,13 +1275,13 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
         // padded by the number of home and guest channels
         cast(uint)(plugin.state.bot.homeChannels.length +
             plugin.state.bot.guestChannels.length +
-            (event.channel.hashOf % 5));
+            (event.channel.name.hashOf % 5));
 
     void importDg()
     {
         importCustomEmotes(
             plugin: plugin,
-            channelName: event.channel.idup,
+            channelName: event.channel.name.idup,
             id: event.aux[0].to!uint);
     }
 
@@ -1332,43 +1332,43 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
     {
         enum pattern = "Usage: %s%s [name of streamer] [optional number of times to spam]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendCountNotANumber()
     {
         enum message = "The passed count is not a number.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendInvalidStreamerName()
     {
         enum message = "Invalid streamer name.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoSuchUser(const string target)
     {
         immutable message = "No such user: " ~ target;
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendUserHasNoChannel()
     {
         enum message = "Impossible error; user has no channel?";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoShoutoutOfCurrentChannel()
     {
         enum message = "Can't give a shoutout to the current channel...";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendOtherError()
     {
         enum message = "An error occurred when preparing the shoutout.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string slice = event.content.stripped;  // mutable
@@ -1385,7 +1385,7 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
 
     immutable login = idOf(plugin, target);
 
-    if (login == event.channel[1..$])
+    if (login == event.channel.name[1..$])
     {
         return sendNoShoutoutOfCurrentChannel();
     }
@@ -1443,7 +1443,7 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
 
     foreach (immutable i; 0..numTimes)
     {
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 }
 
@@ -1476,13 +1476,13 @@ void onCommandVanish(TwitchPlugin plugin, const IRCEvent event)
 
     try
     {
-        cast(void)timeoutUser(plugin, event.channel, event.sender.id, 1);
+        cast(void)timeoutUser(plugin, event.channel.name, event.sender.id, 1);
     }
     catch (ErrorJSONException e)
     {
         import kameloso.plugins.common.misc : nameOf;
         enum pattern = "Failed to vanish <l>%s</> in <l>%s</> <t>(%s)";
-        logger.warningf(pattern, nameOf(event.sender), event.channel, e.msg);
+        logger.warningf(pattern, nameOf(event.sender), event.channel.name, e.msg);
     }
 }
 
@@ -1524,13 +1524,13 @@ void onCommandRepeat(TwitchPlugin plugin, const IRCEvent event)
     {
         enum pattern = "Usage: %s%s [number of times] [text...]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNumTimesGTZero()
     {
         enum message = "Number of times must be greater than 0.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     if (!event.content.length || !event.content.count(' ')) return sendUsage();
@@ -1546,7 +1546,7 @@ void onCommandRepeat(TwitchPlugin plugin, const IRCEvent event)
 
         foreach (immutable i; 0..numTimes)
         {
-            chan(plugin.state, event.channel, slice);
+            chan(plugin.state, event.channel.name, slice);
         }
     }
     catch (ConvException _)
@@ -1579,15 +1579,15 @@ void onCommandSubs(TwitchPlugin plugin, const IRCEvent event)
 
     mixin(memoryCorruptionCheck);
 
-    const room = event.channel in plugin.rooms;
+    const room = event.channel.name in plugin.rooms;
     assert(room, "Tried to get the subscriber count of a channel for which there existed no room");
 
     try
     {
         enum pattern = "%s has %d subscribers.";
-        const subs = getSubscribers(plugin, event.channel, totalOnly: true);
+        const subs = getSubscribers(plugin, event.channel.name, totalOnly: true);
         immutable message = pattern.format(room.broadcasterDisplayName, subs[0].total);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
     catch (MissingBroadcasterTokenException e)
     {
@@ -1650,7 +1650,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
             "Usage: %s%s [YouTube link or video ID]" :
             "Usage: %s%s [Spotify link or track ID]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendMissingCredentials()
@@ -1661,7 +1661,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
         immutable terminalMessage = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
             channelMessage ~ " Run the program with <l>--set twitch.googleKeygen</> to set it up." :
             channelMessage ~ " Run the program with <l>--set twitch.spotifyKeygen</> to set it up.";
-        chan(plugin.state, event.channel, channelMessage);
+        chan(plugin.state, event.channel.name, channelMessage);
         logger.error(terminalMessage);
     }
 
@@ -1670,7 +1670,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
         immutable message = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
             "Invalid Google API credentials." :
             "Invalid Spotify API credentials.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendAtLastNSecondsMustPass()
@@ -1680,13 +1680,13 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
         enum pattern = "At least %s must pass between song requests.";
         immutable duration = timeSince(minimumTimeBetweenSongRequests.seconds);
         immutable message = pattern.format(duration);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendInsufficientPermissions()
     {
         enum message = "You do not have the needed permissions to issue song requests.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendInvalidURL()
@@ -1694,27 +1694,27 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
         immutable message = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
             "Invalid YouTube video URL." :
             "Invalid Spotify track URL.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNonspecificError()
     {
         enum message = "A non-specific error occurred.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendAddedToYouTubePlaylist(const string title)
     {
         enum pattern = "%s added to playlist.";
         immutable message = pattern.format(title);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendAddedToSpotifyPlaylist(const string artist, const string track)
     {
         enum pattern = "%s - %s added to playlist.";
         immutable message = pattern.format(artist, track);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     if (plugin.twitchSettings.songrequestMode == SongRequestMode.disabled) return;
@@ -1724,7 +1724,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
         return sendInsufficientPermissions();
     }
 
-    auto room = event.channel in plugin.rooms;  // must be mutable for history
+    auto room = event.channel.name in plugin.rooms;  // must be mutable for history
     assert(room, "Tried to make a song request in a nonexistent room");
 
     if (event.sender.class_ < IRCUser.class_.operator)
@@ -1756,7 +1756,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
             return sendUsage();
         }
 
-        auto creds = event.channel in plugin.secretsByChannel;
+        auto creds = event.channel.name in plugin.secretsByChannel;
         if (!creds || !creds.googleAccessToken.length || !creds.youtubePlaylistID.length)
         {
             return sendMissingCredentials();
@@ -1844,7 +1844,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
             return sendUsage();
         }
 
-        auto creds = event.channel in plugin.secretsByChannel;
+        auto creds = event.channel.name in plugin.secretsByChannel;
         if (!creds || !creds.spotifyAccessToken.length || !creds.spotifyPlaylistID)
         {
             return sendMissingCredentials();
@@ -1952,7 +1952,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const IRCEvent event)
         import std.format : format;
         enum pattern = `Usage: %s%s "[poll title]" [duration] "[choice 1]" "[choice 2]" ...`;
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     immutable chunks = splitWithQuotes(event.content);
@@ -1972,23 +1972,23 @@ void onCommandStartPoll(TwitchPlugin plugin, const IRCEvent event)
     catch (ConvException _)
     {
         enum message = "Invalid duration.";
-        return chan(plugin.state, event.channel, message);
+        return chan(plugin.state, event.channel.name, message);
     }
     /*catch (DurationStringException e)
     {
-        return chan(plugin.state, event.channel, e.msg);
+        return chan(plugin.state, event.channel.name, e.msg);
     }*/
     catch (Exception e)
     {
-        return chan(plugin.state, event.channel, e.msg);
+        return chan(plugin.state, event.channel.name, e.msg);
     }
 
     try
     {
-        const poll = createPoll(plugin, event.channel, title, durationString, choices);
+        const poll = createPoll(plugin, event.channel.name, title, durationString, choices);
         enum pattern = `Poll "%s" created.`;
         immutable message = pattern.format(poll.title);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
     catch (ErrorJSONException e)
     {
@@ -2006,7 +2006,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const IRCEvent event)
                 enum message = "You must be an affiliate to create Twitch polls.";
             }
 
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
         else
         {
@@ -2063,17 +2063,17 @@ void onCommandEndPoll(TwitchPlugin plugin, const IRCEvent event)
 
     try
     {
-        const polls = getPolls(plugin, event.channel);
+        const polls = getPolls(plugin, event.channel.name);
 
         if (!polls.length)
         {
             enum message = "There are no active polls to end.";
-            return chan(plugin.state, event.channel, message);
+            return chan(plugin.state, event.channel.name, message);
         }
 
         const endedPoll = endPoll(
             plugin,
-            event.channel,
+            event.channel.name,
             polls[0].pollID,
             terminate: true);
 
@@ -2086,18 +2086,18 @@ void onCommandEndPoll(TwitchPlugin plugin, const IRCEvent event)
 
             enum pattern = "Poll ended; status %s";
             immutable message = pattern.format(endedPoll.status.toString());
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
         else
         {
             enum message = "Failed to end poll; status remains active";
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
     }
     catch (EmptyDataJSONException e)
     {
         enum message = "There are no active polls to end.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
     catch (MissingBroadcasterTokenException e)
     {
@@ -2147,7 +2147,7 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
         import std.format : format;
         enum pattern = "Usage: %s%s [word or phrase]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     if (!event.content.length) return sendUsage();
@@ -2173,7 +2173,7 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
 
         try
         {
-            immutable response = deleteMessage(plugin, event.channel, storedEvent.id);
+            immutable response = deleteMessage(plugin, event.channel.name, storedEvent.id);
 
             if ((response.code >= 200) && (response.code < 300))
             {
@@ -2184,7 +2184,7 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
                 import kameloso.plugins.common.misc : nameOf;
 
                 enum pattern = "Failed to delete a message from <h>%s</> in <l>%s";
-                logger.warningf(pattern, nameOf(storedEvent.sender), event.channel);
+                logger.warningf(pattern, nameOf(storedEvent.sender), event.channel.name);
 
                 version(PrintStacktraces)
                 {
@@ -2216,7 +2216,7 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
         }
     }
 
-    auto room = event.channel in plugin.rooms;
+    auto room = event.channel.name in plugin.rooms;
     assert(room, "Tried to nuke a word in a nonexistent room");
 
     uint numDeleted;
@@ -2354,13 +2354,13 @@ void onCommandEcount(TwitchPlugin plugin, const IRCEvent event)
     {
         enum pattern = "Usage: %s%s [emote]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendNotATwitchEmote()
     {
         enum message = "That is not a (known) Twitch, BetterTTV, FrankerFaceZ or 7tv emote.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendResults(const long count)
@@ -2376,7 +2376,7 @@ void onCommandEcount(TwitchPlugin plugin, const IRCEvent event)
             .to!size_t + 1;  // upper-bound inclusive!
 
         string rawSlice = event.raw;  // mutable
-        rawSlice.advancePast(event.channel);
+        rawSlice.advancePast(event.channel.name);
         rawSlice.advancePast(" :");
 
         // Slice it as a dstring to (hopefully) get full characters
@@ -2389,7 +2389,7 @@ void onCommandEcount(TwitchPlugin plugin, const IRCEvent event)
         // Make the pattern "%,?d", and supply an extra ' ' argument to get European grouping
         enum pattern = "%s has been used %,d times!";
         immutable message = pattern.format(emote, count);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     if (!event.content.length)
@@ -2401,7 +2401,7 @@ void onCommandEcount(TwitchPlugin plugin, const IRCEvent event)
         return sendNotATwitchEmote();
     }
 
-    const channelcounts = event.channel in plugin.ecount;
+    const channelcounts = event.channel.name in plugin.ecount;
     if (!channelcounts) return sendResults(0L);
 
     string slice = event.emotes;
@@ -2481,7 +2481,7 @@ void onCommandWatchtime(TwitchPlugin plugin, const IRCEvent event)
         if (!user.nickname.length)
         {
             immutable message = "No such user: " ~ givenName;
-            return chan(plugin.state, event.channel, message);
+            return chan(plugin.state, event.channel.name, message);
         }
 
         nickname = user.nickname;
@@ -2492,51 +2492,51 @@ void onCommandWatchtime(TwitchPlugin plugin, const IRCEvent event)
     {
         enum pattern = "%s has not been watching this channel's streams.";
         immutable message = pattern.format(displayName);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void reportViewerTime(const Duration time)
     {
         enum pattern = "%s has been a viewer for a total of %s.";
         immutable message = pattern.format(displayName, timeSince(time));
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void reportNoViewerTimeInvoker()
     {
         enum message = "You have not been watching this channel's streams.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void reportViewerTimeInvoker(const Duration time)
     {
         enum pattern = "You have been a viewer for a total of %s.";
         immutable message = pattern.format(timeSince(time));
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
-    if (nickname == event.channel[1..$])
+    if (nickname == event.channel.name[1..$])
     {
         if (nameSpecified)
         {
             enum pattern = "%s is the streamer though...";
             immutable message = pattern.format(nickname);
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
         else
         {
             enum message = "You are the streamer though...";
-            chan(plugin.state, event.channel, message);
+            chan(plugin.state, event.channel.name, message);
         }
         return;
     }
     else if (nickname == plugin.state.client.nickname)
     {
         enum message = "I've seen it all.";
-        return chan(plugin.state, event.channel, message);
+        return chan(plugin.state, event.channel.name, message);
     }
 
-    if (const channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
+    if (const channelViewerTimes = event.channel.name in plugin.viewerTimesByChannel)
     {
         if (const viewerTime = nickname in *channelViewerTimes)
         {
@@ -2596,17 +2596,17 @@ void onCommandSetTitle(TwitchPlugin plugin, const IRCEvent event)
     {
         enum pattern = "Usage: %s%s [title]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        return chan(plugin.state, event.channel, message);
+        return chan(plugin.state, event.channel.name, message);
     }
 
     immutable title = unescapedTitle.unquoted.replace(`"`, `\"`);
 
     try
     {
-        setChannelTitle(plugin, event.channel, title);
+        setChannelTitle(plugin, event.channel.name, title);
         enum pattern = "Channel title set to: %s";
         immutable message = pattern.format(title);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
     catch (MissingBroadcasterTokenException e)
     {
@@ -2656,19 +2656,19 @@ void onCommandSetGame(TwitchPlugin plugin, const IRCEvent event)
 
     if (!unescapedGameName.length)
     {
-        const channelInfo = getChannel(plugin, event.channel);
+        const channelInfo = getChannel(plugin, event.channel.name);
 
         enum pattern = "Currently playing game: %s";
         immutable gameName = channelInfo.gameName.length ?
             channelInfo.gameName :
             "(nothing)";
         immutable message = pattern.format(gameName);
-        return chan(plugin.state, event.channel, message);
+        return chan(plugin.state, event.channel.name, message);
     }
 
     immutable specified = unescapedGameName.unquoted.replace(`"`, `\"`);
     immutable numberSupplied = (specified.length && specified.isNumeric);
-    uint gameID = numberSupplied ? specified.to!uint : 0;  // mutable
+    ulong gameID = numberSupplied ? specified.to!ulong : 0;  // mutable
 
     try
     {
@@ -2690,20 +2690,20 @@ void onCommandSetGame(TwitchPlugin plugin, const IRCEvent event)
             name = gameInfo.name;
         }
 
-        setChannelGame(plugin, event.channel, gameID);
+        setChannelGame(plugin, event.channel.name, gameID);
         enum pattern = "Game set to: %s";
         immutable message = pattern.format(name);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
     catch (EmptyResponseException _)
     {
         enum message = "Empty response from server!";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
     catch (EmptyDataJSONException _)
     {
         enum message = "Could not find a game by that name; check spelling.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
     catch (MissingBroadcasterTokenException e)
     {
@@ -2755,16 +2755,16 @@ void onCommandCommercial(TwitchPlugin plugin, const IRCEvent event)
     {
         enum pattern = "Usage: %s%s [commercial duration; valid values are 30, 60, 90, 120, 150 and 180]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        return chan(plugin.state, event.channel, message);
+        return chan(plugin.state, event.channel.name, message);
     }
 
     void sendNoOngoingStream()
     {
         enum message = "There is no ongoing stream.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
-    const room = event.channel in plugin.rooms;
+    const room = event.channel.name in plugin.rooms;
     assert(room, "Tried to start a commercial in a nonexistent room");
 
     if (!room.stream.live) return sendNoOngoingStream();
@@ -2772,12 +2772,12 @@ void onCommandCommercial(TwitchPlugin plugin, const IRCEvent event)
     if (!lengthString.among!("30", "60", "90", "120", "150", "180"))
     {
         enum message = "Commercial duration must be one of 30, 60, 90, 120, 150 or 180.";
-        return chan(plugin.state, event.channel, message);
+        return chan(plugin.state, event.channel.name, message);
     }
 
     try
     {
-        startCommercial(plugin, event.channel, lengthString);
+        startCommercial(plugin, event.channel.name, lengthString);
     }
     catch (ErrorJSONException e)
     {
@@ -2803,13 +2803,13 @@ void onCommandCommercial(TwitchPlugin plugin, const IRCEvent event)
     catch (EmptyResponseException _)
     {
         enum message = "Empty response from server!";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
     catch (TwitchQueryException e)
     {
         if (e.code == 400) // Bad Request
         {
-            chan(plugin.state, event.channel, e.msg);
+            chan(plugin.state, event.channel.name, e.msg);
         }
         else
         {
@@ -3793,12 +3793,12 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
         if (plugin.state.bot.homeChannels.canFind!pred(event.sender.nickname))
         {
             event.type = IRCEvent.Type.CHAN;
-            event.channel = '#' ~ event.sender.nickname;
+            event.channel.name = '#' ~ event.sender.nickname;
             event.aux[0] = string.init;  // Whisper count
             event.target = IRCUser.init;
         }
     }
-    else if (!event.channel.length)
+    else if (!event.channel.name.length)
     {
         return false;
     }
@@ -3848,7 +3848,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             else
             {
                 // Only embed if the event is in a home channel
-                isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
+                isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel.name);
                 determinedWhetherHomeChannel = true;
                 shouldEmbedCustomEmotes = isHomeChannel;
             }
@@ -3857,7 +3857,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             {
                 import kameloso.plugins.twitch.emotes : embedCustomEmotes;
 
-                const customChannelEmotes = event.channel in plugin.customChannelEmotes;
+                const customChannelEmotes = event.channel.name in plugin.customChannelEmotes;
                 const customEmotes = customChannelEmotes ? &customChannelEmotes.emotes : null;
 
                 // event.content is guaranteed to not be empty here
@@ -3929,10 +3929,10 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             {
                 if (channelFromID.length)
                 {
-                    if (*channelFromID != event.channel)
+                    if (*channelFromID != event.channel.name)
                     {
                         // Found channel name in cache; insert into event.subchannel
-                        event.subchannel = *channelFromID;
+                        event.subchannel.name = *channelFromID;
                     }
 
                     event.aux[$-4] = string.init;  // it's noisy
@@ -3972,7 +3972,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                     {
                         immutable channelName = '#' ~ twitchUser.nickname;
                         plugin.channelNamesByID[sharedChannelID] = channelName;
-                        event.subchannel = channelName;
+                        event.subchannel.name = channelName;
 
                         if (plugin.state.settings.trace)
                         {
@@ -4009,11 +4009,11 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
         if (plugin.twitchSettings.promoteBroadcasters)
         {
             // Already ensured channel has length in parent function
-            if (user.nickname == event.channel[1..$])
+            if (user.nickname == event.channel.name[1..$])
             {
                 // User is channel owner but is not registered as staff
                 user.class_ = IRCUser.Class.staff;
-                plugin.state.messages ~= ThreadMessage.putUser(event.channel, boxed(user));
+                plugin.state.messages ~= ThreadMessage.putUser(event.channel.name, boxed(user));
                 return true;
             }
         }
@@ -4040,7 +4040,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 plugin.twitchSettings.promoteModerators,
                 plugin.twitchSettings.promoteVIPs);
 
-            plugin.state.messages ~= ThreadMessage.putUser(event.channel, boxed(user));
+            plugin.state.messages ~= ThreadMessage.putUser(event.channel.name, boxed(user));
             return true;
         }
 
@@ -4049,7 +4049,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
     if (!plugin.twitchSettings.promoteEverywhere && !determinedWhetherHomeChannel)
     {
-        isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
+        isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel.name);
         determinedWhetherHomeChannel = true;
     }
 
@@ -4433,7 +4433,7 @@ package:
 
                 Cannot be made immutable or generated `opAssign`s break.
              +/
-            /*immutable*/ uint _id;
+            /*immutable*/ ulong _id;
 
         package:
             /++
@@ -4444,7 +4444,7 @@ package:
             /++
                 The numerical ID of the user/account of the channel owner.
              +/
-            uint userID;
+            ulong userID;
 
             /++
                 The user/account name of the channel owner.
@@ -4459,7 +4459,7 @@ package:
             /++
                 The numerical ID of a game, as supplied by Twitch.
              +/
-            uint gameID;
+            ulong gameID;
 
             /++
                 The name of the game that's being streamed.
@@ -4547,7 +4547,7 @@ package:
                 Params:
                     id = This stream's numerical ID, as reported by Twitch.
              +/
-            this(const uint id) pure @safe nothrow @nogc
+            this(const ulong id) pure @safe nothrow @nogc
             {
                 this._id = id;
             }
@@ -4665,7 +4665,7 @@ package:
         /++
             Broadcaster user/account/room ID (not name).
          +/
-        uint id;
+        ulong id;
 
         /++
             Associative array of the [Follower]s of this channel, keyed by nickname.
@@ -4922,7 +4922,7 @@ package:
         /++
             The channel's numerical Twitch ID.
          +/
-        uint id;
+        ulong id;
 
         /++
             Emote AA.

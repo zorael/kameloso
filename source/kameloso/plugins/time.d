@@ -188,34 +188,34 @@ void onCommandTime(TimePlugin plugin, const IRCEvent event)
     {
         enum pattern = "Invalid timezone: <b>%s<b>";
         immutable message = pattern.format(zonestring);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendMalformedEntry(const string overrideString)
     {
         enum pattern = `Internal error; possible malformed entry "<b>%s<b>" in timezones file.`;
         immutable message = pattern.format(overrideString);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendInternalError()
     {
         enum message = "Internal error.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendTimestampInZone(const string timestamp, const string specified)
     {
         enum pattern = "The time is currently <b>%s<b> in <b>%s<b>.";
         immutable message = pattern.format(timestamp, specified);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     void sendTimestampLocal(const string timestamp)
     {
         enum pattern = "The time is currently <b>%s<b> locally.";
         immutable message = pattern.format(timestamp);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     version(TwitchSupport)
@@ -226,11 +226,11 @@ void onCommandTime(TimePlugin plugin, const IRCEvent event)
         // No specific timezone specified; report the streamer's
         // (technically the bot's, unless an override was entered in the config file)
         enum pattern = "The time is currently %s for %s.";
-        immutable name = (plugin.state.client.nickname == event.channel[1..$]) ?
+        immutable name = (plugin.state.client.nickname == event.channel.name[1..$]) ?
             "me" :
-            nameOf(plugin, event.channel[1..$]);
+            nameOf(plugin, event.channel.name[1..$]);
         immutable message = pattern.format(timestamp, name);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string getTimestamp(/*const*/ ubyte hour, const ubyte minute)
@@ -254,7 +254,7 @@ void onCommandTime(TimePlugin plugin, const IRCEvent event)
     }
 
     immutable specified = event.content.stripped;
-    const overrideZone = event.channel in plugin.channelTimezones;
+    const overrideZone = event.channel.name in plugin.channelTimezones;
 
     immutable timezone = specified.length ?
         getTimezoneByName(specified) :
@@ -472,11 +472,11 @@ void onCommandSetZone(TimePlugin plugin, const IRCEvent event)
 
     if (specified == "-")
     {
-        plugin.channelTimezones.remove(event.channel);
+        plugin.channelTimezones.remove(event.channel.name);
         saveResourceToDisk(plugin.channelTimezones, plugin.timezonesFile);
 
         enum message = "Timezone cleared.";
-        return chan(plugin.state, event.channel, message);
+        return chan(plugin.state, event.channel.name, message);
     }
 
     immutable timezone = getTimezoneByName(specified);
@@ -485,15 +485,15 @@ void onCommandSetZone(TimePlugin plugin, const IRCEvent event)
     {
         enum pattern = "Invalid timezone: <b>%s<b>";
         immutable message = pattern.format(specified);
-        return chan(plugin.state, event.channel, message);
+        return chan(plugin.state, event.channel.name, message);
     }
 
-    plugin.channelTimezones[event.channel] = timezone.name;
+    plugin.channelTimezones[event.channel.name] = timezone.name;
     saveResourceToDisk(plugin.channelTimezones, plugin.timezonesFile);
 
     enum pattern = "Timezone changed to <b>%s<b>.";
     immutable message = pattern.format(timezone.name);
-    chan(plugin.state, event.channel, message);
+    chan(plugin.state, event.channel.name, message);
 }
 
 

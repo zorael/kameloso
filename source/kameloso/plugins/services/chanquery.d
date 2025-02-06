@@ -151,7 +151,7 @@ void startChannelQueries(ChanQueryService service, const IRCEvent _)
             raw(service.state, message, properties);
 
             do Fiber.yield();  // Awaiting specified types
-            while (thisFiber.payload.channel != channelName);
+            while (thisFiber.payload.channel.name != channelName);
 
             delay(service, ChanQueryService.timeBetweenQueries, yield: true);
         }
@@ -387,7 +387,7 @@ void startChannelQueries(ChanQueryService service, const IRCEvent _)
 void onSelfjoin(ChanQueryService service, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
-    service.channelStates[event.channel] = ChannelState.unset;
+    service.channelStates[event.channel.name] = ChannelState.unset;
 }
 
 
@@ -404,7 +404,7 @@ void onSelfjoin(ChanQueryService service, const IRCEvent event)
 void onSelfpart(ChanQueryService service, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
-    service.channelStates.remove(event.channel);
+    service.channelStates.remove(event.channel.name);
 }
 
 
@@ -421,7 +421,7 @@ void onSelfpart(ChanQueryService service, const IRCEvent event)
 void onTopic(ChanQueryService service, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
-    service.channelStates[event.channel] |= ChannelState.topicKnown;
+    service.channelStates[event.channel.name] |= ChannelState.topicKnown;
 }
 
 
@@ -478,7 +478,7 @@ void onMyInfo(ChanQueryService service, const IRCEvent event)
 void onNoSuchChannel(ChanQueryService service, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
-    service.channelStates.remove(event.channel);
+    service.channelStates.remove(event.channel.name);
 }
 
 

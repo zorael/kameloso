@@ -792,7 +792,7 @@ void onNamesReply(SeenPlugin plugin, const IRCEvent event)
     event.sender.nickname = "foo";
     event.sender.ident = "~bar";
     event.sender.address = "baz.foo.bar.org";
-    event.channel = "#bar";
+    event.channel.name = "#bar";
     event.content = "Joe";
     event.aux[$-1] = "seen";
     ---
@@ -846,7 +846,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         {
             chan("#d", "Hello world!");
             query("kameloso", "Hello you!");
-            privmsg(event.channel, event.sender.nickname, "Query or chan!");
+            privmsg(event.channel.name, event.sender.nickname, "Query or chan!");
             join("#flerrp");
             part("#flerrp");
             topic("#flerrp", "This is a new topic");
@@ -869,36 +869,36 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         {
             enum pattern = "Usage: <b>%s%s<b> [nickname]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-            return privmsg(event.channel, event.sender.nickname, message);
+            return privmsg(event.channel.name, event.sender.nickname, message);
         }
         else if (!requestedUser.isValidNickname(plugin.state.server))
         {
             // Nickname contained a space or other invalid character
             immutable message = "Invalid user: <h>" ~ requestedUser ~ "<h>";
-            return privmsg(event.channel, event.sender.nickname, message);
+            return privmsg(event.channel.name, event.sender.nickname, message);
         }
         else if (requestedUser == state.client.nickname)
         {
             // The requested nick is the bot's.
             enum message = "T-that's me though...";
-            return privmsg(event.channel, event.sender.nickname, message);
+            return privmsg(event.channel.name, event.sender.nickname, message);
         }
         else if (requestedUser == event.sender.nickname)
         {
             // The person is asking for seen information about him-/herself.
             enum message = "That's you!";
-            return privmsg(event.channel, event.sender.nickname, message);
+            return privmsg(event.channel.name, event.sender.nickname, message);
         }
 
         foreach (const channel; state.channels)
         {
             if (requestedUser in channel.users)
             {
-                immutable pattern = (event.channel.length && (event.channel == channel.name)) ?
+                immutable pattern = (event.channel.name.length && (event.channel.name == channel.name)) ?
                     "<h>%s<h> is here right now!" :
                     "<h>%s<h> is online right now.";
                 immutable message = pattern.format(requestedUser);
-                return privmsg(event.channel, event.sender.nickname, message);
+                return privmsg(event.channel.name, event.sender.nickname, message);
             }
         }
 
@@ -912,14 +912,14 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
             immutable diff = (Clock.currTime - timestamp);
             immutable elapsed = timeSince!(7, 2)(diff);
             immutable message = pattern.format(requestedUser, elapsed);
-            privmsg(event.channel, event.sender.nickname, message);
+            privmsg(event.channel.name, event.sender.nickname, message);
         }
         else
         {
             // No matches for nickname `event.content` in `plugin.seenUsers`.
             enum pattern = "I have never seen <h>%s<h>.";
             immutable message = pattern.format(requestedUser);
-            privmsg(event.channel, event.sender.nickname, message);
+            privmsg(event.channel.name, event.sender.nickname, message);
         }
     }
 }

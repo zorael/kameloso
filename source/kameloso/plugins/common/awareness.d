@@ -603,7 +603,7 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const IRCEvent event) @system
  +/
 void onUserAwarenessEndOfList(IRCPlugin plugin, const IRCEvent event) @system
 {
-    if (auto channel = event.channel in plugin.state.channels)
+    if (auto channel = event.channel.name in plugin.state.channels)
     {
         // created in `onChannelAwarenessSelfjoin`
         channel.users.rehash();
@@ -919,10 +919,10 @@ mixin template ChannelAwareness(
  +/
 void onChannelAwarenessSelfjoin(IRCPlugin plugin, const IRCEvent event)
 {
-    if (event.channel in plugin.state.channels) return;
+    if (event.channel.name in plugin.state.channels) return;
 
-    plugin.state.channels[event.channel] = IRCChannel.init;
-    plugin.state.channels[event.channel].name = event.channel;
+    plugin.state.channels[event.channel.name] = IRCChannel.init;
+    plugin.state.channels[event.channel.name].name = event.channel.name;
 }
 
 
@@ -940,7 +940,7 @@ void onChannelAwarenessSelfjoin(IRCPlugin plugin, const IRCEvent event)
 void onChannelAwarenessSelfpart(IRCPlugin plugin, const IRCEvent event)
 {
     // On Twitch SELFPART may occur on untracked channels
-    auto channel = event.channel in plugin.state.channels;
+    auto channel = event.channel.name in plugin.state.channels;
     if (!channel) return;
 
     nickloop:
@@ -948,7 +948,7 @@ void onChannelAwarenessSelfpart(IRCPlugin plugin, const IRCEvent event)
     {
         foreach (immutable stateChannelName, const stateChannel; plugin.state.channels)
         {
-            if (stateChannelName == event.channel) continue;
+            if (stateChannelName == event.channel.name) continue;
             if (nickname in stateChannel.users) continue nickloop;
         }
 
@@ -956,7 +956,7 @@ void onChannelAwarenessSelfpart(IRCPlugin plugin, const IRCEvent event)
         plugin.state.users.remove(nickname);
     }
 
-    plugin.state.channels.remove(event.channel);
+    plugin.state.channels.remove(event.channel.name);
 }
 
 
@@ -966,7 +966,7 @@ void onChannelAwarenessSelfpart(IRCPlugin plugin, const IRCEvent event)
  +/
 void onChannelAwarenessJoin(IRCPlugin plugin, const IRCEvent event)
 {
-    auto channel = event.channel in plugin.state.channels;
+    auto channel = event.channel.name in plugin.state.channels;
     if (!channel) return;
 
     channel.users[event.sender.nickname] = true;
@@ -985,7 +985,7 @@ void onChannelAwarenessJoin(IRCPlugin plugin, const IRCEvent event)
  +/
 void onChannelAwarenessPart(IRCPlugin plugin, const IRCEvent event)
 {
-    auto channel = event.channel in plugin.state.channels;
+    auto channel = event.channel.name in plugin.state.channels;
     if (!channel) return;
 
     if (event.sender.nickname !in channel.users)
@@ -1064,7 +1064,7 @@ void onChannelAwarenessQuit(IRCPlugin plugin, const IRCEvent event)
  +/
 void onChannelAwarenessTopic(IRCPlugin plugin, const IRCEvent event)
 {
-    if (auto channel = event.channel in plugin.state.channels)
+    if (auto channel = event.channel.name in plugin.state.channels)
     {
         channel.topic = event.content;  // don't strip
     }
@@ -1077,7 +1077,7 @@ void onChannelAwarenessTopic(IRCPlugin plugin, const IRCEvent event)
  +/
 void onChannelAwarenessCreationTime(IRCPlugin plugin, const IRCEvent event)
 {
-    if (auto channel = event.channel in plugin.state.channels)
+    if (auto channel = event.channel.name in plugin.state.channels)
     {
         channel.created = event.count[0].get();
     }
@@ -1104,7 +1104,7 @@ void onChannelAwarenessMode(IRCPlugin plugin, const IRCEvent event)
         }
     }
 
-    if (auto channel = event.channel in plugin.state.channels)
+    if (auto channel = event.channel.name in plugin.state.channels)
     {
         (*channel).setMode(event.aux[0], event.content, plugin.state.server);
     }
@@ -1123,7 +1123,7 @@ void onChannelAwarenessWhoReply(IRCPlugin plugin, const IRCEvent event)
 {
     import std.string : representation;
 
-    auto channel = event.channel in plugin.state.channels;
+    auto channel = event.channel.name in plugin.state.channels;
     if (!channel) return;
 
     // User awareness bits add the IRCUser
@@ -1173,7 +1173,7 @@ void onChannelAwarenessNamesReply(IRCPlugin plugin, const IRCEvent event)
 
     if (!event.content.length) return;
 
-    auto channel = event.channel in plugin.state.channels;
+    auto channel = event.channel.name in plugin.state.channels;
     if (!channel) return;
 
     auto namesRange = event.content.splitter(' ');
@@ -1237,7 +1237,7 @@ void onChannelAwarenessModeLists(IRCPlugin plugin, const IRCEvent event)
     // :niven.freenode.net 346 kameloso^ #flerrp asdf!fdas@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405089
     // :niven.freenode.net 728 kameloso^ #flerrp q qqqq!*@asdf.net zorael!~NaN@2001:41d0:2:80b4:: 1514405101
 
-    auto channel = event.channel in plugin.state.channels;
+    auto channel = event.channel.name in plugin.state.channels;
     if (!channel) return;
 
     with (IRCEvent.Type)
@@ -1289,7 +1289,7 @@ void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
 {
     import dialect.common : setMode;
 
-    if (auto channel = event.channel in plugin.state.channels)
+    if (auto channel = event.channel.name in plugin.state.channels)
     {
         // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
         (*channel).setMode(event.aux[0], event.content, plugin.state.server);
@@ -1393,7 +1393,7 @@ mixin template TwitchAwareness(
     )
     void onTwitchAwarenessSenderCarryingEventMixin(IRCPlugin plugin, const IRCEvent event) @system
     {
-        kameloso.plugins.common.awareness.onTwitchAwarenessUserCarrierImpl(plugin, event.channel, event.sender);
+        kameloso.plugins.common.awareness.onTwitchAwarenessUserCarrierImpl(plugin, event.channel.name, event.sender);
     }
 
     // onTwitchAwarenessTargetCarryingEventMixin
@@ -1424,7 +1424,7 @@ mixin template TwitchAwareness(
     )
     void onTwitchAwarenessTargetCarryingEventMixin(IRCPlugin plugin, const IRCEvent event) @system
     {
-        kameloso.plugins.common.awareness.onTwitchAwarenessUserCarrierImpl(plugin, event.channel, event.target);
+        kameloso.plugins.common.awareness.onTwitchAwarenessUserCarrierImpl(plugin, event.channel.name, event.target);
     }
 }
 

@@ -162,7 +162,7 @@ void onCommandQuote(QuotePlugin plugin, const IRCEvent event)
     {
         enum pattern = "Usage: <b>%s%s<b> [nickname] [optional search terms or #index]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     if (!isTwitch && !event.content.length) return sendNonTwitchUsage();
@@ -171,10 +171,10 @@ void onCommandQuote(QuotePlugin plugin, const IRCEvent event)
     {
         if (isTwitch)
         {
-            immutable nickname = event.channel[1..$];
+            immutable nickname = event.channel.name[1..$];
             immutable searchTerms = event.content.stripped.unquoted;
 
-            const channelQuotes = event.channel in plugin.quotes;
+            const channelQuotes = event.channel.name in plugin.quotes;
             if (!channelQuotes)
             {
                 return Senders.sendNoQuotesForNickname(plugin, event, nickname);
@@ -193,7 +193,7 @@ void onCommandQuote(QuotePlugin plugin, const IRCEvent event)
                     getQuoteByIndexString(*quotes, searchTerms[1..$], index) :
                     getQuoteBySearchTerms(plugin, *quotes, searchTerms, index);
 
-            return sendQuoteToChannel(plugin, quote, event.channel, nickname, index);
+            return sendQuoteToChannel(plugin, quote, event.channel.name, nickname, index);
         }
         else /*if (!isTwitch)*/
         {
@@ -214,7 +214,7 @@ void onCommandQuote(QuotePlugin plugin, const IRCEvent event)
                 return Senders.sendInvalidNickname(plugin, event, nickname);
             }
 
-            const channelQuotes = event.channel in plugin.quotes;
+            const channelQuotes = event.channel.name in plugin.quotes;
             if (!channelQuotes)
             {
                 return Senders.sendNoQuotesForNickname(plugin, event, nickname);
@@ -233,7 +233,7 @@ void onCommandQuote(QuotePlugin plugin, const IRCEvent event)
                 // No search terms
                 size_t index;  // out reference!
                 immutable quote = getRandomQuote(*quotes, nickname, index);
-                return sendQuoteToChannel(plugin, quote, event.channel, nickname, index);
+                return sendQuoteToChannel(plugin, quote, event.channel.name, nickname, index);
 
             case overrun:
                 // Search terms given
@@ -242,7 +242,7 @@ void onCommandQuote(QuotePlugin plugin, const IRCEvent event)
                 immutable quote = (searchTerms.representation[0] == '#') ?
                     getQuoteByIndexString(*quotes, searchTerms[1..$], index) :
                     getQuoteBySearchTerms(plugin, *quotes, searchTerms, index);
-                return sendQuoteToChannel(plugin, quote, event.channel, nickname, index);
+                return sendQuoteToChannel(plugin, quote, event.channel.name, nickname, index);
 
             case underrun:
                 // Handled above
@@ -262,7 +262,7 @@ void onCommandQuote(QuotePlugin plugin, const IRCEvent event)
     {
         enum pattern = "No quotes found for search terms \"<b>%s<b>\"";
         immutable message = pattern.format(e.searchTerms);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
     catch (ConvException _)
     {
@@ -301,7 +301,7 @@ void onCommandAddQuote(QuotePlugin plugin, const IRCEvent event)
             "Usage: %s%s [new quote]" :
             "Usage: <b>%s%s<b> [nickname] [new quote]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string nickname;  // mutable
@@ -310,7 +310,7 @@ void onCommandAddQuote(QuotePlugin plugin, const IRCEvent event)
     if (isTwitch)
     {
         if (!slice.length) return sendUsage();
-        nickname = event.channel[1..$];
+        nickname = event.channel.name[1..$];
         // Drop down to create the Quote
     }
     else /*if (!isTwitch)*/
@@ -352,13 +352,13 @@ void onCommandAddQuote(QuotePlugin plugin, const IRCEvent event)
     quote.line = line.strippedRight;
     quote.timestamp = event.time;
 
-    plugin.quotes[event.channel][nickname] ~= quote;
-    immutable pos = plugin.quotes[event.channel][nickname].length+(-1);
+    plugin.quotes[event.channel.name][nickname] ~= quote;
+    immutable pos = plugin.quotes[event.channel.name][nickname].length+(-1);
     saveQuotes(plugin);
 
     enum pattern = "Quote added at index <b>#%d<b>.";
     immutable message = pattern.format(pos);
-    chan(plugin.state, event.channel, message);
+    chan(plugin.state, event.channel.name, message);
 }
 
 
@@ -393,7 +393,7 @@ void onCommandModQuote(QuotePlugin plugin, const IRCEvent event)
             "Usage: %s%s [index] [new quote text]" :
             "Usage: <b>%s%s<b> [nickname] [index] [new quote text]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string slice = event.content.stripped;  // mutable
@@ -403,7 +403,7 @@ void onCommandModQuote(QuotePlugin plugin, const IRCEvent event)
 
     if (isTwitch)
     {
-        nickname = event.channel[1..$];
+        nickname = event.channel.name[1..$];
         immutable results = slice.splitInto(indexString);
 
         with (SplitResults)
@@ -450,14 +450,14 @@ void onCommandModQuote(QuotePlugin plugin, const IRCEvent event)
         return Senders.sendIndexMustBePositiveNumber(plugin, event);
     }
 
-    if ((event.channel !in plugin.quotes) ||
-        (nickname !in plugin.quotes[event.channel]))
+    if ((event.channel.name !in plugin.quotes) ||
+        (nickname !in plugin.quotes[event.channel.name]))
     {
         // If there are no prior quotes, allocate an array so we can test the length below
-        plugin.quotes[event.channel][nickname] = [];
+        plugin.quotes[event.channel.name][nickname] = [];
     }
 
-    auto quotes = nickname in plugin.quotes[event.channel];
+    auto quotes = nickname in plugin.quotes[event.channel.name];
 
     if (!quotes.length)
     {
@@ -479,7 +479,7 @@ void onCommandModQuote(QuotePlugin plugin, const IRCEvent event)
     saveQuotes(plugin);
 
     enum message = "Quote modified.";
-    chan(plugin.state, event.channel, message);
+    chan(plugin.state, event.channel.name, message);
 }
 
 
@@ -510,7 +510,7 @@ void onCommandMergeQuotes(QuotePlugin plugin, const IRCEvent event)
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
             enum message = "You cannot merge quotes on Twitch.";
-            return chan(plugin.state, event.channel, message);
+            return chan(plugin.state, event.channel.name, message);
         }
     }
 
@@ -518,7 +518,7 @@ void onCommandMergeQuotes(QuotePlugin plugin, const IRCEvent event)
     {
         enum pattern = "Usage: <b>%s%s<b> [source nickname] [target nickname]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string slice = event.content.stripped;  // mutable
@@ -533,7 +533,7 @@ void onCommandMergeQuotes(QuotePlugin plugin, const IRCEvent event)
         return Senders.sendInvalidNickname(plugin, event, target);
     }
 
-    const channelQuotes = event.channel in plugin.quotes;
+    const channelQuotes = event.channel.name in plugin.quotes;
     if (!channelQuotes)
     {
         return Senders.sendNoQuotesForNickname(plugin, event, source);
@@ -545,15 +545,15 @@ void onCommandMergeQuotes(QuotePlugin plugin, const IRCEvent event)
         return Senders.sendNoQuotesForNickname(plugin, event, source);
     }
 
-    plugin.quotes[event.channel][target] ~= *quotes;
-    plugin.quotes[event.channel].remove(source);
+    plugin.quotes[event.channel.name][target] ~= *quotes;
+    plugin.quotes[event.channel.name].remove(source);
     saveQuotes(plugin);
 
     enum pattern = "<b>%d<b> %s merged.";
     immutable message = pattern.format(
         quotes.length,
         quotes.length.plurality("quote", "quotes"));
-    chan(plugin.state, event.channel, message);
+    chan(plugin.state, event.channel.name, message);
 }
 
 
@@ -589,7 +589,7 @@ void onCommandDelQuote(QuotePlugin plugin, const IRCEvent event)
             "Usage: %s%s [index]" :
             "Usage: <b>%s%s<b> [nickname] [index]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     string nickname;  // mutable
@@ -599,7 +599,7 @@ void onCommandDelQuote(QuotePlugin plugin, const IRCEvent event)
     {
         if (!event.content.length) return sendUsage();
 
-        nickname = event.channel[1..$];
+        nickname = event.channel.name[1..$];
         indexString = event.content.stripped;
     }
     else /*if (!isTwitch)*/
@@ -610,7 +610,7 @@ void onCommandDelQuote(QuotePlugin plugin, const IRCEvent event)
         if (results != SplitResults.match) return sendUsage();
     }
 
-    auto channelQuotes = event.channel in plugin.quotes;  // mutable
+    auto channelQuotes = event.channel.name in plugin.quotes;  // mutable
     if (!channelQuotes)
     {
         return Senders.sendNoQuotesForNickname(plugin, event, nickname);
@@ -623,7 +623,7 @@ void onCommandDelQuote(QuotePlugin plugin, const IRCEvent event)
 
         enum pattern = "All quotes for <h>%s<h> removed.";
         immutable message = pattern.format(nickname);
-        return chan(plugin.state, event.channel, message);
+        return chan(plugin.state, event.channel.name, message);
     }
 
     auto quotes = nickname in *channelQuotes;  // mutable
@@ -654,7 +654,7 @@ void onCommandDelQuote(QuotePlugin plugin, const IRCEvent event)
     saveQuotes(plugin);
 
     enum message = "Quote removed, indexes updated.";
-    chan(plugin.state, event.channel, message);
+    chan(plugin.state, event.channel.name, message);
 }
 
 
@@ -859,7 +859,7 @@ private:
     {
         enum pattern = "Index <b>#%d<b> out of range; valid is <b>[0..%d]<b> (inclusive).";
         immutable message = pattern.format(indexGiven, upperBound-1);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     // sendInvalidNickname
@@ -878,7 +878,7 @@ private:
     {
         enum pattern = "Invalid nickname: <h>%s<h>";
         immutable message = pattern.format(nickname);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     // sendNoQuotesForNickname
@@ -908,7 +908,7 @@ private:
 
         enum pattern = "No quotes on record for <h>%s<h>!";
         immutable message = pattern.format(possibleDisplayName);
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 
     // sendIndexMustBePositiveNumber
@@ -924,7 +924,7 @@ private:
         const IRCEvent event)
     {
         enum message = "Index must be a positive number.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel.name, message);
     }
 }
 
