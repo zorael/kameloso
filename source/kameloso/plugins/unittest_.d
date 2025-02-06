@@ -104,7 +104,7 @@ void onCommand(UnittestPlugin plugin, const IRCEvent event)
             .description("Test regex description")
     )
 )
-void onRegex(UnittestPlugin _, const IRCEvent _2)
+void onRegex(UnittestPlugin _, const IRCEvent __)
 {
     // ...
 }

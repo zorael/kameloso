@@ -732,11 +732,11 @@ void onUserstate(TwitchPlugin plugin, const IRCEvent event)
     .onEvent(IRCEvent.Type.GLOBALUSERSTATE)
     .fiber(true)
 )
-void onGlobalUserstate(TwitchPlugin plugin, const IRCEvent event)
+void onGlobalUserstate(TwitchPlugin plugin, const IRCEvent _)
 {
     import kameloso.plugins.twitch.emotes : importCustomEmotes;
 
-    mixin(memoryCorruptionCheck);
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     // dialect sets the display name during parsing
     //assert(plugin.state.client.displayName == event.target.displayName);
@@ -2283,13 +2283,13 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
     .fiber(true)
 )
-void onEndOfMOTD(TwitchPlugin plugin, const IRCEvent event)
+void onEndOfMOTD(TwitchPlugin plugin, const IRCEvent _)
 {
     import std.algorithm.comparison : max;
     import std.algorithm.searching : startsWith;
     import std.concurrency : spawn;
 
-    mixin(memoryCorruptionCheck);
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     // Concatenate the Bearer and OAuth headers once.
     // This has to be done *after* connect's register
@@ -2938,10 +2938,10 @@ void initialise(TwitchPlugin plugin)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_MYINFO)
 )
-void onMyInfo(TwitchPlugin plugin, const IRCEvent event)
+void onMyInfo(TwitchPlugin plugin, const IRCEvent _)
 {
     // Load ecounts and such.
-    mixin(memoryCorruptionCheck);
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
     loadResources(plugin);
 }
 

@@ -850,12 +850,12 @@ void updateUser(
     .onEvent(IRCEvent.Type.RPL_WELCOME)
     .fiber(true)
 )
-void onWelcome(PersistenceService service, const IRCEvent event)
+void onWelcome(PersistenceService service, const IRCEvent _)
 {
     import kameloso.plugins.common.scheduling : delay;
     import core.time : hours;
 
-    mixin(memoryCorruptionCheck);
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     reloadAccountClassifiersFromDisk(service);
     if (service.state.settings.preferHostmasks) reloadHostmasksFromDisk(service);

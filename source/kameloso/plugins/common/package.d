@@ -555,7 +555,7 @@ mixin template IRCPluginImpl(
 
                 static if ((typeUDAIndex != -1) || (valueUDAIndex != -1))
                 {
-                    foreach (immutable n, _2; this.tupleof[i].tupleof)
+                    foreach (immutable n, __; this.tupleof[i].tupleof)
                     {
                         enum enablerUDAIndex = udaIndexOf!(this.tupleof[i].tupleof[n], Enabler);
 

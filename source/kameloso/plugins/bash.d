@@ -135,9 +135,11 @@ void onCommandBash(BashPlugin plugin, const IRCEvent event)
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
 )
-void onEndOfMotd(BashPlugin plugin, const IRCEvent event)
+void onEndOfMotd(BashPlugin plugin, const IRCEvent _)
 {
     import std.concurrency : Tid, spawn;
+
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     if (plugin.transient.workerTid == Tid.init)
     {

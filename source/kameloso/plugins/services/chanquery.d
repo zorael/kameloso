@@ -74,7 +74,7 @@ enum ChannelState : ubyte
     .onEvent(IRCEvent.Type.PING)
     .fiber(true)
 )
-void startChannelQueries(ChanQueryService service, const IRCEvent event)
+void startChannelQueries(ChanQueryService service, const IRCEvent _)
 {
     import kameloso.plugins.common.scheduling : await, delay, unawait, undelay;
     import kameloso.thread : CarryingFiber, ThreadMessage, boxed;
@@ -84,7 +84,7 @@ void startChannelQueries(ChanQueryService service, const IRCEvent event)
     import core.thread.fiber : Fiber;
     import core.time : seconds;
 
-    mixin(memoryCorruptionCheck);
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     if (service.transient.querying) return;  // Try again next PING
 

@@ -395,9 +395,11 @@ in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber"
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
 )
-void onEndOfMotd(WebtitlePlugin plugin, const IRCEvent event)
+void onEndOfMotd(WebtitlePlugin plugin, const IRCEvent _)
 {
     import std.algorithm.comparison : max;
+
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     // Use a minimum of one worker thread, regardless of setting
     plugin.transient.workerTids.length =

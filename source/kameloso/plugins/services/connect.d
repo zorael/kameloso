@@ -676,9 +676,9 @@ void tryAuth(ConnectService service)
     .onEvent(IRCEvent.Type.AUTH_SUCCESS)
     .onEvent(IRCEvent.Type.AUTH_FAILURE)
 )
-void onAuthEnd(ConnectService service, const IRCEvent event)
+void onAuthEnd(ConnectService service, const IRCEvent _)
 {
-    mixin(memoryCorruptionCheck);
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     service.transient.progress.authentication = Progress.finished;
 
@@ -785,12 +785,12 @@ void onTwitchAuthFailure(ConnectService service, const IRCEvent event)
     .onEvent(IRCEvent.Type.ERR_NICKNAMEINUSE)
     .onEvent(IRCEvent.Type.ERR_NICKCOLLISION)
 )
-void onNickInUse(ConnectService service, const IRCEvent event)
+void onNickInUse(ConnectService service, const IRCEvent _)
 {
     import std.conv : to;
     import std.random : uniform;
 
-    mixin(memoryCorruptionCheck);
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     if (service.transient.progress.registration == Progress.inProgress)
     {
@@ -816,9 +816,9 @@ void onNickInUse(ConnectService service, const IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
 )
-void onBadNick(ConnectService service, const IRCEvent event)
+void onBadNick(ConnectService service, const IRCEvent _)
 {
-    mixin(memoryCorruptionCheck);
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     if (service.transient.progress.registration == Progress.inProgress)
     {
@@ -1470,11 +1470,11 @@ version(WithPrinterPlugin)
     .onEvent(IRCEvent.Type.SELFNICK)
     .onEvent(IRCEvent.Type.ERR_NICKNAMEINUSE)
 )
-void onSelfnickSuccessOrFailure(ConnectService service, const IRCEvent event)
+void onSelfnickSuccessOrFailure(ConnectService service, const IRCEvent _)
 {
     import kameloso.thread : ThreadMessage, boxed;
 
-    mixin(memoryCorruptionCheck);
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     auto message = ThreadMessage.busMessage("printer", boxed("unsquelch " ~ service.state.client.origNickname));
     service.state.messages ~= message;
@@ -1517,9 +1517,9 @@ void onQuit(ConnectService service, const IRCEvent event)
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
 )
-void onEndOfMOTD(ConnectService service, const IRCEvent event)
+void onEndOfMOTD(ConnectService service, const IRCEvent _)
 {
-    mixin(memoryCorruptionCheck);
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     // Make sure this function is only processed once
     if (service.transient.sawEndOfMOTD) return;
