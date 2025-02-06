@@ -298,6 +298,8 @@ void formatMessageMonochrome(Sink)
 
     void putTarget()
     {
+        if (!event.target.nickname.length) return;
+
         bool putArrow;
         bool putDisplayName;
 
@@ -374,13 +376,40 @@ void formatMessageMonochrome(Sink)
         }
     }
 
-    void putContent()
+    void putContent(
+        const string line,
+        const bool altcontent = false)
     {
-        if (event.sender.isServer || event.sender.nickname.length)
-        {
-            immutable isEmote = (event.type == IRCEvent.Type.EMOTE) ||
-                (event.type == IRCEvent.Type.SELFEMOTE);
+        if (!line.length) return;
 
+        if (!event.sender.isServer && !event.sender.nickname.length)
+        {
+            // PING or ERROR likely
+            sink.put(line);  // No need for delimiter space
+            return;
+        }
+
+        immutable isEmote =
+            (event.type == IRCEvent.Type.EMOTE) ||
+            (event.type == IRCEvent.Type.SELFEMOTE);
+
+        string content = line;  // mutable
+        bool openQuote;
+
+        if (altcontent)
+        {
+            if (event.target.nickname.length)
+            {
+                sink.put(`: "`);
+                openQuote = true;
+            }
+            else
+            {
+                sink.put(` | `);
+            }
+        }
+        else
+        {
             if (isEmote)
             {
                 sink.put(' ');
@@ -388,34 +417,33 @@ void formatMessageMonochrome(Sink)
             else
             {
                 sink.put(`: "`);
+                openQuote = true;
             }
-
-            with (IRCEvent.Type)
-            switch (event.type)
-            {
-            case CHAN:
-            case EMOTE:
-            case TWITCH_SUBGIFT:
-                if (plugin.state.client.nickname.length &&
-                    content.containsNickname(plugin.state.client.nickname))
-                {
-                    // Nick was mentioned (certain)
-                    shouldBell = bellOnMention;
-                }
-                break;
-
-            default:
-                break;
-            }
-
-            sink.put(content);
-            if (!isEmote) sink.put('"');
         }
-        else
+
+        with (IRCEvent.Type)
+        switch (event.type)
         {
-            // PING or ERROR likely
-            sink.put(content);  // No need for indenting space
+        case CHAN:
+        case EMOTE:
+        case TWITCH_SUBGIFT:
+        case TWITCH_SUB:
+        case TWITCH_ANNOUNCEMENT:
+        case TWITCH_CHEER:
+        //case SELFCHAN:
+            if (content.containsNickname(plugin.state.client.nickname))
+            {
+                // Nick was mentioned (certain)
+                shouldBell = bellOnMention;
+            }
+            break;
+
+        default:
+            break;
         }
+
+        sink.put(content);
+        if (openQuote) sink.put('"');
     }
 
     sink.put('[');
@@ -450,34 +478,18 @@ void formatMessageMonochrome(Sink)
 
     putSender();
 
-    bool putQuotedTwitchMessage;
+    putContent(event.content);
+
+    putTarget();
+
     string[event.aux.length] auxCopy = event.aux;
 
-    version(TwitchSupport)
+    if (event.altcontent.length)
     {
-        import std.algorithm.comparison : among;
-
-        if (event.target.nickname.length &&
-            event.altcontent.length &&
-            !event.type.among!
-                (IRCEvent.Type.TWITCH_SUBGIFT,
-                IRCEvent.Type.TWITCH_PAYFORWARD,
-                IRCEvent.Type.RPL_WHOISSERVER,
-                IRCEvent.Type.RPL_WHOISACTUALLY,
-                IRCEvent.Type.ACCOUNT))
-        {
-            /*if (content.length)*/ putContent();
-            putTarget();
-            .put(sink, `: "`, event.altcontent, '"');
-            putQuotedTwitchMessage = true;
-            auxCopy[$-2] = string.init;
-        }
-    }
-
-    if (!putQuotedTwitchMessage)
-    {
-        if (content.length) putContent();
-        if (event.target.nickname.length) putTarget();
+        putContent(
+            line: event.altcontent,
+            altcontent: true);
+        auxCopy[$-2] = string.init;  // Remove the custom emote definitions
     }
 
     // Base the range on the modified copy
@@ -509,7 +521,7 @@ void formatMessageMonochrome(Sink)
         .put(sink, " ! ", event.errors, " !");
     }
 
-    shouldBell = shouldBell ||
+    shouldBell |=
         ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
         (event.errors.length && bellOnError);
 
@@ -526,6 +538,7 @@ void formatMessageMonochrome(Sink)
 
     IRCPluginState state;
     state.server.daemon = IRCServer.Daemon.twitch;
+    state.client.nickname = "nickname";
     PrinterPlugin plugin = new PrinterPlugin(state);
 
     IRCEvent event;
@@ -648,6 +661,21 @@ void formatMessageMonochrome(Sink)
         nickstring ~= " (n1ckn4m3)";
         immutable expected = "[chan] [#nickname] " ~ nickstring ~ `: "Blah balah"`;
         assert((queryLine == expected), queryLine);
+        sink.clear();
+    }
+
+    event.subchannel.name = "#sub";
+    event.altcontent = "alt alt alt alt";
+
+    {
+        formatMessageMonochrome(plugin, sink, event, bellOnMention: false, bellOnError: false);
+        immutable queryLine = sink[][11..$].idup;
+        version(TwitchSupport) string nickstring = "Nickname";
+        else string nickstring = "nickname";
+        //nickstring ~= "/anyone";
+        nickstring ~= " (n1ckn4m3)";
+        immutable expected = "[chan] [#nickname] < [#sub] " ~ nickstring ~ `: "Blah balah" | "alt alt alt alt"`;
+        assert((queryLine == expected), queryLine);
         //sink.clear();
     }
 }
@@ -704,7 +732,6 @@ void formatMessageColoured(Sink)
 
     immutable rawTypestring = event.type.toString();
     immutable typestring = rawTypestring.withoutTypePrefix;
-    string content = event.content;  // mutable, don't strip
     bool shouldBell;
 
     /++
@@ -886,6 +913,8 @@ void formatMessageColoured(Sink)
 
     void putTarget()
     {
+        if (!event.target.nickname.length) return;
+
         scope(exit) sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
 
         bool putArrow;
@@ -996,10 +1025,15 @@ void formatMessageColoured(Sink)
         }
     }
 
-    void putContent()
+    void putContent(
+        const string line,
+        const string emotes,
+        const bool altcontent = false)
     {
         import kameloso.terminal.colours.defs : ANSICodeType, TerminalBackground, TerminalForeground;
         import kameloso.terminal.colours : applyANSI;
+
+        if (!line.length) return;
 
         scope(exit) sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
 
@@ -1020,17 +1054,36 @@ void formatMessageColoured(Sink)
         if (!event.sender.isServer && !event.sender.nickname.length)
         {
             // PING or ERROR likely
-            sink.put(content);  // No need for delimiter space
+            sink.put(line);  // No need for delimiter space
             return;
         }
 
-        if (isEmote)
+        string content = line;  // mutable
+        bool openQuote;
+
+        if (altcontent)
         {
-            sink.put(' ');
+            if (event.target.nickname.length)
+            {
+                sink.put(`: "`);
+                openQuote = true;
+            }
+            else
+            {
+                sink.put(` | `);
+            }
         }
         else
         {
-            sink.put(`: "`);
+            if (isEmote)
+            {
+                sink.put(' ');
+            }
+            else
+            {
+                sink.put(`: "`);
+                openQuote = true;
+            }
         }
 
         if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
@@ -1044,7 +1097,9 @@ void formatMessageColoured(Sink)
             version(TwitchSupport)
             {
                 content = highlightEmotes(
-                    event: event,
+                    line: content,
+                    emotes: emotes,
+                    type: event.type,
                     colourful: plugin.printerSettings.colourfulEmotes,
                     settings: plugin.state.settings);
             }
@@ -1056,6 +1111,9 @@ void formatMessageColoured(Sink)
         case CHAN:
         case EMOTE:
         case TWITCH_SUBGIFT:
+        case TWITCH_SUB:
+        case TWITCH_ANNOUNCEMENT:
+        case TWITCH_CHEER:
         //case SELFCHAN:
             import kameloso.terminal.colours : invert;
 
@@ -1081,23 +1139,26 @@ void formatMessageColoured(Sink)
                 }
             }
 
-            if (!match) goto default;
-
-            sink.put(inverted);
-            shouldBell = bellOnMention;
+            if (match)
+            {
+                sink.put(inverted);
+                shouldBell = bellOnMention;
+            }
             break;
 
         default:
-            // Normal non-highlighting channel message
-            sink.put(content);
             break;
         }
+        sink.put(content);
 
         // Reset the background to ward off bad backgrounds bleeding out
         sink.applyANSI(fgBase, ANSICodeType.foreground); //, TerminalBackground.default_);
         sink.applyANSI(TerminalBackground.default_);
-        if (!isEmote) sink.put('"');
+
+        if (openQuote) sink.put('"');
     }
+
+    ////////////////////////////////////////////////////////////////////////////
 
     immutable timestampCode = plugin.state.settings.brightTerminal ? Timestamp.bright : Timestamp.dark;
     sink.applyANSI(timestampCode, ANSICodeType.foreground);
@@ -1168,72 +1229,24 @@ void formatMessageColoured(Sink)
 
     putSender();
 
-    bool putQuotedTwitchMessage;
+    version(TwitchSupport) immutable emotes = event.emotes;
+    else immutable emotes = string.init;
+
+    putContent(
+        line: event.content,
+        emotes: emotes);
+
+    putTarget();
+
     string[event.aux.length] auxCopy = event.aux;
 
-    version(TwitchSupport)
+    if (event.altcontent.length)
     {
-        import std.algorithm.comparison : among;
-
-        if (event.content.length &&
-            event.target.nickname.length &&
-            event.altcontent.length &&
-            !event.type.among!
-                (IRCEvent.Type.TWITCH_SUBGIFT,
-                IRCEvent.Type.TWITCH_PAYFORWARD,
-                IRCEvent.Type.RPL_WHOISSERVER,
-                IRCEvent.Type.RPL_WHOISACTUALLY,
-                IRCEvent.Type.ACCOUNT))
-        {
-            /*if (content.length)*/ putContent();
-            putTarget();
-            immutable code = plugin.state.settings.brightTerminal ? Bright.content : Dark.content;
-            sink.applyANSI(code, ANSICodeType.foreground);
-
-            if (event.aux[$-2].length)
-            {
-                import std.array : Appender;
-
-                static Appender!(char[]) customEmoteSink;
-                scope(exit) customEmoteSink.clear();
-                sink.reserve(event.content.length + 60);  // guesstimate
-
-                immutable TerminalForeground highlight = plugin.state.settings.brightTerminal ?
-                    Bright.highlight :
-                    Dark.highlight;
-                immutable TerminalForeground contentFgBase = plugin.state.settings.brightTerminal ?
-                    Bright.content :
-                    Dark.content;
-
-                // We can't know whether the replied-to event is an emote-only
-                // event or not, so just treat it as if it isn't and pass contentFgBase
-                customEmoteSink.highlightEmotesImpl(
-                    line: event.altcontent,
-                    emotes: event.aux[$-2],
-                    pre: highlight,
-                    post: contentFgBase,
-                    colourful: plugin.printerSettings.colourfulEmotes,
-                    settings: plugin.state.settings);
-                .put(sink, `: "`, customEmoteSink[], '"');
-
-                // Remove the custom emote definitions
-                auxCopy[$-2] = string.init;
-            }
-            else
-            {
-                // No emotes embedded, probably not a home or no custom emotes for channel
-                .put(sink, `: "`, event.altcontent, '"');
-            }
-
-            putQuotedTwitchMessage = true;
-            auxCopy[0] = string.init;
-        }
-    }
-
-    if (!putQuotedTwitchMessage)
-    {
-        if (content.length) putContent();
-        if (event.target.nickname.length) putTarget();
+        putContent(
+            line: event.altcontent,
+            emotes: event.aux[$-2],
+            altcontent: true);
+        auxCopy[$-2] = string.init;  // Remove the custom emote definitions
     }
 
     // Base the range on the modified copy
@@ -1272,7 +1285,7 @@ void formatMessageColoured(Sink)
 
     sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
 
-    shouldBell = shouldBell ||
+    shouldBell |=
         ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
         (event.errors.length && bellOnError);
 
@@ -1363,6 +1376,8 @@ unittest
 
     Params:
         event = [dialect.defs.IRCEvent|IRCEvent] whose content text to highlight.
+        emotes = The list of emotes and their positions as divined from the
+            IRCv3 tags of an event.
         colourful = Whether or not emotes should be highlighted in colours.
         settings = Current [kameloso.pods.CoreSettings|settings].
 
@@ -1373,7 +1388,9 @@ unittest
 version(Colours)
 version(TwitchSupport)
 auto highlightEmotes(
-    const IRCEvent event,
+    const string line,
+    const string emotes,
+    const IRCEvent.Type type,
     const bool colourful,
     const CoreSettings settings)
 {
@@ -1384,11 +1401,11 @@ auto highlightEmotes(
     alias Bright = EventPrintingBright;
     alias Dark = EventPrintingDark;
 
-    if (!event.emotes.length) return event.content;
+    if (!emotes.length) return line;
 
     static Appender!(char[]) sink;
     scope(exit) sink.clear();
-    sink.reserve(event.content.length + 60);  // guesttimate, mostly +10
+    sink.reserve(line.length + 60);  // guesttimate, mostly +10
 
     immutable TerminalForeground highlight = settings.brightTerminal ?
         Bright.highlight :
@@ -1402,13 +1419,13 @@ auto highlightEmotes(
         Bright.emote :
         Dark.emote;
 
-    immutable baseColour = (event.type == IRCEvent.Type.EMOTE) || (event.type == IRCEvent.Type.SELFEMOTE) ?
+    immutable baseColour = (type == IRCEvent.Type.EMOTE) || (type == IRCEvent.Type.SELFEMOTE) ?
         emoteFgBase :
         contentFgBase;
 
     sink.highlightEmotesImpl(
-        line: event.content,
-        emotes: event.emotes,
+        line: line,
+        emotes: emotes,
         pre: highlight,
         post: baseColour,
         colourful: colourful,

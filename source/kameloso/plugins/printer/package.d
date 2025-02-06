@@ -303,9 +303,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         event.content = event.content
             .replace(cast(ubyte)TerminalToken.bell, string.init)
             .strippedRight;
-
         bool put;
-
 
         scope(exit) plugin.linebuffer.clear();
 
