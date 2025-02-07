@@ -468,11 +468,25 @@ void formatMessageMonochrome(Sink)
 
     if (event.channel.name.length)
     {
-        .put(sink, '[', event.channel.name, "] ");
+        .put(sink, '[', event.channel.name);
+
+        if (plugin.printerSettings.channelIDs && event.channel.id)
+        {
+            .put(sink, ':', event.channel.id);
+        }
+
+        .put(sink, "] ");
 
         if (event.subchannel.name.length && (event.subchannel.name != event.channel.name))
         {
-            .put(sink, "< [", event.subchannel.name, "] ");
+            .put(sink, "< [", event.subchannel.name);
+
+            if (plugin.printerSettings.channelIDs && event.subchannel.id)
+            {
+                .put(sink, ':', event.subchannel.id);
+            }
+
+            .put(sink, "] ");
         }
     }
 
@@ -664,7 +678,10 @@ void formatMessageMonochrome(Sink)
         sink.clear();
     }
 
+    plugin.printerSettings.channelIDs = true;
+    event.channel.id = 123;
     event.subchannel.name = "#sub";
+    event.subchannel.id = 456;
     event.altcontent = "alt alt alt alt";
 
     {
@@ -674,7 +691,7 @@ void formatMessageMonochrome(Sink)
         else string nickstring = "nickname";
         //nickstring ~= "/anyone";
         nickstring ~= " (n1ckn4m3)";
-        immutable expected = "[chan] [#nickname] < [#sub] " ~ nickstring ~ `: "Blah balah" | alt alt alt alt`;
+        immutable expected = "[chan] [#nickname:123] < [#sub:456] " ~ nickstring ~ `: "Blah balah" | alt alt alt alt`;
         assert((queryLine == expected), queryLine);
         //sink.clear();
     }
@@ -1211,7 +1228,14 @@ void formatMessageColoured(Sink)
             Dark.channel;
 
         sink.applyANSI(channelCode, ANSICodeType.foreground);
-        .put(sink, '[', event.channel.name, "] ");
+        .put(sink, '[', event.channel.name);
+
+        if (plugin.printerSettings.channelIDs && event.channel.id)
+        {
+            .put(sink, ':', event.channel.id);
+        }
+
+        sink.put("] ");
 
         if (event.subchannel.name.length && (event.subchannel.name != event.channel.name))
         {
@@ -1223,7 +1247,14 @@ void formatMessageColoured(Sink)
             .put(sink, "< ");
 
             sink.applyANSI(channelCode, ANSICodeType.foreground);
-            .put(sink, '[', event.subchannel, "] ");
+            .put(sink, '[', event.subchannel);
+
+            if (plugin.printerSettings.channelIDs && event.subchannel.id)
+            {
+                .put(sink, ':', event.subchannel.id);
+            }
+
+            sink.put("] ");
         }
     }
 

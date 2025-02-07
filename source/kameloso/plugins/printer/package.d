@@ -196,6 +196,11 @@ public:
         bool accountNames = false;
 
         /++
+            Whether or not to print channel IDs. Only applicable on Twitch.
+         +/
+        bool channelIDs = false;
+
+        /++
             [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to explicitly exclude
             from printing, even when it otherwise would have been printed.
          +/
