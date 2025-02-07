@@ -674,7 +674,7 @@ void formatMessageMonochrome(Sink)
         else string nickstring = "nickname";
         //nickstring ~= "/anyone";
         nickstring ~= " (n1ckn4m3)";
-        immutable expected = "[chan] [#nickname] < [#sub] " ~ nickstring ~ `: "Blah balah" | "alt alt alt alt"`;
+        immutable expected = "[chan] [#nickname] < [#sub] " ~ nickstring ~ `: "Blah balah" | alt alt alt alt`;
         assert((queryLine == expected), queryLine);
         //sink.clear();
     }
