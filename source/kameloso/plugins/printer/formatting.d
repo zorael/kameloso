@@ -386,12 +386,12 @@ void formatMessageMonochrome(Sink)
 
     /++
         Writes the content of the event to the output range sink.
-        If `altcontent` is `true`, the content is written in a different style,
+        If `isAltcontent` is `true`, the content is written in a different style,
         as befits the secondary message-ness of [IRCEvent.altcontent].
      +/
     void putContent(
         const string line,
-        const bool altcontent = false)
+        const bool isAltcontent = false)
     {
         if (!line.length) return;
 
@@ -403,13 +403,14 @@ void formatMessageMonochrome(Sink)
         }
 
         immutable isEmote =
-            (event.type == IRCEvent.Type.EMOTE) ||
-            (event.type == IRCEvent.Type.SELFEMOTE);
+            !isAltcontent &&  // we can't really tell but treat altcontent as always non-emote
+            ((event.type == IRCEvent.Type.EMOTE) ||
+            (event.type == IRCEvent.Type.SELFEMOTE));
 
         string content = line;  // mutable
         bool openQuote;
 
-        if (altcontent)
+        if (isAltcontent)
         {
             if (event.target.nickname.length)
             {
@@ -527,7 +528,7 @@ void formatMessageMonochrome(Sink)
     {
         putContent(
             line: event.altcontent,
-            altcontent: true);
+            isAltcontent: true);
         auxCopy[$-2] = string.init;  // Remove the custom emote definitions
     }
 
@@ -1095,13 +1096,13 @@ void formatMessageColoured(Sink)
 
     /++
         Writes the content of the event to the output range sink.
-        If `altcontent` is `true`, the content is written in a different style,
+        If `isAltcontent` is `true`, the content is written in a different style,
         as befits the secondary message-ness of [IRCEvent.altcontent].
      +/
     void putContent(
         const string line,
         const string emotes,
-        const bool altcontent = false)
+        const bool isAltcontent = false)
     {
         import kameloso.terminal.colours.defs : ANSICodeType, TerminalBackground, TerminalForeground;
         import kameloso.terminal.colours : applyANSI;
@@ -1117,8 +1118,9 @@ void formatMessageColoured(Sink)
             Bright.emote :
             Dark.emote;
         immutable isEmote =
-            (event.type == IRCEvent.Type.EMOTE) ||
-            (event.type == IRCEvent.Type.SELFEMOTE);
+            !isAltcontent &&  // we can't really tell but treat altcontent as always non-emote
+            ((event.type == IRCEvent.Type.EMOTE) ||
+            (event.type == IRCEvent.Type.SELFEMOTE));
         immutable fgBase = isEmote ? emoteFgBase : contentFgBase;
 
         //sink.applyANSI(TerminalReset.all, ANSICodeType.reset);  // do we need this?
@@ -1134,7 +1136,7 @@ void formatMessageColoured(Sink)
         string content = line;  // mutable
         bool openQuote;
 
-        if (altcontent)
+        if (isAltcontent)
         {
             if (event.target.nickname.length)
             {
@@ -1342,7 +1344,7 @@ void formatMessageColoured(Sink)
         putContent(
             line: event.altcontent,
             emotes: event.aux[$-2],
-            altcontent: true);
+            isAltcontent: true);
         auxCopy[$-2] = string.init;  // Remove the custom emote definitions
     }
 
