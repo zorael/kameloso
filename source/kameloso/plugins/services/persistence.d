@@ -164,7 +164,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
         Nested implementation function so we can properly handle the sender and
         target separately.
      +/
-    static void postprocessImpl(
+    static void postprocessUserImpl(
         PersistenceService service,
         ref IRCEvent event,
         ref IRCUser user,
@@ -460,16 +460,19 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 
     version(TwitchSupport)
     {
-        /+
+        /++
+            Nested implementation function so we can properly handle channel and
+            subchannel separately.
+
             Insert channel IDs into and retrieve channel IDs from the channel cache.
             This allows us to keep track of channel IDs even if it is not sent
             in the event.
          +/
-        IRCEvent.Channel*[2] bothChannels = [ &event.channel, &event.subchannel ];
-
-        foreach (channel; bothChannels[])
+        static void postprocessChannelImpl(
+            PersistenceService service,
+            ref IRCEvent.Channel channel)
         {
-            if (!channel.name.length) continue;
+            if (!channel.name.length) return;
 
             if (auto cachedChannel = channel.name in service.channelCache)
             {
@@ -485,20 +488,23 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                 }
                 else if (channel.id && (channel.id != cachedChannel.id))
                 {
-                    // It has an ID and it's different from the event's; insert
+                    // It has an ID and it's different from the event's; insert it
                     channel.id = cachedChannel.id;
                 }
             }
             else
             {
                 // No cached channel so just assign this one
-                service.channelCache[channel.name] = *channel;
+                service.channelCache[channel.name] = channel;
             }
         }
+
+        postprocessChannelImpl(service, event.channel);
+        postprocessChannelImpl(service, event.subchannel);
     }
 
-    postprocessImpl(service, event, event.sender, isTarget: false);
-    postprocessImpl(service, event, event.target, isTarget: true);
+    postprocessUserImpl(service, event, event.sender, isTarget: false);
+    postprocessUserImpl(service, event, event.target, isTarget: true);
 
     // Nothing in here should warrant a further message check
     return false;
