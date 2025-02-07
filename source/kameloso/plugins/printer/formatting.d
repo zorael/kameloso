@@ -219,6 +219,10 @@ void formatMessageMonochrome(Sink)
         }
     }
 
+    /++
+        Writes the sender's nickname, display name, account name, and badges
+        to the output range sink.
+     +/
     void putSender()
     {
         if (event.sender.isServer)
@@ -296,6 +300,10 @@ void formatMessageMonochrome(Sink)
         }
     }
 
+    /++
+        Writes the target's nickname, display name, account name, and badges
+        to the output range sink.
+     +/
     void putTarget()
     {
         if (!event.target.nickname.length) return;
@@ -376,6 +384,11 @@ void formatMessageMonochrome(Sink)
         }
     }
 
+    /++
+        Writes the content of the event to the output range sink.
+        If `altcontent` is `true`, the content is written in a different style,
+        as befits the secondary message-ness of [IRCEvent.altcontent].
+     +/
     void putContent(
         const string line,
         const bool altcontent = false)
@@ -445,6 +458,8 @@ void formatMessageMonochrome(Sink)
         sink.put(content);
         if (openQuote) sink.put('"');
     }
+
+    ////////////////////////////////////////////////////////////////////////////
 
     sink.put('[');
 
@@ -751,6 +766,14 @@ void formatMessageColoured(Sink)
     immutable typestring = rawTypestring.withoutTypePrefix;
     bool shouldBell;
 
+    static if (!__traits(hasMember, Sink, "data"))
+    {
+        scope(exit)
+        {
+            sink.put('\n');
+        }
+    }
+
     /++
         Outputs a terminal ANSI colour token based on the hash of the passed
         nickname.
@@ -765,7 +788,9 @@ void formatMessageColoured(Sink)
         if (!plugin.printerSettings.colourfulNicknames)
         {
             // Don't differentiate between sender and target? Consistency?
-            return plugin.state.settings.brightTerminal ? Bright.sender : Dark.sender;
+            return plugin.state.settings.brightTerminal ?
+                Bright.sender :
+                Dark.sender;
         }
 
         return getColourByHash(nickname, plugin.state.settings);
@@ -815,14 +840,10 @@ void formatMessageColoured(Sink)
         }
     }
 
-    static if (!__traits(hasMember, Sink, "data"))
-    {
-        scope(exit)
-        {
-            sink.put('\n');
-        }
-    }
-
+    /++
+        Writes the sender's nickname, display name, account name, and badges
+        to the output range sink.
+     +/
     void putSender()
     {
         scope(exit) sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
@@ -928,6 +949,10 @@ void formatMessageColoured(Sink)
         }
     }
 
+    /++
+        Writes the target's nickname, display name, account name, and badges
+        to the output range sink.
+     +/
     void putTarget()
     {
         if (!event.target.nickname.length) return;
@@ -1042,6 +1067,11 @@ void formatMessageColoured(Sink)
         }
     }
 
+    /++
+        Writes the content of the event to the output range sink.
+        If `altcontent` is `true`, the content is written in a different style,
+        as befits the secondary message-ness of [IRCEvent.altcontent].
+     +/
     void putContent(
         const string line,
         const string emotes,
