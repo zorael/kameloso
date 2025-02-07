@@ -298,8 +298,22 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         version(Debug)
         {
             // Exclude types explicitly declared as to be excluded
-            immutable exclude = plugin.exclude.length && plugin.exclude.canFind(event.type);
-            if (exclude) return;
+            if (event.altcontent.length &&
+                (event.type != IRCEvent.Type.CHAN))
+            {
+                // Allow
+            }
+            /*else if (event.channel.id || event.subchannel.id)
+            {
+                // Also allow
+            }*/
+            else
+            {
+                immutable exclude =
+                    plugin.exclude.length &&
+                    plugin.exclude.canFind(event.type);
+                if (exclude) return;
+            }
         }
 
         // Strip bells so we don't get phantom noise

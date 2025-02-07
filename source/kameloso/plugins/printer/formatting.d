@@ -416,9 +416,13 @@ void formatMessageMonochrome(Sink)
                 sink.put(`: "`);
                 openQuote = true;
             }
+            else if (event.content.length)
+            {
+                sink.put(" | ");
+            }
             else
             {
-                sink.put(` | `);
+                sink.put(' ');
             }
         }
         else
@@ -707,6 +711,20 @@ void formatMessageMonochrome(Sink)
         //nickstring ~= "/anyone";
         nickstring ~= " (n1ckn4m3)";
         immutable expected = "[chan] [#nickname:123] < [#sub:456] " ~ nickstring ~ `: "Blah balah" | alt alt alt alt`;
+        assert((queryLine == expected), queryLine);
+        sink.clear();
+    }
+
+    event.content = string.init;
+
+    {
+        formatMessageMonochrome(plugin, sink, event, bellOnMention: false, bellOnError: false);
+        immutable queryLine = sink[][11..$].idup;
+        version(TwitchSupport) string nickstring = "Nickname";
+        else string nickstring = "nickname";
+        //nickstring ~= "/anyone";
+        nickstring ~= " (n1ckn4m3)";
+        immutable expected = "[chan] [#nickname:123] < [#sub:456] " ~ nickstring ~ ` alt alt alt alt`;
         assert((queryLine == expected), queryLine);
         //sink.clear();
     }
@@ -1117,9 +1135,13 @@ void formatMessageColoured(Sink)
                 sink.put(`: "`);
                 openQuote = true;
             }
+            else if (event.content.length)
+            {
+                sink.put(" | ");
+            }
             else
             {
-                sink.put(` | `);
+                sink.put(' ');
             }
         }
         else
