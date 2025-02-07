@@ -639,6 +639,7 @@ unittest
     Params:
         line = Line to examine and invert a substring of.
         toInvert = Substring to invert.
+        match = out-parameter that will be set to `true` if any inversion was done.
         caseSensitive = Whether or not to look for matches case-insensitively,
             yet invert with the casing passed.
 
@@ -649,6 +650,7 @@ unittest
 string invert(
     const string line,
     const string toInvert,
+    out bool match,
     const bool caseSensitive = true) pure @safe
 {
     import kameloso.terminal.colours.defs : TerminalFormat, TerminalReset;
@@ -705,6 +707,7 @@ string invert(
             // Line ends with the string; break
             sink.put(slice[0..startpos]);
             sink.put(inverted);
+            match = true;
             //break;
         }
         else if ((startpos > 1) && slice[startpos-1].isValidNicknameCharacter)
@@ -722,6 +725,7 @@ string invert(
             // Begins at string start, or trailed by non-nickname character
             sink.put(slice[0..startpos]);
             sink.put(inverted);
+            match = true;
         }
 
         ++i;
@@ -744,153 +748,182 @@ unittest
 
     immutable pre = "%c[%dm".format(TerminalToken.format, TerminalFormat.reverse);
     immutable post = "%c[%dm".format(TerminalToken.format, TerminalReset.invert);
+    bool match;
 
     {
-        immutable line = "abc".invert("abc");
+        immutable line = "abc".invert("abc", match);
         immutable expected = pre ~ "abc" ~ post;
+        assert(match);
         assert((line == expected), line);
     }
     {
-        immutable line = "abc abc".invert("abc");
+        immutable line = "abc abc".invert("abc", match);
         immutable inverted = pre ~ "abc" ~ post;
         immutable expected = inverted ~ ' ' ~ inverted;
+        assert(match);
         assert((line == expected), line);
     }
     {
-        immutable line = "abca abc".invert("abc");
+        immutable line = "abca abc".invert("abc", match);
         immutable inverted = pre ~ "abc" ~ post;
         immutable expected = "abca " ~ inverted;
+        assert(match);
         assert((line == expected), line);
     }
     {
-        immutable line = "abcabc".invert("abc");
+        immutable line = "abcabc".invert("abc", match);
         immutable expected = "abcabc";
+        assert(!match);
         assert((line == expected), line);
     }
     {
-        immutable line = "kameloso^^".invert("kameloso");
+        immutable line = "kameloso^^".invert("kameloso", match);
         immutable expected = "kameloso^^";
+        assert(!match);
         assert((line == expected), line);
     }
     {
-        immutable line = "foo kameloso bar".invert("kameloso");
+        immutable line = "foo kameloso bar".invert("kameloso", match);
         immutable expected = "foo " ~ pre ~ "kameloso" ~ post ~ " bar";
+        assert(match);
         assert((line == expected), line);
     }
     {
-        immutable line = "fookameloso bar".invert("kameloso");
+        immutable line = "fookameloso bar".invert("kameloso", match);
         immutable expected = "fookameloso bar";
+        assert(!match);
         assert((line == expected), line);
     }
     {
-        immutable line = "foo kamelosobar".invert("kameloso");
+        immutable line = "foo kamelosobar".invert("kameloso", match);
         immutable expected = "foo kamelosobar";
+        assert(!match);
         assert((line == expected), line);
     }
     {
-        immutable line = "foo(kameloso)bar".invert("kameloso");
+        immutable line = "foo(kameloso)bar".invert("kameloso", match);
         immutable expected = "foo(" ~ pre ~ "kameloso" ~ post ~ ")bar";
+        assert(match);
         assert((line == expected), line);
     }
     {
-        immutable line = "kameloso: 8ball".invert("kameloso");
+        immutable line = "kameloso: 8ball".invert("kameloso", match);
         immutable expected = pre ~ "kameloso" ~ post ~ ": 8ball";
+        assert(match);
         assert((line == expected), line);
     }
     {
         immutable line = "Welcome to the freenode Internet Relay Chat Network kameloso^"
-            .invert("kameloso^");
+            .invert("kameloso^", match);
         immutable expected = "Welcome to the freenode Internet Relay Chat Network " ~
             pre ~ "kameloso^" ~ post;
+        assert(match);
         assert((line == expected), line);
     }
     {
-        immutable line = "kameloso^: wfwef".invert("kameloso^");
+        immutable line = "kameloso^: wfwef".invert("kameloso^", match);
         immutable expected = pre ~ "kameloso^" ~ post ~ ": wfwef";
+        assert(match);
         assert((line == expected), line);
     }
     {
-        immutable line = "[kameloso^]".invert("kameloso^");
+        immutable line = "[kameloso^]".invert("kameloso^", match);
         immutable expected = "[kameloso^]";
+        assert(!match);
         assert((line == expected), line);
     }
     {
-        immutable line = `"kameloso^"`.invert("kameloso^");
+        immutable line = `"kameloso^"`.invert("kameloso^", match);
         immutable expected = "\"" ~ pre ~ "kameloso^" ~ post ~ "\"";
+        assert(match);
         assert((line == expected), line);
     }
     {
-        immutable line = "kameloso^".invert("kameloso");
+        immutable line = "kameloso^".invert("kameloso", match);
         immutable expected = "kameloso^";
+        assert(!match);
         assert((line == expected), line);
     }
     {
-        immutable line = "That guy kameloso? is a bot".invert("kameloso");
+        immutable line = "That guy kameloso? is a bot".invert("kameloso", match);
         immutable expected = "That guy " ~ pre ~ "kameloso" ~ post  ~ "? is a bot";
+        assert(match);
         assert((line == expected), line);
     }
     {
-        immutable line = "kameloso`".invert("kameloso");
+        immutable line = "kameloso`".invert("kameloso", match);
         immutable expected = "kameloso`";
+        assert(!match);
         assert((line == expected), line);
     }
     {
-        immutable line = "kameloso9".invert("kameloso");
+        immutable line = "kameloso9".invert("kameloso", match);
         immutable expected = "kameloso9";
+        assert(!match);
         assert((line == expected), line);
     }
     {
-        immutable line = "kameloso-".invert("kameloso");
+        immutable line = "kameloso-".invert("kameloso", match);
         immutable expected = "kameloso-";
+        assert(!match);
         assert((line == expected), line);
     }
     {
-        immutable line = "kameloso_".invert("kameloso");
+        immutable line = "kameloso_".invert("kameloso", match);
         immutable expected = "kameloso_";
+        assert(!match);
         assert((line == expected), line);
     }
     {
-        immutable line = "kameloso_".invert("kameloso_");
+        immutable line = "kameloso_".invert("kameloso_", match);
         immutable expected = pre ~ "kameloso_" ~ post;
+        assert(match);
         assert((line == expected), line);
     }
     {
-        immutable line = "kameloso kameloso kameloso kameloso kameloso".invert("kameloso");
+        immutable line = "kameloso kameloso kameloso kameloso kameloso".invert("kameloso", match);
         immutable expected = "%1$skameloso%2$s %1$skameloso%2$s %1$skameloso%2$s %1$skameloso%2$s %1$skameloso%2$s"
             .format(pre, post);
+        assert(match);
         assert((line == expected), line);
     }
 
     // Case-insensitive tests
 
     {
-        immutable line = "KAMELOSO".invert("kameloso", caseSensitive: false);
+        immutable line = "KAMELOSO".invert("kameloso", match, caseSensitive: false);
         immutable expected = pre ~ "kameloso" ~ post;
+        assert(match);
         assert((line == expected), line);
     }
     {
-        immutable line = "KamelosoTV".invert("kameloso", caseSensitive: false);
+        immutable line = "KamelosoTV".invert("kameloso", match, caseSensitive: false);
         immutable expected = "KamelosoTV";
+        assert(!match);
         assert((line == expected), line);
     }
     {
-        immutable line = "Blah blah kAmElOsO Blah blah".invert("kameloso", caseSensitive: false);
+        immutable line = "Blah blah kAmElOsO Blah blah".invert("kameloso", match, caseSensitive: false);
         immutable expected = "Blah blah " ~ pre ~ "kameloso" ~ post ~ " Blah blah";
+        assert(match);
         assert((line == expected), line);
     }
     {
-        immutable line = "Blah blah".invert("kameloso");
+        immutable line = "Blah blah".invert("kameloso", match);
         immutable expected = "Blah blah";
+        assert(!match);
         assert((line == expected), line);
     }
     {
-        immutable line = "".invert("kameloso");
+        immutable line = "".invert("kameloso", match);
         immutable expected = "";
+        assert(!match);
         assert((line == expected), line);
     }
     {
-        immutable line = "KAMELOSO".invert("kameloso");
+        immutable line = "KAMELOSO".invert("kameloso", match);
         immutable expected = "KAMELOSO";
+        assert(!match);
         assert((line == expected), line);
     }
 }
