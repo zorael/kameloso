@@ -4917,11 +4917,6 @@ package:
             Emote AA.
          +/
         bool[dstring] emotes;
-
-        /++
-            Emote AA.
-         +/
-        bool[string] emotes2;
     }
 
     /++
@@ -4934,7 +4929,6 @@ package:
         Custom global BetterTTV, FrankerFaceZ and 7tv emotes, as fetched via API calls.
      +/
     bool[dstring] customGlobalEmotes;
-    bool[string] customGlobalEmotes2;
 
     /++
         The Twitch application ID for the kameloso bot.
