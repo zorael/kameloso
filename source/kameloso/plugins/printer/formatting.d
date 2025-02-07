@@ -1140,8 +1140,7 @@ void formatMessageColoured(Sink)
 
             if (content.containsNickname(plugin.state.client.nickname))
             {
-                inverted = content.invert(plugin.state.client.nickname);
-                match = true;
+                inverted = content.invert(plugin.state.client.nickname, match);
             }
 
             version(TwitchSupport)
@@ -1151,8 +1150,9 @@ void formatMessageColoured(Sink)
                     (plugin.state.client.nickname != plugin.state.client.displayName) &&
                     content.containsNickname(plugin.state.client.displayName))
                 {
-                    inverted = inverted.invert(plugin.state.client.displayName);
-                    match = true;
+                    bool displayNameMatch;
+                    inverted = inverted.invert(plugin.state.client.displayName, displayNameMatch);
+                    match |= displayNameMatch;
                 }
             }
 
