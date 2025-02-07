@@ -635,8 +635,7 @@ auto handleGetopt(Kameloso instance) @system
         std.getopt.config.bundling,
         std.getopt.config.passThrough,
         "c|config", &instance.settings.configFile,
-        "version", &shouldShowVersion,
-    );
+        "version", &shouldShowVersion);
 
     if (shouldShowVersion)
     {
@@ -672,8 +671,7 @@ auto handleGetopt(Kameloso instance) @system
         "setup-twitch", &shouldSetupTwitch,
         "get-openssl-1_1", &shouldDownloadOpenSSL1_1,
         "internal-num-reexecs", &instance.transient.numReexecs,
-        "internal-channel-override", &channelOverride,
-    );
+        "internal-channel-override", &channelOverride);
 
     if (colourString.length)
     {

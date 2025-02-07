@@ -529,8 +529,8 @@ void generateExpiryReminders(
         onExpiryDg();
     }
 
-    alias reminderPoints = AliasSeq!(
-        14.days,
+    alias reminderPoints = AliasSeq!
+        (14.days,
         7.days,
         3.days,
         1.days,
@@ -539,8 +539,7 @@ void generateExpiryReminders(
         1.hours,
         30.minutes,
         10.minutes,
-        5.minutes,
-    );
+        5.minutes);
 
     immutable now = Clock.currTime;
     immutable trueExpiry = (expiresWhen - now);

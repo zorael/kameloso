@@ -98,8 +98,8 @@ auto applyCustomSettings(
                 }
                 else
                 {
-                    if (setting.among!(
-                        "colour",
+                    if (setting.among!
+                        ("colour",
                         "color",
                         "brightTerminal",
                         "headless",

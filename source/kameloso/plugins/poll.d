@@ -809,8 +809,8 @@ void generateVoteReminders(
 
     // Warn about the poll ending at certain points, depending on how long the duration is.
 
-    alias reminderPoints = AliasSeq!(
-        7.days,
+    alias reminderPoints = AliasSeq!
+        (7.days,
         3.days,
         2.days,
         1.days,
@@ -823,8 +823,7 @@ void generateVoteReminders(
         5.minutes,
         2.minutes,
         30.seconds,
-        10.seconds,
-    );
+        10.seconds);
 
     immutable duration = (poll.end - poll.start);
     immutable remaining = (poll.end - Clock.currTime);

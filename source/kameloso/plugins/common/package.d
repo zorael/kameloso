@@ -1347,13 +1347,12 @@ mixin template IRCPluginImpl(
             }
         }
 
-        alias allFunIndexes = AliasSeq!(
-            setupFunIndexes,
+        alias allFunIndexes = AliasSeq!
+            (setupFunIndexes,
             earlyFunIndexes,
             normalFunIndexes,
             lateFunIndexes,
-            cleanupFunIndexes,
-        );
+            cleanupFunIndexes);
 
         /+
             Process all functions.

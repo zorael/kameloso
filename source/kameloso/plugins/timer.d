@@ -1054,8 +1054,7 @@ void handleListTimers(
             timer.timeThreshold,
             timer.messageCountStagger,
             timer.timeStagger,
-            timer.suspended,
-        );
+            timer.suspended);
 
         chan(plugin.state, event.channel.name, timerMessage);
     }

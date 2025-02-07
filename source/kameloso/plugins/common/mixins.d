@@ -862,8 +862,8 @@ private:
         Generates the functions `askToWriteln`, `askToTrace`, `askToLog`,
         `askToInfo`, `askToWarning`, and `askToError`,
      +/
-    static foreach (immutable verb; AliasSeq!(
-        "Writeln",
+    static foreach (immutable verb; AliasSeq!
+        ("Writeln",
         "Trace",
         "Log",
         "Info",
@@ -948,8 +948,8 @@ unittest
         import std.algorithm.comparison : among;
         import std.algorithm.searching : startsWith;
 
-        static if (funstring.among!(
-                "object",
+        static if (funstring.among!
+                ("object",
                 "dialect",
                 "kameloso",
                 "Message") ||

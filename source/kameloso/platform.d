@@ -358,8 +358,8 @@ Pid exec(
                 {
                     immutable flag = slice.advancePast('=', inherit: true);
 
-                    if (flag.among!(
-                        "twitch.keygen",
+                    if (flag.among!
+                        ("twitch.keygen",
                         "twitch.superKeygen",
                         "twitch.googleKeygen",
                         "twitch.youtubeKeygen",
@@ -376,10 +376,10 @@ Pid exec(
                 string slice = args[i];  // mutable
                 immutable flag = slice.advancePast('=', inherit: true);
 
-                if (flag.among!(
-                    //"--setup-twitch",  // this sets up the config file, then exits
-                    "--get-cacert",
+                if (flag.among!
+                    ("--get-cacert",
                     "--get-openssl",
+                    //"--setup-twitch",  // this sets up the config file, then exits
                     "--internal-num-reexecs",
                     "--internal-channel-override"))
                 {
