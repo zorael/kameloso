@@ -489,9 +489,12 @@ void formatMessageMonochrome(Sink)
     {
         .put(sink, '[', event.channel.name);
 
-        if (plugin.printerSettings.channelIDs && event.channel.id)
+        version(TwitchSupport)
         {
-            .put(sink, ':', event.channel.id);
+            if (plugin.printerSettings.channelIDs && event.channel.id)
+            {
+                .put(sink, ':', event.channel.id);
+            }
         }
 
         .put(sink, "] ");
@@ -500,9 +503,12 @@ void formatMessageMonochrome(Sink)
         {
             .put(sink, "< [", event.subchannel.name);
 
-            if (plugin.printerSettings.channelIDs && event.subchannel.id)
+            version(TwitchSupport)
             {
-                .put(sink, ':', event.subchannel.id);
+                if (plugin.printerSettings.channelIDs && event.subchannel.id)
+                {
+                    .put(sink, ':', event.subchannel.id);
+                }
             }
 
             .put(sink, "] ");
@@ -1284,9 +1290,12 @@ void formatMessageColoured(Sink)
         sink.applyANSI(channelCode, ANSICodeType.foreground);
         .put(sink, '[', event.channel.name);
 
-        if (plugin.printerSettings.channelIDs && event.channel.id)
+        version(TwitchSupport)
         {
-            .put(sink, ':', event.channel.id);
+            if (plugin.printerSettings.channelIDs && event.channel.id)
+            {
+                .put(sink, ':', event.channel.id);
+            }
         }
 
         sink.put("] ");
@@ -1303,9 +1312,12 @@ void formatMessageColoured(Sink)
             sink.applyANSI(channelCode, ANSICodeType.foreground);
             .put(sink, '[', event.subchannel);
 
-            if (plugin.printerSettings.channelIDs && event.subchannel.id)
+            version(TwitchSupport)
             {
-                .put(sink, ':', event.subchannel.id);
+                if (plugin.printerSettings.channelIDs && event.subchannel.id)
+                {
+                    .put(sink, ':', event.subchannel.id);
+                }
             }
 
             sink.put("] ");
