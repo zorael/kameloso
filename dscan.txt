@@ -7,3 +7,4 @@ poll\.d.+Variable choicesVoldemort is never modified
 Variable benignAbort is never modified
 Variable .+UserExisted is never modified
 common/package\.d.+Parameter event is never used.
+formatting\.d.+Variable displayNameMatch is never modified
