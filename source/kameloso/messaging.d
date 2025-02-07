@@ -54,7 +54,6 @@ import kameloso.plugins.common : IRCPluginState;
 import kameloso.irccolours : expandIRCTags, stripIRCTags;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;
-import std.meta : AliasSeq;
 static import kameloso.common;
 
 version(unittest) import lu.conv : toString;
@@ -1103,13 +1102,10 @@ void askToOutputImpl(string askVerb)(IRCPluginState state, const string line)
 
 
 /+
-    Generate `askToLevel` family of functions at compile-time, provided the compiler
-    is recent enough to support it. Too old compilers fail at resolving the "static"
-    [askToWarn] alias.
-
-    For older compilers, just provide the handwritten aliases.
+    Generate `askToLevel` family of functions at compile-time.
  +/
-private alias askLevels = AliasSeq!(
+private static immutable string[8] askLevels =
+[
     "askToTrace",
     "askToLog",
     "askToInfo",
@@ -1118,9 +1114,9 @@ private alias askLevels = AliasSeq!(
     "askToCritical",
     "askToFatal",
     "askToWriteln",
-);
+];
 
-static foreach (immutable askVerb; askLevels)
+static foreach (immutable askVerb; askLevels[])
 {
     mixin(`
 /++
@@ -1152,7 +1148,7 @@ unittest
 
     alias T = ThreadMessage.MessageType;
 
-    static immutable T[7] expectedLevels =
+    static immutable T[8-1] expectedLevels =
     [
         T.askToTrace,
         T.askToLog,
@@ -1164,7 +1160,7 @@ unittest
         T.askToWriteln,
     ];
 
-    static immutable string[7] expectedMessages =
+    static immutable string[8-1] expectedMessages =
     [
         "trace",
         "log",
