@@ -615,7 +615,7 @@ void onEmoteBearingMessage(TwitchPlugin plugin, const IRCEvent event)
 void onSelfjoin(TwitchPlugin plugin, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
-    cast(void)getRoom(plugin, event.channel.name);
+    cast(void)getRoom(plugin, event.channel);
 }
 
 
@@ -626,19 +626,24 @@ void onSelfjoin(TwitchPlugin plugin, const IRCEvent event)
 
     Params:
         plugin = The current [TwitchPlugin].
-        channelName = The name of the channel to retrieve.
+        channel = [dialect.defs.IRCEvent.Channel|Channel] representing the
+            [TwitchPlugin.Room] to create and/or retrieve.
 
     Returns:
         A pointer to a [TwitchPlugin.Room], newly-created or otherwise.
  +/
-auto getRoom(TwitchPlugin plugin, const string channelName)
+auto getRoom(TwitchPlugin plugin, const IRCEvent.Channel channel)
 {
-    auto room = channelName in plugin.rooms;
+    auto room = channel.name in plugin.rooms;
 
-    if (!room)
+    if (room)
     {
-        plugin.rooms[channelName] = TwitchPlugin.Room(channelName);
-        room = channelName in plugin.rooms;
+        if (!room.id) room.id = channel.id;
+    }
+    else
+    {
+        plugin.rooms[channel.name] = TwitchPlugin.Room(channel);
+        room = channel.name in plugin.rooms;
         room.lastNMessages.resize(TwitchPlugin.Room.messageMemory);
     }
 
@@ -710,7 +715,7 @@ void onUserstate(TwitchPlugin plugin, const IRCEvent event)
     else
     {
         // It's a home channel yet we don't seem to be a moderator
-        auto room = getRoom(plugin, event.channel.name);
+        auto room = getRoom(plugin, event.channel);
 
         if (!room.sawUserstate)
         {
@@ -1099,33 +1104,17 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
 {
     import kameloso.constants : BufferSize;
     import kameloso.thread : ThreadMessage, boxed;
-    import std.conv : to;
     import core.thread.fiber : Fiber;
 
     mixin(memoryCorruptionCheck);
 
-    auto room = getRoom(plugin, event.channel.name);
-    if (room.id) return;  // Already initialised? Double roomstate?
+    auto room = getRoom(plugin, event.channel);
 
     // Cache channel name by its numeric ID
-    plugin.channelNamesByID[event.aux[0]] = event.channel.name;
-
-    try
-    {
-        room.id = event.aux[0].to!uint;  // Assign this before spending time in getTwitchUser
-    }
-    catch (Exception _) {}  // gag and ignore,, fetch user below
+    plugin.channelNamesByID[event.channel.id] = event.channel.name;
 
     void onRoomStateDg()
     {
-        if (!room.id) // || !event.aux[0].length)
-        {
-            // For some reason the room ID isn't in the event? Has happened at least twice
-            // Try to salvage the situation by querying the server with the username instead
-            const twitchUser = getTwitchUser(plugin, event.channel.name[1..$]);
-            room.id = twitchUser.id;
-        }
-
         /+
             Fetch the broadcaster's Twitch user through an API call and store it as
             a new IRCUser in the plugin.state.users AA, including its display name.
@@ -1241,14 +1230,14 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
     import kameloso.plugins.twitch.emotes : baseDelayBetweenImports, importCustomEmotes;
     import kameloso.plugins.common.scheduling : delay;
     import std.algorithm.searching : countUntil;
-    import std.conv : to;
     import core.thread.fiber : Fiber;
     import kameloso.constants : BufferSize;
 
     mixin(memoryCorruptionCheck);
 
     // Cache channel name by its numeric ID
-    if (event.aux[0].length) plugin.channelNamesByID[event.aux[0]] = event.channel.name;
+    assert(event.channel.id);
+    plugin.channelNamesByID[event.channel.id] = event.channel.name;
 
     if (!plugin.twitchSettings.customEmotes || !plugin.twitchSettings.customEmotesEverywhere) return;
 
@@ -1282,7 +1271,7 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
         importCustomEmotes(
             plugin: plugin,
             channelName: event.channel.name.idup,
-            id: event.aux[0].to!uint);
+            id: event.channel.id);
     }
 
     auto importFiber = new Fiber(&importDg, BufferSize.fiberStack);
@@ -3833,10 +3822,8 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             IRCEvent.Type.SELFCHAN,
             IRCEvent.Type.SELFEMOTE);
 
-        immutable eventMayContainCustomEmotes =
-            (event.content.length || (event.target.nickname.length && event.aux[0].length));
-
-        if (isEmotePossibleEventType && eventMayContainCustomEmotes)
+        if (isEmotePossibleEventType &&
+            (event.content.length || event.altcontent.length))
         {
             bool shouldEmbedCustomEmotes;
 
@@ -3867,10 +3854,10 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                     customEmotes: customEmotes ? *customEmotes : null,
                     customGlobalEmotes: plugin.customGlobalEmotes);
 
-                if (event.target.nickname.length && event.aux[0].length)
+                if (event.target.nickname.length && event.altcontent.length)
                 {
                     embedCustomEmotes(
-                        content: event.aux[0],
+                        content: event.altcontent,
                         emotes: event.aux[$-2],
                         customEmotes: customEmotes ? *customEmotes : null,
                         customGlobalEmotes: plugin.customGlobalEmotes);
@@ -3922,8 +3909,10 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
         if (!isTarget && event.aux[$-4].length)
         {
+            import std.conv : to;
+
             // Shared message; event.aux[$-4] is the foreign channel ID
-            immutable sharedChannelID = event.aux[$-4];
+            immutable sharedChannelID = event.aux[$-4].to!ulong;
 
             if (const channelFromID = sharedChannelID in plugin.channelNamesByID)
             {
@@ -4070,8 +4059,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
         {
             event.sender.updated = 1L;
         }
-        else if (event.type.among!
-            (IRCEvent.Type.TWITCH_GIFTRECEIVED))
+        else if (event.type == IRCEvent.Type.TWITCH_GIFTRECEIVED)
         {
             event.target.updated = 1L;
         }
@@ -4615,18 +4603,19 @@ package:
         }
 
         /++
-            Constructor taking a string (channel) name.
+            Constructor taking a [dialect.defs.IRCEvent.Channel|Channel] instance.
 
             Params:
-                channelName = Name of the channel.
+                channel = The channel to initialise this [Room] with.
          +/
-        this(const string channelName) /*pure nothrow @nogc*/ @safe
+        this(const IRCEvent.Channel channel) /*pure nothrow @nogc*/ @safe
         {
             import std.random : uniform;
 
-            this.channelName = channelName;
+            this.channelName = channel.name;
             this.broadcasterName = channelName[1..$];
             this.broadcasterDisplayName = this.broadcasterName;  // until we resolve it
+            this.id = channel.id;
             this._uniqueID = uniform(1, uint.max);
         }
 
@@ -5002,7 +4991,7 @@ package:
     /++
         Channel names cached by their numeric user IDs.
      +/
-    string[string] channelNamesByID;
+    string[ulong] channelNamesByID;
 
     /++
         Associative array of responses from async HTTP queries.
