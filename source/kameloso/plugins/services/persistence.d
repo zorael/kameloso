@@ -458,8 +458,13 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
         }
     }
 
-    version(WantChannelCache)
+    version(TwitchSupport)
     {
+        /+
+            Insert channel IDs into and retrieve channel IDs from the channel cache.
+            This allows us to keep track of channel IDs even if it is not sent
+            in the event.
+         +/
         IRCEvent.Channel*[2] bothChannels = [ &event.channel, &event.subchannel ];
 
         foreach (channel; bothChannels[])
@@ -478,7 +483,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                         cachedChannel.id = channel.id;
                     }
                 }
-                else if (channel.id != cachedChannel.id)
+                else if (channel.id && (channel.id != cachedChannel.id))
                 {
                     // It has an ID and it's different from the event's; insert
                     channel.id = cachedChannel.id;
