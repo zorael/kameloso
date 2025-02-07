@@ -458,6 +458,40 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
         }
     }
 
+    version(WantChannelCache)
+    {
+        IRCEvent.Channel*[2] bothChannels = [ &event.channel, &event.subchannel ];
+
+        foreach (channel; bothChannels[])
+        {
+            if (!channel.name.length) continue;
+
+            if (auto cachedChannel = channel.name in service.channelCache)
+            {
+                // Cached channel exists
+                if (!cachedChannel.id)
+                {
+                    // It has no ID
+                    if (channel.id)
+                    {
+                        // ...but the event does; inherit it
+                        cachedChannel.id = channel.id;
+                    }
+                }
+                else if (channel.id != cachedChannel.id)
+                {
+                    // It has an ID and it's different from the event's; insert
+                    channel.id = cachedChannel.id;
+                }
+            }
+            else
+            {
+                // No cached channel so just assign this one
+                service.channelCache[channel.name] = *channel;
+            }
+        }
+    }
+
     postprocessImpl(service, event, event.sender, isTarget: false);
     postprocessImpl(service, event, event.target, isTarget: true);
 
@@ -1547,6 +1581,17 @@ private:
         Cache of users by channel and nickname.
      +/
     RehashingAA!(IRCUser[string][string]) channelUserCache;
+
+    version(TwitchSupport)
+    {
+        /++
+            Cache of [IRCEvent.Channel|Channel]s, keyed by channel name.
+
+            This should not grow very large so there's probably no need to make
+            it a [lu.containers.RehashingAA|RehashingAA].
+         +/
+        IRCEvent.Channel[string] channelCache;
+    }
 
     /++
         Inherits a user into the cache.
