@@ -27,6 +27,7 @@ import kameloso.net : ListenAttempt;
 import kameloso.plugins.common : IRCPlugin;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
+import std.datetime.systime : SysTime;
 
 version(WantConcurrencyMessageLoop)
 {
@@ -223,12 +224,13 @@ void signalHandler(int sig) nothrow @nogc @system
 
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
+        now = The current time as a [std.datetime.systime.SysTime|SysTime].
 
     Returns:
         A [lu.misc.Next|Next] value, signaling to the caller whether the bot
         should exit or not.
  +/
-auto processMessages(Kameloso instance)
+auto processMessages(Kameloso instance, const SysTime now)
 {
     import kameloso.common : OutgoingLine;
     import kameloso.constants : Timeout;
@@ -387,13 +389,12 @@ auto processMessages(Kameloso instance)
 
         case putUser:
             import kameloso.thread : Boxed;
-            import std.datetime.systime : Clock;
 
             auto boxedUser = cast(Boxed!IRCUser)message.payload;
             assert(boxedUser, "Incorrectly cast message payload: " ~ typeof(boxedUser).stringof);
 
             auto user = boxedUser.payload;
-            user.updated = Clock.currTime.toUnixTime();
+            user.updated = now.toUnixTime();
 
             foreach (plugin; instance.plugins)
             {
@@ -441,8 +442,7 @@ auto processMessages(Kameloso instance)
         case fakeEvent:
             version(Debug)
             {
-                import std.datetime.systime : Clock;
-                processLineFromServer(instance, message.content, Clock.currTime.toUnixTime());
+                processLineFromServer(instance, message.content, now.toUnixTime());
             }
             break;
 
@@ -487,8 +487,6 @@ auto processMessages(Kameloso instance)
         switch (m.event.type)
         {
         case CHAN:
-            /*enum pattern = "PRIVMSG %s :";
-            prelude = pattern.format(m.event.channel.name);*/
             prelude = text("PRIVMSG ", m.event.channel.name, " :");
             lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
             break;
@@ -507,8 +505,6 @@ auto processMessages(Kameloso instance)
                 }
             }
 
-            /*enum pattern = "PRIVMSG %s :";
-            prelude = pattern.format(m.event.target.nickname);*/
             prelude = text("PRIVMSG ", m.event.target.nickname, " :");
             lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
             break;
@@ -522,8 +518,6 @@ auto processMessages(Kameloso instance)
             {
                 if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
                 {
-                    /*enum pattern = "PRIVMSG %s :/me ";
-                    prelude = pattern.format(emoteTarget);*/
                     prelude = text("PRIVMSG ", emoteTarget, " :/me ");
                     lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
                 }
@@ -532,8 +526,6 @@ auto processMessages(Kameloso instance)
             if (!prelude.length)
             {
                 import dialect.common : IRCControlCharacter;
-                /*enum pattern = "PRIVMSG %s :%cACTION %s%2$c";
-                line = pattern.format(emoteTarget, cast(char)IRCControlCharacter.ctcp, m.event.content);*/
                 immutable c = cast(char)IRCControlCharacter.ctcp;
                 line = text( "PRIVMSG ", emoteTarget, " :", c, "ACTION ", m.event.content, c);
             }
@@ -541,20 +533,14 @@ auto processMessages(Kameloso instance)
 
         case MODE:
             import lu.string : strippedRight;
-            /*enum pattern = "MODE %s %s %s";
-            line = pattern.format(m.event.channel.name, m.event.aux[0], m.event.content.strippedRight);*/
             line = text("MODE ", m.event.channel.name, ' ', m.event.aux[0], ' ', m.event.content.strippedRight);
             break;
 
         case TOPIC:
-            /*enum pattern = "TOPIC %s :%s";
-            line = pattern.format(m.event.channel.name, m.event.content);*/
             line = text("TOPIC ", m.event.channel.name, " :", m.event.content);
             break;
 
         case INVITE:
-            /*enum pattern = "INVITE %s %s";
-            line = pattern.format(m.event.channel.name, m.event.target.nickname);*/
             line = text("INVITE ", m.event.channel.name, ' ', m.event.target.nickname);
             break;
 
@@ -575,8 +561,6 @@ auto processMessages(Kameloso instance)
             immutable reason = m.event.content.length ?
                 " :" ~ m.event.content :
                 string.init;
-            /*enum pattern = "KICK %s %s%s";
-            line = pattern.format(m.event.channel.name, m.event.target.nickname, reason);*/
             line = text("KICK ", m.event.channel.name, ' ', m.event.target.nickname, reason);
             break;
 
@@ -615,9 +599,8 @@ auto processMessages(Kameloso instance)
 
         case RPL_WHOISACCOUNT:
             import kameloso.constants : Timeout;
-            import std.datetime.systime : Clock;
 
-            immutable nowInUnix = Clock.currTime.toUnixTime();
+            immutable nowInUnix = now.toUnixTime();
             immutable then = m.event.target.updated;
             immutable hysteresis = force ? 1 : Timeout.whoisRetry;
 
@@ -929,11 +912,11 @@ auto mainLoop(Kameloso instance)
     /++
         Processes messages in a try-catch.
      +/
-    auto processMessages()
+    auto processMessages(const SysTime now)
     {
         try
         {
-            return .processMessages(instance);
+            return .processMessages(instance, now);
         }
         catch (Exception e)
         {
@@ -973,8 +956,10 @@ auto mainLoop(Kameloso instance)
         }
     }
 
+    immutable startTime = Clock.currTime;
+
     /// Variable denoting what we should do next loop.
-    auto next = processMessages();  // Immediately check for messages, in case starting plugins left some
+    auto next = processMessages(startTime);  // Immediately check for messages, in case starting plugins left some
     if (next != Next.continue_) return next;
     else if (*instance.abort) return Next.returnFailure;
 
@@ -984,7 +969,7 @@ auto mainLoop(Kameloso instance)
     immutable historyEntryIndex = instance.connectionHistory.length;  // snapshot index, 0 at first
     instance.connectionHistory ~= Kameloso.ConnectionHistoryEntry.init;
     historyEntry = &instance.connectionHistory[historyEntryIndex];
-    historyEntry.startTime = Clock.currTime.toUnixTime();
+    historyEntry.startTime = startTime.toUnixTime();
     historyEntry.stopTime = historyEntry.startTime;  // In case we abort before the first read is recorded
 
     /// UNIX timestamp of when the Socket receive timeout was shortened.
@@ -1084,7 +1069,7 @@ auto mainLoop(Kameloso instance)
 
         if (shouldCheckMessages)
         {
-            next = processMessages();
+            next = processMessages(now);
             if (next != Next.continue_) return next;
             else if (*instance.abort) return Next.returnFailure;
 
@@ -1168,7 +1153,7 @@ auto mainLoop(Kameloso instance)
         }
 
         // Check messages to see if we should exit
-        next = processMessages();
+        next = processMessages(now);
         if (*instance.abort) return Next.returnFailure;
         //else if (next != Next.continue_) return next;  // process buffers before passing on Next.retry
 
