@@ -59,12 +59,27 @@ auto downloadWindowsSSL(
     static int downloadFile(
         const string url,
         const string what,
-        const string saveAs)
+        const string saveAs,
+        const size_t sizeInBytes = 0)
     {
         import std.process : execute;
 
-        enum pattern = "Downloading %s from <l>%s</>...";
-        logger.infof(pattern, what, url);
+        if (sizeInBytes)
+        {
+            enum pattern = "Downloading %s from <l>%s</>... (<l>%.1f Mb</>)";
+            immutable sizeInMbytes = sizeInBytes / 1024.0 / 1024;
+            logger.infof(pattern, what, url, sizeInMbytes);
+
+            if (sizeInMbytes > 100)
+            {
+                logger.info("This may take a while. Please wait.");
+            }
+        }
+        else
+        {
+            enum pattern = "Downloading %s from <l>%s</>...";
+            logger.infof(pattern, what, url);
+        }
 
         immutable string[3] command =
         [
@@ -204,7 +219,7 @@ auto downloadWindowsSSL(
         immutable jsonFile = buildNormalizedPath(temporaryDir, "win32_openssl_hashes.json");
         immutable manifestResult = downloadFile(
             url: jsonURL,
-            what: "manifest",
+            what: "file manifest",
             saveAs: jsonFile);
 
         if (*instance.abort) return;
@@ -219,6 +234,7 @@ auto downloadWindowsSSL(
             string topFilename;
             uint topVersionMinor;
             uint topVersionPatch;
+            size_t topSize;
 
             const manifestJSON = parseJSON(readText(jsonFile));
             const fileEntriesJSON = "files" in manifestJSON;
@@ -254,6 +270,7 @@ auto downloadWindowsSSL(
                     topFilename = filename;
                     topVersionMinor = versionMinor;
                     topVersionPatch = versionPatch;
+                    topSize = fileEntryJSON["size"].integer;
                 }
                 else if (
                     (versionMinor == topVersionMinor) &&
@@ -261,6 +278,7 @@ auto downloadWindowsSSL(
                 {
                     topFilename = filename;
                     topVersionPatch = versionPatch;
+                    topSize = fileEntryJSON["size"].integer;
                 }
             }
 
@@ -276,7 +294,8 @@ auto downloadWindowsSSL(
             immutable downloadResult = downloadFile(
                 url: topFileEntryJSON["url"].str,
                 what: "OpenSSL installer",
-                saveAs: msiPath);
+                saveAs: msiPath,
+                sizeInBytes: topSize);
 
             if (*instance.abort) return;
             if (downloadResult != 0) return;
@@ -289,6 +308,8 @@ auto downloadWindowsSSL(
             ];
 
             logger.info("Launching <l>OpenSSL</> installer.");
+            logger.warning("Choose to install to <l>Windows system directories</> when asked.");
+
             immutable msiExecResult = execute(command[]);
 
             if (msiExecResult.status != 0)
