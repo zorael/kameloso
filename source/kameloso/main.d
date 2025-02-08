@@ -37,10 +37,12 @@ version(WantConcurrencyMessageLoop)
         {
             enum optimisedMessage1 = "Warning: optimised (release) builds using " ~
                 "concurrency messages (version `WantConcurrencyMessageLoop`) " ~
-                "are prone to memory corruption and crashes when compiled with dmd.";
-            enum optimisedMessage2 = "Please use ldc instead for optimised builds.";
+                "may suffer from memory corruption and crashes when compiled with dmd.";
+            enum optimisedMessage2 = "Please use ldc for optimised builds.";
+            pragma(msg, string.init);
             pragma(msg, optimisedMessage1);
             pragma(msg, optimisedMessage2);
+            pragma(msg, string.init);
         }
     }
 }
