@@ -4289,8 +4289,7 @@ void memoryCorruptionCheckImpl(
 {
     import std.algorithm.searching : canFind;
 
-    if (!uda.acceptedEventTypes.canFind(IRCEvent.Type.ANY) &&
-        !uda.acceptedEventTypes.canFind(event.type))
+    if (!uda.acceptedEventTypes.canFind(event.type, IRCEvent.Type.ANY))
     {
         import lu.conv : toString;
         import std.format : format;
