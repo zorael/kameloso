@@ -350,9 +350,10 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     event.clearTargetNicknameIfUs(plugin.state);
 
     // Immediately print events of types declared to be included
+    // Additionally always include if ANY was supplied
     immutable shouldInclude =
         plugin.include.length &&
-        plugin.include.canFind(event.type);
+        plugin.include.canFind(event.type, IRCEvent.Type.ANY);
 
     if (shouldInclude)
     {
