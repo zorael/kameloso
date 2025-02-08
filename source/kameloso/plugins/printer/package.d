@@ -284,7 +284,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
      +/
     static void printEvent(
         PrinterPlugin plugin,
-        /*const*/ ref IRCEvent event,
+        /*const*/ IRCEvent event,
         const bool overrideExcludes = false)
     {
         import kameloso.terminal : TerminalToken;
