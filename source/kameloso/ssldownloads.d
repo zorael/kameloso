@@ -308,7 +308,7 @@ auto downloadWindowsSSL(
             ];
 
             logger.info("Launching <l>OpenSSL</> installer.");
-            logger.warning("Choose to install to <l>Windows system directories</> when asked.");
+            logger.info("Choose to install to <l>Windows system directories</> when asked.");
 
             immutable msiExecResult = execute(command[]);
 
