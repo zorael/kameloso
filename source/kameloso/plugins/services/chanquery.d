@@ -74,7 +74,7 @@ enum ChannelState : ubyte
     .onEvent(IRCEvent.Type.PING)
     .fiber(true)
 )
-void startChannelQueries(ChanQueryService service, const IRCEvent _)
+void startChannelQueries(ChanQueryService service)
 {
     import kameloso.plugins.common.scheduling : await, delay, unawait, undelay;
     import kameloso.thread : CarryingFiber, ThreadMessage, boxed;
@@ -84,7 +84,12 @@ void startChannelQueries(ChanQueryService service, const IRCEvent _)
     import core.thread.fiber : Fiber;
     import core.time : seconds;
 
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    /+
+        We can't do a corruption check because this function will be called
+        from `onMyInfo` with an even type of `RPL_MYINFO`, which is not
+        the `PING` event the checker expects.
+     +/
+    //mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     if (service.transient.querying) return;  // Try again next PING
 
@@ -436,13 +441,13 @@ void onTopic(ChanQueryService service, const IRCEvent event)
     .channelPolicy(omniscientChannelPolicy)
     .fiber(true)
 )
-void onEndOfNames(ChanQueryService service, const IRCEvent event)
+void onEndOfNames(ChanQueryService service, const IRCEvent _)
 {
-    mixin(memoryCorruptionCheck);
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     if (!service.transient.querying && service.transient.queriedAtLeastOnce)
     {
-        startChannelQueries(service, event);
+        startChannelQueries(service);
     }
 }
 
@@ -455,14 +460,14 @@ void onEndOfNames(ChanQueryService service, const IRCEvent event)
     .onEvent(IRCEvent.Type.RPL_MYINFO)
     .fiber(true)
 )
-void onMyInfo(ChanQueryService service, const IRCEvent event)
+void onMyInfo(ChanQueryService service, const IRCEvent _)
 {
     import kameloso.plugins.common.scheduling : delay;
 
-    mixin(memoryCorruptionCheck);
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     delay(service, service.timeBeforeInitialQueries, yield: true);
-    startChannelQueries(service, event);
+    startChannelQueries(service);
 }
 
 
