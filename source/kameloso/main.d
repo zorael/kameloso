@@ -694,12 +694,18 @@ auto processMessages(Kameloso instance)
 
         default:
             import lu.conv : toString;
-            // Using Enum here is not necessary but lowers compilation memory usage
+            // Using toString here is not necessary but lowers compilation memory usage
             logger.error("<l>processMessages</>.<l>eventToServer</> missing case " ~
                 "for outgoing event type <l>", m.event.type.toString());
             break;
         }
 
+        /++
+            Sends a line to the server, via the appropriate buffer.
+
+            Params:
+                finalLine = The line to send.
+         +/
         void appropriateline(const string finalLine)
         {
             if (immediate)
@@ -766,8 +772,8 @@ auto processMessages(Kameloso instance)
     }
 
     /+
-        Messages. Process all priority ones over all plugins before processing
-        normal ones.
+        Messages. Process all priority messages over all plugins as a separate
+        step before processing normal messages.
      +/
     foreach (immutable isPriority; trueThenFalse[])
     {
@@ -840,8 +846,7 @@ auto processMessages(Kameloso instance)
 
         /++
             On compilers 2.092 or later, this prevents a closure from being
-            allocated each time this function is called. On 2.091 and earlier it
-            doesn't, which is unfortunate.
+            allocated each time this function is called.
          +/
         scope onThreadMessageDg = &onThreadMessage;
         scope onEventMessageDg = &onEventMessage;

@@ -251,9 +251,6 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     in ((channelName.length || sender.length || target.length),
         "Tried to update squelchstamp but with no channel or user information passed")
     {
-        /*import std.algorithm.comparison : either;
-        immutable key = either!(s => s.length)(channel, sender, target);*/
-
         immutable key =
             channelName.length ? channelName :
             sender.length ? sender :
