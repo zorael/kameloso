@@ -284,32 +284,26 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
      +/
     static void printEvent(
         PrinterPlugin plugin,
-        /*const*/ ref IRCEvent event)
+        /*const*/ ref IRCEvent event,
+        const bool overrideExcludes = false)
     {
         import kameloso.terminal : TerminalToken;
         import lu.string : strippedRight;
         import std.array : replace;
         import std.stdio : stdout, writeln;
 
-        version(Debug)
+        // Exclude types explicitly declared as to be excluded
+        if (overrideExcludes)
         {
-            // Exclude types explicitly declared as to be excluded
-            if (event.altcontent.length &&
-                (event.type != IRCEvent.Type.CHAN))
-            {
-                // Allow
-            }
-            /*else if (event.channel.id || event.subchannel.id)
-            {
-                // Also allow
-            }*/
-            else
-            {
-                immutable exclude =
-                    plugin.exclude.length &&
-                    plugin.exclude.canFind(event.type);
-                if (exclude) return;
-            }
+            // Do nothing
+        }
+        else
+        {
+            immutable shouldExclude =
+                plugin.exclude.length &&
+                plugin.exclude.canFind(event.type);
+
+            if (shouldExclude) return;
         }
 
         // Strip bells so we don't get phantom noise
@@ -318,6 +312,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         event.content = event.content
             .replace(cast(ubyte)TerminalToken.bell, string.init)
             .strippedRight;
+
         bool put;
 
         scope(exit) plugin.linebuffer.clear();
@@ -354,11 +349,17 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     // Clear event.target.nickname for those types.
     event.clearTargetNicknameIfUs(plugin.state);
 
-    version(Debug)
+    // Immediately print events of types declared to be included
+    immutable shouldInclude =
+        plugin.include.length &&
+        plugin.include.canFind(event.type);
+
+    if (shouldInclude)
     {
-        // Immediately print events of types declared to be included
-        immutable include = plugin.include.length && plugin.include.canFind(event.type);
-        if (include) return printEvent(plugin, event);
+        return printEvent(
+            plugin,
+            event,
+            overrideExcludes: true);
     }
 
     with (IRCEvent.Type)
@@ -1072,18 +1073,15 @@ package:
      +/
     @Resource string logDirectory = "logs";
 
-    version(Debug)
-    {
-        /++
-            [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to exclude from printing.
-         +/
-        IRCEvent.Type[] exclude;
+    /++
+        [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to exclude from printing.
+     +/
+    IRCEvent.Type[] exclude;
 
-        /++
-            [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to include in printing.
-         +/
-        IRCEvent.Type[] include;
-    }
+    /++
+        [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to include in printing.
+     +/
+    IRCEvent.Type[] include;
 
     mixin IRCPluginImpl;
 }
