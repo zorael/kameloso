@@ -755,23 +755,7 @@ auto processMessages(Kameloso instance)
         lines = null;
     }
 
-    /+
-        Timestamp of when the loop started.
-     +/
-    immutable loopStartTime = MonoTime.currTime;
-    static immutable maxReceiveTime = Timeout.messageReadMsecs.msecs;
-
-    /+
-        Still time enough to act on messages?
-     +/
-    auto isStillOnTime()
-    {
-        immutable onTime = ((MonoTime.currTime - loopStartTime) <= maxReceiveTime);
-        //version(Debug) if (!onTime) logger.warning("Messenger loop ran out of time");
-        return onTime;
-    }
-
-    /+
+    /++
         Whether or not to continue the loop.
      +/
     auto shouldStillContinue()
@@ -808,21 +792,13 @@ auto processMessages(Kameloso instance)
                     // Something triggered an abort
                     return next;
                 }
-                else if (!isPriority && !isStillOnTime)
-                {
-                    // Ran out of time processing a non-priority message
-                    return next;
-                }
             }
 
             box.clear();
         }
     }
 
-    if (!shouldStillContinue || !isStillOnTime)
-    {
-        return next;
-    }
+    if (!shouldStillContinue) return next;
 
     /+
         Outgoing messages.
@@ -841,9 +817,9 @@ auto processMessages(Kameloso instance)
             onEventMessage(message);
             message.exhausted = true;
 
-            if (!shouldStillContinue || !isStillOnTime)
+            if (!shouldStillContinue)
             {
-                // Ran out of time or something triggered an abort
+                // Something triggered an abort
                 return next;
             }
         }
@@ -860,10 +836,7 @@ auto processMessages(Kameloso instance)
      +/
     version(WantConcurrencyMessageLoop)
     {
-        if (!shouldStillContinue || !isStillOnTime)
-        {
-            return next;
-        }
+        if (!shouldStillContinue) return next;
 
         /++
             On compilers 2.092 or later, this prevents a closure from being
@@ -876,7 +849,7 @@ auto processMessages(Kameloso instance)
         /+
             Concurrency messages, dead last.
          +/
-        readloop:
+        receiveLoop:
         while (true)
         {
             bool receivedSomething;
@@ -893,11 +866,11 @@ auto processMessages(Kameloso instance)
             }
             catch (Exception e)
             {
-                logger.error("processMessages caught exception: <l>", e.msg);
+                logger.error("Exception caught processing concurrency messages: <l>", e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
 
-            if (!receivedSomething || !shouldStillContinue || !isStillOnTime) break readloop;
+            if (!receivedSomething || !shouldStillContinue) break receiveLoop;
         }
     }
 
