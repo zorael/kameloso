@@ -245,23 +245,19 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     static bool updateSquelchstamp(
         PrinterPlugin plugin,
         const long time,
-        const string channel,
+        const string channelName,
         const string sender,
         const string target)
-    in ((channel.length || sender.length || target.length),
+    in ((channelName.length || sender.length || target.length),
         "Tried to update squelchstamp but with no channel or user information passed")
     {
         /*import std.algorithm.comparison : either;
         immutable key = either!(s => s.length)(channel, sender, target);*/
 
         immutable key =
-            channel.length ? channel :
+            channelName.length ? channelName :
             sender.length ? sender :
             /*target.length ?*/ target;
-
-        // already in in-contract
-        /*assert(key.length, "Logic error; tried to update squelchstamp but " ~
-            "no `channel`, no `sender`, no `target`");*/
 
         auto squelchstamp = key in plugin.squelches;
 
