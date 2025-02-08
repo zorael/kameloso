@@ -40,5 +40,17 @@ private:
      +/
     kameloso.plugins.twitch.TwitchSettings twitchSettings;
 
+    /++
+        Overrides the name of the plugin; if left as-is it will become
+        "twitch.stub" and `--set twitch.setting` will fail.
+
+        Returns:
+            A string wit the value "twitch".
+     +/
+    override public string name() const pure @safe nothrow @nogc
+    {
+        return "twitch";
+    }
+
     mixin IRCPluginImpl;
 }
