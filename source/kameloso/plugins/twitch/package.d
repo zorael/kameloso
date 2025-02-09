@@ -3626,96 +3626,135 @@ unittest
 }
 
 
-// bringBadgeToFront
+// sortBadges
 /++
-    Sorts a comma-separated list of badges so that a given badge is listed first.
-
-    Note: It does not sort the badges alphabetically, and as such multiple calls
-    may result in the order not ending up quite as imagined. Perform the procedure
-    in reverse if possible, to guarantee the last badge is the first.
+    Sorts a comma-separated list of badges so that the badges in the `badgeOrder`
+    array are placed first, in the order they appear in the array.
 
     Params:
         badges = A reference to the comma-separated string of badges to sort in place.
-        badge = The badge to bring to the front.
+        badgeOrder = The order of badges to sort by.
  +/
-void bringBadgeToFront(ref string badges, const string badge) pure @safe
+void sortBadges(ref string badges, const string[] badgeOrder)
 {
     import std.algorithm.iteration : splitter;
+    import std.algorithm.searching : countUntil;
     import std.algorithm.sorting : sort;
-    import std.array : array, join;
+    import std.array : Appender, join;
+    import std.string : indexOf;
 
-    auto thisBadgeFirst(const string a, const string b)
+    static Appender!(string[]) sink;
+    scope(exit) sink.clear();
+
+    size_t lastIndex;
+    bool inOrder = true;
+    auto range = badges.splitter(',');
+
+    foreach (immutable badge; range)
     {
-        import std.algorithm.searching : startsWith;
-        return a.startsWith(badge) && !b.startsWith(badge);
+        if (!badge.length) continue;
+
+        immutable slashIndex = badge.indexOf('/');
+
+        if (slashIndex == -1)
+        {
+            // Malformed badges?
+            throw new Exception("Malformed badge was missing a slash: " ~ badge);
+        }
+
+        immutable badgeName = badge[0..slashIndex];
+        immutable badgeIndex = badgeOrder.countUntil(badgeName);
+
+        if (badgeIndex < lastIndex) inOrder = false;
+
+        lastIndex = badgeIndex;
+        sink.put(badge);
     }
 
-    badges = badges
-        .splitter(',')
-        .array
-        .sort!thisBadgeFirst()
+    if (inOrder) return;
+
+    auto compareBadges(const string a, const string b)
+    {
+        // Slashes are guaranteed to be present, we already checked
+        immutable aSlashIndex = a.indexOf('/');
+        immutable bSlashIndex = b.indexOf('/');
+
+        auto aBadgeIndex = badgeOrder.countUntil(a[0..aSlashIndex]);
+        auto bBadgeIndex = badgeOrder.countUntil(b[0..bSlashIndex]);
+
+        if (aBadgeIndex == -1) aBadgeIndex = 255;
+        if (bBadgeIndex == -1) bBadgeIndex = 255;
+
+        return aBadgeIndex < bBadgeIndex;
+    }
+
+    // Insert it back into the original ref string
+    badges = sink[]
+        .sort!compareBadges
         .join(',');
 }
 
 ///
 unittest
 {
+    const string[4] badgeOrder =
+    [
+        "broadcaster",
+        "moderator",
+        "vip",
+        "subscriber",
+    ];
+
     {
         string badges = "subscriber/14,broadcaster/1";
-        bringBadgeToFront(badges, "broadcaster/");
+        sortBadges(badges, badgeOrder[]);
         assert((badges == "broadcaster/1,subscriber/14"), badges);
     }
     {
         string badges = "broadcaster/1,broadcaster/1";
-        bringBadgeToFront(badges, "broadcaster/");
+        sortBadges(badges, badgeOrder[]);
         assert((badges == "broadcaster/1,broadcaster/1"), badges);
     }
     {
-        string badges = "vip/1,subscriber/14";
-        bringBadgeToFront(badges, "broadcaster/");
+        string badges = "subscriber/14,vip/1";
+        sortBadges(badges, badgeOrder[]);
         assert((badges == "vip/1,subscriber/14"), badges);
     }
     {
         string badges;
-        bringBadgeToFront(badges, "broadcaster/");
+        sortBadges(badges, badgeOrder[]);
         assert(!badges.length, badges);
     }
     {
-        string badges = "hirfharf";
-        bringBadgeToFront(badges, "broadcaster/");
-        assert((badges == "hirfharf"), badges);
+        string badges = "hirfharf/1,horfhorf/32";
+        sortBadges(badges, badgeOrder[]);
+        assert((badges == "hirfharf/1,horfhorf/32"), badges);
     }
     {
         string badges = "subscriber/14,moderator/1";
-        bringBadgeToFront(badges, "moderator/");
+        sortBadges(badges, badgeOrder[]);
         assert((badges == "moderator/1,subscriber/14"), badges);
     }
     {
         string badges = "broadcaster/1,asdf/9999";
-        bringBadgeToFront(badges, "asdf/");
-        assert((badges == "asdf/9999,broadcaster/1"), badges);
+        sortBadges(badges, badgeOrder[]);
+        assert((badges == "broadcaster/1,asdf/9999"), badges);
     }
     {
-        string badges = "subscriber/91,broadcaster/1,sub-gifter/25";
-        bringBadgeToFront(badges, "vip/");
-        bringBadgeToFront(badges, "moderator/");
-        bringBadgeToFront(badges, "broadcaster/");
+        string badges = "subscriber/91,sub-gifter/25,broadcaster/1";
+        sortBadges(badges, badgeOrder[]);
         assert((badges == "broadcaster/1,subscriber/91,sub-gifter/25"), badges);
     }
     {
-        string badges = "f/1,b/2,d/3,c/4,a/5,e/6";
-        static immutable string[3] badgeOrder =
+        static immutable string[3] altBadgeOrder =
         [
-            "a/",
-            "b/",
-            "c/",
+            "a",
+            "b",
+            "c",
         ];
 
-        foreach_reverse (immutable badge; badgeOrder[])
-        {
-            bringBadgeToFront(badges, badge);
-        }
-
+        string badges = "f/1,b/2,d/3,c/4,a/5,e/6";
+        sortBadges(badges, altBadgeOrder[]);
         assert((badges == "a/5,b/2,c/4,f/1,d/3,e/6"), badges);
     }
 }
@@ -3888,23 +3927,16 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
         if (user.badges.length)
         {
-            // Move some badges to the front of the string, in reverse order of importance
-            static immutable string[3] badgeOrder =
+            // Move some badges to the front of the string, in order of importance
+            static immutable string[4] badgeOrder =
             [
-                "vip/",
-                "moderator/",
-                "broadcaster/"
+                "broadcaster",
+                "moderator",
+                "vip",
+                "subscriber",
             ];
 
-            foreach (immutable badge; badgeOrder[])
-            {
-                import std.algorithm.searching : canFind;
-
-                if (user.badges.canFind(badge))
-                {
-                    bringBadgeToFront(user.badges, badge);
-                }
-            }
+            sortBadges(user.badges, badgeOrder[]);
         }
 
         if (!isTarget && event.aux[$-4].length)
