@@ -531,7 +531,7 @@ auto getUser(IRCPlugin plugin, const string specified)
     {
         if (isTwitch)
         {
-            foreach (user; plugin.state.users.aaOf)
+            foreach (const user; plugin.state.users.aaOf)
             {
                 if (user.displayName == nickname)
                 {
@@ -543,7 +543,7 @@ auto getUser(IRCPlugin plugin, const string specified)
             IRCUser user;
             user.nickname = nickname;
             user.account = nickname;
-            user.class_ = IRCUser.Class.registered;
+            user.class_ = IRCUser.Class.anyone;
             //user.displayName = nickname;
             return user;
         }
