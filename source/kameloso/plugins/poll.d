@@ -7,7 +7,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#poll,
         [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -509,7 +509,7 @@ void generatePollFiber(
 
         while (true)
         {
-            import kameloso.plugins.common.misc : idOf;
+            import kameloso.plugins.common : idOf;
 
             auto currentPoll = channelName in plugin.channelPolls;
             if (!currentPoll || (currentPoll.uniqueID != poll.uniqueID)) return;

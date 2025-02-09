@@ -8,7 +8,7 @@
     See_Also:
         [kameloso.net],
         [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)

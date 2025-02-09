@@ -38,7 +38,7 @@
     ---
 
     See_Also:
-        [kameloso.plugins.common.misc],
+        [kameloso.plugins.common],
         [kameloso.plugins.common.awareness],
         [kameloso.plugins.common.scheduling],
         [kameloso.plugins.common.mixins],
@@ -55,6 +55,7 @@ debug version = Debug;
 
 private:
 
+import kameloso.pods : CoreSettings;
 import kameloso.thread : CarryingFiber;
 import dialect.defs;
 import std.traits : ParameterStorageClass;

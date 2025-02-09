@@ -7,7 +7,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#quote,
         [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -684,7 +684,7 @@ void sendQuoteToChannel(
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            import kameloso.plugins.common.misc : nameOf;
+            import kameloso.plugins.common : nameOf;
             name = nameOf(plugin, nickname);
         }
     }
@@ -900,7 +900,7 @@ private:
         {
             if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
-                import kameloso.plugins.common.misc : nameOf;
+                import kameloso.plugins.common : nameOf;
                 possibleDisplayName = nameOf(plugin, nickname);
             }
         }
@@ -1507,7 +1507,7 @@ void initResources(QuotePlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+        import kameloso.plugins.common : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(

@@ -8,7 +8,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners,
         [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -337,7 +337,7 @@ public:
 )
 void onOneliner(OnelinerPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.common.misc : nameOf;
+    import kameloso.plugins.common : nameOf;
     import kameloso.string : replaceRandom;
     import lu.string : advancePast, splitWithQuotes;
     import std.algorithm.searching : startsWith;
@@ -1498,7 +1498,7 @@ void initResources(OnelinerPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+        import kameloso.plugins.common : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(

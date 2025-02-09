@@ -16,7 +16,7 @@
         [kameloso.plugins.printer.formatting],
         [kameloso.plugins.printer.logging],
         [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -788,7 +788,7 @@ void initResources(PrinterPlugin plugin)
 
     if (!establishLogLocation(plugin.logDirectory, plugin.transient.naggedAboutDir))
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+        import kameloso.plugins.common : IRCPluginInitialisationException;
 
         throw new IRCPluginInitialisationException(
             "Could not create log directory",

@@ -50,7 +50,7 @@ unittest
 {
     pragma(msg, "blarp");
     import kameloso.pods : CoreSettings;
-    import kameloso.plugins.common.misc : applyCustomSettings;
+    import kameloso.plugins.common : applyCustomSettings;
 
     IRCPluginState state;
     IRCPlugin plugin = new TwitchPlugin(state);

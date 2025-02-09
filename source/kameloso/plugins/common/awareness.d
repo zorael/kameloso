@@ -41,7 +41,7 @@
 
     See_Also:
         [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -165,7 +165,7 @@ mixin template MinimalAuthentication(
  +/
 void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const IRCEvent event) @system
 {
-    import kameloso.plugins.common.misc : catchUser;
+    import kameloso.plugins.common : catchUser;
 
     // Catch the user here, before replaying anything.
     catchUser(plugin, event.target);
@@ -447,7 +447,7 @@ void onUserAwarenessNick(IRCPlugin plugin, const IRCEvent event) @system
  +/
 void onUserAwarenessCatchTarget(IRCPlugin plugin, const IRCEvent event) @system
 {
-    import kameloso.plugins.common.misc : catchUser;
+    import kameloso.plugins.common : catchUser;
     catchUser(plugin, event.target);
 }
 
@@ -465,7 +465,7 @@ void onUserAwarenessCatchTarget(IRCPlugin plugin, const IRCEvent event) @system
 void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
     (IRCPlugin plugin, const IRCEvent event) @system
 {
-    import kameloso.plugins.common.misc : catchUser;
+    import kameloso.plugins.common : catchUser;
 
     with (IRCEvent.Type)
     switch (event.type)
@@ -538,7 +538,7 @@ void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
  +/
 void onUserAwarenessNamesReply(IRCPlugin plugin, const IRCEvent event) @system
 {
-    import kameloso.plugins.common.misc : catchUser;
+    import kameloso.plugins.common : catchUser;
     import kameloso.irccolours : stripColours;
     import dialect.common : IRCControlCharacter, stripModesign;
     import lu.string : advancePast;
@@ -1448,7 +1448,7 @@ void onTwitchAwarenessUserCarrierImpl(
     const string channelName,
     const IRCUser user) @system
 {
-    import kameloso.plugins.common.misc : catchUser;
+    import kameloso.plugins.common : catchUser;
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 

@@ -11,7 +11,7 @@
 
     See_Also:
         [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -1314,7 +1314,7 @@ void initResources(PersistenceService service)
         service = The current [PersistenceService].
 
     Throws:
-        [kameloso.plugins.common.misc.IRCPluginInitialisationException|IRCPluginInitialisationException]
+        [kameloso.plugins.common.IRCPluginInitialisationException|IRCPluginInitialisationException]
         on failure loading the `user.json` file.
  +/
 void initAccountResources(PersistenceService service)
@@ -1330,7 +1330,7 @@ void initAccountResources(PersistenceService service)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+        import kameloso.plugins.common : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(
@@ -1414,7 +1414,7 @@ void initAccountResources(PersistenceService service)
             }
             catch (JSONException e)
             {
-                import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+                import kameloso.plugins.common : IRCPluginInitialisationException;
                 import kameloso.common : logger;
 
                 version(PrintStacktraces) logger.trace(e);
@@ -1438,7 +1438,7 @@ void initAccountResources(PersistenceService service)
     Reads, completes and saves the hostmasks JSON file, creating one if it doesn't exist.
 
     Throws:
-        [kameloso.plugins.common.misc.IRCPluginInitialisationException|IRCPluginInitialisationException]
+        [kameloso.plugins.common.IRCPluginInitialisationException|IRCPluginInitialisationException]
         on failure loading the `hostmasks.json` file.
  +/
 void initHostmaskResources(PersistenceService service)
@@ -1454,7 +1454,7 @@ void initHostmaskResources(PersistenceService service)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+        import kameloso.plugins.common : IRCPluginInitialisationException;
         import kameloso.common : logger;
 
         version(PrintStacktraces) logger.trace(e);

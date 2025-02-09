@@ -2542,7 +2542,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
 
             if (auto fiber = cast(CarryingFiber!(SetSettingPayload))(action.fiber))
             {
-                import kameloso.plugins.common.misc : applyCustomSettings;
+                import kameloso.plugins : applyCustomSettings;
 
                 immutable expression = action.context;
                 immutable success = applyCustomSettings(
@@ -2686,7 +2686,7 @@ void resetSignals() nothrow @nogc
  +/
 auto tryGetopt(Kameloso instance)
 {
-    import kameloso.plugins.common.misc : IRCPluginSettingsException;
+    import kameloso.plugins.common : IRCPluginSettingsException;
     import kameloso.config : handleGetopt;
     import kameloso.configreader : ConfigurationFileReadFailureException;
     import kameloso.string : doublyBackslashed;
@@ -3432,7 +3432,7 @@ void resolvePaths(Kameloso instance) @safe
  +/
 auto startBot(Kameloso instance)
 {
-    import kameloso.plugins.common.misc :
+    import kameloso.plugins.common  :
         IRCPluginInitialisationException,
         pluginNameOfFilename,
         pluginFileBaseName;
@@ -3647,7 +3647,7 @@ auto startBot(Kameloso instance)
             }
             catch (IRCPluginInitialisationException e)
             {
-                import kameloso.plugins.common.misc : pluginFileBaseName;
+                import kameloso.plugins.common : pluginFileBaseName;
 
                 enum pattern = "The <l>%s</> plugin failed to initialise: " ~
                     "<t>%s</> (at <l>%s</>:<l>%d</>)";
@@ -4331,7 +4331,7 @@ public:
  +/
 auto run(string[] args)
 {
-    import kameloso.plugins.common.misc : IRCPluginInitialisationException, IRCPluginSettingsException;
+    import kameloso.plugins.common : IRCPluginInitialisationException, IRCPluginSettingsException;
     import kameloso.constants : ShellReturnValue;
     import kameloso.logger : KamelosoLogger;
     import kameloso.string : doublyBackslashed, replaceTokens;
@@ -4657,7 +4657,7 @@ auto run(string[] args)
     }
     catch (IRCPluginInitialisationException e)
     {
-        import kameloso.plugins.common.misc : pluginFileBaseName;
+        import kameloso.plugins.common : pluginFileBaseName;
 
         enum pattern = "The <l>%s</> plugin failed to initialise: " ~
             "<t>%s</> (at <l>%s</>:<l>%d</>)";

@@ -496,15 +496,13 @@ public:
         settings, and not far enough to have loaded any resources.
 
         Throws:
-            [kameloso.plugins.common.misc.IRCPluginSettingsException|IRCPluginSettingsException]
+            [kameloso.plugins.common.IRCPluginSettingsException|IRCPluginSettingsException]
             on failure to apply custom settings.
      +/
     void instantiatePlugins() @system
     in (!this.plugins.length, "Tried to instantiate plugins but the array was not empty")
     {
-        import kameloso.plugins : IRCPluginState, instantiatePlugins;
-        import kameloso.plugins.common.misc : applyCustomSettings;
-        import std.concurrency : thisTid;
+        import kameloso.plugins : IRCPluginState, applyCustomSettings, instantiatePlugins;
 
         teardownPlugins();
 
@@ -550,7 +548,7 @@ public:
 
         if (!allCustomSuccess)
         {
-            import kameloso.plugins.common.misc : IRCPluginSettingsException;
+            import kameloso.plugins.common : IRCPluginSettingsException;
             throw new IRCPluginSettingsException("Some custom plugin settings could not be applied.");
         }
     }

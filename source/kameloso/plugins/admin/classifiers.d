@@ -23,7 +23,7 @@ private:
 
 import kameloso.plugins.admin;
 
-import kameloso.plugins.common.misc : nameOf;
+import kameloso.plugins.common : nameOf;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;

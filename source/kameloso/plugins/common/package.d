@@ -11,7 +11,7 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-module kameloso.plugins.common.misc;
+module kameloso.plugins.common;
 
 private:
 

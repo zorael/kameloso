@@ -25,7 +25,7 @@
         [kameloso.plugins.twitch.providers.google],
         [kameloso.plugins.twitch.providers.spotify],
         [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -1309,7 +1309,7 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
 )
 void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.common.misc : idOf;
+    import kameloso.plugins.common : idOf;
     import lu.string : SplitResults, splitInto, stripped;
     import std.algorithm.searching : startsWith;
     import std.format : format;
@@ -1469,7 +1469,7 @@ void onCommandVanish(TwitchPlugin plugin, const IRCEvent event)
     }
     catch (ErrorJSONException e)
     {
-        import kameloso.plugins.common.misc : nameOf;
+        import kameloso.plugins.common : nameOf;
         enum pattern = "Failed to vanish <l>%s</> in <l>%s</> <t>(%s)";
         logger.warningf(pattern, nameOf(event.sender), event.channel.name, e.msg);
     }
@@ -2170,7 +2170,7 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
             }
             else
             {
-                import kameloso.plugins.common.misc : nameOf;
+                import kameloso.plugins.common : nameOf;
 
                 enum pattern = "Failed to delete a message from <h>%s</> in <l>%s";
                 logger.warningf(pattern, nameOf(storedEvent.sender), event.channel.name);
@@ -2814,7 +2814,7 @@ void onCommandCommercial(TwitchPlugin plugin, const IRCEvent event)
  +/
 void initialise(TwitchPlugin plugin)
 {
-    import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+    import kameloso.plugins.common : IRCPluginInitialisationException;
     import kameloso.terminal : isTerminal;
     import std.algorithm.searching : endsWith;
 
@@ -4080,7 +4080,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
  +/
 void initResources(TwitchPlugin plugin)
 {
-    import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+    import kameloso.plugins.common : IRCPluginInitialisationException;
     import lu.json : JSONStorage;
     import std.file : exists, mkdir;
     import std.json : JSONException, JSONType;
