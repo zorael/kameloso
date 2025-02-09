@@ -44,7 +44,7 @@ public:
             instead of v3.2.
 
     Returns:
-        `true` if [kameloso.kameloso.Kameloso.settings|Kameloso.settings]
+        `true` if [kameloso.kameloso.Kameloso.coreSettings|Kameloso.coreSettings]
         were touched and the configuration file should be updated; `false` if not.
  +/
 auto downloadWindowsSSL(
@@ -140,9 +140,9 @@ auto downloadWindowsSSL(
             import std.path : dirName;
 
             // Save next to the configuration file
-            // Can't use instance.settings.configDirectory; it hasn't been resolved yet
+            // Can't use instance.coreSettings.configDirectory; it hasn't been resolved yet
             instance.connSettings.caBundleFile = buildNormalizedPath(
-                instance.settings.configFile.dirName,
+                instance.coreSettings.configFile.dirName,
                 "cacert.pem");
         }
     }
@@ -161,7 +161,7 @@ auto downloadWindowsSSL(
 
         if (result == 0)
         {
-            if (!instance.settings.force)
+            if (!instance.coreSettings.force)
             {
                 enum cacertPattern = "File saved as <l>%s</>; configuration updated.";
                 logger.infof(cacertPattern, instance.connSettings.caBundleFile.doublyBackslashed);
@@ -353,7 +353,7 @@ auto downloadWindowsSSL(
 
         resolveCacert();
 
-        if (instance.connSettings.caBundleFile.exists && !instance.settings.force)
+        if (instance.connSettings.caBundleFile.exists && !instance.coreSettings.force)
         {
             enum pattern = "Found certificate authority bundle file <l>%s</>; not downloading.";
             logger.infof(pattern, instance.connSettings.caBundleFile.doublyBackslashed);
@@ -370,7 +370,7 @@ auto downloadWindowsSSL(
     {
         import kameloso.net : openSSLIsInstalled;
 
-        if (!instance.settings.force && openSSLIsInstalled())
+        if (!instance.coreSettings.force && openSSLIsInstalled())
         {
             enum message = "Found <l>OpenSSL for Windows</> as already installed; not downloading.";
             logger.info(message);

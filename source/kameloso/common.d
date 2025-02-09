@@ -26,11 +26,11 @@ static this()
 {
     // This is technically before settings have been read.
     // Set some defaults for unit tests.
-    .settings.colours = true;
-    .settings.brightTerminal = false;
-    .settings.headless = false;
-    .settings.flush = true;
-    .logger = new KamelosoLogger(.settings);
+    .coreSettings.colours = true;
+    .coreSettings.brightTerminal = false;
+    .coreSettings.headless = false;
+    .coreSettings.flush = true;
+    .logger = new KamelosoLogger(.coreSettings);
 }
 
 
@@ -50,16 +50,24 @@ static this()
 KamelosoLogger logger;
 
 
-// settings
+// coreSettings
 /++
     A [kameloso.pods.CoreSettings|CoreSettings] struct global, housing
     certain runtime settings.
 
     This will be accessed from other parts of the program, via
-    [kameloso.common.settings], so they know to use coloured output or not.
+    [kameloso.common.coreSettings], so they know to use coloured output or not.
     It is a problem that needs solving.
  +/
-CoreSettings settings;
+CoreSettings coreSettings;
+
+
+// settings
+/++
+    Deprecated alias to [coreSettings].
+ +/
+deprecated("Use `kameloso.common.coreSettings` instead.")
+alias settings = coreSettings;
 
 
 // globalAbort

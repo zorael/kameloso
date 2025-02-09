@@ -419,7 +419,7 @@ void onUserAwarenessQuit(IRCPlugin plugin, const IRCEvent event)
  +/
 void onUserAwarenessNick(IRCPlugin plugin, const IRCEvent event) @system
 {
-    if (plugin.state.settings.preferHostmasks)
+    if (plugin.state.coreSettings.preferHostmasks)
     {
         // Persistence will have set up a complete user with account and everything.
         // There's no point in copying anything over.

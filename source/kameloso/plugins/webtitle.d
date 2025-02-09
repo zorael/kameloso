@@ -178,7 +178,7 @@ void onMessageImpl(WebtitlePlugin plugin, const IRCEvent event)
     immutable content = event.content.strippedLeft;  // mutable
 
     if ((content.length < minimumPossibleLinkLength) ||  // duplicates check in findURLs, but shrug
-        (plugin.state.settings.prefix.length && content.startsWith(plugin.state.settings.prefix)))
+        (plugin.state.coreSettings.prefix.length && content.startsWith(plugin.state.coreSettings.prefix)))
     {
         return;
     }

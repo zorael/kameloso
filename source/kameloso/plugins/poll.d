@@ -227,7 +227,7 @@ void onCommandPoll(PollPlugin plugin, const IRCEvent event)
             import std.format : format;
 
             enum pattern = "Usage: <b>%s%s<b> [duration] [choice1] [choice2] ...";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+            immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
             chan(plugin.state, event.channel.name, message);
         }
     }
@@ -402,7 +402,7 @@ auto getPollChoices(
     void sendChoiceMustNotStartWithPrefix()
     {
         enum pattern = `Poll choices may not start with the command prefix ("%s").`;
-        immutable message = pattern.format(plugin.state.settings.prefix);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix);
         chan(plugin.state, channelName, message);
     }
 
@@ -429,7 +429,7 @@ auto getPollChoices(
         import std.uni : toLower;
 
         if (plugin.pollSettings.forbidPrefixedChoices &&
-            rawChoice.startsWith(plugin.state.settings.prefix))
+            rawChoice.startsWith(plugin.state.coreSettings.prefix))
         {
             /*return*/ sendChoiceMustNotStartWithPrefix();
             return result;

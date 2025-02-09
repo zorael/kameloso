@@ -138,7 +138,7 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
         break;
 
     case RPL_WHOISUSER:
-        if (plugin.state.settings.preferHostmasks && event.target.account.length)
+        if (plugin.state.coreSettings.preferHostmasks && event.target.account.length)
         {
             // Persistence will have set the account field, if there is any to set.
             goto case RPL_WHOISACCOUNT;
@@ -308,7 +308,7 @@ void onCommandAutomode(AutomodePlugin plugin, const IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [add|clear|list] [nickname/account] [mode]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 

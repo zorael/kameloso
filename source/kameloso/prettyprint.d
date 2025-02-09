@@ -5,7 +5,7 @@
 
     Example:
 
-    `prettyprint(client, bot, settings);`
+    `prettyprint(client, bot, server);`
     ---
 /* Output to screen:
 
@@ -213,11 +213,11 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
 
         version(Colours)
         {
-            if (kameloso.common.settings.colours)
+            if (kameloso.common.coreSettings.colours)
             {
                 prettyformatImpl!(all, Yes.coloured)
                     (outbuffer,
-                    brightTerminal: kameloso.common.settings.brightTerminal,
+                    brightTerminal: kameloso.common.coreSettings.brightTerminal,
                     thing,
                     widths.type+1,
                     widths.name);
@@ -251,7 +251,7 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
     () @trusted
     {
         // Flush stdout to make sure we don't lose any output
-        if (kameloso.common.settings.flush) stdout.flush();
+        if (kameloso.common.coreSettings.flush) stdout.flush();
     }();
 }
 

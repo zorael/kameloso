@@ -55,7 +55,7 @@ void manageClassLists(
         import std.format : format;
 
         enum pattern = "Usage: <b>%s%s<b> [add|del|list]";
-        immutable message = pattern.format(plugin.state.settings.prefix, class_.toString());
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, class_.toString());
         privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
@@ -769,7 +769,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
         }
         else
         {
-            immutable colouredAccount = colourByHash(account, plugin.state.settings);
+            immutable colouredAccount = colourByHash(account, plugin.state.coreSettings);
             enum pattern = `Added hostmask "<l>%s</>", mapped to account <h>%s</>.`;
             logger.infof(pattern, mask, colouredAccount);
         }

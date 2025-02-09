@@ -56,7 +56,7 @@ void requestGoogleKeys(TwitchPlugin plugin)
     import std.string : indexOf;
     import core.time : seconds;
 
-    scope(exit) if (plugin.state.settings.flush) stdout.flush();
+    scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
     logger.trace();
     logger.warning("== Google authorisation key generation wizard ==");
@@ -213,11 +213,11 @@ then finally <i>Allow</>.`;
     Pid browser;
     scope(exit) if (browser !is null) wait(browser);
 
-    if (plugin.state.settings.force)
+    if (plugin.state.coreSettings.force)
     {
         logger.warning("Forcing; not automatically opening browser.");
         printManualURL(url);
-        if (plugin.state.settings.flush) stdout.flush();
+        if (plugin.state.coreSettings.flush) stdout.flush();
     }
     else
     {
@@ -231,13 +231,13 @@ then finally <i>Allow</>.`;
             // Probably we got some platform wrong and command was not found
             logger.warning("Error: could not automatically open browser.");
             printManualURL(url);
-            if (plugin.state.settings.flush) stdout.flush();
+            if (plugin.state.coreSettings.flush) stdout.flush();
         }
         catch (Exception _)
         {
             logger.warning("Error: no graphical environment detected");
             printManualURL(url);
-            if (plugin.state.settings.flush) stdout.flush();
+            if (plugin.state.coreSettings.flush) stdout.flush();
         }
     }
 
@@ -247,7 +247,7 @@ then finally <i>Allow</>.`;
 
     while (!code.length)
     {
-        scope(exit) if (plugin.state.settings.flush) stdout.flush();
+        scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
         enum pasteMessage = "<i>></> ";
         write(pasteMessage.expandTags(LogLevel.off));
@@ -388,7 +388,7 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
 
     enum url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet";
 
-    if (plugin.state.settings.trace)
+    if (plugin.state.coreSettings.trace)
     {
         import kameloso.common : logger;
         enum pattern = "GET: <i>%s";

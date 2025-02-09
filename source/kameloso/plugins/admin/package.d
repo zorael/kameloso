@@ -112,7 +112,7 @@ version(Debug)
 )
 void onAnyEvent(AdminPlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.settings.headless) return;
+    if (plugin.state.coreSettings.headless) return;
     onAnyEventImpl(plugin, event);
 }
 
@@ -140,7 +140,7 @@ version(Debug)
 )
 void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.settings.headless) return;
+    if (plugin.state.coreSettings.headless) return;
     onCommandShowUserImpl(plugin, event);
 }
 
@@ -242,7 +242,7 @@ version(Debug)
 )
 void onCommandShowUsers(AdminPlugin plugin)
 {
-    if (plugin.state.settings.headless) return;
+    if (plugin.state.coreSettings.headless) return;
     onCommandShowUsersImpl(plugin);
 }
 
@@ -333,7 +333,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [add|del|list] [channel]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
@@ -394,7 +394,7 @@ void onCommandGuest(AdminPlugin plugin, const IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [add|del|list] [channel]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
@@ -1163,7 +1163,7 @@ version(IncludeHeavyStuff)
 )
 void onCommandStatus(AdminPlugin plugin)
 {
-    if (plugin.state.settings.headless) return;
+    if (plugin.state.coreSettings.headless) return;
     onCommandStatusImpl(plugin);
 }
 
@@ -1188,7 +1188,7 @@ void onCommandSummary(AdminPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
 
-    if (plugin.state.settings.headless) return;
+    if (plugin.state.coreSettings.headless) return;
     plugin.state.messages ~= ThreadMessage.wantLiveSummary;
 }
 
@@ -1357,7 +1357,7 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
     import lu.string : SplitResults, advancePast, splitInto, stripped;
     import std.format : format;
 
-    if (!plugin.state.settings.preferHostmasks)
+    if (!plugin.state.coreSettings.preferHostmasks)
     {
         enum message = "This bot is not currently configured to use hostmasks for authentication.";
         return privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
@@ -1366,7 +1366,7 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [add|del|list] [args...]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
@@ -1383,7 +1383,7 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
         if (results != SplitResults.match)
         {
             enum pattern = "Usage: <b>%s%s add<b> [account] [hostmask]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+            immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
             return privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
 
@@ -1396,7 +1396,7 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
         if (!slice.length || (slice.indexOf(' ') != -1))
         {
             enum pattern = "Usage: <b>%s%s del<b> [hostmask]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+            immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
             return privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
 
@@ -1423,7 +1423,7 @@ void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
-    if (plugin.state.settings.headless) return;
+    if (plugin.state.coreSettings.headless) return;
 
     JSONStorage json;
     json.load(plugin.hostmasksFile);
@@ -1442,12 +1442,12 @@ void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
             import std.json : JSONValue;
             import std.stdio : stdout, writeln;
 
-            if (plugin.state.settings.headless) return;
+            if (plugin.state.coreSettings.headless) return;
 
             logger.log("Current hostmasks:");
             // json can contain the example placeholder, so make a new one out of aa
             writeln(JSONValue(aa).toPrettyString);
-            if (plugin.state.settings.flush) stdout.flush();
+            if (plugin.state.coreSettings.flush) stdout.flush();
         }
         else
         {
@@ -1710,7 +1710,7 @@ void onCommandSelftest(AdminPlugin plugin, const IRCEvent event)
     {
         enum pattern = "Usage: %s%s [target nickname] [optional plugin name(s)]";
         immutable message = pattern.format(
-            plugin.state.settings.prefix,
+            plugin.state.coreSettings.prefix,
             event.aux[0]);
         chan(plugin.state, event.channel.name, message);
         return;
@@ -1832,7 +1832,7 @@ void onBusMessage(
                 case "state":
                     import kameloso.prettyprint : prettyprint;
                     // Adds 350 mb to compilation memory usage
-                    if (plugin.state.settings.headless) return;
+                    if (plugin.state.coreSettings.headless) return;
                     return prettyprint(plugin.state);
             }
 
@@ -1866,11 +1866,11 @@ void onBusMessage(
 
         case "gc.stats":
             import kameloso.misc : printGCStats;
-            if (plugin.state.settings.headless) return;
+            if (plugin.state.coreSettings.headless) return;
             return printGCStats();
 
         case "user":
-            if (plugin.state.settings.headless) return;
+            if (plugin.state.coreSettings.headless) return;
 
             if (const user = slice in plugin.state.users)
             {
@@ -1887,14 +1887,14 @@ void onBusMessage(
             return onCommandShowUsersImpl(plugin);
 
         case "printraw":
-            if (plugin.state.settings.headless) return;
+            if (plugin.state.coreSettings.headless) return;
             plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
             enum pattern = "Printing raw: <l>%s";
             logger.infof(pattern, plugin.adminSettings.printRaw);
             return;
 
         case "printbytes":
-            if (plugin.state.settings.headless) return;
+            if (plugin.state.coreSettings.headless) return;
             plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
             enum pattern = "Printing bytes: <l>%s";
             logger.infof(pattern, plugin.adminSettings.printBytes);

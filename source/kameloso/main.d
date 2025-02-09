@@ -364,7 +364,7 @@ auto processMessages(Kameloso instance, const SysTime now)
 
         case save:
             import kameloso.config : writeConfigurationFile;
-            writeConfigurationFile(instance, instance.settings.configFile);
+            writeConfigurationFile(instance, instance.coreSettings.configFile);
             break;
 
         case popCustomSetting:
@@ -438,7 +438,7 @@ auto processMessages(Kameloso instance, const SysTime now)
             import std.stdio : stdout, writeln;
 
             writeln(message.content.expandTags(LogLevel.off));
-            if (instance.settings.flush) stdout.flush();
+            if (instance.coreSettings.flush) stdout.flush();
             break;
 
         case fakeEvent:
@@ -476,7 +476,7 @@ auto processMessages(Kameloso instance, const SysTime now)
         }
 
         immutable background = (m.properties & Message.Property.background);
-        immutable quiet = (instance.settings.hideOutgoing || (m.properties & Message.Property.quiet));
+        immutable quiet = (instance.coreSettings.hideOutgoing || (m.properties & Message.Property.quiet));
         immutable force = (m.properties & Message.Property.forced);
         immutable priority = (m.properties & Message.Property.priority);
         immutable immediate = (m.properties & Message.Property.immediate);
@@ -656,7 +656,7 @@ auto processMessages(Kameloso instance, const SysTime now)
             version(TraceWhois)
             {
                 import std.stdio : stdout;
-                if (instance.settings.flush) stdout.flush();
+                if (instance.coreSettings.flush) stdout.flush();
             }
             break;
 
@@ -722,7 +722,7 @@ auto processMessages(Kameloso instance, const SysTime now)
             }
             else
             {
-                instance.outbuffer.put(OutgoingLine(finalLine, quiet: instance.settings.hideOutgoing));
+                instance.outbuffer.put(OutgoingLine(finalLine, quiet: instance.coreSettings.hideOutgoing));
             }
         }
 
@@ -990,7 +990,7 @@ auto mainLoop(Kameloso instance)
     {
         if (*instance.abort) return Next.returnFailure;
 
-        if (!instance.settings.headless && instance.transient.wantLiveSummary)
+        if (!instance.coreSettings.headless && instance.transient.wantLiveSummary)
         {
             // Live connection summary requested.
             printSummary(instance);
@@ -1469,7 +1469,7 @@ void processLineFromServer(
 
     scope(failure)
     {
-        if (!instance.settings.headless)
+        if (!instance.coreSettings.headless)
         {
             import std.algorithm.searching : canFind;
             import std.stdio : stdout;
@@ -1494,7 +1494,7 @@ void processLineFromServer(
                 }
             }
 
-            if (instance.settings.flush) stdout.flush();
+            if (instance.coreSettings.flush) stdout.flush();
         }
     }
 
@@ -2271,7 +2271,7 @@ void processPendingReplays(Kameloso instance, IRCPlugin plugin)
         {
             import std.stdio : writef, writefln, writeln;
 
-            if (!instance.settings.headless)
+            if (!instance.coreSettings.headless)
             {
                 import std.algorithm.iteration : map;
 
@@ -2288,7 +2288,7 @@ void processPendingReplays(Kameloso instance, IRCPlugin plugin)
         {
             version(TraceWhois)
             {
-                if (!instance.settings.headless)
+                if (!instance.coreSettings.headless)
                 {
                     writeln(" ...and actually issuing.");
                 }
@@ -2302,7 +2302,7 @@ void processPendingReplays(Kameloso instance, IRCPlugin plugin)
         {
             version(TraceWhois)
             {
-                if (!instance.settings.headless)
+                if (!instance.coreSettings.headless)
                 {
                     enum pattern = " ...but already issued %d seconds ago.";
                     writefln(pattern, (nowInUnix - lastWhois));
@@ -2313,7 +2313,7 @@ void processPendingReplays(Kameloso instance, IRCPlugin plugin)
         version(TraceWhois)
         {
             import std.stdio : stdout;
-            if (instance.settings.flush) stdout.flush();
+            if (instance.coreSettings.flush) stdout.flush();
         }
 
         foreach (ref replay; replaysForNickname)
@@ -2504,7 +2504,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                 {
                 case "core":
                     import lu.serialisation : serialise;
-                    sink.serialise(*instance.settings);
+                    sink.serialise(*instance.coreSettings);
                     apply();
                     break;
 
@@ -2547,7 +2547,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                 immutable expression = action.context;
                 immutable success = applyCustomSettings(
                     instance.plugins,
-                    *instance.settings,
+                    *instance.coreSettings,
                     [ expression ],
                     toPluginsOnly: false);  // include settings
 
@@ -2734,7 +2734,7 @@ auto tryGetopt(Kameloso instance)
     catch (ProcessException e)
     {
         enum pattern = "Failed to open <l>%s</> in an editor: <t>%s";
-        logger.errorf(pattern, instance.settings.configFile.doublyBackslashed, e.msg);
+        logger.errorf(pattern, instance.coreSettings.configFile.doublyBackslashed, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (IRCPluginSettingsException e)
@@ -2854,7 +2854,7 @@ auto tryConnect(Kameloso instance)
 
             string resolvedHost;  // mutable
 
-            if (!instance.settings.numericAddresses)
+            if (!instance.coreSettings.numericAddresses)
             {
                 try
                 {
@@ -3228,16 +3228,16 @@ void postInstanceSetup()
     This is called during early execution.
 
     Params:
-        settings = A reference to some [kameloso.pods.CoreSettings|CoreSettings].
+        coreSettings = A reference to some [kameloso.pods.CoreSettings|CoreSettings].
  +/
-void setDefaultDirectories(ref CoreSettings settings) @safe
+void setDefaultDirectories(ref CoreSettings coreSettings) @safe
 {
     import kameloso.constants : KamelosoFilenames;
     import kameloso.platform : cbd = configurationBaseDirectory, rbd = resourceBaseDirectory;
     import std.path : buildNormalizedPath;
 
-    settings.configFile = buildNormalizedPath(cbd, "kameloso", KamelosoFilenames.configuration);
-    settings.resourceDirectory = buildNormalizedPath(rbd, "kameloso");
+    coreSettings.configFile = buildNormalizedPath(cbd, "kameloso", KamelosoFilenames.configuration);
+    coreSettings.resourceDirectory = buildNormalizedPath(rbd, "kameloso");
 }
 
 
@@ -3259,7 +3259,7 @@ auto verifySettings(Kameloso instance)
 {
     import lu.misc : Next;
 
-    if (!instance.settings.force)
+    if (!instance.coreSettings.force)
     {
         import dialect.common : isValidNickname;
 
@@ -3273,7 +3273,7 @@ auto verifySettings(Kameloso instance)
             return Next.returnFailure;
         }
 
-        /*if (!instance.settings.prefix.length)
+        /*if (!instance.coreSettings.prefix.length)
         {
             logger.error("No prefix configured!");
             return Next.returnFailure;
@@ -3300,7 +3300,7 @@ auto verifySettings(Kameloso instance)
         // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
         // the workaround being never resolve addresses that don't contain at least one dot
         immutable addressIsResolvable =
-            instance.settings.force ||
+            instance.coreSettings.force ||
             instance.parser.server.address == "localhost" ||
             (instance.parser.server.address.indexOf('.') != -1) ||
             (instance.parser.server.address.indexOf(':') != -1);
@@ -3346,24 +3346,24 @@ void resolvePaths(Kameloso instance) @safe
     version(Posix)
     {
         import std.path : expandTilde;
-        instance.settings.resourceDirectory = instance.settings.resourceDirectory.expandTilde();
+        instance.coreSettings.resourceDirectory = instance.coreSettings.resourceDirectory.expandTilde();
     }
 
     // Resolve and create the resource directory
     // Assume nothing has been entered if it is the default resource dir sans server etc
-    if (instance.settings.resourceDirectory == defaultResourceHomeDir)
+    if (instance.coreSettings.resourceDirectory == defaultResourceHomeDir)
     {
         version(Windows)
         {
             import std.string : replace;
-            instance.settings.resourceDirectory = buildNormalizedPath(
+            instance.coreSettings.resourceDirectory = buildNormalizedPath(
                 defaultResourceHomeDir,
                 "server",
                 instance.parser.server.address.replace(':', '_'));
         }
         else version(Posix)
         {
-            instance.settings.resourceDirectory = buildNormalizedPath(
+            instance.coreSettings.resourceDirectory = buildNormalizedPath(
                 defaultResourceHomeDir,
                 "server",
                 instance.parser.server.address);
@@ -3374,17 +3374,17 @@ void resolvePaths(Kameloso instance) @safe
         }
     }
 
-    if (!instance.settings.resourceDirectory.exists)
+    if (!instance.coreSettings.resourceDirectory.exists)
     {
         import kameloso.string : doublyBackslashed;
         import std.file : mkdirRecurse;
 
-        mkdirRecurse(instance.settings.resourceDirectory);
+        mkdirRecurse(instance.coreSettings.resourceDirectory);
         enum pattern = "Created resource directory <i>%s";
-        logger.logf(pattern, instance.settings.resourceDirectory.doublyBackslashed);
+        logger.logf(pattern, instance.coreSettings.resourceDirectory.doublyBackslashed);
     }
 
-    instance.settings.configDirectory = instance.settings.configFile.dirName;
+    instance.coreSettings.configDirectory = instance.coreSettings.configFile.dirName;
 
     string*[3] filenames =
     [
@@ -3404,9 +3404,9 @@ void resolvePaths(Kameloso instance) @safe
 
         if (!filename.isAbsolute && !filename.exists)
         {
-            immutable fullPath = instance.settings.configDirectory.isAbsolute ?
-                absolutePath(filename, instance.settings.configDirectory) :
-                buildNormalizedPath(instance.settings.configDirectory, filename);
+            immutable fullPath = instance.coreSettings.configDirectory.isAbsolute ?
+                absolutePath(filename, instance.coreSettings.configDirectory) :
+                buildNormalizedPath(instance.coreSettings.configDirectory, filename);
 
             if (fullPath.exists)
             {
@@ -3476,16 +3476,18 @@ auto startBot(Kameloso instance)
                 enum lastConnectAttemptFizzled = false;
             }
 
-            if ((!lastConnectAttemptFizzled && instance.settings.reexecToReconnect) || instance.transient.askedToReexec)
+            if ((!lastConnectAttemptFizzled &&
+                instance.coreSettings.reexecToReconnect) ||
+                instance.transient.askedToReexec)
             {
                 import kameloso.platform : exec;
                 import kameloso.terminal : isTerminal, resetTerminalTitle, setTerminalTitle;
                 import lu.misc : ReturnValueException;
                 import std.process : ProcessException;
 
-                if (!instance.settings.headless)
+                if (!instance.coreSettings.headless)
                 {
-                    if (instance.settings.exitSummary && instance.connectionHistory.length)
+                    if (instance.coreSettings.exitSummary && instance.connectionHistory.length)
                     {
                         printSummary(instance);
                     }
@@ -3870,7 +3872,7 @@ auto startBot(Kameloso instance)
         attempt.silentExit = false;
 
         /+
-            If `instance.settings.callgrind` is true, do a callgrind dump
+            If `instance.coreSettings.callgrind` is true, do a callgrind dump
             before the main loop starts, and then once again on disconnect.
             That way the dump won't contain uninteresting profiling about
             resolving IPs and connecting and such.
@@ -3901,34 +3903,34 @@ auto startBot(Kameloso instance)
                 if ((result.status != 0) ||
                     result.output.startsWith("Error: Callgrind task with PID"))
                 {
-                    instance.settings.callgrind = false;
+                    instance.coreSettings.callgrind = false;
                     logger.warning("Not running under Callgrind.");
                 }
             }
             catch (ProcessException e)
             {
                 logger.warning("No <l>callgrind_control</> tool found.");
-                instance.settings.callgrind = false;
+                instance.coreSettings.callgrind = false;
             }
 
-            if (!instance.settings.callgrind)
+            if (!instance.coreSettings.callgrind)
             {
                 foreach (plugin; instance.plugins)
                 {
                     // Update plugins so they don't re-enable this
-                    plugin.state.settings.callgrind = false;
+                    plugin.state.coreSettings.callgrind = false;
                 }
             }
         }
 
-        if (instance.settings.callgrind)
+        if (instance.coreSettings.callgrind)
         {
             // --set core.callgrind=true, dump
             dumpCallgrind();
         }
 
         // Also dump at scope exit
-        scope(exit) if (instance.settings.callgrind) dumpCallgrind(skipSuccessCheck: true);
+        scope(exit) if (instance.coreSettings.callgrind) dumpCallgrind(skipSuccessCheck: true);
 
         version(WantConcurrencyMessageLoop)
         {
@@ -4168,7 +4170,7 @@ void echoQuitMessage(Kameloso instance, const string reason) @safe
 
     version(Colours)
     {
-        if (instance.settings.colours)
+        if (instance.coreSettings.colours)
         {
             import kameloso.irccolours : mapEffects;
             logger.trace("--> QUIT :", reason.mapEffects);
@@ -4201,7 +4203,7 @@ void prettyPrintStartScreen(const Kameloso instance, const string arg0)
 
     printVersionInfo();
     writeln();
-    if (instance.settings.flush) stdout.flush();
+    if (instance.coreSettings.flush) stdout.flush();
 
     // Print the current settings to show what's going on.
     IRCClient prettyClient = instance.parser.client;
@@ -4214,7 +4216,7 @@ void prettyPrintStartScreen(const Kameloso instance, const string arg0)
 
         giveBrightTerminalHint();
         logger.trace();
-        notifyAboutIncompleteConfiguration(instance.settings.configFile, arg0);
+        notifyAboutIncompleteConfiguration(instance.coreSettings.configFile, arg0);
     }
 }
 
@@ -4271,7 +4273,7 @@ auto checkInitialisationMessages(
 
         case save:
             import kameloso.config : writeConfigurationFile;
-            writeConfigurationFile(instance, instance.settings.configFile);
+            writeConfigurationFile(instance, instance.coreSettings.configFile);
             break;
 
         default:
@@ -4381,11 +4383,11 @@ auto run(string[] args)
     instance.abort = &kameloso.common.globalAbort;
 
     // Set up default directories in the settings.
-    setDefaultDirectories(*instance.settings);
+    setDefaultDirectories(*instance.coreSettings);
 
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for colours and headless
-    kameloso.common.logger = new KamelosoLogger(*instance.settings);
+    kameloso.common.logger = new KamelosoLogger(*instance.coreSettings);
 
     // Set up signal handling so that we can gracefully catch Ctrl+C.
     setupSignals();
@@ -4394,7 +4396,7 @@ auto run(string[] args)
     {
         import kameloso.terminal : TerminalToken, isTerminal;
 
-        if (!instance.settings.headless)
+        if (!instance.coreSettings.headless)
         {
             enum bellString = TerminalToken.bell ~ "";
             immutable bell = isTerminal ? bellString : string.init;
@@ -4406,7 +4408,7 @@ auto run(string[] args)
 
     // Handle command-line arguments.
     immutable actionAfterGetopt = tryGetopt(instance);
-    kameloso.common.globalHeadless = instance.settings.headless;
+    kameloso.common.globalHeadless = instance.coreSettings.headless;
 
     with (Next)
     final switch (actionAfterGetopt)
@@ -4429,7 +4431,7 @@ auto run(string[] args)
         assert(0, text("`tryGetopt` returned `", actionAfterGetopt.toString(), "`"));
     }
 
-    if (!instance.settings.headless || instance.settings.force)
+    if (!instance.coreSettings.headless || instance.coreSettings.force)
     {
         try
         {
@@ -4441,31 +4443,31 @@ auto run(string[] args)
         catch (ErrnoException e)
         {
             import std.stdio : writeln;
-            if (!instance.settings.headless) writeln("Failed to set stdout buffer mode/size! errno:", e.errno);
-            if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
+            if (!instance.coreSettings.headless) writeln("Failed to set stdout buffer mode/size! errno:", e.errno);
+            if (!instance.coreSettings.force) return ShellReturnValue.terminalSetupFailure;
         }
         catch (Exception e)
         {
-            if (!instance.settings.headless)
+            if (!instance.coreSettings.headless)
             {
                 import std.stdio : writeln;
                 writeln("Failed to set stdout buffer mode/size!");
                 writeln(e);
             }
 
-            if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
+            if (!instance.coreSettings.force) return ShellReturnValue.terminalSetupFailure;
         }
         finally
         {
             import std.stdio : stdout;
-            if (instance.settings.flush) stdout.flush();
+            if (instance.coreSettings.flush) stdout.flush();
         }
     }
 
     // Apply some defaults to empty members, as stored in `kameloso.constants`.
     // It's done before in tryGetopt but do it again to ensure we don't have an empty nick etc
     // Skip if --force was passed.
-    if (!instance.settings.force)
+    if (!instance.coreSettings.force)
     {
         import kameloso.config : applyDefaults;
         applyDefaults(instance);
@@ -4474,7 +4476,7 @@ auto run(string[] args)
     // Additionally if the port is an SSL-like port, assume SSL,
     // but only if the user isn't forcing settings
     if (!instance.connSettings.ssl &&
-        !instance.settings.force &&
+        !instance.coreSettings.force &&
         instance.parser.server.port.among!(6697, 7000, 7001, 7029, 7070, 9999, 443))
     {
         instance.connSettings.ssl = true;
@@ -4483,7 +4485,7 @@ auto run(string[] args)
     // Copy ssl setting to the Connection after the above
     instance.conn.ssl = instance.connSettings.ssl;
 
-    if (!instance.settings.headless && !instance.transient.numReexecs)
+    if (!instance.coreSettings.headless && !instance.transient.numReexecs)
     {
         prettyPrintStartScreen(instance, args[0]);
     }
@@ -4529,7 +4531,7 @@ auto run(string[] args)
              +/
             immutable string[2] fallbackCaBundleFileDirs =
             [
-                instance.settings.configDirectory,
+                instance.coreSettings.configDirectory,
                 args[0].dirName,
             ];
 
@@ -4548,7 +4550,7 @@ auto run(string[] args)
         }
 
         if (
-            (!instance.settings.headless &&
+            (!instance.coreSettings.headless &&
             !instance.transient.numReexecs) &&
             (!instance.connSettings.caBundleFile.exists ||
             instance.connSettings.caBundleFile.isDir))
@@ -4557,7 +4559,7 @@ auto run(string[] args)
         }
     }
 
-    // Sync settings and connSettings.
+    // Sync coreSettings and connSettings.
     instance.conn.certFile = instance.connSettings.certFile;
     instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
 
@@ -4581,16 +4583,16 @@ auto run(string[] args)
 
         instance.instantiatePlugins();
 
-        if (!instance.settings.headless &&
+        if (!instance.coreSettings.headless &&
             !instance.transient.numReexecs &&
             instance.missingConfigurationEntries.length &&
-            instance.settings.configFile.exists)
+            instance.coreSettings.configFile.exists)
         {
             import kameloso.config : notifyAboutMissingSettings;
             notifyAboutMissingSettings(
                 instance.missingConfigurationEntries,
                 args[0],
-                instance.settings.configFile);
+                instance.coreSettings.configFile);
         }
     }
     catch (ConvException e)
@@ -4598,14 +4600,14 @@ auto run(string[] args)
         // Configuration file/--set argument syntax error
         logger.error(e.msg);
         version(PrintStacktraces) logger.trace(e.info);
-        if (!instance.settings.force) return ShellReturnValue.customConfigSyntaxFailure;
+        if (!instance.coreSettings.force) return ShellReturnValue.customConfigSyntaxFailure;
     }
     catch (IRCPluginSettingsException e)
     {
         // --set plugin/setting name error
         logger.error(e.msg);
         version(PrintStacktraces) logger.trace(e.info);
-        if (!instance.settings.force) return ShellReturnValue.customConfigFailure;
+        if (!instance.coreSettings.force) return ShellReturnValue.customConfigFailure;
     }
     catch (Exception e)
     {
@@ -4618,7 +4620,7 @@ auto run(string[] args)
             e.line);
 
         version(PrintStacktraces) logger.trace(e);
-        if (!instance.settings.force) return ShellReturnValue.pluginInstantiationException;
+        if (!instance.coreSettings.force) return ShellReturnValue.pluginInstantiationException;
     }
 
     // Save the original nickname *once*, outside the connection loop.
@@ -4702,8 +4704,8 @@ auto run(string[] args)
         string reason;  // mutable
 
         if (!*instance.abort &&
-            !instance.settings.headless &&
-            !instance.settings.hideOutgoing)
+            !instance.coreSettings.headless &&
+            !instance.coreSettings.hideOutgoing)
         {
             import kameloso.thread : getQuitMessage;
 
@@ -4724,12 +4726,12 @@ auto run(string[] args)
     }
 
     // Save if we're exiting and configuration says we should.
-    if (instance.settings.saveOnExit)
+    if (instance.coreSettings.saveOnExit)
     {
         try
         {
             import kameloso.config : writeConfigurationFile;
-            writeConfigurationFile(instance, instance.settings.configFile);
+            writeConfigurationFile(instance, instance.coreSettings.configFile);
         }
         catch (Exception e)
         {
@@ -4748,9 +4750,9 @@ auto run(string[] args)
     }
 
     // Print connection summary
-    if (!instance.settings.headless)
+    if (!instance.coreSettings.headless)
     {
-        if (instance.settings.exitSummary && instance.connectionHistory.length)
+        if (instance.coreSettings.exitSummary && instance.connectionHistory.length)
         {
             printSummary(instance);
         }

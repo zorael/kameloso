@@ -49,6 +49,7 @@ private:
 ///
 unittest
 {
+    pragma(msg, "blarp");
     import kameloso.pods : CoreSettings;
     import kameloso.plugins.common.misc : applyCustomSettings;
 
@@ -65,7 +66,7 @@ unittest
 
     cast(void)applyCustomSettings(
         [ plugin ],
-        settings: coreSettings,
+        coreSettings: coreSettings,
         customSettings: newSettings,
         toPluginsOnly: true);
 

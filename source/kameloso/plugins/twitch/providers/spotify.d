@@ -56,7 +56,7 @@ void requestSpotifyKeys(TwitchPlugin plugin)
     import std.stdio : File, readln, stdin, stdout, write, writeln;
     import std.string : indexOf;
 
-    scope(exit) if (plugin.state.settings.flush) stdout.flush();
+    scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
     logger.trace();
     logger.warning("== Spotify authorisation key generation wizard ==");
@@ -179,11 +179,11 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
     Pid browser;
     scope(exit) if (browser !is null) wait(browser);
 
-    if (plugin.state.settings.force)
+    if (plugin.state.coreSettings.force)
     {
         logger.warning("Forcing; not automatically opening browser.");
         printManualURL(url);
-        if (plugin.state.settings.flush) stdout.flush();
+        if (plugin.state.coreSettings.flush) stdout.flush();
     }
     else
     {
@@ -197,13 +197,13 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
             // Probably we got some platform wrong and command was not found
             logger.warning("Error: could not automatically open browser.");
             printManualURL(url);
-            if (plugin.state.settings.flush) stdout.flush();
+            if (plugin.state.coreSettings.flush) stdout.flush();
         }
         catch (Exception _)
         {
             logger.warning("Error: no graphical environment detected");
             printManualURL(url);
-            if (plugin.state.settings.flush) stdout.flush();
+            if (plugin.state.coreSettings.flush) stdout.flush();
         }
     }
 
@@ -213,7 +213,7 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
 
     while (!code.length)
     {
-        scope(exit) if (plugin.state.settings.flush) stdout.flush();
+        scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
         enum pasteMessage = "<i>></> ";
         write(pasteMessage.expandTags(LogLevel.off));
@@ -510,7 +510,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
     enum urlPattern = "https://api.spotify.com/v1/playlists/%s/tracks?uris=spotify:track:%s";
     immutable url = urlPattern.format(creds.spotifyPlaylistID, trackID);
 
-    if (plugin.state.settings.trace)
+    if (plugin.state.coreSettings.trace)
     {
         import kameloso.common : logger;
         enum pattern = "GET: <i>%s";

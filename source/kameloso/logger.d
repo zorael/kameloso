@@ -159,17 +159,17 @@ public:
         [kameloso.pods.CoreSettings|CoreSettings] struct.
 
         Params:
-            settings = [kameloso.pods.CoreSettings|CoreSettings] whose
+            coreSettings = [kameloso.pods.CoreSettings|CoreSettings] whose
                 values to inherit.
      +/
-    this(const CoreSettings settings) pure nothrow @safe
+    this(const CoreSettings coreSettings) pure nothrow @safe
     {
         linebuffer.reserve(bufferInitialSize);
         messagebuffer.reserve(bufferInitialSize);
-        this.colours = settings.colours;
-        this.brightTerminal = settings.brightTerminal;
-        this.headless = settings.headless;
-        this.flush = settings.flush;
+        this.colours = coreSettings.colours;
+        this.brightTerminal = coreSettings.brightTerminal;
+        this.headless = coreSettings.headless;
+        this.flush = coreSettings.flush;
     }
 
     version(Colours)
@@ -646,13 +646,13 @@ unittest
         }
     }
 
-    CoreSettings settings;
-    settings.colours = false;
-    settings.brightTerminal = false;
-    settings.headless = false;
-    settings.flush = true;
+    CoreSettings coreSettings;
+    coreSettings.colours = false;
+    coreSettings.brightTerminal = false;
+    coreSettings.headless = false;
+    coreSettings.flush = true;
 
-    auto log_ = new KamelosoLogger(settings);
+    auto log_ = new KamelosoLogger(coreSettings);
 
     log_.logf!"log: %s"("log");
     log_.infof!"log: %s"("info");
@@ -665,9 +665,9 @@ unittest
 
     version(Colours)
     {
-        settings.colours = true;
-        settings.brightTerminal = true;
-        log_ = new KamelosoLogger(settings);
+        coreSettings.colours = true;
+        coreSettings.brightTerminal = true;
+        log_ = new KamelosoLogger(coreSettings);
 
         log_.log("log: log");
         log_.info("log: info");
@@ -678,8 +678,8 @@ unittest
         log_.trace("log: trace");
         log_.off("log: off");
 
-        settings.brightTerminal = false;
-        log_ = new KamelosoLogger(settings);
+        coreSettings.brightTerminal = false;
+        log_ = new KamelosoLogger(coreSettings);
 
         log_.log("log: log");
         log_.info("log: info");

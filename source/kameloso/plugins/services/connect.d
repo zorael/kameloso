@@ -569,7 +569,7 @@ void tryAuth(ConnectService service)
         immutable message = text(verb, ' ', password);
         query(service.state, serviceNick, message, properties);
 
-        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
+        if (!service.state.coreSettings.hideOutgoing && !service.state.coreSettings.trace)
         {
             enum pattern = "--> PRIVMSG %s :%s hunter2";
             logger.tracef(pattern, serviceNick, verb);
@@ -597,7 +597,7 @@ void tryAuth(ConnectService service)
         immutable message = text(verb, ' ', account, ' ', password);
         query(service.state, serviceNick, message, properties);
 
-        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
+        if (!service.state.coreSettings.hideOutgoing && !service.state.coreSettings.trace)
         {
             enum pattern = "--> PRIVMSG %s :%s %s hunter2";
             logger.tracef(pattern, serviceNick, verb, account);
@@ -616,7 +616,7 @@ void tryAuth(ConnectService service)
             immutable message = "NICKSERV IDENTIFY " ~ password;
             raw(service.state, message, properties);
 
-            if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
+            if (!service.state.coreSettings.hideOutgoing && !service.state.coreSettings.trace)
             {
                 logger.trace("--> NICKSERV IDENTIFY hunter2");
             }
@@ -1190,7 +1190,7 @@ auto trySASLPlain(ConnectService service)
         enum properties = Message.Property.quiet;
         immediate(service.state, message, properties);
 
-        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
+        if (!service.state.coreSettings.hideOutgoing && !service.state.coreSettings.trace)
         {
             logger.trace("--> AUTHENTICATE hunter2");
         }
@@ -1349,13 +1349,13 @@ void onWelcome(ConnectService service, const IRCEvent event)
     {
         import kameloso.plugins.common.scheduling : await, unawait;
 
-        if (service.state.settings.preferHostmasks &&
-            !service.state.settings.force)
+        if (service.state.coreSettings.preferHostmasks &&
+            !service.state.coreSettings.force)
         {
             // We already infer account by username on Twitch;
             // hostmasks mode makes no sense there. So disable it.
-            service.state.settings.preferHostmasks = false;
-            service.state.updates |= typeof(service.state.updates).settings;
+            service.state.coreSettings.preferHostmasks = false;
+            service.state.updates |= typeof(service.state.updates).coreSettings;
         }
 
         static immutable IRCEvent.Type[2] endOfMOTDEventTypes =
@@ -1382,15 +1382,14 @@ void onWelcome(ConnectService service, const IRCEvent event)
 
             if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
 
-            service.state.settings.colouredOutgoing = false;
-            service.state.updates |= typeof(service.state.updates).settings;
+            service.state.coreSettings.colouredOutgoing = false;
+            service.state.updates |= typeof(service.state.updates).coreSettings;
 
-            if (service.state.settings.prefix.startsWith(".") ||
-                service.state.settings.prefix.startsWith("/"))
+            if (service.state.coreSettings.prefix.startsWith(".", "/"))
             {
                 enum pattern = `WARNING: A prefix of "<l>%s</>" will *not* work on Twitch servers, ` ~
                     "as <l>.</> and <l>/</> are reserved for Twitch's own commands.";
-                logger.warningf(pattern, service.state.settings.prefix);
+                logger.warningf(pattern, service.state.coreSettings.prefix);
             }
         }
         else
@@ -1643,7 +1642,7 @@ void onUnknownCommand(ConnectService service, const IRCEvent event)
     mixin(memoryCorruptionCheck);
 
     if (service.transient.serverSupportsWHOIS &&
-        !service.state.settings.preferHostmasks &&
+        !service.state.coreSettings.preferHostmasks &&
         (event.aux[0] == "WHOIS"))
     {
         logger.error("Error: This server does not seem to support user accounts.");
@@ -1727,7 +1726,7 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
 
                 if (strikes <= StrikeBreakpoints.wait)
                 {
-                    if (service.state.settings.trace && (strikes > 1))
+                    if (service.state.coreSettings.trace && (strikes > 1))
                     {
                         logger.warning("Server is suspiciously quiet.");
                     }
@@ -1842,7 +1841,7 @@ void register(ConnectService service)
         capabilityServerBlacklistSuffix
             .canFind!((a,b) => b.endsWith(a))(serverToLower);
 
-    if (!serverBlacklisted || service.state.settings.force)
+    if (!serverBlacklisted || service.state.coreSettings.force)
     {
         enum properties = Message.Property.quiet;
         enum message = "CAP LS 302";
@@ -1900,7 +1899,7 @@ void register(ConnectService service)
         immutable message = "PASS " ~ service.state.bot.pass;
         immediate(service.state, message, properties);
 
-        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
+        if (!service.state.coreSettings.hideOutgoing && !service.state.coreSettings.trace)
         {
             version(TwitchSupport)
             {
@@ -1934,7 +1933,7 @@ void register(ConnectService service)
     {
         // CAP should work, nick will be negotiated after CAP END
     }
-    else if (serverBlacklisted && !service.state.settings.force)
+    else if (serverBlacklisted && !service.state.coreSettings.force)
     {
         // No CAP, do NICK right away
         negotiateNick(service);

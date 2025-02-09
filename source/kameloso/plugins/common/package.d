@@ -774,7 +774,7 @@ mixin template IRCPluginImpl(
                     " home:",  cast(bool)(uda._channelPolicy & ChannelPolicy.home),
                     " guest:", cast(bool)(uda._channelPolicy & ChannelPolicy.guest),
                     " any:",   cast(bool)(uda._channelPolicy & ChannelPolicy.any));
-                if (state.settings.flush) stdout.flush();
+                if (state.coreSettings.flush) stdout.flush();
             }
 
             if (event.channel.name.length)
@@ -790,7 +790,7 @@ mixin template IRCPluginImpl(
                     static if (verbose)
                     {
                         writeln("   ...ignore non-matching channel ", event.channel.name);
-                        if (state.settings.flush) stdout.flush();
+                        if (state.coreSettings.flush) stdout.flush();
                     }
 
                     // channel policy does not match
@@ -845,7 +845,7 @@ mixin template IRCPluginImpl(
                         {
                             enum pattern = `   ...Command "%s"`;
                             writefln(pattern, command._word);
-                            if (state.settings.flush) stdout.flush();
+                            if (state.coreSettings.flush) stdout.flush();
                         }
 
                         // The call to .prefixPolicyMatches modifies event.content
@@ -854,7 +854,7 @@ mixin template IRCPluginImpl(
                             static if (verbose)
                             {
                                 writeln("   ...policy doesn't match; continue next Command");
-                                if (state.settings.flush) stdout.flush();
+                                if (state.coreSettings.flush) stdout.flush();
                             }
 
                             // Do nothing, proceed to next command but restore content first
@@ -879,7 +879,7 @@ mixin template IRCPluginImpl(
                             static if (verbose)
                             {
                                 writeln("   ...command word matches!");
-                                if (state.settings.flush) stdout.flush();
+                                if (state.coreSettings.flush) stdout.flush();
                             }
 
                             event.aux[$-1] = commandWordInEvent;
@@ -909,7 +909,7 @@ mixin template IRCPluginImpl(
                             {
                                 enum pattern = `   ...Regex r"%s"`;
                                 writefln(pattern, regex._expression);
-                                if (state.settings.flush) stdout.flush();
+                                if (state.coreSettings.flush) stdout.flush();
                             }
 
                             if (!event.prefixPolicyMatches!verbose(regex._policy, state))
@@ -917,7 +917,7 @@ mixin template IRCPluginImpl(
                                 static if (verbose)
                                 {
                                     writeln("   ...policy doesn't match; continue next Regex");
-                                    if (state.settings.flush) stdout.flush();
+                                    if (state.coreSettings.flush) stdout.flush();
                                 }
 
                                 // Do nothing, proceed to next regex
@@ -933,7 +933,7 @@ mixin template IRCPluginImpl(
                                     static if (verbose)
                                     {
                                         writeln("   ...expression matches!");
-                                        if (state.settings.flush) stdout.flush();
+                                        if (state.coreSettings.flush) stdout.flush();
                                     }
 
                                     event.aux[$-1] = hits[0];
@@ -947,7 +947,7 @@ mixin template IRCPluginImpl(
                                     {
                                         enum matchPattern = `   ...matching "%s" against expression "%s" failed.`;
                                         writefln(matchPattern, event.content, regex._expression);
-                                        if (state.settings.flush) stdout.flush();
+                                        if (state.coreSettings.flush) stdout.flush();
                                     }
                                 }
                             }
@@ -957,7 +957,7 @@ mixin template IRCPluginImpl(
                                 {
                                     writeln("   ...Regex exception: ", e.msg);
                                     version(PrintStacktraces) writeln(e);
-                                    if (state.settings.flush) stdout.flush();
+                                    if (state.coreSettings.flush) stdout.flush();
                                 }
                             }
                         }
@@ -966,12 +966,12 @@ mixin template IRCPluginImpl(
 
                 if (commandMatch)
                 {
-                    if (state.settings.observerMode)
+                    if (state.coreSettings.observerMode)
                     {
                         static if (verbose)
                         {
                             writeln("   ...observer mode; skip");
-                            if (state.settings.flush) stdout.flush();
+                            if (state.coreSettings.flush) stdout.flush();
                         }
 
                         return NextStep.continue_;  // next function
@@ -985,7 +985,7 @@ mixin template IRCPluginImpl(
                     static if (verbose)
                     {
                         writeln("   ...no Command nor Regex match; continue funloop");
-                        if (state.settings.flush) stdout.flush();
+                        if (state.coreSettings.flush) stdout.flush();
                     }
 
                     return NextStep.continue_; // next function
@@ -998,7 +998,7 @@ mixin template IRCPluginImpl(
                 {
                     writeln("   ...Permissions.",
                         uda._permissionsRequired.toString());
-                    if (state.settings.flush) stdout.flush();
+                    if (state.coreSettings.flush) stdout.flush();
                 }
 
                 immutable result = this.allow(event, uda._permissionsRequired);
@@ -1006,7 +1006,7 @@ mixin template IRCPluginImpl(
                 static if (verbose)
                 {
                     writeln("   ...allow result is ", result.toString());
-                    if (state.settings.flush) stdout.flush();
+                    if (state.coreSettings.flush) stdout.flush();
                 }
 
                 if (result == FilterResult.pass)
@@ -1023,7 +1023,7 @@ mixin template IRCPluginImpl(
                     {
                         enum pattern = "   ...%s WHOIS";
                         writefln(pattern, typeof(this).stringof);
-                        if (state.settings.flush) stdout.flush();
+                        if (state.coreSettings.flush) stdout.flush();
                     }
 
                     static if (
@@ -1057,7 +1057,7 @@ mixin template IRCPluginImpl(
             static if (verbose)
             {
                 writeln("   ...calling!");
-                if (state.settings.flush) stdout.flush();
+                if (state.coreSettings.flush) stdout.flush();
             }
 
             /+
@@ -1448,7 +1448,7 @@ mixin template IRCPluginImpl(
                     {
                         // Instance of Resource, e.g. @Resource("subdir") annotation
                         this.tupleof[i] = buildNormalizedPath(
-                            state.settings.resourceDirectory,
+                            state.coreSettings.resourceDirectory,
                             attrs[resourceUDAIndex].subdirectory,
                             this.tupleof[i]);
                     }
@@ -1456,7 +1456,7 @@ mixin template IRCPluginImpl(
                     {
                         // Resource as a type, e.g. @Resource annotation
                         this.tupleof[i] = buildNormalizedPath(
-                            state.settings.resourceDirectory,
+                            state.coreSettings.resourceDirectory,
                             this.tupleof[i]);
                     }
                 }
@@ -1472,7 +1472,7 @@ mixin template IRCPluginImpl(
                         {
                             // Instance of Configuration, e.g. @Configuration("subdir") annotation
                             this.tupleof[i] = buildNormalizedPath(
-                                state.settings.configDirectory,
+                                state.coreSettings.configDirectory,
                                 attrs[configurationUDAIndex].subdirectory,
                                 this.tupleof[i]);
                         }
@@ -1480,7 +1480,7 @@ mixin template IRCPluginImpl(
                         {
                             // Configuration as a type, e.g. @Configuration annotation
                             this.tupleof[i] = buildNormalizedPath(
-                                state.settings.configDirectory,
+                                state.coreSettings.configDirectory,
                                 this.tupleof[i]);
                         }
                     }
@@ -1665,10 +1665,16 @@ mixin template IRCPluginImpl(
             int bar;
         }
 
-        FooSettings settings;
+        class FooPlugin : IRCPlugin
+        {
+            FooSettings fooSettings;
+        }
 
-        setSettingByName("bar", 42);
-        assert(settings.bar == 42);
+        IRCPluginState state;
+        IRCPlugin plugin = new IRCPlugin(state);
+
+        pluign.setSettingByName("bar", 42);
+        assert(plugin.fooSettings.bar == 42);
         ---
 
         Params:
@@ -2254,7 +2260,7 @@ auto prefixPolicyMatches(bool verbose)
         return true;
 
     case prefixed:
-        if (!state.settings.prefix.length)
+        if (!state.coreSettings.prefix.length)
         {
             static if (verbose)
             {
@@ -2262,14 +2268,14 @@ auto prefixPolicyMatches(bool verbose)
             }
             goto case nickname;
         }
-        else if (event.content.startsWith(state.settings.prefix))
+        else if (event.content.startsWith(state.coreSettings.prefix))
         {
             static if (verbose)
             {
                 enum pattern = "    ...does start with prefix (%s)";
-                writefln(pattern, state.settings.prefix);
+                writefln(pattern, state.coreSettings.prefix);
             }
-            event.content = event.content[state.settings.prefix.length..$];
+            event.content = event.content[state.coreSettings.prefix.length..$];
         }
         else
         {
@@ -2308,14 +2314,14 @@ auto prefixPolicyMatches(bool verbose)
                 event.content = event.content
                     .stripSeparatedPrefix(state.client.displayName, demandSeparatingChars: true);
 
-                if (state.settings.prefix.length && event.content.startsWith(state.settings.prefix))
+                if (state.coreSettings.prefix.length && event.content.startsWith(state.coreSettings.prefix))
                 {
                     static if (verbose)
                     {
                         enum pattern = "        ...further starts with prefix (%s)";
-                        writefln(pattern, state.settings.prefix);
+                        writefln(pattern, state.coreSettings.prefix);
                     }
-                    event.content = event.content[state.settings.prefix.length..$];
+                    event.content = event.content[state.coreSettings.prefix.length..$];
                 }
 
                 strippedDisplayName = true;
@@ -2337,15 +2343,15 @@ auto prefixPolicyMatches(bool verbose)
             event.content = event.content
                 .stripSeparatedPrefix(state.client.nickname, demandSeparatingChars: true);
 
-            if (state.settings.prefix.length && event.content.startsWith(state.settings.prefix))
+            if (state.coreSettings.prefix.length && event.content.startsWith(state.coreSettings.prefix))
             {
                 static if (verbose)
                 {
                     enum pattern = "        ...further starts with prefix (%s)";
-                    writefln(pattern, state.settings.prefix);
+                    writefln(pattern, state.coreSettings.prefix);
                 }
 
-                event.content = event.content[state.settings.prefix.length..$];
+                event.content = event.content[state.coreSettings.prefix.length..$];
             }
             // Drop down
         }
@@ -2627,7 +2633,7 @@ auto allowImpl(bool verbose = false)
     return filterSender!verbose
         (event,
         permissionsRequired,
-        plugin.state.settings.preferHostmasks);
+        plugin.state.coreSettings.preferHostmasks);
 }
 
 
@@ -2892,6 +2898,7 @@ private:
     import std.array : Appender;
     import std.concurrency : Tid;
     import core.thread.fiber : Fiber;
+    import kameloso.common;
 
     /++
         Numeric ID of the current connection, to disambiguate between multiple
@@ -2909,27 +2916,27 @@ public:
         /++
             Nothing marked as updated. Initial value.
          +/
-        nothing  = 0,
+        nothing = 0,
 
         /++
             [IRCPluginState.bot] was marked as updated.
          +/
-        bot      = 1 << 0,
+        bot     = 1 << 0,
 
         /++
             [IRCPluginState.client] was marked as updated.
          +/
-        client   = 1 << 1,
+        client  = 1 << 1,
 
         /++
             [IRCPluginState.server] was marked as updated.
          +/
-        server   = 1 << 2,
+        server  = 1 << 2,
 
         /++
-            [IRCPluginState.settings] was marked as updated.
+            [IRCPluginState.coreSettings] was marked as updated.
          +/
-        settings = 1 << 3,
+        coreSettings = 1 << 3,
     }
 
     // client
@@ -2957,7 +2964,10 @@ public:
     /++
         The current program-wide [kameloso.pods.CoreSettings|CoreSettings].
      +/
-    CoreSettings settings;
+    CoreSettings coreSettings;
+
+    deprecated("Use `IRCPluginState.coreSettings` instead")
+    alias settings = coreSettings;
 
     // connSettings
     /++
@@ -4418,7 +4428,7 @@ private:
         import std.array : replace;
 
         return line
-            .replace("${prefix}", plugin.state.settings.prefix)
+            .replace("${prefix}", plugin.state.coreSettings.prefix)
             .replace("${channel}", this.channelName)
             .replace("${target}", this.targetNickname)
             .replace("${bot}", plugin.state.client.nickname);
@@ -4476,7 +4486,7 @@ public:
     {
         immutable line = replaceTokens(tokenedLine);
         delay(plugin, delayBetween, yield: true);
-        chan(plugin.state, channelName, plugin.state.settings.prefix ~ line);
+        chan(plugin.state, channelName, plugin.state.coreSettings.prefix ~ line);
     }
 
     /++

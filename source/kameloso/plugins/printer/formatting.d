@@ -813,12 +813,12 @@ void formatMessageColoured(Sink)
         if (!plugin.printerSettings.colourfulNicknames)
         {
             // Don't differentiate between sender and target? Consistency?
-            return plugin.state.settings.brightTerminal ?
+            return plugin.state.coreSettings.brightTerminal ?
                 Bright.sender :
                 Dark.sender;
         }
 
-        return getColourByHash(nickname, plugin.state.settings);
+        return getColourByHash(nickname, plugin.state.coreSettings);
     }
 
     /++
@@ -837,7 +837,7 @@ void formatMessageColoured(Sink)
             if (!user.isServer &&
                 user.colour.length &&
                 plugin.printerSettings.truecolour &&
-                plugin.state.settings.extendedColours)
+                plugin.state.coreSettings.extendedColours)
             {
                 import kameloso.terminal.colours : applyTruecolour;
                 import lu.conv : rgbFromHex;
@@ -847,7 +847,7 @@ void formatMessageColoured(Sink)
                     rgb.r,
                     rgb.g,
                     rgb.b,
-                    brightTerminal: plugin.state.settings.brightTerminal,
+                    brightTerminal: plugin.state.coreSettings.brightTerminal,
                     normalise: plugin.printerSettings.normaliseTruecolour);
                 coloured = true;
             }
@@ -966,7 +966,7 @@ void formatMessageColoured(Sink)
                     break;
 
                 default:
-                    immutable code = plugin.state.settings.brightTerminal ? Bright.badge : Dark.badge;
+                    immutable code = plugin.state.coreSettings.brightTerminal ? Bright.badge : Dark.badge;
                     sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.applyANSI(code, ANSICodeType.foreground);
                     .put(sink, " [", event.sender.badges, ']');
@@ -1086,7 +1086,7 @@ void formatMessageColoured(Sink)
                 event.target.badges.length &&
                 (event.target.badges != "*"))
             {
-                immutable code = plugin.state.settings.brightTerminal ? Bright.badge : Dark.badge;
+                immutable code = plugin.state.coreSettings.brightTerminal ? Bright.badge : Dark.badge;
                 sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.applyANSI(code, ANSICodeType.foreground);
                 .put(sink, " [", event.target.badges, ']');
@@ -1111,10 +1111,10 @@ void formatMessageColoured(Sink)
 
         scope(exit) sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
 
-        immutable TerminalForeground contentFgBase = plugin.state.settings.brightTerminal ?
+        immutable TerminalForeground contentFgBase = plugin.state.coreSettings.brightTerminal ?
             Bright.content :
             Dark.content;
-        immutable TerminalForeground emoteFgBase = plugin.state.settings.brightTerminal ?
+        immutable TerminalForeground emoteFgBase = plugin.state.coreSettings.brightTerminal ?
             Bright.emote :
             Dark.emote;
         immutable isEmote =
@@ -1180,7 +1180,7 @@ void formatMessageColoured(Sink)
                     emotes: emotes,
                     type: event.type,
                     colourful: plugin.printerSettings.colourfulEmotes,
-                    settings: plugin.state.settings);
+                    coreSettings: plugin.state.coreSettings);
             }
         }
 
@@ -1239,7 +1239,7 @@ void formatMessageColoured(Sink)
 
     ////////////////////////////////////////////////////////////////////////////
 
-    immutable timestampCode = plugin.state.settings.brightTerminal ? Timestamp.bright : Timestamp.dark;
+    immutable timestampCode = plugin.state.coreSettings.brightTerminal ? Timestamp.bright : Timestamp.dark;
     sink.applyANSI(timestampCode, ANSICodeType.foreground);
     sink.put('[');
 
@@ -1254,11 +1254,11 @@ void formatMessageColoured(Sink)
         (event.type == IRCEvent.Type.TWITCH_ERROR) ||
         rawTypestring.startsWith("ERR_"))
     {
-        sink.applyANSI(plugin.state.settings.brightTerminal ? Bright.error : Dark.error);
+        sink.applyANSI(plugin.state.coreSettings.brightTerminal ? Bright.error : Dark.error);
     }
     else
     {
-        if (plugin.state.settings.brightTerminal)
+        if (plugin.state.coreSettings.brightTerminal)
         {
             immutable code = (event.type == IRCEvent.Type.QUERY) ? Bright.query : Bright.type;
             sink.applyANSI(code, ANSICodeType.foreground);
@@ -1285,7 +1285,7 @@ void formatMessageColoured(Sink)
 
     if (event.channel.name.length)
     {
-        immutable channelCode = plugin.state.settings.brightTerminal ?
+        immutable channelCode = plugin.state.coreSettings.brightTerminal ?
             Bright.channel :
             Dark.channel;
 
@@ -1304,7 +1304,7 @@ void formatMessageColoured(Sink)
 
         if (event.subchannel.name.length && (event.subchannel.name != event.channel.name))
         {
-            immutable arrowCode = plugin.state.settings.brightTerminal ?
+            immutable arrowCode = plugin.state.coreSettings.brightTerminal ?
                 Bright.content :
                 Dark.content;
 
@@ -1353,7 +1353,7 @@ void formatMessageColoured(Sink)
     if (!auxRange.empty)
     {
         enum pattern = " (%-(%s%|) (%))";
-        sink.applyANSI(plugin.state.settings.brightTerminal ? Bright.aux : Dark.aux);
+        sink.applyANSI(plugin.state.coreSettings.brightTerminal ? Bright.aux : Dark.aux);
         sink.formattedWrite(pattern, auxRange);
     }
 
@@ -1361,7 +1361,7 @@ void formatMessageColoured(Sink)
     if (!countRange.empty)
     {
         enum pattern = " {%-(%s%|} {%)}";
-        sink.applyANSI(plugin.state.settings.brightTerminal ? Bright.count : Dark.count);
+        sink.applyANSI(plugin.state.coreSettings.brightTerminal ? Bright.count : Dark.count);
         sink.formattedWrite(pattern, countRange);
     }
 
@@ -1369,7 +1369,7 @@ void formatMessageColoured(Sink)
     {
         import lu.conv : toAlphaInto;
 
-        sink.applyANSI(plugin.state.settings.brightTerminal ? Bright.num : Dark.num);
+        sink.applyANSI(plugin.state.coreSettings.brightTerminal ? Bright.num : Dark.num);
         sink.put(" [#");
         event.num.toAlphaInto!(3, 3)(sink);
         sink.put(']');
@@ -1377,7 +1377,7 @@ void formatMessageColoured(Sink)
 
     if (event.errors.length)
     {
-        immutable code = plugin.state.settings.brightTerminal ? Bright.error : Dark.error;
+        immutable code = plugin.state.coreSettings.brightTerminal ? Bright.error : Dark.error;
         sink.applyANSI(code, ANSICodeType.foreground);
         .put(sink, " ! ", event.errors, " !");
     }
@@ -1478,7 +1478,7 @@ unittest
         emotes = The list of emotes and their positions as divined from the
             IRCv3 tags of an event.
         colourful = Whether or not emotes should be highlighted in colours.
-        settings = Current [kameloso.pods.CoreSettings|settings].
+        coreSettings = Current [kameloso.pods.CoreSettings|settings].
 
     Returns:
         A new string of the passed [dialect.defs.IRCEvent|IRCEvent]'s `content` member
@@ -1491,7 +1491,7 @@ auto highlightEmotes(
     const string emotes,
     const IRCEvent.Type type,
     const bool colourful,
-    const CoreSettings settings)
+    const CoreSettings coreSettings)
 {
     import kameloso.constants : DefaultColours;
     import std.array : Appender;
@@ -1506,15 +1506,15 @@ auto highlightEmotes(
     scope(exit) sink.clear();
     sink.reserve(line.length + 60);  // guesttimate, mostly +10
 
-    immutable TerminalForeground highlight = settings.brightTerminal ?
+    immutable TerminalForeground highlight = coreSettings.brightTerminal ?
         Bright.highlight :
         Dark.highlight;
 
-    immutable TerminalForeground contentFgBase = settings.brightTerminal ?
+    immutable TerminalForeground contentFgBase = coreSettings.brightTerminal ?
         Bright.content :
         Dark.content;
 
-    immutable TerminalForeground emoteFgBase = settings.brightTerminal ?
+    immutable TerminalForeground emoteFgBase = coreSettings.brightTerminal ?
         Bright.emote :
         Dark.emote;
 
@@ -1528,7 +1528,7 @@ auto highlightEmotes(
         pre: highlight,
         post: baseColour,
         colourful: colourful,
-        settings: settings);
+        coreSettings: coreSettings);
 
     return sink[].assumeUnique();
 }
@@ -1547,7 +1547,7 @@ auto highlightEmotes(
         pre = Terminal foreground tint to colour the emotes with.
         post = Terminal foreground tint to reset to after colouring an emote.
         colourful = Whether or not emotes should be highlighted in colours.
-        settings = Current [kameloso.pods.CoreSettings|settings].
+        coreSettings = Current [kameloso.pods.CoreSettings|settings].
  +/
 version(Colours)
 version(TwitchSupport)
@@ -1558,7 +1558,7 @@ void highlightEmotesImpl(Sink)
     const TerminalForeground pre,
     const TerminalForeground post,
     const bool colourful,
-    const CoreSettings settings)
+    const CoreSettings coreSettings)
 {
     import std.algorithm.iteration : splitter, uniq;
     import std.algorithm.sorting : sort;
@@ -1646,7 +1646,7 @@ void highlightEmotesImpl(Sink)
         import kameloso.terminal.colours : applyANSI, getColourByHash;
 
         immutable colour = colourful ?
-            getColourByHash(highlight.id, settings) :
+            getColourByHash(highlight.id, coreSettings) :
             pre;
 
         sink.put(dline[pos..highlight.start]);

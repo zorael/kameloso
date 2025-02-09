@@ -233,7 +233,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 
-    if (!plugin.printerSettings.monitor || plugin.state.settings.headless) return;
+    if (!plugin.printerSettings.monitor || plugin.state.coreSettings.headless) return;
 
     if (plugin.printerSettings.hideBlacklistedUsers && (event.sender.class_ == IRCUser.Class.blacklist)) return;
 
@@ -316,7 +316,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         version(Colours)
         {
-            if (plugin.state.settings.colours)
+            if (plugin.state.coreSettings.colours)
             {
                 formatMessageColoured(
                     plugin,
@@ -339,7 +339,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         }
 
         writeln(plugin.linebuffer[]);
-        if (plugin.state.settings.flush) stdout.flush();
+        if (plugin.state.coreSettings.flush) stdout.flush();
     }
 
     // For many types there's no need to display the target nickname when it's the bot's

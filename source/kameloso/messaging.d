@@ -952,7 +952,7 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
             cast(bool)(properties & Message.Property.forced),
             cast(bool)(properties & Message.Property.quiet),
             cast(bool)(properties & Message.Property.background));
-        if (state.settings.flush) stdout.flush();
+        if (state.coreSettings.flush) stdout.flush();
     }
 
     state.outgoingMessages ~= m;

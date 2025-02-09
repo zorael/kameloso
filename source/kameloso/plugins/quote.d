@@ -161,7 +161,7 @@ void onCommandQuote(QuotePlugin plugin, const IRCEvent event)
     void sendNonTwitchUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [nickname] [optional search terms or #index]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 
@@ -300,7 +300,7 @@ void onCommandAddQuote(QuotePlugin plugin, const IRCEvent event)
         immutable pattern = isTwitch ?
             "Usage: %s%s [new quote]" :
             "Usage: <b>%s%s<b> [nickname] [new quote]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 
@@ -392,7 +392,7 @@ void onCommandModQuote(QuotePlugin plugin, const IRCEvent event)
         immutable pattern = isTwitch ?
             "Usage: %s%s [index] [new quote text]" :
             "Usage: <b>%s%s<b> [nickname] [index] [new quote text]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 
@@ -517,7 +517,7 @@ void onCommandMergeQuotes(QuotePlugin plugin, const IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [source nickname] [target nickname]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 
@@ -588,7 +588,7 @@ void onCommandDelQuote(QuotePlugin plugin, const IRCEvent event)
         immutable pattern = isTwitch ?
             "Usage: %s%s [index]" :
             "Usage: <b>%s%s<b> [nickname] [index]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 

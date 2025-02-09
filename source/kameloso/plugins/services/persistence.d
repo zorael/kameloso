@@ -212,7 +212,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 
         if (service.state.server.daemon != IRCServer.Daemon.twitch)
         {
-            if (service.state.settings.preferHostmasks &&
+            if (service.state.coreSettings.preferHostmasks &&
                 (stored.account != old.account))
             {
                 /+
@@ -620,7 +620,7 @@ void resolveAccount(
         // hit
         user.account = *cachedAccount;
     }
-    else if (service.state.settings.preferHostmasks)
+    else if (service.state.coreSettings.preferHostmasks)
     {
         /+
             No map match, and we're in hostmask mode.
@@ -903,7 +903,7 @@ void onWelcome(PersistenceService service, const IRCEvent _)
     mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     reloadAccountClassifiersFromDisk(service);
-    if (service.state.settings.preferHostmasks) reloadHostmasksFromDisk(service);
+    if (service.state.coreSettings.preferHostmasks) reloadHostmasksFromDisk(service);
 
     static immutable cacheEntryAgeCheckPeriodicity = 1.hours;
     enum cacheEntryMaxAgeSeconds = 12 * 3600;  // 12 hours
@@ -1135,7 +1135,7 @@ unittest
 void reload(PersistenceService service)
 {
     reloadAccountClassifiersFromDisk(service);
-    if (service.state.settings.preferHostmasks) reloadHostmasksFromDisk(service);
+    if (service.state.coreSettings.preferHostmasks) reloadHostmasksFromDisk(service);
 }
 
 

@@ -111,7 +111,7 @@ void onCommandBash(BashPlugin plugin, const IRCEvent event)
         import std.format : format;
 
         enum pattern = "Usage: <b>%s%s<b> [optional bash quote number]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 

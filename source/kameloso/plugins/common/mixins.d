@@ -278,7 +278,7 @@ mixin template WHOISFiberDelegate(
                 return callOnSuccess();
 
             case RPL_WHOISUSER:
-                if (_context.state.settings.preferHostmasks)
+                if (_context.state.coreSettings.preferHostmasks)
                 {
                     return callOnSuccess();
                 }

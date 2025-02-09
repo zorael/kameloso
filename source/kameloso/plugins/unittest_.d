@@ -140,8 +140,8 @@ unittest
     import std.path : buildNormalizedPath;
 
     IRCPluginState state;
-    state.settings.configDirectory = "conf";
-    state.settings.resourceDirectory = "res";
+    state.coreSettings.configDirectory = "conf";
+    state.coreSettings.resourceDirectory = "res";
     auto plugin = new UnittestPlugin(state);
 
     assert((plugin.name == "unittest"), plugin.name);
@@ -156,10 +156,10 @@ unittest
         plugin.Introspection.allEventHandlerFunctionsInModule.length.to!string);
 
     immutable resPathWithout = buildNormalizedPath(
-        plugin.state.settings.resourceDirectory,
+        plugin.state.coreSettings.resourceDirectory,
         "unittest.delme");
     immutable resPathWith = buildNormalizedPath(
-        plugin.state.settings.resourceDirectory,
+        plugin.state.coreSettings.resourceDirectory,
         "unittest",
         "unittest.delme");
 
@@ -167,10 +167,10 @@ unittest
     assert((plugin.resFileWithSubdir == resPathWith), plugin.resFileWithSubdir);
 
     immutable confPathWithout = buildNormalizedPath(
-        plugin.state.settings.configDirectory,
+        plugin.state.coreSettings.configDirectory,
         "unittest.delme");
     immutable confPathWith = buildNormalizedPath(
-        plugin.state.settings.configDirectory,
+        plugin.state.coreSettings.configDirectory,
         "unittest",
         "unittest.delme");
 

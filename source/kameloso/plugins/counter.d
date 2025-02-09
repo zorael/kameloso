@@ -214,14 +214,14 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [add|del|format|list] [counter word]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 
     void sendFormatUsage()
     {
         enum pattern = "Usage: <b>%s%s format<b> [counter word] [one of ?, +, - and =] [format pattern]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 
@@ -260,7 +260,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
     void sendCountersList(const string[] counters)
     {
         enum pattern = "Current counters: %s";
-        immutable arrayPattern = "%-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)<b>";
+        immutable arrayPattern = "%-(<b>" ~ plugin.state.coreSettings.prefix ~ "%s<b>, %)<b>";
         immutable list = arrayPattern.format(counters);
         immutable message = pattern.format(list);
         chan(plugin.state, event.channel.name, message);
@@ -353,7 +353,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
             saveCounters(plugin);
 
             enum pattern = "Counter <b>%s<b> added! Access it with <b>%s%s<b>.";
-            immutable message = pattern.format(slice, plugin.state.settings.prefix, slice);
+            immutable message = pattern.format(slice, plugin.state.coreSettings.prefix, slice);
             chan(plugin.state, event.channel.name, message);
         }
 
@@ -549,12 +549,12 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    if ((slice.length < (plugin.state.settings.prefix.length+1)) &&  // !w
+    if ((slice.length < (plugin.state.coreSettings.prefix.length+1)) &&  // !w
         (slice.length < (plugin.state.client.nickname.length+2))) return;  // nickname:w
 
-    if (slice.startsWith(plugin.state.settings.prefix))
+    if (slice.startsWith(plugin.state.coreSettings.prefix))
     {
-        slice = slice[plugin.state.settings.prefix.length..$];
+        slice = slice[plugin.state.coreSettings.prefix.length..$];
     }
     else if (slice.startsWith(plugin.state.client.nickname))
     {

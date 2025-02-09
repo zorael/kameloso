@@ -118,29 +118,29 @@ void verboselyWriteConfig(
     import kameloso.common : logger;
     static import kameloso.common;
 
-    if (!instance.settings.headless)
+    if (!instance.coreSettings.headless)
     {
         import kameloso.misc : printVersionInfo;
         import std.stdio : stdout, writeln;
 
         printVersionInfo();
         writeln();
-        if (instance.settings.flush) stdout.flush();
+        if (instance.coreSettings.flush) stdout.flush();
     }
 
     // If we don't instantiate the plugins there'll be no plugins array
     instance.instantiatePlugins();
-    writeConfigurationFile(instance, instance.settings.configFile);
+    writeConfigurationFile(instance, instance.coreSettings.configFile);
 
-    if (!instance.settings.headless)
+    if (!instance.coreSettings.headless)
     {
         import kameloso.prettyprint : prettyprint;
         import kameloso.string : doublyBackslashed;
         import std.file : exists;
 
-        prettyprint(client, instance.bot, server, instance.connSettings, *instance.settings);
+        prettyprint(client, instance.bot, server, instance.connSettings, *instance.coreSettings);
         enum pattern = "Configuration written to <i>%s";
-        logger.logf(pattern, instance.settings.configFile.doublyBackslashed);
+        logger.logf(pattern, instance.coreSettings.configFile.doublyBackslashed);
 
         if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
         {
@@ -150,9 +150,9 @@ void verboselyWriteConfig(
         }
 
         immutable shouldGiveBrightTerminalHint =
-            instance.settings.colours &&
-            !instance.settings.brightTerminal &&
-            !instance.settings.configFile.exists;
+            instance.coreSettings.colours &&
+            !instance.coreSettings.brightTerminal &&
+            !instance.coreSettings.configFile.exists;
 
         if (shouldGiveBrightTerminalHint)
         {
@@ -185,7 +185,7 @@ void printSettings(Kameloso instance) @system
         // Apply custom settings to the settings struct. Disregard returned value
         cast(void)applyCustomSettings(
             null,
-            *instance.settings,
+            *instance.coreSettings,
             instance.customSettings,
             toPluginsOnly: false);  // include settings
     }
@@ -198,13 +198,13 @@ void printSettings(Kameloso instance) @system
         instance.bot,
         instance.parser.server,
         instance.connSettings,
-        *instance.settings);
+        *instance.coreSettings);
 
     instance.instantiatePlugins();
 
     foreach (plugin; instance.plugins) plugin.printSettings();
 
-    if (instance.settings.flush) stdout.flush();
+    if (instance.coreSettings.flush) stdout.flush();
 }
 
 
@@ -265,9 +265,9 @@ void manageConfigFile(
         }
 
         enum pattern = "Attempting to open <i>%s</> with <i>%s</>...";
-        logger.logf(pattern, instance.settings.configFile.doublyBackslashed, editor.doublyBackslashed);
+        logger.logf(pattern, instance.coreSettings.configFile.doublyBackslashed, editor.doublyBackslashed);
 
-        immutable string[2] command = [ editor, instance.settings.configFile ];
+        immutable string[2] command = [ editor, instance.coreSettings.configFile ];
         spawnProcess(command[]).wait;
     }
 
@@ -294,7 +294,7 @@ void manageConfigFile(
             enum editor = "xdg-open";
 
             immutable isGraphicalEnvironment =
-                instance.settings.force ||
+                instance.coreSettings.force ||
                 environment.get("DISPLAY", string.init).length ||
                 environment.get("WAYLAND_DISPLAY", string.init).length;
 
@@ -317,7 +317,7 @@ void manageConfigFile(
         // by [kameloso.main.tryGetopt].
 
         enum pattern = "Attempting to open <i>%s</> in a graphical text editor...";
-        logger.logf(pattern, instance.settings.configFile.doublyBackslashed);
+        logger.logf(pattern, instance.coreSettings.configFile.doublyBackslashed);
 
         if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
         {
@@ -326,7 +326,7 @@ void manageConfigFile(
             giveConfigurationMinimalInstructions();
         }
 
-        immutable command = [ editor, instance.settings.configFile ];
+        immutable command = [ editor, instance.coreSettings.configFile ];
         execute(command);
     }
 
@@ -337,7 +337,7 @@ void manageConfigFile(
         * the config file doesn't exist
      +/
 
-    immutable configFileExists = instance.settings.configFile.exists;
+    immutable configFileExists = instance.coreSettings.configFile.exists;
 
     if (shouldWriteConfig || !configFileExists)
     {
@@ -354,7 +354,7 @@ void manageConfigFile(
             giveInstructions: giveInstructions);
     }
 
-    if (!instance.settings.headless && (shouldOpenTerminalEditor || shouldOpenGraphicalEditor))
+    if (!instance.coreSettings.headless && (shouldOpenTerminalEditor || shouldOpenGraphicalEditor))
     {
         // If instructions were given, add an extra linebreak to make it prettier
         if (!configFileExists) logger.trace();
@@ -381,7 +381,7 @@ void manageConfigFile(
     Example:
     ---
     Appender!(char[]) sink;
-    sink.serialise(client, server, settings);
+    sink.serialise(client, server, coreSettings);
     immutable configText = sink[].justifiedEntryValueText;
     writeToDisk("kameloso.conf", configText, addBanner: true);
     ---
@@ -634,7 +634,7 @@ auto handleGetopt(Kameloso instance) @system
         std.getopt.config.caseSensitive,
         std.getopt.config.bundling,
         std.getopt.config.passThrough,
-        "c|config", &instance.settings.configFile,
+        "c|config", &instance.coreSettings.configFile,
         "version", &shouldShowVersion);
 
     if (shouldShowVersion)
@@ -645,15 +645,15 @@ auto handleGetopt(Kameloso instance) @system
     }
 
     // Ignore invalid/missing entries here, report them when initialising plugins
-    instance.settings.configFile.readConfigInto(
+    instance.coreSettings.configFile.readConfigInto(
         instance.parser.client,
         instance.bot,
         instance.parser.server,
         instance.connSettings,
-        *instance.settings);
+        *instance.coreSettings);
 
     applyDefaults(instance);
-    applyTerminalOverrides(instance.settings.flush, instance.settings.colours);
+    applyTerminalOverrides(instance.coreSettings.flush, instance.coreSettings.colours);
 
     /+
         Call getopt once more just to get values for colour and the Twitch
@@ -675,15 +675,15 @@ auto handleGetopt(Kameloso instance) @system
 
     if (colourString.length)
     {
-        immutable valueBefore = instance.settings.colours;
-        resolveFlagString(colourString, instance.settings.colours);
-        immutable valueAfter = instance.settings.colours;
+        immutable valueBefore = instance.coreSettings.colours;
+        resolveFlagString(colourString, instance.coreSettings.colours);
+        immutable valueAfter = instance.coreSettings.colours;
 
         if (valueBefore != valueAfter)
         {
             // Colours were probably disabled, so reinitialise the logger
             destroy(kameloso.common.logger);
-            kameloso.common.logger = new KamelosoLogger(*instance.settings);
+            kameloso.common.logger = new KamelosoLogger(*instance.coreSettings);
         }
     }
 
@@ -710,7 +710,7 @@ auto handleGetopt(Kameloso instance) @system
 
         immutable sslText = quiet ? string.init :
             instance.connSettings.ssl ? "true" :
-                instance.settings.force ? "false" : "inferred by port";
+                instance.coreSettings.force ? "false" : "inferred by port";
 
         immutable passwordMask = quiet ? string.init :
             instance.bot.password.length ? '*'.repeat(uniform(6, 10)).to!string : string.init;
@@ -749,14 +749,14 @@ auto handleGetopt(Kameloso instance) @system
             enum getCacertString = getOpenSSLString;
         }
 
-        immutable configFileExtension = instance.settings.configFile.extension;
+        immutable configFileExtension = instance.coreSettings.configFile.extension;
         immutable defaultGeditProgramString =
             "[<i>the default application used to open <l>*" ~
                 configFileExtension ~ "<i> files on your system</>]";
 
         version(Windows)
         {
-            immutable geditProgramString = instance.settings.force ?
+            immutable geditProgramString = instance.coreSettings.force ?
                 defaultGeditProgramString :
                 "[<i>notepad.exe</>]";
         }
@@ -874,8 +874,8 @@ auto handleGetopt(Kameloso instance) @system
                 quiet ? string.init :
                     "Adjust colours for bright terminal backgrounds [<i>%s</>]"
                         .expandTags(LogLevel.trace)
-                        .format(instance.settings.brightTerminal),
-                &instance.settings.brightTerminal,
+                        .format(instance.coreSettings.brightTerminal),
+                &instance.coreSettings.brightTerminal,
             "color",
                 quiet ? string.init :
                     "Use colours in terminal output (<i>auto</>|<i>always</>|<i>never</>)"
@@ -894,15 +894,15 @@ auto handleGetopt(Kameloso instance) @system
                 quiet ? string.init :
                     "Specify a different configuration file [<i>%s</>]"
                         .expandTags(LogLevel.trace)
-                        .format(instance.settings.configFile),
+                        .format(instance.coreSettings.configFile),
                 //&settings.configFile,  // already handled
                 &noop,
             "r|resourceDir",
                 quiet ? string.init :
                     "Specify a different resource directory [<i>%s</>]"
                         .expandTags(LogLevel.trace)
-                        .format(instance.settings.resourceDirectory),
-                &instance.settings.resourceDirectory,
+                        .format(instance.coreSettings.resourceDirectory),
+                &instance.coreSettings.resourceDirectory,
             /+"receiveTimeout",
                 quiet ? string.init :
                     ("Socket receive timeout in milliseconds; lower numbers " ~
@@ -940,22 +940,22 @@ auto handleGetopt(Kameloso instance) @system
             "numeric",
                 quiet ? string.init :
                     "Use numeric output of addresses",
-                &instance.settings.numericAddresses,
+                &instance.coreSettings.numericAddresses,
             "summary",
                 quiet ? string.init :
                     "Show a connection summary on program exit [<i>%s</>]"
                         .expandTags(LogLevel.trace)
-                        .format(instance.settings.exitSummary),
-                &instance.settings.exitSummary,
+                        .format(instance.coreSettings.exitSummary),
+                &instance.coreSettings.exitSummary,
             "force",
                 quiet ? string.init :
                     "Force connect (skips some checks)",
-                &instance.settings.force,
+                &instance.coreSettings.force,
             "flush",
                 quiet ? string.init :
                     "Set terminal mode to flush screen output after each line written to it. " ~
                         "(Use this if the screen only occasionally updates)",
-                &instance.settings.flush,
+                &instance.coreSettings.flush,
             "save",
                 quiet ? string.init :
                     "Write configuration to file",
@@ -972,7 +972,7 @@ auto handleGetopt(Kameloso instance) @system
             "headless",
                 quiet ? string.init :
                     "Headless mode, disabling all terminal output",
-                &instance.settings.headless,
+                &instance.coreSettings.headless,
             "version",
                 quiet ? string.init :
                     "Show version information",
@@ -1010,7 +1010,7 @@ auto handleGetopt(Kameloso instance) @system
 
     cast(void)applyCustomSettings(
         null,
-        *instance.settings,
+        *instance.coreSettings,
         instance.customSettings,
         toPluginsOnly: false);  // include settings
 
@@ -1023,7 +1023,7 @@ auto handleGetopt(Kameloso instance) @system
 
     // Reinitialise the logger with new settings
     destroy(kameloso.common.logger);
-    kameloso.common.logger = new KamelosoLogger(*instance.settings);
+    kameloso.common.logger = new KamelosoLogger(*instance.coreSettings);
 
     // Support channels and admins being separated by spaces (mirror config file behaviour)
     if (inputHomeChannels.length) inputHomeChannels = flatten(inputHomeChannels);
@@ -1098,12 +1098,12 @@ auto handleGetopt(Kameloso instance) @system
         // It's okay to reuse args, it's probably empty save for arg0
         // and we just want the help listing
 
-        if (!instance.settings.headless)
+        if (!instance.coreSettings.headless)
         {
             import std.stdio : stdout;
             printVersionInfo();
             printHelp(callGetopt(args, quiet: false));
-            if (instance.settings.flush) stdout.flush();
+            if (instance.coreSettings.flush) stdout.flush();
         }
 
         return Next.returnSuccess;
@@ -1166,7 +1166,7 @@ auto handleGetopt(Kameloso instance) @system
             shouldWriteConfig: shouldWriteConfig,
             shouldOpenTerminalEditor: shouldOpenTerminalEditor,
             shouldOpenGraphicalEditor: shouldOpenGraphicalEditor,
-            force: instance.settings.force);
+            force: instance.coreSettings.force);
 
         return Next.returnSuccess;
     }
@@ -1174,7 +1174,7 @@ auto handleGetopt(Kameloso instance) @system
     if (shouldShowSettings)
     {
         // --settings was passed, show all options and quit
-        if (!instance.settings.headless) printSettings(instance);
+        if (!instance.coreSettings.headless) printSettings(instance);
         return Next.returnSuccess;
     }
 
@@ -1194,7 +1194,7 @@ auto handleGetopt(Kameloso instance) @system
     Example:
     ---
     Kameloso instance;
-    writeConfigurationFile(instance, instance.settings.configFile);
+    writeConfigurationFile(instance, instance.coreSettings.configFile);
     ---
 
     Params:
@@ -1229,16 +1229,16 @@ void writeConfigurationFile(
             instance.bot.quitReason = KamelosoDefaults.quitReason;
         }
 
-        if (!instance.settings.prefix.length)
+        if (!instance.coreSettings.prefix.length)
         {
             // Only set the prefix if we're creating a new file, to allow for empty prefixes
-            instance.settings.prefix = KamelosoDefaults.prefix;
+            instance.coreSettings.prefix = KamelosoDefaults.prefix;
         }
     }
 
     // Base64-encode passwords if they're not already encoded
     // --force opts out
-    if (!instance.settings.force)
+    if (!instance.coreSettings.force)
     {
         if (instance.bot.password.length && !instance.bot.password.startsWith("base64:"))
         {
@@ -1274,19 +1274,19 @@ void writeConfigurationFile(
             escapedServerDirName) :
         string.init;
 
-    string settingsResourceDirSnapshot = instance.settings.resourceDirectory.expandTilde();  // mutable
+    string settingsResourceDirSnapshot = instance.coreSettings.resourceDirectory.expandTilde();  // mutable
 
     if (settingsResourceDirSnapshot == defaultResourceHomeDir)
     {
         settingsResourceDirSnapshot = defaultFullServerResourceDir;
     }
 
-    if (!instance.settings.force &&
+    if (!instance.coreSettings.force &&
         (settingsResourceDirSnapshot == defaultFullServerResourceDir))
     {
         // If the resource directory is the default (unset),
         // or if it is what would be automatically inferred, write it out as empty
-        instance.settings.resourceDirectory = string.init;
+        instance.coreSettings.resourceDirectory = string.init;
     }
 
     sink.serialise(
@@ -1294,7 +1294,7 @@ void writeConfigurationFile(
         instance.bot,
         instance.parser.server,
         instance.connSettings,
-        *instance.settings);
+        *instance.coreSettings);
     sink.put('\n');
 
     foreach (immutable i, plugin; instance.plugins)
@@ -1311,7 +1311,7 @@ void writeConfigurationFile(
     writeToDisk(filename, justified, addBanner: true);
 
     // Restore resource dir in case we aren't exiting
-    instance.settings.resourceDirectory = settingsResourceDirSnapshot;
+    instance.coreSettings.resourceDirectory = settingsResourceDirSnapshot;
 }
 
 
@@ -1436,7 +1436,7 @@ out (; (instance.parser.server.address.length), "Empty server address")
 out (; (instance.parser.server.port != 0), "Server port of 0")
 out (; (instance.bot.quitReason.length), "Empty bot quit reason")
 out (; (instance.bot.partReason.length), "Empty bot part reason")
-//out (; (instance.settings.prefix.length), "Empty prefix")
+//out (; (instance.coreSettings.prefix.length), "Empty prefix")
 {
     import kameloso.constants : KamelosoDefaults, KamelosoDefaultIntegers;
 
@@ -1485,9 +1485,9 @@ out (; (instance.bot.partReason.length), "Empty bot part reason")
         instance.bot.partReason = KamelosoDefaults.partReason;
     }
 
-    /*if (!instance.settings.prefix.length)
+    /*if (!instance.coreSettings.prefix.length)
     {
-        instance.settings.prefix = KamelosoDefaults.prefix;
+        instance.coreSettings.prefix = KamelosoDefaults.prefix;
     }*/
 }
 

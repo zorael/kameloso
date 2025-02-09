@@ -172,7 +172,7 @@ public:
         IRCClient client;
         IRCServer server;
         IRCBot bot;
-        CoreSettings settings;
+        CoreSettings coreSettings;
         ConnectionSettings connSettings;
         IRCUser[string] users;
         IRCChannel[string] channels;
@@ -203,13 +203,13 @@ public:
     information about things that relate to an IRC bot, like which channels
     to join, which home channels to operate in, the list of administrator accounts, etc.
 
-    * [kameloso.plugins.common.IRCPluginState.settings|IRCPluginState.settings]
+    * [kameloso.plugins.common.IRCPluginState.coreSettings|IRCPluginState.coreSettings]
     is a copy of the "global" [kameloso.pods.CoreSettings|CoreSettings],
     which contains information about how the bot should output text, whether
     or not to always save to disk upon program exit, and some other program-wide settings.
 
     * [kameloso.plugins.common.IRCPluginState.connSettings|IRCPluginState.connSettings]
-    is like [kameloso.plugins.common.IRCPluginState.settings|IRCPluginState.settings],
+    is like [kameloso.plugins.common.IRCPluginState.coreSettings|IRCPluginState.coreSettings],
     except for values relating to the connection to the server; whether to
     use IPv6, paths to any certificates, and the such.
 
@@ -868,7 +868,7 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         if (!requestedUser.length)
         {
             enum pattern = "Usage: <b>%s%s<b> [nickname]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+            immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
             return privmsg(event.channel.name, event.sender.nickname, message);
         }
         else if (!requestedUser.isValidNickname(plugin.state.server))

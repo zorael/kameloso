@@ -34,7 +34,7 @@ public:
 
     Params:
         plugins = Array of all [kameloso.plugins.common.IRCPlugin|IRCPlugin]s.
-        settings = Pointer to a [kameloso.pods.CoreSettings|CoreSettings] struct.
+        coreSettings = Pointer to a [kameloso.pods.CoreSettings|CoreSettings] struct.
         customSettings = Array of custom settings to apply to plugins' own
             setting, in the string forms of "`plugin.setting=value`".
         toPluginsOnly = Whether to apply settings to the core settings struct
@@ -48,7 +48,7 @@ public:
  +/
 auto applyCustomSettings(
     IRCPlugin[] plugins,
-    ref CoreSettings settings,
+    ref CoreSettings coreSettings,
     const string[] customSettings,
     const bool toPluginsOnly)
 {
@@ -87,8 +87,8 @@ auto applyCustomSettings(
                 if (toPluginsOnly) continue top;
 
                 immutable success = value.length ?
-                    settings.setMemberByName(setting, value) :
-                    settings.setMemberByName(setting, true);
+                    coreSettings.setMemberByName(setting, value) :
+                    coreSettings.setMemberByName(setting, true);
 
                 if (!success)
                 {
@@ -105,15 +105,15 @@ auto applyCustomSettings(
                         "headless",
                         "flush"))
                     {
-                        logger = new KamelosoLogger(settings);
+                        logger = new KamelosoLogger(coreSettings);
                     }
 
                     foreach (plugin; plugins)
                     {
-                        plugin.state.settings = settings;
+                        plugin.state.coreSettings = coreSettings;
 
                         // No need to flag as updated when we update here manually
-                        //plugin.state.updates |= typeof(plugin.state.updates).settings;
+                        //plugin.state.updates |= typeof(plugin.state.updates).coreSettings;
                     }
                 }
                 continue top;
@@ -214,7 +214,7 @@ unittest
 
     cast(void)applyCustomSettings(
         [ plugin ],
-        settings: coreSettings,
+        coreSettings: coreSettings,
         customSettings: newSettings,
         toPluginsOnly: true);
 

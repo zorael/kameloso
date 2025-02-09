@@ -1320,7 +1320,7 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: %s%s [name of streamer] [optional number of times to spam]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 
@@ -1512,7 +1512,7 @@ void onCommandRepeat(TwitchPlugin plugin, const IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: %s%s [number of times] [text...]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 
@@ -1638,7 +1638,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
         immutable pattern = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
             "Usage: %s%s [YouTube link or video ID]" :
             "Usage: %s%s [Spotify link or track ID]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 
@@ -1940,7 +1940,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const IRCEvent event)
     {
         import std.format : format;
         enum pattern = `Usage: %s%s "[poll title]" [duration] "[choice 1]" "[choice 2]" ...`;
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 
@@ -2135,7 +2135,7 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
     {
         import std.format : format;
         enum pattern = "Usage: %s%s [word or phrase]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 
@@ -2152,7 +2152,7 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
         version(PrintStacktraces)
         void printStacktrace(Exception e)
         {
-            if (!plugin.state.settings.headless)
+            if (!plugin.state.coreSettings.headless)
             {
                 import std.stdio : stdout, writeln;
                 writeln(e);
@@ -2342,7 +2342,7 @@ void onCommandEcount(TwitchPlugin plugin, const IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: %s%s [emote]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 
@@ -2584,7 +2584,7 @@ void onCommandSetTitle(TwitchPlugin plugin, const IRCEvent event)
     if (!unescapedTitle.length)
     {
         enum pattern = "Usage: %s%s [title]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         return chan(plugin.state, event.channel.name, message);
     }
 
@@ -2743,7 +2743,7 @@ void onCommandCommercial(TwitchPlugin plugin, const IRCEvent event)
     if (!lengthString.length)
     {
         enum pattern = "Usage: %s%s [commercial duration; valid values are 30, 60, 90, 120, 150 and 180]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         return chan(plugin.state, event.channel.name, message);
     }
 
@@ -2843,12 +2843,12 @@ void initialise(TwitchPlugin plugin)
         return;
     }
 
-    if (someKeygenWanted || (!plugin.state.bot.pass.length && !plugin.state.settings.force))
+    if (someKeygenWanted || (!plugin.state.bot.pass.length && !plugin.state.coreSettings.force))
     {
         import kameloso.thread : ThreadMessage;
         import lu.json : JSONStorage;
 
-        if (plugin.state.settings.headless)
+        if (plugin.state.coreSettings.headless)
         {
             // Headless mode is enabled, so a terminal wizard doesn't make sense
             return;
@@ -2869,7 +2869,7 @@ void initialise(TwitchPlugin plugin)
 
         // Automatically keygen if no pass
         if (plugin.twitchSettings.keygen ||
-            (!plugin.state.bot.pass.length && !plugin.state.settings.force))
+            (!plugin.state.bot.pass.length && !plugin.state.coreSettings.force))
         {
             import kameloso.plugins.twitch.providers.twitch : requestTwitchKey;
             requestTwitchKey(plugin);
@@ -3235,7 +3235,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
         }
         catch (TwitchQueryException e)
         {
-            if (plugin.state.settings.headless)
+            if (plugin.state.coreSettings.headless)
             {
                 //version(PrintStacktraces) logger.trace(e);
                 delay(plugin, retryDelay, yield: true);
@@ -3275,7 +3275,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
         }
         catch (EmptyResponseException e)
         {
-            if (plugin.state.settings.headless)
+            if (plugin.state.coreSettings.headless)
             {
                 //version(PrintStacktraces) logger.trace(e);
                 delay(plugin, retryDelay, yield: true);
@@ -3329,7 +3329,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
     immutable now = Clock.currTime;
     immutable expiresWhen = SysTime.fromUnixTime(now.toUnixTime() + expiresIn);
 
-    if (plugin.state.settings.headless)
+    if (plugin.state.coreSettings.headless)
     {
         void onExpiryHeadlessDg()
         {
@@ -3940,7 +3940,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 {
                     import std.conv : to;
 
-                    /*if (plugin.state.settings.trace)
+                    /*if (plugin.state.coreSettings.trace)
                     {
                         enum pattern = "Querying server for channel name of user ID <l>%s</>...";
                         logger.infof(pattern, sharedChannelID);
@@ -3963,7 +3963,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                         plugin.channelNamesByID[sharedChannelID] = channelName;
                         event.subchannel.name = channelName;
 
-                        if (plugin.state.settings.trace)
+                        if (plugin.state.coreSettings.trace)
                         {
                             enum pattern = "Resolved channel <l>%s</> from user ID <l>%s</>.";
                             logger.infof(pattern, channelName, sharedChannelID);
@@ -4858,7 +4858,7 @@ package:
                 t.m -= Throttle.bump;
             }
 
-            if (!this.state.settings.headless)
+            if (!this.state.coreSettings.headless)
             {
                 enum pattern = "--> [%s] %s";
                 logger.tracef(

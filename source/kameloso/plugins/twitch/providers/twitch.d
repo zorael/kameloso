@@ -47,7 +47,7 @@ void requestTwitchKey(TwitchPlugin plugin)
     import std.process : Pid, ProcessException, wait;
     import std.stdio : stdout, writeln;
 
-    scope(exit) if (plugin.state.settings.flush) stdout.flush();
+    scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
     logger.trace();
     logger.warning("== Twitch authorisation key generation wizard ==");
@@ -68,7 +68,7 @@ your <w>BOT</> account.
   disable it for this to work.
 `;
     writeln(attemptToOpenMessage.expandTags(LogLevel.off));
-    if (plugin.state.settings.flush) stdout.flush();
+    if (plugin.state.coreSettings.flush) stdout.flush();
 
     static immutable scopes =
     [
@@ -154,11 +154,11 @@ your <w>BOT</> account.
     enum authNode = "https://id.twitch.tv/oauth2/authorize";
     immutable url = buildAuthNodeURL(authNode, scopes);
 
-    if (plugin.state.settings.force)
+    if (plugin.state.coreSettings.force)
     {
         logger.warning("Forcing; not automatically opening browser.");
         printManualURL(url);
-        if (plugin.state.settings.flush) stdout.flush();
+        if (plugin.state.coreSettings.flush) stdout.flush();
     }
     else
     {
@@ -172,13 +172,13 @@ your <w>BOT</> account.
             // Probably we got some platform wrong and command was not found
             logger.warning("Error: could not automatically open browser.");
             printManualURL(url);
-            if (plugin.state.settings.flush) stdout.flush();
+            if (plugin.state.coreSettings.flush) stdout.flush();
         }
         catch (Exception _)
         {
             logger.warning("Error: no graphical environment detected");
             printManualURL(url);
-            if (plugin.state.settings.flush) stdout.flush();
+            if (plugin.state.coreSettings.flush) stdout.flush();
         }
     }
 
@@ -218,7 +218,7 @@ void requestTwitchSuperKey(TwitchPlugin plugin)
     import std.stdio : stdout, writeln;
     import std.datetime.systime : Clock;
 
-    scope(exit) if (plugin.state.settings.flush) stdout.flush();
+    scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
     logger.trace();
     logger.warning("== Twitch authorisation super-key generation wizard ==");
@@ -267,7 +267,7 @@ your main <w>STREAMER</> account.
   disable it for this to work.
 `;
     writeln(attemptToOpenMessage.expandTags(LogLevel.off));
-    if (plugin.state.settings.flush) stdout.flush();
+    if (plugin.state.coreSettings.flush) stdout.flush();
 
     static immutable scopes =
     [
@@ -348,11 +348,11 @@ your main <w>STREAMER</> account.
     enum authNode = "https://id.twitch.tv/oauth2/authorize";
     immutable url = buildAuthNodeURL(authNode, scopes);
 
-    if (plugin.state.settings.force)
+    if (plugin.state.coreSettings.force)
     {
         logger.warning("Forcing; not automatically opening browser.");
         printManualURL(url);
-        if (plugin.state.settings.flush) stdout.flush();
+        if (plugin.state.coreSettings.flush) stdout.flush();
     }
     else
     {
@@ -366,7 +366,7 @@ your main <w>STREAMER</> account.
             // Probably we got some platform wrong and command was not found
             logger.warning("Error: could not automatically open browser.");
             printManualURL(url);
-            if (plugin.state.settings.flush) stdout.flush();
+            if (plugin.state.coreSettings.flush) stdout.flush();
         }
     }
 
@@ -424,7 +424,7 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
 
     while (!key.length)
     {
-        scope(exit) if (plugin.state.settings.flush) stdout.flush();
+        scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
         enum pasteMessage = "<l>Paste the address of empty the page you were redirected to here (empty line exits):</>
 

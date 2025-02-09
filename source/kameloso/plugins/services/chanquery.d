@@ -107,7 +107,7 @@ void startChannelQueries(ChanQueryService service)
     }
 
     // Continue anyway if eagerLookups
-    if (!querylist.length && !service.state.settings.eagerLookups) return;
+    if (!querylist.length && !service.state.coreSettings.eagerLookups) return;
 
     auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
     assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
@@ -218,7 +218,7 @@ void startChannelQueries(ChanQueryService service)
     }
 
     // Stop here if we can't or are not interested in going further
-    if (!service.transient.serverSupportsWHOIS || !service.state.settings.eagerLookups) return;
+    if (!service.transient.serverSupportsWHOIS || !service.state.coreSettings.eagerLookups) return;
 
     immutable nowInUnix = Clock.currTime.toUnixTime();
     bool[string] uniqueUsers;

@@ -73,7 +73,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [start|stop|status]";  // hide clear
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
     }
 

@@ -36,8 +36,8 @@
     immutable kamelosoInverted = line.invert("kameloso");
     assert(line != kamelosoInverted);
 
-    immutable nicknameTint = "nickname".getColourByHash(*kameloso.common.settings);
-    immutable substringTint = "substring".getColourByHash(*kameloso.common.settings);
+    immutable nicknameTint = "nickname".getColourByHash(*kameloso.common.coreSettings);
+    immutable substringTint = "substring".getColourByHash(*kameloso.common.coreSettings);
     ---
 
     It is used heavily in the Printer plugin, to format sections of its output
@@ -1029,12 +1029,12 @@ unittest
 
     Example:
     ---
-    immutable nickColour = "kameloso".getColourByHash(*kameloso.common.settings);
+    immutable nickColour = "kameloso".getColourByHash(*kameloso.common.coreSettings);
     ---
 
     Params:
         word = String to hash and base colour on.
-        settings = A copy of the program-global [kameloso.pods.CoreSettings|CoreSettings].
+        coreSettings = A copy of the program-global [kameloso.pods.CoreSettings|CoreSettings].
 
     Returns:
         A `uint` that can be used in an ANSI foreground colour sequence.
@@ -1044,10 +1044,10 @@ unittest
  +/
 auto getColourByHash(
     const string word,
-    const CoreSettings settings) pure @safe /*@nogc*/ nothrow
+    const CoreSettings coreSettings) pure @safe /*@nogc*/ nothrow
 in (word.length, "Tried to get colour by hash but no word was given")
 {
-    return getColourByHashImpl(word, settings.brightTerminal, settings.extendedColours);
+    return getColourByHashImpl(word, coreSettings.brightTerminal, coreSettings.extendedColours);
 }
 
 ///
@@ -1262,7 +1262,7 @@ unittest
 
     Params:
         word = String to colour.
-        settings = A copy of the program-global [kameloso.pods.CoreSettings|CoreSettings].
+        coreSettings = A copy of the program-global [kameloso.pods.CoreSettings|CoreSettings].
 
     Returns:
         `word`, now in colour based on the hash of its contents.
@@ -1273,9 +1273,9 @@ unittest
  +/
 auto colourByHash(
     const string word,
-    const CoreSettings settings) pure @safe nothrow
+    const CoreSettings coreSettings) pure @safe nothrow
 {
-    immutable code = getColourByHash(word, settings);
+    immutable code = getColourByHash(word, coreSettings);
     return word.withANSI(code);
 }
 

@@ -186,7 +186,7 @@ in (((channelName.length && id) ||
                     id,
                     __FUNCTION__);
 
-                if (plugin.state.settings.trace)
+                if (plugin.state.coreSettings.trace)
                 {
                     reportSuccess(emoteImport.name, numAdded);
                 }
@@ -197,7 +197,7 @@ in (((channelName.length && id) ||
             }
             catch (UnexpectedJSONException _)
             {
-                if (plugin.state.settings.trace)
+                if (plugin.state.coreSettings.trace)
                 {
                     reportFailure(emoteImport.name);
                 }

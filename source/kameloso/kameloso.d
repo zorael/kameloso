@@ -160,8 +160,8 @@ public:
         static import kameloso.common;
 
         this._args = args.dup;
-        conn = new Connection;
-        settings = &kameloso.common.settings;
+        this.conn = new Connection;
+        this.coreSettings = &kameloso.common.coreSettings;
     }
 
     // ctor
@@ -176,7 +176,7 @@ public:
     this() @safe
     {
         static import kameloso.common;
-        settings = &kameloso.common.settings;
+        this.coreSettings = &kameloso.common.coreSettings;
     }
 
     // teardown
@@ -186,9 +186,9 @@ public:
     void teardown()
     {
         teardownPlugins();
-        conn.teardown();
-        destroy(conn);
-        conn = null;
+        this.conn.teardown();
+        destroy(this.conn);
+        this.conn = null;
     }
 
     // args
@@ -200,7 +200,7 @@ public:
      +/
     auto args() const
     {
-        return _args;
+        return this._args;
     }
 
     // transient
@@ -224,11 +224,18 @@ public:
      +/
     IRCPlugin[] plugins;
 
-    // settings
+    // coreSettings
     /++
         Pointer to the program-wide settings global.
      +/
-    CoreSettings* settings;
+    CoreSettings* coreSettings;
+
+    // coreSettings
+    /++
+        Deprecated alias to [coreSettings].
+     +/
+    deprecated("Use `Kameloso.coreSettings` instead")
+    alias settings = coreSettings;
 
     // connSettings
     /++
@@ -453,13 +460,13 @@ public:
 
             if (dryRun) break;
 
-            if (!settings.headless && (settings.trace || !buffer.front.quiet))
+            if (!coreSettings.headless && (coreSettings.trace || !buffer.front.quiet))
             {
                 bool printed;
 
                 version(Colours)
                 {
-                    if (settings.colours)
+                    if (coreSettings.colours)
                     {
                         import kameloso.irccolours : mapEffects;
                         logger.trace("--> ", buffer.front.line.mapEffects);
@@ -506,7 +513,7 @@ public:
         state.client = this.parser.client;
         state.server = this.parser.server;
         state.bot = this.bot;
-        state.settings = *this.settings;
+        state.coreSettings = *this.coreSettings;
         state.connSettings = this.connSettings;
         state.abort = this.abort;
 
@@ -521,7 +528,7 @@ public:
             string[][string] theseInvalidEntries;
 
             plugin.deserialiseConfigFrom(
-                settings.configFile,
+                this.coreSettings.configFile,
                 theseMissingEntries,
                 theseInvalidEntries);
 
@@ -538,7 +545,7 @@ public:
 
         immutable allCustomSuccess = applyCustomSettings(
             this.plugins,
-            *this.settings,
+            *this.coreSettings,
             this.customSettings,
             toPluginsOnly: true);  // Don't overwrite changes to the instance settings
 
@@ -702,7 +709,7 @@ public:
                 import std.path : dirName;
                 import core.stdc.errno : ENOENT;
 
-                if ((e.errno == ENOENT) && !settings.resourceDirectory.dirName.exists)
+                if ((e.errno == ENOENT) && !coreSettings.resourceDirectory.dirName.exists)
                 {
                     // The resource directory hasn't been created, don't panic
                 }
@@ -767,15 +774,15 @@ public:
             propagate(plugin.state.server);
         }
 
-        if (plugin.state.updates & Update.settings)
+        if (plugin.state.updates & Update.coreSettings)
         {
             // Something changed the settings; propagate
-            plugin.state.updates &= ~Update.settings;
-            propagate(plugin.state.settings);
-            *this.settings = plugin.state.settings;
+            plugin.state.updates &= ~Update.coreSettings;
+            propagate(plugin.state.coreSettings);
+            *this.coreSettings = plugin.state.coreSettings;
 
-            // not necessary now that this.settings is a pointer to kameloso.common.settings
-            //*kameloso.common.settings = plugin.state.settings;
+            // not necessary now that this.coreSettings is a pointer to kameloso.common.coreSettings
+            //*kameloso.common.coreSettings = plugin.state.coreSettings;
         }
 
         assert((plugin.state.updates == Update.nothing),

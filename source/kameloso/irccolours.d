@@ -1367,7 +1367,7 @@ auto expandIRCTags(T)
     ---
     // Old
     enum pattern = "Quote %s #%s saved.";
-    immutable message = plugin.state.settings.colouredOutgoing ?
+    immutable message = plugin.state.coreSettings.colouredOutgoing ?
         pattern.format(id.ircColourByHash(extendedOutgoingColours: true), index.ircBold) :
         pattern.format(id, index);
     privmsg(plugin.state, event.channel, event.sender.nickname. message);
@@ -1390,8 +1390,8 @@ auto expandIRCTags(T)(const T line) @system
 
     return expandIRCTags(
         line,
-        extendedOutgoingColours: kameloso.common.settings.extendedOutgoingColours,
-        strip: !kameloso.common.settings.colouredOutgoing);
+        extendedOutgoingColours: kameloso.common.coreSettings.extendedOutgoingColours,
+        strip: !kameloso.common.coreSettings.colouredOutgoing);
 }
 
 ///

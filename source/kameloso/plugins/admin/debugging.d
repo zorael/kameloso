@@ -46,7 +46,7 @@ void onAnyEventImpl(AdminPlugin plugin, const IRCEvent event)
 {
     import std.stdio : stdout, write, writefln, writeln;
 
-    if (plugin.state.settings.headless) return;
+    if (plugin.state.coreSettings.headless) return;
 
     bool wroteSomething;  // mutable
 
@@ -87,7 +87,7 @@ void onAnyEventImpl(AdminPlugin plugin, const IRCEvent event)
         wroteSomething = true;
     }
 
-    if (plugin.state.settings.flush && wroteSomething) stdout.flush();
+    if (plugin.state.coreSettings.flush && wroteSomething) stdout.flush();
 }
 
 
@@ -102,7 +102,7 @@ void onCommandShowUserImpl(AdminPlugin plugin, const IRCEvent event)
     import kameloso.prettyprint : prettyprint;
     import std.algorithm.iteration : splitter;
 
-    if (plugin.state.settings.headless) return;
+    if (plugin.state.coreSettings.headless) return;
 
     foreach (immutable username; event.content.splitter(' '))
     {
@@ -132,7 +132,7 @@ void onCommandShowUsersImpl(AdminPlugin plugin)
     import kameloso.prettyprint : prettyprint;
     import std.stdio : stdout, writeln;
 
-    if (plugin.state.settings.headless) return;
+    if (plugin.state.coreSettings.headless) return;
 
     foreach (immutable name, const user; plugin.state.users.aaOf)
     {
@@ -141,7 +141,7 @@ void onCommandShowUsersImpl(AdminPlugin plugin)
     }
 
     writeln(plugin.state.users.length, " users.");
-    if (plugin.state.settings.flush) stdout.flush();
+    if (plugin.state.coreSettings.flush) stdout.flush();
 }
 
 
@@ -168,7 +168,7 @@ void onCommandPrintRawImpl(AdminPlugin plugin, const IRCEvent event)
     import std.conv : text;
     import std.format : format;
 
-    if (plugin.state.settings.headless) return;
+    if (plugin.state.coreSettings.headless) return;
 
     plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
 
@@ -189,7 +189,7 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const IRCEvent event)
     import std.conv : text;
     import std.format : format;
 
-    if (plugin.state.settings.headless) return;
+    if (plugin.state.coreSettings.headless) return;
 
     plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
 
@@ -224,7 +224,7 @@ void onCommandPrintEventsImpl(
     import std.algorithm.iteration : map;
     import std.format : format;
 
-    if (plugin.state.settings.headless) return;  // shouldn't output events to terminal
+    if (plugin.state.coreSettings.headless) return;  // shouldn't output events to terminal
 
     if (!input.length)
     {
@@ -295,7 +295,7 @@ void onCommandStatusImpl(AdminPlugin plugin)
     import std.stdio : stdout, writeln;
     import std.typecons : Flag, No, Yes;
 
-    if (plugin.state.settings.headless) return;
+    if (plugin.state.coreSettings.headless) return;
 
     logger.log("Current state:");
     prettyprint!(Yes.all)(plugin.state.client, plugin.state.server);
@@ -316,7 +316,7 @@ void onCommandStatusImpl(AdminPlugin plugin)
         prettyprint(user);
     }*/
 
-    if (plugin.state.settings.flush) stdout.flush();
+    if (plugin.state.coreSettings.flush) stdout.flush();
 }
 
 
@@ -334,13 +334,13 @@ void onCommandBusImpl(
     import kameloso.thread : ThreadMessage, boxed;
     import std.stdio : stdout, writeln;
 
-    if (!plugin.state.settings.headless)
+    if (!plugin.state.coreSettings.headless)
     {
         logger.info("Sending bus message.");
         writeln("Header: ", header);
         writeln("Content: ", content);
 
-        if (plugin.state.settings.flush) stdout.flush();
+        if (plugin.state.coreSettings.flush) stdout.flush();
     }
 
     plugin.state.messages ~= ThreadMessage.busMessage(header, boxed(content));

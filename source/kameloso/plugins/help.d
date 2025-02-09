@@ -281,7 +281,7 @@ void sendCommandHelpImpl(
         return syntax
             .replace("$command", commandString)
             .replace("$bot", plugin.state.client.nickname)
-            .replace("$prefix", plugin.state.settings.prefix)
+            .replace("$prefix", plugin.state.coreSettings.prefix)
             .replace("$nickname", event.sender.nickname)
             .replace("$header", string.init)
             .strippedLeft;
@@ -297,11 +297,11 @@ void sendCommandHelpImpl(
         immutable humanlyReadable = getHumanlyReadable(syntax);
         string contentLine;  // mutable
 
-        if (plugin.state.settings.prefix.length && (command.policy == PrefixPolicy.prefixed))
+        if (plugin.state.coreSettings.prefix.length && (command.policy == PrefixPolicy.prefixed))
         {
             contentLine = (shouldNotTouch || syntax.startsWith("$prefix")) ?
                 humanlyReadable :
-                plugin.state.settings.prefix ~ humanlyReadable;
+                plugin.state.coreSettings.prefix ~ humanlyReadable;
         }
         else if (command.policy == PrefixPolicy.direct)
         {
@@ -370,7 +370,7 @@ void sendFullPluginListing(
 
     enum pattern = "Use <b>%s%s<b> [<b>plugin<b>] [<b>command<b>] " ~
         "for information about a command.";
-    immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+    immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
     sendMessage(plugin, event, message);
 }
 
@@ -585,8 +585,8 @@ auto addPrefix(HelpPlugin plugin, const string word, const PrefixPolicy policy)
         return word;
 
     case prefixed:
-        if (!plugin.state.settings.prefix.length) goto case nickname;
-        return plugin.state.settings.prefix ~ word;
+        if (!plugin.state.coreSettings.prefix.length) goto case nickname;
+        return plugin.state.coreSettings.prefix ~ word;
 
     case nickname:
         return plugin.state.client.nickname[0..1] ~ ':' ~ word;
@@ -634,9 +634,9 @@ auto stripPrefix(HelpPlugin plugin, const string prefixed)
         return slice;
     }
 
-    if (prefixed.startsWith(plugin.state.settings.prefix))
+    if (prefixed.startsWith(plugin.state.coreSettings.prefix))
     {
-        return prefixed[plugin.state.settings.prefix.length..$];
+        return prefixed[plugin.state.coreSettings.prefix.length..$];
     }
     else if (prefixed.startsWith(plugin.state.client.nickname))
     {

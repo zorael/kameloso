@@ -132,7 +132,7 @@ in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outsi
                 e,
                 i,
                 endlessly: endlessly,
-                headless: plugin.state.settings.headless);
+                headless: plugin.state.coreSettings.headless);
             continue;  // If we're here the above didn't throw; continue
         }
     }
@@ -609,7 +609,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
             {
                 version(PrintStacktraces)
                 {
-                    if (!plugin.state.settings.headless)
+                    if (!plugin.state.coreSettings.headless)
                     {
                         import std.stdio : stdout, writeln;
                         writeln(json.toPrettyString);
@@ -634,7 +634,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
             version(PrintStacktraces)
             {
-                if (!plugin.state.settings.headless)
+                if (!plugin.state.coreSettings.headless)
                 {
                     import std.stdio : stdout, writeln;
                     writeln(response.str);

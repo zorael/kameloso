@@ -247,7 +247,7 @@ void onTwitchChannelEvent(NotePlugin plugin, const IRCEvent event)
 )
 void onWhoReply(NotePlugin plugin, const IRCEvent event)
 {
-    if (plugin.state.settings.eagerLookups) return;
+    if (plugin.state.coreSettings.eagerLookups) return;
     playbackNotes(plugin, event, background: true);
 }
 
@@ -425,7 +425,7 @@ void onCommandAddNote(NotePlugin plugin, const IRCEvent event)
         import std.format : format;
 
         enum pattern = "Usage: <b>%s%s<b> [nickname] [note text]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
         privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 

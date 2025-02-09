@@ -289,7 +289,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const bool strip) @sa
                     {
                         import kameloso.terminal.colours : colourByHash;
 
-                        sink.put(colourByHash(word, kameloso.common.settings));
+                        sink.put(colourByHash(word, kameloso.common.coreSettings));
 
                         with (LogLevel)
                         levelswitch:
@@ -571,7 +571,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel) @safe
         static assert(0, message);
     }
 
-    return expandTags(line, baseLevel, strip: !kameloso.common.settings.colours);
+    return expandTags(line, baseLevel, strip: !kameloso.common.coreSettings.colours);
 }
 
 ///
