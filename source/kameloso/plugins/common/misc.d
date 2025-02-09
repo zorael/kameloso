@@ -587,10 +587,10 @@ unittest
     Returns a meaningful basename of a plugin filename.
 
     This is preferred over use of [std.path.baseName] because some plugins are
-    nested in their own directories. The basename of `plugins/twitch/base.d` is
-    `base.d`, much like that of `plugins/printer/base.d` is.
+    nested in their own directories. The basename of `plugins/twitch/package.d` is
+    `package.d`, much like that of `plugins/printer/package.d` is.
 
-    With this we get `twitch/base.d` and `printer/base.d` instead, while still
+    With this we get `twitch/package.d` and `printer/package.d` instead, while still
     getting `oneliners.d`.
 
     Params:
@@ -618,13 +618,13 @@ unittest
     {
         version(Posix)
         {
-            enum filename = "plugins/twitch/base.d";
-            immutable expected = "twitch/base.d";
+            enum filename = "plugins/twitch/package.d";
+            immutable expected = "twitch/package.d";
         }
         else /*version(Windows)*/
         {
-            enum filename = "plugins\\twitch\\base.d";
-            immutable expected = "twitch\\base.d";
+            enum filename = "plugins\\twitch\\package.d";
+            immutable expected = "twitch\\package.d";
         }
 
         immutable actual = pluginFileBaseName(filename);
@@ -673,8 +673,8 @@ unittest
         assert((expected == actual), actual);
     }
     {
-        version(Posix) enum filename = "plugins/twitch/base.d";
-        else /*version(Windows)*/ enum filename = "plugins\\twitch\\base.d";
+        version(Posix) enum filename = "plugins/twitch/package.d";
+        else /*version(Windows)*/ enum filename = "plugins\\twitch\\package.d";
         immutable expected = "twitch";
         immutable actual = pluginNameOfFilename(filename);
         assert((expected == actual), actual);
@@ -709,11 +709,11 @@ in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`
     import std.string : indexOf;
 
     string slice = filename;  // mutable
-    size_t separatorPos = slice.indexOf(dirSeparator);
+    ptrdiff_t separatorPos = slice.indexOf(dirSeparator);
 
     while (separatorPos != -1)
     {
-        if (slice[separatorPos+1..$] == "base.d")
+        if (slice[separatorPos+1..$] == "package.d")
         {
             return getPluginName ? slice[0..separatorPos] : slice;
         }
