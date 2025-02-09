@@ -3816,25 +3816,29 @@ void sortBadges(ref string badges, const string[] badgeOrder)
 
     foreach (immutable badge; range)
     {
-        if (!badge.length) continue;
+        if (!badge.length) continue;  // should never happen
 
         immutable slashIndex = badge.indexOf('/');
 
         if (slashIndex == -1)
         {
-            // Malformed badges?
+            // Malformed badges? should also never happen
             throw new Exception("Malformed badge was missing a slash: " ~ badge);
         }
 
         immutable badgeName = badge[0..slashIndex];
-        immutable badgeIndex = badgeOrder.countUntil(badgeName);
 
-        if (badgeIndex < lastIndex) inOrder = false;
+        if (inOrder)
+        {
+            immutable badgeIndex = badgeOrder.countUntil(badgeName);
+            inOrder = (badgeIndex >= lastIndex);
+            lastIndex = badgeIndex;
+        }
 
-        lastIndex = badgeIndex;
         sink.put(badge);
     }
 
+    // No need to do anything if the badges were already ordered
     if (inOrder) return;
 
     auto compareBadges(const string a, const string b)
