@@ -144,7 +144,7 @@ unittest
     state.settings.resourceDirectory = "res";
     auto plugin = new UnittestPlugin(state);
 
-    assert((plugin.name == "unittest_"), plugin.name);
+    assert((plugin.name == "unittest"), plugin.name);
 
     assert(!plugin.isEnabled);
     plugin.unittestSettings.enabled = true;

@@ -173,6 +173,9 @@ auto applyCustomSettings(
 ///
 unittest
 {
+    import std.conv : to;
+    import std.math : isClose;
+
     @Settings static struct MyPluginSettings
     {
         @Enabler bool enabled;
@@ -188,7 +191,7 @@ unittest
     {
         MyPluginSettings myPluginSettings;
 
-        override string name() const
+        override string name(const bool _, const bool __) const
         {
             return "myplugin";
         }
@@ -198,6 +201,7 @@ unittest
 
     IRCPluginState state;
     IRCPlugin plugin = new MyPlugin(state);
+    CoreSettings coreSettings;
 
     auto newSettings =
     [
@@ -208,8 +212,6 @@ unittest
         "myplugin.d=99.99",
     ];
 
-    CoreSettings coreSettings;
-
     cast(void)applyCustomSettings(
         [ plugin ],
         settings: coreSettings,
@@ -217,9 +219,6 @@ unittest
         toPluginsOnly: true);
 
     const ps = (cast(MyPlugin)plugin).myPluginSettings;
-
-    import std.conv : to;
-    import std.math : isClose;
 
     assert((ps.s == "abc def ghi"), ps.s);
     assert((ps.i == 42), ps.i.to!string);
