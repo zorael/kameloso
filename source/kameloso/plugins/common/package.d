@@ -2767,7 +2767,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
     {
         foreach (const command; uda.commands)
         {
-            import std.string : indexOf;
+            import std.algorithm.searching : canFind;
 
             if (!command._word.length)
             {
@@ -2776,7 +2776,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
                 immutable message = pattern.format(uda.fqn);
                 assert(0, message);
             }
-            else if (command._word.indexOf(' ') != -1)
+            else if (command._word.canFind(' '))
             {
                 enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a `Command` whose trigger " ~

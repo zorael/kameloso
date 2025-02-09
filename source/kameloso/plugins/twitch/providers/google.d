@@ -49,11 +49,11 @@ void requestGoogleKeys(TwitchPlugin plugin)
     import kameloso.terminal.colours.tags : expandTags;
     import kameloso.time : timeSince;
     import lu.string : advancePast, stripped;
+    import std.algorithm.searching : canFind;
     import std.conv : to;
     import std.format : format;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : File, readln, stdin, stdout, write, writeln;
-    import std.string : indexOf;
     import core.time : seconds;
 
     scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
@@ -162,7 +162,7 @@ A normal URL to any playlist you can modify will work fine. They do not have to 
             // Likely a playlist ID
             creds.youtubePlaylistID = playlistURL;
         }
-        else if (playlistURL.indexOf("list=") != -1)
+        else if (playlistURL.canFind("list="))
         {
             string slice = playlistURL;  // mutable
             slice.advancePast("list=");
@@ -275,7 +275,7 @@ then finally <i>Allow</>.`;
             continue;
         }
 
-        if (input.indexOf("code=") == -1)
+        if (!input.canFind("code="))
         {
             import std.algorithm.searching : startsWith;
 

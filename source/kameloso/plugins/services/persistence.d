@@ -938,7 +938,6 @@ void onNamesReply(PersistenceService service, const IRCEvent event)
     import lu.string : advancePast;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : canFind;
-    import std.string : indexOf;
 
     mixin(memoryCorruptionCheck);
 
@@ -957,7 +956,7 @@ void onNamesReply(PersistenceService service, const IRCEvent event)
 
     foreach (immutable userstring; names)
     {
-        if (userstring.indexOf('!') == -1)
+        if (!userstring.canFind('!'))
         {
             // No need to check for slice.contains('@')
             // Freenode-like, only nicknames with possible modesigns
@@ -981,7 +980,7 @@ void onNamesReply(PersistenceService service, const IRCEvent event)
 
         // Do addresses ever contain bold, italics, underlined?
         immutable ident = slice.advancePast('@');
-        immutable address = (slice.indexOf(cast(char)IRCControlCharacter.colour) != -1) ?
+        immutable address = slice.canFind(cast(char)IRCControlCharacter.colour) ?
             stripColours(slice) :
             slice;
 
@@ -1242,7 +1241,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
     {
         import kameloso.string : doublyBackslashed;
         import dialect.common : isValidHostmask;
-        import std.string : indexOf;
+        import std.algorithm.searching : canFind;
 
         alias examplePlaceholderKey1 = PersistenceService.Placeholder.hostmask1;
         alias examplePlaceholderKey2 = PersistenceService.Placeholder.hostmask2;
@@ -1272,7 +1271,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
             user.account = account;
             service.hostmaskDefinitions ~= user;
 
-            if (user.nickname.length && (user.nickname.indexOf('*') == -1))
+            if (user.nickname.length && !user.nickname.canFind('*'))
             {
                 // Nickname has length and is not a glob
                 // (adding a glob to hostmaskUsers is okay)

@@ -1268,8 +1268,8 @@ private void prettyformatImpl(
 @system unittest
 {
     import lu.assert_ : assertMultilineEquals;
+    import std.algorithm.searching : canFind;
     import std.array : Appender;
-    import std.string : indexOf;
 
     Appender!(char[]) sink;
     sink.reserve(512);  // ~323
@@ -1432,21 +1432,21 @@ private void prettyformatImpl(
 
             assert((sink[].length > 12), "Empty sink after coloured fill");
 
-            assert(sink[].indexOf("-- StructName2\n") != -1);  // Settings stripped
-            assert(sink[].indexOf("int_") != -1);
-            assert(sink[].indexOf("12345") != -1);
+            assert(sink[].canFind("-- StructName2\n"));  // Settings stripped
+            assert(sink[].canFind("int_"));
+            assert(sink[].canFind("12345"));
 
-            assert(sink[].indexOf("string_") != -1);
-            assert(sink[].indexOf(`"foo"`) != -1);
+            assert(sink[].canFind("string_"));
+            assert(sink[].canFind(`"foo"`));
 
-            assert(sink[].indexOf("bool_") != -1);
-            assert(sink[].indexOf("true") != -1);
+            assert(sink[].canFind("bool_"));
+            assert(sink[].canFind("true"));
 
-            assert(sink[].indexOf("float_") != -1);
-            assert(sink[].indexOf("3.14") != -1);
+            assert(sink[].canFind("float_"));
+            assert(sink[].canFind("3.14"));
 
-            assert(sink[].indexOf("double_") != -1);
-            assert(sink[].indexOf("99.9") != -1);
+            assert(sink[].canFind("double_"));
+            assert(sink[].canFind("99.9"));
 
             sink.clear();
         }

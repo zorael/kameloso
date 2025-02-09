@@ -667,7 +667,7 @@ auto getRoom(TwitchPlugin plugin, const IRCEvent.Channel channel)
 )
 void onUserstate(TwitchPlugin plugin, const IRCEvent event)
 {
-    import std.string : indexOf;
+    import std.algorithm.searching : canFind;
 
     mixin(memoryCorruptionCheck);
 
@@ -700,14 +700,14 @@ void onUserstate(TwitchPlugin plugin, const IRCEvent event)
     }
     else if (
         !plugin.twitchSettings.promoteBroadcasters &&
-        (event.target.badges.indexOf("broadcaster/") != -1))
+        event.target.badges.canFind("broadcaster/"))
     {
         // All is also well
         registerOpMod();
     }
     else if (
         !plugin.twitchSettings.promoteModerators &&
-        (event.target.badges.indexOf("moderator/") != -1))
+        event.target.badges.canFind("moderator/"))
     {
         // Likewise
         registerOpMod();
@@ -1621,8 +1621,8 @@ void onCommandSubs(TwitchPlugin plugin, const IRCEvent event)
 void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
 {
     import lu.string : advancePast, stripped;
+    import std.algorithm.searching : canFind;
     import std.format : format;
-    import std.string : indexOf;
     import core.time : seconds;
 
     mixin(memoryCorruptionCheck);
@@ -1739,8 +1739,8 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
         }
         else if (
             !url.length ||
-            (url.indexOf(' ') != -1) ||
-            ((url.indexOf("youtube.com/") == -1) && (url.indexOf("youtu.be/") == -1)))
+            url.canFind(' ') ||
+            !url.canFind("youtube.com/", "youtu.be/"))
         {
             return sendUsage();
         }
@@ -1765,12 +1765,12 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
         {
             videoID = slice;
         }
-        else if (slice.indexOf("youtube.com/watch?v=") != -1)
+        else if (slice.canFind("youtube.com/watch?v="))
         {
             slice.advancePast("youtube.com/watch?v=");
             videoID = slice.advancePast('&', inherit: true);
         }
-        else if (slice.indexOf("youtu.be/") != -1)
+        else if (slice.canFind("youtu.be/"))
         {
             slice.advancePast("youtu.be/");
             videoID = slice.advancePast('?', inherit: true);
@@ -1827,8 +1827,8 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
         }
         else if (
             !url.length ||
-            (url.indexOf(' ') != -1) ||
-            (url.indexOf("spotify.com/track/") == -1))
+            url.canFind(' ') ||
+            !url.canFind("spotify.com/track/"))
         {
             return sendUsage();
         }
@@ -1849,7 +1849,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
         {
             trackID = slice;
         }
-        else if (slice.indexOf("spotify.com/track/") != -1)
+        else if (slice.canFind("spotify.com/track/"))
         {
             slice.advancePast("spotify.com/track/");
             trackID = slice.advancePast('?', inherit: true);
@@ -3898,9 +3898,9 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
             foreach (immutable badge; badgeOrder[])
             {
-                import std.string : indexOf;
+                import std.algorithm.searching : canFind;
 
-                if (user.badges.indexOf(badge) != -1)
+                if (user.badges.canFind(badge))
                 {
                     bringBadgeToFront(user.badges, badge);
                 }

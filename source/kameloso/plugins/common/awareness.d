@@ -543,7 +543,7 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const IRCEvent event) @system
     import dialect.common : IRCControlCharacter, stripModesign;
     import lu.string : advancePast;
     import std.algorithm.iteration : splitter;
-    import std.string : indexOf;
+    import std.algorithm.searching : canFind;
 
     version(TwitchSupport)
     {
@@ -561,7 +561,7 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const IRCEvent event) @system
         string slice = userstring;  // mutable
         IRCUser user;  // ditto
 
-        if (slice.indexOf('!') == -1)
+        if (!slice.canFind('!'))
         {
             // No need to check for slice.contains('@'))
             // Freenode-like, only nicknames with possible modesigns
@@ -578,7 +578,7 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const IRCEvent event) @system
             immutable ident = slice.advancePast('@');
 
             // Do addresses ever contain bold, italics, underlined?
-            immutable address = (slice.indexOf(cast(char)IRCControlCharacter.colour) != -1) ?
+            immutable address = slice.canFind(cast(char)IRCControlCharacter.colour) ?
                 stripColours(slice) :
                 slice;
 
@@ -1168,8 +1168,9 @@ void onChannelAwarenessWhoReply(IRCPlugin plugin, const IRCEvent event)
 void onChannelAwarenessNamesReply(IRCPlugin plugin, const IRCEvent event)
 {
     import dialect.common : stripModesign;
+    import std.algorithm.searching : canFind;
     import std.algorithm.iteration : splitter;
-    import std.string : indexOf, representation;
+    import std.string : representation;
 
     if (!event.content.length) return;
 
@@ -1183,7 +1184,7 @@ void onChannelAwarenessNamesReply(IRCPlugin plugin, const IRCEvent event)
         string slice = userstring;  // mutable
         string nickname;  // ditto
 
-        if (userstring.indexOf('!') != -1)// && userstring.contains('@'))  // No need to check both
+        if (userstring.canFind('!'))// && userstring.canFind('@'))  // No need to check both
         {
             import lu.string : advancePast;
             // SpotChat-like, names are in full nick!ident@address form

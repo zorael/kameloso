@@ -73,9 +73,9 @@ public:
 auto expandTags(T)(const T line, const LogLevel baseLevel, const bool strip) @safe
 {
     import kameloso.common : logger;
+    import std.algorithm.searching : canFind;
     import std.array : Appender;
     import std.range : ElementEncodingType;
-    import std.string : indexOf;
     import std.traits : Unqual, isSomeString;
     static import kameloso.common;
 
@@ -90,7 +90,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const bool strip) @sa
 
     alias E = Unqual!(ElementEncodingType!T);
 
-    if (!line.length || (line.indexOf('<') == -1)) return line;
+    if (!line.length || !line.canFind('<')) return line;
 
     // Without marking this as @trusted, we can't have @safe expandTags...
     static auto wrappedIndexOf(H, N)(const H haystack, const N rawNeedle) @trusted

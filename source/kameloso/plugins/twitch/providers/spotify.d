@@ -51,10 +51,10 @@ void requestSpotifyKeys(TwitchPlugin plugin)
     import kameloso.logger : LogLevel;
     import kameloso.terminal.colours.tags : expandTags;
     import lu.string : advancePast, stripped;
+    import std.algorithm.searching : canFind;
     import std.format : format;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : File, readln, stdin, stdout, write, writeln;
-    import std.string : indexOf;
 
     scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
@@ -139,7 +139,7 @@ A normal URL to any playlist you can modify will work fine.
             // Likely a playlist ID
             creds.spotifyPlaylistID = playlistURL;
         }
-        else if (playlistURL.indexOf("spotify.com/playlist/") != -1)
+        else if (playlistURL.canFind("spotify.com/playlist/"))
         {
             string slice = playlistURL;  // mutable
             slice.advancePast("spotify.com/playlist/");
@@ -241,7 +241,7 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
             continue;
         }
 
-        if (input.indexOf("code=") == -1)
+        if (!input.canFind("code="))
         {
             import std.algorithm.searching : startsWith;
 

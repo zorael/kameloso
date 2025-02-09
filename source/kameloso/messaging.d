@@ -485,7 +485,7 @@ void emote(
     const string caller = __FUNCTION__)
 in (emoteTarget.length, "Tried to send an emote but no target was given")
 {
-    import std.string : indexOf;
+    import std.algorithm.searching : canFind;
 
     Message m;
 
@@ -493,7 +493,7 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
     m.properties = properties;
     m.caller = caller;
 
-    if (state.server.chantypes.indexOf(emoteTarget[0]) != -1)
+    if (state.server.chantypes.canFind(emoteTarget[0]))
     {
         m.event.channel.name = emoteTarget;
     }

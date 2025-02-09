@@ -940,8 +940,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
         foreach (immutable rawCap; event.aux[])
         {
             import lu.string : advancePast;
-            import std.algorithm.searching : startsWith;
-            import std.string : indexOf;
+            import std.algorithm.searching : canFind, startsWith;
 
             if (!rawCap.length) continue;
 
@@ -956,8 +955,8 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
                 // https://issues.dlang.org/show_bug.cgi?id=21427
                 // feep[work] | the quick workaround is to wrap the switch body in a {}
                 {
-                    immutable acceptsExternal = !sub.length || (sub.indexOf("EXTERNAL") != -1);
-                    immutable acceptsPlain = !sub.length || (sub.indexOf("PLAIN") != -1);
+                    immutable acceptsExternal = !sub.length || sub.canFind("EXTERNAL");
+                    immutable acceptsPlain = !sub.length || sub.canFind("PLAIN");
                     immutable hasKey =
                         (service.state.connSettings.privateKeyFile.length ||
                         service.state.connSettings.certFile.length);

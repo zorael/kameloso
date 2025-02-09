@@ -40,6 +40,7 @@ debug version = Debug;
 auto findURLs(const string line) @safe pure
 {
     import lu.string : advancePast, stripped, strippedRight;
+    import std.algorithm.searching : canFind;
     import std.string : indexOf;
 
     enum wordBoundaryTokens = ".,!?:";
@@ -83,9 +84,8 @@ auto findURLs(const string line) @safe pure
             continue;
         }
         else if (
-            (slice.indexOf(' ') == -1) &&
-            ((slice[10..$].indexOf("http://") != -1) ||
-            (slice[10..$].indexOf("https://") != -1)))
+            !slice.canFind(' ') &&
+            slice[10..$].canFind("https://", "http://"))
         {
             // There is a second URL in the middle of this one
             break;
@@ -96,7 +96,7 @@ auto findURLs(const string line) @safe pure
         immutable hit = slice
             .advancePast(' ', inherit: true)
             .strippedRight(wordBoundaryTokens);
-        if (hit.indexOf('.') != -1) hits ~= hit;
+        if (hit.canFind('.')) hits ~= hit;
         httpPos = slice.indexOf("http");
     }
 

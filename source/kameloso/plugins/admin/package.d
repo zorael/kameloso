@@ -1085,12 +1085,13 @@ void onCommandGet(AdminPlugin plugin, const IRCEvent event)
         }
         else if (setting.length)
         {
+            import std.algorithm.searching : canFind;
             import std.format : format;
-            import std.string : indexOf;
 
-            immutable pattern = (value.indexOf(' ') != -1) ?
+            immutable pattern = value.canFind(' ') ?
                 "%s.%s=\"%s\"" :
                 "%s.%s=%s";
+
             immutable message = pattern.format(pluginName, setting, value);
             privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
@@ -1391,9 +1392,9 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
 
     case "del":
     case "remove":
-        import std.string : indexOf;
+        import std.algorithm.searching : canFind;
 
-        if (!slice.length || (slice.indexOf(' ') != -1))
+        if (!slice.length || (slice.canFind(' ')))
         {
             enum pattern = "Usage: <b>%s%s del<b> [hostmask]";
             immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);

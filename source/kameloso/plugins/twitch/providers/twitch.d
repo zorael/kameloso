@@ -417,8 +417,8 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
 {
     import kameloso.logger : LogLevel;
     import lu.string : advancePast, stripped;
+    import std.algorithm.searching : canFind;
     import std.stdio : readln, stdin, stdout, write, writeln;
-    import std.string : indexOf;
 
     string key;
 
@@ -448,7 +448,7 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
             // As is
             key = readURL;
         }
-        else if (readURL.indexOf("access_token=") == -1)
+        else if (!readURL.canFind("access_token="))
         {
             import std.algorithm.searching : startsWith;
 

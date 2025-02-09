@@ -1023,8 +1023,8 @@ Quote getQuoteBySearchTerms(
     const string searchTermsCased,
     out size_t index)
 {
+    import std.algorithm.searching : canFind;
     import std.random : uniform;
-    import std.string : indexOf;
     import std.uni : toLower;
 
     auto stripPunctuation(const string inputString)
@@ -1052,14 +1052,13 @@ Quote getQuoteBySearchTerms(
     auto stripDoubleSpaces(const string inputString)
     {
         string output = inputString;  // mutable
-
-        bool hasDoubleSpace = (output.indexOf("  ") != -1);  // mutable
+        bool hasDoubleSpace = output.canFind("  ");  // mutable
 
         while (hasDoubleSpace)
         {
             import std.array : replace;
             output = output.replace("  ", " ");
-            hasDoubleSpace = (output.indexOf("  ") != -1);
+            hasDoubleSpace = output.canFind("  ");
         }
 
         return output;
@@ -1090,7 +1089,7 @@ Quote getQuoteBySearchTerms(
 
     foreach (immutable i, immutable flattenedQuote; flattenedQuotes)
     {
-        if (flattenedQuote.indexOf(searchTerms) == -1) continue;
+        if (!flattenedQuote.canFind(searchTerms)) continue;
 
         if (plugin.quoteSettings.alwaysPickFirstMatch)
         {
@@ -1116,7 +1115,7 @@ Quote getQuoteBySearchTerms(
 
     foreach (immutable i, immutable flattenedQuote; flattenedQuotes)
     {
-        if (stripBoth(flattenedQuote).indexOf(strippedSearchTerms) == -1) continue;
+        if (!stripBoth(flattenedQuote).canFind(strippedSearchTerms)) continue;
 
         if (plugin.quoteSettings.alwaysPickFirstMatch)
         {
@@ -1164,8 +1163,7 @@ auto removeWeeChatHead(
 in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickname was empty")
 {
     import lu.string : advancePast, strippedLeft;
-    import std.algorithm.searching : startsWith;
-    import std.string : indexOf;
+    import std.algorithm.searching : canFind, startsWith;
 
     static bool isN(const char c)
     {
@@ -1193,7 +1191,7 @@ in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickna
 
     if (slice.length > nickname.length)
     {
-        if (((prefixes.indexOf(slice[0]) != -1) &&
+        if ((prefixes.canFind(slice[0]) &&
             slice[1..$].startsWith(nickname)) ||
             slice.startsWith(nickname))
         {

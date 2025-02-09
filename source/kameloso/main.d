@@ -2971,7 +2971,7 @@ auto tryConnect(Kameloso instance)
             continue;
 
         case transientSSLFailure:
-            import std.string : indexOf;
+            import std.algorithm.searching : canFind;
 
             // "Failed to establish SSL connection after successful connect (system lib)"
             // "Failed to establish SSL connection after successful connect" --> attempted SSL on non-SSL server
@@ -2980,7 +2980,7 @@ auto tryConnect(Kameloso instance)
             if (*instance.abort) return Next.returnFailure;
 
             if ((numTransientSSLFailures++ < transientSSLFailureTolerance) &&
-                (attempt.error.indexOf("(system lib)") != -1))
+                attempt.error.canFind("(system lib)"))
             {
                 // Random failure, just reconnect immediately
                 // but only `transientSSLFailureTolerance` times
@@ -3294,7 +3294,7 @@ auto verifySettings(Kameloso instance)
 
     version(Posix)
     {
-        import std.string : indexOf;
+        import std.algorithm.searching : canFind;
 
         // Workaround for Issue 19247:
         // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
@@ -3302,8 +3302,7 @@ auto verifySettings(Kameloso instance)
         immutable addressIsResolvable =
             instance.coreSettings.force ||
             instance.parser.server.address == "localhost" ||
-            (instance.parser.server.address.indexOf('.') != -1) ||
-            (instance.parser.server.address.indexOf(':') != -1);
+            instance.parser.server.address.canFind('.', ':');
     }
     else version(Windows)
     {

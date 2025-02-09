@@ -909,13 +909,13 @@ unittest
 auto asAbbreviatedDuration(const string line)
 {
     import lu.string : advancePast;
+    import std.algorithm.searching : canFind;
     import std.conv : to;
-    import std.string : indexOf;
     import core.time : days, hours, minutes, seconds;
 
     static int getAbbreviatedValue(ref string slice, const char c)
     {
-        if (slice.indexOf(c) != -1)
+        if (slice.canFind(c))
         {
             immutable valueString = slice.advancePast(c);
             immutable value = valueString.length ? valueString.to!int : 0;

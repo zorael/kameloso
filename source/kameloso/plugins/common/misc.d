@@ -54,15 +54,15 @@ auto applyCustomSettings(
 {
     import lu.objmanip : SetMemberException;
     import lu.string : advancePast;
+    import std.algorithm.searching : canFind;
     import std.conv : ConvException;
-    import std.string : indexOf;
 
     bool allSuccess = true;
 
     top:
     foreach (immutable line; customSettings)
     {
-        if (line.indexOf('.') == -1)
+        if (!line.canFind('.'))
         {
             enum pattern = `Bad <l>plugin</>.<l>setting</>=<l>value</> format. (<l>%s</>)`;
             logger.warningf(pattern, line);

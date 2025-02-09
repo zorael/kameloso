@@ -645,7 +645,7 @@ auto mapEffects(
     const TerminalForeground fgBase = TerminalForeground.default_,
     const TerminalBackground bgBase = TerminalBackground.default_) pure
 {
-    import std.string : indexOf;
+    import std.algorithm.searching : canFind;
 
     alias I = IRCControlCharacter;
     alias TF = TerminalFormat;
@@ -654,25 +654,25 @@ auto mapEffects(
 
     string line = origLine;  // mutable
 
-    if (line.indexOf(cast(char)I.colour) != -1)
+    if (line.canFind(cast(char)I.colour))
     {
         // Colour is mIRC 3
         line = mapColours(line, fgBase, bgBase);
     }
 
-    if (line.indexOf(cast(char)I.bold) != -1)
+    if (line.canFind(cast(char)I.bold))
     {
         // Bold is terminal 1, mIRC 2
         line = mapEffectsImpl!(No.strip, I.bold, TF.bold)(line);
     }
 
-    if (line.indexOf(cast(char)I.italics) != -1)
+    if (line.canFind(cast(char)I.italics))
     {
         // Italics is terminal 3 (not really), mIRC 29
         line = mapEffectsImpl!(No.strip, I.italics, TF.italics)(line);
     }
 
-    if (line.indexOf(cast(char)I.underlined) != -1)
+    if (line.canFind(cast(char)I.underlined))
     {
         // Underlined is terminal 4, mIRC 31
         line = mapEffectsImpl!(No.strip, I.underlined, TF.underlined)(line);
@@ -1616,6 +1616,7 @@ private T expandIRCTagsImpl(T)
     const bool extendedOutgoingColours,
     const bool strip = false) pure @safe
 {
+    import std.algorithm.searching : canFind;
     import std.array : Appender;
     import std.range : ElementEncodingType;
     import std.string : indexOf, representation;
@@ -1623,7 +1624,7 @@ private T expandIRCTagsImpl(T)
 
     alias E = Unqual!(ElementEncodingType!T);
 
-    if (!line.length || (line.indexOf('<') == -1)) return line;
+    if (!line.length || !line.canFind('<')) return line;
 
     Appender!(E[]) sink;
     size_t lastEnd;
