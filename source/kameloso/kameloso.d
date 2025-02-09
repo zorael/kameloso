@@ -751,42 +751,40 @@ public:
 
         if (*this.abort) return;
 
-        if (plugin.state.updates == Update.nothing) return;
+        immutable updates = plugin.state.updates;
 
-        if (plugin.state.updates & Update.bot)
+        if (updates == Update.nothing) return;
+
+        if (updates & Update.bot)
         {
             // Something changed the bot; propagate
-            plugin.state.updates &= ~Update.bot;
+            //plugin.state.updates &= ~Update.bot;
             propagate(plugin.state.bot);
         }
 
-        if (plugin.state.updates & Update.client)
+        if (updates & Update.client)
         {
             // Something changed the client; propagate
-            plugin.state.updates &= ~Update.client;
+            //plugin.state.updates &= ~Update.client;
             propagate(plugin.state.client);
         }
 
-        if (plugin.state.updates & Update.server)
+        if (updates & Update.server)
         {
             // Something changed the server; propagate
-            plugin.state.updates &= ~Update.server;
+            //plugin.state.updates &= ~Update.server;
             propagate(plugin.state.server);
         }
 
-        if (plugin.state.updates & Update.coreSettings)
+        if (updates & Update.coreSettings)
         {
             // Something changed the settings; propagate
-            plugin.state.updates &= ~Update.coreSettings;
+            //plugin.state.updates &= ~Update.coreSettings;
             propagate(plugin.state.coreSettings);
             *this.coreSettings = plugin.state.coreSettings;
-
-            // not necessary now that this.coreSettings is a pointer to kameloso.common.coreSettings
-            //*kameloso.common.coreSettings = plugin.state.coreSettings;
         }
 
-        assert((plugin.state.updates == Update.nothing),
-            "`IRCPluginState.updates` was not reset after checking and propagating");
+        plugin.state.updates = Update.nothing;
     }
 
     // propagate
