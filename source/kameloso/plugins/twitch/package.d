@@ -3847,13 +3847,10 @@ void sortBadges(ref string badges, const string[] badgeOrder)
         immutable aSlashIndex = a.indexOf('/');
         immutable bSlashIndex = b.indexOf('/');
 
-        auto aBadgeIndex = badgeOrder.countUntil(a[0..aSlashIndex]);
-        auto bBadgeIndex = badgeOrder.countUntil(b[0..bSlashIndex]);
+        immutable aBadgeIndex = badgeOrder.countUntil(a[0..aSlashIndex]);
+        immutable bBadgeIndex = badgeOrder.countUntil(b[0..bSlashIndex]);
 
-        if (aBadgeIndex == -1) aBadgeIndex = 255;
-        if (bBadgeIndex == -1) bBadgeIndex = 255;
-
-        return aBadgeIndex < bBadgeIndex;
+        return size_t(aBadgeIndex) < size_t(bBadgeIndex);
     }
 
     // Insert it back into the original ref string
