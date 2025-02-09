@@ -18,8 +18,8 @@ version(unittest):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.awareness;
 import kameloso.plugins.common.mixins;
+import kameloso.plugins.common.mixins.awareness;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 

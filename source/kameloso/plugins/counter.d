@@ -23,7 +23,7 @@ version(WithCounterPlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.awareness : MinimalAuthentication;
+import kameloso.plugins.common.mixins.awareness;
 import kameloso.messaging;
 import dialect.defs;
 

@@ -26,7 +26,7 @@ version(WithChanQueryService):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
+import kameloso.plugins.common.mixins.awareness;
 import dialect.defs;
 
 

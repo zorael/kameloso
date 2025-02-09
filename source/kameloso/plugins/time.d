@@ -19,7 +19,7 @@ version(WithTimePlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.awareness : UserAwareness;
+import kameloso.plugins.common.mixins.awareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
@@ -602,7 +602,7 @@ mixin PluginRegistration!TimePlugin;
 
 version(TwitchSupport)
 {
-    import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness;
+    import kameloso.plugins.common.mixins.awareness : ChannelAwareness, TwitchAwareness;
 
     mixin ChannelAwareness;  // Only needed to get TwitchAwareness in
     mixin TwitchAwareness;

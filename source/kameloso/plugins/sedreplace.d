@@ -45,7 +45,7 @@ version(WithSedReplacePlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.awareness : MinimalAuthentication;
+import kameloso.plugins.common.mixins.awareness;
 import kameloso.messaging;
 import dialect.defs;
 import lu.container : CircularBuffer;

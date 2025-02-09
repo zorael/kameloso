@@ -49,7 +49,7 @@ debug version = Debug;
 private import kameloso.plugins;
 
 // Awareness mixins, for plumbing.
-private import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
+private import kameloso.plugins.common.mixins.awareness;
 
 // [kameloso.common] for the global logger instance.
 private import kameloso.common : logger;

@@ -214,7 +214,7 @@ import kameloso.plugins.twitch.common;
 import dialect.postprocessors.twitch;  // To trigger the module ctor
 
 import kameloso.plugins;
-import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
+import kameloso.plugins.common.mixins.awareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import kameloso.thread : Sendable;

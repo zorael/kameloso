@@ -22,7 +22,7 @@ version(WithPollPlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common.awareness : MinimalAuthentication;
+import kameloso.plugins.common.mixins.awareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
