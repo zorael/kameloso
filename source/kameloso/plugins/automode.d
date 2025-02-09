@@ -5,8 +5,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#automode,
-        [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins],
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -21,8 +21,7 @@ version(WithAutomodePlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
-import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
+import kameloso.plugins.common.mixins.awareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
@@ -80,7 +79,7 @@ void initResources(AutomodePlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+        import kameloso.plugins.common : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(
@@ -691,8 +690,8 @@ private:
     // isEnabled
     /++
         Override
-        [kameloso.plugins.common.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
-        (effectively overriding [kameloso.plugins.common.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
+        [kameloso.plugins.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
+        (effectively overriding [kameloso.plugins.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
         and inject a server check, so this service does nothing on Twitch servers,
         in addition to doing nothing when [AutomodeSettings.enabled] is false.
 

@@ -10,8 +10,8 @@
     It has no commands.
 
     See_Also:
-        [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins],
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -26,7 +26,6 @@ version(WithPersistenceService):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
 import kameloso.common : logger;
 import dialect.defs;
 
@@ -925,7 +924,7 @@ void onWelcome(PersistenceService service, const IRCEvent _)
     Freenode only sends a list of the nicknames but SpotChat sends the full
     `user!ident@address` information.
 
-    This was copy/pasted from [kameloso.plugins.common.awareness.onUserAwarenessNamesReply]
+    This was copy/pasted from [kameloso.plugins.common.mixins.awareness.onUserAwarenessNamesReply]
     to spare us the full mixin.
  +/
 @(IRCEventHandler()
@@ -1314,7 +1313,7 @@ void initResources(PersistenceService service)
         service = The current [PersistenceService].
 
     Throws:
-        [kameloso.plugins.common.misc.IRCPluginInitialisationException|IRCPluginInitialisationException]
+        [kameloso.plugins.common.IRCPluginInitialisationException|IRCPluginInitialisationException]
         on failure loading the `user.json` file.
  +/
 void initAccountResources(PersistenceService service)
@@ -1330,7 +1329,7 @@ void initAccountResources(PersistenceService service)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+        import kameloso.plugins.common : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(
@@ -1414,7 +1413,7 @@ void initAccountResources(PersistenceService service)
             }
             catch (JSONException e)
             {
-                import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+                import kameloso.plugins.common : IRCPluginInitialisationException;
                 import kameloso.common : logger;
 
                 version(PrintStacktraces) logger.trace(e);
@@ -1438,7 +1437,7 @@ void initAccountResources(PersistenceService service)
     Reads, completes and saves the hostmasks JSON file, creating one if it doesn't exist.
 
     Throws:
-        [kameloso.plugins.common.misc.IRCPluginInitialisationException|IRCPluginInitialisationException]
+        [kameloso.plugins.IRCPluginInitialisationException|IRCPluginInitialisationException]
         on failure loading the `hostmasks.json` file.
  +/
 void initHostmaskResources(PersistenceService service)
@@ -1454,7 +1453,7 @@ void initHostmaskResources(PersistenceService service)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+        import kameloso.plugins.common : IRCPluginInitialisationException;
         import kameloso.common : logger;
 
         version(PrintStacktraces) logger.trace(e);
@@ -1511,7 +1510,7 @@ public:
     this service we aim to complete such [dialect.defs.IRCUser|IRCUser] entries as
     the union of everything we know from previous events.
 
-    It only needs part of [kameloso.plugins.common.awareness.UserAwareness|UserAwareness]
+    It only needs part of [kameloso.plugins.common.mixins.awareness.UserAwareness|UserAwareness]
     for minimal bookkeeping, not the full package, so we only copy/paste the
     relevant bits to stay slim.
  +/
@@ -1595,7 +1594,7 @@ private:
     version(TwitchSupport)
     {
         /++
-            Cache of [IRCEvent.Channel|Channel]s, keyed by channel name.
+            Cache of [dialect.defs.IRCEvent.Channel|Channel]s, keyed by channel name.
 
             This should not grow very large so there's probably no need to make
             it a [lu.containers.RehashingAA|RehashingAA].

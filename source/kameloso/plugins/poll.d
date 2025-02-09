@@ -6,8 +6,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#poll,
-        [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins],
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -22,8 +22,7 @@ version(WithPollPlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
-import kameloso.plugins.common.awareness : MinimalAuthentication;
+import kameloso.plugins.common.mixins.awareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
@@ -510,7 +509,7 @@ void generatePollFiber(
 
         while (true)
         {
-            import kameloso.plugins.common.misc : idOf;
+            import kameloso.plugins.common : idOf;
 
             auto currentPoll = channelName in plugin.channelPolls;
             if (!currentPoll || (currentPoll.uniqueID != poll.uniqueID)) return;
@@ -968,11 +967,11 @@ void onWelcome(PollPlugin plugin)
 // onSelfjoin
 /++
     Registers a channel entry in
-    [kameloso.plugins.common.IRCPluginState.channels|IRCPluginState.channels]
+    [kameloso.plugins.IRCPluginState.channels|IRCPluginState.channels]
     upon joining one.
 
     This would normally be done using
-    [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness], but we
+    [kameloso.plugins.common.mixins.awareness.ChannelAwareness|ChannelAwareness], but we
     only need the channel registration and not the whole user tracking, so just
     copy/paste these bits.
  +/
@@ -991,11 +990,11 @@ void onSelfjoin(PollPlugin plugin, const IRCEvent event)
 // onSelfpart
 /++
     De-registers a channel entry in
-    [kameloso.plugins.common.IRCPluginState.channels|IRCPluginState.channels]
+    [kameloso.plugins.IRCPluginState.channels|IRCPluginState.channels]
     upon parting from one.
 
     This would normally be done using
-    [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness], but we
+    [kameloso.plugins.common.mixins.awareness.ChannelAwareness|ChannelAwareness], but we
     only need the channel registration and not the whole user tracking, so just
     copy/paste these bits.
  +/

@@ -24,8 +24,7 @@
         [kameloso.plugins.twitch.providers.twitch],
         [kameloso.plugins.twitch.providers.google],
         [kameloso.plugins.twitch.providers.spotify],
-        [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -202,7 +201,7 @@ private enum SRM
  +/
 alias SongRequestMode = SRM;
 
-private import kameloso.plugins.common;
+private import kameloso.plugins;
 
 version(TwitchSupport):
 version(WithTwitchPlugin):
@@ -212,9 +211,8 @@ private:
 import kameloso.plugins.twitch.api;
 import kameloso.plugins.twitch.common;
 import dialect.postprocessors.twitch;  // To trigger the module ctor
-
 import kameloso.plugins;
-import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
+import kameloso.plugins.common.mixins.awareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import kameloso.thread : Sendable;
@@ -1309,7 +1307,7 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
 )
 void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.common.misc : idOf;
+    import kameloso.plugins.common : idOf;
     import lu.string : SplitResults, splitInto, stripped;
     import std.algorithm.searching : startsWith;
     import std.format : format;
@@ -1469,7 +1467,7 @@ void onCommandVanish(TwitchPlugin plugin, const IRCEvent event)
     }
     catch (ErrorJSONException e)
     {
-        import kameloso.plugins.common.misc : nameOf;
+        import kameloso.plugins.common : nameOf;
         enum pattern = "Failed to vanish <l>%s</> in <l>%s</> <t>(%s)";
         logger.warningf(pattern, nameOf(event.sender), event.channel.name, e.msg);
     }
@@ -2170,7 +2168,7 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
             }
             else
             {
-                import kameloso.plugins.common.misc : nameOf;
+                import kameloso.plugins.common : nameOf;
 
                 enum pattern = "Failed to delete a message from <h>%s</> in <l>%s";
                 logger.warningf(pattern, nameOf(storedEvent.sender), event.channel.name);
@@ -2814,7 +2812,7 @@ void onCommandCommercial(TwitchPlugin plugin, const IRCEvent event)
  +/
 void initialise(TwitchPlugin plugin)
 {
-    import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+    import kameloso.plugins.common : IRCPluginInitialisationException;
     import kameloso.terminal : isTerminal;
     import std.algorithm.searching : endsWith;
 
@@ -3355,6 +3353,172 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
             "Your Twitch authorisation token",
             &onExpiryDg);
     }
+}
+
+
+// generateExpiryReminders
+/++
+    Generates and delays Twitch authorisation token expiry reminders.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+        expiresWhen = A [std.datetime.systime.SysTime|SysTime] of when the expiry occurs.
+        what = The string of what kind of token is expiring.
+        onExpiryDg = Delegate to call when the token expires.
+ +/
+void generateExpiryReminders(
+    TwitchPlugin plugin,
+    const SysTime expiresWhen,
+    const string what,
+    void delegate() onExpiryDg)
+{
+    import kameloso.plugins.common.scheduling : delay;
+    import lu.string : plurality;
+    import std.datetime.systime : Clock;
+    import std.meta : AliasSeq;
+    import core.time : days, hours, minutes, seconds, weeks;
+
+    auto untilExpiry()
+    {
+        immutable now = Clock.currTime;
+        return (expiresWhen - now) + 59.seconds;
+    }
+
+    void warnOnWeeksDg()
+    {
+        immutable numDays = untilExpiry.total!"days";
+        if (numDays <= 0) return;
+
+        // More than a week away, just .info
+        enum pattern = "%s will expire in <l>%d days</> on <l>%4d-%02d-%02d";
+        logger.infof(
+            pattern,
+            what,
+            numDays,
+            expiresWhen.year,
+            cast(uint)expiresWhen.month,
+            expiresWhen.day);
+    }
+
+    void warnOnDaysDg()
+    {
+        int numDays;
+        int numHours;
+        untilExpiry.split!("days", "hours")(numDays, numHours);
+        if ((numDays < 0) || (numHours < 0)) return;
+
+        // A week or less, more than a day; warning
+        if (numHours > 0)
+        {
+            enum pattern = "Warning: %s will expire " ~
+                "in <l>%d %s and %d %s</> at <l>%4d-%02d-%02d %02d:%02d";
+            logger.warningf(
+                pattern,
+                what,
+                numDays, numDays.plurality("day", "days"),
+                numHours, numHours.plurality("hour", "hours"),
+                expiresWhen.year, cast(uint)expiresWhen.month, expiresWhen.day,
+                expiresWhen.hour, expiresWhen.minute);
+        }
+        else
+        {
+            enum pattern = "Warning: %s will expire " ~
+                "in <l>%d %s</> at <l>%4d-%02d-%02d %02d:%02d";
+            logger.warningf(
+                pattern,
+                what,
+                numDays, numDays.plurality("day", "days"),
+                expiresWhen.year, cast(uint)expiresWhen.month, expiresWhen.day,
+                expiresWhen.hour, expiresWhen.minute);
+        }
+    }
+
+    void warnOnHoursDg()
+    {
+        int numHours;
+        int numMinutes;
+        untilExpiry.split!("hours", "minutes")(numHours, numMinutes);
+        if ((numHours < 0) || (numMinutes < 0)) return;
+
+        // Less than a day; warning
+        if (numMinutes > 0)
+        {
+            enum pattern = "WARNING: %s will expire " ~
+                "in <l>%d %s and %d %s</> at <l>%02d:%02d";
+            logger.warningf(
+                pattern,
+                what,
+                numHours, numHours.plurality("hour", "hours"),
+                numMinutes, numMinutes.plurality("minute", "minutes"),
+                expiresWhen.hour, expiresWhen.minute);
+        }
+        else
+        {
+            enum pattern = "WARNING: %s will expire in <l>%d %s</> at <l>%02d:%02d";
+            logger.warningf(
+                pattern,
+                what,
+                numHours, numHours.plurality("hour", "hours"),
+                expiresWhen.hour, expiresWhen.minute);
+        }
+    }
+
+    void warnOnMinutesDg()
+    {
+        immutable numMinutes = untilExpiry.total!"minutes";
+        if (numMinutes <= 0) return;
+
+        // Less than an hour; warning
+        enum pattern = "WARNING: %s will expire in <l>%d minutes</> at <l>%02d:%02d";
+        logger.warningf(
+            pattern,
+            what,
+            numMinutes,
+            expiresWhen.hour,
+            expiresWhen.minute);
+    }
+
+    void onTrueExpiry()
+    {
+        // Key expired
+        onExpiryDg();
+    }
+
+    alias reminderPoints = AliasSeq!
+        (14.days,
+        7.days,
+        3.days,
+        1.days,
+        12.hours,
+        6.hours,
+        1.hours,
+        30.minutes,
+        10.minutes,
+        5.minutes);
+
+    immutable now = Clock.currTime;
+    immutable trueExpiry = (expiresWhen - now);
+
+    foreach (immutable reminderPoint; reminderPoints)
+    {
+        if (trueExpiry >= reminderPoint)
+        {
+            immutable untilPoint = (trueExpiry - reminderPoint);
+            if (reminderPoint >= 1.weeks) delay(plugin, &warnOnWeeksDg, untilPoint);
+            else if (reminderPoint >= 1.days) delay(plugin, &warnOnDaysDg, untilPoint);
+            else if (reminderPoint >= 1.hours) delay(plugin, &warnOnHoursDg, untilPoint);
+            else /*if (reminderPoint >= 1.minutes)*/ delay(plugin, &warnOnMinutesDg, untilPoint);
+        }
+    }
+
+    // Notify on expiry, maybe quit
+    delay(plugin, &onTrueExpiry, trueExpiry);
+
+    // Also announce once normally how much time is left
+    if (trueExpiry >= 1.weeks) warnOnWeeksDg();
+    else if (trueExpiry >= 1.days) warnOnDaysDg();
+    else if (trueExpiry >= 1.hours) warnOnHoursDg();
+    else /*if (trueExpiry >= 1.minutes)*/ warnOnMinutesDg();
 }
 
 
@@ -4112,7 +4276,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
  +/
 void initResources(TwitchPlugin plugin)
 {
-    import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+    import kameloso.plugins.common : IRCPluginInitialisationException;
     import lu.json : JSONStorage;
     import std.file : exists, mkdir;
     import std.json : JSONException, JSONType;
@@ -5074,8 +5238,8 @@ package:
     // isEnabled
     /++
         Override
-        [kameloso.plugins.common.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
-        (effectively overriding [kameloso.plugins.common.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
+        [kameloso.plugins.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
+        (effectively overriding [kameloso.plugins.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
         and inject a server check, so this plugin only works on Twitch, in addition
         to doing nothing when [TwitchSettings.enabled] is false.
 

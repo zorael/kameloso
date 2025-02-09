@@ -23,7 +23,6 @@ version(WithPrinterPlugin):
 private:
 
 import kameloso.plugins.printer;
-
 import kameloso.pods : CoreSettings;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -571,7 +570,7 @@ void formatMessageMonochrome(Sink)
 ///
 @system unittest
 {
-    import kameloso.plugins.common : IRCPluginState;
+    import kameloso.plugins : IRCPluginState;
     import std.array : Appender;
 
     Appender!(char[]) sink;

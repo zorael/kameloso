@@ -15,8 +15,8 @@
         https://github.com/zorael/kameloso/wiki/Current-plugins#printer,
         [kameloso.plugins.printer.formatting],
         [kameloso.plugins.printer.logging],
-        [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins],
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -33,10 +33,8 @@ private:
 
 import kameloso.plugins.printer.formatting;
 import kameloso.plugins.printer.logging;
-
 import kameloso.plugins;
-import kameloso.plugins.common;
-import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
+import kameloso.plugins.common.mixins.awareness;
 import kameloso.thread : Sendable;
 import dialect.defs;
 
@@ -566,7 +564,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 /++
     Logs an event to disk.
 
-    It is set to [kameloso.plugins.common.ChannelPolicy.any|ChannelPolicy.any],
+    It is set to [kameloso.plugins.ChannelPolicy.any|ChannelPolicy.any],
     and configuration dictates whether or not non-home events should be logged.
     Likewise whether or not raw events should be logged.
 
@@ -789,7 +787,7 @@ void initResources(PrinterPlugin plugin)
 
     if (!establishLogLocation(plugin.logDirectory, plugin.transient.naggedAboutDir))
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+        import kameloso.plugins.common : IRCPluginInitialisationException;
 
         throw new IRCPluginInitialisationException(
             "Could not create log directory",

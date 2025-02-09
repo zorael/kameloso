@@ -13,8 +13,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#note,
-        [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins],
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -29,8 +29,7 @@ version(WithNotePlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
-import kameloso.plugins.common.awareness : MinimalAuthentication;
+import kameloso.plugins.common.mixins.awareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
@@ -330,7 +329,7 @@ void playbackNotesImpl(
 
         foreach (const id; nicknameAndAccount[])
         {
-            import kameloso.plugins.common.misc : nameOf;
+            import kameloso.plugins.common : nameOf;
             import kameloso.time : timeSince;
             import std.datetime.systime : SysTime;
 
@@ -416,7 +415,7 @@ void playbackNotesImpl(
 )
 void onCommandAddNote(NotePlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.common.misc : nameOf;
+    import kameloso.plugins.common : nameOf;
     import lu.string : SplitResults, splitInto, stripped;
     import std.algorithm.searching : startsWith;
 
@@ -574,7 +573,7 @@ void initResources(NotePlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+        import kameloso.plugins.common : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(

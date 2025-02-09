@@ -6,8 +6,8 @@
     responds to requests.
 
     See_Also:
-        [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins],
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -22,7 +22,6 @@ version(WithCTCPService):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
 import kameloso.messaging;
 import dialect.defs;
 
@@ -345,8 +344,8 @@ private:
     // isEnabled
     /++
         Override
-        [kameloso.plugins.common.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
-        (effectively overriding [kameloso.plugins.common.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
+        [kameloso.plugins.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
+        (effectively overriding [kameloso.plugins.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
         and inject a server check, so this service does nothing on Twitch servers.
 
         Returns:

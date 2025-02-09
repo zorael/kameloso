@@ -7,8 +7,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners,
-        [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins],
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -23,8 +23,7 @@ version(WithOnelinerPlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
-import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
+import kameloso.plugins.common.mixins.awareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
@@ -338,7 +337,7 @@ public:
 )
 void onOneliner(OnelinerPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.common.misc : nameOf;
+    import kameloso.plugins.common : nameOf;
     import kameloso.string : replaceRandom;
     import lu.string : advancePast, splitWithQuotes;
     import std.algorithm.searching : startsWith;
@@ -630,7 +629,7 @@ void handleNewOneliner(
 /++
     Creates a new and empty oneliner.
 
-    Uses [kameloso.plugins.common.defer|defer] to defer the creation to
+    Uses [kameloso.plugins.defer|defer] to defer the creation to
     the main event loop, so that it can supply the list of existing commands across
     all plugins and abort if the new trigger word would conflict with one.
 
@@ -650,7 +649,7 @@ void newOnelinerImpl(
     const uint cooldownSeconds,
     const string alias_ = string.init)
 {
-    import kameloso.plugins.common : defer;
+    import kameloso.plugins : defer;
     import std.format : format;
     import std.typecons : Tuple;
 
@@ -1499,7 +1498,7 @@ void initResources(OnelinerPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+        import kameloso.plugins.common : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(
@@ -1684,7 +1683,7 @@ private:
 
         Returns:
             An associative array of
-            [kameloso.plugins.common.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s,
+            [kameloso.plugins.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s,
             one for each oneliner active in the passed channel.
      +/
     override public IRCPlugin.CommandMetadata[string] channelSpecificCommands(const string channelName) @system

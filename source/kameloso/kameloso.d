@@ -22,7 +22,7 @@ private:
     import kameloso.common : OutgoingLine, logger;
     import kameloso.constants : BufferSize;
     import kameloso.net : Connection;
-    import kameloso.plugins.common : IRCPlugin;
+    import kameloso.plugins : IRCPlugin;
     import kameloso.pods : ConnectionSettings, CoreSettings, IRCBot;
     import dialect.defs : IRCClient, IRCServer;
     import dialect.parsing : IRCParser;
@@ -496,16 +496,13 @@ public:
         settings, and not far enough to have loaded any resources.
 
         Throws:
-            [kameloso.plugins.common.misc.IRCPluginSettingsException|IRCPluginSettingsException]
+            [kameloso.plugins.common.IRCPluginSettingsException|IRCPluginSettingsException]
             on failure to apply custom settings.
      +/
     void instantiatePlugins() @system
     in (!this.plugins.length, "Tried to instantiate plugins but the array was not empty")
     {
-        import kameloso.plugins.common : IRCPluginState;
-        import kameloso.plugins.common.misc : applyCustomSettings;
-        import std.concurrency : thisTid;
-        static import kameloso.plugins;
+        import kameloso.plugins : IRCPluginState, applyCustomSettings, instantiatePlugins;
 
         teardownPlugins();
 
@@ -518,7 +515,7 @@ public:
         state.abort = this.abort;
 
         // Leverage kameloso.plugins.instantiatePlugins to construct all plugins.
-        this.plugins = kameloso.plugins.instantiatePlugins(state);
+        this.plugins = instantiatePlugins(state);
 
         foreach (plugin; this.plugins)
         {
@@ -551,8 +548,9 @@ public:
 
         if (!allCustomSuccess)
         {
-            import kameloso.plugins.common.misc : IRCPluginSettingsException;
-            throw new IRCPluginSettingsException("Some custom plugin settings could not be applied.");
+            import kameloso.plugins.common : IRCPluginSettingsException;
+            enum message = "Some custom plugin settings could not be applied.";
+            throw new IRCPluginSettingsException(message);
         }
     }
 
@@ -590,7 +588,7 @@ public:
         Initialises all plugins, calling any module-level `.initialise` functions.
 
         This merely calls
-        [kameloso.plugins.common.IRCPlugin.initialise|IRCPlugin.initialise]
+        [kameloso.plugins.IRCPlugin.initialise|IRCPlugin.initialise]
         on each plugin.
 
         If any plugin fails to initialise, it will have thrown and something up
@@ -604,7 +602,7 @@ public:
         This happens after connection has been established.
 
         This merely calls
-        [kameloso.plugins.common.IRCPlugin.setup|IRCPlugin.setup]
+        [kameloso.plugins.IRCPlugin.setup|IRCPlugin.setup]
         on each plugin.
 
         Don't setup disabled plugins.
@@ -616,7 +614,7 @@ public:
         Initialises all plugins' resource files.
 
         This merely calls
-        [kameloso.plugins.common.IRCPlugin.initResources|IRCPlugin.initResources]
+        [kameloso.plugins.IRCPlugin.initResources|IRCPlugin.initResources]
         on each plugin.
      +/
     alias initPluginResources = issuePluginCallImpl!"initResources";
@@ -626,7 +624,7 @@ public:
         Reloads all plugins by calling any module-level `reload` functions.
 
         This merely calls
-        [kameloso.plugins.common.IRCPlugin.reload|IRCPlugin.reload]
+        [kameloso.plugins.IRCPlugin.reload|IRCPlugin.reload]
         on each plugin.
 
         What this actually does is up to the plugins.
@@ -742,7 +740,7 @@ public:
 
         Params:
             plugin = The plugin whose
-                [kameloso.plugins.common.IRCPluginState|IRCPluginState]s
+                [kameloso.plugins.IRCPluginState|IRCPluginState]s
                 member structs to inspect for updates.
      +/
     void checkPluginForUpdates(IRCPlugin plugin)
@@ -790,7 +788,7 @@ public:
     // propagate
     /++
         Propagates an updated struct, to `this`, [parser], and to each plugins'
-        [kameloso.plugins.common.IRCPluginState|IRCPluginState]s, overwriting
+        [kameloso.plugins.IRCPluginState|IRCPluginState]s, overwriting
         existing such.
 
         Params:

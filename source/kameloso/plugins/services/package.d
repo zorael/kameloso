@@ -4,6 +4,7 @@
     Removing or disabling any of these may yield adverse results.
 
     See_Also:
+        [kameloso.plugins],
         [kameloso.plugins.services.chanquery]
         [kameloso.plugins.services.connect]
         [kameloso.plugins.services.ctcp]

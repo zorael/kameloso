@@ -180,7 +180,7 @@ void printSettings(Kameloso instance) @system
 
     if (instance.customSettings.length)
     {
-        import kameloso.plugins.common.misc : applyCustomSettings;
+        import kameloso.plugins : applyCustomSettings;
 
         // Apply custom settings to the settings struct. Disregard returned value
         cast(void)applyCustomSettings(
@@ -587,7 +587,7 @@ auto handleGetopt(Kameloso instance) @system
     import kameloso.configreader : readConfigInto;
     import kameloso.logger : KamelosoLogger;
     import kameloso.misc : printVersionInfo;
-    import kameloso.plugins.common.misc : applyCustomSettings;
+    import kameloso.plugins : applyCustomSettings;
     import kameloso.terminal : applyTerminalOverrides;
     import lu.misc : Next;
     import lu.objmanip : replaceMembers;

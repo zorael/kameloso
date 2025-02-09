@@ -2,8 +2,8 @@
     Unit test plugin.
 
     See_Also:
-        [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins],
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -18,9 +18,8 @@ version(unittest):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
-import kameloso.plugins.common.awareness;
 import kameloso.plugins.common.mixins;
+import kameloso.plugins.common.mixins.awareness;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 

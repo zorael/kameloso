@@ -6,12 +6,12 @@
 
     It is qualified as a service, so while it is not technically mandatory, it
     is highly recommended if you plan on mixing in
-    [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness] into
+    [kameloso.plugins.common.mixins.awareness.ChannelAwareness|ChannelAwareness] into
     your plugins.
 
     See_Also:
-        [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins],
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -26,15 +26,13 @@ version(WithChanQueryService):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
-import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
+import kameloso.plugins.common.mixins.awareness;
 import dialect.defs;
-
 
 version(OmniscientQueries)
 {
     /++
-        The [kameloso.plugins.common.ChannelPolicy|ChannelPolicy] to mix in
+        The [kameloso.plugins.ChannelPolicy|ChannelPolicy] to mix in
         awareness with depending on whether version `OmniscientQueries` is set or not.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;
@@ -560,8 +558,8 @@ private:
     // isEnabled
     /++
         Override
-        [kameloso.plugins.common.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
-        (effectively overriding [kameloso.plugins.common.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
+        [kameloso.plugins.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
+        (effectively overriding [kameloso.plugins.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
         and inject a server check, so this service does nothing on Twitch servers.
 
         Returns:

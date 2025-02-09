@@ -1,11 +1,9 @@
 /++
-    The section of [kameloso.plugins.common] that involves mixins.
-
-    This was all in one `plugins/common.d` file that just grew too big.
+    Mixins for common functionality, such as the issuing of WHOIS calls.
 
     See_Also:
         [kameloso.plugins.common],
-        [kameloso.plugins.common.scheduling]
+        [kameloso.plugins.common.mixins.awareness]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -59,7 +57,7 @@ mixin template WHOISFiberDelegate(
     alias onFailure = null,
     Flag!"alwaysLookup" alwaysLookup = No.alwaysLookup)
 {
-    import kameloso.plugins.common : IRCPlugin;
+    import kameloso.plugins : IRCPlugin;
     import std.traits : ParameterIdentifierTuple, isSomeFunction;
 
     enum parentFunction = __FUNCTION__;
@@ -308,7 +306,7 @@ mixin template WHOISFiberDelegate(
     /++
         Constructs a [kameloso.thread.CarryingFiber|CarryingFiber] carrying a
         [dialect.defs.IRCEvent|IRCEvent] and enqueues it into the
-        [kameloso.plugins.common.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
+        [kameloso.plugins.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
         associative array, then issues a WHOIS query (unless overridden via
         the `issueWhois` parameter).
 
@@ -524,7 +522,7 @@ mixin template WHOISFiberDelegate(
     This merely makes it possible to use commands like
     `raw("PING :irc.freenode.net")` without having to import
     [kameloso.messaging] and pass the plugin's
-    [kameloso.plugins.common.IRCPluginState|IRCPluginState] in every
+    [kameloso.plugins.IRCPluginState|IRCPluginState] in every
     call of the functions.
 
     Params:
@@ -533,7 +531,7 @@ mixin template WHOISFiberDelegate(
 mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_)
 {
 private:
-    import kameloso.plugins.common : IRCPlugin;
+    import kameloso.plugins : IRCPlugin;
     import kameloso.messaging : Message;
     import std.meta : AliasSeq;
     static import kameloso.messaging;
@@ -891,7 +889,7 @@ void askTo" ~ verb ~ "(const string line)
 ///
 unittest
 {
-    import kameloso.plugins.common : IRCPlugin, IRCPluginImpl, IRCPluginState;
+    import kameloso.plugins : IRCPlugin, IRCPluginImpl, IRCPluginState;
 
     class MyPlugin : IRCPlugin
     {

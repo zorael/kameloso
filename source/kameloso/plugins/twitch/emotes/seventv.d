@@ -2,7 +2,9 @@
     Functions for importing custom 7tv emotes.
 
     See_Also:
-        https://7tv.app
+        https://7tv.app,
+        [kameloso.plugins.twitch],
+        [kameloso.plugins.twitch.emotes]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)

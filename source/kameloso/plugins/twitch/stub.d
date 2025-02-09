@@ -13,13 +13,15 @@
  +/
 module kameloso.plugins.twitch.stub;
 
-version(WithTwitchPlugin) {}
-else version(WithTwitchPluginStub):
+version(unittest) version = ShouldCompileTwitchStub;
+else version(WithTwitchPlugin) {}  // Exempt
+else version(WithTwitchPluginStub) version = ShouldCompileTwitchStub;
+
+version(ShouldCompileTwitchStub):
 
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
 
 mixin PluginRegistration!(TwitchPlugin, -5.priority);
 
@@ -49,26 +51,27 @@ private:
 ///
 unittest
 {
-    pragma(msg, "blarp");
     import kameloso.pods : CoreSettings;
-    import kameloso.plugins.common.misc : applyCustomSettings;
 
     IRCPluginState state;
     IRCPlugin plugin = new TwitchPlugin(state);
     CoreSettings coreSettings;
-
-    const newSettings =
-    [
-        "twitch.enabled=false",
-    ];
 
     assert(plugin.isEnabled);
 
     cast(void)applyCustomSettings(
         [ plugin ],
         coreSettings: coreSettings,
-        customSettings: newSettings,
+        customSettings: [ "twitch.enabled=false" ],
         toPluginsOnly: true);
 
     assert(!plugin.isEnabled);
+
+    cast(void)applyCustomSettings(
+        [ plugin ],
+        coreSettings: coreSettings,
+        customSettings: [ "twitch.enabled" ],
+        toPluginsOnly: true);
+
+    assert(plugin.isEnabled);
 }

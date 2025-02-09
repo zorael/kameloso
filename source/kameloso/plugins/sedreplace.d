@@ -29,8 +29,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#sedreplace,
-        [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins],
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -45,8 +45,7 @@ version(WithSedReplacePlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
-import kameloso.plugins.common.awareness : MinimalAuthentication;
+import kameloso.plugins.common.mixins.awareness;
 import kameloso.messaging;
 import dialect.defs;
 import lu.container : CircularBuffer;

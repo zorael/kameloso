@@ -5,8 +5,7 @@
         [kameloso.plugins.twitch],
         [kameloso.plugins.twitch.common],
         [kameloso.plugins.twitch.providers.twitch],
-        [kameloso.plugins.common],
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -23,7 +22,6 @@ private:
 
 import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
-
 import kameloso.tables : HTTPVerb;
 import dialect.defs;
 import lu.container : MutexedAA;

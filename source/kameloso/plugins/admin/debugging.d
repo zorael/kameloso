@@ -24,7 +24,6 @@ version(Debug):
 private:
 
 import kameloso.plugins.admin : AdminPlugin;
-
 import kameloso.messaging;
 import dialect.defs;
 
@@ -125,7 +124,7 @@ void onCommandShowUserImpl(AdminPlugin plugin, const IRCEvent event)
 // onCommandShowUsersImpl
 /++
     Prints out the current `users` array of the [kameloso.plugins.admin.AdminPlugin|AdminPlugin]'s
-    [kameloso.plugins.common.IRCPluginState|IRCPluginState] to the local terminal.
+    [kameloso.plugins.IRCPluginState|IRCPluginState] to the local terminal.
  +/
 void onCommandShowUsersImpl(AdminPlugin plugin)
 {
