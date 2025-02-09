@@ -1,11 +1,9 @@
 /++
-    The section of [kameloso.plugins.common] that involves mixins.
-
-    This was all in one `plugins/common.d` file that just grew too big.
+    Mixins for common functionality, such as the issuing of WHOIS calls.
 
     See_Also:
         [kameloso.plugins.common],
-        [kameloso.plugins.common.scheduling]
+        [kameloso.plugins.common.mixins.awareness]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)

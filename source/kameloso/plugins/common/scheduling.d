@@ -1,13 +1,11 @@
 /++
-    The section of [kameloso.plugins.common] that deals with delaying executing
-    of [core.thread.fiber.Fiber|Fiber]s and delegates to a later point in time,
+    This modules deals with delaying execution of
+    [core.thread.fiber.Fiber|Fiber]s and delegates to a later point in time,
     and registering such to await a specific type of [dialect.defs.IRCEvent|IRCEvent].
 
-    This was all in one `plugins/common.d` file that just grew too big.
-
     See_Also:
-        [kameloso.plugins.common],
-        [kameloso.plugins.common.mixins]
+        [kameloso.plugins],
+        [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)

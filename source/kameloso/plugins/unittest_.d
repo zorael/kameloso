@@ -2,7 +2,7 @@
     Unit test plugin.
 
     See_Also:
-        [kameloso.plugins.common],
+        [kameloso.plugins],
         [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)

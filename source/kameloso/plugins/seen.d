@@ -27,7 +27,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#seen,
-        [kameloso.plugins.common],
+        [kameloso.plugins],
         [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
@@ -100,22 +100,22 @@ else
 
 
 /++
-    [kameloso.plugins.common.awareness.UserAwareness|UserAwareness] is a mixin
-    template; it proxies to a few functions defined in [kameloso.plugins.common.awareness]
+    [kameloso.plugins.common.mixins.awareness.UserAwareness|UserAwareness] is a mixin
+    template; it proxies to a few functions defined in [kameloso.plugins.common.mixins.awareness]
     to deal with common book-keeping that every plugin *that wants to keep track
     of users* need. If you don't want to track which users you have seen (and are
     visible to you now), you don't need this.
 
     Additionally it implicitly mixes in
-    [kameloso.plugins.common.awareness.MinimalAuthentication|MinimalAuthentication],
+    [kameloso.plugins.common.mixins.awareness.MinimalAuthentication|MinimalAuthentication],
     needed as soon as you have any [kameloso.plugins.PrefixPolicy|PrefixPolicy] checks.
  +/
 mixin UserAwareness;
 
 
 /++
-    Complementary to [kameloso.plugins.common.awareness.UserAwareness|UserAwareness] is
-    [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness], which
+    Complementary to [kameloso.plugins.common.mixins.awareness.UserAwareness|UserAwareness] is
+    [kameloso.plugins.common.mixins.awareness.ChannelAwareness|ChannelAwareness], which
     will add in book-keeping about the channels the bot is in, their topics, modes,
     and list of participants. Channel awareness requires user awareness, but not
     the other way around.

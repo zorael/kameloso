@@ -5,8 +5,7 @@
         [kameloso.plugins.twitch],
         [kameloso.plugins.twitch.api],
         [kameloso.plugins.twitch.providers.common],
-        [kameloso.plugins.common],
-        [kameloso.plugins.common]
+        [kameloso.plugins]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)

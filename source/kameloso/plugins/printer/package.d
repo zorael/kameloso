@@ -15,7 +15,7 @@
         https://github.com/zorael/kameloso/wiki/Current-plugins#printer,
         [kameloso.plugins.printer.formatting],
         [kameloso.plugins.printer.logging],
-        [kameloso.plugins.common],
+        [kameloso.plugins],
         [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)

@@ -13,7 +13,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#note,
-        [kameloso.plugins.common],
+        [kameloso.plugins],
         [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)

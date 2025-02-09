@@ -7,7 +7,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#webtitle,
-        [kameloso.plugins.common],
+        [kameloso.plugins],
         [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
@@ -123,7 +123,7 @@ static immutable descriptionExemptions =
 
     This function is annotated with
     [kameloso.plugins.Permissions.ignore|Permissions.ignore],
-    but we don't mix in [kameloso.plugins.common.awareness.MinimalAuthentication|MinimalAuthentication].
+    but we don't mix in [kameloso.plugins.common.mixins.awareness.MinimalAuthentication|MinimalAuthentication].
     Ideally we would annotate it [kameloso.plugins.Permissions.anyone|Permissions.anyone],
     but then *any* channel message would incur a user lookup, which
     is a bit much.

@@ -2,7 +2,9 @@
     Functions for importing custom FrankerFaceZ emotes.
 
     See_Also:
-        https://www.frankerfacez.com
+        https://www.frankerfacez.com,
+        [kameloso.plugins.twitch],
+        [kameloso.plugins.twitch.emotes]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)

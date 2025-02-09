@@ -8,7 +8,7 @@
     Example:
     ---
     import kameloso.plugins;
-    import kameloso.plugins.common.awareness;
+    import kameloso.plugins.common.mixins.awareness;
 
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.CHAN)
@@ -39,9 +39,9 @@
 
     See_Also:
         [kameloso.plugins.common],
-        [kameloso.plugins.common.awareness],
         [kameloso.plugins.common.scheduling],
         [kameloso.plugins.common.mixins],
+        [kameloso.plugins.common.mixins.awareness]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)

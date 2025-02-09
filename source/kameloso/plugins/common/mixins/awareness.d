@@ -7,7 +7,7 @@
     Example:
     ---
     import kameloso.plugins;
-    import kameloso.plugins.common.awareness;
+    import kameloso.plugins.common.mixins.awareness;
 
     @Settings struct FooSettings { /* ... */ }
 
@@ -40,8 +40,9 @@
     ---
 
     See_Also:
+        [kameloso.plugins],
         [kameloso.plugins.common],
-        [kameloso.plugins.common]
+        [kameloso.plugins.commin.mixins]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)

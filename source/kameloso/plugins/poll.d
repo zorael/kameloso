@@ -6,7 +6,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#poll,
-        [kameloso.plugins.common],
+        [kameloso.plugins],
         [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
@@ -971,7 +971,7 @@ void onWelcome(PollPlugin plugin)
     upon joining one.
 
     This would normally be done using
-    [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness], but we
+    [kameloso.plugins.common.mixins.awareness.ChannelAwareness|ChannelAwareness], but we
     only need the channel registration and not the whole user tracking, so just
     copy/paste these bits.
  +/
@@ -994,7 +994,7 @@ void onSelfjoin(PollPlugin plugin, const IRCEvent event)
     upon parting from one.
 
     This would normally be done using
-    [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness], but we
+    [kameloso.plugins.common.mixins.awareness.ChannelAwareness|ChannelAwareness], but we
     only need the channel registration and not the whole user tracking, so just
     copy/paste these bits.
  +/

@@ -2,6 +2,7 @@
     Functions related to importing and embedding custom emotes.
 
     See_Also:
+        [kameloso.plugins.twitch],
         [kameloso.plugins.twitch.emotes.bttv]
         [kameloso.plugins.twitch.emotes.ffz]
         [kameloso.plugins.twitch.emotes.seventv]

@@ -6,11 +6,11 @@
 
     It is qualified as a service, so while it is not technically mandatory, it
     is highly recommended if you plan on mixing in
-    [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness] into
+    [kameloso.plugins.common.mixins.awareness.ChannelAwareness|ChannelAwareness] into
     your plugins.
 
     See_Also:
-        [kameloso.plugins.common],
+        [kameloso.plugins],
         [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)

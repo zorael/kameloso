@@ -1,9 +1,11 @@
 /++
-    The is not a plugin by itself but contains code common to all plugins,
-    without which they will *not* function.
+    This module contains common functions and types used by all plugins.
 
     See_Also:
-        [kameloso.plugins.common]
+        [kameloso.plugins],
+        [kameloso.plugins.common.scheduling],
+        [kameloso.plugins.common.mixins],
+        [kameloso.plugins.common.mixins.awareness]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)

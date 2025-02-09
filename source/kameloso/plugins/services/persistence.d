@@ -10,7 +10,7 @@
     It has no commands.
 
     See_Also:
-        [kameloso.plugins.common],
+        [kameloso.plugins],
         [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
@@ -925,7 +925,7 @@ void onWelcome(PersistenceService service, const IRCEvent _)
     Freenode only sends a list of the nicknames but SpotChat sends the full
     `user!ident@address` information.
 
-    This was copy/pasted from [kameloso.plugins.common.awareness.onUserAwarenessNamesReply]
+    This was copy/pasted from [kameloso.plugins.common.mixins.awareness.onUserAwarenessNamesReply]
     to spare us the full mixin.
  +/
 @(IRCEventHandler()
@@ -1511,7 +1511,7 @@ public:
     this service we aim to complete such [dialect.defs.IRCUser|IRCUser] entries as
     the union of everything we know from previous events.
 
-    It only needs part of [kameloso.plugins.common.awareness.UserAwareness|UserAwareness]
+    It only needs part of [kameloso.plugins.common.mixins.awareness.UserAwareness|UserAwareness]
     for minimal bookkeeping, not the full package, so we only copy/paste the
     relevant bits to stay slim.
  +/

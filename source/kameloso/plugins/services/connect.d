@@ -7,7 +7,7 @@
 
     See_Also:
         [kameloso.net],
-        [kameloso.plugins.common],
+        [kameloso.plugins],
         [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)

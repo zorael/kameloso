@@ -6,7 +6,7 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#quote,
-        [kameloso.plugins.common],
+        [kameloso.plugins],
         [kameloso.plugins.common]
 
     Copyright: [JR](https://github.com/zorael)
