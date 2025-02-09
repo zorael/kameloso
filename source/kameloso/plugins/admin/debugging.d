@@ -24,7 +24,6 @@ version(Debug):
 private:
 
 import kameloso.plugins.admin : AdminPlugin;
-
 import kameloso.messaging;
 import dialect.defs;
 

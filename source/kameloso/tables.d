@@ -9,10 +9,6 @@
  +/
 module kameloso.tables;
 
-private:
-
-public:
-
 
 // trueThenFalse
 /++

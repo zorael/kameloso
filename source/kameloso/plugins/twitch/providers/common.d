@@ -18,8 +18,6 @@ module kameloso.plugins.twitch.providers.common;
 version(TwitchSupport):
 version(WithTwitchPlugin):
 
-private:
-
 package:
 
 

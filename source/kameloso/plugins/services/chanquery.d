@@ -29,7 +29,6 @@ import kameloso.plugins;
 import kameloso.plugins.common.mixins.awareness;
 import dialect.defs;
 
-
 version(OmniscientQueries)
 {
     /++

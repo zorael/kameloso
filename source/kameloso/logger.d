@@ -29,10 +29,6 @@
  +/
 module kameloso.logger;
 
-private:
-
-public:
-
 
 // LogLevel
 /++

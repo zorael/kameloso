@@ -22,12 +22,10 @@ version(WithAdminPlugin):
 private:
 
 import kameloso.plugins.admin;
-
 import kameloso.plugins.common : nameOf;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import std.algorithm.comparison : among;
 
 package:
 

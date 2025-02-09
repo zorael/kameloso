@@ -23,7 +23,6 @@ version(WithPrinterPlugin):
 private:
 
 import kameloso.plugins.printer;
-
 import kameloso.pods : CoreSettings;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;

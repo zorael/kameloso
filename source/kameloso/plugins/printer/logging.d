@@ -23,7 +23,6 @@ version(WithPrinterPlugin):
 private:
 
 import kameloso.plugins.printer;
-
 import kameloso.common : logger;
 import dialect.defs;
 

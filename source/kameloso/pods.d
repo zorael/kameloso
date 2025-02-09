@@ -12,10 +12,6 @@
  +/
 module kameloso.pods;
 
-private:
-
-public:
-
 
 // CoreSettings
 /++

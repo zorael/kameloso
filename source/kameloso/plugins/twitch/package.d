@@ -211,7 +211,6 @@ private:
 import kameloso.plugins.twitch.api;
 import kameloso.plugins.twitch.common;
 import dialect.postprocessors.twitch;  // To trigger the module ctor
-
 import kameloso.plugins;
 import kameloso.plugins.common.mixins.awareness;
 import kameloso.common : logger;

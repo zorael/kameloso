@@ -22,7 +22,6 @@ private:
 
 import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
-
 import kameloso.tables : HTTPVerb;
 import dialect.defs;
 import lu.container : MutexedAA;
