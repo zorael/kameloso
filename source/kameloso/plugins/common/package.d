@@ -282,13 +282,19 @@ public:
     /++
         Returns the name of the plugin.
 
+        Params:
+            lowercase = Whether or not to return the name in lowercase.
+            fullName = Whether to return the full name, including "Plugin" or "Service".
+
         Returns:
             The string name of the plugin.
 
         See_Also:
             [kameloso.plugins.common.IRCPluginImpl.name]
      +/
-    string name() const pure @safe nothrow @nogc;
+    string name(
+        const bool lowercase = true,
+        const bool fullName = false) const pure @safe nothrow @nogc;
 
     // commands
     /++
@@ -1951,39 +1957,53 @@ mixin template IRCPluginImpl(
 
     // name
     /++
-        Returns the name of the plugin. (Technically it's the name of the module.)
+        Returns the name of the plugin.
+
+        If `fullName` is `true`, the full name is returned, including "Plugin" or "Service".
+        If it is false, these are sliced off the end of the string.
+
+        If `lowercase` is `true`, the name as selected by the above is returned
+        in lowercase.
+
+        All cases are evaluated at compile-time for performance.
+
+        Params:
+            lowercase = Whether to return the name in lowercase.
+            fullName = Whether to return the full name, including "Plugin" or "Service".
 
         Returns:
-            The module name of the mixing-in class.
+            The name of the mixing-in class, in the requested form.
      +/
-    override public string name() const pure nothrow @nogc
+    override public string name(
+        const bool lowercase = true,
+        const bool fullName = false) const pure nothrow @nogc
     {
+        import std.traits : Unqual;
+        import std.uni : toLower;
+
+        enum pluginName = Unqual!(typeof(this)).stringof;
+
         static immutable ctfeName = ()
         {
-            import std.algorithm.searching : startsWith;
+            import std.algorithm.searching : countUntil;
 
-            enum modulePrefix = "kameloso.plugins.";
+            immutable nameEndPos = pluginName.countUntil("Plugin", "Service");
 
-            static if (module_.startsWith(modulePrefix))
-            {
-                import std.string : indexOf;
-
-                string slice = module_[modulePrefix.length..$];  // mutable
-                immutable dotPos = slice.indexOf('.');
-                if (dotPos == -1) return slice;
-                return (slice[dotPos+1..$] == "base") ? slice[0..dotPos] : slice[dotPos+1..$];
-            }
-            else
-            {
-                import std.format : format;
-
-                enum pattern = "Plugin module `%s` is not under `kameloso.plugins`";
-                enum message = pattern.format(module_);
-                static assert(0, message);
-            }
+            return (nameEndPos != -1) ?
+                pluginName[0..nameEndPos] :
+                pluginName;
         }();
 
-        return ctfeName;
+        if (fullName)
+        {
+            static immutable ctfeFullLower = pluginName.toLower();
+            return lowercase ? ctfeFullLower : pluginName;
+        }
+        else
+        {
+            static immutable ctfeNameLower = ctfeName.toLower();
+            return lowercase ? ctfeNameLower : ctfeName;
+        }
     }
 
     // channelSpecificCommands
