@@ -1313,7 +1313,7 @@ void initResources(PersistenceService service)
         service = The current [PersistenceService].
 
     Throws:
-        [kameloso.plugins.IRCPluginInitialisationException|IRCPluginInitialisationException]
+        [kameloso.plugins.common.IRCPluginInitialisationException|IRCPluginInitialisationException]
         on failure loading the `user.json` file.
  +/
 void initAccountResources(PersistenceService service)
@@ -1594,7 +1594,7 @@ private:
     version(TwitchSupport)
     {
         /++
-            Cache of [IRCEvent.Channel|Channel]s, keyed by channel name.
+            Cache of [dialect.defs.IRCEvent.Channel|Channel]s, keyed by channel name.
 
             This should not grow very large so there's probably no need to make
             it a [lu.containers.RehashingAA|RehashingAA].

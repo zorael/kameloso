@@ -42,7 +42,7 @@
     See_Also:
         [kameloso.plugins],
         [kameloso.plugins.common],
-        [kameloso.plugins.commin.mixins]
+        [kameloso.plugins.common.mixins]
 
     Copyright: [JR](https://github.com/zorael)
     License: [Boost Software License 1.0](https://www.boost.org/users/license.html)

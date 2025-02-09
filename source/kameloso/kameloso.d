@@ -496,7 +496,7 @@ public:
         settings, and not far enough to have loaded any resources.
 
         Throws:
-            [kameloso.plugins.IRCPluginSettingsException|IRCPluginSettingsException]
+            [kameloso.plugins.common.IRCPluginSettingsException|IRCPluginSettingsException]
             on failure to apply custom settings.
      +/
     void instantiatePlugins() @system

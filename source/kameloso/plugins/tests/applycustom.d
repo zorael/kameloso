@@ -1,7 +1,7 @@
 /++
     Tests that must be in a file that that does not contain any
     [kameloso.plugins.IRCEventHandler|IRCEventHandler]-annotated functions.
-    This is due to the way [kameloso.plugins.IRCEventImpl|IRCEventImpl] scans
+    This is due to the way [kameloso.plugins.IRCPluginImpl|IRCPluginImpl] scans
     the module into which it is mixed in.
 
     This file contains tests for [kameloso.plugins.applyCustomSettings].
