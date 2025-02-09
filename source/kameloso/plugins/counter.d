@@ -305,7 +305,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 
         if (!slice.length) goto default;
 
-        if (slice.canFind!(c => c.among!('+', '-', '=', '?')))
+        if (slice.canFind('+', '-', '=', '?'))
         {
             return sendMustBeUniqueAndMayNotContain();
         }

@@ -450,7 +450,7 @@ Pid exec(
         string arg0 = args[0];  // mutable
         args = args[1..$];  // pop it
 
-        if (arg0.startsWith('.') || arg0.startsWith('/') || arg0.startsWith('\\'))
+        if (arg0.startsWith('.', '/', '\\'))
         {
             // Seems to be a valid path
         }
@@ -466,18 +466,17 @@ Pid exec(
 
         for (size_t i; i<args.length; ++i)
         {
-            import std.algorithm.searching : startsWith;
-
             if (sink[].length) sink.put(' ');
 
-            if (args[i].startsWith("-H") ||
-                args[i].startsWith("-C") ||
-                args[i].startsWith("--homeChannels") ||
-                args[i].startsWith("--guestChannels") ||
-                args[i].startsWith("--set"))
+            if (args[i].startsWith(
+                "-H",
+                "-C",
+                "--homeChannels",
+                "--guestChannels",
+                "--set"))
             {
+                import std.algorithm.searching : canFind;
                 import std.format : formattedWrite;
-                import std.string : indexOf;
 
                 /+
                     Arguments to the program are passed to powershell
@@ -502,7 +501,7 @@ Pid exec(
                     if ((channelName.length > 1) && (channelName[0] == '=')) channelName = channelName[1..$];
                     sink.formattedWrite(`%s="%s"`, flag, applyPlaceholders(channelName));
                 }
-                else if (args[i].indexOf('=') != -1)
+                else if (args[i].canFind('='))
                 {
                     import lu.string : advancePast;
                     // --homeChannels="#abc,#def"

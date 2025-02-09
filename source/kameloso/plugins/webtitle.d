@@ -441,20 +441,17 @@ void persistentQuerier(
     void onTitleRequest(string url, int id)
     {
         import lu.string : advancePast;
-        import std.algorithm.searching : startsWith;
-        import std.string : indexOf;
+        import std.algorithm.searching : canFind, startsWith;
 
         TitleLookupResult result;
 
-        if (url.indexOf("://i.imgur.com/") != -1)
+        if (url.canFind("://i.imgur.com/"))
         {
             // imgur direct links naturally have no titles, but the normal pages do.
             // Rewrite and look those up instead.
             url = rewriteDirectImgurURL(url);
         }
-        else if (
-            (url.indexOf("youtube.com/watch?v=") != -1) ||
-            (url.indexOf("youtu.be/") != -1))
+        else if (url.canFind("youtube.com/watch?v=", "youtu.be/"))
         {
             // Do our own slicing instead of using regexes, because footprint.
             string slice = url;  // mutable
@@ -465,8 +462,11 @@ void persistentQuerier(
 
             if (slice.startsWith("www.")) slice = slice[4..$];
 
-            if (slice.startsWith("youtube.com/watch?v=") ||
-                slice.startsWith("youtu.be/"))
+            immutable startsWithThis = slice.startsWith(
+                "youtube.com/watch?v=",
+                "youtu.be/");
+
+            if (startsWithThis)
             {
                 immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
                 result = sendHTTPRequestImpl(youtubeURL, caBundleFile);
@@ -781,18 +781,17 @@ auto rewriteDirectImgurURL(const string url) @safe pure
     import lu.string : advancePast;
     import std.algorithm.searching : startsWith;
 
-    if (url.startsWith("https://i.imgur.com/"))
-    {
-        immutable path = url[20..$].advancePast('.');
-        return "https://imgur.com/" ~ path;
-    }
-    else if (url.startsWith("http://i.imgur.com/"))
-    {
-        immutable path = url[19..$].advancePast('.');
-        return "https://imgur.com/" ~ path;
-    }
+    immutable startsWithThis = url.startsWith(
+        "https://i.imgur.com/",
+        "http://i.imgur.com/");
 
-    return url;
+    if (!startsWithThis) return url;
+
+    immutable path = (startsWithThis == 1) ?
+        url[20..$].advancePast('.') :
+        url[19..$].advancePast('.');
+
+    return "https://imgur.com/" ~ path;
 }
 
 ///
