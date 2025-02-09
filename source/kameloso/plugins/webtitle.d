@@ -798,14 +798,14 @@ auto rewriteDirectImgurURL(const string url) @safe pure
 unittest
 {
     {
-        immutable directURL = "https://i.imgur.com/URHe5og.jpg";
-        immutable rewritten = rewriteDirectImgurURL(directURL);
-        assert((rewritten == "https://imgur.com/URHe5og"), rewritten);
+        enum directURL = "https://i.imgur.com/URHe5og.jpg";
+        static immutable rewritten = rewriteDirectImgurURL(directURL);
+        static assert((rewritten == "https://imgur.com/URHe5og"), rewritten);
     }
     {
-        immutable directURL = "http://i.imgur.com/URHe5og.jpg";
-        immutable rewritten = rewriteDirectImgurURL(directURL);
-        assert((rewritten == "https://imgur.com/URHe5og"), rewritten);
+        enum directURL = "http://i.imgur.com/URHe5og.jpg";
+        static immutable rewritten = rewriteDirectImgurURL(directURL);
+        static assert((rewritten == "https://imgur.com/URHe5og"), rewritten);
     }
 }
 
