@@ -37,7 +37,7 @@ module kameloso.thread;
 
 private:
 
-import kameloso.plugins.common : IRCPlugin;
+import kameloso.plugins : IRCPlugin;
 import std.meta : allSatisfy;
 import std.traits : isNumeric, isSomeFunction;
 import core.thread.fiber : Fiber;

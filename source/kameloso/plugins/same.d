@@ -24,18 +24,15 @@ module kameloso.plugins.same;
 
 version(WithSamePlugin):
 
-
 /+
     Pick *one*.
  +/
 version = MatchByStringComparison;
 //version = MatchWithRegex;
 
-
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
 import kameloso.messaging;
 import dialect.defs;
 

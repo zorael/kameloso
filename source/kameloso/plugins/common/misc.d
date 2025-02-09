@@ -15,7 +15,7 @@ module kameloso.plugins.common.misc;
 
 private:
 
-import kameloso.plugins.common;
+import kameloso.plugins;
 import kameloso.common : logger;
 import kameloso.pods : CoreSettings;
 import dialect.defs;

@@ -22,7 +22,6 @@ version(WithChatbotPlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;

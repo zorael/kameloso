@@ -59,7 +59,7 @@ mixin template WHOISFiberDelegate(
     alias onFailure = null,
     Flag!"alwaysLookup" alwaysLookup = No.alwaysLookup)
 {
-    import kameloso.plugins.common : IRCPlugin;
+    import kameloso.plugins : IRCPlugin;
     import std.traits : ParameterIdentifierTuple, isSomeFunction;
 
     enum parentFunction = __FUNCTION__;
@@ -533,7 +533,7 @@ mixin template WHOISFiberDelegate(
 mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_)
 {
 private:
-    import kameloso.plugins.common : IRCPlugin;
+    import kameloso.plugins : IRCPlugin;
     import kameloso.messaging : Message;
     import std.meta : AliasSeq;
     static import kameloso.messaging;
@@ -891,7 +891,7 @@ void askTo" ~ verb ~ "(const string line)
 ///
 unittest
 {
-    import kameloso.plugins.common : IRCPlugin, IRCPluginImpl, IRCPluginState;
+    import kameloso.plugins : IRCPlugin, IRCPluginImpl, IRCPluginState;
 
     class MyPlugin : IRCPlugin
     {

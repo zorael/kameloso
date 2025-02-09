@@ -23,7 +23,6 @@ version(WithWebtitlePlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
 import requests.base : Response;
 import dialect.defs;
 import lu.container : MutexedAA;

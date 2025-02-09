@@ -29,7 +29,6 @@ version(WithPipelinePlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
 import kameloso.common : logger;
 import dialect.defs;
 import core.time : Duration;

@@ -455,7 +455,7 @@ mixin template IRCPluginImpl(
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
-    private import kameloso.plugins.common :
+    private import kameloso.plugins :
         FilterResult,
         IRCEventHandler,
         IRCPluginState,
@@ -613,7 +613,7 @@ mixin template IRCPluginImpl(
     pragma(inline, true)
     private FilterResult allow(const IRCEvent event, const Permissions permissionsRequired) @system
     {
-        import kameloso.plugins.common : allowImpl;
+        import kameloso.plugins : allowImpl;
         return allowImpl!(cast(bool)debug_)(this, event, permissionsRequired);
     }
 
@@ -668,7 +668,7 @@ mixin template IRCPluginImpl(
      +/
     private void onEventImpl(/*const*/ IRCEvent origEvent) @system
     {
-        import kameloso.plugins.common : Timing;
+        import kameloso.plugins : Timing;
         import std.algorithm.searching : canFind;
 
         // call
@@ -1014,7 +1014,7 @@ mixin template IRCPluginImpl(
                 }
                 else if (result == FilterResult.whois)
                 {
-                    import kameloso.plugins.common : enqueue;
+                    import kameloso.plugins : enqueue;
                     import lu.traits : TakesParams;
                     import std.traits : arity;
 
@@ -1223,7 +1223,7 @@ mixin template IRCPluginImpl(
             }
             catch (Exception e)
             {
-                import kameloso.plugins.common : sanitiseEvent;
+                import kameloso.plugins : sanitiseEvent;
                 import std.utf : UTFException;
                 import core.exception : UnicodeException;
 
@@ -1893,7 +1893,7 @@ mixin template IRCPluginImpl(
 
     version(Selftests)
     {
-        private import kameloso.plugins.common : Selftester;
+        private import kameloso.plugins : Selftester;
         private import std.typecons : Ternary;
 
         // selftest
@@ -1914,7 +1914,7 @@ mixin template IRCPluginImpl(
         {
             static if (__traits(compiles, { alias _ = .selftest; }))
             {
-                import kameloso.plugins.common : Selftester;
+                import kameloso.plugins : Selftester;
                 import lu.traits : TakesParams;
 
                 if (!this.isEnabled) return Ternary.unknown;
@@ -2073,7 +2073,7 @@ mixin template IRCPluginImpl(
     {
         enum ctCommandsEnumLiteral =
         {
-            import kameloso.plugins.common : IRCEventHandler;
+            import kameloso.plugins : IRCEventHandler;
             import std.traits : getUDAs;
 
             assert(__ctfe, "ctCommandsEnumLiteral called outside CTFE");
@@ -4980,7 +4980,7 @@ mixin template PluginRegistration(
      +/
     shared static this()
     {
-        import kameloso.plugins.common : IRCPluginState;
+        import kameloso.plugins : IRCPluginState;
 
         static if (__traits(compiles, new Plugin(IRCPluginState.init)))
         {

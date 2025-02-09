@@ -19,7 +19,7 @@ module kameloso.plugins.common.scheduling;
 
 private:
 
-import kameloso.plugins.common : IRCPlugin;
+import kameloso.plugins : IRCPlugin;
 import dialect.defs;
 import core.thread.fiber : Fiber;
 import core.time : Duration;

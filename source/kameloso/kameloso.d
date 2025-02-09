@@ -22,7 +22,7 @@ private:
     import kameloso.common : OutgoingLine, logger;
     import kameloso.constants : BufferSize;
     import kameloso.net : Connection;
-    import kameloso.plugins.common : IRCPlugin;
+    import kameloso.plugins : IRCPlugin;
     import kameloso.pods : ConnectionSettings, CoreSettings, IRCBot;
     import dialect.defs : IRCClient, IRCServer;
     import dialect.parsing : IRCParser;
@@ -502,10 +502,9 @@ public:
     void instantiatePlugins() @system
     in (!this.plugins.length, "Tried to instantiate plugins but the array was not empty")
     {
-        import kameloso.plugins.common : IRCPluginState;
+        import kameloso.plugins : IRCPluginState, instantiatePlugins;
         import kameloso.plugins.common.misc : applyCustomSettings;
         import std.concurrency : thisTid;
-        static import kameloso.plugins;
 
         teardownPlugins();
 
@@ -518,7 +517,7 @@ public:
         state.abort = this.abort;
 
         // Leverage kameloso.plugins.instantiatePlugins to construct all plugins.
-        this.plugins = kameloso.plugins.instantiatePlugins(state);
+        this.plugins = instantiatePlugins(state);
 
         foreach (plugin; this.plugins)
         {

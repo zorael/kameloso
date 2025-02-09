@@ -18,7 +18,6 @@ version(unittest):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
 import kameloso.plugins.common.awareness;
 import kameloso.plugins.common.mixins;
 import dialect.defs;

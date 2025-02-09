@@ -22,7 +22,6 @@ version(WithQuotePlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;

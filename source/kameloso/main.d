@@ -24,7 +24,7 @@ import kameloso.common : logger;
 import kameloso.constants : ShellReturnValue;
 import kameloso.kameloso : Kameloso;
 import kameloso.net : ListenAttempt;
-import kameloso.plugins.common : IRCPlugin;
+import kameloso.plugins : IRCPlugin;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
 import std.datetime.systime : SysTime;
@@ -2560,7 +2560,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
         version(Selftests)
         version(WantSelftestHandler)
         {
-            import kameloso.plugins.common : Selftester;
+            import kameloso.plugins : Selftester;
             import std.typecons : Ternary;
 
             alias SelftestPayload = Tuple!(string[], Ternary delegate()[]);

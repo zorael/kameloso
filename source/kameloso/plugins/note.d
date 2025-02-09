@@ -29,7 +29,6 @@ version(WithNotePlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : logger;
 import kameloso.messaging;

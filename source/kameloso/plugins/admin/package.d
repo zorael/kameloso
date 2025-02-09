@@ -30,7 +30,6 @@ import kameloso.plugins.admin.classifiers;
 version(Debug) import kameloso.plugins.admin.debugging;
 
 import kameloso.plugins;
-import kameloso.plugins.common;
 import kameloso.plugins.common.awareness;
 import kameloso.common : logger;
 import kameloso.messaging;

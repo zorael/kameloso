@@ -35,7 +35,6 @@ import kameloso.plugins.printer.formatting;
 import kameloso.plugins.printer.logging;
 
 import kameloso.plugins;
-import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import kameloso.thread : Sendable;
 import dialect.defs;

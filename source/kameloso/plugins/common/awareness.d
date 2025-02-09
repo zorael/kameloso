@@ -6,7 +6,7 @@
 
     Example:
     ---
-    import kameloso.plugins.common;
+    import kameloso.plugins;
     import kameloso.plugins.common.awareness;
 
     @Settings struct FooSettings { /* ... */ }
@@ -53,7 +53,7 @@ module kameloso.plugins.common.awareness;
 
 private:
 
-import kameloso.plugins.common;
+import kameloso.plugins;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 

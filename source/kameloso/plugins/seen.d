@@ -44,11 +44,9 @@ version(WithSeenPlugin):
 // For when we want to limit some functionality to debug builds.
 debug version = Debug;
 
-// We need the bits to register the plugin to be automatically instantiated.
-private import kameloso.plugins;
-
 // We need the definition of an [kameloso.plugins.common.IRCPlugin|IRCPlugin] and other crucial things.
-private import kameloso.plugins.common;
+// We also need the bits to register the plugin to be automatically instantiated.
+private import kameloso.plugins;
 
 // Awareness mixins, for plumbing.
 private import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;

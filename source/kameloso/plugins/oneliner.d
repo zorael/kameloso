@@ -23,7 +23,6 @@ version(WithOnelinerPlugin):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;
@@ -650,7 +649,7 @@ void newOnelinerImpl(
     const uint cooldownSeconds,
     const string alias_ = string.init)
 {
-    import kameloso.plugins.common : defer;
+    import kameloso.plugins : defer;
     import std.format : format;
     import std.typecons : Tuple;
 

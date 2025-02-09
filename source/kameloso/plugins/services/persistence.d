@@ -26,7 +26,7 @@ version(WithPersistenceService):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
+import kameloso.plugins;
 import kameloso.common : logger;
 import dialect.defs;
 

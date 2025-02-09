@@ -50,7 +50,7 @@ module kameloso.messaging;
 
 private:
 
-import kameloso.plugins.common : IRCPluginState;
+import kameloso.plugins : IRCPluginState;
 import kameloso.irccolours : expandIRCTags, stripIRCTags;
 import kameloso.thread : ThreadMessage;
 import dialect.defs;

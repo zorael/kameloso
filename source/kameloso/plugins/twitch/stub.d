@@ -19,7 +19,6 @@ else version(WithTwitchPluginStub):
 private:
 
 import kameloso.plugins;
-import kameloso.plugins.common;
 
 mixin PluginRegistration!(TwitchPlugin, -5.priority);
 

@@ -202,7 +202,7 @@ private enum SRM
  +/
 alias SongRequestMode = SRM;
 
-private import kameloso.plugins.common;
+private import kameloso.plugins;
 
 version(TwitchSupport):
 version(WithTwitchPlugin):

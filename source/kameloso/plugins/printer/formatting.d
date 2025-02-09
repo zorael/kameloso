@@ -571,7 +571,7 @@ void formatMessageMonochrome(Sink)
 ///
 @system unittest
 {
-    import kameloso.plugins.common : IRCPluginState;
+    import kameloso.plugins : IRCPluginState;
     import std.array : Appender;
 
     Appender!(char[]) sink;
