@@ -4217,6 +4217,212 @@ void defer(T)
 }
 
 
+// applyCustomSettings
+/++
+    Changes a setting of a plugin, given both the names of the plugin and the
+    setting, in string form.
+
+    This merely iterates the passed `plugins` and calls their
+    [kameloso.plugins.common.IRCPlugin.setMemberByName|IRCPlugin.setMemberByName]
+    methods.
+
+    Params:
+        plugins = Array of all [kameloso.plugins.common.IRCPlugin|IRCPlugin]s.
+        coreSettings = Pointer to a [kameloso.pods.CoreSettings|CoreSettings] struct.
+        customSettings = Array of custom settings to apply to plugins' own
+            setting, in the string forms of "`plugin.setting=value`".
+        toPluginsOnly = Whether to apply settings to the core settings struct
+            as well, or only to the plugins.
+
+    Returns:
+        `true` if no setting name mismatches occurred, `false` if it did.
+
+    See_Also:
+        [lu.objmanip.setSettingByName]
+ +/
+auto applyCustomSettings(
+    IRCPlugin[] plugins,
+    ref CoreSettings coreSettings,
+    const string[] customSettings,
+    const bool toPluginsOnly)
+{
+    import kameloso.common : logger;
+    import lu.objmanip : SetMemberException;
+    import lu.string : advancePast;
+    import std.algorithm.searching : canFind;
+    import std.conv : ConvException;
+
+    bool allSuccess = true;
+
+    top:
+    foreach (immutable line; customSettings)
+    {
+        if (!line.canFind('.'))
+        {
+            enum pattern = `Bad <l>plugin</>.<l>setting</>=<l>value</> format. (<l>%s</>)`;
+            logger.warningf(pattern, line);
+            allSuccess = false;
+            continue;
+        }
+
+        string slice = line;  // mutable
+        immutable pluginstring = slice.advancePast(".");
+        immutable setting = slice.advancePast('=', inherit: true);
+        alias value = slice;
+
+        try
+        {
+            if (pluginstring == "core")
+            {
+                import kameloso.common : logger;
+                import kameloso.logger : KamelosoLogger;
+                import lu.objmanip : setMemberByName;
+                import std.algorithm.comparison : among;
+
+                if (toPluginsOnly) continue top;
+
+                immutable success = value.length ?
+                    coreSettings.setMemberByName(setting, value) :
+                    coreSettings.setMemberByName(setting, true);
+
+                if (!success)
+                {
+                    enum pattern = `No such <l>core</> setting: "<l>%s</>"`;
+                    logger.warningf(pattern, setting);
+                    allSuccess = false;
+                }
+                else
+                {
+                    if (setting.among!
+                        ("colour",
+                        "color",
+                        "brightTerminal",
+                        "headless",
+                        "flush"))
+                    {
+                        logger = new KamelosoLogger(coreSettings);
+                    }
+
+                    foreach (plugin; plugins)
+                    {
+                        plugin.state.coreSettings = coreSettings;
+
+                        // No need to flag as updated when we update here manually
+                        //plugin.state.updates |= typeof(plugin.state.updates).coreSettings;
+                    }
+                }
+                continue top;
+            }
+            else if (!plugins.length)
+            {
+                continue top;
+            }
+            else
+            {
+                foreach (plugin; plugins)
+                {
+                    if (plugin.name != pluginstring) continue;
+
+                    immutable success = plugin.setSettingByName(
+                        setting,
+                        value.length ? value : "true");
+
+                    if (!success)
+                    {
+                        enum pattern = `No such <l>%s</> plugin setting: "<l>%s</>"`;
+                        logger.warningf(pattern, pluginstring, setting);
+                        allSuccess = false;
+                    }
+                    continue top;
+                }
+            }
+
+            // If we're here, the loop was never continued --> unknown plugin
+            enum pattern = `Invalid plugin: "<l>%s</>"`;
+            logger.warningf(pattern, pluginstring);
+            allSuccess = false;
+            // Drop down, try next
+        }
+        catch (SetMemberException e)
+        {
+            enum pattern = "Failed to set <l>%s</>.<l>%s</>: " ~
+                "it requires a value and none was supplied.";
+            logger.warningf(pattern, pluginstring, setting);
+            version(PrintStacktraces) logger.trace(e.info);
+            allSuccess = false;
+            // Drop down, try next
+        }
+        catch (ConvException e)
+        {
+            enum pattern = `Invalid value for <l>%s</>.<l>%s</>: "<l>%s</>" <t>(%s)`;
+            logger.warningf(pattern, pluginstring, setting, value, e.msg);
+            allSuccess = false;
+            // Drop down, try next
+        }
+        continue top;
+    }
+
+    return allSuccess;
+}
+
+///
+unittest
+{
+    import std.conv : to;
+    import std.math : isClose;
+
+    @Settings static struct MyPluginSettings
+    {
+        @Enabler bool enabled;
+
+        string s;
+        int i;
+        float f;
+        bool b;
+        double d;
+    }
+
+    static final class MyPlugin : IRCPlugin
+    {
+        MyPluginSettings myPluginSettings;
+
+        override string name(const bool _, const bool __) const
+        {
+            return "myplugin";
+        }
+
+        mixin IRCPluginImpl;
+    }
+
+    IRCPluginState state;
+    IRCPlugin plugin = new MyPlugin(state);
+    CoreSettings coreSettings;
+
+    auto newSettings =
+    [
+        `myplugin.s="abc def ghi"`,
+        "myplugin.i=42",
+        "myplugin.f=3.14",
+        "myplugin.b=true",
+        "myplugin.d=99.99",
+    ];
+
+    cast(void)applyCustomSettings(
+        [ plugin ],
+        coreSettings: coreSettings,
+        customSettings: newSettings,
+        toPluginsOnly: true);
+
+    const ps = (cast(MyPlugin)plugin).myPluginSettings;
+
+    assert((ps.s == "abc def ghi"), ps.s);
+    assert((ps.i == 42), ps.i.to!string);
+    assert(ps.f.isClose(3.14f), ps.f.to!string);
+    assert(ps.b);
+    assert(ps.d.isClose(99.99), ps.d.to!string);
+}
+
+
 // memoryCorruptionCheckConstraintsDefault
 /++
     Whether or not to add constraints to the [memoryCorruptionCheck] mixin string
