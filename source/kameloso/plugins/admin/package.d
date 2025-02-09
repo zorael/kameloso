@@ -42,7 +42,7 @@ import core.time : Duration;
 version(OmniscientAdmin)
 {
     /++
-        The [kameloso.plugins.common.ChannelPolicy|ChannelPolicy] to mix in
+        The [kameloso.plugins.ChannelPolicy|ChannelPolicy] to mix in
         awareness with depending on whether version `OmniscientAdmin` is set or not.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;
@@ -224,7 +224,7 @@ void onCommandSave(AdminPlugin plugin, const IRCEvent event)
 // onCommandShowUsers
 /++
     Prints out the current `users` array of the [AdminPlugin]'s
-    [kameloso.plugins.common.IRCPluginState|IRCPluginState] to the local terminal.
+    [kameloso.plugins.IRCPluginState|IRCPluginState] to the local terminal.
  +/
 version(Debug)
 @(IRCEventHandler()
@@ -303,7 +303,7 @@ void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 /++
     Adds or removes channels to/from the list of currently active home channels,
     in the [kameloso.pods.IRCBot.homeChannels|IRCBot.homeChannels] array of
-    the current [AdminPlugin]'s [kameloso.plugins.common.IRCPluginState|IRCPluginState].
+    the current [AdminPlugin]'s [kameloso.plugins.IRCPluginState|IRCPluginState].
 
     Merely passes on execution to [addChannel] and [delChannel] with `addAsHome: true`
     (and `delFromHomes: true`) as argument.
@@ -364,7 +364,7 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
 /++
     Adds or removes channels to/from the list of currently active guest channels,
     in the [kameloso.pods.IRCBot.guestChannels|IRCBot.guestChannels] array of
-    the current [AdminPlugin]'s [kameloso.plugins.common.IRCPluginState|IRCPluginState].
+    the current [AdminPlugin]'s [kameloso.plugins.IRCPluginState|IRCPluginState].
 
     Merely passes on execution to [addChannel] and [delChannel] with `addAsHome: false`
     (and `delFromHomes: false`) as argument.
@@ -426,7 +426,7 @@ void onCommandGuest(AdminPlugin plugin, const IRCEvent event)
     Adds a channel to the list of currently active home or guest channels, to the
     [kameloso.pods.IRCBot.homeChannels|IRCBot.homeChannels] and
     [kameloso.pods.IRCBot.guestChannels|IRCBot.guestChannels] arrays of the
-    current [AdminPlugin]'s [kameloso.plugins.common.IRCPluginState|IRCPluginState],
+    current [AdminPlugin]'s [kameloso.plugins.IRCPluginState|IRCPluginState],
     respectively.
 
     Follows up with a [core.thread.fiber.Fiber|Fiber] to verify that the channel
@@ -619,7 +619,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
     Removes a channel from the list of currently active home or guest channels, from the
     [kameloso.pods.IRCBot.homeChannels|IRCBot.homeChannels] and
     [kameloso.pods.IRCBot.guestChannels|IRCBot.guestChannels] arrays of the
-    current [AdminPlugin]'s [kameloso.plugins.common.IRCPluginState|IRCPluginState],
+    current [AdminPlugin]'s [kameloso.plugins.IRCPluginState|IRCPluginState],
     respectively.
 
     Params:
@@ -685,9 +685,9 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 /++
     Adds a nickname to the list of users who may trigger the bot, to the current
     [dialect.defs.IRCClient.Class.whitelist|IRCClient.Class.whitelist] of the
-    current [AdminPlugin]'s [kameloso.plugins.common.IRCPluginState|IRCPluginState].
+    current [AdminPlugin]'s [kameloso.plugins.IRCPluginState|IRCPluginState].
 
-    This is on a [kameloso.plugins.common.Permissions.operator|Permissions.operator] level.
+    This is on a [kameloso.plugins.Permissions.operator|Permissions.operator] level.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -714,9 +714,9 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 /++
     Adds a nickname to the list of users who may trigger the bot, to the current
     list of [dialect.defs.IRCClient.Class.elevated|IRCClient.Class.elevated] users of the
-    current [AdminPlugin]'s [kameloso.plugins.common.IRCPluginState|IRCPluginState].
+    current [AdminPlugin]'s [kameloso.plugins.IRCPluginState|IRCPluginState].
 
-    This is on a [kameloso.plugins.common.Permissions.operator|Permissions.operator] level.
+    This is on a [kameloso.plugins.Permissions.operator|Permissions.operator] level.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -794,9 +794,9 @@ void onCommandStaff(AdminPlugin plugin, const IRCEvent event)
 // onCommandBlacklist
 /++
     Adds a nickname to the list of users who may not trigger the bot whatsoever,
-    except on actions annotated [kameloso.plugins.common.Permissions.ignore|Permissions.ignore].
+    except on actions annotated [kameloso.plugins.Permissions.ignore|Permissions.ignore].
 
-    This is on a [kameloso.plugins.common.Permissions.operator|Permissions.operator] level.
+    This is on a [kameloso.plugins.Permissions.operator|Permissions.operator] level.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)

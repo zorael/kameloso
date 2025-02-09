@@ -308,7 +308,7 @@ mixin template WHOISFiberDelegate(
     /++
         Constructs a [kameloso.thread.CarryingFiber|CarryingFiber] carrying a
         [dialect.defs.IRCEvent|IRCEvent] and enqueues it into the
-        [kameloso.plugins.common.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
+        [kameloso.plugins.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
         associative array, then issues a WHOIS query (unless overridden via
         the `issueWhois` parameter).
 
@@ -524,7 +524,7 @@ mixin template WHOISFiberDelegate(
     This merely makes it possible to use commands like
     `raw("PING :irc.freenode.net")` without having to import
     [kameloso.messaging] and pass the plugin's
-    [kameloso.plugins.common.IRCPluginState|IRCPluginState] in every
+    [kameloso.plugins.IRCPluginState|IRCPluginState] in every
     call of the functions.
 
     Params:

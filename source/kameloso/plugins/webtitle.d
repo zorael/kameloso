@@ -122,9 +122,9 @@ static immutable descriptionExemptions =
     Merely passes the event on to [onMessageImpl].
 
     This function is annotated with
-    [kameloso.plugins.common.Permissions.ignore|Permissions.ignore],
+    [kameloso.plugins.Permissions.ignore|Permissions.ignore],
     but we don't mix in [kameloso.plugins.common.awareness.MinimalAuthentication|MinimalAuthentication].
-    Ideally we would annotate it [kameloso.plugins.common.Permissions.anyone|Permissions.anyone],
+    Ideally we would annotate it [kameloso.plugins.Permissions.anyone|Permissions.anyone],
     but then *any* channel message would incur a user lookup, which
     is a bit much.
 

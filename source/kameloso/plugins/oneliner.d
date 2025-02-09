@@ -629,7 +629,7 @@ void handleNewOneliner(
 /++
     Creates a new and empty oneliner.
 
-    Uses [kameloso.plugins.common.defer|defer] to defer the creation to
+    Uses [kameloso.plugins.defer|defer] to defer the creation to
     the main event loop, so that it can supply the list of existing commands across
     all plugins and abort if the new trigger word would conflict with one.
 
@@ -1683,7 +1683,7 @@ private:
 
         Returns:
             An associative array of
-            [kameloso.plugins.common.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s,
+            [kameloso.plugins.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s,
             one for each oneliner active in the passed channel.
      +/
     override public IRCPlugin.CommandMetadata[string] channelSpecificCommands(const string channelName) @system

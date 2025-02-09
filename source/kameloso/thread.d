@@ -268,7 +268,7 @@ struct ThreadMessage
 
         /++
             Request to put an [dialect.defs.IRCUser|IRCUser] into each plugin's (and service's)
-            [kameloso.plugins.common.IRCPluginState.users|IRCPluginState.users]
+            [kameloso.plugins.IRCPluginState.users|IRCPluginState.users]
             associative array.
          +/
         putUser,
@@ -824,8 +824,8 @@ void interruptibleSleep(const Duration dur, const bool* abort) @system
 
 // getQuitMessage
 /++
-    Iterates the [kameloso.plugins.common.IRCPluginState.messages|messages] and
-    [kameloso.plugins.common.IRCPluginState.priorityMessages|priorityMessages] arrays
+    Iterates the [kameloso.plugins.IRCPluginState.messages|messages] and
+    [kameloso.plugins.IRCPluginState.priorityMessages|priorityMessages] arrays
     of each plugin. If a [kameloso.thread.ThreadMessage.MessageType.quit|quit]
     message is found, its content is returned.
 

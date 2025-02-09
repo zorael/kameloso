@@ -565,7 +565,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 /++
     Logs an event to disk.
 
-    It is set to [kameloso.plugins.common.ChannelPolicy.any|ChannelPolicy.any],
+    It is set to [kameloso.plugins.ChannelPolicy.any|ChannelPolicy.any],
     and configuration dictates whether or not non-home events should be logged.
     Likewise whether or not raw events should be logged.
 

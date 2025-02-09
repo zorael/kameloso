@@ -51,20 +51,20 @@ import dialect.defs;
 
     Plugins don't know about other plugins; the only way for them to communicate
     with the outside world is by unidirectionally leaving messages in
-    [kameloso.plugins.common.IRCPluginState.messages|IRCPluginState.messages]
+    [kameloso.plugins.IRCPluginState.messages|IRCPluginState.messages]
     (and related arrays).
 
     As such, we cannot from a plugin query other plugins for their
-    [kameloso.plugins.common.IRCEventHandler.Command|IRCEventHandler.Command]-annotated
+    [kameloso.plugins.IRCEventHandler.Command|IRCEventHandler.Command]-annotated
     functions, by design. Plugins should be self-contained.
 
     To work around this we construct a delegate that accepts associative arrays of
-    [kameloso.plugins.common.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata],
+    [kameloso.plugins.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata],
     and leave them as a message. These are constructed at compile-time based on
     the event handlers in a plugin module.
 
     The main event loop will then gather
-    [kameloso.plugins.common.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s
+    [kameloso.plugins.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s
     from all plugins and invoke the delegate with these "commands" arrays as argument.
 
     Once we have the list we format it nicely and send it back to the requester.
@@ -259,7 +259,7 @@ void sendMessage(
             send the help text for.
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         commandString = String of the command we're to send help text for (sans prefix).
-        command = Actual [kameloso.plugins.common.IRCPlugin.CommandMetadata|CommandMetadata]
+        command = Actual [kameloso.plugins.IRCPlugin.CommandMetadata|CommandMetadata]
             of the command we're to send help text for.
  +/
 void sendCommandHelpImpl(
@@ -563,9 +563,9 @@ auto filterHiddenCommands(IRCPlugin.CommandMetadata[string] aa)
 // addPrefix
 /++
     Adds a prefix to a command word; the command prefix if the passed `policy` is
-    [kameloso.plugins.common.PrefixPolicy.prefixed], the bot nickname if it is
-    [kameloso.plugins.common.PrefixPolicy.nickname], and as is if it is
-    [kameloso.plugins.common.PrefixPolicy.direct].
+    [kameloso.plugins.PrefixPolicy.prefixed], the bot nickname if it is
+    [kameloso.plugins.PrefixPolicy.nickname], and as is if it is
+    [kameloso.plugins.PrefixPolicy.direct].
 
     Params:
         plugin = The current [HelpPlugin].

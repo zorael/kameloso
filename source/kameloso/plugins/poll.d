@@ -967,7 +967,7 @@ void onWelcome(PollPlugin plugin)
 // onSelfjoin
 /++
     Registers a channel entry in
-    [kameloso.plugins.common.IRCPluginState.channels|IRCPluginState.channels]
+    [kameloso.plugins.IRCPluginState.channels|IRCPluginState.channels]
     upon joining one.
 
     This would normally be done using
@@ -990,7 +990,7 @@ void onSelfjoin(PollPlugin plugin, const IRCEvent event)
 // onSelfpart
 /++
     De-registers a channel entry in
-    [kameloso.plugins.common.IRCPluginState.channels|IRCPluginState.channels]
+    [kameloso.plugins.IRCPluginState.channels|IRCPluginState.channels]
     upon parting from one.
 
     This would normally be done using

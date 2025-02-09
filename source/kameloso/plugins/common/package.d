@@ -101,13 +101,13 @@ final class IRCPluginInitialisationException : Exception
 // catchUser
 /++
     Catch an [dialect.defs.IRCUser|IRCUser], saving it to the
-    [kameloso.plugins.common.IRCPlugin|IRCPlugin]'s
-    [kameloso.plugins.common.IRCPluginState.users|IRCPluginState.users] array.
+    [kameloso.plugins.IRCPlugin|IRCPlugin]'s
+    [kameloso.plugins.IRCPluginState.users|IRCPluginState.users] array.
 
     If a user already exists, meld the new information into the old one.
 
     Params:
-        plugin = Current [kameloso.plugins.common.IRCPlugin|IRCPlugin].
+        plugin = Current [kameloso.plugins.IRCPlugin|IRCPlugin].
         newUser = The [dialect.defs.IRCUser|IRCUser] to catch.
  +/
 void catchUser(IRCPlugin plugin, const IRCUser newUser) @system
@@ -186,7 +186,7 @@ unittest
     If not version `TwitchSupport` then it always returns the nickname.
 
     Params:
-        plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.IRCPlugin|IRCPlugin], whatever it is.
         specified = The name of a user to look up.
 
     Returns:
@@ -243,7 +243,7 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
     Merely wraps [getUser] with [idOf].
 
     Params:
-        plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.IRCPlugin|IRCPlugin], whatever it is.
         nickname = The name of a user to look up.
 
     Returns:
@@ -293,7 +293,7 @@ unittest
     nickname as if it was a display name.
 
     Params:
-        plugin = The current [kameloso.plugins.common.IRCPlugin|IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.IRCPlugin|IRCPlugin], whatever it is.
         specified = The name of a user to look up.
 
     Returns:
