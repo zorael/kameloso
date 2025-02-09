@@ -28,7 +28,10 @@ public:
 
 // TwitchPlugin
 /++
-    TwitchPlugin stub.
+    Stub for the [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin], compiled
+    when the bot is built without Twitch support.
+
+    This provides lines to the configuration file even when the bot isn't compiled in.
  +/
 final class TwitchPlugin : IRCPlugin
 {
@@ -41,4 +44,30 @@ private:
     kameloso.plugins.twitch.TwitchSettings twitchSettings;
 
     mixin IRCPluginImpl;
+}
+
+///
+unittest
+{
+    import kameloso.pods : CoreSettings;
+    import kameloso.plugins.common.misc : applyCustomSettings;
+
+    IRCPluginState state;
+    IRCPlugin plugin = new TwitchPlugin(state);
+    CoreSettings coreSettings;
+
+    const newSettings =
+    [
+        "twitch.enabled=false",
+    ];
+
+    assert(plugin.isEnabled);
+
+    cast(void)applyCustomSettings(
+        [ plugin ],
+        settings: coreSettings,
+        customSettings: newSettings,
+        toPluginsOnly: true);
+
+    assert(!plugin.isEnabled);
 }
