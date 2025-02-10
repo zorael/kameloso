@@ -183,17 +183,11 @@ unittest
 void formatMessageMonochrome(Sink)
     (PrinterPlugin plugin,
     auto ref Sink sink,
-    const IRCEvent event,
+    /*const*/ IRCEvent event,
     const bool bellOnMention,
     const bool bellOnError)
 {
     import kameloso.irccolours : stripEffects;
-    import lu.conv : toString;
-    import std.algorithm.comparison : equal;
-    import std.algorithm.iteration : filter;
-    import std.datetime : DateTime;
-    import std.datetime.systime : SysTime;
-    import std.format : formattedWrite;
     import std.range.primitives : isOutputRange;
     import std.uni : asLowerCase;
 
@@ -206,15 +200,74 @@ void formatMessageMonochrome(Sink)
         static assert(0, message);
     }
 
-    immutable typestring = event.type.toString().withoutTypePrefix;
-    immutable content = stripEffects(event.content);
-    bool shouldBell;
-
-    static if (!__traits(hasMember, Sink, "data"))
+    /++
+        Writes the timestamp and type of the event to the output range sink.
+     +/
+    void putTimeAndType()
     {
-        scope(exit)
+        import lu.conv : toString;
+        import std.datetime : DateTime;
+        import std.datetime.systime : SysTime;
+
+        sink.put('[');
+
+        (cast(DateTime)SysTime
+            .fromUnixTime(event.time))
+            .timeOfDay
+            .toString(sink);
+
+        sink.put("] [");
+
+        immutable typestring = event.type.toString().withoutTypePrefix;
+
+        if (plugin.printerSettings.uppercaseTypes)
         {
-            sink.put('\n');
+            sink.put(typestring);
+        }
+        else
+        {
+            sink.put(typestring.asLowerCase);
+        }
+
+        sink.put("] ");
+    }
+
+    /++
+        Writes the channel name and any potential subchannel name to the output
+        range sink.
+
+        If the channel has an ID and the setting is enabled, it is also printed.
+     +/
+    void putChannels()
+    {
+        if (event.channel.name.length)
+        {
+            .put(sink, '[', event.channel.name);
+
+            version(TwitchSupport)
+            {
+                if (plugin.printerSettings.channelIDs && event.channel.id)
+                {
+                    .put(sink, ':', event.channel.id);
+                }
+            }
+
+            .put(sink, "] ");
+
+            if (event.subchannel.name.length && (event.subchannel.name != event.channel.name))
+            {
+                .put(sink, "< [", event.subchannel.name);
+
+                version(TwitchSupport)
+                {
+                    if (plugin.printerSettings.channelIDs && event.subchannel.id)
+                    {
+                        .put(sink, ':', event.subchannel.id);
+                    }
+                }
+
+                .put(sink, "] ");
+            }
         }
     }
 
@@ -236,6 +289,8 @@ void formatMessageMonochrome(Sink)
         {
             if (event.sender.displayName.length)
             {
+                import std.algorithm.comparison : equal;
+
                 sink.put(event.sender.displayName);
                 putDisplayName = true;
 
@@ -330,6 +385,8 @@ void formatMessageMonochrome(Sink)
 
             if (event.target.displayName.length)
             {
+                import std.algorithm.comparison : equal;
+
                 sink.put(event.target.displayName);
                 putDisplayName = true;
 
@@ -390,6 +447,7 @@ void formatMessageMonochrome(Sink)
      +/
     void putContent(
         const string line,
+        ref bool shouldBell,
         const bool isAltcontent = false)
     {
         if (!line.length) return;
@@ -406,7 +464,6 @@ void formatMessageMonochrome(Sink)
             ((event.type == IRCEvent.Type.EMOTE) ||
             (event.type == IRCEvent.Type.SELFEMOTE));
 
-        string content = line;  // mutable
         bool openQuote;
 
         if (isAltcontent)
@@ -448,7 +505,7 @@ void formatMessageMonochrome(Sink)
         case TWITCH_ANNOUNCEMENT:
         case TWITCH_CHEER:
         //case SELFCHAN:
-            if (content.containsNickname(plugin.state.client.nickname))
+            if (line.containsNickname(plugin.state.client.nickname))
             {
                 // Nick was mentioned (certain)
                 shouldBell = bellOnMention;
@@ -459,106 +516,107 @@ void formatMessageMonochrome(Sink)
             break;
         }
 
-        sink.put(content);
+        sink.put(line);
         if (openQuote) sink.put('"');
+    }
+
+    /++
+        Writes the auxiliary information of the event to the output range sink.
+     +/
+    void putAux()
+    {
+        import std.algorithm.iteration : filter;
+        import std.format : formattedWrite;
+
+        auto auxRange = event.aux[].filter!(s => s.length);
+        if (!auxRange.empty)
+        {
+            enum pattern = " (%-(%s%|) (%))";
+            sink.formattedWrite(pattern, auxRange);
+        }
+    }
+
+    /++
+        Writes the count information of the event to the output range sink.
+     +/
+    void putCount()
+    {
+        import std.algorithm.iteration : filter;
+        import std.format : formattedWrite;
+
+        auto countRange = event.count[].filter!(n => !n.isNull);
+        if (!countRange.empty)
+        {
+            enum pattern = " {%-(%s%|} {%)}";
+            sink.formattedWrite(pattern, countRange);
+        }
+    }
+
+    /++
+        Writes the numerical ID of the event to the output range sink.
+     +/
+    void putNum()
+    {
+        if (event.num > 0)
+        {
+            import lu.conv : toAlphaInto;
+
+            sink.put(" [#");
+            event.num.toAlphaInto!(3, 3)(sink);
+            sink.put(']');
+        }
+    }
+
+    /++
+        Writes any errors that occurred during parsing or postprocessing of the
+        event to the output range sink.
+     +/
+    void putErrors()
+    {
+        if (event.errors.length)
+        {
+            .put(sink, " ! ", event.errors, " !");
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
-    sink.put('[');
-
-    (cast(DateTime)SysTime
-        .fromUnixTime(event.time))
-        .timeOfDay
-        .toString(sink);
-
-    sink.put("] [");
-
-    if (plugin.printerSettings.uppercaseTypes)
+    static if (!__traits(hasMember, Sink, "data"))
     {
-        sink.put(typestring);
-    }
-    else
-    {
-        sink.put(typestring.asLowerCase);
+        // May be a lockingTextWriter and the content won't be writeln'd
+        scope(exit) sink.put('\n');
     }
 
-    sink.put("] ");
+    bool shouldBell;
 
-    if (event.channel.name.length)
-    {
-        .put(sink, '[', event.channel.name);
+    putTimeAndType();
 
-        version(TwitchSupport)
-        {
-            if (plugin.printerSettings.channelIDs && event.channel.id)
-            {
-                .put(sink, ':', event.channel.id);
-            }
-        }
-
-        .put(sink, "] ");
-
-        if (event.subchannel.name.length && (event.subchannel.name != event.channel.name))
-        {
-            .put(sink, "< [", event.subchannel.name);
-
-            version(TwitchSupport)
-            {
-                if (plugin.printerSettings.channelIDs && event.subchannel.id)
-                {
-                    .put(sink, ':', event.subchannel.id);
-                }
-            }
-
-            .put(sink, "] ");
-        }
-    }
+    putChannels();
 
     putSender();
 
-    putContent(event.content);
+    putContent(
+        line: stripEffects(event.content),
+        shouldBell: shouldBell);
 
     putTarget();
-
-    string[event.aux.length] auxCopy = event.aux;
 
     if (event.altcontent.length)
     {
         putContent(
-            line: event.altcontent,
+            line: stripEffects(event.altcontent),
+            shouldBell: shouldBell,
             isAltcontent: true);
-        auxCopy[$-2] = string.init;  // Remove the custom emote definitions
+        event.aux[$-2] = string.init;  // Remove any custom emote definitions
     }
 
-    // Base the range on the modified copy
-    auto auxRange = auxCopy[].filter!(s => s.length);
-    if (!auxRange.empty)
-    {
-        enum pattern = " (%-(%s%|) (%))";
-        sink.formattedWrite(pattern, auxRange);
-    }
+    putAux();
 
-    auto countRange = event.count[].filter!(n => !n.isNull);
-    if (!countRange.empty)
-    {
-        enum pattern = " {%-(%s%|} {%)}";
-        sink.formattedWrite(pattern, countRange);
-    }
+    putCount();
 
-    if (event.num > 0)
-    {
-        import lu.conv : toAlphaInto;
+    putNum();
 
-        sink.put(" [#");
-        event.num.toAlphaInto!(3, 3)(sink);
-        sink.put(']');
-    }
-
-    if (event.errors.length)
-    {
-        .put(sink, " ! ", event.errors, " !");
-    }
+    putErrors();
 
     shouldBell |=
         ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
@@ -571,6 +629,7 @@ void formatMessageMonochrome(Sink)
 @system unittest
 {
     import kameloso.plugins : IRCPluginState;
+    import lu.assert_ : assertMultilineEquals;
     import std.array : Appender;
 
     Appender!(char[]) sink;
@@ -601,7 +660,7 @@ void formatMessageMonochrome(Sink)
         else string nickstring = "nickname";
         //nickstring ~= "/whitelist";
         immutable expected = "[join] [#channel] " ~ nickstring;
-        assert((joinLine == expected), joinLine);
+        assertMultilineEquals(actual: joinLine, expected: expected);
         sink.clear();
     }
 
@@ -615,7 +674,7 @@ void formatMessageMonochrome(Sink)
         else string nickstring = "nickname";
         //nickstring ~= "/whitelist";
         immutable expected = "[chan] [#channel] " ~ nickstring ~ `: "Harbl snarbl"`;
-        assert((chanLine == expected), chanLine);
+        assertMultilineEquals(actual: chanLine, expected: expected);
         sink.clear();
     }
 
@@ -633,7 +692,7 @@ void formatMessageMonochrome(Sink)
         nickstring ~= "/staff";
         immutable expected = "[chan] [#channel] " ~ nickstring ~
             ` [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`;
-        assert((twitchLine == expected), twitchLine);
+        assertMultilineEquals(actual: twitchLine, expected: expected);
         sink.clear();
         event.sender.badges = string.init;
     }}
@@ -655,7 +714,7 @@ void formatMessageMonochrome(Sink)
         nickstring ~= "/anyone";
         nickstring ~= " (n1ckn4m3)";
         immutable expected = "[account] " ~ nickstring ~ " (n1ckn4m3)";
-        assert((accountLine == expected), accountLine);
+        assertMultilineEquals(actual: accountLine, expected: expected);
         sink.clear();
     }
 
@@ -679,7 +738,8 @@ void formatMessageMonochrome(Sink)
         nickstring ~= " (n1ckn4m3)";
         immutable expected = "[error] " ~ nickstring ~ `: "Blah balah" (aux1) (aux5) ` ~
             "{-42} {123} {420} [#666] ! DANGER WILL ROBINSON !";
-        assert((errorLine == expected), errorLine);
+        //assert((errorLine == expected), errorLine);
+        assertMultilineEquals(actual: errorLine, expected: expected);
         sink.clear();
     }
 
@@ -693,13 +753,13 @@ void formatMessageMonochrome(Sink)
 
     {
         formatMessageMonochrome(plugin, sink, event, bellOnMention: false, bellOnError: false);
-        immutable queryLine = sink[][11..$].idup;
+        immutable line = sink[][11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
         //nickstring ~= "/anyone";
         nickstring ~= " (n1ckn4m3)";
         immutable expected = "[chan] [#nickname] " ~ nickstring ~ `: "Blah balah"`;
-        assert((queryLine == expected), queryLine);
+        assertMultilineEquals(actual: line, expected: expected);
         sink.clear();
     }
 
@@ -711,13 +771,13 @@ void formatMessageMonochrome(Sink)
 
     {
         formatMessageMonochrome(plugin, sink, event, bellOnMention: false, bellOnError: false);
-        immutable queryLine = sink[][11..$].idup;
+        immutable line = sink[][11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
         //nickstring ~= "/anyone";
         nickstring ~= " (n1ckn4m3)";
         immutable expected = "[chan] [#nickname:123] < [#sub:456] " ~ nickstring ~ `: "Blah balah" | alt alt alt alt`;
-        assert((queryLine == expected), queryLine);
+        assertMultilineEquals(actual: line, expected: expected);
         sink.clear();
     }
 
@@ -725,13 +785,13 @@ void formatMessageMonochrome(Sink)
 
     {
         formatMessageMonochrome(plugin, sink, event, bellOnMention: false, bellOnError: false);
-        immutable queryLine = sink[][11..$].idup;
+        immutable line = sink[][11..$].idup;
         version(TwitchSupport) string nickstring = "Nickname";
         else string nickstring = "nickname";
         //nickstring ~= "/anyone";
         nickstring ~= " (n1ckn4m3)";
         immutable expected = "[chan] [#nickname:123] < [#sub:456] " ~ nickstring ~ ` alt alt alt alt`;
-        assert((queryLine == expected), queryLine);
+        assertMultilineEquals(actual: line, expected: expected);
         //sink.clear();
     }
 }
@@ -757,19 +817,13 @@ version(Colours)
 void formatMessageColoured(Sink)
     (PrinterPlugin plugin,
     auto ref Sink sink,
-    const IRCEvent event,
+    /*const*/ IRCEvent event,
     const bool bellOnMention,
     const bool bellOnError)
 {
     import kameloso.constants : DefaultColours;
     import kameloso.terminal.colours.defs : ANSICodeType, TerminalReset;
     import kameloso.terminal.colours : applyANSI;
-    import lu.conv : toString;
-    import std.algorithm.iteration : filter;
-    import std.algorithm.searching : startsWith;
-    import std.datetime : DateTime;
-    import std.datetime.systime : SysTime;
-    import std.format : formattedWrite;
     import std.range.primitives : isOutputRange;
     import std.uni : asLowerCase;
 
@@ -785,18 +839,6 @@ void formatMessageColoured(Sink)
     alias Bright = EventPrintingBright;
     alias Dark = EventPrintingDark;
     alias Timestamp = DefaultColours.TimestampColour;
-
-    immutable rawTypestring = event.type.toString();
-    immutable typestring = rawTypestring.withoutTypePrefix;
-    bool shouldBell;
-
-    static if (!__traits(hasMember, Sink, "data"))
-    {
-        scope(exit)
-        {
-            sink.put('\n');
-        }
-    }
 
     /++
         Outputs a terminal ANSI colour token based on the hash of the passed
@@ -829,8 +871,6 @@ void formatMessageColoured(Sink)
      +/
     void colourUserTruecolour(const IRCUser user, const bool byAccount = false)
     {
-        bool coloured;
-
         version(TwitchSupport)
         {
             if (!user.isServer &&
@@ -848,19 +888,126 @@ void formatMessageColoured(Sink)
                     rgb.b,
                     brightTerminal: plugin.state.coreSettings.brightTerminal,
                     normalise: plugin.printerSettings.normaliseTruecolour);
-                coloured = true;
+                return;
             }
         }
 
-        if (!coloured)
-        {
-            immutable name = user.isServer ?
-                user.address :
-                ((user.account.length && (byAccount || plugin.printerSettings.colourByAccount)) ?
-                    user.account :
-                    user.nickname);
+        immutable name = user.isServer ?
+            user.address :
+            ((user.account.length && (byAccount || plugin.printerSettings.colourByAccount)) ?
+                user.account :
+                user.nickname);
 
-            sink.applyANSI(colourByHash(name), ANSICodeType.foreground);
+        sink.applyANSI(colourByHash(name), ANSICodeType.foreground);
+    }
+
+    /++
+        Writes the timestamp and type of the event to the output range sink.
+     +/
+    void putTimeAndType()
+    {
+        import lu.conv : toString;
+        import std.algorithm.searching : startsWith;
+        import std.datetime : DateTime;
+        import std.datetime.systime : SysTime;
+
+        immutable rawTypestring = event.type.toString();
+        immutable typestring = rawTypestring.withoutTypePrefix;
+        immutable timestampCode = plugin.state.coreSettings.brightTerminal ? Timestamp.bright : Timestamp.dark;
+
+        sink.applyANSI(timestampCode, ANSICodeType.foreground);
+        sink.put('[');
+
+        (cast(DateTime)SysTime
+            .fromUnixTime(event.time))
+            .timeOfDay
+            .toString(sink);
+
+        sink.put(']');
+
+        if ((event.type == IRCEvent.Type.ERROR) ||
+            (event.type == IRCEvent.Type.TWITCH_ERROR) ||
+            rawTypestring.startsWith("ERR_"))
+        {
+            sink.applyANSI(plugin.state.coreSettings.brightTerminal ? Bright.error : Dark.error);
+        }
+        else
+        {
+            if (plugin.state.coreSettings.brightTerminal)
+            {
+                immutable code = (event.type == IRCEvent.Type.QUERY) ? Bright.query : Bright.type;
+                sink.applyANSI(code, ANSICodeType.foreground);
+            }
+            else
+            {
+                immutable code = (event.type == IRCEvent.Type.QUERY) ? Dark.query : Dark.type;
+                sink.applyANSI(code, ANSICodeType.foreground);
+            }
+        }
+
+        sink.put(" [");
+
+        if (plugin.printerSettings.uppercaseTypes)
+        {
+            sink.put(typestring);
+        }
+        else
+        {
+            sink.put(typestring.asLowerCase);
+        }
+
+        sink.put("] ");
+    }
+
+    /++
+        Writes the channel name and any potential subchannel name to the output
+        range sink.
+
+        If the channel has an ID and the setting is enabled, it is also printed.
+     +/
+    void putChannels()
+    {
+        if (event.channel.name.length)
+        {
+            immutable channelCode = plugin.state.coreSettings.brightTerminal ?
+                Bright.channel :
+                Dark.channel;
+
+            sink.applyANSI(channelCode, ANSICodeType.foreground);
+            .put(sink, '[', event.channel.name);
+
+            version(TwitchSupport)
+            {
+                if (plugin.printerSettings.channelIDs && event.channel.id)
+                {
+                    .put(sink, ':', event.channel.id);
+                }
+            }
+
+            sink.put("] ");
+
+            if (event.subchannel.name.length && (event.subchannel.name != event.channel.name))
+            {
+                immutable arrowCode = plugin.state.coreSettings.brightTerminal ?
+                    Bright.content :
+                    Dark.content;
+
+                sink.applyANSI(arrowCode, ANSICodeType.foreground);
+                .put(sink, "< ");
+
+                sink.applyANSI(channelCode, ANSICodeType.foreground);
+                .put(sink, '[', event.subchannel);
+
+                version(TwitchSupport)
+                {
+                    if (plugin.printerSettings.channelIDs && event.subchannel.id)
+                    {
+                        .put(sink, ':', event.subchannel.id);
+                    }
+                }
+
+                sink.put("] ");
+            }
         }
     }
 
@@ -1006,8 +1153,8 @@ void formatMessageColoured(Sink)
                 break;
             }
 
-            colourUserTruecolour(event.target);
             putArrow = true;
+            colourUserTruecolour(event.target);
 
             if (event.target.displayName.length)
             {
@@ -1101,6 +1248,7 @@ void formatMessageColoured(Sink)
     void putContent(
         const string line,
         const string emotes,
+        ref bool shouldBell,
         const bool isAltcontent = false)
     {
         import kameloso.terminal.colours.defs : ANSICodeType, TerminalBackground, TerminalForeground;
@@ -1221,13 +1369,17 @@ void formatMessageColoured(Sink)
             {
                 sink.put(inverted);
                 shouldBell = bellOnMention;
+                break;
             }
-            break;
+            else
+            {
+                goto default;
+            }
 
         default:
+            sink.put(content);
             break;
         }
-        sink.put(content);
 
         // Reset the background to ward off bad backgrounds bleeding out
         sink.applyANSI(fgBase, ANSICodeType.foreground); //, TerminalBackground.default_);
@@ -1236,94 +1388,83 @@ void formatMessageColoured(Sink)
         if (openQuote) sink.put('"');
     }
 
+    /++
+        Writes the auxiliary information of the event to the output range sink.
+     +/
+    void putAux()
+    {
+        import std.algorithm.iteration : filter;
+        import std.format : formattedWrite;
+
+        auto auxRange = event.aux[].filter!(s => s.length);
+        if (!auxRange.empty)
+        {
+            enum pattern = " (%-(%s%|) (%))";
+            sink.applyANSI(plugin.state.coreSettings.brightTerminal ? Bright.aux : Dark.aux);
+            sink.formattedWrite(pattern, auxRange);
+        }
+    }
+
+    /++
+        Writes the count information of the event to the output range sink.
+     +/
+    void putCount()
+    {
+        import std.algorithm.iteration : filter;
+        import std.format : formattedWrite;
+
+        auto countRange = event.count[].filter!(n => !n.isNull);
+        if (!countRange.empty)
+        {
+            enum pattern = " {%-(%s%|} {%)}";
+            sink.applyANSI(plugin.state.coreSettings.brightTerminal ? Bright.count : Dark.count);
+            sink.formattedWrite(pattern, countRange);
+        }
+    }
+
+    /++
+        Writes the numerical ID of the event to the output range sink.
+     +/
+    void putNum()
+    {
+        if (event.num > 0)
+        {
+            import lu.conv : toAlphaInto;
+
+            sink.applyANSI(plugin.state.coreSettings.brightTerminal ? Bright.num : Dark.num);
+            sink.put(" [#");
+            event.num.toAlphaInto!(3, 3)(sink);
+            sink.put(']');
+        }
+    }
+
+    /++
+        Writes any errors that occurred during parsing or postprocessing of the
+        event to the output range sink.
+     +/
+    void putErrors()
+    {
+        if (event.errors.length)
+        {
+            immutable code = plugin.state.coreSettings.brightTerminal ? Bright.error : Dark.error;
+            sink.applyANSI(code, ANSICodeType.foreground);
+            .put(sink, " ! ", event.errors, " !");
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////
 
-    immutable timestampCode = plugin.state.coreSettings.brightTerminal ? Timestamp.bright : Timestamp.dark;
-    sink.applyANSI(timestampCode, ANSICodeType.foreground);
-    sink.put('[');
-
-    (cast(DateTime)SysTime
-        .fromUnixTime(event.time))
-        .timeOfDay
-        .toString(sink);
-
-    sink.put(']');
-
-    if ((event.type == IRCEvent.Type.ERROR) ||
-        (event.type == IRCEvent.Type.TWITCH_ERROR) ||
-        rawTypestring.startsWith("ERR_"))
+    static if (!__traits(hasMember, Sink, "data"))
     {
-        sink.applyANSI(plugin.state.coreSettings.brightTerminal ? Bright.error : Dark.error);
-    }
-    else
-    {
-        if (plugin.state.coreSettings.brightTerminal)
-        {
-            immutable code = (event.type == IRCEvent.Type.QUERY) ? Bright.query : Bright.type;
-            sink.applyANSI(code, ANSICodeType.foreground);
-        }
-        else
-        {
-            immutable code = (event.type == IRCEvent.Type.QUERY) ? Dark.query : Dark.type;
-            sink.applyANSI(code, ANSICodeType.foreground);
-        }
+        // May be a lockingTextWriter and the content won't be writeln'd
+        scope(exit) sink.put('\n');
     }
 
-    sink.put(" [");
+    bool shouldBell;
 
-    if (plugin.printerSettings.uppercaseTypes)
-    {
-        sink.put(typestring);
-    }
-    else
-    {
-        sink.put(typestring.asLowerCase);
-    }
+    putTimeAndType();
 
-    sink.put("] ");
-
-    if (event.channel.name.length)
-    {
-        immutable channelCode = plugin.state.coreSettings.brightTerminal ?
-            Bright.channel :
-            Dark.channel;
-
-        sink.applyANSI(channelCode, ANSICodeType.foreground);
-        .put(sink, '[', event.channel.name);
-
-        version(TwitchSupport)
-        {
-            if (plugin.printerSettings.channelIDs && event.channel.id)
-            {
-                .put(sink, ':', event.channel.id);
-            }
-        }
-
-        sink.put("] ");
-
-        if (event.subchannel.name.length && (event.subchannel.name != event.channel.name))
-        {
-            immutable arrowCode = plugin.state.coreSettings.brightTerminal ?
-                Bright.content :
-                Dark.content;
-
-            sink.applyANSI(arrowCode, ANSICodeType.foreground);
-            .put(sink, "< ");
-
-            sink.applyANSI(channelCode, ANSICodeType.foreground);
-            .put(sink, '[', event.subchannel);
-
-            version(TwitchSupport)
-            {
-                if (plugin.printerSettings.channelIDs && event.subchannel.id)
-                {
-                    .put(sink, ':', event.subchannel.id);
-                }
-            }
-
-            sink.put("] ");
-        }
-    }
+    putChannels();
 
     putSender();
 
@@ -1332,54 +1473,28 @@ void formatMessageColoured(Sink)
 
     putContent(
         line: event.content,
-        emotes: emotes);
+        emotes: emotes,
+        shouldBell: shouldBell);
 
     putTarget();
-
-    string[event.aux.length] auxCopy = event.aux;
 
     if (event.altcontent.length)
     {
         putContent(
             line: event.altcontent,
             emotes: event.aux[$-2],
+            shouldBell: shouldBell,
             isAltcontent: true);
-        auxCopy[$-2] = string.init;  // Remove the custom emote definitions
+        event.aux[$-2] = string.init;  // Remove any custom emote definitions
     }
 
-    // Base the range on the modified copy
-    auto auxRange = auxCopy[].filter!(s => s.length);
-    if (!auxRange.empty)
-    {
-        enum pattern = " (%-(%s%|) (%))";
-        sink.applyANSI(plugin.state.coreSettings.brightTerminal ? Bright.aux : Dark.aux);
-        sink.formattedWrite(pattern, auxRange);
-    }
+    putAux();
 
-    auto countRange = event.count[].filter!(n => !n.isNull);
-    if (!countRange.empty)
-    {
-        enum pattern = " {%-(%s%|} {%)}";
-        sink.applyANSI(plugin.state.coreSettings.brightTerminal ? Bright.count : Dark.count);
-        sink.formattedWrite(pattern, countRange);
-    }
+    putCount();
 
-    if (event.num > 0)
-    {
-        import lu.conv : toAlphaInto;
+    putNum();
 
-        sink.applyANSI(plugin.state.coreSettings.brightTerminal ? Bright.num : Dark.num);
-        sink.put(" [#");
-        event.num.toAlphaInto!(3, 3)(sink);
-        sink.put(']');
-    }
-
-    if (event.errors.length)
-    {
-        immutable code = plugin.state.coreSettings.brightTerminal ? Bright.error : Dark.error;
-        sink.applyANSI(code, ANSICodeType.foreground);
-        .put(sink, " ! ", event.errors, " !");
-    }
+    putErrors();
 
     sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
 
