@@ -4204,15 +4204,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             }
         }
 
-        enum minimumTimeBetweenPromotions = 30;  // seconds
-        immutable deltaTime = (event.time - user.updated);
-
-        if (deltaTime < minimumTimeBetweenPromotions)
-        {
-            // It was updated recently, no need to re-promote
-            return false;
-        }
-        else if (user.badges.length)
+        if (user.badges.length)
         {
             /+
                 Infer class from the user's badge(s).
