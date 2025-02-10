@@ -1508,7 +1508,7 @@ void formatMessageColoured(Sink)
 
 // withoutTypePrefix
 /++
-    Slices away any type prefixes from the string of a
+    Slices away any type prefixes from the string name of an
     [dialect.defs.IRCEvent.Type|IRCEvent.Type].
 
     Only for shared use in [formatMessageMonochrome] and [formatMessageColoured].
@@ -1531,49 +1531,63 @@ void formatMessageColoured(Sink)
     Returns:
         A slice of the passed `typestring`, excluding any prefixes if present.
  +/
-auto withoutTypePrefix(const string typestring) pure @safe nothrow @nogc
+private auto withoutTypePrefix(const string typestring) pure @safe
 {
     import std.algorithm.searching : startsWith;
+    import std.meta : AliasSeq;
 
-    if (typestring.startsWith("RPL_") || typestring.startsWith("ERR_"))
+    alias typePrefixes = AliasSeq!("RPL_", "ERR_", "TWITCH_");
+
+    version(TwitchSupport)
     {
+        immutable typePrefixIndex = typestring.startsWith(typePrefixes);
+    }
+    else
+    {
+        immutable typePrefixIndex = typestring.startsWith(typePrefixes[0..2]);
+    }
+
+    version(TwitchSupport)
+    {
+        if (typePrefixIndex == 3)
+        {
+            // TWITCH_
+            return typestring[7..$];
+        }
+    }
+
+    if (typePrefixIndex != 0)
+    {
+        // RPL_ or ERR_
         return typestring[4..$];
     }
     else
     {
-        version(TwitchSupport)
-        {
-            if (typestring.startsWith("TWITCH_"))
-            {
-                return typestring[7..$];
-            }
-        }
+        return typestring;  // as is
     }
-
-    return typestring;  // as is
 }
 
 ///
 unittest
 {
     {
-        immutable typestring = "RPL_ENDOFMOTD";
+        enum typestring = "RPL_ENDOFMOTD";
         immutable without = typestring.withoutTypePrefix;
         assert((without == "ENDOFMOTD"), without);
     }
     {
-        immutable typestring = "ERR_CHANOPRIVSNEEDED";
+        enum typestring = "ERR_CHANOPRIVSNEEDED";
         immutable without = typestring.withoutTypePrefix;
         assert((without == "CHANOPRIVSNEEDED"), without);
     }
     version(TwitchSupport)
     {{
-        immutable typestring = "TWITCH_USERSTATE";
+        enum typestring = "TWITCH_SUB";
         immutable without = typestring.withoutTypePrefix;
-        assert((without == "USERSTATE"), without);
+        assert((without == "SUB"), without);
     }}
     {
-        immutable typestring = "PRIVMSG";
+        enum typestring = "PRIVMSG";
         immutable without = typestring.withoutTypePrefix;
         assert((without == "PRIVMSG"), without);
     }
