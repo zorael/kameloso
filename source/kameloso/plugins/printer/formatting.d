@@ -869,7 +869,7 @@ void formatMessageColoured(Sink)
         This is for Twitch servers that assign such values to users' messages.
         By catching it we can honour the setting by tinting users accordingly.
      +/
-    void colourUserTruecolour(const IRCUser user, const bool byAccount = false)
+    void putUserColour(const IRCUser user, const bool byAccount = false)
     {
         version(TwitchSupport)
         {
@@ -899,6 +899,20 @@ void formatMessageColoured(Sink)
                 user.nickname);
 
         sink.applyANSI(colourByHash(name), ANSICodeType.foreground);
+    }
+
+    /++
+        Puts a string into the output range sink in inverted colours.
+     +/
+    void putInverted(const string toInvert)
+    {
+        import kameloso.terminal : TerminalToken;
+        import kameloso.terminal.colours.defs : TerminalFormat, TerminalReset;
+
+        enum tF = cast(char)TerminalToken.format;
+        enum fR = cast(int)TerminalFormat.reverse;
+        enum rI = cast(int)TerminalReset.invert;
+        .put(sink, tF, '[', fR, 'm', toInvert, tF, '[', rI, 'm');
     }
 
     /++
@@ -1021,7 +1035,7 @@ void formatMessageColoured(Sink)
 
         bool putDisplayName;
 
-        colourUserTruecolour(event.sender);
+        putUserColour(event.sender);
 
         if (event.sender.isServer)
         {
@@ -1054,7 +1068,7 @@ void formatMessageColoured(Sink)
                     }
 
                     sink.put(" (");
-                    colourUserTruecolour(event.sender, byAccount: true);
+                    putUserColour(event.sender, byAccount: true);
                     sink.put(event.sender.account);
                     sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.put(')');
@@ -1086,7 +1100,7 @@ void formatMessageColoured(Sink)
                 }
 
                 sink.put(" (");
-                colourUserTruecolour(event.sender, byAccount: true);
+                putUserColour(event.sender, byAccount: true);
                 sink.put(event.sender.account);
                 sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.put(')');
@@ -1134,6 +1148,7 @@ void formatMessageColoured(Sink)
 
         bool putArrow;
         bool putDisplayName;
+        bool putColour;
 
         version(TwitchSupport)
         {
@@ -1154,14 +1169,24 @@ void formatMessageColoured(Sink)
             }
 
             putArrow = true;
-            colourUserTruecolour(event.target);
 
             if (event.target.displayName.length)
             {
                 import std.algorithm.comparison : equal;
                 import std.uni : asLowerCase;
 
-                sink.put(event.target.displayName);
+                if (!event.sender.isServer &&
+                    (event.target.nickname == plugin.state.client.nickname))
+                {
+                    putInverted(event.target.displayName);
+                }
+                else
+                {
+                    putUserColour(event.target);
+                    sink.put(event.target.displayName);
+                    putColour = true;
+                }
+
                 putDisplayName = true;
 
                 if (plugin.printerSettings.classNames)
@@ -1179,7 +1204,8 @@ void formatMessageColoured(Sink)
                     }
 
                     sink.put(" (");
-                    colourUserTruecolour(event.target, byAccount: true);
+                    putUserColour(event.target, byAccount: true);
+                    putColour = true;
                     sink.put(event.target.account);
                     sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     sink.put(')');
@@ -1192,12 +1218,22 @@ void formatMessageColoured(Sink)
             // No need to check isServer; target is never server
             sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
             sink.put(" -> ");
-            colourUserTruecolour(event.target);
+            putUserColour(event.target);
+            putColour = true;
         }
 
         if (!putDisplayName)
         {
-            sink.put(event.target.nickname);
+            if (!event.sender.isServer &&
+                (event.target.nickname == plugin.state.client.nickname))
+            {
+                putInverted(event.target.nickname);
+            }
+            else
+            {
+                putUserColour(event.target);
+                sink.put(event.target.nickname);
+            }
 
             if (plugin.printerSettings.classNames)
             {
@@ -1218,7 +1254,7 @@ void formatMessageColoured(Sink)
                 }
 
                 sink.put(" (");
-                colourUserTruecolour(event.target, byAccount: true);
+                putUserColour(event.target, byAccount: true);
                 sink.put(event.target.account);
                 sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 sink.put(')');
