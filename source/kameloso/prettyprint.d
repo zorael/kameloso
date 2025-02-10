@@ -603,7 +603,7 @@ private void prettyformatArrayMemberImpl(Flag!"coloured" coloured, Sink)
 
         if (args.truncated)
         {
-            immutable rtPattern = "%s%*s %s%-*s %s[%-(" ~
+            immutable rtPattern = "%s%*s %s%-*s  %s[%-(" ~
                 elemQuote ~ "%s" ~ elemQuote ~ ", %)" ~ elemQuote ~ "]%s ... (%d)\n";
 
             sink.formattedWrite(
@@ -621,7 +621,7 @@ private void prettyformatArrayMemberImpl(Flag!"coloured" coloured, Sink)
         }
         else
         {
-            immutable rtPattern = "%s%*s %s%-*s %s%s[%-(" ~
+            immutable rtPattern = "%s%*s %s%-*s  %s[%-(" ~
                 elemQuote ~ "%s" ~ elemQuote ~ ", %)" ~ elemQuote ~ "]%s(%d)\n";
 
             sink.formattedWrite(
@@ -632,7 +632,6 @@ private void prettyformatArrayMemberImpl(Flag!"coloured" coloured, Sink)
                 memberCode.asANSI,
                 args.namewidth,
                 args.memberstring,
-                (args.value.length ? string.init : " "),
                 valueCode.asANSI,
                 args.value,
                 lengthCode.asANSI,
@@ -643,7 +642,7 @@ private void prettyformatArrayMemberImpl(Flag!"coloured" coloured, Sink)
     {
         if (args.truncated)
         {
-            immutable rtPattern = "%*s %-*s [%-(" ~
+            immutable rtPattern = "%*s %-*s  [%-(" ~
                 elemQuote ~ "%s" ~ elemQuote ~ ", %)" ~ elemQuote ~ "] ... (%d)\n";
 
             sink.formattedWrite(
@@ -657,7 +656,7 @@ private void prettyformatArrayMemberImpl(Flag!"coloured" coloured, Sink)
         }
         else
         {
-            immutable rtPattern = "%*s %-*s %s[%-(" ~
+            immutable rtPattern = "%*s %-*s  [%-(" ~
                 elemQuote ~ "%s" ~ elemQuote ~ ", %)" ~ elemQuote ~ "](%d)\n";
 
             sink.formattedWrite(
@@ -666,7 +665,6 @@ private void prettyformatArrayMemberImpl(Flag!"coloured" coloured, Sink)
                 args.typestring,
                 args.namewidth,
                 args.memberstring,
-                (args.value.length ? string.init : " "),
                 args.value,
                 args.length);
         }
@@ -739,7 +737,7 @@ private void prettyformatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Si
         }
         else
         {
-            immutable rtPattern = "%s%*s %s%-*s %s%s[%-(" ~
+            immutable rtPattern = "%s%*s %s%-*s  %s[%-(" ~
                 keyQuote ~ "%s" ~ keyQuote ~ ":" ~
                 valueQuote ~ "%s" ~ valueQuote ~ ", %)" ~ valueQuote ~ "]%s(%d)\n";
 
@@ -751,7 +749,6 @@ private void prettyformatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Si
                 memberCode.asANSI,
                 args.namewidth,
                 args.memberstring,
-                (content.length ? string.init : " "),
                 valueCode.asANSI,
                 content,
                 lengthCode.asANSI,
@@ -762,7 +759,7 @@ private void prettyformatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Si
     {
         if (args.truncated)
         {
-            immutable rtPattern = "%*s %-*s [%-(" ~
+            immutable rtPattern = "%*s %-*s  [%-(" ~
                 keyQuote ~ "%s" ~ keyQuote  ~ ":" ~
                 valueQuote ~ "%s" ~ valueQuote ~ ", %)" ~ valueQuote ~ "] ... (%d)\n";
 
@@ -777,7 +774,7 @@ private void prettyformatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Si
         }
         else
         {
-            immutable rtPattern = "%*s %-*s %s[%-(" ~
+            immutable rtPattern = "%*s %-*s  [%-(" ~
                 keyQuote ~ "%s" ~ keyQuote  ~ ":" ~
                 valueQuote ~ "%s" ~ valueQuote ~ ", %)" ~ valueQuote ~ "](%d)\n";
 
@@ -787,7 +784,6 @@ private void prettyformatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Si
                 args.typestring,
                 args.namewidth,
                 args.memberstring,
-                (content.length ? string.init : " "),
                 content,
                 args.length);
         }
@@ -1316,11 +1312,11 @@ private void prettyformatImpl(
          bool b                           true
         float f                           3.14
        double d                           99.9
-       char[] c                          ['a', 'b', 'c'](3)
+       char[] c                           ['a', 'b', 'c'](3)
        char[] emptyC                      [](0)
-     string[] dynA                       ["foo", "bar", "baz"](3)
-        int[] iA                         [1, 2, 3, 4](4)
-   char[char] cC                         ['k':'v', 'K':'V'](2)
+     string[] dynA                        ["foo", "bar", "baz"](3)
+        int[] iA                          [1, 2, 3, 4](4)
+   char[char] cC                          ['k':'v', 'K':'V'](2)
 `;
 
         sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, s);
@@ -1362,14 +1358,14 @@ private void prettyformatImpl(
            bool b                           true
           float f                           3.14
          double d                           99.9
-         char[] c                          ['a', 'b', 'c'](3)
+         char[] c                           ['a', 'b', 'c'](3)
          char[] emptyC                      [](0)
-       string[] dynA                       ["foo", "bar", "baz"](3)
-          int[] iA                         [1, 2, 3, 4](4)
-          int[] iA2                        [5, 6, 7, 8, 9] ... (11)
+       string[] dynA                        ["foo", "bar", "baz"](3)
+          int[] iA                          [1, 2, 3, 4](4)
+          int[] iA2                         [5, 6, 7, 8, 9] ... (11)
      char[char] cC                          [](0)
-      bool[int] aa                         [6:false, 4:false, 1:true, 3:true, 5:true] ... (6)
- string[string] aa2                        ["foo":"bar", "harbl":"snarbl"](2)
+      bool[int] aa                          [6:false, 4:false, 1:true, 3:true, 5:true] ... (6)
+ string[string] aa2                         ["foo":"bar", "harbl":"snarbl"](2)
 `;
 
         sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c1);
@@ -1619,7 +1615,7 @@ unittest
        string s                          "arb"(3)
           int i                           2
        string someLongConfiguration      "acdc adcadcad acacdadc"(22)
-        int[] arrMatey                   [1, 2, 3, 42](4)
+        int[] arrMatey                    [1, 2, 3, 42](4)
        Nested nest                       <class> (null)
 `;
 
@@ -1632,7 +1628,7 @@ unittest
        string s                          "arb"(3)
           int i                           2
        string someLongConfiguration      "acdc adcadcad acacdadc"(22)
-        int[] arrMatey                   [1, 2, 3, 42](4)
+        int[] arrMatey                    [1, 2, 3, 42](4)
        Nested nest                       <class>
 `;
 
