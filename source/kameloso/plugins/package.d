@@ -1432,6 +1432,16 @@ mixin template IRCPluginImpl(
         this.state.nextScheduledTimestamp = long.max;
         this.state.updates = IRCPluginState.Update.nothing;
 
+        /+
+            Guesstimates. There will never be many deferred actions, but on
+            Twitch there will be a *lot* of putUser messages. Outgoing and
+            priority are harder to predict, but 16 "should be enough for everyone".
+         +/
+        this.state.deferredActions.reserve(2);
+        this.state.messages.reserve(32);
+        this.state.priorityMessages.reserve(16);
+        this.state.outgoingMessages.reserve(16);
+
         foreach (immutable i, ref _; this.tupleof)
         {
             static if (isSerialisable!(this.tupleof[i]))
