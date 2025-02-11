@@ -3637,8 +3637,11 @@ void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream s
             [dialect.defs.IRCUser.Class.operator|operator].
         promoteVIPs = Whether to promote VIPs to
             [dialect.defs.IRCUser.Class.elevated|elevated].
+
+    Returns:
+        `true` if changes were made; `false` if not.
  +/
-void promoteUserFromBadges(
+auto promoteUserFromBadges(
     ref IRCUser.Class class_,
     const string badges,
     //const bool promoteBroadcasters,
@@ -3649,7 +3652,9 @@ void promoteUserFromBadges(
     import std.algorithm.comparison : among;
     import std.algorithm.iteration : splitter;
 
-    if (class_ >= IRCUser.Class.operator) return;  // already as high as we go
+    if (class_ >= IRCUser.Class.operator) return false;  // already as high as we go
+
+    bool retval;
 
     foreach (immutable badge; badges.splitter(','))
     {
@@ -3663,27 +3668,30 @@ void promoteUserFromBadges(
 
         immutable badgePart = badge[0..slashPos];
 
+        with (IRCUser.Class)
         switch (badgePart)
         {
         case "subscriber":
-            if (class_ < IRCUser.Class.registered)
+            if (class_ < registered)
             {
-                class_ = IRCUser.Class.registered;
+                class_ = registered;
+                retval = true;
             }
             break;  // Check next badge
 
         case "vip":
-            if (promoteVIPs && (class_ < IRCUser.Class.elevated))
+            if (promoteVIPs && (class_ < elevated))
             {
-                class_ = IRCUser.Class.elevated;
+                class_ = elevated;
+                retval = true;
             }
             break;  // as above
 
         case "moderator":
-            if (promoteModerators && (class_ < IRCUser.Class.operator))
+            if (promoteModerators && (class_ < operator))
             {
-                class_ = IRCUser.Class.operator;
-                return;  // We don't go any higher than moderator until we uncomment the below
+                class_ = operator;
+                return true;  // We don't go any higher than moderator until we uncomment the below
             }
             break;  // as above
 
@@ -3691,9 +3699,10 @@ void promoteUserFromBadges(
             // This is already done by comparing the user's name to the channel
             // name in the calling function.
 
-            if (promoteBroadcasters && (class_ < IRCUser.Class.staff))
+            if (promoteBroadcasters && (class_ < staff))
             {
-                class_ = IRCUser.Class.staff;
+                class_ = staff;
+                return true;
             }
             return;  // No need to check more badges
          +/
@@ -3703,6 +3712,8 @@ void promoteUserFromBadges(
             break;
         }
     }
+
+    return retval;
 }
 
 ///
@@ -3713,77 +3724,88 @@ unittest
     {
         enum badges = "subscriber/12,sub-gift-leader/1";
         auto class_ = IRCUser.Class.anyone;
-        promoteUserFromBadges(class_, badges, false, false);
+        immutable changed = promoteUserFromBadges(class_, badges, false, false);
+        assert(changed);
         enum expected = IRCUser.Class.registered;
         assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "premium/1";
         auto class_ = IRCUser.Class.anyone;
-        promoteUserFromBadges(class_, badges, false, false);
+        immutable changed = promoteUserFromBadges(class_, badges, false, false);
+        assert(!changed);
         enum expected = IRCUser.Class.anyone;
         assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "subscriber/12,vip/1";
         auto class_ = IRCUser.Class.anyone;
-        promoteUserFromBadges(class_, badges, false, false);
+        immutable changed = promoteUserFromBadges(class_, badges, false, false);
+        assert(changed);
         enum expected = IRCUser.Class.registered;  // because promoteVIPs false
         assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "subscriber/12,vip/1";
         auto class_ = IRCUser.Class.anyone;
-        promoteUserFromBadges(class_, badges, true, true);
+        immutable changed = promoteUserFromBadges(class_, badges, true, true);
+        assert(changed);
         enum expected = IRCUser.Class.elevated;
         assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "moderator/1,subscriber/3012";
         auto class_ = IRCUser.Class.anyone;
-        promoteUserFromBadges(class_, badges, true, true);
+        immutable changed = promoteUserFromBadges(class_, badges, true, true);
+        assert(changed);
         enum expected = IRCUser.Class.operator;
         assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "moderator/1,subscriber/3012";
         auto class_ = IRCUser.Class.anyone;
-        promoteUserFromBadges(class_, badges, false, true);
+        immutable changed = promoteUserFromBadges(class_, badges, false, true);
+        assert(changed);
         enum expected = IRCUser.Class.registered;
         assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "broadcaster/1,subscriber/12,partner/1";
         auto class_ = IRCUser.Class.anyone;
-        promoteUserFromBadges(class_, badges, false, true);
+        immutable changed = promoteUserFromBadges(class_, badges, false, true);
+        assert(changed);
         enum expected = IRCUser.Class.registered;  // not staff because broadcasters are identified elsewhere
         assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "moderator/1";  // no comma splitter test
         auto class_ = IRCUser.Class.anyone;
-        promoteUserFromBadges(class_, badges, true, true);
+        immutable changed = promoteUserFromBadges(class_, badges, true, true);
+        assert(changed);
         enum expected = IRCUser.Class.operator;
         assert((class_ == expected), class_.toString());
     }
     {
         enum badges = "subscriber/1";
         auto class_ = IRCUser.Class.operator;
-        promoteUserFromBadges(class_, badges, true, true);
+        immutable changed = promoteUserFromBadges(class_, badges, true, true);
+        assert(!changed);
         enum expected = IRCUser.Class.operator;
         assert((class_ == expected), class_.toString());
     }
     {
         enum badges = string.init;
         auto class_ = IRCUser.Class.staff;
-        promoteUserFromBadges(class_, badges, true, true);
+        immutable changed = promoteUserFromBadges(class_, badges, true, true);
+        assert(!changed);
         enum expected = IRCUser.Class.staff;
         assert((class_ == expected), class_.toString());
     }
     {
         enum badges = string.init;
         auto class_ = IRCUser.Class.anyone;
-        promoteUserFromBadges(class_, badges, false, false);
+        immutable changed = promoteUserFromBadges(class_, badges, false, false);
+        assert(!changed);
         enum expected = IRCUser.Class.anyone;
         assert((class_ == expected), class_.toString());
     }
