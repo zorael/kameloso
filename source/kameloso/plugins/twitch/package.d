@@ -3977,6 +3977,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
     import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
+    import std.typecons : Ternary;
 
     if (plugin.twitchSettings.mapWhispersToChannel &&
         event.type.among!(IRCEvent.Type.QUERY, IRCEvent.Type.SELFQUERY))
@@ -3996,8 +3997,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
         return false;
     }
 
-    bool isHomeChannel;
-    bool determinedWhetherHomeChannel;
+    Ternary isHomeChannel;
 
     /+
         Embed custom emotes.
@@ -4040,8 +4040,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             {
                 // Only embed if the event is in a home channel
                 isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel.name);
-                determinedWhetherHomeChannel = true;
-                shouldEmbedCustomEmotes = isHomeChannel;
+                shouldEmbedCustomEmotes = (isHomeChannel == Ternary.yes);
             }
 
             if (shouldEmbedCustomEmotes)
@@ -4225,14 +4224,12 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
         return false;
     }
 
-    if (!plugin.twitchSettings.promoteEverywhere && !determinedWhetherHomeChannel)
+    if (!plugin.twitchSettings.promoteEverywhere && (isHomeChannel == Ternary.unknown)))
     {
         isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel.name);
-        determinedWhetherHomeChannel = true;
     }
 
-    if (plugin.twitchSettings.promoteEverywhere ||
-        (determinedWhetherHomeChannel && isHomeChannel))
+    if (plugin.twitchSettings.promoteEverywhere || (isHomeChannel == Ternary.yes))
     {
         /+
             Badges may change on some events, and the promotion hysteresis in
