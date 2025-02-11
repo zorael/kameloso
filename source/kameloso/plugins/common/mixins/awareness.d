@@ -187,7 +187,7 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const IRCEvent e
     {
         import kameloso.constants : Timeout;
 
-        if ((event.time - replay.timestamp) >= Timeout.whoisDiscard)
+        if ((event.time - replay.timestamp) >= Timeout.Integers.whoisDiscardSeconds)
         {
             // Stale entry
         }

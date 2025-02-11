@@ -381,7 +381,6 @@ auto sendHTTPRequestImpl(
     import kameloso.constants : KamelosoInfo, Timeout;
     import requests.base : Response;
     import requests.request : Request;
-    import core.time : seconds;
 
     static string[string] headers;
 
@@ -396,7 +395,7 @@ auto sendHTTPRequestImpl(
     auto req = Request();
     //req.verbosity = 1;
     req.keepAlive = false;
-    req.timeout = Timeout.httpGET.seconds;
+    req.timeout = Timeout.httpGET;
     req.addHeaders(headers);
     if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
 
@@ -501,9 +500,9 @@ in (url.length, "Tried to send an HTTP request without a URL")
 auto waitForLookupResults(BashPlugin plugin, const int id)
 in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber")
 {
-    import std.datetime.systime : Clock;
+    import core.time : MonoTime;
 
-    immutable startTimeInUnix = Clock.currTime.toUnixTime();
+    immutable start = MonoTime.currTime;
     enum timeoutMultiplier = 2;
 
     while (true)
@@ -526,9 +525,9 @@ in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber"
             import kameloso.constants : Timeout;
             import core.time : msecs;
 
-            immutable nowInUnix = Clock.currTime.toUnixTime();
+            immutable now = MonoTime.currTime;
 
-            if ((nowInUnix - startTimeInUnix) >= (Timeout.httpGET * timeoutMultiplier))
+            if ((now - start) >= (Timeout.httpGET * timeoutMultiplier))
             {
                 plugin.lookupBucket.remove(id);
                 return result;

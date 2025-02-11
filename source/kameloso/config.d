@@ -1018,7 +1018,7 @@ auto handleGetopt(Kameloso instance) @system
     if (instance.connSettings.receiveTimeout == 0)
     {
         import kameloso.constants : Timeout;
-        instance.connSettings.receiveTimeout = Timeout.receiveMsecs;
+        instance.connSettings.receiveTimeout = Timeout.Integers.receiveMsecs;
     }
 
     // Reinitialise the logger with new settings

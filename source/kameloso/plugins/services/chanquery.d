@@ -230,7 +230,9 @@ void startChannelQueries(ChanQueryService service)
             if (nickname == service.state.client.nickname) continue;
 
             const user = nickname in service.state.users;
-            if (!user || !user.account.length || ((nowInUnix - user.updated) > Timeout.whoisRetry))
+            if (!user ||
+                !user.account.length ||
+                ((nowInUnix - user.updated) > Timeout.Integers.whoisRetrySeconds))
             {
                 // No user, or no account and sufficient amount of time passed since last WHOIS
                 uniqueUsers[nickname] = true;

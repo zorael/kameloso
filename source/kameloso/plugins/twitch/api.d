@@ -710,7 +710,7 @@ auto sendHTTPRequestImpl(
     auto req = Request();
     //req.verbosity = 1;
     req.keepAlive = true;
-    req.timeout = Timeout.httpGET.seconds;
+    req.timeout = Timeout.httpGET;
     req.addHeaders(headers);
     if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
 
@@ -1364,7 +1364,7 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
 
             immutable nowInUnix = Clock.currTime.toUnixTime();
 
-            if ((nowInUnix - startTimeInUnix) >= Timeout.httpGET)
+            if ((nowInUnix - startTimeInUnix) >= Timeout.Integers.httpGETSeconds)
             {
                 plugin.responseBucket.remove(id);
                 return QueryResponse.init;

@@ -238,7 +238,7 @@ public:
         /++
             Socket receive timeout in milliseconds (how often to check for other messages).
          +/
-        uint receiveTimeout = Timeout.receiveMsecs;
+        uint receiveTimeout = Timeout.Integers.receiveMsecs;
 
         // messageRate
         /++

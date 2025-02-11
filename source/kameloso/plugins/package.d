@@ -2455,7 +2455,7 @@ auto filterSender(bool verbose = false)
 
     // In hostmasks mode there's zero point to WHOIS a sender, as the instigating
     // event will have the hostmask embedded in it, always.
-    immutable whoisExpired = !preferHostmasks && (timediff > Timeout.whoisRetry);
+    immutable whoisExpired = !preferHostmasks && (timediff > Timeout.Integers.whoisRetrySeconds);
 
     static if (verbose)
     {
@@ -3305,7 +3305,8 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 
     immutable timeSinceUpdate = (event.time - user.updated);
 
-    if ((timeSinceUpdate < Timeout.whoisRetry) && (timeSinceUpdate > Timeout.whoisGracePeriod))
+    if ((timeSinceUpdate < Timeout.Integers.whoisRetrySeconds) &&
+        (timeSinceUpdate > Timeout.Integers.whoisGracePeriodSeconds))
     {
         version(ExplainReplay)
         {

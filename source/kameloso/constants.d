@@ -15,7 +15,6 @@ private:
 
 import kameloso.semver : KamelosoSemVer, KamelosoSemVerPrerelease;
 
-
 version(DigitalMars)
 {
     /++
@@ -277,7 +276,190 @@ enum ConnectionDefaultIntegers
     /++
         How many times to attempt to connect to an IP before moving on to the next one.
      +/
-    retries = 4,
+    connectionRetries = 4,
+}
+
+
+// Timeout
+/++
+    Various timeout values used throughout the program.
+ +/
+struct Timeout
+{
+private:
+    import core.time : hnsecs, msecs, seconds;
+
+    alias CDF = ConnectionDefaultFloats;
+
+public:
+    // ConnectionDefaultIntegers
+    /++
+        Connection defaults, integers version.
+     +/
+    enum Integers
+    {
+        /++
+            The receive attempt timeout as set as a [std.socket.SocketOption|SocketOption].
+         +/
+        receiveMsecs = 1000,
+
+        /++
+            The receive attempt timeout when it's shortened to provide better
+            responsiveness, in milliseconds.
+         +/
+        receiveShortenedMsecs = cast(int)(receiveMsecs * CDF.receiveShorteningMultiplier),
+
+        /++
+            The amount of time to spend with a shortened receive timeout.
+            After this, it reverts to [Timeout.receiveMsecs].
+         +/
+        maxShortenDurationHnsecs = 2_000 * 10_000,
+
+        /++
+            The send attempt timeout as set as a [std.socket.SocketOption|SocketOption].
+         +/
+        sendMsecs = 15_000,
+
+        /++
+            How long to wait before allowing to re-issue a WHOIS query for a user.
+
+            This is merely to stop us from spamming queries for the same person
+            without hysteresis.
+         +/
+        whoisRetrySeconds = 30,
+
+        /++
+            The length of the window in which replays may be queued before the timer
+            towards [Timeout.whoisRetry] kicks in.
+         +/
+        whoisGracePeriodSeconds = 3,
+
+        /++
+            How long a replayable event is expected to be relevant. Before this
+            it will be replayed, after this it will be discarded.
+
+            Note: WHOIS-replays will break if the ping toward the server reaches this value.
+         +/
+        whoisDiscardSeconds = 10,
+
+        /++
+            The amount of seconds to wait before retrying after a failed
+            connection attempt.
+         +/
+        connectionRetrySeconds = 5,
+
+        /++
+            The maximum amount of time to wait between connection attempts.
+         +/
+        connectionDelayCapSeconds = 300,
+
+        /++
+            How long to keep trying to read from the sever when not receiving
+            anything at all before the connection is considered lost.
+         +/
+        connectionLostSeconds = 600,
+
+        /++
+            How long to wait before retrying a connection attempt after a network
+            down error.
+         +/
+        networkDownDelayCapSeconds = 600,
+
+        /++
+            Timeout for HTTP GET requests.
+         +/
+        httpGETSeconds = 10,
+
+        /++
+            How long to wait after encountering an error when reading from the
+            server, before trying anew.
+
+            Not having a small delay could cause it to spam the screen with errors
+            as fast as it can.
+         +/
+        readErrorGracePeriodMsecs = 100,
+
+        /++
+            The amount of seconds to wait before retrying to connect after an
+            instant failure to register on Twitch.
+         +/
+        twitchRegistrationFailConnectionRetryMsecs = 500,
+    }
+
+    /++
+        The receive attempt timeout as set as a [std.socket.SocketOption|SocketOption].
+     +/
+    static immutable receive = Integers.receiveMsecs.msecs;
+
+    /++
+        The send attempt timeout as set as a [std.socket.SocketOption|SocketOption].
+     +/
+    static immutable send = Integers.sendMsecs.msecs;
+
+    /++
+        The amount of time to spend with a shortened receive timeout.
+        After this, it reverts to [Timeout.receiveMsecs].
+     +/
+    static immutable maxShortenDuration = Integers.maxShortenDurationHnsecs.hnsecs;
+
+    /++
+        The maximum amount of time to wait between connection attempts.
+     +/
+    static immutable connectionDelayCap = Integers.connectionDelayCapSeconds.seconds;
+
+    /++
+        The amount of seconds to wait before retrying after a failed connection attempt.
+     +/
+    static immutable connectionRetry = Integers.connectionRetrySeconds.seconds;
+
+    /++
+        The amount of seconds to wait before retrying to connect after an instant
+        failure to register on Twitch.
+     +/
+    static immutable twitchRegistrationFailConnectionRetry =
+        Integers.twitchRegistrationFailConnectionRetryMsecs.msecs;
+
+    /++
+        How long to wait before allowing to re-issue a WHOIS query for a user.
+
+        This is merely to stop us from spamming queries for the same person
+        without hysteresis.
+     +/
+    static immutable whoisRetry = Integers.whoisRetrySeconds.seconds;
+
+    /++
+        How long a replayable event is expected to be relevant. Before this it
+        will be replayed, after this it will be discarded.
+
+        Note: WHOIS-replays will break if the ping toward the server reaches this value.
+     +/
+    static immutable whoisDiscard = Integers.whoisDiscardSeconds.seconds;
+
+    /++
+        The length of the window in which replays may be queued before the timer
+        towards [Timeout.whoisRetry] kicks in.
+     +/
+    static immutable whoisGracePeriod = Integers.whoisGracePeriodSeconds.seconds;
+
+    /++
+        How long to wait after encountering an error when reading from the server,
+        before trying anew.
+
+        Not having a small delay could cause it to spam the screen with errors
+        as fast as it can.
+     +/
+    static immutable readErrorGracePeriod = Integers.readErrorGracePeriodMsecs.msecs;
+
+    /++
+        How long to keep trying to read from the sever when not receiving anything
+        at all before the connection is considered lost.
+     +/
+    static immutable connectionLost = Integers.connectionLostSeconds.seconds;
+
+    /++
+        Timeout for HTTP GET requests.
+     +/
+    static immutable httpGET = Integers.httpGETSeconds.seconds;
 }
 
 
@@ -388,95 +570,6 @@ enum BufferSize
         overflow (which they seem to have a knack for doing).
      +/
     fiberStack = 32_768,
-}
-
-
-// Timeout
-/++
-    Various timeouts, in seconds unless specified otherwise.
- +/
-enum Timeout
-{
-    /++
-        The send attempt timeout as set as a [std.socket.SocketOption|SocketOption],
-        in milliseconds.
-     +/
-    sendMsecs = 15_000,
-
-    /++
-        The receive attempt timeout as set as a [std.socket.SocketOption|SocketOption],
-        in milliseconds.
-     +/
-    receiveMsecs = 1000,
-
-    /++
-        The amount of time to spend with a shortened receive timeout, in milliseconds.
-        After this, it reverts to [Timeout.receiveMsecs].
-     +/
-    maxShortenDurationMsecs = 2000,
-
-    /++
-        The maximum amount of time to wait between connection attempts.
-     +/
-    connectionDelayCap = 300,
-
-    /++
-        The amount of seconds to wait before retrying after a failed connection attempt.
-     +/
-    connectionRetry = 5,
-
-    /++
-        The amount of seconds to wait before retrying to connect after an instant
-        failure to register on Twitch.
-     +/
-    twitchRegistrationFailConnectionRetryMsecs = 500,
-
-    /++
-        How long to wait before allowing to re-issue a WHOIS query for a user.
-
-        This is merely to stop us from spamming queries for the same person
-        without hysteresis.
-     +/
-    whoisRetry = 30,
-
-    /++
-        How long a replayable event is expected to be relevant. Before this it
-        will be replayed, after this it will be discarded.
-
-        Note: WHOIS-replays will break if the ping toward the server reaches this value.
-     +/
-    whoisDiscard = 10,
-
-    /++
-        The length of the window in which replays may be queued before the timer
-        towards [Timeout.whoisRetry] kicks in.
-     +/
-    whoisGracePeriod = 3,
-
-    /++
-        How long to wait after encountering an error when reading from the server,
-        before trying anew.
-
-        Not having a small delay could cause it to spam the screen with errors
-        as fast as it can.
-     +/
-    readErrorGracePeriodMsecs = 100,
-
-    /++
-        How long to keep trying to read from the sever when not receiving anything
-        at all before the connection is considered lost.
-     +/
-    connectionLost = 600,
-
-    /++
-        Timeout for HTTP GET requests.
-     +/
-    httpGET = 10,
-
-    /++
-        Timeout for message processing (in between socket reads).
-     +/
-    messageReadMsecs = 1500,
 }
 
 

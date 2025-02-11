@@ -235,7 +235,6 @@ void signalHandler(int sig) nothrow @nogc @system
 auto processMessages(Kameloso instance, const SysTime now)
 {
     import kameloso.common : OutgoingLine;
-    import kameloso.constants : Timeout;
     import kameloso.messaging : Message;
     import kameloso.tables : trueThenFalse;
     import kameloso.thread : ThreadMessage;
@@ -604,7 +603,7 @@ auto processMessages(Kameloso instance, const SysTime now)
 
             immutable nowInUnix = now.toUnixTime();
             immutable then = m.event.target.updated;
-            immutable hysteresis = force ? 1 : Timeout.whoisRetry;
+            immutable hysteresis = force ? 1 : Timeout.Integers.whoisRetrySeconds;
 
             version(TraceWhois)
             {
@@ -977,9 +976,6 @@ auto mainLoop(Kameloso instance)
     /// UNIX timestamp of when the Socket receive timeout was shortened.
     long timeWhenReceiveWasShortened;
 
-    /// `Timeout.maxShortenDurationMsecs` in hecto-nanoseconds.
-    enum maxShortenDurationHnsecs = Timeout.maxShortenDurationMsecs * 10_000;
-
     /++
         The timestamp of when the previous loop started.
         Start at `SysTime.init` so the first tick always runs.
@@ -1170,7 +1166,7 @@ auto mainLoop(Kameloso instance)
         }
 
         if (timeWhenReceiveWasShortened &&
-            (nowInHnsecs > (timeWhenReceiveWasShortened + maxShortenDurationHnsecs)))
+            (nowInHnsecs > (timeWhenReceiveWasShortened + Timeout.Integers.maxShortenDurationHnsecs)))
         {
             // Shortened duration passed, reset timestamp to disable it
             timeWhenReceiveWasShortened = 0L;
@@ -1187,11 +1183,10 @@ auto mainLoop(Kameloso instance)
             nextGlobalScheduledTimestamp ||
             timeWhenReceiveWasShortened)
         {
-            import kameloso.constants : ConnectionDefaultFloats;
             import std.algorithm.comparison : min;
 
             immutable defaultTimeout = timeWhenReceiveWasShortened ?
-                cast(uint)(Timeout.receiveMsecs * ConnectionDefaultFloats.receiveShorteningMultiplier) :
+                Timeout.Integers.receiveShortenedMsecs :
                 instance.connSettings.receiveTimeout;
 
             immutable untilNextGlobalScheduled = nextGlobalScheduledTimestamp ?
@@ -1343,8 +1338,7 @@ auto listenAttemptToNext(Kameloso instance, const ListenAttempt attempt)
         }
 
         // Sleep briefly so it won't flood the screen on chains of errors
-        static immutable readErrorGracePeriod = Timeout.readErrorGracePeriodMsecs.msecs;
-        interruptibleSleep(readErrorGracePeriod, instance.abort);
+        interruptibleSleep(Timeout.readErrorGracePeriod, instance.abort);
         return Next.retry;
 
     case timeout:
@@ -2248,7 +2242,7 @@ void processPendingReplays(Kameloso instance, IRCPlugin plugin)
     import std.datetime.systime : Clock;
 
     // Walk through replays and call WHOIS on those that haven't been
-    // WHOISed in the last Timeout.whoisRetry seconds
+    // WHOISed in the last Timeout.Integers.whoisRetrySeconds seconds
 
     immutable nowInUnix = Clock.currTime.toUnixTime();
 
@@ -2284,7 +2278,7 @@ void processPendingReplays(Kameloso instance, IRCPlugin plugin)
 
         immutable lastWhois = instance.whoisHistory.get(nickname, 0L);
 
-        if ((nowInUnix - lastWhois) > Timeout.whoisRetry)
+        if ((nowInUnix - lastWhois) > Timeout.Integers.whoisRetrySeconds)
         {
             version(TraceWhois)
             {
@@ -2772,10 +2766,7 @@ auto tryGetopt(Kameloso instance)
  +/
 auto tryConnect(Kameloso instance)
 {
-    import kameloso.constants :
-        ConnectionDefaultFloats,
-        ConnectionDefaultIntegers,
-        Timeout;
+    import kameloso.constants : ConnectionDefaultIntegers, Timeout;
     import kameloso.net : ConnectionAttempt, connectFiber;
     import kameloso.thread : interruptibleSleep;
     import lu.misc : Next;
@@ -2784,7 +2775,7 @@ auto tryConnect(Kameloso instance)
     auto connector = new Generator!ConnectionAttempt(() =>
         connectFiber(
             instance.conn,
-            ConnectionDefaultIntegers.retries,
+            connectionRetries: ConnectionDefaultIntegers.connectionRetries,
             instance.abort));
 
     scope(exit)
@@ -2793,7 +2784,7 @@ auto tryConnect(Kameloso instance)
         connector = null;
     }
 
-    uint incrementedRetryDelay = Timeout.connectionRetry;
+    uint incrementedRetryDelay = Timeout.Integers.connectionRetrySeconds;
     enum transientSSLFailureTolerance = 10;
     uint numTransientSSLFailures;
 
@@ -2805,7 +2796,7 @@ auto tryConnect(Kameloso instance)
         connector.call();
         if (*instance.abort) return Next.returnFailure;
         const attempt = connector.front;
-        immutable isLastRetry = (attempt.retryNum+1 == ConnectionDefaultIntegers.retries);
+        immutable isLastRetry = (attempt.retryNum+1 == ConnectionDefaultIntegers.connectionRetries);
 
         auto errorString()
         {
@@ -2819,23 +2810,27 @@ auto tryConnect(Kameloso instance)
 
         void verboselyDelay()
         {
+            import kameloso.constants : ConnectionDefaultFloats;
             import std.algorithm.comparison : min;
 
             enum pattern = "Retrying in <i>%d</> seconds...";
             logger.logf(pattern, incrementedRetryDelay);
             interruptibleSleep(incrementedRetryDelay.seconds, instance.abort);
 
-            incrementedRetryDelay = cast(uint)(incrementedRetryDelay *
+            incrementedRetryDelay = cast(uint)
+                (incrementedRetryDelay *
                 ConnectionDefaultFloats.delayIncrementMultiplier);
-            incrementedRetryDelay = min(incrementedRetryDelay, Timeout.connectionDelayCap);
+            incrementedRetryDelay = min(
+                incrementedRetryDelay,
+                Timeout.Integers.connectionDelayCapSeconds);
         }
 
         void verboselyDelayToNextIP()
         {
             enum pattern = "Failed to connect to IP. Trying next IP in <i>%d</> seconds.";
-            logger.logf(pattern, cast(uint)Timeout.connectionRetry);
-            incrementedRetryDelay = Timeout.connectionRetry;
-            interruptibleSleep(Timeout.connectionRetry.seconds, instance.abort);
+            logger.logf(pattern, cast(uint)Timeout.Integers.connectionRetrySeconds);
+            incrementedRetryDelay = Timeout.Integers.connectionRetrySeconds;
+            interruptibleSleep(Timeout.connectionRetry, instance.abort);
         }
 
         with (ConnectionAttempt.ConnectState)
@@ -3097,7 +3092,7 @@ auto tryResolve(Kameloso instance, const bool firstConnect)
         resolver = null;
     }
 
-    uint incrementedRetryDelay = Timeout.connectionRetry;
+    uint incrementedRetryDelay = Timeout.Integers.connectionRetrySeconds;
     enum incrementMultiplier = 1.2;
 
     void delayOnNetworkDown()
@@ -3442,6 +3437,7 @@ auto startBot(Kameloso instance)
     import dialect.parsing : IRCParser;
     import lu.misc : Next;
     import std.algorithm.comparison : among;
+    import core.time : Duration;
 
     // Save a backup snapshot of the client, for restoring upon reconnections
     IRCClient backupClient = instance.parser.client;
@@ -3565,7 +3561,7 @@ auto startBot(Kameloso instance)
                 instance.fastbuffer.clear();
             }
 
-            auto gracePeriodBeforeReconnect = Timeout.connectionRetry.seconds;  // mutable
+            Duration gracePeriodBeforeReconnect = Timeout.connectionRetry;  // mutable
 
             version(TwitchSupport)
             {
@@ -3578,7 +3574,7 @@ auto startBot(Kameloso instance)
                         to RPL_WELCOME, or we're reconnecting.
                         Quickly attempt again.
                      +/
-                    gracePeriodBeforeReconnect = Timeout.twitchRegistrationFailConnectionRetryMsecs.msecs;
+                    gracePeriodBeforeReconnect = Timeout.twitchRegistrationFailConnectionRetry;
                 }
             }
 

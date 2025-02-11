@@ -53,13 +53,13 @@
 
     // Connection established
 
-    enum connectionLostSeconds = 600;
+    immutable connectionLost = 600.seconds;
 
     auto listener = new Generator!ListenAttempt(() =>
         listenFiber(
             conn,
             abort,
-            connectionLostSeconds));
+            connectionLost));
 
     listener.call();
 
@@ -86,6 +86,7 @@ version(unittest) version = WindowsPlatform;
 private:
 
 import kameloso.constants : BufferSize, Timeout;
+import core.time : Duration;
 
 public:
 
@@ -309,8 +310,8 @@ public:
      +/
     void setDefaultOptions(Socket socketToSetup)
     {
+        import kameloso.constants : Timeout;
         import std.socket : SocketOption, SocketOptionLevel;
-        import core.time : msecs;
 
         with (socketToSetup)
         with (SocketOption)
@@ -318,11 +319,11 @@ public:
         {
             setOption(SOCKET, RCVBUF, BufferSize.socketOptionReceive);
             setOption(SOCKET, SNDBUF, BufferSize.socketOptionSend);
-            setOption(SOCKET, RCVTIMEO, Timeout.receiveMsecs.msecs);
-            setOption(SOCKET, SNDTIMEO, Timeout.sendMsecs.msecs);
+            setOption(SOCKET, RCVTIMEO, Timeout.receive);
+            setOption(SOCKET, SNDTIMEO, Timeout.send);
 
-            _receiveTimeout = Timeout.receiveMsecs;
-            _sendTimeout = Timeout.sendMsecs;
+            _receiveTimeout = Timeout.Integers.receiveMsecs;
+            _sendTimeout = Timeout.Integers.sendMsecs;
             blocking = true;
         }
     }
@@ -642,13 +643,13 @@ struct ListenAttempt
     ---
     //Connection conn;  // Address previously connected established with
 
-    enum connectionLostSeconds = 600;
+    immutable connectionLost = 600.seconds;
 
     auto listener = new Generator!ListenAttempt(() =>
         listenFiber(
             conn,
             abort,
-            connectionLostSeconds));
+            connectionLost));
 
     foreach (const attempt; listener)
     {
@@ -701,20 +702,21 @@ struct ListenAttempt
 void listenFiber(
     Connection conn,
     const bool* abort,
-    const int connectionLost = Timeout.connectionLost,
+    const Duration connectionLost = Timeout.connectionLost,
     const size_t bufferSize = BufferSize.socketReceive) @system
 in (conn.connected, "Tried to set up a listening fiber on a dead connection")
-in ((connectionLost > 0), "Tried to set up a listening fiber with connection timeout of <= 0")
+in ((connectionLost > Duration.zero), "Tried to set up a listening fiber with connection timeout of <= 0")
 {
     import std.concurrency : yield;
     import std.datetime.systime : Clock;
     import std.socket : Socket, lastSocketError;
     import std.string : indexOf;
+    import core.time : MonoTime, seconds;
 
     if (*abort) return;
 
     auto buffer = new ubyte[bufferSize];
-    long timeLastReceived = Clock.currTime.toUnixTime();
+    auto timeLastReceived = MonoTime.currTime;
     size_t start;
 
     alias State = ListenAttempt.ListenState;
@@ -790,6 +792,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
         }
 
         attempt.errno = errno;
+        immutable timeReceiveAttempt = MonoTime.currTime;
 
         if (!attempt.bytesReceived)
         {
@@ -813,7 +816,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
         if (attempt.bytesReceived == Socket.ERROR)
         {
-            immutable delta = (Clock.currTime.toUnixTime() - timeLastReceived);
+            immutable delta = (timeReceiveAttempt - timeLastReceived);
 
             if (delta > connectionLost)
             {
@@ -903,7 +906,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
             }
         }
 
-        timeLastReceived = Clock.currTime.toUnixTime();
+        timeLastReceived = timeReceiveAttempt;
         consecutiveWarnings = 0;
 
         immutable ptrdiff_t end = cast(ptrdiff_t)(start + attempt.bytesReceived);

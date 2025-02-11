@@ -445,7 +445,8 @@ mixin template WHOISFiberDelegate(
                         import kameloso.constants : Timeout;
                         import std.datetime.systime : Clock;
 
-                        if ((Clock.currTime.toUnixTime() - user.updated) <= Timeout.whoisRetry)
+                        if ((Clock.currTime.toUnixTime() - user.updated) <=
+                            Timeout.Integers.whoisRetrySeconds)
                         {
                             static if (TakesParams!(onFailure, IRCEvent))
                             {
