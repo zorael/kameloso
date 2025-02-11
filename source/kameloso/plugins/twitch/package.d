@@ -4229,15 +4229,18 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 There's no sense in skipping this if promote{Moderators,VIPs} are false
                 since it also always promotes subscribers.
              +/
-            promoteUserFromBadges(
+            immutable changed = promoteUserFromBadges(
                 user.class_,
                 user.badges,
                 //plugin.twitchSettings.promoteBroadcasters,
                 plugin.twitchSettings.promoteModerators,
                 plugin.twitchSettings.promoteVIPs);
 
-            plugin.state.messages ~= ThreadMessage.putUser(event.channel.name, boxed(user));
-            return true;
+            if (changed)
+            {
+                plugin.state.messages ~= ThreadMessage.putUser(event.channel.name, boxed(user));
+                return true;
+            }
         }
 
         return false;
