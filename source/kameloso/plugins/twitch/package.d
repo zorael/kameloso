@@ -4051,7 +4051,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             IRCEvent.Type.SELFEMOTE);
 
         if (isEmotePossibleEventType &&
-            (event.content.length || event.altcontent.length))
+            (event.content.length || (event.target.nickname.length && event.altcontent.length)))
         {
             bool shouldEmbedCustomEmotes;
 
@@ -4076,7 +4076,6 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 const customChannelEmotes = event.channel.name in plugin.customChannelEmotes;
                 const customEmotes = customChannelEmotes ? &customChannelEmotes.emotes : null;
 
-                // event.content is guaranteed to not be empty here
                 embedCustomEmotes(
                     content: event.content,
                     emotes: event.emotes,
@@ -4139,7 +4138,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
             if (const channelFromID = sharedChannelID in plugin.channelNamesByID)
             {
-                if (*channelFromID != event.channel.name)
+                if (channelFromID.length && (*channelFromID != event.channel.name))
                 {
                     // Found channel name in cache; insert into event.subchannel
                     event.subchannel.name = *channelFromID;
@@ -4165,6 +4164,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                     scope(failure)
                     {
                         // getTwitchUser throws if the user ID is invalid
+                        // plus we throw ourselves if the user ID does not have a channel
                         plugin.channelNamesByID.remove(sharedChannelID);
                     }
 
@@ -4172,27 +4172,19 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                         plugin,
                         id: sharedChannelID);
 
-                    if (twitchUser.nickname.length)
+                    if (!twitchUser.nickname.length)
                     {
-                        immutable channelName = '#' ~ twitchUser.nickname;
-                        plugin.channelNamesByID[sharedChannelID] = channelName;
-                        event.subchannel.name = channelName;
-
-                        if (plugin.state.coreSettings.trace)
-                        {
-                            enum pattern = "Resolved channel <l>%s</> from user ID <l>%d</>.";
-                            logger.infof(pattern, channelName, sharedChannelID);
-                        }
+                        // Can this ever happen?
+                        throw new Exception("Failed to resolve channel name from user ID");
                     }
-                    else
+
+                    immutable channelName = '#' ~ twitchUser.nickname;
+                    plugin.channelNamesByID[sharedChannelID] = channelName;
+
+                    if (plugin.state.coreSettings.trace)
                     {
-                        /+
-                            Query failed for some reason yet didn't throw?
-                            This should never really happen.
-                            Reset by removing the placeholder entry in the cache
-                            so we can try again later.
-                         +/
-                        plugin.channelNamesByID.remove(sharedChannelID);
+                        enum pattern = "Resolved channel <l>%s</> from user ID <l>%d</>.";
+                        logger.infof(pattern, channelName, sharedChannelID);
                     }
                 }
 
