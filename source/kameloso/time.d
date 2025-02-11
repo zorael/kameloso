@@ -66,10 +66,7 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
 
     static if (!isOutputRange!(Sink, char[]))
     {
-        import std.format : format;
-
-        enum pattern = "`%s` must be passed an output range of `char[]`";
-        enum message = pattern.format(__FUNCTION__);
+        enum message = "`timeSinceInto` must be passed an output range of `char[]`";
         static assert(0, message);
     }
 
@@ -209,14 +206,12 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
 
             if (abbreviate)
             {
-                //sink.formattedWrite("%dy", years);
                 sink.put('y');
             }
             else
             {
-                /*sink.formattedWrite("%d %s", years,
-                    years.plurality("year", "years"));*/
-                sink.put(years.plurality(" year", " years"));
+                immutable noun = years.plurality(" year", " years");
+                sink.put(noun);
             }
 
             putSomething = true;
@@ -234,7 +229,6 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
                     if (putSomething) sink.put(' ');
                 }
 
-                //sink.formattedWrite("%dm", months);
                 months.toAlphaInto(sink);
                 sink.put('m');
             }
@@ -259,10 +253,9 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
                     }
                 }
 
-                /*sink.formattedWrite("%d %s", months,
-                    months.plurality("month", "months"));*/
                 months.toAlphaInto(sink);
-                sink.put(months.plurality(" month", " months"));
+                immutable noun = months.plurality(" month", " months");
+                sink.put(noun);
             }
 
             putSomething = true;
@@ -280,7 +273,6 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
                     if (putSomething) sink.put(' ');
                 }
 
-                //sink.formattedWrite("%dw", weeks);
                 weeks.toAlphaInto(sink);
                 sink.put('w');
             }
@@ -304,10 +296,9 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
                     }
                 }
 
-                /*sink.formattedWrite("%d %s", weeks,
-                    weeks.plurality("week", "weeks"));*/
                 weeks.toAlphaInto(sink);
-                sink.put(weeks.plurality(" week", " weeks"));
+                immutable noun = weeks.plurality(" week", " weeks");
+                sink.put(noun);
             }
 
             putSomething = true;
@@ -325,7 +316,6 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
                     if (putSomething) sink.put(' ');
                 }
 
-                //sink.formattedWrite("%dd", days);
                 days.toAlphaInto(sink);
                 sink.put('d');
             }
@@ -348,10 +338,9 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
                     }
                 }
 
-                /*sink.formattedWrite("%d %s", days,
-                    days.plurality("day", "days"));*/
                 days.toAlphaInto(sink);
-                sink.put(days.plurality(" day", " days"));
+                immutable noun = days.plurality(" day", " days");
+                sink.put(noun);
             }
 
             putSomething = true;
@@ -369,7 +358,6 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
                     if (putSomething) sink.put(' ');
                 }
 
-                //sink.formattedWrite("%dh", hours);
                 hours.toAlphaInto(sink);
                 sink.put('h');
             }
@@ -391,10 +379,9 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
                     }
                 }
 
-                /*sink.formattedWrite("%d %s", hours,
-                    hours.plurality("hour", "hours"));*/
                 hours.toAlphaInto(sink);
-                sink.put(hours.plurality(" hour", " hours"));
+                immutable noun = hours.plurality(" hour", " hours");
+                sink.put(noun);
             }
 
             putSomething = true;
@@ -412,7 +399,6 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
                     if (putSomething) sink.put(' ');
                 }
 
-                //sink.formattedWrite("%dm", minutes);
                 minutes.toAlphaInto(sink);
                 sink.put('m');
             }
@@ -433,10 +419,9 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
                     }
                 }
 
-                /*sink.formattedWrite("%d %s", minutes,
-                    minutes.plurality("minute", "minutes"));*/
                 minutes.toAlphaInto(sink);
-                sink.put(minutes.plurality(" minute", " minutes"));
+                immutable noun = minutes.plurality(" minute", " minutes");
+                sink.put(noun);
             }
 
             putSomething = true;
@@ -452,7 +437,6 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
                 sink.put(' ');
             }
 
-            //sink.formattedWrite("%ds", diff.seconds);
             diff.seconds.toAlphaInto(sink);
             sink.put('s');
         }
@@ -463,10 +447,9 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
                 sink.put(" and ");
             }
 
-            /*sink.formattedWrite("%d %s", diff.seconds,
-                diff.seconds.plurality("second", "seconds"));*/
             diff.seconds.toAlphaInto(sink);
-            sink.put(diff.seconds.plurality(" second", " seconds"));
+            immutable noun = diff.seconds.plurality(" second", " seconds");
+            sink.put(noun);
         }
     }
 }
@@ -478,7 +461,7 @@ unittest
     import core.time;
 
     Appender!(char[]) sink;
-    sink.reserve(64);  // workaround for formattedWrite < 2.076
+    sink.reserve(64);
 
     {
         immutable dur = Duration.zero;
