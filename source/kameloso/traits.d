@@ -431,9 +431,7 @@ unittest
 private auto longestMemberImpl(Flag!"unserialisable" unserialisable, Things...)()
 if (Things.length > 0)  // may as well be a constraint
 {
-    import lu.traits : isSerialisable;
-    import lu.uda : Hidden, Unserialisable;
-    import std.traits : hasUDA, isAggregateType;
+    import std.traits : isAggregateType, isType;
 
     static struct Results
     {
@@ -444,26 +442,41 @@ if (Things.length > 0)  // may as well be a constraint
     Results results;
     if (!__ctfe) return results;
 
-    foreach (Thing; Things)
+    foreach (immutable i, Thing; Things)
     {
+        static if (!isType!Thing)
+        {
+            import std.format : format;
+
+            enum pattern = "`longestMemberImpl` was passed a non-type `%s` `%s`";
+            enum message = pattern.format(
+                typeof(Things[i]).stringof,
+                __traits(identifier, Things[i]));
+            static assert(0, message);
+        }
+
         static if (!isAggregateType!Thing)
         {
             import std.format : format;
 
             enum pattern = "`longestNamesImpl` was passed a non-aggregate type `%s`";
-            enum message = pattern.format(Thing.stringof);
+            enum message = pattern.format(Things[i].stringof);
             static assert(0, message);
         }
 
         foreach (immutable memberstring; __traits(derivedMembers, Thing))
         {
+            import lu.traits : isSerialisable, udaIndexOf;
+            import lu.uda : Hidden, Unserialisable;
+
             static if (
                 !memberstringIsThisCtorOrDtor(memberstring) &&
                 memberIsVisibleAndNotDeprecated!(Thing, memberstring) &&
                 memberIsValue!(Thing, memberstring) &&
                 isSerialisable!(__traits(getMember, Thing, memberstring)) &&
-                !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
-                (unserialisable || !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable)))
+                udaIndexOf!(__traits(getMember, Thing, memberstring), Hidden) == -1 &&
+                (unserialisable ||
+                    udaIndexOf!(__traits(getMember, Thing, memberstring), Unserialisable) == -1))
             {
                 import lu.traits : isTrulyString;
                 import std.traits : isArray, isAssociativeArray;
