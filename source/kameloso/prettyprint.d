@@ -174,30 +174,34 @@ public:
             information that doesn't carry between program runs.
             Also those annotated [lu.uda.Hidden|Hidden].
         things = Variadic list of aggregate objects to enumerate.
+
+    Returns:
+        The number of total members that were printed, across all passed objects.
  +/
-void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things things)
+auto prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things things)
 {
     import kameloso.constants : BufferSize;
     import std.array : Appender;
     import std.meta : allSatisfy;
     import std.stdio : stdout, writeln;
-    import std.traits : isAggregateType;
+    import std.traits : isAggregateType, isType;
     static import kameloso.common;
 
     static if (!Things.length)
     {
-        import std.format : format;
-
-        enum pattern = "`%s` was not passed anything to print";
-        enum message = pattern.format(__FUNCTION__);
+        enum message = "`prettyprint` was not passed anything to print";
         static assert(0, message);
     }
-    else static if (!allSatisfy!(isAggregateType, Things))
-    {
-        import std.format : format;
 
-        enum pattern = "`%s` was passed one or more non-aggregate types";
-        enum message = pattern.format(__FUNCTION__);
+    static if (!allSatisfy!(isType, Things))
+    {
+        enum message = "`prettyprint` was passed one or more types as arguments";
+        static assert(0, message);
+    }
+
+    static if (!allSatisfy!(isAggregateType, Things))
+    {
+        enum message = "`prettyprint` was passed one or more non-aggregate types";
         static assert(0, message);
     }
 
@@ -211,13 +215,15 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
         return kameloso.common.globalHeadless;
     }();
 
-    if (returnBecauseHeadless) return;
+    if (returnBecauseHeadless) return 0;
 
     alias widths = Widths!(all, Things);
 
     static Appender!(char[]) outbuffer;
     scope(exit) outbuffer.clear();
+
     outbuffer.reserve(BufferSize.prettyprintBufferPerObject * Things.length);
+    uint totalFormatted;
 
     foreach (immutable i, ref thing; things)
     {
@@ -227,12 +233,14 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
         {
             if (kameloso.common.coreSettings.colours)
             {
-                prettyformatImpl!(all, Yes.coloured)
+                immutable numFormatted = prettyformatImpl!(all, Yes.coloured)
                     (outbuffer,
                     brightTerminal: kameloso.common.coreSettings.brightTerminal,
                     thing,
-                    widths.type+1,
-                    widths.name);
+                    typeWidth: widths.type+1,
+                    nameWidth: widths.name);
+
+                totalFormatted += numFormatted;
                 put = true;
             }
         }
@@ -240,15 +248,17 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
         if (!put)
         {
             // Brightness setting is irrelevant; pass false
-            prettyformatImpl!(all, No.coloured)
+            immutable numFormatted = prettyformatImpl!(all, No.coloured)
                 (outbuffer,
                 brightTerminal: false,
                 thing,
-                widths.type+1,
-                widths.name);
+                typeWidth: widths.type+1,
+                nameWidth: widths.name);
+
+            totalFormatted += numFormatted;
         }
 
-        static if (i+1 < things.length)
+        static if (i+1 < Things.length)
         {
             // Pad between things
             outbuffer.put('\n');
@@ -265,6 +275,8 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
         // Flush stdout to make sure we don't lose any output
         if (kameloso.common.coreSettings.flush) stdout.flush();
     }();
+
+    return totalFormatted;
 }
 
 
@@ -300,8 +312,11 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
         sink = Output range to write to.
         brightTerminal = Whether or not to format for a bright terminal background.
         things = Variadic list of aggregate objects to enumerate and format.
+
+    Returns:
+        The number of total members that were formatted, across all passed objects.
  +/
-void prettyformat(
+auto prettyformat(
     Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured,
     Sink,
@@ -316,58 +331,54 @@ void prettyformat(
 
     static if (!Things.length)
     {
-        import std.format : format;
-
-        enum pattern = "`%s` was not passed anything to print";
-        enum message = pattern.format(__FUNCTION__);
+        enum message = "`prettyformat` was not passed anything to print";
         static assert(0, message);
     }
 
     static if (!allSatisfy!(isType, Things))
     {
-        import std.format : format;
-
-        enum pattern = "`%s` was passed one or more non-type arguments";
-        enum message = pattern.format(__FUNCTION__);
+        enum message = "`prettyformat` was passed one or more non-type arguments";
         static assert(0, message);
     }
 
     static if (!allSatisfy!(isAggregateType, Things))
     {
-        import std.format : format;
-
-        enum pattern = "`%s` was passed one or more non-aggregate types";
-        enum message = pattern.format(__FUNCTION__);
+        enum message = "`prettyformat` was passed one or more non-aggregate types";
         static assert(0, message);
     }
 
     static if (!isOutputRange!(Sink, char[]))
     {
-        import std.format : format;
-
-        enum pattern = "`%s` must be passed an output range of `char[]`";
-        enum message = pattern.format(__FUNCTION__);
+        enum message = "`prettyformat` must be passed an output range of `char[]`";
         static assert(0, message);
     }
 
     alias widths = Widths!(all, Things);
+    uint totalFormatted;
 
     foreach (immutable i, ref thing; things)
     {
-        prettyformatImpl!(all, coloured)
+        immutable numFormatted = prettyformatImpl!(all, coloured)
             (sink,
             brightTerminal: brightTerminal,
             thing,
-            widths.type+1,
-            widths.name);
+            typeWidth: widths.type+1,
+            nameWidth: widths.name);
 
-        static if ((i+1 < things.length) || !__traits(hasMember, Sink, "data"))
+        totalFormatted += numFormatted;
+
+        static if (
+            ((Things.length > 1) &&
+            (i+1 < Things.length)) ||
+            !__traits(hasMember, Sink, "data"))
         {
             // Not an Appender, make sure it has a final linebreak to be consistent
             // with Appender writeln
             sink.put('\n');
         }
     }
+
+    return totalFormatted;
 }
 
 
@@ -395,12 +406,12 @@ private struct FormatStringMemberArguments
     /++
         Width (length) of longest type name.
      +/
-    uint typewidth;
+    uint typeWidth;
 
     /++
         Width (length) of longest member name.
      +/
-    uint namewidth;
+    uint nameWidth;
 
     /++
         Whether or not we should compensate for a bright terminal background.
@@ -448,12 +459,11 @@ private void prettyformatStringMemberImpl(Flag!"coloured" coloured, Sink)
             sink.formattedWrite(
                 pattern,
                 typeCode.asANSI,
-                args.typewidth,
+                args.typeWidth,
                 args.typestring,
                 memberCode.asANSI,
-                args.namewidth,
+                args.nameWidth,
                 args.memberstring,
-                //(args.value.length ? string.init : " "),
                 valueCode.asANSI,
                 args.value[0..args.truncateAfter],
                 lengthCode.asANSI,
@@ -470,10 +480,10 @@ private void prettyformatStringMemberImpl(Flag!"coloured" coloured, Sink)
             sink.formattedWrite(
                 pattern,
                 typeCode.asANSI,
-                args.typewidth,
+                args.typeWidth,
                 args.typestring,
                 memberCode.asANSI,
-                args.namewidth,
+                args.nameWidth,
                 args.memberstring,
                 (args.value.length ? string.init : " "),
                 valueCode.asANSI,
@@ -489,11 +499,10 @@ private void prettyformatStringMemberImpl(Flag!"coloured" coloured, Sink)
             enum pattern = `%*s %-*s "%s" ... (%d)` ~ '\n';
             sink.formattedWrite(
                 pattern,
-                args.typewidth,
+                args.typeWidth,
                 args.typestring,
-                args.namewidth,
+                args.nameWidth,
                 args.memberstring,
-                //(args.value.length ? string.init : " "),
                 args.value[0..args.truncateAfter],
                 args.value.length);
         }
@@ -502,9 +511,9 @@ private void prettyformatStringMemberImpl(Flag!"coloured" coloured, Sink)
             enum pattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
             sink.formattedWrite(
                 pattern,
-                args.typewidth,
+                args.typeWidth,
                 args.typestring,
-                args.namewidth,
+                args.nameWidth,
                 args.memberstring,
                 (args.value.length ? string.init : " "),
                 args.value,
@@ -563,12 +572,12 @@ private struct FormatArrayMemberArguments
     /++
         Width (length) of longest type name.
      +/
-    uint typewidth;
+    uint typeWidth;
 
     /++
         Width (length) of longest member name.
      +/
-    uint namewidth;
+    uint nameWidth;
 
     /++
         Whether or not we should compensate for a bright terminal background.
@@ -629,10 +638,10 @@ private void prettyformatArrayMemberImpl(Flag!"coloured" coloured, Sink)
             sink.formattedWrite(
                 rtPattern,
                 typeCode.asANSI,
-                args.typewidth,
+                args.typeWidth,
                 args.typestring,
                 memberCode.asANSI,
-                args.namewidth,
+                args.nameWidth,
                 args.memberstring,
                 valueCode.asANSI,
                 args.value,
@@ -647,10 +656,10 @@ private void prettyformatArrayMemberImpl(Flag!"coloured" coloured, Sink)
             sink.formattedWrite(
                 rtPattern,
                 typeCode.asANSI,
-                args.typewidth,
+                args.typeWidth,
                 args.typestring,
                 memberCode.asANSI,
-                args.namewidth,
+                args.nameWidth,
                 args.memberstring,
                 valueCode.asANSI,
                 args.value,
@@ -667,9 +676,9 @@ private void prettyformatArrayMemberImpl(Flag!"coloured" coloured, Sink)
 
             sink.formattedWrite(
                 rtPattern,
-                args.typewidth,
+                args.typeWidth,
                 args.typestring,
-                args.namewidth,
+                args.nameWidth,
                 args.memberstring,
                 args.value,
                 args.length);
@@ -681,9 +690,9 @@ private void prettyformatArrayMemberImpl(Flag!"coloured" coloured, Sink)
 
             sink.formattedWrite(
                 rtPattern,
-                args.typewidth,
+                args.typeWidth,
                 args.typestring,
-                args.namewidth,
+                args.nameWidth,
                 args.memberstring,
                 args.value,
                 args.length);
@@ -745,10 +754,10 @@ private void prettyformatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Si
             sink.formattedWrite(
                 rtPattern,
                 typeCode.asANSI,
-                args.typewidth,
+                args.typeWidth,
                 args.typestring,
                 memberCode.asANSI,
-                args.namewidth,
+                args.nameWidth,
                 args.memberstring,
                 valueCode.asANSI,
                 content,
@@ -764,10 +773,10 @@ private void prettyformatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Si
             sink.formattedWrite(
                 rtPattern,
                 typeCode.asANSI,
-                args.typewidth,
+                args.typeWidth,
                 args.typestring,
                 memberCode.asANSI,
-                args.namewidth,
+                args.nameWidth,
                 args.memberstring,
                 valueCode.asANSI,
                 content,
@@ -785,9 +794,9 @@ private void prettyformatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Si
 
             sink.formattedWrite(
                 rtPattern,
-                args.typewidth,
+                args.typeWidth,
                 args.typestring,
-                args.namewidth,
+                args.nameWidth,
                 args.memberstring,
                 content,
                 args.length);
@@ -800,9 +809,9 @@ private void prettyformatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Si
 
             sink.formattedWrite(
                 rtPattern,
-                args.typewidth,
+                args.typeWidth,
                 args.typestring,
-                args.namewidth,
+                args.nameWidth,
                 args.memberstring,
                 content,
                 args.length);
@@ -840,12 +849,12 @@ private struct FormatAggregateMemberArguments
     /++
         Width (length) of longest type name.
      +/
-    uint typewidth;
+    uint typeWidth;
 
     /++
         Width (length) of longest member name.
      +/
-    uint namewidth;
+    uint nameWidth;
 
     /++
         Whether or not we should compensate for a bright terminal background.
@@ -884,10 +893,10 @@ private void prettyformatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
         sink.formattedWrite(
             pattern,
             typeCode.asANSI,
-            args.typewidth,
+            args.typeWidth,
             args.typestring,
             memberCode.asANSI,
-            args.namewidth,
+            args.nameWidth,
             args.memberstring,
             valueCode.asANSI,
             args.aggregateType,
@@ -898,9 +907,9 @@ private void prettyformatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
         enum pattern = "%*s %-*s <%s>%s\n";
         sink.formattedWrite(
             pattern,
-            args.typewidth,
+            args.typeWidth,
             args.typestring,
-            args.namewidth,
+            args.nameWidth,
             args.memberstring,
             args.aggregateType,
             args.initText);
@@ -932,12 +941,12 @@ private struct FormatOtherMemberArguments
     /++
         Width (length) of longest type name.
      +/
-    uint typewidth;
+    uint typeWidth;
 
     /++
         Width (length) of longest member name.
      +/
-    uint namewidth;
+    uint nameWidth;
 
     /++
         Whether or not we should compensate for a bright terminal background.
@@ -977,10 +986,10 @@ private void prettyformatOtherMemberImpl(Flag!"coloured" coloured, Sink)
         sink.formattedWrite(
             pattern,
             typeCode.asANSI,
-            args.typewidth,
+            args.typeWidth,
             args.typestring,
             memberCode.asANSI,
-            args.namewidth,
+            args.nameWidth,
             args.memberstring,
             valueCode.asANSI,
             args.value);
@@ -990,9 +999,9 @@ private void prettyformatOtherMemberImpl(Flag!"coloured" coloured, Sink)
         enum pattern = "%*s %-*s  %s\n";
         sink.formattedWrite(
             pattern,
-            args.typewidth,
+            args.typeWidth,
             args.typestring,
-            args.namewidth,
+            args.nameWidth,
             args.memberstring,
             args.value);
     }
@@ -1014,10 +1023,13 @@ private void prettyformatOtherMemberImpl(Flag!"coloured" coloured, Sink)
         sink = Output range to write to.
         bright = Whether or not to format for a bright terminal background.
         thing = Aggregate object to enumerate and format.
-        typewidth = The width with which to pad type names, to align properly.
-        namewidth = The width with which to pad variable names, to align properly.
+        typeWidth = The width with which to pad type names, to align properly.
+        nameWidth = The width with which to pad variable names, to align properly.
+
+    Returns:
+        The number of total members that were formatted, across all passed objects.
  +/
-private void prettyformatImpl(
+private auto prettyformatImpl(
     Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured,
     Sink,
@@ -1025,41 +1037,12 @@ private void prettyformatImpl(
     (auto ref Sink sink,
     const bool brightTerminal,
     const auto ref Thing thing,
-    const uint typewidth,
-    const uint namewidth)
+    const uint typeWidth,
+    const uint nameWidth)
 {
     import lu.string : stripSuffix;
     import std.format : formattedWrite;
-    import std.meta : allSatisfy;
-    import std.range.primitives : isOutputRange;
-    import std.traits : Unqual, isAggregateType, isType;
-
-    static if (!isType!Thing)
-    {
-        import std.format : format;
-
-        enum pattern = "`%s` was passed a non-type `%s` argument";
-        enum message = pattern.format(__FUNCTION__, typeof(Thing).stringof);
-        static assert(0, message);
-    }
-
-    static if (!isAggregateType!Thing)
-    {
-        import std.format : format;
-
-        enum pattern = "`%s` was passed a non-aggregate type `%s`";
-        enum message = pattern.format(__FUNCTION__, Thing.stringof);
-        static assert(0, message);
-    }
-
-    static if (!isOutputRange!(Sink, char[]))
-    {
-        import std.format : format;
-
-        enum pattern = "`%s` must be passed an output range of `char[]`";
-        enum message = pattern.format(__FUNCTION__);
-        static assert(0, message);
-    }
+    import std.traits : Unqual;
 
     static if (coloured)
     {
@@ -1074,6 +1057,8 @@ private void prettyformatImpl(
     alias Thing = Unqual!(typeof(thing));
 
     sink.formattedWrite("-- %s\n", Thing.stringof.stripSuffix("Settings"));
+
+    uint numFormatted;
 
     foreach (immutable memberstring; __traits(derivedMembers, Thing))
     {
@@ -1113,8 +1098,8 @@ private void prettyformatImpl(
                 const content = __traits(getMember, thing, memberstring);
                 args.typestring = T.stringof;
                 args.memberstring = memberstring;
-                args.typewidth = typewidth;
-                args.namewidth = namewidth + namePadding;
+                args.typeWidth = typeWidth;
+                args.nameWidth = nameWidth + namePadding;
                 args.bright = brightTerminal;
                 args.truncateAfter = all ? uint.max : stringTruncation;
                 args.value = content.to!string;
@@ -1140,8 +1125,8 @@ private void prettyformatImpl(
                 auto content = __traits(getMember, thing, memberstring);
                 args.typestring = UnqualArray!T.stringof;
                 args.memberstring = memberstring;
-                args.typewidth = typewidth;
-                args.namewidth = namewidth + namePadding;
+                args.typeWidth = typeWidth;
+                args.nameWidth = nameWidth + namePadding;
                 args.truncated = !all && (content.length > arrayTruncation);
                 args.bright = brightTerminal;
 
@@ -1234,8 +1219,8 @@ private void prettyformatImpl(
                 args.typestring = T.stringof;
                 args.memberstring = memberstring;
                 args.aggregateType = aggregateType;
-                args.typewidth = typewidth;
-                args.namewidth = namewidth + namePadding;
+                args.typeWidth = typeWidth;
+                args.nameWidth = nameWidth + namePadding;
                 args.bright = brightTerminal;
                 prettyformatAggregateMemberImpl!coloured(sink, args);
             }
@@ -1245,8 +1230,8 @@ private void prettyformatImpl(
                 auto content = __traits(getMember, thing, memberstring);
                 args.typestring = T.stringof;
                 args.memberstring = memberstring;
-                args.typewidth = typewidth;
-                args.namewidth = namewidth + namePadding;
+                args.typeWidth = typeWidth;
+                args.nameWidth = nameWidth + namePadding;
                 args.bright = brightTerminal;
 
                 static if (isTrulyString!T)
@@ -1286,8 +1271,12 @@ private void prettyformatImpl(
 
                 prettyformatOtherMemberImpl!coloured(sink, args);
             }
+
+            ++numFormatted;
         }
     }
+
+    return numFormatted;
 }
 
 ///
@@ -1296,6 +1285,7 @@ private void prettyformatImpl(
     import lu.assert_ : assertMultilineEquals;
     import std.algorithm.searching : canFind;
     import std.array : Appender;
+    import std.conv : to;
 
     Appender!(char[]) sink;
     sink.reserve(512);  // ~323
@@ -1349,8 +1339,9 @@ private void prettyformatImpl(
    char[char] cC                          ['k':'v', 'K':'V'](2)
 `;
 
-        sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, s);
+        auto numFormatted = sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, s);
         sink[].assertMultilineEquals(structNameSerialised);
+        assert((numFormatted == 13), numFormatted.to!string);
         sink.clear();
 
         // Class copy
@@ -1398,8 +1389,9 @@ private void prettyformatImpl(
  string[string] aa2                         ["foo":"bar", "harbl":"snarbl"](2)
 `;
 
-        sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c1);
+        numFormatted = sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c1);
         sink[].assertMultilineEquals(classNameSerialised);
+        assert((numFormatted == 16), numFormatted.to!string);
         sink.clear();
     }
     {
@@ -1434,8 +1426,9 @@ private void prettyformatImpl(
           int fdsa                        -1
 `;
 
-        sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, st1, st2);
+        immutable numFormatted = sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, st1, st2);
         sink[].assertMultilineEquals(st1st2Formatted);
+        assert((numFormatted == 4), numFormatted.to!string);
         sink.clear();
     }
     {
@@ -1450,11 +1443,13 @@ private void prettyformatImpl(
                 float float_ = 3.14f;
                 double double_ = 99.9;
             }
+
             StructName2Settings s2;
 
             sink.clear();
             sink.reserve(256);  // ~239
-            sink.prettyformat!(No.all, Yes.coloured)(brightTerminal: false, s2);
+            immutable numFormatted = sink.prettyformat!(No.all, Yes.coloured)(brightTerminal: false, s2);
+            assert((numFormatted == 5), numFormatted.to!string);
 
             assert((sink[].length > 12), "Empty sink after coloured fill");
 
@@ -1494,8 +1489,9 @@ private void prettyformatImpl(
           int i                           42
 `;
 
-        sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c2);
+        immutable numFormatted = sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c2);
         sink[].assertMultilineEquals(cFormatted);
+        assert((numFormatted == 3), numFormatted.to!string);
         sink.clear();
     }
     {
@@ -1534,9 +1530,10 @@ private void prettyformatImpl(
           int i                           -1
 `;
 
-        sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c4, c4.i3, c4.c3);
+        immutable numFormatted = sink.prettyformat!(No.all, No.coloured)(brightTerminal: false, c4, c4.i3, c4.c3);
         sink[].assertMultilineEquals(c4Formatted);
-        //sink.clear();
+        assert((numFormatted == 4), numFormatted.to!string);
+        sink.clear();
     }
 }
 
