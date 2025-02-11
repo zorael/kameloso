@@ -443,7 +443,7 @@ auto processMessages(Kameloso instance, const SysTime now)
         case fakeEvent:
             version(Debug)
             {
-                processLineFromServer(instance, message.content, now.toUnixTime());
+                processLineFromServer(instance, message.content, now);
             }
             break;
 
@@ -1121,7 +1121,7 @@ auto mainLoop(Kameloso instance)
                 historyEntry.bytesReceived += max(attempt.bytesReceived, 0);
                 historyEntry.stopTime = nowInUnix;
                 ++historyEntry.numEvents;
-                processLineFromServer(instance, attempt.line, nowInUnix);
+                processLineFromServer(instance, attempt.line, now);
                 break;
 
             case retry:
@@ -1443,12 +1443,12 @@ void logPluginActionException(
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance instance.
         raw = A raw line as read from the server.
-        nowInUnix = Current timestamp in UNIX time.
+        now = The current time.
  +/
 void processLineFromServer(
     Kameloso instance,
     const string raw,
-    const long nowInUnix)
+    const SysTime now)
 {
     import kameloso.string : doublyBackslashed;
     import dialect.common : IRCParseException;
@@ -1517,7 +1517,7 @@ void processLineFromServer(
         eventWasInitialised = true;
 
         // Save timestamp in the event itself.
-        event.time = nowInUnix;
+        event.time = now.toUnixTime();
 
         version(TwitchSupport)
         {
