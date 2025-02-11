@@ -247,6 +247,7 @@ public:
         Params:
             dur = The duration to assign as receive timeout, in number of milliseconds.
      +/
+    pragma(inline, true)
     void receiveTimeout(const uint dur)
     {
         setTimeout(SocketOption.RCVTIMEO, dur);
