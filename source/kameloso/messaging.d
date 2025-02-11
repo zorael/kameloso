@@ -876,7 +876,6 @@ unittest
             and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
-
 void quit(
     ref IRCPluginState state,
     const string reason = string.init,

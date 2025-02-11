@@ -279,7 +279,6 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
     If any extra text is following the "quit" command, it uses that as the quit
     reason. Otherwise it falls back to what is specified in the configuration file.
  +/
-
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)

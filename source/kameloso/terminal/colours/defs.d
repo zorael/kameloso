@@ -12,7 +12,6 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-
 module kameloso.terminal.colours.defs;
 
 

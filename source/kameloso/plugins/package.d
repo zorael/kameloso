@@ -3365,7 +3365,7 @@ private auto replay(Plugin, Fun)
     Fun fun,
     const Permissions permissionsRequired,
     const bool inFiber,
-    const string caller = __FUNCTION__)
+    const string caller)
 {
     void replayDg(Replay replay)
     {
