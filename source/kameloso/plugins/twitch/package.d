@@ -4109,6 +4109,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
             // Shared message; event.aux[$-4] is the foreign channel ID
             immutable sharedChannelID = event.aux[$-4].to!ulong;
+            event.aux[$-4] = string.init;  // it's noisy and wholly uninteresting now
 
             if (const channelFromID = sharedChannelID in plugin.channelNamesByID)
             {
