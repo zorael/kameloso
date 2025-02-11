@@ -95,14 +95,19 @@ template memberIsVisibleAndNotDeprecated(Thing, string memberstring)
     else
     {
         /+
-            __traits(getVisibility) over deprecated __traits(getProtection).
             __traits(isDeprecated) before __traits(getVisibility) to gag
             deprecation warnings.
+
+            source/kameloso/traits.d(104,14): Error: argument `char` has no visibility
+
+            Tentatively test __traits(compiles, __traits(getVisibility, ...))
+            first to avoid this.
          +/
         static if (
             !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
-            (__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "private") &&
-            (__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "package"))
+            __traits(compiles, __traits(getVisibility, __traits(getMember, Thing, memberstring))) &&
+            ((__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "private") &&
+            (__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "package")))
         {
             enum memberIsVisibleAndNotDeprecated = true;
         }
