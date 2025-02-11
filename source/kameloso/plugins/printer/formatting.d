@@ -504,6 +504,7 @@ void formatMessageMonochrome(Sink)
         case TWITCH_SUB:
         case TWITCH_ANNOUNCEMENT:
         case TWITCH_CHEER:
+        case CLEARMSG:
         //case SELFCHAN:
             if (line.containsNickname(plugin.state.client.nickname))
             {
@@ -1376,6 +1377,7 @@ void formatMessageColoured(Sink)
         case TWITCH_SUB:
         case TWITCH_ANNOUNCEMENT:
         case TWITCH_CHEER:
+        case CLEARMSG:
         //case SELFCHAN:
             import kameloso.terminal.colours : invert;
 
