@@ -68,9 +68,6 @@ enum minimumTypeWidth = 12;
 enum minimumNameWidth = 24;
 
 
-public:
-
-
 // Widths
 /++
     Calculates the minimum padding needed to accommodate the strings of all the
@@ -144,6 +141,9 @@ unittest
     static assert(widths.type == max(minimumTypeWidth, "string[]".length));
     static assert(widths.name == max(minimumNameWidth, "longerString".length));
 }
+
+
+public:
 
 
 // prettyprint
@@ -239,7 +239,7 @@ void prettyprint(Flag!"all" all = No.all, Things...)(const auto ref Things thing
 
         if (!put)
         {
-            // Brightness setting is irrelevant; pass No
+            // Brightness setting is irrelevant; pass false
             prettyformatImpl!(all, No.coloured)
                 (outbuffer,
                 brightTerminal: false,
@@ -311,8 +311,8 @@ void prettyformat(
     const auto ref Things things)
 {
     import std.meta : allSatisfy;
-    import std.traits : isAggregateType;
     import std.range.primitives : isOutputRange;
+    import std.traits : isAggregateType, isType;
 
     static if (!Things.length)
     {
@@ -322,7 +322,17 @@ void prettyformat(
         enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
-    else static if (!allSatisfy!(isAggregateType, Things))
+
+    static if (!allSatisfy!(isType, Things))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` was passed one or more non-type arguments";
+        enum message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+
+    static if (!allSatisfy!(isAggregateType, Things))
     {
         import std.format : format;
 
@@ -330,7 +340,8 @@ void prettyformat(
         enum message = pattern.format(__FUNCTION__);
         static assert(0, message);
     }
-    else static if (!isOutputRange!(Sink, char[]))
+
+    static if (!isOutputRange!(Sink, char[]))
     {
         import std.format : format;
 
@@ -592,9 +603,6 @@ private void prettyformatArrayMemberImpl(Flag!"coloured" coloured, Sink)
     const FormatArrayMemberArguments args)
 {
     import std.format : formattedWrite;
-    import std.range.primitives : ElementEncodingType;
-    import std.traits : TemplateOf;
-    import std.typecons : Nullable;
 
     /// Quote character to enclose elements in
     immutable elemQuote =
@@ -1024,17 +1032,27 @@ private void prettyformatImpl(
     import std.format : formattedWrite;
     import std.meta : allSatisfy;
     import std.range.primitives : isOutputRange;
-    import std.traits : Unqual, isAggregateType;
+    import std.traits : Unqual, isAggregateType, isType;
+
+    static if (!isType!Thing)
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` was passed a non-type `%s` argument";
+        enum message = pattern.format(__FUNCTION__, typeof(Thing).stringof);
+        static assert(0, message);
+    }
 
     static if (!isAggregateType!Thing)
     {
         import std.format : format;
 
         enum pattern = "`%s` was passed a non-aggregate type `%s`";
-        enum message = pattern.format(__FUNCTION__, T.stringof);
+        enum message = pattern.format(__FUNCTION__, Thing.stringof);
         static assert(0, message);
     }
-    else static if (!isOutputRange!(Sink, char[]))
+
+    static if (!isOutputRange!(Sink, char[]))
     {
         import std.format : format;
 
