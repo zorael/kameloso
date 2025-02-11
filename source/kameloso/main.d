@@ -1575,7 +1575,8 @@ void processLineFromServer(
 
             try
             {
-                plugin.postprocess(event);
+                immutable shouldCheckMessages = plugin.postprocess(event);
+                if (shouldCheckMessages) instance.processMessages(now);
             }
             catch (Exception e)
             {
