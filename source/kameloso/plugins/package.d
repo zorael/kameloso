@@ -1556,7 +1556,7 @@ mixin template IRCPluginImpl(
                 import lu.traits : stringOfTypeOf;
                 import std.format : format;
 
-                enum pattern = "`%s.postprocess` has an unsupported function signature: `%s`";
+                enum pattern = "`%s.postprocess` was unexpectedly a `%s`";
                 enum message = pattern.format(module_, stringOfTypeOf!(.postprocess));
                 static assert(0, message);
             }
@@ -1595,7 +1595,7 @@ mixin template IRCPluginImpl(
                 import lu.traits : stringOfTypeOf;
                 import std.format : format;
 
-                enum pattern = "`%s.initResources` has an unsupported function signature: `%s`";
+                enum pattern = "`%s.initResources` was unexpectedly a `%s`";
                 enum message = pattern.format(module_, stringOfTypeOf!(.initResources));
                 static assert(0, message);
             }
@@ -1843,7 +1843,7 @@ mixin template IRCPluginImpl(
                     import lu.traits : stringOfTypeOf;
                     import std.format : format;
 
-                    ` ~ "enum pattern = \"`%s.%s` has an unsupported function signature: `%s`\";
+                    ` ~ "enum pattern = \"`%s.%s` was unexpectedly a `%s`\";
                     enum message = pattern.format(module_, \"" ~ funName ~ `", stringOfTypeOf!(.` ~ funName ~ `));
                     static assert(0, message);
                 }
@@ -1891,7 +1891,7 @@ mixin template IRCPluginImpl(
                 import lu.traits : stringOfTypeOf;
                 import std.format : format;
 
-                enum pattern = "`%s.tick` has an unsupported function signature: `%s`";
+                enum pattern = "`%s.tick` was unexpectedly a `%s`";
                 enum message = pattern.format(module_, stringOfTypeOf!(.tick));
                 static assert(0, message);
             }
@@ -1959,7 +1959,7 @@ mixin template IRCPluginImpl(
                     import lu.traits : stringOfTypeOf;
                     import std.format : format;
 
-                    enum pattern = "`%s.selftest` has an unsupported function signature: `%s`";
+                    enum pattern = "`%s.selftest` was unexpectedly a `%s`";
                     enum message = pattern.format(module_, stringOfTypeOf!(.selftest));
                     static assert(0, message);
                 }
@@ -2188,7 +2188,7 @@ mixin template IRCPluginImpl(
                 import lu.traits : stringOfTypeOf;
                 import std.format : format;
 
-                enum pattern = "`%s.onBusMessage` has an unsupported function signature: `%s`";
+                enum pattern = "`%s.onBusMessage` was unexpectedly a `%s`";
                 enum message = pattern.format(module_, stringOfTypeOf!(.onBusMessage));
                 static assert(0, message);
             }
@@ -3501,8 +3501,7 @@ private auto replay(Plugin, Fun)
                 {
                     // onEventImpl.call should already have statically asserted all
                     // event handlers are of the types above
-                    enum message = "Failed to cover event handler function signature " ~ Fun.stringof;
-                    static assert(0, message);
+                    static assert(0, "Unreachable");
                 }
             }
 
