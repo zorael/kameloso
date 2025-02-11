@@ -3976,18 +3976,20 @@ void teardown(TwitchPlugin plugin)
 auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
     import std.algorithm.comparison : among;
-    import std.algorithm.searching : canFind;
     import std.typecons : Ternary;
 
     if (plugin.twitchSettings.mapWhispersToChannel &&
         event.type.among!(IRCEvent.Type.QUERY, IRCEvent.Type.SELFQUERY))
     {
-        alias pred = (channelName, senderNickname) => (senderNickname == channelName[1..$]);
+        import std.algorithm.searching : countUntil;
 
-        if (plugin.state.bot.homeChannels.canFind!pred(event.sender.nickname))
+        alias pred = (channelName, senderNickname) => channelName.length && (senderNickname == channelName[1..$]);
+        immutable channelIndex = plugin.state.bot.homeChannels.countUntil!pred(event.sender.nickname);
+
+        if (channelIndex != -1)
         {
             event.type = IRCEvent.Type.CHAN;
-            event.channel.name = '#' ~ event.sender.nickname;
+            event.channel.name = plugin.state.bot.homeChannels[channelIndex];
             event.aux[0] = string.init;  // Whisper count
             event.target = IRCUser.init;
         }
@@ -4038,6 +4040,8 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             }
             else
             {
+                import std.algorithm.searching : canFind;
+
                 // Only embed if the event is in a home channel
                 isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel.name);
                 shouldEmbedCustomEmotes = (isHomeChannel == Ternary.yes);
@@ -4113,15 +4117,10 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
             if (const channelFromID = sharedChannelID in plugin.channelNamesByID)
             {
-                if (channelFromID.length)
+                if (*channelFromID != event.channel.name)
                 {
-                    if (*channelFromID != event.channel.name)
-                    {
-                        // Found channel name in cache; insert into event.subchannel
-                        event.subchannel.name = *channelFromID;
-                    }
-
-                    event.aux[$-4] = string.init;  // it's noisy
+                    // Found channel name in cache; insert into event.subchannel
+                    event.subchannel.name = *channelFromID;
                 }
             }
             else
@@ -4135,11 +4134,9 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
                 void getChannelNameDg()
                 {
-                    import std.conv : to;
-
                     /*if (plugin.state.coreSettings.trace)
                     {
-                        enum pattern = "Querying server for channel name of user ID <l>%s</>...";
+                        enum pattern = "Querying server for channel name of user ID <l>%d</>...";
                         logger.infof(pattern, sharedChannelID);
                     }*/
 
@@ -4151,8 +4148,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
                     immutable twitchUser = getTwitchUser(
                         plugin,
-                        givenName: string.init,
-                        id: sharedChannelID.to!uint);
+                        id: sharedChannelID);
 
                     if (twitchUser.nickname.length)
                     {
@@ -4162,7 +4158,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
                         if (plugin.state.coreSettings.trace)
                         {
-                            enum pattern = "Resolved channel <l>%s</> from user ID <l>%s</>.";
+                            enum pattern = "Resolved channel <l>%s</> from user ID <l>%d</>.";
                             logger.infof(pattern, channelName, sharedChannelID);
                         }
                     }
@@ -4225,8 +4221,9 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
         return false;
     }
 
-    if (!plugin.twitchSettings.promoteEverywhere && (isHomeChannel == Ternary.unknown)))
+    if (!plugin.twitchSettings.promoteEverywhere && (isHomeChannel == Ternary.unknown))
     {
+        import std.algorithm.searching : canFind;
         isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel.name);
     }
 
