@@ -298,7 +298,7 @@ unittest
 }
 
 
-// longestMemberNames
+// longestMember
 /++
     Introspects one or more aggregate types and determines the name of the
     longest member found between them, as well as the name of the longest type.
@@ -310,7 +310,7 @@ unittest
     Params:
         Things = Types to introspect.
  +/
-enum longestMemberNames(Things...) = longestMemberNamesImpl!(No.unserialisable, Things)();
+enum longestMember(Things...) = longestMemberImpl!(No.unserialisable, Things)();
 
 ///
 unittest
@@ -341,21 +341,21 @@ unittest
         long looooooooooooooooooooooong;
     }
 
-    alias fooNames = longestMemberNames!Foo;
-    static assert((fooNames.member == "veryLongName"), fooNames.member);
-    static assert((fooNames.type == "char[][string]"), fooNames.type);
+    alias fooLongest = longestMember!Foo;
+    static assert((fooLongest.member == "veryLongName"), fooLongest.member);
+    static assert((fooLongest.type == "char[][string]"), fooLongest.type);
 
-    alias barNames = longestMemberNames!Bar;
-    static assert((barNames.member == "evenLongerName"), barNames.member);
-    static assert((barNames.type == "string"), barNames.type);
+    alias barLongest = longestMember!Bar;
+    static assert((barLongest.member == "evenLongerName"), barLongest.member);
+    static assert((barLongest.type == "string"), barLongest.type);
 
-    alias bothNames = longestMemberNames!(Foo, Bar);
-    static assert((bothNames.member == "evenLongerName"), bothNames.member);
-    static assert((bothNames.type == "char[][string]"), bothNames.type);
+    alias bothLongest = longestMember!(Foo, Bar);
+    static assert((bothLongest.member == "evenLongerName"), bothLongest.member);
+    static assert((bothLongest.type == "char[][string]"), bothLongest.type);
 }
 
 
-// longestUnserialisableMemberNames
+// longestUnserialisableMember
 /++
     Introspects one or more aggregate types and determines the name of the
     longest member found between them, as well as the name of the longest type.
@@ -367,8 +367,8 @@ unittest
     Params:
         Things = Types to introspect.
  +/
-enum longestUnserialisableMemberNames(Things...) =
-    longestMemberNamesImpl!(Yes.unserialisable, Things)();
+enum longestUnserialisableMember(Things...) =
+    longestMemberImpl!(Yes.unserialisable, Things)();
 
 ///
 unittest
@@ -399,21 +399,21 @@ unittest
         long looooooooooooooooooooooong;
     }
 
-    alias fooNames = longestUnserialisableMemberNames!Foo;
-    static assert((fooNames.member == "veryVeryVeryLongNameThatIsInvalid"), fooNames.member);
-    static assert((fooNames.type == "string[][string]"), fooNames.type);
+    alias fooLongest = longestUnserialisableMember!Foo;
+    static assert((fooLongest.member == "veryVeryVeryLongNameThatIsInvalid"), fooLongest.member);
+    static assert((fooLongest.type == "string[][string]"), fooLongest.type);
 
-    alias barNames = longestUnserialisableMemberNames!Bar;
-    static assert((barNames.member == "shoooooooooooooooort"), barNames.member);
-    static assert((barNames.type == "string"), barNames.type);
+    alias barLongest = longestUnserialisableMember!Bar;
+    static assert((barLongest.member == "shoooooooooooooooort"), barLongest.member);
+    static assert((barLongest.type == "string"), barLongest.type);
 
-    alias bothNames = longestUnserialisableMemberNames!(Foo, Bar);
-    static assert((bothNames.member == "veryVeryVeryLongNameThatIsInvalid"), bothNames.member);
-    static assert((bothNames.type == "string[][string]"), bothNames.type);
+    alias bothLongest = longestUnserialisableMember!(Foo, Bar);
+    static assert((bothLongest.member == "veryVeryVeryLongNameThatIsInvalid"), bothLongest.member);
+    static assert((bothLongest.type == "string[][string]"), bothLongest.type);
 }
 
 
-// longestMemberNamesImpl
+// longestMemberImpl
 /++
     Introspects one or more aggregate types and determines the name of the
     longest member found between them, as well as the name of the longest type.
@@ -428,7 +428,7 @@ unittest
             [lu.uda.Unserialisable|Unserialisable].
         Things = Types to introspect.
  +/
-private auto longestMemberNamesImpl(Flag!"unserialisable" unserialisable, Things...)()
+private auto longestMemberImpl(Flag!"unserialisable" unserialisable, Things...)()
 if (Things.length > 0)  // may as well be a constraint
 {
     import lu.traits : isSerialisable;

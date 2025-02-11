@@ -81,32 +81,44 @@ public:
         all = Whether or not to also include [lu.uda.Unserialisable|Unserialisable] members.
         Things = Variadic list of aggregates to introspect.
  +/
-private template Widths(Flag!"all" all, Things...)
+template Widths(Flag!"all" all, Things...)
 if (Things.length > 0)
 {
 private:
     import std.algorithm.comparison : max;
+    import std.meta : allSatisfy;
+    import std.traits : isType;
 
-    static if (all)
+    static if (!allSatisfy!(isType, Things))
     {
-        import kameloso.traits : longestUnserialisableMemberNames;
+        import std.format : format;
 
-        alias names = longestUnserialisableMemberNames!Things;
-        public enum type = max(minimumTypeWidth, names.type.length);
-        enum initialWidth = names.member.length;
+        enum message = "`Widths` was passed one or more non-type arguments";
+        static assert(0, message);
     }
     else
     {
-        import kameloso.traits : longestMemberNames;
+        static if (all)
+        {
+            import kameloso.traits : longestUnserialisableMember;
 
-        alias names = longestMemberNames!Things;
-        public enum type = max(minimumTypeWidth, names.type.length);
-        enum initialWidth = names.member.length;
+            alias names = longestUnserialisableMember!Things;
+            public enum type = max(minimumTypeWidth, names.type.length);
+            enum initialWidth = names.member.length;
+        }
+        else
+        {
+            import kameloso.traits : longestMember;
+
+            alias names = longestMember!Things;
+            public enum type = max(minimumTypeWidth, names.type.length);
+            enum initialWidth = names.member.length;
+        }
+
+        enum ptrdiff_t compensatedWidth = (type > minimumTypeWidth) ?
+            (initialWidth - type + minimumTypeWidth) : initialWidth;
+        public enum ptrdiff_t name = max(minimumNameWidth, compensatedWidth);
     }
-
-    enum ptrdiff_t compensatedWidth = (type > minimumTypeWidth) ?
-        (initialWidth - type + minimumTypeWidth) : initialWidth;
-    public enum ptrdiff_t name = max(minimumNameWidth, compensatedWidth);
 }
 
 ///
