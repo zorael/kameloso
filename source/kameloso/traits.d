@@ -67,9 +67,17 @@ auto memberstringIsThisCtorOrDtor(const string memberstring) pure @safe nothrow 
  +/
 template memberIsVisibleAndNotDeprecated(Thing, string memberstring)
 {
-    import std.traits : isAggregateType;
+    import std.traits : isAggregateType, isType;
 
-    static if (!isAggregateType!Thing)
+    static if (!isType!Thing)
+    {
+        import std.format : format;
+
+        enum pattern = "`memberIsVisibleAndNotDeprecated` was passed a non-type `%s`";
+        enum message = pattern.format(typeof(Thing).stringof);
+        static assert(0, message);
+    }
+    else static if (!isAggregateType!Thing)
     {
         import std.format : format;
 
@@ -148,9 +156,17 @@ unittest
  +/
 template memberIsMutable(Thing, string memberstring)
 {
-    import std.traits : isAggregateType, isMutable;
+    import std.traits : isAggregateType, isMutable, isType;
 
-    static if (!isAggregateType!Thing)
+    static if (!isType!Thing)
+    {
+        import std.format : format;
+
+        enum pattern = "`memberIsMutable` was passed a non-type `%s`";
+        enum message = pattern.format(typeof(Thing).stringof);
+        static assert(0, message);
+    }
+    else static if (!isAggregateType!Thing)
     {
         import std.format : format;
 
@@ -218,7 +234,15 @@ template memberIsValue(Thing, string memberstring)
 {
     import std.traits : isAggregateType, isMutable, isSomeFunction, isType;
 
-    static if (!isAggregateType!Thing)
+    static if (!isType!Thing)
+    {
+        import std.format : format;
+
+        enum pattern = "`memberIsValue` was passed a non-type `%s`";
+        enum message = pattern.format(typeof(Thing).stringof);
+        static assert(0, message);
+    }
+    else static if (!isAggregateType!Thing)
     {
         import std.format : format;
 
