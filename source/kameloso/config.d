@@ -696,27 +696,34 @@ auto handleGetopt(Kameloso instance) @system
             instance.parser.client.nickname.length ? instance.parser.client.nickname : "<random>";
 
         immutable sslText = quiet ? string.init :
-            instance.connSettings.ssl ? "true" :
-                instance.coreSettings.force ? "false" : "inferred by port";
+            instance.connSettings.ssl ?
+                "true" :
+                instance.coreSettings.force ?
+                    "false" :
+                    "inferred by port";
 
         immutable passwordMask = quiet ? string.init :
-            instance.bot.password.length ? '*'.repeat(uniform(6, 10)).to!string : string.init;
+            instance.bot.password.length ?
+                '*'.repeat(uniform(6, 10)).to!string :
+                string.init;
 
         immutable passMask = quiet ? string.init :
-            instance.bot.pass.length ? '*'.repeat(uniform(6, 10)).to!string : string.init;
+            instance.bot.pass.length ?
+                '*'.repeat(uniform(6, 10)).to!string :
+                string.init;
 
         immutable editorCommand = quiet ? string.init :
             environment.get("EDITOR", string.init);
 
         immutable editorVariableValue = quiet ? string.init :
             editorCommand.length ?
-                " [<i>%s</>]".expandTags(LogLevel.trace).format(editorCommand) :
+                " [<i>%s</>]".expandTags(LogLevel.off).format(editorCommand) :
                 string.init;
 
         auto formatNum(const size_t num)
         {
             return (quiet || (num == 0)) ? string.init :
-                " (<i>%d</>)".expandTags(LogLevel.trace).format(num);
+                " (<i>%d</>)".expandTags(LogLevel.off).format(num);
         }
 
         void appendCustomSetting(const string _, const string setting)
@@ -778,31 +785,31 @@ auto handleGetopt(Kameloso instance) @system
             "n|nickname",
                 quiet ? string.init :
                     "Nickname [<i>%s</>]"
-                        .expandTags(LogLevel.trace)
+                        .expandTags(LogLevel.off)
                         .format(nickname),
                 &instance.parser.client.nickname,
             "s|server",
                 quiet ? string.init :
                     "Server address [<i>%s</>]"
-                        .expandTags(LogLevel.trace)
+                        .expandTags(LogLevel.off)
                         .format(instance.parser.server.address),
                 &instance.parser.server.address,
             "P|port",
                 quiet ? string.init :
                     "Server port [<i>%d</>]"
-                        .expandTags(LogLevel.trace)
+                        .expandTags(LogLevel.off)
                         .format(instance.parser.server.port),
                 &instance.parser.server.port,
             "6|ipv6",
                 quiet ? string.init :
                     "Use IPv6 where available [<i>%s</>]"
-                        .expandTags(LogLevel.trace)
+                        .expandTags(LogLevel.off)
                         .format(instance.connSettings.ipv6),
                 &instance.connSettings.ipv6,
             "ssl",
                 quiet ? string.init :
                     "Attempt SSL connection [<i>%s</>]"
-                        .expandTags(LogLevel.trace)
+                        .expandTags(LogLevel.off)
                         .format(sslText),
                 &instance.connSettings.ssl,
             "A|account",
@@ -810,7 +817,7 @@ auto handleGetopt(Kameloso instance) @system
                     "Services account name" ~
                         (instance.bot.account.length ?
                             " [<i>%s</>]"
-                                .expandTags(LogLevel.trace)
+                                .expandTags(LogLevel.off)
                                 .format(instance.bot.account) :
                             string.init),
                 &instance.bot.account,
@@ -819,7 +826,7 @@ auto handleGetopt(Kameloso instance) @system
                     "Services account password" ~
                         (instance.bot.password.length ?
                             " [<i>%s</>]"
-                                .expandTags(LogLevel.trace)
+                                .expandTags(LogLevel.off)
                                 .format(passwordMask) :
                             string.init),
                 &instance.bot.password,
@@ -828,7 +835,7 @@ auto handleGetopt(Kameloso instance) @system
                     "Registration pass" ~
                         (instance.bot.pass.length ?
                             " [<i>%s</>]"
-                                .expandTags(LogLevel.trace)
+                                .expandTags(LogLevel.off)
                                 .format(passMask) :
                             string.init),
                 &instance.bot.pass,
@@ -840,7 +847,7 @@ auto handleGetopt(Kameloso instance) @system
             "H|homeChannels",
                 quiet ? string.init :
                     text(("Home channels to operate in, comma-separated " ~
-                        "(escape or enquote any octothorpe <i>#</>s)").expandTags(LogLevel.trace),
+                        "(escape or enquote any octothorpe <i>#</>s)").expandTags(LogLevel.off),
                         formatNum(instance.bot.homeChannels.length)),
                 &inputHomeChannels,
             "C|guestChannels",
@@ -860,18 +867,18 @@ auto handleGetopt(Kameloso instance) @system
             "bright",
                 quiet ? string.init :
                     "Adjust colours for bright terminal backgrounds [<i>%s</>]"
-                        .expandTags(LogLevel.trace)
+                        .expandTags(LogLevel.off)
                         .format(instance.coreSettings.brightTerminal),
                 &instance.coreSettings.brightTerminal,
             "color",
                 quiet ? string.init :
                     "Use colours in terminal output (<i>auto</>|<i>always</>|<i>never</>)"
-                        .expandTags(LogLevel.trace),
+                        .expandTags(LogLevel.off),
                     &nothing,
             /*"colour",
                 quiet ? string.init :
                     "(Alias to <i>--color</>)"
-                        .expandTags(LogLevel.trace),
+                        .expandTags(LogLevel.off),
                     &nothing,*/
             "set",
                 quiet ? string.init :
@@ -880,21 +887,21 @@ auto handleGetopt(Kameloso instance) @system
             "c|config",
                 quiet ? string.init :
                     "Specify a different configuration file [<i>%s</>]"
-                        .expandTags(LogLevel.trace)
+                        .expandTags(LogLevel.off)
                         .format(instance.coreSettings.configFile),
                 //&settings.configFile,  // already handled
                 &noop,
             "r|resourceDir",
                 quiet ? string.init :
                     "Specify a different resource directory [<i>%s</>]"
-                        .expandTags(LogLevel.trace)
+                        .expandTags(LogLevel.off)
                         .format(instance.coreSettings.resourceDirectory),
                 &instance.coreSettings.resourceDirectory,
             /+"receiveTimeout",
                 quiet ? string.init :
                     ("Socket receive timeout in milliseconds; lower numbers " ~
                         "improve worse-case responsiveness of outgoing messages [<i>%d</>]")
-                            .expandTags(LogLevel.trace)
+                            .expandTags(LogLevel.off)
                             .format(instance.connSettings.receiveTimeout),
                 &instance.connSettings.receiveTimeout,
             "privateKey",
@@ -908,7 +915,7 @@ auto handleGetopt(Kameloso instance) @system
             "cacert",
                 quiet ? string.init :
                     "Path to <i>cacert.pem</> certificate bundle, or equivalent"
-                        .expandTags(LogLevel.trace),
+                        .expandTags(LogLevel.off),
                 &instance.connSettings.caBundleFile,
             "get-openssl",
                 quiet ? string.init :
@@ -917,7 +924,7 @@ auto handleGetopt(Kameloso instance) @system
             "get-cacert",
                 quiet ? string.init :
                     getCacertString
-                        .expandTags(LogLevel.trace),
+                        .expandTags(LogLevel.off),
                 &shouldDownloadCacert,
             "setup-twitch",
                 quiet ? string.init :
@@ -931,7 +938,7 @@ auto handleGetopt(Kameloso instance) @system
             "summary",
                 quiet ? string.init :
                     "Show a connection summary on program exit [<i>%s</>]"
-                        .expandTags(LogLevel.trace)
+                        .expandTags(LogLevel.off)
                         .format(instance.coreSettings.exitSummary),
                 &instance.coreSettings.exitSummary,
             "force",
@@ -949,12 +956,12 @@ auto handleGetopt(Kameloso instance) @system
                 &shouldWriteConfig,
             "edit",
                 quiet ? string.init :
-                    editorMessage.expandTags(LogLevel.trace) ~ editorVariableValue,
+                    editorMessage.expandTags(LogLevel.off) ~ editorVariableValue,
                 &shouldOpenTerminalEditor,
             "gedit",
                 quiet ? string.init :
                     ("Open the configuration file in a *graphical* text editor " ~ geditProgramString)
-                        .expandTags(LogLevel.trace),
+                        .expandTags(LogLevel.off),
                 &shouldOpenGraphicalEditor,
             "headless",
                 quiet ? string.init :
