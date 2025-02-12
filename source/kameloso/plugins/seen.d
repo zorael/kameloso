@@ -1119,13 +1119,14 @@ void onWelcome(SeenPlugin plugin)
     void endOfMotdDg(IRCEvent)
     {
         import kameloso.plugins.common.scheduling : unawait;
+        import lu.string : plurality;
 
         unawait(plugin, &endOfMotdDg, endOfMotdEventTypes[]);
 
         // Reports statistics on how many users are registered as having been seen
-
-        enum pattern = "Currently <i>%d</> users seen.";
-        logger.logf(pattern, plugin.seenUsers.length);
+        enum pattern = "Currently <i>%3,d</> %s seen.";
+        immutable noun = plugin.seenUsers.length.plurality("user", "users");
+        logger.logf(pattern, plugin.seenUsers.length, noun);
     }
 
     await(plugin, &endOfMotdDg, endOfMotdEventTypes[]);
