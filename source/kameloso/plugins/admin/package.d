@@ -1710,7 +1710,7 @@ void onCommandSelftest(AdminPlugin plugin, const IRCEvent event)
         enum pattern = "Usage: %s%s [target nickname] [optional plugin name(s)]";
         immutable message = pattern.format(
             plugin.state.coreSettings.prefix,
-            event.aux[0]);
+            event.aux[$-1]);
         chan(plugin.state, event.channel.name, message);
         return;
     }
