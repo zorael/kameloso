@@ -33,11 +33,14 @@ debug version = Debug;
 
     Params:
         line = String line to examine and find URLs in.
+        max = Maximum number of URLs to find. Default is `uint.max`.
 
     Returns:
         A `string[]` array of found URLs. These include fragment identifiers.
  +/
-auto findURLs(const string line) @safe pure
+auto findURLs(
+    const string line,
+    const uint max = uint.max) @safe pure
 {
     import lu.string : advancePast, stripped, strippedRight;
     import std.algorithm.searching : canFind;
@@ -46,13 +49,15 @@ auto findURLs(const string line) @safe pure
     enum wordBoundaryTokens = ".,!?:";
     enum minimumPossibleLinkLength = "http://a.se".length;
 
+    if (max == 0) return null;
+
     string slice = line.stripped;  // mutable
     if (slice.length < minimumPossibleLinkLength) return null;
 
     string[] hits;
     ptrdiff_t httpPos = slice.indexOf("http");
 
-    while (httpPos != -1)
+    while ((httpPos != -1) && (hits.length < max))
     {
         if ((httpPos > 0) && (slice[httpPos-1] != ' '))
         {
@@ -119,8 +124,19 @@ unittest
         assert((urls == [ "https://a.com", "http://b.com", "https://d.asdf.asdf.asdf" ]), urls.to!string);
     }
     {
+        // max 2
+        const urls = findURLs("blah https://a.com http://b.com shttps://c https://d.asdf.asdf.asdf        ", max: 2);
+        assert((urls.length == 2), urls.to!string);
+        assert((urls == [ "https://a.com", "http://b.com" ]), urls.to!string);
+    }
+    {
         const urls = findURLs("http:// http://asdf https:// asdfhttpasdf http://google.com");
         assert((urls.length == 1), urls.to!string);
+    }
+    {
+        // max 0
+        const urls = findURLs("http:// http://asdf https:// asdfhttpasdf http://google.com", max: 0);
+        assert(!urls.length, urls.to!string);
     }
     {
         const urls = findURLs("http://a.sehttp://a.shttp://a.http://http:");
