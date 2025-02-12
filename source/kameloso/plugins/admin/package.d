@@ -1608,6 +1608,7 @@ void onCommandSelftest(AdminPlugin plugin, const IRCEvent event)
 
         void selftestDgInner()
         {
+            import kameloso.irccolours : expandIRCTags;
             import kameloso.time : timeSince;
             import core.time : MonoTime;
 
@@ -1617,7 +1618,13 @@ void onCommandSelftest(AdminPlugin plugin, const IRCEvent event)
             immutable start = MonoTime.currTime;
 
             enum message = "Running self-tests. This may take several minutes.";
+            enum pluginListPattern = "Plugins to test: <b>%-(%s<b>, <b>%)<b> (<b>%d<b>)";
+            immutable pluginListMessage = pluginListPattern
+                .format(pluginNames, pluginNames.length)
+                .expandIRCTags;
+
             chan(plugin.state, event.channel.name, message);
+            chan(plugin.state, event.channel.name, pluginListMessage);
 
             string[] succeeded;
             string[] failed;
