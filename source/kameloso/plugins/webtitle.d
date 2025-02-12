@@ -46,6 +46,11 @@ import core.thread.fiber : Fiber;
     IRCUser.Class minimumPermissionsNeeded = IRCUser.Class.anyone;
 
     /++
+        How many URLs to look up per line in a message. Any further URLs will be ignored.
+     +/
+    int maxURLsPerLine = 1;
+
+    /++
         How many worker threads to use, to offload the HTTP requests to.
      +/
     uint workerThreads = 3;
@@ -195,7 +200,10 @@ void onMessageImpl(WebtitlePlugin plugin, const IRCEvent event)
         if (nicknameStripped != content) return;
     }
 
-    auto urls = findURLs(event.content);  // mutable so advancePast in lookupURLs works
+    // mutable so advancePast in lookupURLs works
+    auto urls = findURLs(
+        line: event.content,
+        max: plugin.webtitleSettings.maxURLsPerLine);
 
     if (urls.length)
     {
