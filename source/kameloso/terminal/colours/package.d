@@ -293,7 +293,10 @@ string asANSI(const uint code) pure @safe nothrow
         g = Reference to a green value.
         b = Reference to a blue value.
  +/
-private void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure @safe nothrow @nogc
+private void normaliseColoursBright(
+    ref uint r,
+    ref uint g,
+    ref uint b) pure @safe nothrow @nogc
 {
     enum pureWhiteReplacement = 120;
     enum pureWhiteRange = 200;
@@ -356,7 +359,10 @@ private void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure @sa
         g = Reference to a green value.
         b = Reference to a blue value.
  +/
-private void normaliseColours(ref uint r, ref uint g, ref uint b) pure @safe nothrow @nogc
+private void normaliseColours(
+    ref uint r,
+    ref uint g,
+    ref uint b) pure @safe nothrow @nogc
 {
     enum pureBlackReplacement = 120;
 
@@ -1112,24 +1118,20 @@ private auto getColourByHashImpl(
 in (word.length, "Tried to get colour by hash but no word was given")
 {
     import kameloso.irccolours : ircANSIColourMap;
-    import kameloso.terminal.colours.defs : TerminalForeground;
+    import kameloso.terminal.colours.defs : TF = TerminalForeground;
     import std.traits : EnumMembers;
 
-    static immutable basicForegroundMembers = [ EnumMembers!TerminalForeground ];
-
-    static immutable uint[basicForegroundMembers.length+(-2)] brightTableBasic =
-        TerminalForeground.black ~ basicForegroundMembers[2..$-1];
-
-    static immutable uint[basicForegroundMembers.length+(-2)] darkTableBasic =
-        TerminalForeground.white ~ basicForegroundMembers[2..$-1];
+    static immutable basicFg = [ EnumMembers!TF ];
+    static immutable uint[basicFg.length+(-2)] brightTable = TF.black ~ basicFg[2..$-1];
+    static immutable uint[basicFg.length+(-2)] darkTable = TF.white ~ basicFg[2..$-1];
 
     static immutable brightTableExtended = ()
     {
         uint[98] colourTable = ircANSIColourMap[1..$].dup;
 
         // Tweak colours, darken some very bright ones
-        colourTable[0] = TerminalForeground.black;
-        colourTable[11] = TerminalForeground.yellow;
+        colourTable[0]  = TF.black;
+        colourTable[11] = TF.yellow;
         colourTable[53] = 224;
         colourTable[65] = 222;
         colourTable[77] = 223;
@@ -1163,8 +1165,8 @@ in (word.length, "Tried to get colour by hash but no word was given")
             darkTableExtended
             :
         brightTerminal ?
-            brightTableBasic :
-            darkTableBasic;
+            brightTable :
+            darkTable;
 
     immutable colourIndex = (hashOf(word) % table.length);
     return table[colourIndex];
@@ -1177,22 +1179,34 @@ unittest
 
     {
         enum word = "kameloso";
-        immutable hash = getColourByHashImpl(word, brightTerminal: false, extendedColours: true);
+        immutable hash = getColourByHashImpl(
+            word,
+            brightTerminal: false,
+            extendedColours: true);
         assert((hash == 227), hash.to!string);
     }
     {
         enum word = "kameloso^";
-        immutable hash = getColourByHashImpl(word, brightTerminal: false, extendedColours: true);
+        immutable hash = getColourByHashImpl(
+            word,
+            brightTerminal: false,
+            extendedColours: true);
         assert((hash == 46), hash.to!string);
     }
     {
         enum word = "zorael";
-        immutable hash = getColourByHashImpl(word, brightTerminal: true, extendedColours: true);
+        immutable hash = getColourByHashImpl(
+            word,
+            brightTerminal: true,
+            extendedColours: true);
         assert((hash == 35), hash.to!string);
     }
     {
         enum word = "NO";
-        immutable hash = getColourByHashImpl(word, brightTerminal: true, extendedColours: true);
+        immutable hash = getColourByHashImpl(
+            word,
+            brightTerminal: true,
+            extendedColours: true);
         assert((hash == 90), hash.to!string);
     }
 }
@@ -1220,7 +1234,10 @@ auto colourByHash(
     const bool extendedColours = CoreSettings.init.extendedColours) pure @safe nothrow
 in (word.length, "Tried to colour a word by hash but no word was given")
 {
-    immutable code = getColourByHashImpl(word, brightTerminal, extendedColours);
+    immutable code = getColourByHashImpl(
+        word,
+        brightTerminal,
+        extendedColours);
     return word.withANSI(code);
 }
 
