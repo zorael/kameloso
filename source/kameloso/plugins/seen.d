@@ -1124,7 +1124,7 @@ void onWelcome(SeenPlugin plugin)
         unawait(plugin, &endOfMotdDg, endOfMotdEventTypes[]);
 
         // Reports statistics on how many users are registered as having been seen
-        enum pattern = "Currently <i>%3,d</> %s seen.";
+        enum pattern = "Currently <i>%,d</> %s seen.";
         immutable noun = plugin.seenUsers.length.plurality("user", "users");
         logger.logf(pattern, plugin.seenUsers.length, noun);
     }
