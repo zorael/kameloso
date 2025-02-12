@@ -109,23 +109,30 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
 
         If the class is `unset`, it is raised to `anyone`.
      +/
-    static void discoverAdmin(PersistenceService service, ref IRCUser user)
+    static void discoverAdmin(
+        PersistenceService service,
+        ref IRCUser user,
+        const long nowInUnix)
     {
-        if (user.class_ == IRCUser.Class.admin)
+        if ((user.class_ == IRCUser.Class.admin) ||
+            (user.class_ == IRCUser.Class.blacklist))
         {
-            // admin is sticky
+            // admin and blacklist are sticky
             return;
         }
         else
         {
-            import std.algorithm.searching : canFind;
+            enum minimumTimeBetweenAdminChecks = 60;  // seconds
 
-            // We can't really throttle this, but maybe it pales in
-            // comparison to all the AA lookups we're doing
-            if (service.state.bot.admins.canFind(user.account))
+            if ((nowInUnix - user.updated) > minimumTimeBetweenAdminChecks)
             {
-                user.class_ = IRCUser.Class.admin;
-                return;
+                import std.algorithm.searching : canFind;
+
+                if (service.state.bot.admins.canFind(user.account))
+                {
+                    user.class_ = IRCUser.Class.admin;
+                    return;
+                }
             }
         }
 
@@ -154,7 +161,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             // into the global user
             version(TwitchSupport) user.badges = string.init;
 
-            discoverAdmin(service, *user);
+            discoverAdmin(service, *user, event.time);
             syncUserWithGlobal(service, *user, errors: event.errors);
         }
     }
@@ -322,24 +329,23 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
                 }
                 break;
             }
+        }
 
-            // Ensure sane classes
-            if (((stored.class_ == IRCUser.Class.anyone) ||
-                (stored.class_ == IRCUser.Class.unset)) &&
-                stored.account.length && (stored.account != "*"))
+        /+
+            Check the user for admin-ness. This also sets the class to anyone
+            if it should be unset for some reason.
+         +/
+        discoverAdmin(service, *stored, event.time);
+
+        if (service.state.server.daemon != IRCServer.Daemon.twitch)
+        {
+            // If the user has an account, just assign it registered
+            if ((stored.class_ != IRCUser.Class.blacklist) &&
+                (stored.class_ < IRCUser.Class.registered) &&
+                stored.account.length &&
+                (stored.account != "*"))
             {
                 stored.class_ = IRCUser.Class.registered;
-            }
-            else if (stored.class_ == IRCUser.Class.unset)
-            {
-                stored.class_ = IRCUser.Class.anyone;
-            }
-        }
-        else /*if (service.state.server.daemon != IRCServer.Daemon.twitch)*/
-        {
-            version(TwitchSupport)
-            {
-                discoverAdmin(service, *stored);
             }
         }
 
