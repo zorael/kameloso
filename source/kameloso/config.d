@@ -176,19 +176,6 @@ void printSettings(Kameloso instance) @system
     import kameloso.prettyprint : prettyprint;
     import std.stdio : stdout, writeln;
     import std.typecons : Flag, No, Yes;
-    static import kameloso.common;
-
-    if (instance.customSettings.length)
-    {
-        import kameloso.plugins : applyCustomSettings;
-
-        // Apply custom settings to the settings struct. Disregard returned value
-        cast(void)applyCustomSettings(
-            null,
-            *instance.coreSettings,
-            instance.customSettings,
-            toPluginsOnly: false);  // include settings
-    }
 
     printVersionInfo();
     writeln();
