@@ -4376,18 +4376,6 @@ auto applyCustomSettings(
 }
 
 
-// memoryCorruptionCheckConstraintsDefault
-/++
-    Whether or not to add constraints to the [memoryCorruptionCheck] mixin string
-    to ensure it is mixed into an appropriate environment.
-
-    This becomes the default value for the `constraints` parameter of [memoryCorruptionCheck].
-    It is set to `true` in the `unittest` configuration and `false` otherwise.
- +/
-version(unittest) enum memoryCorruptionCheckConstraintsDefault = true;
-else enum memoryCorruptionCheckConstraintsDefault = false;  /// ditto
-
-
 // memoryCorruptionCheck
 /++
     Mixin that adds a check to ensure that the event type of the event being
@@ -4399,14 +4387,6 @@ else enum memoryCorruptionCheckConstraintsDefault = false;  /// ditto
     If version `MemoryCorruptionChecks` is not declared it is a no-op and returns
     an empty string.
 
-    Params:
-        eventParamName = (Optional) Name of the parameter that holds the event;
-            default "event".
-        udaIndex = (Optional) Index of the `IRCEventHandler` UDA to check for; default 0.
-        constraints = (Optional) Whether or not to add constraints to the string
-            to ensure it is mixed into an appropriate environment; defaults to
-            the value of [memoryCorruptionCheckConstraintsDefault].
-
     Returns:
         A string that can be mixed into a function to add the check.
 
@@ -4416,41 +4396,49 @@ else enum memoryCorruptionCheckConstraintsDefault = false;  /// ditto
 auto memoryCorruptionCheck(
     const string eventParamName = "event",
     const size_t udaIndex = 0,
-    const bool constraints = memoryCorruptionCheckConstraintsDefault)
+    const bool constraints = true)
 {
     version(MemoryCorruptionChecks)
     {
-        import std.conv : to;
-
-        immutable udaIndexString = udaIndex.to!string;
-        enum prelude = "static import kameloso.plugins;";
-
-        immutable constraintsString = constraints ?
-    "
+        enum mixinBody =
+    "{
     import lu.traits : udaIndexOf;
+    import std.traits : ParameterIdentifierTuple, Parameters;
+    static import kameloso.plugins;
 
-    static if (!__traits(compiles, " ~ eventParamName ~ ".type))
+    alias fun = mixin(__FUNCTION__);
+    alias funParams = Parameters!fun;
+    alias paramNames = ParameterIdentifierTuple!fun;
+
+    static if ((funParams.length == 1) && is(funParams[0] : kameloso.plugins.IRCEvent))
     {
-        enum message = \"`memoryCorruptionCheck` must be mixed into a function \" ~
-            \"with an `IRCEvent` parameter named `" ~ eventParamName ~ "`\";
+        enum eventParamName = paramNames[0];
+    }
+    else static if ((funParams.length == 2) && is(funParams[1] : kameloso.plugins.IRCEvent))
+    {
+        enum eventParamName = paramNames[1];
+    }
+    else
+    {
+        enum message = \"`\" ~ __FUNCTION__ ~ \"` mixes in `memoryCorruptionCheck` \" ~
+            \"but is not a function accepting an `IRCEvent` parameter.\";
         static assert(0, message);
     }
 
-    static if (udaIndexOf!(mixin(__FUNCTION__), kameloso.plugins.IRCEventHandler) != " ~ udaIndexString ~ ")
+    static immutable udaIndex = udaIndexOf!(fun, kameloso.plugins.IRCEventHandler);
+
+    static if (udaIndex == -1)
     {
-        enum message = \"`memoryCorruptionCheck` must be mixed into a function \" ~
-            \"annotated with an `IRCEventHandler` (at UDA index `" ~ udaIndexString ~ "`)\";
+        enum message = \"`\" ~ __FUNCTION__ ~ \"` mixes in `memoryCorruptionCheck` \" ~
+            \"but is not annotated with an `IRCEventHandler`.\";
         static assert(0, message);
     }
-    " :
-    string.init;
 
-        immutable checkString =
-    "
-    static immutable _uda = __traits(getAttributes, mixin(__FUNCTION__))[" ~ udaIndexString ~ "];
-    kameloso.plugins.memoryCorruptionCheckImpl(" ~ eventParamName ~ ", _uda, __FUNCTION__);";
+    static immutable _uda = __traits(getAttributes, fun)[udaIndex];
+    kameloso.plugins.memoryCorruptionCheckImpl(mixin(eventParamName), _uda, __FUNCTION__);
+    }";
 
-        return "{\n    " ~ prelude ~ constraintsString ~ checkString ~ "\n}";
+        return mixinBody;
     }
     else
     {
@@ -4476,13 +4464,12 @@ void memoryCorruptionCheckImpl(
     const IRCEventHandler uda,
     const string functionName) pure @safe
 {
+    import lu.conv : toString;
     import std.algorithm.searching : canFind;
+    import std.format : format;
 
     if (!uda.acceptedEventTypes.canFind(event.type, IRCEvent.Type.ANY))
     {
-        import lu.conv : toString;
-        import std.format : format;
-
         enum pattern = "Event handler `%s` was called with an unexpected event type: %s";
         immutable message = pattern.format(functionName, event.type.toString());
         assert(0, message);
@@ -4494,7 +4481,8 @@ void memoryCorruptionCheckImpl(
 
         if (!event.aux[$-1].length)
         {
-            enum message = "No command word found in event.aux[$-1]";
+            enum pattern = "Event handler `%s` was called with no command word found in the event's `aux[$-1]`";
+            immutable message = pattern.format(functionName, event.type.toString());
             assert(0, message);
         }
 
