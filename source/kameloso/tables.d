@@ -15,8 +15,23 @@ module kameloso.tables;
     As the name suggests, a `bool[2]` with the values `true`, then `false`.
 
     Has its uses when you want to `foreach` over something twice.
+
+    See_Also:
+        [falseThenTrue]
  +/
 static immutable bool[2] trueThenFalse = [ true, false ];
+
+
+// falseThenTrue
+/++
+    As the name suggests, a `bool[2]` with the values `false`, then `true`.
+
+    Has its uses when you want to `foreach` over something twice.
+
+    See_Also:
+        [trueThenFalse]
+ +/
+static immutable bool[2] falseThenTrue = [ false, true ];
 
 
 // HTTPVerb
