@@ -4510,36 +4510,16 @@ void memoryCorruptionCheckImpl(
 
 version(unittest)
 {
-    // memoryCorruptionCheckTestDefaultName
-    /++
-        Test function for [memoryCorruptionCheck] with default parameters.
-     +/
-    @(IRCEventHandler())
-    private void memoryCorruptionCheckTestDefaultName(IRCEvent event)
-    {
-
-        mixin(memoryCorruptionCheck);
-    }
-
-
-    // memoryCorruptionCheckTestCustomName
-    /++
-        Test function for [memoryCorruptionCheck] with a custom event parameter name.
-     +/
-    @(IRCEventHandler())
-    private void memoryCorruptionCheckTestCustomName(IRCEvent blarp)
-    {
-        mixin(memoryCorruptionCheck);
-    }
-
-
-    // memoryCorruptionCheckTestCustomIndex
+    // memoryCorruptionCheckCustomIndexUDAIndex
     /++
         Test function for [memoryCorruptionCheck] with a custom UDA index.
      +/
     @123
+    @456
+    @789
     @(IRCEventHandler())
-    private void memoryCorruptionCheckTestCustomNameCustomIndex(IRCEvent hirr)
+    @123
+    private void memoryCorruptionCheckCustomIndexUDAIndex(IRCEvent _)
     {
         mixin(memoryCorruptionCheck);
     }
