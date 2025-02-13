@@ -406,7 +406,7 @@ void onEndOfMotd(WebtitlePlugin plugin, const IRCEvent _)
 {
     import std.algorithm.comparison : max;
 
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    mixin(memoryCorruptionCheck);
 
     // Use a minimum of one worker thread, regardless of setting
     plugin.transient.workerTids.length =

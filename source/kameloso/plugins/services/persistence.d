@@ -905,7 +905,7 @@ void onWelcome(PersistenceService service, const IRCEvent _)
     import kameloso.plugins.common.scheduling : delay;
     import core.time : hours;
 
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    mixin(memoryCorruptionCheck);
 
     reloadAccountClassifiersFromDisk(service);
     if (service.state.coreSettings.preferHostmasks) reloadHostmasksFromDisk(service);

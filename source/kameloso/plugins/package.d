@@ -4521,7 +4521,7 @@ version(unittest)
     private void memoryCorruptionCheckTestDefaultName(IRCEvent event)
     {
 
-        mixin(memoryCorruptionCheck(constraints: true));
+        mixin(memoryCorruptionCheck);
     }
 
 
@@ -4532,7 +4532,7 @@ version(unittest)
     @(IRCEventHandler())
     private void memoryCorruptionCheckTestCustomName(IRCEvent blarp)
     {
-        mixin(memoryCorruptionCheck(eventParamName: "blarp"));
+        mixin(memoryCorruptionCheck);
     }
 
 
@@ -4544,7 +4544,7 @@ version(unittest)
     @(IRCEventHandler())
     private void memoryCorruptionCheckTestCustomNameCustomIndex(IRCEvent hirr)
     {
-        mixin(memoryCorruptionCheck(eventParamName: "hirr", udaIndex: 1));
+        mixin(memoryCorruptionCheck);
     }
 }
 

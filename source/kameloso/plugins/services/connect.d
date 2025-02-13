@@ -677,7 +677,7 @@ void tryAuth(ConnectService service)
 )
 void onAuthEnd(ConnectService service, const IRCEvent _)
 {
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    mixin(memoryCorruptionCheck);
 
     service.transient.progress.authentication = Progress.finished;
 
@@ -789,7 +789,7 @@ void onNickInUse(ConnectService service, const IRCEvent _)
     import std.conv : to;
     import std.random : uniform;
 
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    mixin(memoryCorruptionCheck);
 
     if (service.transient.progress.registration == Progress.inProgress)
     {
@@ -817,7 +817,7 @@ void onNickInUse(ConnectService service, const IRCEvent _)
 )
 void onBadNick(ConnectService service, const IRCEvent _)
 {
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    mixin(memoryCorruptionCheck);
 
     if (service.transient.progress.registration == Progress.inProgress)
     {
@@ -1471,7 +1471,7 @@ void onSelfnickSuccessOrFailure(ConnectService service, const IRCEvent _)
 {
     import kameloso.thread : ThreadMessage, boxed;
 
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    mixin(memoryCorruptionCheck);
 
     auto message = ThreadMessage.busMessage("printer", boxed("unsquelch " ~ service.state.client.origNickname));
     service.state.messages ~= message;
@@ -1516,7 +1516,7 @@ void onQuit(ConnectService service, const IRCEvent event)
 )
 void onEndOfMOTD(ConnectService service, const IRCEvent _)
 {
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    mixin(memoryCorruptionCheck);
 
     // Make sure this function is only processed once
     if (service.transient.sawEndOfMOTD) return;

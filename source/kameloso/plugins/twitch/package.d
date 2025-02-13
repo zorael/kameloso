@@ -739,7 +739,7 @@ void onGlobalUserstate(TwitchPlugin plugin, const IRCEvent _)
 {
     import kameloso.plugins.twitch.emotes : importCustomEmotes;
 
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    mixin(memoryCorruptionCheck);
 
     // dialect sets the display name during parsing
     //assert(plugin.state.client.displayName == event.target.displayName);
@@ -2276,7 +2276,7 @@ void onEndOfMOTD(TwitchPlugin plugin, const IRCEvent _)
     import std.algorithm.searching : startsWith;
     import std.concurrency : spawn;
 
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    mixin(memoryCorruptionCheck);
 
     // Concatenate the Bearer and OAuth headers once.
     // This has to be done *after* connect's register
@@ -2928,7 +2928,7 @@ void initialise(TwitchPlugin plugin)
 void onMyInfo(TwitchPlugin plugin, const IRCEvent _)
 {
     // Load ecounts and such.
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    mixin(memoryCorruptionCheck);
     loadResources(plugin);
 }
 

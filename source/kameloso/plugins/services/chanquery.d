@@ -75,7 +75,7 @@ enum ChannelState : ubyte
 )
 void onPing(ChanQueryService service, const IRCEvent _)
 {
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    mixin(memoryCorruptionCheck);
     startQueries(service);
 }
 
@@ -531,7 +531,7 @@ void onTopic(ChanQueryService service, const IRCEvent event)
 )
 void onEndOfNames(ChanQueryService service, const IRCEvent _)
 {
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    mixin(memoryCorruptionCheck);
 
     if (!service.transient.querying && service.transient.queriedAtLeastOnce)
     {
@@ -552,7 +552,7 @@ void onMyInfo(ChanQueryService service, const IRCEvent _)
 {
     import kameloso.plugins.common.scheduling : delay;
 
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    mixin(memoryCorruptionCheck);
 
     delay(service, service.timeBeforeInitialQueries, yield: true);
     startQueries(service);

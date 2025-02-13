@@ -138,7 +138,7 @@ void onEndOfMotd(BashPlugin plugin, const IRCEvent _)
 {
     import std.concurrency : Tid, spawn;
 
-    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    mixin(memoryCorruptionCheck);
 
     if (plugin.transient.workerTid == Tid.init)
     {
