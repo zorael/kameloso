@@ -27,6 +27,7 @@ import kameloso.net : ListenAttempt;
 import kameloso.plugins : IRCPlugin;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
+import lu.misc : Next;
 import std.datetime.systime : SysTime;
 
 version(WantConcurrencyMessageLoop)
@@ -227,18 +228,22 @@ void signalHandler(int sig) nothrow @nogc @system
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         now = The current time as a [std.datetime.systime.SysTime|SysTime].
+        onlyThisPlugin = An optional [kameloso.plugins.IRCPlugin|IRCPlugin] which,
+            if specified, should be the only plugin whose messages are processed.
 
     Returns:
         A [lu.misc.Next|Next] value, signaling to the caller whether the bot
         should exit or not.
  +/
-auto processMessages(Kameloso instance, const SysTime now)
+auto processMessages(
+    Kameloso instance,
+    const SysTime now,
+    IRCPlugin onlyThisPlugin = null)
 {
     import kameloso.common : OutgoingLine;
     import kameloso.messaging : Message;
     import kameloso.tables : trueThenFalse;
     import kameloso.thread : ThreadMessage;
-    import lu.misc : Next;
     import core.time : MonoTime, msecs;
 
     auto next = Next.continue_;
@@ -759,15 +764,24 @@ auto processMessages(Kameloso instance, const SysTime now)
         Messages. Process all priority messages over all plugins as a separate
         step before processing normal messages.
      +/
+    messagePriorityFlipFlop:
     foreach (immutable isPriority; trueThenFalse[])
     {
+        messagePluginForeach:
         foreach (plugin; instance.plugins)
         {
+            if ((onlyThisPlugin !is null) &&
+                (onlyThisPlugin !is plugin))
+            {
+                // A plugin was specified and this isn't it
+                continue messagePluginForeach;
+            }
+
             auto box = isPriority ?
                 &plugin.state.priorityMessages :
                 &plugin.state.messages;
 
-            if (!(*box)[].length) continue;
+            if (!(*box)[].length) continue messagePluginForeach;
 
             messageLoop:
             for (size_t i; i<(*box)[].length; ++i)
@@ -785,6 +799,12 @@ auto processMessages(Kameloso instance, const SysTime now)
             }
 
             box.clear();
+
+            if (onlyThisPlugin is plugin)
+            {
+                // We're done with the plugin we were asked to process
+                break messagePriorityFlipFlop;
+            }
         }
     }
 
@@ -793,16 +813,23 @@ auto processMessages(Kameloso instance, const SysTime now)
     /+
         Outgoing messages.
      +/
-    outgoingMessageTop:
+    outgoingMessagePluginForeach:
     foreach (plugin; instance.plugins)
     {
-        if (!plugin.state.outgoingMessages[].length || !plugin.isEnabled) continue outgoingMessageTop;
+        if ((onlyThisPlugin !is null) &&
+            (onlyThisPlugin !is plugin))
+        {
+            // A plugin was specified and this isn't it
+            continue outgoingMessagePluginForeach;
+        }
+
+        if (!plugin.state.outgoingMessages[].length || !plugin.isEnabled) continue outgoingMessagePluginForeach;
 
         // No need to iterate with a for loop since the length shouldn't change in the middle of it
-        outgoingMessageInner:
+        outgoingMessageMessageForeach:
         foreach (immutable i, ref message; plugin.state.outgoingMessages[])
         {
-            if (message.exhausted) continue outgoingMessageInner;
+            if (message.exhausted) continue outgoingMessageMessageForeach;
 
             onEventMessage(message);
             message.exhausted = true;
@@ -816,6 +843,12 @@ auto processMessages(Kameloso instance, const SysTime now)
 
         // if we're here, we've exhausted all outgoing messages for this plugin
         plugin.state.outgoingMessages.clear();
+
+        if (onlyThisPlugin is plugin)
+        {
+            // We're done with the plugin we were asked to process
+            break outgoingMessagePluginForeach;
+        }
     }
 
     /+
