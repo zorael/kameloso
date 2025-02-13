@@ -448,7 +448,7 @@ auto processMessages(
         case fakeEvent:
             version(Debug)
             {
-                processLineFromServer(instance, message.content, now);
+                next = processLineFromServer(instance, message.content, now);
             }
             break;
 
@@ -1154,7 +1154,10 @@ auto mainLoop(Kameloso instance)
                 historyEntry.bytesReceived += max(attempt.bytesReceived, 0);
                 historyEntry.stopTime = nowInUnix;
                 ++historyEntry.numEvents;
-                processLineFromServer(instance, attempt.line, now);
+
+                next = processLineFromServer(instance, attempt.line, now);
+                if (next != Next.continue_) return next;
+                else if (*instance.abort) return Next.returnFailure;
                 break;
 
             case retry:
@@ -1477,8 +1480,11 @@ void logPluginActionException(
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance instance.
         raw = A raw line as read from the server.
         now = The current time.
+
+    Returns:
+        A [lu.misc.Next] informing the calling function what to do next.
  +/
-void processLineFromServer(
+Next processLineFromServer(
     Kameloso instance,
     const string raw,
     const SysTime now)
@@ -1609,7 +1615,13 @@ void processLineFromServer(
             try
             {
                 immutable shouldCheckMessages = plugin.postprocess(event);
-                if (shouldCheckMessages) instance.processMessages(now);
+
+                if (shouldCheckMessages)
+                {
+                    immutable next = processMessages(instance, now, plugin);
+                    if (next != Next.continue_) return next;
+                }
+
             }
             catch (Exception e)
             {
@@ -1620,7 +1632,7 @@ void processLineFromServer(
                     "postprocess");
             }
 
-            if (*instance.abort) return;  // handled in mainLoop listenerloop
+            if (*instance.abort) return Next.returnFailure;  // handled in mainLoop listenerloop
             instance.checkPluginForUpdates(plugin);
         }
 
@@ -1643,13 +1655,13 @@ void processLineFromServer(
             }
 
             // These handle exceptions internally
-            if (*instance.abort) return;
+            if (*instance.abort) return Next.returnFailure;
             if (plugin.state.hasPendingReplays) processPendingReplays(instance, plugin);
             if (plugin.state.readyReplays.length) processReadyReplays(instance, plugin);
-            if (*instance.abort) return;
+            if (*instance.abort) return Next.returnFailure;
             processAwaitingDelegates(plugin, event);
             processAwaitingFibers(plugin, event);
-            if (*instance.abort) return;
+            if (*instance.abort) return Next.returnFailure;
             instance.checkPluginForUpdates(plugin);
         }
 
@@ -1739,6 +1751,8 @@ void processLineFromServer(
         printEventDebugDetails(event, raw);
         version(PrintStacktraces) logger.trace(e);
     }
+
+    return Next.continue_;
 }
 
 
