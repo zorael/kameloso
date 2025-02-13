@@ -925,7 +925,6 @@ auto mainLoop(Kameloso instance)
 {
     import kameloso.constants : Timeout;
     import kameloso.net : ListenAttempt, SocketSendException, listenFiber;
-    import lu.misc : Next;
     import std.concurrency : Generator;
     import std.datetime.systime : Clock, SysTime;
     import core.thread.fiber : Fiber;
@@ -1333,8 +1332,6 @@ auto sendLines(Kameloso instance)
  +/
 auto listenAttemptToNext(Kameloso instance, const ListenAttempt attempt)
 {
-    import lu.misc : Next;
-
     // Handle the attempt; switch on its state
     with (ListenAttempt.ListenState)
     final switch (attempt.state)
@@ -2818,7 +2815,6 @@ auto tryConnect(Kameloso instance)
     import kameloso.constants : ConnectionDefaultIntegers, Timeout;
     import kameloso.net : ConnectionAttempt, connectFiber;
     import kameloso.thread : interruptibleSleep;
-    import lu.misc : Next;
     import std.concurrency : Generator;
 
     auto connector = new Generator!ConnectionAttempt(() =>
@@ -3124,7 +3120,6 @@ auto tryResolve(Kameloso instance, const bool firstConnect)
 {
     import kameloso.constants : Timeout;
     import kameloso.net : ResolveAttempt, resolveFiber;
-    import lu.misc : Next;
     import std.concurrency : Generator;
 
     auto resolver = new Generator!ResolveAttempt(() =>
@@ -3301,8 +3296,6 @@ void setDefaultDirectories(ref CoreSettings coreSettings) @safe
  +/
 auto verifySettings(Kameloso instance)
 {
-    import lu.misc : Next;
-
     if (!instance.coreSettings.force)
     {
         import dialect.common : isValidNickname;
@@ -3484,7 +3477,6 @@ auto startBot(Kameloso instance)
     import kameloso.string : doublyBackslashed;
     import kameloso.terminal : TerminalToken, isTerminal;
     import dialect.parsing : IRCParser;
-    import lu.misc : Next;
     import std.algorithm.comparison : among;
     import core.time : Duration;
 
@@ -4171,10 +4163,6 @@ void printSummary(const Kameloso instance) @safe
  +/
 struct RunState
 {
-private:
-    import lu.misc : Next;
-
-public:
     /++
         Enum denoting what we should do next loop in an execution attempt.
      +/
@@ -4380,7 +4368,6 @@ auto run(string[] args)
     import kameloso.constants : ShellReturnValue;
     import kameloso.logger : KamelosoLogger;
     import kameloso.string : doublyBackslashed, replaceTokens;
-    import lu.misc : Next;
     import std.algorithm.comparison : among;
     import std.conv : ConvException;
     import std.exception : ErrnoException;
