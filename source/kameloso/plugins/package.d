@@ -4393,10 +4393,7 @@ auto applyCustomSettings(
     See_Also:
         [memoryCorruptionCheckImpl]
  +/
-auto memoryCorruptionCheck(
-    const string eventParamName = "event",
-    const size_t udaIndex = 0,
-    const bool constraints = true)
+auto memoryCorruptionCheck()
 {
     version(MemoryCorruptionChecks)
     {
