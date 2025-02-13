@@ -45,19 +45,19 @@ public:
 
     // brightTerminal
     /++
-        Flag denoting that the terminal has a bright background.
+        Whether or not he terminal has a bright background.
      +/
     bool brightTerminal = false;
 
     // extendedColours
     /++
-        Flag denoting that the bot should output text using extended ANSI sequences.
+        Whether or not the bot should output text using extended ANSI sequences.
      +/
     bool extendedColours = true;
 
     // preferHostmasks
     /++
-        Flag denoting that hostmasks should be used instead of accounts to authenticate users.
+        Whether or not hostmasks should be used instead of accounts to authenticate users.
      +/
     bool preferHostmasks = false;
 
@@ -89,7 +89,7 @@ public:
 
     // saveOnExit
     /++
-        Flag denoting that we should save configuration changes to file on exit.
+        Whether or not we should save configuration changes to file on exit.
      +/
     bool saveOnExit = false;
 

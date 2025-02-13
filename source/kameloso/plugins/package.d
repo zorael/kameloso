@@ -486,7 +486,7 @@ mixin template IRCPluginImpl(
     }
 
     /++
-        Flag denoting that [kameloso.plugins.IRCPluginImpl|IRCPluginImpl]
+        Constant denoting that [kameloso.plugins.IRCPluginImpl|IRCPluginImpl]
         has been mixed in.
      +/
     private enum hasIRCPluginImpl = true;

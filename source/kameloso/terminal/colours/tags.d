@@ -547,7 +547,7 @@ unittest
     String-replaces `<tags>` in a string with the results from calls to
     [kameloso.logger.KamelosoLogger|KamelosoLogger] `*tint` methods.
     Also works with `dstring`s and `wstring`s. Overload that does not take a
-    `strip` [std.typecons.Flag|Flag].
+    `strip` bool.
 
     Params:
         line = A line of text, presumably with `<tags>`.

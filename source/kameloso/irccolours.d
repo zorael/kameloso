@@ -1278,7 +1278,7 @@ unittest
     Slightly more complicated, but essentially string-replaces `<tags>` in an
     outgoing IRC string with correlating formatting using
     [dialect.common.IRCControlCharacter|IRCControlCharacter]s in their syntax.
-    Overload that takes an explicit `strip` [std.typecons.Flag|Flag].
+    Overload that takes an explicit `strip` bool.
 
     Params:
         line = String line to expand IRC tags of.
@@ -1348,7 +1348,7 @@ auto expandIRCTags(T)
     Slightly more complicated, but essentially string-replaces `<tags>` in an
     outgoing IRC string with correlating formatting using
     [dialect.common.IRCControlCharacter|IRCControlCharacter]s in their syntax.
-    Overload that does not take a `strip` [std.typecons.Flag|Flag].
+    Overload that does not take a `strip` bool.
 
     `<tags>` are the lowercase first letter of all
     [dialect.common.IRCControlCharacter|IRCControlCharacter] members;

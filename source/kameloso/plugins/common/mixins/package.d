@@ -105,7 +105,7 @@ mixin template WHOISFiberDelegate(
     }
 
     /++
-        Flag denoting that [WHOISFiberDelegate] has been mixed in.
+        Constant denoting that [WHOISFiberDelegate] has been mixed in.
      +/
     enum hasWHOISFiber = true;
 
@@ -554,7 +554,7 @@ private:
     }
 
     /++
-        Flag denoting that [MessagingProxy] has been mixed in.
+        Constant denoting that [MessagingProxy] has been mixed in.
      +/
     enum hasMessagingProxy = true;
 

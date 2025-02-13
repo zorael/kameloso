@@ -102,7 +102,7 @@ mixin template MinimalAuthentication(
     }
 
     /++
-        Flag denoting that
+        Constant denoting that
         [kameloso.plugins.common.mixins.awareness.MinimalAuthentication|MinimalAuthentication]
         has been mixed in.
      +/
@@ -266,7 +266,7 @@ mixin template UserAwareness(
     }
 
     /++
-        Flag denoting that
+        Constant denoting that
         [kameloso.plugins.common.mixins.awareness.UserAwareness|UserAwareness]
         has been mixed in.
      +/
@@ -649,7 +649,7 @@ mixin template ChannelAwareness(
     }
 
     /++
-        Flag denoting that [kameloso.plugins.common.mixins.awareness.ChannelAwareness|ChannelAwareness]
+        Constant denoting that [kameloso.plugins.common.mixins.awareness.ChannelAwareness|ChannelAwareness]
         has been mixed in.
      +/
     package enum hasChannelAwareness = true;
@@ -1342,7 +1342,7 @@ mixin template TwitchAwareness(
     }
 
     /++
-        Flag denoting that [kameloso.plugins.common.mixins.awareness.TwitchAwareness|TwitchAwareness]
+        Constant denoting that [kameloso.plugins.common.mixins.awareness.TwitchAwareness|TwitchAwareness]
         has been mixed in.
      +/
     package enum hasTwitchAwareness = true;
@@ -1493,7 +1493,7 @@ mixin template TwitchAwareness(
     }
 
     /++
-        Flag denoting that [kameloso.plugins.common.mixins.awareness.TwitchAwareness|TwitchAwareness]
+        Constant denoting that [kameloso.plugins.common.mixins.awareness.TwitchAwareness|TwitchAwareness]
         has been mixed in.
      +/
     package enum hasTwitchAwareness = true;
