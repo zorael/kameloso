@@ -28,6 +28,7 @@ private:
 import kameloso.plugins;
 import kameloso.plugins.common.mixins.awareness;
 import dialect.defs;
+import core.thread.fiber : Fiber;
 
 version(OmniscientQueries)
 {
@@ -61,37 +62,46 @@ enum ChannelState : ubyte
 }
 
 
-// startChannelQueries
+// onPing
 /++
-    Queries channels for information about them and their users.
+    Calls [startQueries] to start querying channels and users for information
+    about them.
 
-    Checks an internal list of channels once every [dialect.defs.IRCEvent.Type.PING|PING],
-    and if one we inhabit hasn't been queried, queries it.
+    See_Also:
+        [startQueries]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
-    .fiber(true)
 )
-void startChannelQueries(ChanQueryService service)
+void onPing(ChanQueryService service, const IRCEvent _)
 {
-    import kameloso.plugins.common.scheduling : await, delay, unawait, undelay;
-    import kameloso.thread : CarryingFiber, ThreadMessage, boxed;
-    import kameloso.messaging : Message, mode, raw;
-    import std.datetime.systime : Clock;
-    import std.string : representation;
-    import core.thread.fiber : Fiber;
-    import core.time : seconds;
+    mixin(memoryCorruptionCheck(eventParamName: "_"));
+    startQueries(service);
+}
+
+
+// startQueries
+/++
+    Starts the routine to query channels and users for information about them.
+
+    Channels are queried first. If the server doesn't support WHOIS, or if
+    [kameloso.plugins.common.settings.CoreSettings.eagerLookups|CoreSettings.eagerLookups]
+    is `false`, users are not WHOISed.
+ +/
+void startQueries(ChanQueryService service)
+{
+    import kameloso.plugins.common.scheduling : delay;
+    import kameloso.constants : BufferSize;
+    import kameloso.thread : CarryingFiber;
+    import core.time : Duration;
+
+    if (service.transient.querying) return;  // Try again next call
 
     /+
-        We can't do a corruption check because this function will be called
-        from `onMyInfo` with an even type of `RPL_MYINFO`, which is not
-        the `PING` event the checker expects.
+        Do as much as we can here *before* we create the fiber.
      +/
-    //mixin(memoryCorruptionCheck(eventParamName: "_"));
-
-    if (service.transient.querying) return;  // Try again next PING
-
     string[] querylist;
+
     foreach (immutable channelName, ref state; service.channelStates)
     {
         if (state & (ChannelState.queried | ChannelState.queued))
@@ -107,9 +117,7 @@ void startChannelQueries(ChanQueryService service)
     // Continue anyway if eagerLookups
     if (!querylist.length && !service.state.coreSettings.eagerLookups) return;
 
-    auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
-    assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-    service.transient.querying = true;  // "Lock"
+    service.transient.querying = true;  // Effectively "lock"
 
     scope(exit)
     {
@@ -117,7 +125,90 @@ void startChannelQueries(ChanQueryService service)
         service.transient.querying = false;  // "Unlock"
     }
 
-    chanloop:
+    void queryDg()
+    {
+        /+
+            Query channels first; for their topics, their user lists and modes.
+         +/
+        queryChannels(service, querylist);
+
+        /+
+            Users are next, but only if we are doing eager lookups, and the
+            server actually supports WHOIS. Otherwise stop here.
+         +/
+        if (service.state.coreSettings.eagerLookups && service.transient.serverSupportsWHOIS)
+        {
+            import std.datetime.systime : Clock;
+
+            immutable nowInUnix = Clock.currTime.toUnixTime();
+            bool[string] uniqueUsers;
+
+            foreach (immutable channelName, const channel; service.state.channels)
+            {
+                foreach (immutable nickname; channel.users.byKey)
+                {
+                    import kameloso.constants : Timeout;
+
+                    if (nickname == service.state.client.nickname) continue;
+
+                    const user = nickname in service.state.users;
+
+                    if (!user ||
+                        !user.account.length ||
+                        ((nowInUnix - user.updated) > Timeout.Integers.whoisRetrySeconds))
+                    {
+                        // No user, or no account and sufficient amount of time passed since last WHOIS
+                        uniqueUsers[nickname] = true;
+                    }
+                }
+            }
+
+            if (uniqueUsers.length)
+            {
+                // Go ahead and WHOIS the users
+                uniqueUsers.rehash();
+                whoisUsers(service, uniqueUsers);
+            }
+        }
+    }
+
+    /+
+        This function may be called from within a fiber already, in which case
+        we can just call the delegate directly.
+     +/
+    if (auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis())
+    {
+        return queryDg();
+    }
+
+    auto queryFiber = new CarryingFiber!IRCEvent(&queryDg, BufferSize.fiberStack);
+    delay(service, queryFiber, Duration.zero);
+}
+
+
+// queryChannels
+/++
+    Queries channels for information about them.
+
+    This function is called by [startQueries] to query channels for their topics,
+    their user lists and modes.
+
+    Parameters:
+        service = The [ChanQueryService] instance.
+        querylist = An array of channel names to query.
+ +/
+void queryChannels(ChanQueryService service, const string[] querylist)
+in (Fiber.getThis(), "Tried to call `queryChannels` from outside a fiber")
+{
+    import kameloso.plugins.common.scheduling : await, delay, unawait, undelay;
+    import kameloso.thread : CarryingFiber, ThreadMessage, boxed;
+    import kameloso.messaging : Message, mode, raw;
+    import std.string : representation;
+
+    auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+    assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+
+    outer:
     foreach (immutable i, immutable channelName; querylist)
     {
         if (channelName !in service.channelStates) continue;
@@ -136,7 +227,7 @@ void startChannelQueries(ChanQueryService service)
         /++
             Common code to send a query, await the results and unlist the fiber.
          +/
-        void queryAwaitAndUnlist(Types)(const string command, const Types types)
+        void queryAwaitAndUnlist(const string command, const IRCEvent.Type[] types)
         {
             import std.conv : text;
 
@@ -162,21 +253,30 @@ void startChannelQueries(ChanQueryService service)
         /++
             Event types that signal the end of a query response.
          +/
-        static immutable IRCEvent.Type[2] topicTypes =
+        static immutable IRCEvent.Type[2] topicReply =
         [
             IRCEvent.Type.RPL_TOPIC,
             IRCEvent.Type.RPL_NOTOPIC,
         ];
 
-        queryAwaitAndUnlist("TOPIC", topicTypes[]);
-        if (channelName !in service.channelStates) continue chanloop;
-        queryAwaitAndUnlist("WHO", IRCEvent.Type.RPL_ENDOFWHO);
-        if (channelName !in service.channelStates) continue chanloop;
-        queryAwaitAndUnlist("MODE", IRCEvent.Type.RPL_CHANNELMODEIS);
-        if (channelName !in service.channelStates) continue chanloop;
+        static immutable IRCEvent.Type[1] whoReply =
+        [
+            IRCEvent.Type.RPL_ENDOFWHO,
+        ];
+
+        static immutable IRCEvent.Type[1] channelModeReply =
+        [
+            IRCEvent.Type.RPL_CHANNELMODEIS,
+        ];
+
+        queryAwaitAndUnlist("TOPIC", topicReply[]);
+        if (channelName !in service.channelStates) continue outer;
+        queryAwaitAndUnlist("WHO", whoReply[]);
+        if (channelName !in service.channelStates) continue outer;
+        queryAwaitAndUnlist("MODE", channelModeReply[]);
+        if (channelName !in service.channelStates) continue outer;
 
         // MODE generic
-
         foreach (immutable n, immutable modechar; service.state.server.aModes.representation)
         {
             import std.conv : text;
@@ -185,7 +285,7 @@ void startChannelQueries(ChanQueryService service)
             {
                 // Cannot await by event type; there are too many types.
                 delay(service, ChanQueryService.timeBetweenQueries, yield: true);
-                if (channelName !in service.channelStates) continue chanloop;
+                if (channelName !in service.channelStates) continue outer;
             }
 
             version(WithPrinterPlugin)
@@ -200,49 +300,43 @@ void startChannelQueries(ChanQueryService service)
 
             enum properties = (Message.Property.quiet | Message.Property.background);
             immutable modeline = text('+', cast(char)modechar);
-            mode(
-                service.state,
+
+            mode(service.state,
                 channelName,
-                modeline,
-                string.init,
+                modes: modeline,
+                content: string.init,
                 properties);
         }
 
-        if (channelName !in service.channelStates) continue chanloop;
+        if (channelName !in service.channelStates) continue outer;
 
         // Overwrite state with [ChannelState.queried];
         // [ChannelState.topicKnown] etc are no longer relevant.
         service.channelStates[channelName] = ChannelState.queried;
     }
+}
 
-    // Stop here if we can't or are not interested in going further
-    if (!service.transient.serverSupportsWHOIS || !service.state.coreSettings.eagerLookups) return;
 
-    immutable nowInUnix = Clock.currTime.toUnixTime();
-    bool[string] uniqueUsers;
+// whoisUsers
+/++
+    WHOIS users in channels.
 
-    foreach (immutable channelName, const channel; service.state.channels)
-    {
-        foreach (immutable nickname; channel.users.byKey)
-        {
-            import kameloso.constants : Timeout;
+    This function is called by [startQueries] to WHOIS users in channels.
 
-            if (nickname == service.state.client.nickname) continue;
+    Parameters:
+        service = The [ChanQueryService] instance.
+        uniqueUsers = An associative array of unique users to WHOIS.
+ +/
+void whoisUsers(ChanQueryService service, const bool[string] uniqueUsers)
+in (Fiber.getThis(), "Tried to call `whoisUsers` from outside a fiber")
+{
+    import kameloso.plugins.common.scheduling : await, delay, unawait, undelay;
+    import kameloso.thread : CarryingFiber, ThreadMessage, boxed;
+    import kameloso.messaging : Message;
+    import std.datetime.systime : Clock;
 
-            const user = nickname in service.state.users;
-            if (!user ||
-                !user.account.length ||
-                ((nowInUnix - user.updated) > Timeout.Integers.whoisRetrySeconds))
-            {
-                // No user, or no account and sufficient amount of time passed since last WHOIS
-                uniqueUsers[nickname] = true;
-            }
-        }
-    }
-
-    if (!uniqueUsers.length) return;  // Early exit
-
-    uniqueUsers.rehash();
+    auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+    assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
     /++
         Event types that signal the end of a WHOIS response.
@@ -263,14 +357,13 @@ void startChannelQueries(ChanQueryService service)
         {
             auto threadMessage = ThreadMessage.busMessage("printer", boxed("unsquelch"));
             service.state.messages ~= threadMessage;
-
         }
     }
 
-    long lastQueryResults;
+    long timeOfLastQueryResults;
     immutable numSecondsBetween = ChanQueryService.timeBetweenQueries.total!"seconds";
 
-    whoisloop:
+    outer:
     foreach (immutable nickname; uniqueUsers.byKey)
     {
         import kameloso.common : logger;
@@ -278,6 +371,7 @@ void startChannelQueries(ChanQueryService service)
         import core.time : seconds;
 
         const user = nickname in service.state.users;
+
         if (!user || (*user).account.length)
         {
             // User disappeared, or something else WHOISed it already.
@@ -286,21 +380,19 @@ void startChannelQueries(ChanQueryService service)
 
         // Delay between runs after first since aMode probes don't delay at end
         delay(service, ChanQueryService.timeBetweenQueries, yield: true);
-        auto elapsed = (Clock.currTime.toUnixTime() - lastQueryResults);
-        auto remaining = (numSecondsBetween - elapsed);
+        auto elapsed = (Clock.currTime.toUnixTime() - timeOfLastQueryResults);
+        auto timeRemaining = (numSecondsBetween - elapsed);
 
-        while (remaining > 0)
+        while (timeRemaining > 0)
         {
-            delay(service, remaining.seconds, yield: false);
-            elapsed = (Clock.currTime.toUnixTime() - lastQueryResults);
-            remaining = (numSecondsBetween - elapsed);
+            delay(service, timeRemaining.seconds, yield: false);
+            elapsed = (Clock.currTime.toUnixTime() - timeOfLastQueryResults);
+            timeRemaining = (numSecondsBetween - elapsed);
         }
 
         version(WithPrinterPlugin)
         {
-            auto threadMessage = ThreadMessage.busMessage("printer", boxed("squelch " ~ nickname));
-            service.state.messages ~= threadMessage;
-
+            service.state.messages ~= ThreadMessage.busMessage("printer", boxed("squelch " ~ nickname));
         }
 
         enum properties = (Message.Property.quiet | Message.Property.background);
@@ -311,6 +403,7 @@ void startChannelQueries(ChanQueryService service)
         enum maxConsecutiveUnknownCommands = 3;
         uint consecutiveUnknownCommands;
 
+        inner:
         while (true)
         {
             with (IRCEvent.Type)
@@ -322,14 +415,14 @@ void startChannelQueries(ChanQueryService service)
                 if (thisFiber.payload.target.nickname == nickname)
                 {
                     // Saw the expected response
-                    lastQueryResults = Clock.currTime.toUnixTime();
-                    continue whoisloop;
+                    timeOfLastQueryResults = thisFiber.payload.time; //Clock.currTime.toUnixTime();
+                    continue outer;
                 }
                 else
                 {
                     // Something else caused a WHOIS; yield until the right one comes along
                     Fiber.yield();
-                    continue;
+                    continue inner;
                 }
 
             case ERR_UNKNOWNCOMMAND:
@@ -342,8 +435,7 @@ void startChannelQueries(ChanQueryService service)
                     if (++consecutiveUnknownCommands >= maxConsecutiveUnknownCommands)
                     {
                         // Cannot WHOIS on this server (assume)
-                        enum message1 = "Error: This server does not seem " ~
-                            "to support user accounts?";
+                        enum message1 = "This server does not seem to support user accounts?";
                         enum message2 = "Consider enabling <l>core</>.<l>preferHostmasks</>.";
                         logger.error(message1);
                         logger.error(message2);
@@ -363,19 +455,16 @@ void startChannelQueries(ChanQueryService service)
                     // Something else issued an unknown command; yield and try again
                     consecutiveUnknownCommands = 0;
                     Fiber.yield();
-                    continue;
+                    continue inner;
                 }
                 break;
 
             default:
-                import lu.conv : toString;
-                immutable message = "Unexpected event type triggered query fiber: " ~
-                    "`IRCEvent.Type." ~ thisFiber.payload.type.toString() ~ '`';
-                assert(0, message);
+                assert(0, "Unreachable");
             }
         }
 
-        assert(0, "Escaped `while (true)` loop in query fiber delegate");
+        assert(0, "Unreachable");
     }
 }
 
@@ -439,7 +528,6 @@ void onTopic(ChanQueryService service, const IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFNAMES)
     .channelPolicy(omniscientChannelPolicy)
-    .fiber(true)
 )
 void onEndOfNames(ChanQueryService service, const IRCEvent _)
 {
@@ -447,7 +535,7 @@ void onEndOfNames(ChanQueryService service, const IRCEvent _)
 
     if (!service.transient.querying && service.transient.queriedAtLeastOnce)
     {
-        startChannelQueries(service);
+        startQueries(service);
     }
 }
 
@@ -467,7 +555,7 @@ void onMyInfo(ChanQueryService service, const IRCEvent _)
     mixin(memoryCorruptionCheck(eventParamName: "_"));
 
     delay(service, service.timeBeforeInitialQueries, yield: true);
-    startChannelQueries(service);
+    startQueries(service);
 }
 
 
@@ -475,7 +563,7 @@ void onMyInfo(ChanQueryService service, const IRCEvent _)
 /++
     If we get an error that a channel doesn't exist, remove it from
     [ChanQueryService.channelStates|channelStates]. This stops it from being
-    queried in [startChannelQueries].
+    queried in [startQueries].
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_NOSUCHCHANNEL)
