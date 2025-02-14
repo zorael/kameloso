@@ -141,6 +141,11 @@ public:
      +/
     bool logPrivateMessages = true;
 
+    /++
+        Whether or not to log errors.
+     +/
+    bool logErrors = true;
+
     @Unserialisable
     {
         /++
@@ -157,11 +162,6 @@ public:
             Whether or not to log server messages.
          +/
         bool logServer = false;
-
-        /++
-            Whether or not to log errors.
-         +/
-        bool logErrors = true;
 
         /++
             Whether or not to log raw events.
