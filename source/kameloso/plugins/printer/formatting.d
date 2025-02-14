@@ -1011,7 +1011,7 @@ void formatMessageColoured(Sink)
                 .put(sink, "< ");
 
                 sink.applyANSI(channelCode, ANSICodeType.foreground);
-                .put(sink, '[', event.subchannel);
+                .put(sink, '[', event.subchannel.name);
 
                 version(TwitchSupport)
                 {
