@@ -4117,7 +4117,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
             if (const channelFromID = sharedChannelID in plugin.channelNamesByID)
             {
-                if (channelFromID.length && (*channelFromID != event.channel.name))
+                if (channelFromID.length)
                 {
                     // Found channel name in cache; insert into event.subchannel
                     event.subchannel.name = *channelFromID;
