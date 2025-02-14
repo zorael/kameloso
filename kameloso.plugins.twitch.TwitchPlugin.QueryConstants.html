@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>TwitchPlugin.QueryConstants (kameloso.plugins.twitch.TwitchPlugin.QueryConstants)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>TwitchPlugin.QueryConstants</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.twitch.html">twitch</a> <a class="breadcrumb" href="kameloso.plugins.twitch.TwitchPlugin.html">TwitchPlugin</a> </div><div><div class="documentation-comment synopsis"><div><p>Constants used when scheduling API queries.</p></div></div></div><div class="annotated-prototype"></div><h2 id="values"><a class="header-anchor" href="#values">Values</a></h2><table class="enum-members"><tr><th>Value</th><th>Meaning</th></tr><tr class="enum-member" id="growthMultiplier"><td><a class="enum-member-name" href="#growthMultiplier">growthMultiplier</a><span class="enum-member-value"><tt class="highlighted"><span class="num">1.1</span></tt></span><div class="enum-attributes"></div></td><td><div><p>The multiplier of how much the query time should temporarily increase
+            when it turned out to be a bit short.</p></div></td></tr><tr class="enum-member" id="retryTimeDivisor"><td><a class="enum-member-name" href="#retryTimeDivisor">retryTimeDivisor</a><span class="enum-member-value"><tt class="highlighted"><span class="num">3</span></tt></span><div class="enum-attributes"></div></td><td><div><p>The divisor of how much to wait before retrying a query, after the
+            timed waited turned out to be a bit short.</p></div></td></tr><tr class="enum-member" id="measurementPadding"><td><a class="enum-member-name" href="#measurementPadding">measurementPadding</a><span class="enum-member-value"><tt class="highlighted"><span class="num">30</span></tt></span><div class="enum-attributes"></div></td><td><div><p>By how many milliseconds to pad measurements of how long a query took
+            to be on the conservative side.</p></div></td></tr><tr class="enum-member" id="averagingWeight"><td><a class="enum-member-name" href="#averagingWeight">averagingWeight</a><span class="enum-member-value"><tt class="highlighted"><span class="num">3</span></tt></span><div class="enum-attributes"></div></td><td><div><p>The weight to assign the current approximate query time before
+            making a weighted average based on a new value. This gives the
+            averaging some inertia.</p></div></td></tr></table><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.twitch.html">twitch</a> <a class="parent" href="kameloso.plugins.twitch.TwitchPlugin.html">TwitchPlugin</a> 
+		<span class="type-separator">enums</span><ul><li><a class="enum current" href="kameloso.plugins.twitch.TwitchPlugin.QueryConstants.html">QueryConstants</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.twitch.TwitchPlugin.getNextWorkerTid.html">getNextWorkerTid</a></li><li><a class="function" href="kameloso.plugins.twitch.TwitchPlugin.isEnabled.html">isEnabled</a></li><li><a class="function" href="kameloso.plugins.twitch.TwitchPlugin.throttleline.html">throttleline</a></li></ul><span class="type-separator">manifest constants</span><ul><li><a class="manifest-constant" href="kameloso.plugins.twitch.TwitchPlugin.clientID.html">clientID</a></li><li><a class="manifest-constant" href="kameloso.plugins.twitch.TwitchPlugin.delegateRetries.html">delegateRetries</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.twitch.TwitchPlugin.CustomChannelEmotes.html">CustomChannelEmotes</a></li><li><a class="struct" href="kameloso.plugins.twitch.TwitchPlugin.Room.html">Room</a></li><li><a class="struct" href="kameloso.plugins.twitch.TwitchPlugin.Throttle.html">Throttle</a></li><li><a class="struct" href="kameloso.plugins.twitch.TwitchPlugin.TransientState.html">TransientState</a></li></ul><span class="type-separator">variables</span><ul><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.channelNamesByID.html">channelNamesByID</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.customChannelEmotes.html">customChannelEmotes</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.customGlobalEmotes.html">customGlobalEmotes</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.ecount.html">ecount</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.ecountFile.html">ecountFile</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.responseBucket.html">responseBucket</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.rooms.html">rooms</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.secretsByChannel.html">secretsByChannel</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.secretsFile.html">secretsFile</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.streamHistoryFile.html">streamHistoryFile</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.throttle.html">throttle</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.transient.html">transient</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.twitchSettings.html">twitchSettings</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.viewerTimesByChannel.html">viewerTimesByChannel</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.viewersFile.html">viewersFile</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.whisperBuffer.html">whisperBuffer</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

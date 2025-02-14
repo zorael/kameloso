@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>LogLineBuffer (kameloso.plugins.printer.logging.LogLineBuffer)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>LogLineBuffer</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.printer.html">printer</a> <a class="breadcrumb" href="kameloso.plugins.printer.logging.html">logging</a> </div><div><div class="documentation-comment synopsis"><div><p>A struct containing lines to write to a log file when next flushing such.</p><p>This is only relevant if
+    <a class="xref" href="kameloso.plugins.printer.PrinterSettings.bufferedWrites.html">PrinterSettings.bufferedWrites</a></p><p>is set.</p><p>As a micro-optimisation an <a class="xref" href="std.array.Appender.html">Appender</a> is used to store the lines,
+    instead of a normal <tt class="inline-code">string[]</tt>.</p></div></div></div><div class="annotated-prototype"><div class="aggregate-prototype"><div class="attributes"><div class="versions-container">version(WithPrinterPlugin)</div>package </div><span class="builtin-type">struct</span> LogLineBuffer  {<div class="aggregate-member"><a href="kameloso.plugins.printer.logging.LogLineBuffer.dir.html"><div class="attributes"></div><tt class="highlighted"><span class="type">string</span></tt> <span class="name">dir</span>;</a></div><div class="aggregate-member"><a href="kameloso.plugins.printer.logging.LogLineBuffer.file.html"><div class="attributes"></div><tt class="highlighted"><span class="type">string</span></tt> <span class="name">file</span>;</a></div><div class="aggregate-member"><a href="kameloso.plugins.printer.logging.LogLineBuffer.lines.html"><div class="attributes"></div><tt class="highlighted"><span class="hid">Appender</span>!(<span class="type">string</span>[])</tt> <span class="name">lines</span>;</a></div><div class="aggregate-member"><a href="kameloso.plugins.printer.logging.LogLineBuffer.clear.html"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">clear</span>();</a></div><div class="aggregate-member"><a href="kameloso.plugins.printer.logging.LogLineBuffer.creationTime.html"><div class="attributes"></div><tt class="highlighted"><span class="hid">SysTime</span></tt> <span class="name">creationTime</span>;</a></div><div class="aggregate-member"><a href="kameloso.plugins.printer.logging.LogLineBuffer.this.1.html"><span class="lang-feature name">this</span>(string dir, SysTime now);</a></div><div class="aggregate-member"><a href="kameloso.plugins.printer.logging.LogLineBuffer.this.2.html"><span class="lang-feature name">this</span>(string dir, string filename);</a></div>}</div></div><h2 id="constructors"><a class="header-anchor" href="#constructors">Constructors</a></h2><dl class="member-list constructors"><dt><a href="kameloso.plugins.printer.logging.LogLineBuffer.this.1.html">this</a><div class="simplified-prototype" style="max-width: 31ch;"><span class="lang-feature name">this</span>(string dir, SysTime now)</div></dt><dd><div><p>Constructor taking a <a class="xref" href="std.datetime.systime.SysTime.html">SysTime</a>, to save as the date
+        the buffer was created.</p></div></dd><dt><a href="kameloso.plugins.printer.logging.LogLineBuffer.this.2.html">this</a><div class="simplified-prototype" style="max-width: 36ch;"><span class="lang-feature name">this</span>(string dir, string filename)</div></dt><dd><div><p>Constructor not taking a <a class="xref" href="std.datetime.systime.SysTime.html">SysTime</a>, for use with
+        buffers that should not be dated, such as the error log and the raw log.</p></div></dd></dl><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="kameloso.plugins.printer.logging.LogLineBuffer.clear.html">clear</a><div class="simplified-prototype" style="max-width: 13ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">clear</span>()</div></dt><dd><div><p>Clears the buffer of lines.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="variable"><a class="header-anchor" href="#variable">Variables</a></h3><dl class="member-list native"><dt><a href="kameloso.plugins.printer.logging.LogLineBuffer.creationTime.html">creationTime</a><div class="simplified-prototype" style="max-width: 23ch;"><tt class="highlighted"><span class="hid">SysTime</span></tt> <span class="name">creationTime</span>;</div></dt><dd><div><p>When this buffer was created.</p></div></dd><dt><a href="kameloso.plugins.printer.logging.LogLineBuffer.dir.html">dir</a><div class="simplified-prototype" style="max-width: 12ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">dir</span>;</div></dt><dd><div><p>Basename directory this buffer will be saved to.</p></div></dd><dt><a href="kameloso.plugins.printer.logging.LogLineBuffer.file.html">file</a><div class="simplified-prototype" style="max-width: 13ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">file</span>;</div></dt><dd><div><p>Fully qualified filename this buffer will be saved to.</p></div></dd><dt><a href="kameloso.plugins.printer.logging.LogLineBuffer.lines.html">lines</a><div class="simplified-prototype" style="max-width: 28ch;"><tt class="highlighted"><span class="hid">Appender</span>!(<span class="type">string</span>[])</tt> <span class="name">lines</span>;</div></dt><dd><div><p>Buffered lines that will be saved to <a class="xref" href="kameloso.plugins.printer.logging.LogLineBuffer.file.html">file</a>, in <a class="xref" href="kameloso.plugins.printer.logging.LogLineBuffer.dir.html">dir</a>.</p></div></dd></dl><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.printer.html">printer</a> <a class="parent" href="kameloso.plugins.printer.logging.html">logging</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.printer.logging.escapedPath.html">escapedPath</a></li><li><a class="function" href="kameloso.plugins.printer.logging.establishLogLocation.html">establishLogLocation</a></li><li><a class="function" href="kameloso.plugins.printer.logging.flushAllLogsImpl.html">flushAllLogsImpl</a></li><li><a class="function" href="kameloso.plugins.printer.logging.flushLog.html">flushLog</a></li><li><a class="function" href="kameloso.plugins.printer.logging.onLoggableEventImpl.html">onLoggableEventImpl</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct current" href="kameloso.plugins.printer.logging.LogLineBuffer.html">LogLineBuffer</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
