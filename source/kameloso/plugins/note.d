@@ -343,7 +343,7 @@ void playbackNotesImpl(
                 immutable duration = (now - timestampAsSysTime).timeSince!(7, 1)(abbreviate: false);
 
                 note.decrypt();
-                enum pattern = "<h>%s<h>! <h>%s<h> left note <b>%s<b> ago: %s";
+                enum pattern = `<h>%s<h>! <h>%s<h> left note <b>%s<b> ago: "%s"`;
                 immutable message = pattern.format(nameOf(user), note.sender, duration, note.line);
                 privmsg(plugin.state, channelName, user.nickname, message);
             }
@@ -359,7 +359,7 @@ void playbackNotesImpl(
                     immutable duration = (now - timestampAsSysTime).timeSince!(7, 1)(abbreviate: true);
 
                     note.decrypt();
-                    enum entryPattern = "<h>%s<h> %s ago: %s";
+                    enum entryPattern = `<h>%s<h> %s ago: "%s"`;
                     immutable report = entryPattern.format(note.sender, duration, note.line);
                     privmsg(plugin.state, channelName, user.nickname, report);
                 }
