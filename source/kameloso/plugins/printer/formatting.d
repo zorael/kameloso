@@ -1640,9 +1640,10 @@ unittest
     Wraps [highlightEmotesImpl].
 
     Params:
-        event = [dialect.defs.IRCEvent|IRCEvent] whose content text to highlight.
+        line = The text to highlight with emotes.
         emotes = The list of emotes and their positions as divined from the
             IRCv3 tags of an event.
+        type = The type of the event.
         colourful = Whether or not emotes should be highlighted in colours.
         coreSettings = Current [kameloso.pods.CoreSettings|settings].
 
