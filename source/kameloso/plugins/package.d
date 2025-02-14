@@ -755,6 +755,21 @@ mixin template IRCPluginImpl(
             state.bot.guestChannels.canFind(origEvent.channel.name) :
             false;
 
+        version(TwitchSupport)
+        {
+            immutable eventHasDistinctSubchannel =
+                (origEvent.channel.id && origEvent.subchannel.id &&
+                (origEvent.channel.id != origEvent.subchannel.id)) ||
+                (origEvent.channel.name.length && origEvent.subchannel.name.length &&
+                (origEvent.channel.name != origEvent.subchannel.name));
+        }
+        else
+        {
+            immutable eventHasDistinctSubchannel =
+                (origEvent.channel.name.length && origEvent.subchannel.name.length &&
+                (origEvent.channel.name != origEvent.subchannel.name));
+        }
+
         // process
         /++
             Process a function.
@@ -780,9 +795,9 @@ mixin template IRCPluginImpl(
             if (event.channel.name.length)
             {
                 immutable channelMatch =
-                    (uda._channelPolicy & ChannelPolicy.home) ? channelIsAHomeChannel :
+                    (uda._channelPolicy & ChannelPolicy.home)  ? channelIsAHomeChannel :
                     (uda._channelPolicy & ChannelPolicy.guest) ? channelIsAGuestChannel :
-                    (uda._channelPolicy & ChannelPolicy.any) ? true :
+                    (uda._channelPolicy & ChannelPolicy.any)   ? true :
                     false;  // invalid values
 
                 if (!channelMatch)
@@ -796,6 +811,32 @@ mixin template IRCPluginImpl(
                     // channel policy does not match
                     return NextStep.continue_;  // next fun
                 }
+            }
+
+            if (!eventHasDistinctSubchannel)
+            {
+                // Ok
+            }
+            else if (uda._acceptExternal)
+            {
+                // Also ok
+            }
+            else if ((uda.commands.length || hasRegexes) &&
+                this.state.coreSettings.acceptCommandsFromSubchannels)
+            {
+                // Also ok
+            }
+            else
+            {
+                // By process of elimination; not ok
+                static if (verbose)
+                {
+                    writeln("   ...ignore event originating from subchannel ",
+                        event.subchannel.name, ':', event.subchannel.id);
+                    if (state.coreSettings.flush) stdout.flush();
+                }
+
+                return NextStep.continue_;  // next fun
             }
 
             immutable origContent = event.content;
@@ -3797,28 +3838,35 @@ public:
         functions to fire after it. If not set (default false), it will
         terminate and move on to the next plugin after the function returns.
      +/
-    bool _chainable;
+    bool _chainable = false;
 
     // _verbose
     /++
         Whether or not additional information should be output to the local
         terminal as the function is (or is not) triggered.
      +/
-    bool _verbose;
+    bool _verbose = false;
 
     // _when
     /++
         Special instruction related to the order of which event handler functions
         within a plugin module are triggered.
      +/
-    Timing _when;
+    Timing _when; //= Timing.untimed;
 
     // _fiber
     /++
         Whether or not the annotated event handler should be run from within a
         [core.thread.fiber.Fiber|Fiber].
      +/
-    bool _fiber;
+    bool _fiber = false;
+
+    // _acceptExternal
+    /++
+        Whether or not the annotated event handler should react to events in a
+        channel that actually originate from a distinct subchannel.
+     +/
+    bool _acceptExternal = false;
 
     // acceptedEventTypeMap
     /++
