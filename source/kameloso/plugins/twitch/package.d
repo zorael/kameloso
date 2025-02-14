@@ -4108,26 +4108,6 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
         if (!user.nickname.length) return false;
 
-        if (user.class_ == IRCUser.Class.blacklist)
-        {
-            // Ignore blacklist for obvious reasons
-            return false;
-        }
-
-        if (user.badges.length)
-        {
-            // Move some badges to the front of the string, in order of importance
-            static immutable string[4] badgeOrder =
-            [
-                "broadcaster",
-                "moderator",
-                "vip",
-                "subscriber",
-            ];
-
-            sortBadges(user.badges, badgeOrder[]);
-        }
-
         if (!isTarget && event.subchannel.id && !event.subchannel.name.length)
         {
             import std.conv : to;
@@ -4193,6 +4173,26 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 // Set an empty string so we don't do this again before the results are in
                 plugin.channelNamesByID[sharedChannelID] = string.init;
             }
+        }
+
+        if (user.class_ == IRCUser.Class.blacklist)
+        {
+            // Ignore blacklist for obvious reasons
+            return false;
+        }
+
+        if (user.badges.length)
+        {
+            // Move some badges to the front of the string, in order of importance
+            static immutable string[4] badgeOrder =
+            [
+                "broadcaster",
+                "moderator",
+                "vip",
+                "subscriber",
+            ];
+
+            sortBadges(user.badges, badgeOrder[]);
         }
 
         if (user.class_ >= IRCUser.Class.staff)
