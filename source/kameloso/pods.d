@@ -183,6 +183,13 @@ public:
             Enables callgrind dumps for profiling.
          +/
         bool callgrind;
+
+        // acceptCommandsFromSubchannels
+        /++
+            Whether or not to accept commands whose origin channel is the subchannel
+            of an event.
+         +/
+        bool acceptCommandsFromSubchannels = false;
     }
 }
 
