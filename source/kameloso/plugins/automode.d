@@ -51,12 +51,13 @@ import dialect.defs;
  +/
 void saveAutomodes(AutomodePlugin plugin)
 {
+    import lu.array : pruneAA;
     import lu.json : JSONStorage;
     import std.json : JSONValue;
 
     // Create a JSONStorage only to save it
     JSONStorage automodes;
-    pruneChannels(plugin.automodes);
+    pruneAA(plugin.automodes);
     automodes.storage = JSONValue(plugin.automodes);
     automodes.save(plugin.automodeFile);
 }
@@ -588,20 +589,6 @@ void onMode(AutomodePlugin plugin, const IRCEvent event)
             applyAutomodes(plugin, event.channel.name, user.nickname, user.account);
         }
     }
-}
-
-
-// pruneChannels
-/++
-    Prunes empty channels in the automodes definitions associative array.
-
-    Params:
-        automodes = Associative array of automodes to prune.
- +/
-void pruneChannels(ref string[string][string] automodes)
-{
-    import lu.array : pruneAA;
-    pruneAA(automodes);
 }
 
 
