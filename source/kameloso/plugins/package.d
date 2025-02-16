@@ -4457,13 +4457,14 @@ auto memoryCorruptionCheck()
     static if ((_lastDotPos != -1) &&
         isSomeFunction!(mixin(__FUNCTION__[0.._lastDotPos])))
     {
-        alias _fun = mixin(__FUNCTION__[0.._lastDotPos]);
+        static immutable _funName = __FUNCTION__[0.._lastDotPos];
     }
     else
     {
-        alias _fun = mixin(__FUNCTION__);
+        enum _funName = __FUNCTION__;
     }
 
+    alias _fun = mixin(_funName);
     alias _funParams = Parameters!_fun;
     alias _paramNames = ParameterIdentifierTuple!_fun;
 
@@ -4477,7 +4478,7 @@ auto memoryCorruptionCheck()
     }
     else
     {
-        enum _message = \"`\" ~ __FUNCTION__ ~ \"` mixes in `memoryCorruptionCheck` \" ~
+        enum _message = \"`\" ~ _funName ~ \"` mixes in `memoryCorruptionCheck` \" ~
             \"but is not a function accepting an `IRCEvent` parameter.\";
         static assert(0, _message);
     }
@@ -4486,13 +4487,13 @@ auto memoryCorruptionCheck()
 
     static if (_udaIndex == -1)
     {
-        enum _message = \"`\" ~ __FUNCTION__ ~ \"` mixes in `memoryCorruptionCheck` \" ~
+        enum _message = \"`\" ~ _funName ~ \"` mixes in `memoryCorruptionCheck` \" ~
             \"but is not annotated with an `IRCEventHandler`.\";
         static assert(0, _message);
     }
 
     static immutable _uda = __traits(getAttributes, _fun)[_udaIndex];
-    kameloso.plugins.memoryCorruptionCheckImpl(mixin(_eventParamName), _uda, __FUNCTION__);
+    kameloso.plugins.memoryCorruptionCheckImpl(mixin(_eventParamName), _uda, _funName);
     }";
 
         return mixinBody;
@@ -4561,7 +4562,7 @@ void memoryCorruptionCheckImpl(
 
             enum pattern = "Event handler `%s` was called with a command word `%s` " ~
                 "not found in the UDA annotation of it";
-            immutable message = pattern.format(functionName, wordLower);
+            immutable message = pattern.format(functionName, event.aux[$-1]);
             assert(0, message);
         }
     }
