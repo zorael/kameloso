@@ -4447,40 +4447,52 @@ auto memoryCorruptionCheck()
     {
         enum mixinBody =
     "{
+    import kameloso.string : indexOfLastOccurrenceOf;
     import lu.traits : udaIndexOf;
-    import std.traits : ParameterIdentifierTuple, Parameters;
+    import std.traits : ParameterIdentifierTuple, Parameters, isSomeFunction;
     static import kameloso.plugins;
 
-    alias fun = mixin(__FUNCTION__);
-    alias funParams = Parameters!fun;
-    alias paramNames = ParameterIdentifierTuple!fun;
+    enum _lastDotPos = __FUNCTION__.indexOfLastOccurrenceOf('.');
 
-    static if ((funParams.length == 1) && is(funParams[0] : kameloso.plugins.IRCEvent))
+    static if ((_lastDotPos != -1) &&
+        isSomeFunction!(mixin(__FUNCTION__[0.._lastDotPos])))
     {
-        enum eventParamName = paramNames[0];
-    }
-    else static if ((funParams.length == 2) && is(funParams[1] : kameloso.plugins.IRCEvent))
-    {
-        enum eventParamName = paramNames[1];
+        alias _fun = mixin(__FUNCTION__[0.._lastDotPos]);
     }
     else
     {
-        enum message = \"`\" ~ __FUNCTION__ ~ \"` mixes in `memoryCorruptionCheck` \" ~
-            \"but is not a function accepting an `IRCEvent` parameter.\";
-        static assert(0, message);
+        alias _fun = mixin(__FUNCTION__);
     }
 
-    static immutable udaIndex = udaIndexOf!(fun, kameloso.plugins.IRCEventHandler);
+    alias _funParams = Parameters!_fun;
+    alias _paramNames = ParameterIdentifierTuple!_fun;
 
-    static if (udaIndex == -1)
+    static if ((_funParams.length == 1) && is(_funParams[0] : kameloso.plugins.IRCEvent))
     {
-        enum message = \"`\" ~ __FUNCTION__ ~ \"` mixes in `memoryCorruptionCheck` \" ~
-            \"but is not annotated with an `IRCEventHandler`.\";
-        static assert(0, message);
+        enum _eventParamName = _paramNames[0];
+    }
+    else static if ((_funParams.length == 2) && is(_funParams[1] : kameloso.plugins.IRCEvent))
+    {
+        enum _eventParamName = _paramNames[1];
+    }
+    else
+    {
+        enum _message = \"`\" ~ __FUNCTION__ ~ \"` mixes in `memoryCorruptionCheck` \" ~
+            \"but is not a function accepting an `IRCEvent` parameter.\";
+        static assert(0, _message);
     }
 
-    static immutable _uda = __traits(getAttributes, fun)[udaIndex];
-    kameloso.plugins.memoryCorruptionCheckImpl(mixin(eventParamName), _uda, __FUNCTION__);
+    static immutable _udaIndex = udaIndexOf!(_fun, kameloso.plugins.IRCEventHandler);
+
+    static if (_udaIndex == -1)
+    {
+        enum _message = \"`\" ~ __FUNCTION__ ~ \"` mixes in `memoryCorruptionCheck` \" ~
+            \"but is not annotated with an `IRCEventHandler`.\";
+        static assert(0, _message);
+    }
+
+    static immutable _uda = __traits(getAttributes, _fun)[_udaIndex];
+    kameloso.plugins.memoryCorruptionCheckImpl(mixin(_eventParamName), _uda, __FUNCTION__);
     }";
 
         return mixinBody;
