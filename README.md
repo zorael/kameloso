@@ -59,6 +59,7 @@ If there's anyone talking it should show on your screen.
     * [SSL libraries on Windows](#ssl-libraries-on-windows)
   * [Downloading source](#downloading-source)
   * [Compiling](#compiling)
+    * [Compiler choice](#compiler-choice)
     * [Build configurations](#build-configurations)
 * [How to use](#how-to-use)
   * [Configuration](#configuration)
@@ -96,17 +97,17 @@ Grab a prebuilt Windows or Linux binary from under [**Releases**](https://github
 
 ### Prerequisites
 
-The program can be built using the [**D**](https://dlang.org) reference compiler [**dmd**](https://dlang.org/download.html) and with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). **dmd** offers *very* fast compilation, while **ldc** is slower at compiling but produces faster code. Additionally, **ldc** supports more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
-
-The GCC-based [**gdc**](https://gdcproject.org/downloads) currently cannot be used to build the bot due to compilation errors in dependency libraries. (This may/will hopefully change.)
+The program can be built using the [**D**](https://dlang.org) reference compiler [**dmd**](https://dlang.org/download.html), with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases) and with the GCC-based [**gdc**](https://gdcproject.org/downloads). **dmd** offers *very* fast compilation, while **ldc** and **gdc** are both slower at compiling but produce faster code. The latter two additionally support more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it is included in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
 
 #### Compiler versions
 
-Starting with `v4.0.0`, a more recent compiler version is required. This is to allow for use of named arguments and to enable some compiler preview switches. You need a compiler based on D version **2.108** or later (April 2024). For **ldc** this translates to a minimum of version **1.38**.
+Starting with `v4.0.0`, a more recent compiler version is required. This is to allow for use of named arguments and to enable some compiler preview switches.
 
-If your repositories (or other software sources) don't have compilers recent enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice.
+You need a compiler based on D version **2.108** or later (April 2024). For **ldc** this translates to a minimum of version **1.38**. It's not easy to find information on **gdc** versions, but **14.2** is known to be recent enough.
+
+If your repositories (or other software sources) don't have compilers recent enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice. (**gdc** is not available via this script.)
 
 Releases of the bot prior to `v4.0.0` remain available for older compilers.
 
@@ -130,22 +131,25 @@ It can also be downloaded as a [`.zip` archive](https://github.com/zorael/kamelo
 dub build
 ```
 
-This will compile the bot in the default **debug** build type, which adds some extra code and debugging symbols. You can omit these and have the compiler perform some optimisations by building it in **release** mode, by calling `dub build -b release`. Mind that build times will increase accordingly.
+This will compile the bot in the default **debug** build type, which adds some extra code and debugging symbols. You can omit these and have the compiler perform some optimisations by building it in **release** mode, by calling `dub build -b release`. Mind that build times will increase.
+
+Refer to the output of `dub --annotate --print-builds` for more build types.
+
+#### Compiler choice
 
 It is recommended that you use **ldc** for release builds.
 
-* **gdc** is very slow to compile.
+* **gdc** is very slow to compile (but is not otherwise a poor choice).
 * **ldc** optimisations are *objectively* better than those of **dmd**.
-* You *may* experience memory corruption and/or crashes with **dmd** in release mode, but it should be fixed now. ([File an issue](https://github.com/zorael/kameloso/issues/new) if you do!)
 
-Refer to the output of `dub --annotate --print-builds` for more build types.
+Specify which compiler you want to use with the `--compiler` switch. You may have to refer to **ldc** as **ldc2** on some systems.
 
 #### Build configurations
 
 There are two primary configurations in which the bot may be built.
 
-* `application`; base configuration
-* `twitch`; additionally includes the Twitch plugin and the required support for Twitch servers
+* `application` is the base configuration
+* `twitch` additionally includes the Twitch plugin and the required support for Twitch servers
 
 Both configurations come in `-lowmem` variants; `application-lowmem` and `twitch-lowmem`; that lower compilation memory required at the cost of increased build times. This may help on memory-constrained systems, such as the Raspberry Pi.
 
@@ -161,7 +165,7 @@ If you want to trim down the program and customise your own build to only compil
 
 ### Configuration
 
-The bot ideally wants the [*services account name*](#except-nothing-happens) of one or more administrators of the bot, and/or one or more *home* channels to operate in. Without either it's just a read-only log bot, which is admittedly also a completely valid and fully-supported use-case, but it's probably not what you want.
+The bot ideally wants the [*services account name*](#except-nothing-happens) of one or more administrators of the bot, and/or more importantly one or more *home* channels to operate in. Without either it's just a read-only log bot, which is admittedly also a completely valid and fully-supported use-case, but it's probably not what you want.
 
 To define these you can either supply them on the command line by use of flags listed by calling the program with `--help`, or by generating a configuration file with `--save` and entering them in there.
 
@@ -202,7 +206,7 @@ Settings not touched will keep their values, but any comments in the file will b
 
 #### Display settings
 
-The bot uses [terminal ANSI colouring](https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit) and text colours are by default set to go well with themes with dark terminal backgrounds. If you instead have a bright background theme, text may be difficult to read (e.g. white on white), depending on your terminal emulator program. If so, try passing the `--bright` argument, or modify the configuration file to enable `brightTerminal` under `[Core]` to make the setting persistent.
+Text colours are by default set to go well with terminal themes with dark backgrounds. If you instead have a bright background theme, text may be difficult to read (e.g. white on white), depending on your terminal emulator program. If so, try passing the `--bright` argument, or modify the configuration file and enable `brightTerminal` under `[Core]` to make the setting persistent.
 
 If only some colours work, try limiting colouring some by disabling `extendedColours`, also under `[Core]`. If one or more colours are still too dark or too bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
 
@@ -249,7 +253,7 @@ Refer to [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins) for
  <kameloso> Note added.
  MsOnline left #channel
 MrOffline joined #channel
- <kameloso> MrOffline! MsOnline left note 4 hours and 28 minutes ago: About the thing you mentioned, yeah no
+ <kameloso> MrOffline! MsOnline left note 4 hours and 28 minutes ago: "About the thing you mentioned, yeah no"
 
       <you> !operator add bob
  <kameloso> Added BOB as an operator in #channel.
@@ -399,7 +403,7 @@ prefix                      "!"
 
 It can technically be any string and not just one character. It may include spaces if enclosed within quotes.
 
-Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. Some commands require it. If an empty command prefix is set, commands may only be invoked by prefixing them with the nickname this way.
+Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. Some commands require it. If no command prefix is set, commands may only be invoked by prefixing them with the nickname this way.
 
 #### ***Except nothing happens***
 
@@ -427,7 +431,7 @@ Prebuilt binaries for Windows and Linux can be found under [**Releases**](https:
 
 The `--setup-twitch` flag creates a configuration file with the server address and port already set to connect to Twitch, then opens it up in a text editor.
 
-On Windows it additionally downloads and launches an installer for [**OpenSSL for Windows**](#openssl) as well as downloads a [**certificate authority bundle**](#certificate-authority-bundle) file, both of which are [required](#windows) to create secure connections. Make sure to opt to *install to Windows system directories* when asked.
+On Windows it additionally downloads and launches an installer for [**OpenSSL for Windows**](#openssl) as well as downloads a [**certificate authority bundle**](#certificate-authority-bundle) file, both of which are [required](#windows) to create secure connections. Make sure to choose to *install to Windows system directories* when asked.
 
 **A line with a leading `#` is disabled, so remove any `#`s from the start of lines you want to enable.**
 
@@ -492,15 +496,17 @@ To connect to Twitch servers, you must first compile the `twitch` build configur
 
 You will also require an [*authorisation token*](https://en.wikipedia.org/wiki/OAuth). Assuming you have a configuration file set up to connect to Twitch, such as with `--setup-twitch`, it will automatically start a terminal wizard requesting one on program startup, **if** none is present. Run the bot with `--set twitch.keygen` to force it if it doesn't, which it won't if you already have a token and it merely expired. (They last about 60 days.)
 
-It will open a browser window in which you may be asked to log into Twitch *on Twitch's own servers*, if you are not already logged in. Verify that it's truly Twitch by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
+If you are not already logged into Twitch in your browser, it will open a browser window with the Twitch login page. Verify that it's truly Twitch by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
 
 > Do note that at no point is the bot privy to your Twitch login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with all this is open for audit; [`requestTwitchKey` in `plugins/twitch/providers/twitch.d`](source/kameloso/plugins/twitch/providers/twitch.d).
 
-After entering your login and password and clicking **Authorize**, you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. **Copy the URL address of it** and **paste** it into the terminal, when prompted to. It will parse the address, extract your authorisation token, verify it, save it to your configuration file, and then finally connect to the server.
+Logging in should lead you to a page where you must authorise the bot to perform certain actions on behalf of your (bot) account, such as reading and sending messages, performing moderator actions, etc.
+
+Click **Authorize** and you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. **Copy the URL address** of that page and **paste** it into the terminal, which you should be prompted to do. Hit enter and it will parse the address, extract your authorisation token, verify it, save it to your configuration file, and then finally connect to the server.
 
 If you prefer to generate the token manually, [here is the URL you need to follow](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=moderator:manage:chat_messages+moderator:manage:banned_users+user:manage:whispers+channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read+moderator:read:followers+user:read:follows&force_verify=true&state=kameloso). The key generation wizard only opens it for you, as well as automates saving the resulting token to your configuration file (as `pass` under `[IRCBot]`).
 
-Mind that the authorisation token should still be kept secret. It's not possible to derive your Twitch account password from it, but anyone with access to it can chat as if they were you.
+Mind that the authorisation token should still be kept secret. It's not possible to derive your Twitch account password from it, but anyone with access to it can chat as if they were you. This is part of why it's recommended to use a bot account instead.
 
 #### Twitch bot
 
