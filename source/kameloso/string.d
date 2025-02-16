@@ -514,3 +514,105 @@ unittest
         assert((actual == expected), actual);
     }
 }
+
+
+// indexOfLastOccurenceOf
+/++
+    Finds the index of the last occurrence of a needle in a haystack.
+
+    Params:
+        haystack = The array to search in.
+        needle = The element or array to search for.
+
+    Returns:
+        The index of the last occurrence of `needle` in `haystack`, or `-1` if not found.
+ +/
+auto indexOfLastOccurrenceOf(Haystack, Needle)
+    (const scope Haystack haystack,
+    const scope Needle needle) pure
+{
+    import std.range : ElementEncodingType, ElementType;
+    import std.string : indexOf;
+    import std.traits : isArray;
+
+    static if (!isArray!Haystack)
+    {
+        enum message = "`indexOfLastOccurrenceOf` only works on array-type haystacks";
+        static assert(0, message);
+    }
+
+    static if (
+        !isArray!Haystack &&
+        !is(Needle : ElementType!Haystack) &&
+        !is(Needle : ElementEncodingType!Haystack))
+    {
+        enum message = "`indexOfLastOccurrenceOf` only works with array- or single-element-type needles";
+        static assert(0, message);
+    }
+
+    static if (isArray!Needle)
+    {
+        immutable needleLength = needle.length;
+        if (!needleLength) return 0;
+    }
+    else
+    {
+        immutable needleLength = 1;
+    }
+
+    if (!haystack.length) return -1;
+
+    ptrdiff_t needlePos = haystack.indexOf(needle);
+    ptrdiff_t previousNeedlePos = needlePos;
+
+    while (needlePos != -1)
+    {
+        previousNeedlePos = needlePos;
+        needlePos = haystack.indexOf(needle, previousNeedlePos+needleLength);
+    }
+
+    return previousNeedlePos;
+}
+
+///
+unittest
+{
+    import std.conv : to;
+
+    {
+        enum line = "haystack";
+        enum needle = "a";
+        enum index = line.indexOfLastOccurrenceOf(needle);
+        static assert((index == 5), index.to!string);
+    }
+    {
+        enum line = "1234567890";
+        enum needle = '7';
+        enum index = line.indexOfLastOccurrenceOf(needle);
+        static assert((index == 6), index.to!string);
+    }
+    {
+        enum line = "123456789";
+        enum needle = '0';
+        enum index = line.indexOfLastOccurrenceOf(needle);
+        static assert((index == -1), index.to!string);
+    }
+    {
+        enum line = "1234567890";
+        enum needle = "";
+        enum index = line.indexOfLastOccurrenceOf(needle);
+        static assert((index == 0), index.to!string);
+    }
+    {
+        enum line = "";
+        enum needle = "";
+        enum index = line.indexOfLastOccurrenceOf(needle);
+        static assert((index == 0), index.to!string);
+    }
+    {
+        enum line = "";
+        enum needle = "blarp";
+        enum index = line.indexOfLastOccurrenceOf(needle);
+        static assert((index == -1), index.to!string);
+    }
+}
