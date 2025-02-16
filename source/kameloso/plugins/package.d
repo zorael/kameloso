@@ -4445,6 +4445,8 @@ auto memoryCorruptionCheck()
 {
     version(MemoryCorruptionChecks)
     {
+        assert(__ctfe, "`memoryCorruptionCheck` should only be used as a compile-time string mixin.");
+
         enum mixinBody =
     "{
     import kameloso.string : indexOfLastOccurrenceOf;
@@ -4470,16 +4472,27 @@ auto memoryCorruptionCheck()
 
     static if ((_funParams.length == 1) && is(_funParams[0] : kameloso.plugins.IRCEvent))
     {
+        enum _pluginParamName = \"null\";
         enum _eventParamName = _paramNames[0];
     }
     else static if ((_funParams.length == 2) && is(_funParams[1] : kameloso.plugins.IRCEvent))
     {
-        enum _eventParamName = _paramNames[1];
+        static if (is(_funParams[0] : IRCPlugin))
+        {
+            enum _pluginParamName = _paramNames[0];
+            enum _eventParamName = _paramNames[1];
+        }
+        else
+        {
+            enum _message = \"`\" ~ _funName ~ \"` mixes in `memoryCorruptionCheck` \" ~
+                \"but does itself not have an `IRCPlugin` parameter.\";
+            static assert(0, _message);
+        }
     }
     else
     {
         enum _message = \"`\" ~ _funName ~ \"` mixes in `memoryCorruptionCheck` \" ~
-            \"but is not a function accepting an `IRCEvent` parameter.\";
+            \"but does itself not have an `IRCEvent` parameter.\";
         static assert(0, _message);
     }
 
@@ -4493,7 +4506,12 @@ auto memoryCorruptionCheck()
     }
 
     static immutable _uda = __traits(getAttributes, _fun)[_udaIndex];
-    kameloso.plugins.memoryCorruptionCheckImpl(mixin(_eventParamName), _uda, _funName);
+
+    kameloso.plugins.memoryCorruptionCheckImpl(
+        mixin(_pluginParamName),
+        mixin(_eventParamName),
+        _uda,
+        _funName);
     }";
 
         return mixinBody;
@@ -4509,15 +4527,18 @@ auto memoryCorruptionCheck()
 /++
     Implementation of the memory corruption check.
 
-    This part can safely be a function instead of a mixin string.
+    This part can safely be a function instead of a mixin string to share code.
 
     Params:
+        plugin = The plugin or service the event handler function takes as
+            parameter, or `null` if it doesn't take one.
         event = The event to check.
         uda = The [IRCEventHandler] UDA to check against.
         functionName = The name of the function being checked.
  +/
 version(MemoryCorruptionChecks)
 void memoryCorruptionCheckImpl(
+    const IRCPlugin plugin,
     const IRCEvent event,
     const IRCEventHandler uda,
     const string functionName) pure @safe
@@ -4528,7 +4549,7 @@ void memoryCorruptionCheckImpl(
 
     if (!uda.acceptedEventTypes.canFind(event.type, IRCEvent.Type.ANY))
     {
-        enum pattern = "Event handler `%s` was called with an unexpected event type: %s";
+        enum pattern = "Event handler `%s` was called with an unexpected event type: `%s`";
         immutable message = pattern.format(functionName, event.type.toString());
         assert(0, message);
     }
@@ -4540,10 +4561,11 @@ void memoryCorruptionCheckImpl(
         if (!event.aux[$-1].length)
         {
             enum pattern = "Event handler `%s` was called with no command word found in the event's `aux[$-1]`";
-            immutable message = pattern.format(functionName, event.type.toString());
+            immutable message = pattern.format(functionName);
             assert(0, message);
         }
 
+        // Scan the commands array for the command word
         immutable wordLower = event.aux[$-1].toLower();
         bool hit;
 
@@ -4566,9 +4588,98 @@ void memoryCorruptionCheckImpl(
             assert(0, message);
         }
     }
+
+    /+
+        If there is a channel and we were passed a plugin, check the channel to
+        see if it satisfies the UDA's channel policy.
+
+        If plugin is null then we can't check whether or not the channel is in
+        the list of home or guest channels.
+     +/
+    if (event.channel.name.length && (plugin !is null))
+    {
+        import std.algorithm.searching : canFind;
+        import std.typecons : Ternary;
+
+        static auto getTernaryStateString(const Ternary ternary)
+        {
+            return
+                (ternary == Ternary.yes) ? "yes" :
+                (ternary == Ternary.no) ? "no" :
+                "unknown";
+        }
+
+        Ternary isHomeChannel;
+        Ternary isGuestChannel;
+        bool satisfied;
+
+        if (uda.channelPolicy & ChannelPolicy.home)
+        {
+            isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel.name);
+            if (isHomeChannel == Ternary.yes) satisfied = true;
+        }
+
+        if (!satisfied && (uda.channelPolicy & ChannelPolicy.guest))
+        {
+            isGuestChannel = plugin.state.bot.guestChannels.canFind(event.channel.name);
+            if (isGuestChannel == Ternary.yes) satisfied = true;
+        }
+
+        if (!satisfied && (uda.channelPolicy & ChannelPolicy.any))
+        {
+            satisfied = true;
+        }
+
+        if (!satisfied)
+        {
+            enum pattern = "Event handler `%s` was called with an event in channel " ~
+                "`%s` that does not satisfy the channel policy of the function; " ~
+                "state is isHomeChannel:%s, isGuestChannel:%s, " ~
+                "policy is home:%s guest:%s any:%s (value:%d)";
+
+            immutable message = pattern.format(
+                functionName,
+                event.channel.name,
+                getTernaryStateString(isHomeChannel),
+                getTernaryStateString(isGuestChannel),
+                cast(bool)(uda.channelPolicy & ChannelPolicy.home),
+                cast(bool)(uda.channelPolicy & ChannelPolicy.guest),
+                cast(bool)(uda.channelPolicy & ChannelPolicy.any),
+                cast(uint)(uda.channelPolicy));
+            assert(0, message);
+        }
+    }
+
+    version(TwitcSupport)
+    {
+        immutable subchannelID = event.subchannel.id;
+    }
+    else
+    {
+        enum subchannelID = 0;
+    }
+
+    /+
+        Check whether the event carries a subchannel when the function is not
+        annotated to accept such.
+     +/
+    if (!uda._acceptExternal &&
+        (event.subchannel.name.length || subchannelID))
+    {
+        enum pattern = "Event handler `%s` was called with an event in channel " ~
+            "`%s` subchannel `%s`:`%d`, and the function was not annotated to " ~
+            "accept events from external channels";
+
+        immutable message = pattern.format(
+            functionName,
+            event.channel.name,
+            event.subchannel.name,
+            subchannelID);
+        assert(0, message);
+    }
 }
 
-
+///
 version(unittest)
 {
     // memoryCorruptionCheckCustomIndexUDAIndex
