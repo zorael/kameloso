@@ -139,6 +139,8 @@ version(Debug)
 )
 void onCommandShowUser(AdminPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (plugin.state.coreSettings.headless) return;
     onCommandShowUserImpl(plugin, event);
 }
@@ -164,6 +166,8 @@ void onCommandWhoami(AdminPlugin plugin, const IRCEvent event)
 {
     import lu.conv : toString;
     import std.format : format;
+
+    mixin(memoryCorruptionCheck);
 
     immutable account = event.sender.account.length ? event.sender.account : "*";
     string message;  // mutable
@@ -215,6 +219,8 @@ void onCommandSave(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
 
+    mixin(memoryCorruptionCheck);
+
     enum message = "Saving configuration to disk.";
     privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     plugin.state.messages ~= ThreadMessage.save;
@@ -239,8 +245,10 @@ version(Debug)
             .description("[debug] Prints out the current users array to the local terminal.")
     )
 )
-void onCommandShowUsers(AdminPlugin plugin)
+void onCommandShowUsers(AdminPlugin plugin, const IRCEvent _)
 {
+    mixin(memoryCorruptionCheck);
+
     if (plugin.state.coreSettings.headless) return;
     onCommandShowUsersImpl(plugin);
 }
@@ -268,6 +276,7 @@ version(Debug)
 )
 void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     onCommandSudoImpl(plugin, event);
 }
 
@@ -294,6 +303,7 @@ void onCommandSudo(AdminPlugin plugin, const IRCEvent event)
 )
 void onCommandQuit(AdminPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     quit(plugin.state, event.content);
 }
 
@@ -327,6 +337,8 @@ void onCommandHome(AdminPlugin plugin, const IRCEvent event)
 {
     import lu.string : advancePast, strippedRight;
     import std.format : format;
+
+    mixin(memoryCorruptionCheck);
 
     void sendUsage()
     {
@@ -388,6 +400,8 @@ void onCommandGuest(AdminPlugin plugin, const IRCEvent event)
 {
     import lu.string : advancePast, strippedRight;
     import std.format : format;
+
+    mixin(memoryCorruptionCheck);
 
     void sendUsage()
     {
@@ -705,6 +719,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 )
 void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     manageClassLists(plugin, event, IRCUser.Class.whitelist);
 }
 
@@ -734,6 +749,7 @@ void onCommandWhitelist(AdminPlugin plugin, const IRCEvent event)
 )
 void onCommandElevated(AdminPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     manageClassLists(plugin, event, IRCUser.Class.elevated);
 }
 
@@ -760,6 +776,7 @@ void onCommandElevated(AdminPlugin plugin, const IRCEvent event)
 )
 void onCommandOperator(AdminPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     manageClassLists(plugin, event, IRCUser.Class.operator);
 }
 
@@ -786,6 +803,7 @@ void onCommandOperator(AdminPlugin plugin, const IRCEvent event)
 )
 void onCommandStaff(AdminPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     manageClassLists(plugin, event, IRCUser.Class.staff);
 }
 
@@ -814,6 +832,7 @@ void onCommandStaff(AdminPlugin plugin, const IRCEvent event)
 )
 void onCommandBlacklist(AdminPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     manageClassLists(plugin, event, IRCUser.Class.blacklist);
 }
 
@@ -839,6 +858,8 @@ void onCommandReload(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
     import std.conv : text;
+
+    mixin(memoryCorruptionCheck);
 
     immutable message = event.content.length ?
         text("Reloading plugin \"<b>", event.content, "<b>\".") :
@@ -869,6 +890,7 @@ version(Debug)
 )
 void onCommandPrintRaw(AdminPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     onCommandPrintRawImpl(plugin, event);
 }
 
@@ -894,6 +916,7 @@ version(Debug)
 )
 void onCommandPrintBytes(AdminPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     onCommandPrintBytesImpl(plugin, event);
 }
 
@@ -920,6 +943,7 @@ version(Debug)
 )
 void onCommandPrintEvents(AdminPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     onCommandPrintEventsImpl(plugin, event.content, event);
 }
 
@@ -946,6 +970,8 @@ void onCommandPrintEvents(AdminPlugin plugin, const IRCEvent event)
 void onCommandJoin(AdminPlugin plugin, const IRCEvent event)
 {
     import lu.string : splitInto, stripped;
+
+    mixin(memoryCorruptionCheck);
 
     if (!event.content.length)
     {
@@ -983,6 +1009,8 @@ void onCommandPart(AdminPlugin plugin, const IRCEvent event)
 {
     import lu.string : splitInto, stripped;
 
+    mixin(memoryCorruptionCheck);
+
     if (!event.content.length)
     {
         enum message = "No channels to part supplied...";
@@ -1019,6 +1047,8 @@ void onCommandSet(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
+
+    mixin(memoryCorruptionCheck);
 
     alias Payload = Tuple!(bool);
 
@@ -1064,6 +1094,8 @@ void onCommandGet(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
+
+    mixin(memoryCorruptionCheck);
 
     alias Payload = Tuple!(string, string, string);
 
@@ -1127,9 +1159,11 @@ version(WithConnectService)
                 "has forcefully logged the bot out.")
     )
 )
-void onCommandAuth(AdminPlugin plugin)
+void onCommandAuth(AdminPlugin plugin, const IRCEvent _)
 {
     import kameloso.thread : ThreadMessage, boxed;
+
+    mixin(memoryCorruptionCheck);
 
     version(TwitchSupport)
     {
@@ -1160,8 +1194,10 @@ version(IncludeHeavyStuff)
             .description("[debug] Dumps information about the current state of the bot to the local terminal.")
     )
 )
-void onCommandStatus(AdminPlugin plugin)
+void onCommandStatus(AdminPlugin plugin, const IRCEvent _)
 {
+    mixin(memoryCorruptionCheck);
+
     if (plugin.state.coreSettings.headless) return;
     onCommandStatusImpl(plugin);
 }
@@ -1183,9 +1219,11 @@ void onCommandStatus(AdminPlugin plugin)
             .description("Prints a connection summary to the local terminal.")
     )
 )
-void onCommandSummary(AdminPlugin plugin)
+void onCommandSummary(AdminPlugin plugin, const IRCEvent _)
 {
     import kameloso.thread : ThreadMessage;
+
+    mixin(memoryCorruptionCheck);
 
     if (plugin.state.coreSettings.headless) return;
     plugin.state.messages ~= ThreadMessage.wantLiveSummary;
@@ -1212,6 +1250,8 @@ version(Debug)
 void onCommandFake(AdminPlugin plugin, const IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
+
+    mixin(memoryCorruptionCheck);
     plugin.state.messages ~= ThreadMessage.fakeEvent(event.content);
 }
 
@@ -1239,6 +1279,8 @@ void onCommandCycle(AdminPlugin plugin, const IRCEvent event)
     import kameloso.time : DurationStringException, asAbbreviatedDuration;
     import lu.string : advancePast, stripped;
     import std.conv : ConvException;
+
+    mixin(memoryCorruptionCheck);
 
     string slice = event.content.stripped;  // mutable
     if (!slice.length) return cycle(plugin, event.channel.name);
@@ -1355,6 +1397,8 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
 {
     import lu.string : SplitResults, advancePast, splitInto, stripped;
     import std.format : format;
+
+    mixin(memoryCorruptionCheck);
 
     if (!plugin.state.coreSettings.preferHostmasks)
     {
@@ -1495,6 +1539,8 @@ void onCommandReconnect(AdminPlugin plugin, const IRCEvent event)
     import kameloso.thread : ThreadMessage, boxed;
     import lu.string : stripped;
 
+    mixin(memoryCorruptionCheck);
+
     logger.warning("Reconnecting upon administrator request.");
     auto message = ThreadMessage.reconnect(event.content.stripped, boxed(false));
     plugin.state.priorityMessages ~= message;
@@ -1525,6 +1571,8 @@ void onCommandReexec(AdminPlugin plugin, const IRCEvent event)
     import kameloso.thread : ThreadMessage, boxed;
     import lu.string : stripped;
 
+    mixin(memoryCorruptionCheck);
+
     auto message = ThreadMessage.reconnect(event.content.stripped, boxed(true));
     plugin.state.priorityMessages ~= message;
 }
@@ -1552,6 +1600,8 @@ version(Debug)
 void onCommandBus(AdminPlugin plugin, const IRCEvent event)
 {
     import lu.string : splitInto, stripped;
+
+    mixin(memoryCorruptionCheck);
 
     string slice = event.content.stripped;  // mutable
     string header;  // ditto
@@ -1592,6 +1642,8 @@ void onCommandSelftest(AdminPlugin plugin, const IRCEvent event)
     import kameloso.thread : CarryingFiber;
     import std.format : format;
     import std.typecons : Ternary, Tuple;
+
+    mixin(memoryCorruptionCheck);
 
     alias Payload = Tuple!(string[], Ternary delegate()[]);
 
@@ -2074,7 +2126,8 @@ void onBusMessage(
         break;
 
     case "summary":
-        return onCommandSummary(plugin);
+        plugin.state.messages ~= ThreadMessage.wantLiveSummary;
+        break;
 
     default:
         enum pattern = "[admin] Unimplemented bus message verb: <l>%s";

@@ -345,6 +345,8 @@ void onOneliner(OnelinerPlugin plugin, const IRCEvent event)
     import std.conv : text, to;
     import std.uni : toLower;
 
+    mixin(memoryCorruptionCheck);
+
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
     if (!event.content.startsWith(plugin.state.coreSettings.prefix)) return;
 
@@ -487,6 +489,8 @@ void onCommandModifyOneliner(OnelinerPlugin plugin, const IRCEvent event)
 {
     import lu.string : advancePast, stripped;
     import std.uni : toLower;
+
+    mixin(memoryCorruptionCheck);
 
     void sendUsage()
     {
@@ -1236,6 +1240,7 @@ void handleAliasOneliner(
 )
 void onCommandCommands(OnelinerPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     listCommands(plugin, event, includeAliases: false);
 }
 
@@ -1349,8 +1354,9 @@ void listCommands(
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(OnelinerPlugin plugin)
+void onWelcome(OnelinerPlugin plugin, const IRCEvent _)
 {
+    mixin(memoryCorruptionCheck);
     loadOneliners(plugin);
 }
 

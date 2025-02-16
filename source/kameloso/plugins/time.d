@@ -183,6 +183,8 @@ void onCommandTime(TimePlugin plugin, const IRCEvent event)
     import std.datetime.timezone : LocalTime;
     import std.format : format;
 
+    mixin(memoryCorruptionCheck);
+
     void sendInvalidTimezone(const string zonestring)
     {
         enum pattern = "Invalid timezone: <b>%s<b>";
@@ -466,6 +468,8 @@ void onCommandSetZone(TimePlugin plugin, const IRCEvent event)
     import lu.string : stripped;
     import std.format : format;
     import std.json : JSONValue;
+
+    mixin(memoryCorruptionCheck);
 
     immutable specified = event.content.stripped;
 

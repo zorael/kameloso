@@ -73,6 +73,8 @@ import dialect.defs;
 )
 void onCommandSay(ChatbotPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     string message;  // mutable
 
     if (event.content.length)
@@ -125,6 +127,8 @@ void onDance(ChatbotPlugin plugin, const IRCEvent event)
     import std.string : indexOf;
     import core.thread.fiber : Fiber;
     import core.time : seconds;
+
+    mixin(memoryCorruptionCheck);
 
     immutable content = event.content.strippedRight;
     immutable dancePos = content.indexOf("DANCE");

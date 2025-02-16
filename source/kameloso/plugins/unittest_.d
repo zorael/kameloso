@@ -65,6 +65,8 @@ version(TwitchSupport)
 )
 void onCommand(UnittestPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     //with (plugin)  // https://github.com/dlang-community/D-Scanner/issues/931
 
     void onSuccess(IRCUser user)

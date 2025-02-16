@@ -53,6 +53,8 @@ void onCTCPs(CTCPService service, const IRCEvent event)
 
     // https://modern.ircdocs.horse/ctcp.html
 
+    mixin(memoryCorruptionCheck);
+
     string line;
 
     with (IRCEvent.Type)
@@ -271,6 +273,8 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
     import dialect.common : I = IRCControlCharacter;
     import std.exception : assumeUnique;
     import std.format : format;
+
+    mixin(memoryCorruptionCheck);
 
     /*  This metadata query returns a list of the CTCP messages that this
         client supports and implements. CLIENTINFO is widely implemented.

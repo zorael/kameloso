@@ -87,6 +87,8 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
 {
     import std.typecons : Tuple;
 
+    mixin(memoryCorruptionCheck);
+
     alias Payload = Tuple!
         (IRCPlugin.CommandMetadata[string][string],
         IRCPlugin.CommandMetadata[string][string]);

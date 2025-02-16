@@ -407,6 +407,8 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
     import lu.string : stripped;
     import std.algorithm.searching : startsWith;
 
+    mixin(memoryCorruptionCheck);
+
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     immutable stripped_ = event.content.stripped;
@@ -512,10 +514,12 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
     .onEvent(IRCEvent.Type.RPL_WELCOME)
     .fiber(true)
 )
-void onWelcome(SedReplacePlugin plugin)
+void onWelcome(SedReplacePlugin plugin, const IRCEvent _)
 {
     import kameloso.plugins.common.scheduling : delay;
     import std.datetime.systime : Clock;
+
+    mixin(memoryCorruptionCheck);
 
     while (true)
     {
@@ -553,6 +557,7 @@ void onWelcome(SedReplacePlugin plugin)
 )
 void onJoin(SedReplacePlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     initPrevlines(plugin, event.channel.name, event.sender.nickname);
 }
 
@@ -567,6 +572,8 @@ void onJoin(SedReplacePlugin plugin, const IRCEvent event)
 )
 void onPart(SedReplacePlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (auto channelLines = event.channel.name in plugin.prevlines)
     {
         (*channelLines).remove(event.sender.nickname);
@@ -583,6 +590,8 @@ void onPart(SedReplacePlugin plugin, const IRCEvent event)
 )
 void onQuit(SedReplacePlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     foreach (ref channelLines; plugin.prevlines)
     {
         channelLines.remove(event.sender.nickname);

@@ -606,8 +606,9 @@ void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
 )
-void onPing(PrinterPlugin plugin)
+void onPing(PrinterPlugin plugin, const IRCEvent _)
 {
+    mixin(memoryCorruptionCheck);
     flushAllLogsImpl(plugin);
 }
 
@@ -624,10 +625,12 @@ void onPing(PrinterPlugin plugin)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ISUPPORT)
 )
-void onISUPPORT(PrinterPlugin plugin)
+void onISUPPORT(PrinterPlugin plugin, const IRCEvent _)
 {
     import kameloso.common : logger;
     import lu.conv : toString;
+
+    mixin(memoryCorruptionCheck);
 
     if (plugin.transient.printedISUPPORT ||
         !plugin.state.server.network.length)

@@ -155,6 +155,8 @@ void onCommandQuote(QuotePlugin plugin, const IRCEvent event)
     import std.format : format;
     import std.string : representation;
 
+    mixin(memoryCorruptionCheck);
+
     immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
 
     void sendNonTwitchUsage()
@@ -292,6 +294,8 @@ void onCommandAddQuote(QuotePlugin plugin, const IRCEvent event)
     import lu.string : stripped, strippedRight, unquoted;
     import std.format : format;
 
+    mixin(memoryCorruptionCheck);
+
     immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
 
     void sendUsage()
@@ -383,6 +387,8 @@ void onCommandModQuote(QuotePlugin plugin, const IRCEvent event)
     import lu.string : SplitResults, splitInto, stripped, strippedRight, unquoted;
     import std.conv : ConvException, to;
     import std.format : format;
+
+    mixin(memoryCorruptionCheck);
 
     immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
 
@@ -504,6 +510,8 @@ void onCommandMergeQuotes(QuotePlugin plugin, const IRCEvent event)
     import lu.string : SplitResults, plurality, splitInto, stripped;
     import std.format : format;
 
+    mixin(memoryCorruptionCheck);
+
     version(TwitchSupport)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
@@ -579,6 +587,8 @@ void onCommandDelQuote(QuotePlugin plugin, const IRCEvent event)
     import std.algorithm.mutation : SwapStrategy, remove;
     import std.conv : ConvException, to;
     import std.format : format;
+
+    mixin(memoryCorruptionCheck);
 
     immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
 
@@ -825,8 +835,9 @@ unittest
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(QuotePlugin plugin)
+void onWelcome(QuotePlugin plugin, const IRCEvent _)
 {
+    mixin(memoryCorruptionCheck);
     loadQuotes(plugin);
 }
 

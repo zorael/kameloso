@@ -155,6 +155,8 @@ public:
 )
 void onJoinOrAccount(NotePlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     version(TwitchSupport)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
@@ -183,6 +185,8 @@ void onJoinOrAccount(NotePlugin plugin, const IRCEvent event)
 )
 void onChannelMessage(NotePlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (plugin.noteSettings.playBackOnAnyActivity ||
         (plugin.state.server.daemon == IRCServer.Daemon.twitch))
     {
@@ -220,6 +224,8 @@ version(TwitchSupport)
 )
 void onTwitchChannelEvent(NotePlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     // No need to check whether we're on Twitch
@@ -246,6 +252,8 @@ void onTwitchChannelEvent(NotePlugin plugin, const IRCEvent event)
 )
 void onWhoReply(NotePlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (plugin.state.coreSettings.eagerLookups) return;
     playbackNotes(plugin, event, background: true);
 }
@@ -419,6 +427,8 @@ void onCommandAddNote(NotePlugin plugin, const IRCEvent event)
     import lu.string : SplitResults, splitInto, stripped;
     import std.algorithm.searching : startsWith;
 
+    mixin(memoryCorruptionCheck);
+
     void sendUsage()
     {
         import std.format : format;
@@ -464,8 +474,9 @@ void onCommandAddNote(NotePlugin plugin, const IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(NotePlugin plugin)
+void onWelcome(NotePlugin plugin, const IRCEvent _)
 {
+    mixin(memoryCorruptionCheck);
     loadNotes(plugin);
 }
 

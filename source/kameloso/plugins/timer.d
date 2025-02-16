@@ -355,6 +355,8 @@ void onCommandTimer(TimerPlugin plugin, const IRCEvent event)
     import lu.string : advancePast, stripped;
     import std.format : format;
 
+    mixin(memoryCorruptionCheck);
+
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [new|modify|add|del|suspend|resume|list] ...";
@@ -1142,6 +1144,8 @@ void handleSuspendTimer(
 )
 void onAnyMessage(TimerPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     auto channel = event.channel.name in plugin.channels;
@@ -1279,8 +1283,9 @@ void startTimerMonitor(TimerPlugin plugin)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(TimerPlugin plugin)
+void onWelcome(TimerPlugin plugin, const IRCEvent _)
 {
+    mixin(memoryCorruptionCheck);
     loadTimers(plugin);
 }
 
@@ -1295,6 +1300,7 @@ void onWelcome(TimerPlugin plugin)
 )
 void onSelfjoin(TimerPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
     handleSelfjoin(plugin, event.channel.name, force: false);
 }
 

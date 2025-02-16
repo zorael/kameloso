@@ -210,6 +210,8 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
     import std.algorithm.searching : canFind;
     import std.format : format;
 
+    mixin(memoryCorruptionCheck);
+
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [add|del|format|list] [counter word]";
@@ -493,6 +495,8 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
     import std.meta : aliasSeqOf;
     import std.string : indexOf;
 
+    mixin(memoryCorruptionCheck);
+
     void sendCurrentCount(const Counter counter)
     {
         if (!counter.patternQuery.length) return;
@@ -681,8 +685,9 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(CounterPlugin plugin)
+void onWelcome(CounterPlugin plugin, const IRCEvent _)
 {
+    mixin(memoryCorruptionCheck);
     loadCounters(plugin);
 }
 

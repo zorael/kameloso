@@ -918,6 +918,8 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
     // http://ircv3.net/irc
     // https://blog.irccloud.com/ircv3
 
+    mixin(memoryCorruptionCheck);
+
     if (service.transient.progress.registration == Progress.finished)
     {
         // It's possible to call CAP LS after registration, and that would start
@@ -1122,8 +1124,10 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SASL_AUTHENTICATE)
 )
-void onSASLAuthenticate(ConnectService service)
+void onSASLAuthenticate(ConnectService service, const IRCEvent _)
 {
+    mixin(memoryCorruptionCheck);
+
     service.transient.progress.authentication = Progress.inProgress;
 
     immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
@@ -1141,7 +1145,7 @@ void onSASLAuthenticate(ConnectService service)
 
     if (!plainSuccess)
     {
-        onSASLFailure(service);
+        onSASLFailureImpl(service);
     }
 }
 
@@ -1215,8 +1219,10 @@ auto trySASLPlain(ConnectService service)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_SASLSUCCESS)
 )
-void onSASLSuccess(ConnectService service)
+void onSASLSuccess(ConnectService service, const IRCEvent _)
 {
+    mixin(memoryCorruptionCheck);
+
     service.transient.progress.authentication = Progress.finished;
 
     /++
@@ -1261,7 +1267,24 @@ void onSASLSuccess(ConnectService service)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_SASLFAIL)
 )
-void onSASLFailure(ConnectService service)
+void onSASLFailure(ConnectService service, const IRCEvent _)
+{
+    mixin(memoryCorruptionCheck);
+    onSASLFailureImpl(service);
+}
+
+
+// onSASLFailureImpl
+/++
+    On SASL authentication failure, calls a `CAP END` to finish the
+    [dialect.defs.IRCEvent.Type.CAP|CAP] negotiations and finish registration.
+
+    Implementation function.
+
+    Flags the client as having finished registering, allowing the main loop to
+    pick it up and propagate it to all other plugins.
+ +/
+void onSASLFailureImpl(ConnectService service)
 {
     if ((service.transient.progress.saslExternal == Progress.inProgress) &&
         service.state.bot.password.length)
@@ -1619,9 +1642,12 @@ version(TwitchSupport)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RECONNECT)
 )
-void onReconnect(ConnectService service)
+void onReconnect(ConnectService service, const IRCEvent _)
 {
     import kameloso.thread : ThreadMessage;
+
+    mixin(memoryCorruptionCheck);
+
     logger.info("Reconnecting upon server request.");
     service.state.priorityMessages ~= ThreadMessage.reconnect;
 }

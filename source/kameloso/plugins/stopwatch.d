@@ -69,6 +69,8 @@ void onCommandStopwatch(StopwatchPlugin plugin, const IRCEvent event)
     import std.datetime.systime : Clock;
     import std.format : format;
 
+    mixin(memoryCorruptionCheck);
+
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [start|stop|status]";  // hide clear
@@ -271,9 +273,11 @@ void deserialiseStopwatches(StopwatchPlugin plugin)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(StopwatchPlugin plugin)
+void onWelcome(StopwatchPlugin plugin, const IRCEvent _)
 {
     import std.file : exists, remove;
+
+    mixin(memoryCorruptionCheck);
 
     if (plugin.stopwatchTempFile.exists)
     {

@@ -104,6 +104,8 @@ void onCommandBash(BashPlugin plugin, const IRCEvent event)
     import std.algorithm.searching : startsWith;
     import std.string : isNumeric;
 
+    mixin(memoryCorruptionCheck);
+
     void sendUsage()
     {
         import kameloso.messaging : privmsg;

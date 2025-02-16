@@ -214,6 +214,8 @@ void onCommandPoll(PollPlugin plugin, const IRCEvent event)
     import std.random : uniform;
     import core.time : Duration;
 
+    mixin(memoryCorruptionCheck);
+
     void sendUsage()
     {
         if (event.sender.class_ < IRCUser.Class.operator)
@@ -952,9 +954,11 @@ void deserialisePolls(PollPlugin plugin)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(PollPlugin plugin)
+void onWelcome(PollPlugin plugin, const IRCEvent _)
 {
     import std.file : exists, remove;
+
+    mixin(memoryCorruptionCheck);
 
     if (plugin.pollTempFile.exists)
     {
@@ -980,6 +984,8 @@ void onWelcome(PollPlugin plugin)
 )
 void onSelfjoin(PollPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (event.channel.name in plugin.state.channels) return;
 
     plugin.state.channels[event.channel.name] = IRCChannel.init;
@@ -1003,6 +1009,8 @@ void onSelfjoin(PollPlugin plugin, const IRCEvent event)
 )
 void onSelfpart(PollPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     plugin.state.channels.remove(event.channel.name);
 }
 

@@ -570,6 +570,8 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
         Don't count non-chatty events if the settings say to ignore them.
      +/
 
+    mixin(memoryCorruptionCheck);
+
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     bool skipTarget;
@@ -655,6 +657,8 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 )
 void onQuit(SeenPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (auto seenTimestamp = event.sender.nickname in plugin.seenUsers)
     {
         *seenTimestamp = event.time;
@@ -675,6 +679,8 @@ void onQuit(SeenPlugin plugin, const IRCEvent event)
 )
 void onNick(SeenPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     updateUser(plugin, event.target.nickname, event.time, skipModesignStrip: true);
@@ -697,6 +703,8 @@ void onNick(SeenPlugin plugin, const IRCEvent event)
 )
 void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     updateUser(plugin, event.target.nickname, event.time);
 }
 
@@ -722,6 +730,8 @@ void onWHOReply(SeenPlugin plugin, const IRCEvent event)
 void onNamesReply(SeenPlugin plugin, const IRCEvent event)
 {
     import std.algorithm.iteration : splitter;
+
+    mixin(memoryCorruptionCheck);
 
     version(TwitchSupport)
     {
@@ -856,6 +866,8 @@ void onCommandSeen(SeenPlugin plugin, const IRCEvent event)
         is not empty, it will be a `chan` channel message, else a private
         `query` message.
      +/
+
+    mixin(memoryCorruptionCheck);
 
     immutable requestedUser = event.content.startsWith('@') ?
         event.content[1..$] :
@@ -1086,11 +1098,13 @@ void saveSeen(SeenPlugin plugin)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(SeenPlugin plugin)
+void onWelcome(SeenPlugin plugin, const IRCEvent _)
 {
     import kameloso.plugins.common.scheduling : await, delay;
     import kameloso.constants : BufferSize;
     import core.thread.fiber : Fiber;
+
+    mixin(memoryCorruptionCheck);
 
     loadSeen(plugin);
 

@@ -118,6 +118,8 @@ void initResources(AutomodePlugin plugin)
 )
 void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     // In case of self WHOIS results, don't automode ourselves
@@ -184,6 +186,8 @@ void onAccountInfo(AutomodePlugin plugin, const IRCEvent event)
 )
 void onJoin(AutomodePlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (event.sender.account.length)
     {
         applyAutomodes(
@@ -304,6 +308,8 @@ void onCommandAutomode(AutomodePlugin plugin, const IRCEvent event)
     import lu.string : SplitResults, advancePast, splitInto, stripped;
     import std.algorithm.searching : count, startsWith;
     import std.format : format;
+
+    mixin(memoryCorruptionCheck);
 
     void sendUsage()
     {
@@ -491,6 +497,8 @@ in ((!add || mode.length), "Tried to add an empty automode")
 )
 void onCommandOp(AutomodePlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     //if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     if (event.sender.account.length)
@@ -513,8 +521,9 @@ void onCommandOp(AutomodePlugin plugin, const IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(AutomodePlugin plugin)
+void onWelcome(AutomodePlugin plugin, const IRCEvent _)
 {
+    mixin(memoryCorruptionCheck);
     loadAutomodes(plugin);
 }
 
@@ -560,6 +569,8 @@ void loadAutomodes(AutomodePlugin plugin)
 void onMode(AutomodePlugin plugin, const IRCEvent event)
 {
     import std.algorithm.searching : canFind;
+
+    mixin(memoryCorruptionCheck);
 
     if ((event.sender.nickname == plugin.state.client.nickname) ||
         (event.target.nickname != plugin.state.client.nickname))

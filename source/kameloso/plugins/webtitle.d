@@ -153,6 +153,8 @@ static immutable descriptionExemptions =
 )
 void onMessage(WebtitlePlugin plugin, const IRCEvent event)
 {
+    mixin(memoryCorruptionCheck);
+
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
     if (event.sender.class_ < plugin.webtitleSettings.minimumPermissionsNeeded) return;
 

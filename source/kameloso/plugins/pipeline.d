@@ -95,11 +95,13 @@ public:
     .onEvent(IRCEvent.Type.RPL_WELCOME)
     .fiber(true)
 )
-void onWelcome(PipelinePlugin plugin)
+void onWelcome(PipelinePlugin plugin, const IRCEvent _)
 {
     import kameloso.plugins.common.scheduling : delay;
     import lu.misc : ReturnValueException;
     import core.time : minutes;
+
+    mixin(memoryCorruptionCheck);
 
     void initRoutine()
     {
