@@ -1634,13 +1634,16 @@ unittest
 
 // highlightEmotes
 /++
-    Tints emote strings and highlights Twitch emotes in a ref
-    [dialect.defs.IRCEvent|IRCEvent]'s `content` member.
+    Tints emote strings and highlights Twitch emotes in a string.
+
+    A [dialect.defs.IRCEvent.Type|IRCEvent.Type] must be provided to put the
+    colour in context; if it is an `EMOTE`- (or `SELFEMOTE`)-type event, the
+    colour of non-emote text will be different.
 
     Wraps [highlightEmotesImpl].
 
     Params:
-        line = The text to highlight with emotes.
+        line = The text in which to highlight emotes.
         emotes = The list of emotes and their positions as divined from the
             IRCv3 tags of an event.
         type = The type of the event.
@@ -1708,7 +1711,7 @@ auto highlightEmotes(
 
     Params:
         sink = Output range to put the results into.
-        line = Content line whose containing emotes should be highlighted.
+        line = Content line containing emotes that should be highlighted.
         emotes = The list of emotes and their positions as divined from the
             IRCv3 tags of an event.
         pre = Terminal foreground tint to colour the emotes with.
