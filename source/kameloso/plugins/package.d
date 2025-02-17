@@ -4449,12 +4449,12 @@ auto memoryCorruptionCheck()
 
         enum mixinBody =
     "{
-    import kameloso.string : indexOfLastOccurrenceOf;
+    import kameloso.string : countUntilLastOccurrenceOf;
     import lu.traits : udaIndexOf;
     import std.traits : ParameterIdentifierTuple, Parameters, isSomeFunction;
     static import kameloso.plugins;
 
-    enum _lastDotPos = __FUNCTION__.indexOfLastOccurrenceOf('.');
+    enum _lastDotPos = __FUNCTION__.countUntilLastOccurrenceOf('.');
 
     static if ((_lastDotPos != -1) &&
         isSomeFunction!(mixin(__FUNCTION__[0.._lastDotPos])))
