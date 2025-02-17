@@ -516,9 +516,11 @@ unittest
 }
 
 
-// indexOfLastOccurenceOf
+// countUntilLastOccurrenceOf
 /++
     Finds the index of the last occurrence of a needle in a haystack.
+    The needle may be a single element (character) or an array of the same type
+    as the haystack.
 
     Params:
         haystack = The array to search in.
@@ -527,17 +529,17 @@ unittest
     Returns:
         The index of the last occurrence of `needle` in `haystack`, or `-1` if not found.
  +/
-auto indexOfLastOccurrenceOf(Haystack, Needle)
+auto countUntilLastOccurrenceOf(Haystack, Needle)
     (const scope Haystack haystack,
     const scope Needle needle) pure
 {
+    import std.algorithm.searching : countUntil;
     import std.range : ElementEncodingType, ElementType;
-    import std.string : indexOf;
     import std.traits : isArray;
 
     static if (!isArray!Haystack)
     {
-        enum message = "`indexOfLastOccurrenceOf` only works on array-type haystacks";
+        enum message = "`countUntilLastOccurrenceOf` only works on array-type haystacks";
         static assert(0, message);
     }
 
@@ -546,7 +548,7 @@ auto indexOfLastOccurrenceOf(Haystack, Needle)
         !is(Needle : ElementType!Haystack) &&
         !is(Needle : ElementEncodingType!Haystack))
     {
-        enum message = "`indexOfLastOccurrenceOf` only works with array- or single-element-type needles";
+        enum message = "`countUntilLastOccurrenceOf` only works with array- or single-element-type needles";
         static assert(0, message);
     }
 
@@ -562,16 +564,18 @@ auto indexOfLastOccurrenceOf(Haystack, Needle)
 
     if (!haystack.length) return -1;
 
-    ptrdiff_t needlePos = haystack.indexOf(needle);
+    ptrdiff_t needlePos = haystack.countUntil(needle);
     ptrdiff_t previousNeedlePos = needlePos;
+    size_t offset;
 
     while (needlePos != -1)
     {
         previousNeedlePos = needlePos;
-        needlePos = haystack.indexOf(needle, previousNeedlePos+needleLength);
+        offset += needlePos + needleLength;
+        needlePos = haystack[offset..$].countUntil(needle);
     }
 
-    return previousNeedlePos;
+    return (offset - needleLength);
 }
 
 ///
@@ -580,39 +584,51 @@ unittest
     import std.conv : to;
 
     {
-        enum line = "haystack";
+        enum haystack = "haystack";
         enum needle = "a";
-        enum index = line.indexOfLastOccurrenceOf(needle);
-        static assert((index == 5), index.to!string);
+        enum index = haystack.countUntilLastOccurrenceOf(needle);
+        assert((index == 5), index.to!string);
     }
     {
-        enum line = "1234567890";
+        enum haystack = "1234567890";
         enum needle = '7';
-        enum index = line.indexOfLastOccurrenceOf(needle);
-        static assert((index == 6), index.to!string);
+        immutable index = haystack.countUntilLastOccurrenceOf(needle);
+        assert((index == 6), index.to!string);
     }
     {
-        enum line = "123456789";
+        enum haystack = "123456789";
         enum needle = '0';
-        enum index = line.indexOfLastOccurrenceOf(needle);
-        static assert((index == -1), index.to!string);
+        immutable index = haystack.countUntilLastOccurrenceOf(needle);
+        assert((index == -1), index.to!string);
     }
     {
-        enum line = "1234567890";
+        enum haystack = "1234567890";
         enum needle = "";
-        enum index = line.indexOfLastOccurrenceOf(needle);
+        immutable index = haystack.countUntilLastOccurrenceOf(needle);
         static assert((index == 0), index.to!string);
     }
     {
-        enum line = "";
+        enum haystack = "";
         enum needle = "";
-        enum index = line.indexOfLastOccurrenceOf(needle);
-        static assert((index == 0), index.to!string);
+        immutable index = haystack.countUntilLastOccurrenceOf(needle);
+        assert((index == 0), index.to!string);
     }
     {
-        enum line = "";
+        enum haystack = "";
         enum needle = "blarp";
-        enum index = line.indexOfLastOccurrenceOf(needle);
-        static assert((index == -1), index.to!string);
+        immutable index = haystack.countUntilLastOccurrenceOf(needle);
+        assert((index == -1), index.to!string);
+    }
+    {
+        static immutable haystack = [ 1, 2, 3, 4, 5, 1, 2, 3 ];
+        enum needle = 1;
+        immutable index = haystack.countUntilLastOccurrenceOf(needle);
+        assert((index == 5), index.to!string);
+    }
+    {
+        static immutable haystack = [ 1, 2, 3, 1, 2, 3, 4, 5, 6 ];
+        static immutable needle = [ 1, 2, 3 ];
+        immutable index = haystack.countUntilLastOccurrenceOf(needle);
+        assert((index == 3), index.to!string);
     }
 }
