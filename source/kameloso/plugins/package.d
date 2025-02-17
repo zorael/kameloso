@@ -4447,6 +4447,21 @@ auto memoryCorruptionCheck()
     {
         assert(__ctfe, "`memoryCorruptionCheck` should only be used as a compile-time string mixin.");
 
+        /+
+        // Alternative approach, doesn't work with doubly-nested functions
+        enum _sentinelChild = 0;
+
+        static if (isSomeFunction!(__traits(parent, __traits(parent, _sentinelChild))))
+        {
+            enum _funName = __MODULE__ ~ '.' ~
+                __traits(identifier, __traits(parent, __traits(parent, _sentinelChild)));
+        }
+        else
+        {
+            enum _funName = __FUNCTION__;
+        }
+         +/
+
         enum mixinBody =
     "{
     import kameloso.string : countUntilLastOccurrenceOf;
