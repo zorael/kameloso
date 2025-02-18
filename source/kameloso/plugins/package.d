@@ -4553,6 +4553,9 @@ auto memoryCorruptionCheck()
         event = The event to check.
         uda = The [IRCEventHandler] UDA to check against.
         functionName = The name of the function being checked.
+
+    See_Also:
+        [memoryCorruptionCheck]
  +/
 version(MemoryCorruptionChecks)
 void memoryCorruptionCheckImpl(
@@ -4578,7 +4581,8 @@ void memoryCorruptionCheckImpl(
 
         if (!event.aux[$-1].length)
         {
-            enum pattern = "Event handler `%s` was called with no command word found in the event's `aux[$-1]`";
+            enum pattern = "Event handler `%s` was called but no command word " ~
+                "was found in the event's `aux[$-1]`";
             immutable message = pattern.format(functionName);
             assert(0, message);
         }
@@ -4600,8 +4604,8 @@ void memoryCorruptionCheckImpl(
         {
             import std.format : format;
 
-            enum pattern = "Event handler `%s` was called with a command word `%s` " ~
-                "not found in the UDA annotation of it";
+            enum pattern = "Event handler `%s` was invoked with a command word " ~
+                `"%s" not found in the UDA annotation of it`;
             immutable message = pattern.format(functionName, event.aux[$-1]);
             assert(0, message);
         }
@@ -4651,8 +4655,8 @@ void memoryCorruptionCheckImpl(
         if (!satisfied)
         {
             enum pattern = "Event handler `%s` was called with an event in channel " ~
-                "`%s` that does not satisfy the channel policy of the function; " ~
-                "state is isHomeChannel:%s, isGuestChannel:%s, " ~
+                "%s that does not satisfy the channel policy of the function; " ~
+                "state is isHomeChannel:%s isGuestChannel:%s, " ~
                 "policy is home:%s guest:%s any:%s (value:%d)";
 
             immutable message = pattern.format(
@@ -4668,12 +4672,14 @@ void memoryCorruptionCheckImpl(
         }
     }
 
-    version(TwitcSupport)
+    version(TwitchSupport)
     {
+        immutable channelID = event.channel.id;
         immutable subchannelID = event.subchannel.id;
     }
     else
     {
+        enum channelID = 0;
         enum subchannelID = 0;
     }
 
@@ -4685,12 +4691,13 @@ void memoryCorruptionCheckImpl(
         (event.subchannel.name.length || subchannelID))
     {
         enum pattern = "Event handler `%s` was called with an event in channel " ~
-            "`%s` subchannel `%s`:`%d`, and the function was not annotated to " ~
-            "accept events from external channels";
+            "%s:%d subchannel %s:%d, and the function was not annotated " ~
+            "to accept events from external channels";
 
         immutable message = pattern.format(
             functionName,
             event.channel.name,
+            channelID,
             event.subchannel.name,
             subchannelID);
         assert(0, message);
@@ -4700,7 +4707,7 @@ void memoryCorruptionCheckImpl(
 ///
 version(unittest)
 {
-    // memoryCorruptionCheckCustomIndexUDAIndex
+    // memoryCorruptionCheckTestCustomIndexUDAIndex
     /++
         Test function for [memoryCorruptionCheck] with a custom UDA index.
      +/
@@ -4709,7 +4716,41 @@ version(unittest)
     @789
     @(IRCEventHandler())
     @123
-    private void memoryCorruptionCheckCustomIndexUDAIndex(IRCEvent _)
+    private void memoryCorruptionCheckTestCustomIndexUDAIndex(IRCEvent _)
+    {
+        mixin(memoryCorruptionCheck);
+    }
+
+    // memoryCorruptionCheckTestNestedFunction
+    /++
+        Test function for [memoryCorruptionCheck] with a nested function.
+     +/
+    @(IRCEventHandler())
+    private void memoryCorruptionCheckTestNestedFunction(IRCEvent _)
+    {
+        void dg()
+        {
+            mixin(memoryCorruptionCheck);
+        }
+    }
+
+    // memoryCorruptionCheckTestNoUDA
+    /++
+        Test function for [memoryCorruptionCheck] with no UDA.
+     +/
+    version(none)
+    private void memoryCorruptionCheckTestNoUDA(IRCEvent _)
+    {
+        mixin(memoryCorruptionCheck);
+    }
+
+    // memoryCorruptionCheckTestNoEventParameter
+    /++
+        Test function for [memoryCorruptionCheck] with no event parameter.
+     +/
+    version(none)
+    @(IRCEventHandler())
+    private void memoryCorruptionCheckTestNoEventParameter()
     {
         mixin(memoryCorruptionCheck);
     }
