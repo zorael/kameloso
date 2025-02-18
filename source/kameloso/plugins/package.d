@@ -4448,40 +4448,43 @@ auto memoryCorruptionCheck()
         assert(__ctfe, "`memoryCorruptionCheck` should only be used as a compile-time string mixin.");
 
         /+
-        // Alternative approach, doesn't work with doubly-nested functions
-        enum _sentinelChild = 0;
+        // Alternative approach
+        import kameloso.string : countUntilLastOccurrenceOf;
 
-        static if (isSomeFunction!(__traits(parent, __traits(parent, _sentinelChild))))
+        enum _lastDotPos = __FUNCTION__.countUntilLastOccurrenceOf('.');
+
+        static if ((_lastDotPos != -1) &&
+            isSomeFunction!(mixin(__FUNCTION__[0.._lastDotPos])))
         {
-            enum _funName = __MODULE__ ~ '.' ~
-                __traits(identifier, __traits(parent, __traits(parent, _sentinelChild)));
+            static immutable _funName = __FUNCTION__[0.._lastDotPos];
         }
         else
         {
             enum _funName = __FUNCTION__;
         }
+
+        alias _fun = mixin(_funName);
          +/
 
         enum mixinBody =
     "{
-    import kameloso.string : countUntilLastOccurrenceOf;
     import lu.traits : udaIndexOf;
     import std.traits : ParameterIdentifierTuple, Parameters, isSomeFunction;
     static import kameloso.plugins;
 
-    enum _lastDotPos = __FUNCTION__.countUntilLastOccurrenceOf('.');
+    enum _sentinelGrandchild = 0;
 
-    static if ((_lastDotPos != -1) &&
-        isSomeFunction!(mixin(__FUNCTION__[0.._lastDotPos])))
+    static if (isSomeFunction!(__traits(parent, __traits(parent, _sentinelGrandchild))))
     {
-        static immutable _funName = __FUNCTION__[0.._lastDotPos];
+        alias _fun = __traits(parent, __traits(parent, _sentinelGrandchild));
+        enum _funName = __MODULE__ ~ '.' ~ __traits(identifier, _fun);
     }
     else
     {
         enum _funName = __FUNCTION__;
+        alias _fun = mixin(_funName);
     }
 
-    alias _fun = mixin(_funName);
     alias _funParams = Parameters!_fun;
     alias _paramNames = ParameterIdentifierTuple!_fun;
 
