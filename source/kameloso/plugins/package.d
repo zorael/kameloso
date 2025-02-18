@@ -4435,13 +4435,17 @@ auto applyCustomSettings(
     If version `MemoryCorruptionChecks` is not declared it is a no-op and returns
     an empty string.
 
+    Params:
+        assertOnError = Whether to `assert(0)` if an error is detected.
+            Passed on to the implementation function.
+
     Returns:
         A string that can be mixed into a function to add the check.
 
     See_Also:
         [memoryCorruptionCheckImpl]
  +/
-auto memoryCorruptionCheck()
+auto memoryCorruptionCheck(Flag!"assertOnError" assertOnError = Yes.assertOnError)()
 {
     version(MemoryCorruptionChecks)
     {
@@ -4529,7 +4533,8 @@ auto memoryCorruptionCheck()
         mixin(_pluginParamName),
         mixin(_eventParamName),
         _uda,
-        _funName);
+        _funName,
+        assertOnError: " ~ (assertOnError ? "true" : "false") ~ ");
     }";
 
         return mixinBody;
@@ -4553,6 +4558,8 @@ auto memoryCorruptionCheck()
         event = The event to check.
         uda = The [IRCEventHandler] UDA to check against.
         functionName = The name of the function being checked.
+        assertOnError = Whether to `assert(0)` if an error is detected. If false,
+            the function will output any errors to the terminal and then do nothing.
 
     See_Also:
         [memoryCorruptionCheck]
@@ -4562,17 +4569,20 @@ void memoryCorruptionCheckImpl(
     const IRCPlugin plugin,
     const IRCEvent event,
     const IRCEventHandler uda,
-    const string functionName) pure @safe
+    const string functionName,
+    const bool assertOnError) /*pure*/ @safe
 {
-    import lu.conv : toString;
     import std.algorithm.searching : canFind;
-    import std.format : format;
+    import std.stdio : writefln;
+
+    bool assertionFailed;
 
     if (!uda.acceptedEventTypes.canFind(event.type, IRCEvent.Type.ANY))
     {
+        import lu.conv : toString;
         enum pattern = "Event handler `%s` was called with an unexpected event type: `%s`";
-        immutable message = pattern.format(functionName, event.type.toString());
-        assert(0, message);
+        writefln(pattern, functionName, event.type.toString());
+        assertionFailed = true;
     }
 
     if (uda.commands.length)
@@ -4583,8 +4593,8 @@ void memoryCorruptionCheckImpl(
         {
             enum pattern = "Event handler `%s` was called but no command word " ~
                 "was found in the event's `aux[$-1]`";
-            immutable message = pattern.format(functionName);
-            assert(0, message);
+            writefln(pattern, functionName);
+            assertionFailed = true;
         }
 
         // Scan the commands array for the command word
@@ -4602,12 +4612,10 @@ void memoryCorruptionCheckImpl(
 
         if (!hit)
         {
-            import std.format : format;
-
             enum pattern = "Event handler `%s` was invoked with a command word " ~
                 `"%s" not found in the UDA annotation of it`;
-            immutable message = pattern.format(functionName, event.aux[$-1]);
-            assert(0, message);
+            writefln(pattern, functionName, event.aux[$-1]);
+            assertionFailed = true;
         }
     }
 
@@ -4659,7 +4667,7 @@ void memoryCorruptionCheckImpl(
                 "state is isHomeChannel:%s isGuestChannel:%s, " ~
                 "policy is home:%s guest:%s any:%s (value:%d)";
 
-            immutable message = pattern.format(
+            writefln(pattern,
                 functionName,
                 event.channel.name,
                 getTernaryStateString(isHomeChannel),
@@ -4668,7 +4676,7 @@ void memoryCorruptionCheckImpl(
                 cast(bool)(uda.channelPolicy & ChannelPolicy.guest),
                 cast(bool)(uda.channelPolicy & ChannelPolicy.any),
                 cast(uint)(uda.channelPolicy));
-            assert(0, message);
+            assertionFailed = true;
         }
     }
 
@@ -4694,13 +4702,32 @@ void memoryCorruptionCheckImpl(
             "%s:%d subchannel %s:%d, and the function was not annotated " ~
             "to accept events from external channels";
 
-        immutable message = pattern.format(
+        writefln(pattern,
             functionName,
             event.channel.name,
             channelID,
             event.subchannel.name,
             subchannelID);
-        assert(0, message);
+        assertionFailed = true;
+    }
+
+    if (assertionFailed)
+    {
+        /+
+            Something went wrong and the error was already output to the terminal.
+            Flush stdout just in case, then assert if we were asked to.
+         +/
+        () @trusted  // writeln trusts stdout.flush, so we will too
+        {
+            import std.stdio : stdout;
+            stdout.flush();
+        }();
+
+        if (assertOnError)
+        {
+            enum message = "Memory corruption check detected an issue; see above for details.";
+            assert(0, message);
+        }
     }
 }
 
