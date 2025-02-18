@@ -4580,7 +4580,8 @@ void memoryCorruptionCheckImpl(
     if (!uda.acceptedEventTypes.canFind(event.type, IRCEvent.Type.ANY))
     {
         import lu.conv : toString;
-        enum pattern = "Event handler `%s` was called with an unexpected event type: `%s`";
+        enum pattern = "[memoryCorruptionCheck] Event handler `%s` was called " ~
+            "with an unexpected event type: `%s`";
         writefln(pattern, functionName, event.type.toString());
         assertionFailed = true;
     }
@@ -4591,8 +4592,8 @@ void memoryCorruptionCheckImpl(
 
         if (!event.aux[$-1].length)
         {
-            enum pattern = "Event handler `%s` was called but no command word " ~
-                "was found in the event's `aux[$-1]`";
+            enum pattern = "[memoryCorruptionCheck] Event handler `%s` was called " ~
+                "but no command word was found in the event's `aux[$-1]`";
             writefln(pattern, functionName);
             assertionFailed = true;
         }
@@ -4612,8 +4613,8 @@ void memoryCorruptionCheckImpl(
 
         if (!hit)
         {
-            enum pattern = "Event handler `%s` was invoked with a command word " ~
-                `"%s" not found in the UDA annotation of it`;
+            enum pattern = "[memoryCorruptionCheck] Event handler `%s` was invoked " ~
+                `with a command word "%s" not found in the UDA annotation of it`;
             writefln(pattern, functionName, event.aux[$-1]);
             assertionFailed = true;
         }
@@ -4662,8 +4663,9 @@ void memoryCorruptionCheckImpl(
 
         if (!satisfied)
         {
-            enum pattern = "Event handler `%s` was called with an event in channel " ~
-                "%s that does not satisfy the channel policy of the function; " ~
+            enum pattern = "[memoryCorruptionCheck] Event handler `%s` was called " ~
+                "with an event in channel %s that does not satisfy the channel " ~
+                "policy of the function; " ~
                 "state is isHomeChannel:%s isGuestChannel:%s, " ~
                 "policy is home:%s guest:%s any:%s (value:%d)";
 
@@ -4698,9 +4700,9 @@ void memoryCorruptionCheckImpl(
     if (!uda._acceptExternal &&
         (event.subchannel.name.length || subchannelID))
     {
-        enum pattern = "Event handler `%s` was called with an event in channel " ~
-            "%s:%d subchannel %s:%d, and the function was not annotated " ~
-            "to accept events from external channels";
+        enum pattern = "[memoryCorruptionCheck] Event handler `%s` was called " ~
+            "with an event in channel %s:%d subchannel %s:%d, and the function " ~
+            "was not annotated to accept events from external channels";
 
         writefln(pattern,
             functionName,
@@ -4725,7 +4727,8 @@ void memoryCorruptionCheckImpl(
 
         if (assertOnError)
         {
-            enum message = "Memory corruption check detected an issue; see above for details.";
+            enum message = "Memory corruption check detected an inconsistency; " ~
+                "see above for details.";
             assert(0, message);
         }
     }
