@@ -245,7 +245,7 @@ You also need to supply the channel for which it all relates.
             benignAbort,
             plugin.state.abort);
 
-        if (benignAbort) return;
+        if (*plugin.state.abort || benignAbort) return;
     }
 
     enum attemptToOpenMessage = `

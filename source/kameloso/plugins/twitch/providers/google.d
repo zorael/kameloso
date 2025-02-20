@@ -125,7 +125,7 @@ A normal URL to any playlist you can modify will work fine. They do not have to 
             benignAbort,
             plugin.state.abort);
 
-        if (benignAbort) return;
+        if (*plugin.state.abort || benignAbort) return;
     }
 
     enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth Client ID<l>:</> ";
