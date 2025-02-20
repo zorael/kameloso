@@ -53,11 +53,6 @@ version(WantConcurrencyMessageLoop)
 /++
     A value line for [rt_options] to fine-tune the garbage collector.
 
-    Older compilers don't support all the garbage collector options newer
-    compilers do (breakpoints being at `2.085` for the precise garbage collector
-    and cleanup behaviour, and `2.098` for the forking one). So in one way or
-    another we need to specialise for compiler versions. This is one way.
-
     See_Also:
         [rt_options]
         https://dlang.org/spec/garbage.html
@@ -857,7 +852,7 @@ auto processMessages(
         if (!shouldStillContinue) return next;
 
         /++
-            On compilers 2.092 or later, this prevents a closure from being
+            Using scope function pointers prevents closures from being
             allocated each time this function is called.
          +/
         scope onThreadMessageDg = &onThreadMessage;

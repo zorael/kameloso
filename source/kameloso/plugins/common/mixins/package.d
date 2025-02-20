@@ -98,10 +98,7 @@ mixin template WHOISFiberDelegate(
     }
     else
     {
-        //alias context = mixin(paramNames[0]);  // Only works on 2.088 and later
-        // The mixin must be a concatenated string for 2.083 and earlier,
-        // but we only support 2.087+
-        mixin("alias _context = ", paramNames[0], ";");
+        alias _context = mixin(paramNames[0]);
     }
 
     /++

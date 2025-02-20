@@ -68,7 +68,7 @@ auto buildCompilerVersionString()
     enum minor = cast(uint)(__VERSION__ % 1000);
 
     Appender!(char[]) sink;
-    sink.reserve(5);  // 2.098
+    sink.reserve(5);  // "2.123"
 
     major.toAlphaInto(sink);
     sink.put('.');

@@ -53,13 +53,6 @@ auto memberstringIsThisCtorOrDtor(const string memberstring) pure @safe nothrow 
     Eponymous template; aliases itself to `true` if the passed member of the
     passed aggregate `Thing` is not `private` and not `deprecated`.
 
-    Compilers previous to 2.096 need to flip the order of the checks (visibility
-    first, deprecations second), whereas it doesn't matter for compilers 2.096
-    onwards. If the order isn't flipped though we get deprecation warnings.
-    Having it this way means we get the visibility/deprecation check we want on
-    all (supported) compiler versions, but regrettably deprecation messages
-    on older compilers. Unsure where the breakpoint is.
-
     Params:
         Thing = Some aggregate.
         memberstring = String name of the member of `Thing` that we want to check

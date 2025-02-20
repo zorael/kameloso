@@ -1205,23 +1205,14 @@ void initResources(SeenPlugin plugin)
 /+
     Only some plugins benefit from this one implementing `onBusMessage`, so omit
     it if they aren't available.
-
-    Use an enum instead of a version, since for some reason this suddenly broke
-    on pre-2.093 compilers.
  +/
 version(WithPipelinePlugin)
 {
-    //version = ShouldImplementOnBusMessage;
-    enum shouldImplementOnBusMessage = true;
+    version = ShouldImplementOnBusMessage;
 }
 else version(WithAdminPlugin)
 {
-    //version = ShouldImplementOnBusMessage;
-    enum shouldImplementOnBusMessage = true;
-}
-else
-{
-    enum shouldImplementOnBusMessage = false;
+    version = ShouldImplementOnBusMessage;
 }
 
 
@@ -1240,8 +1231,7 @@ else
         content = Boxed message content.
  +/
 version(Debug)
-//version(ShouldImplementOnBusMessage)
-static if (shouldImplementOnBusMessage)
+version(ShouldImplementOnBusMessage)
 void onBusMessage(SeenPlugin plugin, const string header, /*shared*/ Sendable content)
 {
     import kameloso.thread : Boxed;

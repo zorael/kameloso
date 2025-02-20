@@ -604,21 +604,14 @@ void tryAuth(ConnectService service)
         break;
 
     case rusnet:
-        /+
-            This fails to compile on <2.097 compilers.
-            "Error: switch skips declaration of variable kameloso.plugins.services.connect.tryAuth.message"
-            Worrisome, but work around the issue for now by adding braces.
-         +/
-        {
-            // Doesn't want a PRIVMSG
-            enum properties = Message.Property.quiet;
-            immutable message = "NICKSERV IDENTIFY " ~ password;
-            raw(service.state, message, properties);
+        // Doesn't want a PRIVMSG
+        enum properties = Message.Property.quiet;
+        immutable message = "NICKSERV IDENTIFY " ~ password;
+        raw(service.state, message, properties);
 
-            if (!service.state.coreSettings.hideOutgoing && !service.state.coreSettings.trace)
-            {
-                logger.trace("--> NICKSERV IDENTIFY hunter2");
-            }
+        if (!service.state.coreSettings.hideOutgoing && !service.state.coreSettings.trace)
+        {
+            logger.trace("--> NICKSERV IDENTIFY hunter2");
         }
         break;
 
