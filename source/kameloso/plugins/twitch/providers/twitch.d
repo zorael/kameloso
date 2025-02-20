@@ -237,6 +237,11 @@ your <w>BOT</> account.
             Scopes required for normal chat and channel moderation.
             Refer to the huge list at the top of the file.
          +/
+        "chat:read",
+        "chat:edit",
+        "whispers:read",
+        "whispers:edit",
+        "channel:moderate",
         "user:manage:whispers",
         "user:write:chat",
         "user:read:follows",
