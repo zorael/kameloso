@@ -224,7 +224,7 @@ your <w>BOT</> account.
 <i>*</> <l>The key generated will be one for the account you are currently logged in as in your browser.</>
   If you are logged into your main Twitch account and you want the bot to use a
   separate account, you will have to <l>log out and log in as that</> first, before
-  attempting this. Use an incognito/private window.
+  attempting this. Alternatively, <l>use an incognito/private browser window</>.
 <i>*</> If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
 `;
@@ -483,7 +483,8 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
     {
         scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
-        enum pasteMessage = "<l>Paste the address of empty the page you were redirected to here (empty line exits):</>
+        enum pasteMessage = "<l>Paste the address of empty the page you were " ~
+            "redirected to here (empty line exits):</>
 
 > ";
         write(pasteMessage.expandTags(LogLevel.off));

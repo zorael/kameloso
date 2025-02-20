@@ -1182,7 +1182,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
         {
             void onExpiryDg()
             {
-                enum pattern = "The broadcaster-level access token for channel <l>%s</> has expired. " ~
+                enum pattern = "The elevated authorisation key for channel <l>%s</> has expired. " ~
                     "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
                 logger.errorf(pattern, event.channel.name);
 
@@ -1199,7 +1199,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
                 generateExpiryReminders(
                     plugin,
                     SysTime.fromUnixTime(creds.broadcasterKeyExpiry),
-                    "The broadcaster-level authorisation token for channel <l>" ~ event.channel.name ~ "</>",
+                    "The elevated authorisation key for channel <l>" ~ event.channel.name ~ "</>",
                     &onExpiryDg);
             }
             catch (InvalidCredentialsException _)
@@ -3322,7 +3322,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
     }
      +/
 
-    enum expiryMessage = "Twitch authorisation token expired";
+    enum expiryMessage = "Twitch authorisation key expired";
     immutable expiresIn = validationJSON["expires_in"].integer;
     immutable now = Clock.currTime;
     immutable expiresWhen = SysTime.fromUnixTime(now.toUnixTime() + expiresIn);
@@ -3341,7 +3341,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
     {
         void onExpiryDg()
         {
-            enum message = "Your Twitch authorisation token has expired. " ~
+            enum message = "Your Twitch authorisation key has expired. " ~
                 "Run the program with <l>--set twitch.keygen/> to generate a new one.";
             logger.error(message);
             quit(plugin.state, expiryMessage);
@@ -3350,7 +3350,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
         generateExpiryReminders(
             plugin,
             expiresWhen,
-            "Your Twitch authorisation token",
+            "Your Twitch authorisation key",
             &onExpiryDg);
     }
 }
@@ -3537,13 +3537,13 @@ void complainAboutMissingTokens(const Exception base)
 
     if (const e = cast(MissingBroadcasterTokenException)base)
     {
-        enum pattern = "Missing broadcaster-level API token for channel <l>%s</>.";
+        enum pattern = "Missing elevated API key for channel <l>%s</>.";
         logger.errorf(pattern, e.channelName);
         match = true;
     }
     else if (const e = cast(InvalidCredentialsException)base)
     {
-        enum pattern = "The broadcaster-level API token for channel <l>%s</> has expired.";
+        enum pattern = "The elevated API key for channel <l>%s</> has expired.";
         logger.errorf(pattern, e.channelName);
         match = true;
     }
