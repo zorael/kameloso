@@ -302,10 +302,10 @@ your <w>BOT</> account.
     writeln();
     logger.info("Validating...");
 
-    immutable expiry = getTokenExpiry(plugin, plugin.state.bot.pass);
+    immutable validation = getTokenExpiry(plugin, plugin.state.bot.pass);
     if (*plugin.state.abort) return;
 
-    immutable delta = (expiry - Clock.currTime);
+    immutable delta = (validation.expiresWhen - Clock.currTime);
     immutable numDays = delta.total!"days";
 
     enum isValidPattern = "Your key is valid for another <l>%d</> days.";
@@ -337,35 +337,10 @@ void requestTwitchSuperKey(TwitchPlugin plugin)
     logger.trace();
     logger.log("== <w>Twitch authorisation super-key generation wizard</> ==");
     enum message = `
-To access certain Twitch functionality, like changing channel settings
-(what game is currently being played, etc), the program needs an authorisation
-key that corresponds to the owner of that channel.
-
-In the instructions that follow, it is essential that you are logged into the
-main <w>STREAMER</> account in your browser.
-
-You also need to supply the channel for which it all relates.
-(Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
-`;
-    writeln(message.expandTags(LogLevel.off));
-
-    string channel;  // mutable
-    uint numEmptyLinesEntered;
-
-    while (!channel.length)
-    {
-        bool benignAbort;
-
-        channel = readChannelName(
-            numEmptyLinesEntered,
-            benignAbort,
-            plugin.state.abort);
-
-        if (*plugin.state.abort || benignAbort) return;
-    }
-
-    enum attemptToOpenMessage = `
---------------------------------------------------------------------------------
+Certain Twitch functionality, such as changing what game is being played in a
+channel, running commercials in it or managing polls, requires the program to
+supply an authorisation key with elevated privileges that corresponds to the
+<l>owner</> of that channel. A separate moderator <w>BOT</> account is <l>not</> enough for these.
 
 <l>Attempting to open a <i>Twitch login page<l> in your default web browser.</>
 Follow the instructions and log in to authorise the use of this program with
@@ -380,7 +355,7 @@ your main <w>STREAMER</> account.
 <i>*</> If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
 `;
-    writeln(attemptToOpenMessage.expandTags(LogLevel.off));
+    writeln(message.expandTags(LogLevel.off));
     if (plugin.state.coreSettings.flush) stdout.flush();
 
     static immutable scopes =
@@ -431,30 +406,35 @@ your main <w>STREAMER</> account.
     inputCreds.broadcasterKey = readURLAndParseKey(plugin, authNode);
     if (*plugin.state.abort) return;
 
+    writeln();
+    logger.info("Validating...");
+
+    immutable validation = getTokenExpiry(plugin, inputCreds.broadcasterKey);
+    if (*plugin.state.abort) return;
+
+    immutable delta = (validation.expiresWhen - Clock.currTime);
+    immutable numDays = delta.total!"days";
+
+    enum isValidPattern = "Your elevated authorisation key for channel <l>#%s</> " ~
+        "is valid for another <l>%d</> days.";
+    logger.infof(isValidPattern, validation.login, numDays);
+    logger.trace();
+
+    immutable channel = '#' ~ validation.login;
+
     auto creds = channel in plugin.secretsByChannel;
     if (!creds)
     {
         plugin.secretsByChannel[channel] = inputCreds;
         creds = channel in plugin.secretsByChannel;
     }
-
-    inputCreds.meldInto!(MeldingStrategy.aggressive)(*creds);
-
-    writeln();
-    logger.info("Validating...");
-
-    immutable expiry = getTokenExpiry(plugin, creds.broadcasterKey);
-    if (*plugin.state.abort) return;
-
-    immutable delta = (expiry - Clock.currTime);
-    immutable numDays = delta.total!"days";
-
-    enum isValidPattern = "Your key is valid for another <l>%d</> days.";
-    logger.infof(isValidPattern, numDays);
-    logger.trace();
+    else
+    {
+        inputCreds.meldInto!(MeldingStrategy.aggressive)(*creds);
+    }
 
     creds.broadcasterBearerToken = "Bearer " ~ creds.broadcasterKey;
-    creds.broadcasterKeyExpiry = expiry.toUnixTime();
+    creds.broadcasterKeyExpiry = validation.expiresWhen.toUnixTime();
     saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
 }
 
@@ -589,16 +569,27 @@ in (Fiber.getThis(), "Tried to call `getTokenExpiry` from outside a fiber")
     import kameloso.plugins.twitch.api : getValidation;
     import std.datetime.systime : Clock, SysTime;
 
+    static struct ValidationResult
+    {
+        string login;
+        SysTime expiresWhen;
+    }
+
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
         try
         {
             immutable validationJSON = getValidation(plugin, authToken, async: false);
-            plugin.state.client.nickname = validationJSON["login"].str;
+
+            ValidationResult result;
+            result.login = validationJSON["login"].str;
+            result.expiresWhen =
+                SysTime.fromUnixTime(Clock.currTime.toUnixTime() +
+                validationJSON["expires_in"].integer);
+
+            plugin.state.client.nickname = result.login;
             plugin.state.updates |= typeof(plugin.state.updates).client;
-            immutable expiresIn = validationJSON["expires_in"].integer;
-            immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime() + expiresIn);
-            return expiresWhen;
+            return result;
         }
         catch (Exception e)
         {
