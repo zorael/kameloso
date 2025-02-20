@@ -30,6 +30,169 @@ import core.thread.fiber : Fiber;
 public:
 
 
+/+
+These were hand-copy/pasted from the Twitch API reference page.
+
+    https://dev.twitch.tv/docs/api/reference
+
+Some endpoints may be missing or incorrect but I tried my best.
+
+
+# BROADCASTER/OWN USER ONLY
+
+start commercial                channel:edit:commercial
+get ad schedule                 channel:read:ads
+snooze next ad                  channel:manage:broadcast
+modify channel information      channel:manage:broadcast
+get channel editors             channel:read:editors
+delete custom rewards           channel:manage:redemptions
+update redemption status        channel:manage:redemptions
+get charity campaign            channel:read:charity
+get charity campaign donations  channel:read:charity
+get creator goals               channel:read:goals
+get channel guest star settings channel:read:guest_star channel:manage:guest_star moderator:read:guest_star moderator:manage:guest_star
+get guest star session          channel:read:guest_star channel:manage:guest_star moderator:read:guest_star moderator:manage:guest_star
+get guest star invites          channel:read:guest_star channel:manage:guest_star moderator:read:guest_star moderator:manage:guest_star
+update guest star settings      channel:manage:guest_star
+create guest star session       channel:manage:guest_star
+end guest star session          channel:manage:guest_star
+send guest star invite          moderator:manage:guest_star channel:manage:guest_star
+delete guest star invite        moderator:manage:guest_star channel:manage:guest_star
+assign guest star slot          moderator:manage:guest_star channel:manage:guest_star
+update guest star slot          moderator:manage:guest_star channel:manage:guest_star
+update guest star slot settings moderator:manage:guest_star channel:manage:guest_star
+get hype train events           channel:read:hype_train
+get moderators                  moderation:read channel:manage:moderators
+add channel moderator           channel:manage:moderators
+remove channel moderator        channel:manage:moderators
+get VIPs                        channel:read:vips channel:manage:vips
+add channel VIP                 channel:manage:vips
+remove channel VIP              channel:manage:vips
+get predictions                 channel:read:predictions channel:manage:predictions
+create predictions              channel:manage:predictions
+end predictions                 channel:manage:predictions
+start a raid                    channel:manage:raids
+cancel a raid                   channel:manage:raids
+update channel stream schedule  channel:manage:schedule
+create stream schedule segment  channel:manage:schedule
+update stream schedule segment  channel:manage:schedule
+delete stream schedule segment  channel:manage:schedule
+get stream key                  channel:read:stream_key
+create stream marker            channel:manage:broadcast
+get stream markers              user:read:broadcast channel:manage:broadcast
+get broadcaster subscriptions   channel:read:subscriptions
+get user block list             user:read:blocked_users
+get polls                       channel:read:polls channel:manage:polls
+create poll                     channel:manage:polls
+end poll                        channel:manage:polls
+delete videos                   channel:manage:videos
+
+
+# USER AND/OR MODERATOR OF OTHER CHANNEL
+
+send guest star invite          moderator:manage:guest_star
+delete guest star invite        moderator:manage:guest_star
+assign guest star slot          moderator:manage:guest_star
+update guest star slot          moderator:manage:guest_star
+update guest star slot settings moderator:manage:guest_star
+check automod status            moderation:read
+get moderators                  moderation:read
+get channel followers           moderator:read:followers
+get banned users                moderator:manage:banned_users moderation:read
+ban user                        moderator:manage:banned_users
+unban user                      moderator:manage:banned_users
+get unban requests              moderator:read:unban_requests moderator:manage:unban_requests
+resolve unban requests          moderator:manage:unban_requests
+get blocked terms               moderator:read:blocked_terms moderator:manage:blocked_terms
+add blocked term                moderator:manage:blocked_terms
+remove blocked term             moderator:manage:blocked_terms
+delete chat messages            moderator:manage:chat_messages
+get moderated channels          user:read:moderated_channels
+update shield mode status       moderator:manage:shield_mode
+get shield mode status          moderator:read:shield_mode moderator:manage:shield_mode
+warn chat user                  moderator:manage:warnings
+get followed streams            user:read:follows
+get channel stream schedule
+search categories
+search channels
+get streams
+check user subscription         user:read:subscriptions
+get all stream tags
+get stream tags
+get channel teams
+get teams
+get users
+update user                     user:edit
+block user                      user:manage:blocked_users
+unblock user                    user:manage:blocked_users
+get user extensions             user:read:broadcast user:edit:broadcast
+get user active extensions      user:read:broadcast user:edit:broadcast
+update user extensions          user:edit:broadcast
+get videos
+send whisper                    user:manage:whispers
+get extension analytics         analytics:read:extensions
+get bits leaderboard            bits:read
+get channel information
+get followed channels           user:read:follows
+create custom rewards           channel:manage:redemptions
+update custom reward            channel:manage:redemptions
+get custom reward               channel:read:redemptions
+get custom rewrd redemption     channel:read:redemptions
+get chatters                    moderator:read:chatters
+get channel emotes
+get global emotes
+get emote sets
+get channel chat badges
+get chat settings
+get shared chat session
+get user emotes                 user:read:emotes
+update chat settings            moderator:manage:chat_settings
+send chat announcements         moderator:manage:announcements
+send a shoutout                 moderator:manage:shoutouts (channel.shoutout.create?)
+send a chat message             user:write:chat
+get user chat colour
+update user chat colour         user:manage:chat_color
+create clip                     clips:edit
+get clips
+get conduits
+create conduits
+update conduits
+delete conduit
+get conduit shards
+update conduit shards
+get content classification labels
+get drops entitlement
+update drops entitlement
+get extension configuration segment
+set extension configuration segment
+set extension required configuration
+send extension pubsub message
+get extension live channels
+get extension secrets
+create extension secret
+send extension chat message
+get extensions
+get released extensions
+get extension bits products
+update extension bits products
+create eventsub subscription
+delete eventsub subscription
+get eventsub subscription
+get top games
+get games
+manage held automod settings    moderator:manage:automod
+get automod settings            moderator:read:automod_settings
+update automod settings         moderator:manage:automod_settings
+get game analytics              analytics:read:games
+get cheermotes
+
+
+# NO AUTHENTICATION REQUIRED AT ALL?
+
+get channel iCalendar
+ +/
+
+
 // requestTwitchKey
 /++
     Starts the key generation terminal wizard.
@@ -70,80 +233,28 @@ your <w>BOT</> account.
 
     static immutable scopes =
     [
-        // New Twitch API
-        // --------------------------
-        //"analytics:read:extension",
-        //"analytics:read:games",
-        //"bits:read",
-        //"channel:edit:commercial",
-        //"channel:manage:broadcast",
-        //"channel:manage:extensions"
-        //"channel:manage:polls",
-        //"channel:manage:predictions",
-        //"channel:manage:redemptions",
-        //"channel:manage:schedule",
-        //"channel:manage:videos",
-        //"channel:read:editors",
-        //"channel:read:goals",
-        //"channel:read:hype_train",
-        //"channel:read:polls",
-        //"channel:read:predictions",
-        //"channel:read:redemptions",
-        //"channel:read:stream_key",
-        //"channel:read:subscriptions",
-        //"clips:edit",
-        //"moderation:read",
-        //"moderator:manage:banned_users",
-        //"moderator:read:blocked_terms",
-        //"moderator:manage:blocked_terms",
-        //"moderator:manage:automod",
-        //"moderator:read:automod_settings",
-        //"moderator:manage:automod_settings",
-        //"moderator:read:chat_settings",
-        //"moderator:manage:chat_settings",
+        /+
+            Scopes required for normal chat and channel moderation.
+            Refer to the huge list at the top of the file.
+         +/
+        "user:manage:whispers",
+        "user:write:chat",
+        "user:read:follows",
+        "user:read:subscriptions",
+        "moderation:read",
+        "moderator:read:chatters",
+        "moderator:read:followers",
         "moderator:manage:chat_messages",
         "moderator:manage:banned_users",
-        //"user:edit",
-        //"user:edit:follows",
-        //"user:manage:blocked_users",
-        //"user:read:blocked_users",
-        //"user:read:broadcast",
-        //"user:read:email",
-        //"user:read:follows",
-        //"user:read:subscriptions"
-        //"user:edit:broadcast",    // removed/undocumented? implied user:read:broadcast
-        "user:manage:whispers",
-
-        // Twitch APIv5
-        // --------------------------
-        //"channel_check_subscription",  // removed/undocumented?
-        //"channel_subscriptions",
-        //"channel_commercial",
-        //"channel_editor",
-        //"channel_feed_edit",      // removed/undocumented?
-        //"channel_feed_read",      // removed/undocumented?
-        //"user_follows_edit",
-        //"channel_read",
-        //"channel_stream",         // removed/undocumented?
-        //"collections_edit",       // removed/undocumented?
-        //"communities_edit",       // removed/undocumented?
-        //"communities_moderate",   // removed/undocumented?
-        //"openid",                 // removed/undocumented?
-        //"user_read",
-        //"user_blocks_read",
-        //"user_blocks_edit",
-        //"user_subscriptions",     // removed/undocumented?
-        //"viewing_activity_read",  // removed/undocumented?
-
-        // Chat and PubSub
-        // --------------------------
-        "channel:moderate",
-        "chat:edit",
-        "chat:read",
-        "whispers:edit",
-        "whispers:read",
-        "moderator:read:followers",
-        "user:read:follows",
+        "moderator:manage:unban_requests",
+        "moderator:manage:blocked_terms",
+        "moderator:manage:automod",
+        "moderator:manage:automod_settings",
+        "moderator:manage:chat_settings",
+        "moderator:manage:announcements",
+        "moderator:manage:shoutouts",
+        "moderator:manage:warnings",
+        "moderator:manage:shield_mode",
     ];
 
     Pid browser;
@@ -269,75 +380,18 @@ your main <w>STREAMER</> account.
 
     static immutable scopes =
     [
-        // New Twitch API
-        // --------------------------
-        //"analytics:read:extension",
-        //"analytics:read:games",
-        //"bits:read",
-        "channel:edit:commercial",
+        /+
+            Scopes required for higher-privilege channel management.
+            Refer to the huge list at the top of the file.
+         +/
         "channel:manage:broadcast",
-        //"channel:manage:extensions"
-        "channel:manage:polls",
+        "channel:manage:moderators",
+        "channel:manage:vips",
         "channel:manage:predictions",
-        //"channel:manage:redemptions",
-        //"channel:manage:schedule",
-        //"channel:manage:videos",
-        "channel:read:editors",
-        "channel:read:goals",
-        "channel:read:hype_train",
-        "channel:read:polls",
-        //"channel:read:predictions",
-        //"channel:read:redemptions",
-        //"channel:read:stream_key",
+        "channel:manage:raids",
+        "channel:manage:polls",
         "channel:read:subscriptions",
-        //"clips:edit",
-        "moderation:read",
-        "moderator:manage:banned_users",
-        "moderator:read:blocked_terms",
-        "moderator:manage:blocked_terms",
-        "moderator:manage:automod",
-        "moderator:read:automod_settings",
-        "moderator:manage:automod_settings",
-        "moderator:read:chat_settings",
-        "moderator:manage:chat_settings",
-        //"user:edit",
-        //"user:edit:follows",
-        //"user:manage:blocked_users",
-        //"user:read:blocked_users",
-        //"user:read:broadcast",
-        //"user:read:email",
-        //"user:read:follows",
-        //"user:read:subscriptions"
-        //"user:edit:broadcast",    // removed/undocumented? implied user:read:broadcast
-
-        // Twitch APIv5
-        // --------------------------
-        //"channel_check_subscription",  // removed/undocumented?
-        //"channel_subscriptions",
-        //"channel_commercial",
-        //"channel_editor",
-        //"channel_feed_edit",      // removed/undocumented?
-        //"channel_feed_read",      // removed/undocumented?
-        //"user_follows_edit",
-        //"channel_read",
-        //"channel_stream",         // removed/undocumented?
-        //"collections_edit",       // removed/undocumented?
-        //"communities_edit",       // removed/undocumented?
-        //"communities_moderate",   // removed/undocumented?
-        //"openid",                 // removed/undocumented?
-        //"user_read",
-        //"user_blocks_read",
-        //"user_blocks_edit",
-        //"user_subscriptions",     // removed/undocumented?
-        //"viewing_activity_read",  // removed/undocumented?
-
-        // Chat and PubSub
-        // --------------------------
-        //"channel:moderate",
-        //"chat:edit",
-        //"chat:read",
-        //"whispers:edit",
-        //"whispers:read",
+        "channel:edit:commercial",
     ];
 
     Pid browser;
