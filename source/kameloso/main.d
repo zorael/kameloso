@@ -3523,14 +3523,15 @@ auto startBot(Kameloso instance)
 
                 if (!instance.coreSettings.headless)
                 {
-                    if (instance.coreSettings.exitSummary && instance.connectionHistory.length)
-                    {
-                        printSummary(instance);
-                    }
-
-                    version(GCStatsOnExit)
+                    if (instance.coreSettings.exitSummary)
                     {
                         import kameloso.misc : printGCStats;
+
+                        if (instance.connectionHistory.length)
+                        {
+                            printSummary(instance);
+                        }
+
                         printGCStats();
                     }
 
@@ -4784,14 +4785,15 @@ auto run(string[] args)
     // Print connection summary
     if (!instance.coreSettings.headless)
     {
-        if (instance.coreSettings.exitSummary && instance.connectionHistory.length)
-        {
-            printSummary(instance);
-        }
-
-        version(GCStatsOnExit)
+        if (instance.coreSettings.exitSummary)
         {
             import kameloso.misc : printGCStats;
+
+            if (instance.connectionHistory.length)
+            {
+                printSummary(instance);
+            }
+
             printGCStats();
         }
 

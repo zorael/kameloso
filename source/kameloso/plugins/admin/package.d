@@ -1922,11 +1922,6 @@ void onBusMessage(
                 return logger.info("Memory minimised.");
         }
 
-        case "gc.stats":
-            import kameloso.misc : printGCStats;
-            if (plugin.state.coreSettings.headless) return;
-            return printGCStats();
-
         case "user":
             if (plugin.state.coreSettings.headless) return;
 
@@ -1966,6 +1961,11 @@ void onBusMessage(
             logger.info("Faking event.");
             return;
     }
+
+    case "gc.stats":
+        import kameloso.misc : printGCStats;
+        if (plugin.state.coreSettings.headless) return;
+        return printGCStats();
 
     case "reconnect":
         plugin.state.priorityMessages ~= ThreadMessage.reconnect;
