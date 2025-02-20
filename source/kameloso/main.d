@@ -75,11 +75,6 @@ enum gcOptions = ()
     {
         sink.put("profile:1 ");
     }
-    else version(unittest)
-    {
-        // Always print profile information on unittest builds
-        sink.put("profile:1 ");
-    }
 
     sink.put("cleanup:finalize ");
 
