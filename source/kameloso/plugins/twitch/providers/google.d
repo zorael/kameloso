@@ -57,7 +57,7 @@ void requestGoogleKeys(TwitchPlugin plugin)
     scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
     logger.trace();
-    logger.warning("== Google authorisation key generation wizard ==");
+    logger.log("== <w>Google authorisation key generation wizard</> ==");
     enum message = `
 To access the YouTube API you need to create a Google application and generate a
 <i>client ID</> and a <i>client secret</> for it.

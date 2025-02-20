@@ -48,7 +48,7 @@ void requestTwitchKey(TwitchPlugin plugin)
     scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
     logger.trace();
-    logger.warning("== Twitch authorisation key generation wizard ==");
+    logger.log("== <w>Twitch authorisation key generation wizard</> ==");
     enum attemptToOpenMessage = `
 <l>Attempting to open a <i>Twitch login page<l> in your default web browser.</>
 Follow the instructions and log in to authorise the use of this program with
@@ -219,7 +219,7 @@ void requestTwitchSuperKey(TwitchPlugin plugin)
     scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
     logger.trace();
-    logger.warning("== Twitch authorisation super-key generation wizard ==");
+    logger.log("== <w>Twitch authorisation super-key generation wizard</> ==");
     enum message = `
 To access certain Twitch functionality, like changing channel settings
 (what game is currently being played, etc), the program needs an authorisation

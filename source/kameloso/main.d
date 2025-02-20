@@ -4088,12 +4088,13 @@ void printSummary(const Kameloso instance) @safe
 
     if (instance.transient.numReexecs > 0)
     {
-        enum summaryPattern = "== Connection summary == <t>(reexecs: </>%d<t>)";
-        logger.infof(summaryPattern, instance.transient.numReexecs);
+        enum summaryPattern = "== <i>Connection summary</> == <t>(reexecs: </>%d<t>)";
+        logger.logf(summaryPattern, instance.transient.numReexecs);
     }
     else
     {
-        logger.info("== Connection summary ==");
+        enum summaryMessage = "== <i>Connection summary</> ==";
+        logger.log(summaryMessage);
     }
 
     foreach (const entry; instance.connectionHistory)

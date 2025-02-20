@@ -57,7 +57,7 @@ void requestSpotifyKeys(TwitchPlugin plugin)
     scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
     logger.trace();
-    logger.warning("== Spotify authorisation key generation wizard ==");
+    logger.log("== <w>Spotify authorisation key generation wizard</> ==");
     enum message = `
 To access the Spotify API you need to create what Spotify calls an <i>app</>,
 and generate a <i>client ID</> and a <i>client secret</> for it.
