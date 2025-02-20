@@ -175,26 +175,54 @@ unittest
 }
 
 
-version(GCStatsOnExit) version = BuildPrintGCStats;
-else version(Debug) version = BuildPrintGCStats;
-
-
 // printGCStats
 /++
     Prints garbage collector statistics to the local terminal.
-
-    Gated behind either version `GCStatsOnExit` *or* `IncludeHeavyStuff`.
  +/
-version(BuildPrintGCStats)
 void printGCStats()
 {
     import kameloso.common : logger;
     import core.memory : GC;
 
     immutable stats = GC.stats();
+    immutable profileStats = GC.profileStats();
 
-    enum pattern = "Lifetime allocated in current thread: <l>%,d</> bytes";
-    logger.infof(pattern, stats.allocatedInCurrentThread);
+    if (profileStats.numCollections == 1)
+    {
+        enum pausePattern = "World stopped for <l>%,d</> ms in <l>1</> collection";
+        logger.infof(
+            pausePattern,
+            profileStats.totalPauseTime.total!"msecs");
+
+        enum collectionPattern = "Collection time: <l>%,d</> ms";
+        logger.infof(
+            collectionPattern,
+            profileStats.totalCollectionTime.total!"msecs");
+    }
+    else if (profileStats.numCollections > 1)
+    {
+        enum pausePattern = "World stopped for <l>%,d</> ms across <l>%d</> collections " ~
+            "(longest was <l>%,d</> ms)";
+        logger.infof(
+            pausePattern,
+            profileStats.totalPauseTime.total!"msecs",
+            profileStats.numCollections,
+            profileStats.maxPauseTime.total!"msecs");
+
+        enum collectionPattern = "Sum of collection cycles: <l>%,d</> ms (max: <l>%,d</> ms)";
+        logger.infof(
+            collectionPattern,
+            profileStats.totalCollectionTime.total!"msecs",
+            profileStats.maxCollectionTime.total!"msecs");
+    }
+    /*else
+    {
+        enum noCollectionsMessage = "No collections have been made.";
+        logger.info(noCollectionsMessage);
+    }*/
+
+    enum lifetimeAllocatedPattern = "Lifetime allocated in current thread: <l>%,d</> bytes";
+    logger.infof(lifetimeAllocatedPattern, stats.allocatedInCurrentThread);
 
     enum memoryUsedPattern = "Memory currently in use: <l>%,d</> bytes; " ~
         "<l>%,d</> additional bytes reserved";
