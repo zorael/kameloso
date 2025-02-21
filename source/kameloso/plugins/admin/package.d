@@ -180,7 +180,7 @@ void onCommandWhoami(AdminPlugin plugin, const IRCEvent event)
             account,
             event.sender.hostmask,
             event.sender.class_.toString(),
-            event.channel);
+            event.channel.name);
     }
     else
     {
