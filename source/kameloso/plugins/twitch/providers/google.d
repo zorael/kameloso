@@ -413,80 +413,101 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
 
     auto data = cast(ubyte[])dataPattern.format(creds.youtubePlaylistID, videoID);
 
-    immutable response = sendHTTPRequest(
-        plugin,
-        url,
-        __FUNCTION__,
-        authorizationBearer,
-        HTTPVerb.post,
-        data,
-        "application/json");
-    immutable json = parseJSON(response.str);
-
-    /*
+    try
     {
-        "kind": "youtube#playlistItem",
-        "etag": "QG1leAsBIlxoG2Y4MxMsV_zIaD8",
-        "id": "UExNNnd5dmt2ME9GTVVfc0IwRUZyWDdUd0pZUHdkMUYwRi4xMkVGQjNCMUM1N0RFNEUx",
-        "snippet": {
-            "publishedAt": "2022-05-24T22:03:44Z",
-            "channelId": "UC_iiOE42xes48ZXeQ4FkKAw",
-            "title": "How Do Sinkholes Form?",
-            "description": "CAN CONTAIN NEWLINES",
-            "thumbnails": {
-                "default": {
-                    "url": "https://i.ytimg.com/vi/e-DVIQPqS8E/default.jpg",
-                    "width": 120,
-                    "height": 90
-                },
-            },
-            "channelTitle": "zorael",
-            "playlistId": "PLM6wyvkv0OFMU_sB0EFrX7TwJYPwd1F0F",
-            "position": 5,
-            "resourceId": {
-                "kind": "youtube#video",
-                "videoId": "e-DVIQPqS8E"
-            },
-            "videoOwnerChannelTitle": "Practical Engineering",
-            "videoOwnerChannelId": "UCMOqf8ab-42UUQIdVoKwjlQ"
-        }
-    }
-     */
+        immutable response = sendHTTPRequest(
+            plugin,
+            url,
+            __FUNCTION__,
+            authorizationBearer,
+            HTTPVerb.post,
+            data,
+            "application/json");
+        immutable responseJSON = parseJSON(response.str);
 
-    /*
-    {
-        "error": {
-            "code": 401,
-            "message": "Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.",
-            "errors": [
-                {
-                    "message": "Invalid Credentials",
-                    "domain": "global",
-                    "reason": "authError",
-                    "location": "Authorization",
-                    "locationType": "header"
-                }
-            ],
-            "status": "UNAUTHENTICATED"
-        }
-    }
-     */
-
-    if (json.type != JSONType.object)
-    {
-        enum message = "Wrong JSON type in playlist append response";
-        throw new UnexpectedJSONException(message, json);
-    }
-
-    immutable errorJSON = "error" in json;
-    if (!errorJSON) return json;  // Success
-
-    if (immutable statusJSON = "status" in *errorJSON)
-    {
-        if (statusJSON.str == "UNAUTHENTICATED")
+        /*
         {
-            if (recursing)
+            "kind": "youtube#playlistItem",
+            "etag": "QG1leAsBIlxoG2Y4MxMsV_zIaD8",
+            "id": "UExNNnd5dmt2ME9GTVVfc0IwRUZyWDdUd0pZUHdkMUYwRi4xMkVGQjNCMUM1N0RFNEUx",
+            "snippet": {
+                "publishedAt": "2022-05-24T22:03:44Z",
+                "channelId": "UC_iiOE42xes48ZXeQ4FkKAw",
+                "title": "How Do Sinkholes Form?",
+                "description": "CAN CONTAIN NEWLINES",
+                "thumbnails": {
+                    "default": {
+                        "url": "https://i.ytimg.com/vi/e-DVIQPqS8E/default.jpg",
+                        "width": 120,
+                        "height": 90
+                    },
+                },
+                "channelTitle": "zorael",
+                "playlistId": "PLM6wyvkv0OFMU_sB0EFrX7TwJYPwd1F0F",
+                "position": 5,
+                "resourceId": {
+                    "kind": "youtube#video",
+                    "videoId": "e-DVIQPqS8E"
+                },
+                "videoOwnerChannelTitle": "Practical Engineering",
+                "videoOwnerChannelId": "UCMOqf8ab-42UUQIdVoKwjlQ"
+            }
+        }
+         */
+
+        if ("id" in responseJSON)
+        {
+            // Seems to have worked
+            return responseJSON;
+        }
+        else
+        {
+            enum message = "Unexpected JSON when adding a video to a YouTube playlist";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+    }
+    catch (TwitchQueryException e)
+    {
+        /*
+        {
+            "error": {
+                "code": 401,
+                "message": "Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.",
+                "errors": [
+                    {
+                        "message": "Invalid Credentials",
+                        "domain": "global",
+                        "reason": "authError",
+                        "location": "Authorization",
+                        "locationType": "header"
+                    }
+                ],
+                "status": "UNAUTHENTICATED"
+            }
+        }
+         */
+
+        immutable responseJSON = parseJSON(e.responseBody);
+        immutable errorJSON = "error" in responseJSON;
+
+        if (!errorJSON)
+        {
+            enum message = "Unexpected JSON when handling error after failing " ~
+                "to add a video to a YouTube playlist";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        if (immutable statusJSON = "status" in *errorJSON)
+        {
+            if (statusJSON.str == "UNAUTHENTICATED")
             {
+                if (!recursing)
+                {
+                    refreshGoogleToken(plugin, creds);
+                    saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+                    return addVideoToYouTubePlaylist(plugin, creds, videoID, recursing: true);
+                }
+
                 immutable errorAAJSON = "errors" in *errorJSON;
 
                 if (errorAAJSON &&
@@ -502,17 +523,11 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
                     throw new ErrorJSONException(message, *errorJSON);
                 }
             }
-            else
-            {
-                refreshGoogleToken(plugin, creds);
-                saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-                return addVideoToYouTubePlaylist(plugin, creds, videoID, recursing: true);
-            }
         }
-    }
 
-    // If we're here, the above didn't match
-    throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
+        // If we're here, the above didn't match
+        throw new ErrorJSONException((*errorJSON)["message"].str, *errorJSON);
+    }
 }
 
 
