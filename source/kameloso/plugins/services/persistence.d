@@ -122,17 +122,12 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
         }
         else
         {
-            enum minimumTimeBetweenAdminChecks = 60;  // seconds
+            import std.algorithm.searching : canFind;
 
-            if ((nowInUnix - user.updated) > minimumTimeBetweenAdminChecks)
+            if (service.state.bot.admins.canFind(user.account))
             {
-                import std.algorithm.searching : canFind;
-
-                if (service.state.bot.admins.canFind(user.account))
-                {
-                    user.class_ = IRCUser.Class.admin;
-                    return;
-                }
+                user.class_ = IRCUser.Class.admin;
+                return;
             }
         }
 
