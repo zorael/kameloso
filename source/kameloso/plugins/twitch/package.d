@@ -1618,7 +1618,7 @@ void onCommandSubs(TwitchPlugin plugin, const IRCEvent event)
 )
 void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
 {
-    import lu.string : advancePast, stripped;
+    import lu.string : advancePast, stripped, unquoted;
     import std.algorithm.searching : canFind;
     import std.format : format;
     import core.time : seconds;
@@ -1692,15 +1692,15 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
 
     void sendAddedToYouTubePlaylist(const string title)
     {
-        enum pattern = "%s added to playlist.";
-        immutable message = pattern.format(title);
+        enum pattern = `"%s" added to playlist.`;
+        immutable message = pattern.format(title.unquoted);
         chan(plugin.state, event.channel.name, message);
     }
 
     void sendAddedToSpotifyPlaylist(const string artist, const string track)
     {
-        enum pattern = "%s - %s added to playlist.";
-        immutable message = pattern.format(artist, track);
+        enum pattern = `%s - "%s" added to playlist.`;
+        immutable message = pattern.format(artist, track.unquoted);
         chan(plugin.state, event.channel.name, message);
     }
 
