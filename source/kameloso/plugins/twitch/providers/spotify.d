@@ -522,59 +522,63 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
         authorizationBearer = "Bearer " ~ creds.spotifyAccessToken;
     }
 
-    immutable res = sendHTTPRequest(
-        plugin,
-        url,
-        __FUNCTION__,
-        authorizationBearer,
-        HTTPVerb.post,
-        cast(ubyte[])null,
-        "application/json");
-    immutable json = parseJSON(res.str);
-
-    /*
+    try
     {
-        "snapshot_id" : "[redacted]"
-    }
-     */
-    /*
-    {
-        "error": {
-            "status": 401,
-            "message": "The access token expired"
-        }
-    }
-     */
+        immutable response = sendHTTPRequest(
+            plugin,
+            url,
+            __FUNCTION__,
+            authorizationBearer,
+            HTTPVerb.post,
+            cast(ubyte[])null,
+            "application/json");
+        immutable responseJSON = parseJSON(response.str);
 
-    if (json.type != JSONType.object)
-    {
-        throw new UnexpectedJSONException("Wrong JSON type in playlist append response", json);
-    }
-
-    immutable errorJSON = "error" in json;
-    if (!errorJSON) return json;  // Success
-
-    if (immutable messageJSON = "message" in *errorJSON)
-    {
-        if (messageJSON.str == "The access token expired")
+        /*
         {
-            if (recursing)
-            {
-                throw new InvalidCredentialsException(messageJSON.str, *errorJSON);
-            }
-            else
-            {
-                refreshSpotifyToken(plugin, creds);
-                saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-                return addTrackToSpotifyPlaylist(plugin, creds, trackID, recursing: true);
+            "snapshot_id" : "[redacted]"
+        }
+        */
+
+        if ("snapshot_id" in responseJSON)
+        {
+            return responseJSON;
+        }
+        else
+        {
+            enum message = "Unexpected JSON when adding a track to a Spotify playlist";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+    }
+    catch (ErrorJSONException e)
+    {
+        /*
+        {
+            "error": {
+                "status": 401,
+                "message": "The access token expired"
             }
         }
+         */
+        if (const messageJSON = "message" in e.json)
+        {
+            if (messageJSON.str == "The access token expired")
+            {
+                if (!recursing)
+                {
+                    refreshSpotifyToken(plugin, creds);
+                    saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+                    return addTrackToSpotifyPlaylist(plugin, creds, trackID, recursing: true);
+                }
 
-        throw new ErrorJSONException(messageJSON.str, *errorJSON);
+                throw new InvalidCredentialsException(messageJSON.str, e.json);
+            }
+
+            throw new ErrorJSONException(messageJSON.str, e.json);
+        }
+
+        throw e;
     }
-
-    // If we're here, the above didn't match
-    throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
 }
 
 
@@ -586,6 +590,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
         trackID = Spotify track ID string.
+        recursing = Whether or not the function is recursing into itself.
 
     Returns:
         A [std.json.JSONValue|JSONValue] of the response.
@@ -599,8 +604,9 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
  +/
 auto getSpotifyTrackByID(
     TwitchPlugin plugin,
-    const Credentials creds,
-    const string trackID)
+    ref Credentials creds,
+    const string trackID,
+    bool recursing = false)
 in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : sendHTTPRequest;
@@ -618,24 +624,80 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
     enum urlPattern = "https://api.spotify.com/v1/tracks/%s";
     immutable url = urlPattern.format(trackID);
 
-    immutable res = sendHTTPRequest(
-        plugin,
-        url,
-        __FUNCTION__,
-        getSpotifyBase64Authorization(creds));
-    immutable json = parseJSON(res.str);
-
-    if (json.type != JSONType.object)
+    try
     {
-        throw new UnexpectedJSONException("Wrong JSON type in track request response", json);
-    }
+        immutable response = sendHTTPRequest(
+            plugin,
+            url,
+            __FUNCTION__,
+            authorizationBearer);
+        immutable responseJSON = parseJSON(response.str);
 
-    if (const errorJSON = "error" in json)
+        /*
+        {
+            "album": { ... },
+            "artists": [ ... ],
+            "available_markets": [ ... ],
+            "disc_number": 1,
+            "duration_ms": 52466,
+            "explicit": false,
+            "external_ids": {
+            "isrc": "GBKBH0502201"
+            },
+            "external_urls": {
+            "spotify": "https:\/\/open.spotify.com\/track\/70XGut7ZJrEK9h9Is1s3gt"
+            },
+            "href": "https:\/\/api.spotify.com\/v1\/tracks\/70XGut7ZJrEK9h9Is1s3gt",
+            "id": "70XGut7ZJrEK9h9Is1s3gt",
+            "is_local": false,
+            "name": "Prelude",
+            "popularity": 30,
+            "preview_url": null,
+            "track_number": 1,
+            "type": "track",
+            "uri": "spotify:track:70XGut7ZJrEK9h9Is1s3gt"
+        }
+         */
+
+        if ("name" in responseJSON)
+        {
+            return responseJSON;
+        }
+        else
+        {
+            enum message = "Unknown JSON when looking up a Spotify track";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+    }
+    catch (ErrorJSONException e)
     {
-        throw new ErrorJSONException(errorJSON.str, *errorJSON);
-    }
+        /*
+        {
+            "error": {
+                "status": 401,
+                "message": "The access token expired"
+            }
+        }
+         */
+        if (const messageJSON = "message" in e.json)
+        {
+            if (messageJSON.str == "The access token expired")
+            {
+                if (!recursing)
+                {
+                    refreshSpotifyToken(plugin, creds);
+                    saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+                    return getSpotifyTrackByID(plugin, creds, trackID, recursing: true);
+                }
 
-    return json;
+                throw new InvalidCredentialsException(messageJSON.str, e.json);
+            }
+
+            throw new ErrorJSONException(messageJSON.str, e.json);
+        }
+
+        throw e;
+    }
 }
 
 
