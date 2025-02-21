@@ -1338,7 +1338,7 @@ void onWelcome(ConnectService service, const IRCEvent event)
     service.transient.progress.registration = Progress.finished;
     service.transient.renameDuringRegistration = string.init;
 
-    version(WithPingMonitor) startPingMonitor(service);
+    startPingMonitor(service);
 
     alias separator = ConnectSettings.sendAfterConnectSeparator;
     auto toSendRange = service.connectSettings.sendAfterConnect.splitter(separator);
