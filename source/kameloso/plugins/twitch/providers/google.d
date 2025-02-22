@@ -56,53 +56,92 @@ void requestGoogleKeys(TwitchPlugin plugin)
 
     scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
+    enum dashboardURL = "https://console.cloud.google.com/projectcreate";
+
     logger.trace();
     logger.log("== <w>Google authorisation key generation wizard</> ==");
-    enum message = `
-To access the YouTube API you need to create a Google application and generate a
-<i>client ID</> and a <i>client secret</> for it.
+    enum preludeMessage = `
+To access the YouTube API you need to create a <i>Google application</> and generate a
+<i>Client ID</> and a <i>Client secret</> for it.
 
-<l>Go here to create a project:</>
+<l>Attempting to open the <i>Google Cloud Dashboard<l> in your default web browser.</>
+`;
+    writeln(preludeMessage.expandTags(LogLevel.off));
 
-    <i>https://console.cloud.google.com/projectcreate</>
+    if (plugin.state.coreSettings.force)
+    {
+        logger.warning("Forcing; not automatically opening browser.");
+        printManualURL(dashboardURL);
+        if (plugin.state.coreSettings.flush) stdout.flush();
+    }
+    else
+    {
+        try
+        {
+            import kameloso.platform : openInBrowser;
+            openInBrowser(dashboardURL);
+        }
+        catch (ProcessException _)
+        {
+            // Probably we got some platform wrong and command was not found
+            logger.warning("Error: could not automatically open browser.");
+            printManualURL(dashboardURL);
+            if (plugin.state.coreSettings.flush) stdout.flush();
+        }
+        catch (Exception _)
+        {
+            logger.warning("Error: no graphical environment detected");
+            printManualURL(dashboardURL);
+            if (plugin.state.coreSettings.flush) stdout.flush();
+        }
+    }
 
-Once created...
-<i>*</> <l>APIs and services</> to the left, then <i>OAuth consent screen</>
-<i>*</> <l>Choose User Type</>: <i>External</> and hit <i>Create</>
-<i>*</> <l>Enter</>...
-  <i>*</> a memorable <i>app name</>
-  <i>*</> your email as <i>user support email</>
-  <i>*</> your email as <i>developer contact information</> (at the bottom of the page)
-  <i>*</> <l>Click</> <i>Save and Continue</>
-<i>*</> <l>Add or Remove Scopes</>
-  <i>*</> <l>Manually add scope</>: "<i>https://www.googleapis.com/auth/youtube</>"
-  <i>*</> <l>Click</> <i>Add to table</>, then <i>Update</>
-    <i>*</> <l>Confirm</> that <i>Your sensitive scopes</> now includes "<i>../auth/youtube</>"
-  <i>*</> <l>Click</> <i>Save and Continue</>
-<i>*</> <l>Click</> <i>+ Add Users</> and enter your Google account email
-<i>*</> <l>Click</> <i>Save and Continue</>, then <i>Back to Dashboard</>
-<i>*</> <l>Click</> <i>Credentials</> to the left
-<i>*</> <l>Click</> <i>+ Create Credentials</> up at the top of the page
-<i>*</> <l>Choose</> <i>OAuth client ID</> in the dropdown menu
-  <i>*</> <l>Application type</>: <i>Desktop app</>
-  <i>*</> <l>Name</>: (any memorable name)
-  <i>*</> <l>Click</> <i>Create</>
+enum message =
+`In the <i>New Project</> dialog...
 
-There should be an <i>OAuth client created</> popup and you should now have a
-newly-generated <i>Client ID</> and <i>Client secret</>.
+<i>*</> <l>Enter</> a <i>Project name</> (anything you want)
+<i>*</> <l>Click</> <i>Create</>
 
-    <w>Copy these somewhere; you'll need them soon.</>
+If you have several Google projects, <w>make sure</> your project is now selected in
+the <i>top bar</>; if not, <l>click</> the <i>project name box</> and <l>select</> it from the list.
 
-<i>*</> <l>Click</> <i>Enabled APIs and Services</> to the left
-<i>*</> <l>Click</> <i>+ Enable APIs and Services</> up top
-  <i>*</> <l>Input</> "<i>YouTube Data API v3</>" and hit Enter
-  <i>*</> <l>Select</> the offered <i>YouTube Data API v3</>
-  <i>*</> <l>Click</> <i>Enable</>
+<i>*</> <l>Click</> <i>APIs and Services</> in the left menu
+<i>*</> <l>Click</> <i>Get Started</>
+  <i>*</> <l>Enter</> an <i>App name</> (anything you want)
+  <i>*</> <l>Enter</> your <i>email address</> as <i>User support email</>
+  <i>*</> <l>Click</> <i>Next</>
+  <i>*</> <l>Set</> <i>Audience</> to <i>External</>, then <l>click</> <i>Next</>
+  <i>*</> <l>Enter</> your <i>email address</> as <i>Contact information</>
+  <i>*</> <l>Agree</> to the <i>terms</>
+  <i>*</> <l>Click</> <i>Continue</> and then <i>Create</>
+<i>*</> <l>Select</> <i>Audience</> in the left menu
+  <i>*</> <l>Add</> a <i>test user</> by pressing <i>+ Add users</>
+    <i>*</> <l>Enter</> your <i>Google account email</> and <l>click</> <i>Save</>
+<i>*</> <l>Select</> <i>Clients</> in the left menu
+  <i>*</> <l>Click</> <i>+ Create Client</> up top
+    <i>*</> <l>Choose</> <i>Desktop</> as <i>Application type</>
+    <i>*</> <l>Enter</> a <i>Name</> (anything you want)
+  <i>*</> <l>Copy</> the <i>Client ID</> by pressing the clipboard icon next to it,
+    in the middle of the screen
+    <i>*</> <l>Paste</> it somewhere, you'll need it soon
+  <i>*</> <l>Click</> the name of the project in the same list to view its <i>additional information</>
+  <i>*</> <l>Copy</> the <i>Client secret</> by pressing the clipboard icon next to it
+    <i>*</> <l>Paste</> it next to your <i>Client ID</> so you have both ready
+<i>*</> <l>Select</> <i>Data access</> in the left menu
+  <i>*</> <l>Click</> <i>Add or remove scopes</>
+    <i>*</> <l>Enter</> a <i>manual scope</>: "<i>https://www.googleapis.com/auth/youtube</>"
+    <i>*</> <l>Click</> <i>Add to table</>, then <i>Update</>
+      <i>*</> <l>Confirm</> that <i>Your sensitive scopes</> now includes "<i>../auth/youtube</>"
+    <i>*</> <l>Click</> <i>Save</>
+<i>*</> <l>Click</> the <i>navigation menu</> in the very top left (the three horizontal lines)
+  <i>*</> <l>Click</> <i>APIs and Services</>
+    <i>*</> <l>Click</> <i>+ Enable APIs and Services</>
+      <i>*</> <l>Search</> for "<i>YouTube Data API v3</>", <l>select</> it, then <l>click</> <i>Enable</>
 
-You also need to supply a Twitch channel to which it all relates.
+You also need to supply a <i>Twitch channel</> in which you would serve song requests.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
 
-Lastly you need a <i>YouTube playlist ID</> to save song requests to.
+Lastly you need a <i>YouTube playlist</> which songs would be added to.
 Your current playlists can be found by clicking <i>Show More</> to the left
 in the normal YouTube home screen. New playlists can be created by opening any
 YouTube video page, clicking the <i>...</> button beneath the video, clicking
@@ -131,7 +170,7 @@ A normal URL to any playlist you can modify will work fine. They do not have to 
     enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth Client ID<l>:</> ";
     creds.googleClientID = readNamedString(
         readOAuthIDMessage,
-        72L,
+        0, //72L,
         passThroughEmptyString: false,
         plugin.state.abort);
     if (*plugin.state.abort) return;
@@ -180,21 +219,21 @@ A normal URL to any playlist you can modify will work fine. They do not have to 
     enum attemptToOpenPattern = `
 --------------------------------------------------------------------------------
 
-<l>Attempting to open a <i>Google login page<l> in your default web browser.</>
+<l>Attempting to open a <i>Google authorisation page<l> in your default web browser.</>
 
 Follow the instructions and log in to authorise the use of this program with your account.
 
-It may ask you for an account twice; once to select an account
-"<i>to proceed to [project name]</>", once to <i>choose your account or brand account</>.
+It should ask you for an account twice;
 
-If so, for the second account, be sure to select a <i>YouTube-specific account</>
-if presented with several alternatives. (One that says <i>YouTube</> underneath it.)
+<i>*</> ...once to select an account "<i>if you want to proceed to [project name]</>"
+<i>*</> ...once to <i>choose your account or brand account</>
 
-    <w>If you have two-factor authentication enabled you may have to authorise
-    the addition with your phone.</>
+For the <i>brand account</>, <w>be sure</> to select a <i>YouTube-specific account</>
+if presented with several alternatives. (One that says <i>YouTube</> underneath it
+instead of your email address.)
 
-Select <i>Continue</> when you get to a "<i>Google hasn't verified this app</>" screen,
-then finally <i>Allow</>.`;
+<i>*</> <l>Click</> <i>Continue</> when you get to "<i>Google hasn't verified this app</>"
+<i>*</> <l>Click</> <i>Continue</> when you get to "<i>[your app] wants access to your Google account</>"`;
 
     writeln(attemptToOpenPattern.expandTags(LogLevel.off));
     writeln(pasteAddressInstructions.expandTags(LogLevel.off));
@@ -326,12 +365,13 @@ then finally <i>Allow</>.`;
     {
         throw new ErrorJSONException(validationJSON["error_description"].str, *errorJSON);
     }
+    else if ("expires_in" !in validationJSON)
+    {
+        enum unexpectedJSONMessage = "Unexpected JSON response from server";
+        throw new UnexpectedJSONException(unexpectedJSONMessage, validationJSON);
+    }
 
-    // "expires_in" is a string
-    immutable expiresIn = validationJSON["expires_in"].str.to!uint;
-
-    enum isValidPattern = "Your key is valid for another <l>%s</> but will be automatically refreshed.";
-    logger.infof(isValidPattern, expiresIn.seconds.timeSince!(3, 1));
+    logger.info("All done!");
     logger.trace();
 
     if (auto storedCreds = channel in plugin.secretsByChannel)
