@@ -3219,3 +3219,155 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
 
     return retryDelegate(plugin, &sendWhisperDg);
 }
+
+
+// sendAnnouncement
+/++
+    Sends a Twitch chat announcement.
+
+    Message lengths may not exceed 500 characters; messages longer are truncated.
+
+    Valid values for `colour` are:
+
+    * blue
+    * green
+    * orange
+    * purple
+    * primary (default)
+
+    Invalid values are overridden to `primary`.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
+        channelID = Twitch ID of channel to send announcement to.
+        message = The announcement to make in the broadcaster’s chat room.
+        colour = The color used to highlight the announcement.
+        caller = Name of the calling function.
+
+    Returns:
+        The HTTP response code received.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#send-chat-announcement
+ +/
+auto sendAnnouncement(
+    TwitchPlugin plugin,
+    const ulong channelID,
+    const string message,
+    const string colour = "primary",
+    const string caller = __FUNCTION__)
+in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
+{
+    import std.algorithm.comparison : among;
+    import std.array : replace;
+    import std.format : format;
+
+    enum urlPattern = "https://api.twitch.tv/helix/chat/announcements" ~
+        "?broadcaster_id=%d" ~
+        "&moderator_id=%d";
+
+    enum bodyPattern =
+`{
+    "message": "%s",
+    "color": "%s"
+}`;
+
+    /+
+        message: The announcement to make in the broadcaster’s chat room.
+            Announcements are limited to a maximum of 500 characters;
+            announcements longer than 500 characters are truncated.
+        color: The color used to highlight the announcement.
+            Possible case-sensitive values are:
+                blue
+                green
+                orange
+                purple
+                primary (default)
+            If color is set to primary or is not set, the channel’s accent color
+            is used to highlight the announcement (see Profile Accent Color
+            under profile settings, Channel and Videos, and Brand).
+     +/
+
+    immutable colourArgument = colour.among!("primary", "blue", "green", "orange", "purple") ?
+        colour :
+        "primary";
+    immutable url = urlPattern.format(channelID, plugin.transient.botID);
+    immutable messageArgument = message.replace(`"`, `\"`);  // won't work with already escaped quotes
+    immutable body_ = bodyPattern.format(messageArgument, colourArgument);
+
+    auto sendAnnouncementDg()
+    {
+        import std.json : JSONValue, parseJSON;
+
+        JSONValue responseJSON;
+        uint responseCode;
+
+        try
+        {
+            immutable response = sendHTTPRequest(
+                plugin,
+                url,caller,
+                plugin.transient.authorizationBearer,
+                HTTPVerb.post,
+                cast(ubyte[])body_,
+                "application/json");
+
+            responseJSON = parseJSON(response.str);  // body should be empty, but in case it isn't
+            responseCode = response.code;
+        }
+        catch (ErrorJSONException e)
+        {
+            responseJSON = e.json;
+            responseCode = cast(uint)e.json["status"].integer;
+        }
+
+        switch (responseCode)
+        {
+        case 204:
+            // 204 No Content
+            // Successfully sent the announcement
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                The message field in the request's body is required.
+                The message field may not contain an empty string.
+                The string in the message field failed review.
+                The specified color is not valid.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The Authorization header is required and must contain a user access token.
+                The user access token is missing the moderator:manage:announcements scope.
+                The OAuth token is not valid.
+                The client ID specified in the Client-Id header does not match
+                the client ID specified in the OAuth token
+             +/
+            goto default;
+
+        case 429:
+            // 429 Too Many Requests
+            /+
+                The sender has exceeded the number of announcements they may
+                send to this broadcaster_id within a given window.
+             +/
+            goto default;
+
+        default:
+            /*import kameloso.common : logger;
+            enum pattern = "Failed to send announcement; response code <l>%d";
+            logger.errorf(pattern, responseCode);*/
+            break;
+        }
+
+        return responseCode;
+    }
+
+    return retryDelegate(plugin, &sendAnnouncementDg);
+}
