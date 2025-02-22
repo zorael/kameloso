@@ -3371,3 +3371,154 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
 
     return retryDelegate(plugin, &sendAnnouncementDg);
 }
+
+
+// warnUser
+/++
+    Warns a user in a channel.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
+        channelID = Twitch ID of channel to warn user in.
+        userID = Twitch ID of user to warn.
+        reason = Reason for warning the user.
+        caller = Name of the calling function.
+
+    Returns:
+        The HTTP response code received.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#warn-chat-user
+ +/
+auto warnUser(
+    TwitchPlugin plugin,
+    const ulong channelID,
+    const ulong userID,
+    const string reason,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
+{
+    import std.array : replace;
+    import std.format : format;
+
+    enum urlPattern = "https://api.twitch.tv/helix/moderation/warnings" ~
+        "?broadcaster_id=%d" ~
+        "&moderator_id=%d";
+
+    enum bodyPattern =
+`{
+    "data": {
+        "user_id": "%d",
+        "reason": "%s"
+    }
+}`;
+
+    immutable url = urlPattern.format(channelID, plugin.transient.botID);
+    immutable reasonArgument = reason.replace(`"`, `\"`);  // won't work with already escaped quotes
+    immutable body_ = bodyPattern.format(userID, reasonArgument);
+
+    auto warnUserDg()
+    {
+        import std.json : JSONValue, parseJSON;
+
+        JSONValue responseJSON;
+        uint responseCode;
+
+        try
+        {
+            immutable response = sendHTTPRequest(
+                plugin,
+                url,caller,
+                plugin.transient.authorizationBearer,
+                HTTPVerb.post,
+                cast(ubyte[])body_,
+                "application/json");
+
+            responseJSON = parseJSON(response.str);  // body should be empty, but in case it isn't
+            responseCode = response.code;
+        }
+        catch (ErrorJSONException e)
+        {
+            responseJSON = e.json;
+            responseCode = cast(uint)e.json["status"].integer;
+        }
+
+        switch (responseCode)
+        {
+        case 200:
+            // 200 OK
+            // Successfully warned the user
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                The broadcaster_id query parameter is required.
+                The moderator_id query parameter is required.
+                The user_id query parameter is required.
+                The reason query parameter is required.
+                The text in the reason field is too long.
+                The user specified in the user_id may not be warned.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The ID in moderator_id must match the user ID in the user access token.
+                The Authorization header is required and must contain a user access token.
+                The user access token must include the moderator:manage:warnings scope.
+                The access token is not valid.
+                The client ID specified in the Client-Id header does not match the
+                client ID specified in the access token.
+             +/
+            goto default;
+
+        case 403:
+            // 403 Forbidden
+            /+
+                The user in moderator_id is not one of the broadcaster’s moderators.
+             +/
+            goto default;
+
+        case 409:
+            // 409 Conflict
+            /+
+                You may not update the user’s warning state while someone else is
+                updating the state. For example, someone else is currently warning
+                the user or the user is acknowledging an existing warning.
+                Please retry your request.
+             +/
+            goto default;
+
+        case 429:
+            // 429 Too Many Requests
+            /+
+                The app has exceeded the number of requests it may make per
+                minute for this broadcaster.
+             +/
+            goto default;
+
+        case 500:
+            // 500 Internal Server Error
+            /+
+                Internal Server Error.
+             +/
+            goto default;
+
+        default:
+            /*import kameloso.common : logger;
+            import std.stdio : writeln;
+
+            enum message = "Failed to warn user";
+            logger.error(message);
+            writeln(responseJSON.toPrettyString);*/
+        }
+
+        return responseCode;
+    }
+
+    return retryDelegate(plugin, &warnUserDg);
+}
