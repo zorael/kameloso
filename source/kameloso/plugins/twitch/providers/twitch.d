@@ -267,11 +267,12 @@ your <w>BOT</> account.
 
     enum authNode = "https://id.twitch.tv/oauth2/authorize";
     immutable url = buildAuthNodeURL(authNode, scopes);
+    enum wording = "Copy and paste this link manually into your browser, and log in as asked:";
 
     if (plugin.state.coreSettings.force)
     {
         logger.warning("Forcing; not automatically opening browser.");
-        printManualURL(url);
+        printManualURL(url, wording);
         if (plugin.state.coreSettings.flush) stdout.flush();
     }
     else
@@ -285,13 +286,13 @@ your <w>BOT</> account.
         {
             // Probably we got some platform wrong and command was not found
             logger.warning("Error: could not automatically open browser.");
-            printManualURL(url);
+            printManualURL(url, wording);
             if (plugin.state.coreSettings.flush) stdout.flush();
         }
         catch (Exception _)
         {
             logger.warning("Error: no graphical environment detected");
-            printManualURL(url);
+            printManualURL(url, wording);
             if (plugin.state.coreSettings.flush) stdout.flush();
         }
     }
