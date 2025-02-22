@@ -111,8 +111,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
      +/
     static void discoverAdmin(
         PersistenceService service,
-        ref IRCUser user,
-        const long nowInUnix)
+        ref IRCUser user)
     {
         if ((user.class_ == IRCUser.Class.admin) ||
             (user.class_ == IRCUser.Class.blacklist))
@@ -156,7 +155,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             // into the global user
             version(TwitchSupport) user.badges = string.init;
 
-            discoverAdmin(service, *user, event.time);
+            discoverAdmin(service, *user);
             syncUserWithGlobal(service, *user, errors: event.errors);
         }
     }
@@ -330,7 +329,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             Check the user for admin-ness. This also sets the class to anyone
             if it should be unset for some reason.
          +/
-        discoverAdmin(service, *stored, event.time);
+        discoverAdmin(service, *stored);
 
         if (service.state.server.daemon != IRCServer.Daemon.twitch)
         {
