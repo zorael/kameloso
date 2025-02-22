@@ -79,6 +79,7 @@ auto readNamedString(
             enum invalidMessage = "Invalid length. Try copying again or file a bug.";
             logger.error(invalidMessage);
             writeln();
+            input = string.init;
             continue;
         }
     }
