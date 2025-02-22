@@ -3092,7 +3092,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         userID = Twitch ID of user to send whisper to.
-        unescapedMessage = Message to send.
+        message = Message to send.
         caller = Name of the calling function.
 
     Returns:
@@ -3104,10 +3104,9 @@ in (userID, "Tried to timeout a user with an unset user ID")
 auto sendWhisper(
     TwitchPlugin plugin,
     const ulong userID,
-    const string unescapedMessage,
+    const string message,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
-in (userID, "Tried to send a whisper with an empty recipient ID string")
 {
     import std.array : replace;
     import std.format : format;
@@ -3122,13 +3121,12 @@ in (userID, "Tried to send a whisper with an empty recipient ID string")
 }`;
 
     immutable url = urlPattern.format(plugin.transient.botID, userID);
-    immutable message = unescapedMessage.replace(`"`, `\"`);  // won't work with already escaped quotes
-    immutable body_ = bodyPattern.format(message);
+    immutable messageArgument = message.replace(`"`, `\"`);  // won't work with already escaped quotes
+    immutable body_ = bodyPattern.format(messageArgument);
 
     auto sendWhisperDg()
     {
         import std.json : JSONValue, parseJSON;
-        import std.stdio : writeln;
 
         JSONValue responseJSON;
         uint responseCode;
@@ -3210,9 +3208,9 @@ in (userID, "Tried to send a whisper with an empty recipient ID string")
             goto default;
 
         default:
-            import kameloso.common : logger;
+            /*import kameloso.common : logger;
             enum pattern = "Failed to send whisper: <l>%s";
-            logger.errorf(pattern, responseJSON["message"].str);
+            logger.errorf(pattern, responseJSON["message"].str);*/
             break;
         }
 
