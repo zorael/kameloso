@@ -56,36 +56,81 @@ void requestSpotifyKeys(TwitchPlugin plugin)
 
     scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
+    enum dashboardURL = "https://developer.spotify.com/dashboard";
+
     logger.trace();
     logger.log("== <w>Spotify authorisation key generation wizard</> ==");
-    enum message = `
+    enum preludeMessage = `
 To access the Spotify API you need to create what Spotify calls an <i>app</>,
-and generate a <i>client ID</> and a <i>client secret</> for it.
+and generate a <i>Client ID</> and a <i>Client secret</> for it.
 
-<l>Go here to create an app:</>
+<l>Attempting to open the <i>Spotify developer dashboard<l> in your default web browser.</>
+`;
+    writeln(preludeMessage.expandTags(LogLevel.off));
 
-    <i>https://developer.spotify.com/dashboard</>
+    if (plugin.state.coreSettings.force)
+    {
+        logger.warning("Forcing; not automatically opening browser.");
+        printManualURL(dashboardURL);
+        if (plugin.state.coreSettings.flush) stdout.flush();
+    }
+    else
+    {
+        try
+        {
+            import kameloso.platform : openInBrowser;
+            openInBrowser(dashboardURL);
+        }
+        catch (ProcessException _)
+        {
+            // Probably we got some platform wrong and command was not found
+            logger.warning("Error: could not automatically open browser.");
+            printManualURL(dashboardURL);
+            if (plugin.state.coreSettings.flush) stdout.flush();
+        }
+        catch (Exception _)
+        {
+            logger.warning("Error: no graphical environment detected");
+            printManualURL(dashboardURL);
+            if (plugin.state.coreSettings.flush) stdout.flush();
+        }
+    }
+
+    enum message =
+`If not already logged in...
+
+<i>*</> <l>Log in</> to your Spotify user account
+<i>*</> <l>Click</> your user badge in the top right and <l>select</> <i>Dashboard</>
+
+Once in the dashboard...
 
 <i>*</> <l>Select</> <i>Create app</>
-  <i>*</> <l>Input something memorable</> as <i>Name</> and <i>Description</>
-  <i>*</> <l>Input</> as <i>Redirect URI</>: "<i>http://localhost</>"
+  <i>*</> <l>Enter</> an <i>App name</> (anything you want)
+  <i>*</> <l>Enter</> a <i>Description</> (anything you want)
+  <i>*</> <l>Enter</> as <i>Redirect URIs</>: "<i>http://localhost</>" and <l>click</> <i>Add</>
+    <i>*</> If you are running local web server on port <i>80</>, you may have to temporarily
+      disable it for this to work.
+  <i>*</> <l>Check</> <i>API/SDKs</>: <i>Web API</>
+  <i>*</> <l>Agree</> to the <i>terms</>
   <i>*</> <l>Click</> <i>Save</>
 <i>*</> <l>Click</> <i>Settings</> in the top right
-<i>*</> <l>Go to</> <i>User Management</>
-  <i>*</> <l>Add</> your Spotify user's <i>email</> address
+<i>*</> <l>Select</> the <i>User Management</> tab
+  <i>*</> <l>Add</> an entry with a <i>name</> and your Spotify user's <i>email</> address
+<i>*</> <l>Select</> the <i>Basic Information</> tab
+  <i>*</> <l>Copy</> the <i>Client ID</> by clicking the <i>clipboard icon</> next to it
+    <i>*</> <l>Paste</> it somewhere, you'll need it soon
+  <i>*</> <l>Click</> <i>View Client Secret</>
+    <i>*</> <l>Copy</> the <i>Client secret</> by clicking the <i>cliboard icon</> next to it
+      <i>*</> <l>Paste</> it next to your <i>Client ID</> so you have both ready
 
-It should now display a <i>Client ID</> and <i>Client secret</>.
-
-    <w>Copy these somewhere; you'll need them soon.</>
-
-You also need to supply a Twitch channel to which it all relates.
+You also need to supply a <i>Twitch channel</> in which you would serve song requests.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
 
-Lastly you need a <i>Spotify playlist ID</> for song requests to work.
+Lastly you need a <i>Spotify playlist</> which song requests would be added to.
 New playlists can be created by clicking the <i>+</> next to <i>Your library</>
 in the panel to the left on the home screen.
 
-A normal URL to any playlist you can modify will work fine.
+A normal URL to any playlist your Spotify user can modify will work fine.
 `;
     writeln(message.expandTags(LogLevel.off));
 
@@ -294,9 +339,8 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
     }
     else if ("display_name" !in validationJSON)
     {
-        throw new UnexpectedJSONException(
-            "Unexpected JSON response from server",
-            validationJSON);
+        enum unexpectedJSONMessage = "Unexpected JSON response from server";
+        throw new UnexpectedJSONException(unexpectedJSONMessage, validationJSON);
     }
 
     logger.info("All done!");
@@ -538,7 +582,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
         {
             "snapshot_id" : "[redacted]"
         }
-        */
+         */
 
         if ("snapshot_id" in responseJSON)
         {

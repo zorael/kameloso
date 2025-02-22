@@ -167,15 +167,17 @@ auto readChannelName(
 
     Params:
         url = URL string.
+        wording = Optional wording to use in the prompt.
  +/
-void printManualURL(const string url)
+void printManualURL(const string url, const string wording = string.init)
 {
     import kameloso.logger : LogLevel;
     import kameloso.terminal.colours.tags : expandTags;
     import std.stdio : writefln;
 
+    enum defaultWording = "Copy and paste this link manually into your browser:";
     enum copyPastePattern = `
-<l>Copy and paste this link manually into your browser, and log in as asked:
+<l>%s
 
 <i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8\<</>
 
@@ -183,7 +185,10 @@ void printManualURL(const string url)
 
 <i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8\<</>
 `;
-    writefln(copyPastePattern.expandTags(LogLevel.off), url);
+    writefln(
+        copyPastePattern.expandTags(LogLevel.off),
+        wording.length ? wording : defaultWording,
+        url);
 }
 
 
