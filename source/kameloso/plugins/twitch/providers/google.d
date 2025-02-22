@@ -286,7 +286,9 @@ instead of your email address.)
     {
         scope(exit) if (plugin.state.coreSettings.flush) stdout.flush();
 
-        enum pasteMessage = "<i>></> ";
+        enum pasteMessage = "<l>Paste the address of empty the page you were redirected to here:</>
+
+<i>></> ";
         write(pasteMessage.expandTags(LogLevel.off));
         stdout.flush();
         stdin.flush();
