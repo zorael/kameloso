@@ -575,6 +575,27 @@ private:
             caller);
     }
 
+    // announce
+    /++
+        Sends a Twitch announcement.
+     +/
+    pragma(inline, true)
+    void announce(
+        const IRCEvent.Channel channel,
+        const string content,
+        const string colour = "primary",
+        const Message.Property properties = Message.Property.none,
+        const string caller = __FUNCTION__)
+    {
+        return kameloso.messaging.announce(
+            state,
+            channel,
+            content,
+            colour,
+            properties,
+            caller);
+    }
+
     // reply
     /++
         Replies to a channel message.
