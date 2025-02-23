@@ -1338,7 +1338,7 @@ void handleSelfjoin(
     if (!channel || force)
     {
         // No channel or forcing; create
-        plugin.channels[eventChannel.name] = TimerPlugin.Channel(eventChannel.name);  // as above
+        plugin.channels[eventChannel.name] = TimerPlugin.Channel(eventChannel);  // as above
         if (!channel) channel = eventChannel.name in plugin.channels;
     }
 
@@ -1594,11 +1594,11 @@ void reload(TimerPlugin plugin)
     loadTimers(plugin);
 
     // Recreate timer fibers from definitions
-    foreach (immutable channelName, channel; plugin.channels)
+    foreach (/*immutable channelName,*/ channel; plugin.channels)
     {
         // Just reuse the SELFJOIN routine, but be sure to force it
         // it will destroy the fibers, so we don't have to here
-        handleSelfjoin(plugin, channelName, force: true);
+        handleSelfjoin(plugin, channel.fromEvent, force: true);
     }
 }
 
@@ -1720,9 +1720,10 @@ private:
     static struct Channel
     {
         /++
-            Name of the channel.
+            [dialect.defs.IRCEvent.Channel|Channel] from
+            [dialect.defs.IRCEvent|IRCEvent].
          +/
-        string channelName;
+        IRCEvent.Channel fromEvent;
 
         /++
             Current message count.
@@ -1733,6 +1734,14 @@ private:
             Pointers to [Timer]s in [TimerPlugin.timersByChannel].
          +/
         Timer*[string] timerPointers;
+
+        /++
+            Constructor.
+         +/
+        this(const IRCEvent.Channel fromEvent)
+        {
+            this.fromEvent = fromEvent;
+        }
     }
 
     /++
