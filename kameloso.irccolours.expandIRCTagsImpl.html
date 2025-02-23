@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>expandIRCTagsImpl (kameloso.irccolours.expandIRCTagsImpl)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>expandIRCTagsImpl</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.irccolours.html">irccolours</a> </div><div><div class="documentation-comment synopsis"><div><p>Implementation function for <a class="xref" href="kameloso.irccolours.expandIRCTags.2.html">expandIRCTags</a>. Kept separate so that
+    <a class="xref" href="std.utf.UTFException.html">UTFException</a> can be neatly caught.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">private @<span class="name" data-ident="safe">safe</span> pure @<span class="name" data-ident="safe">safe</span> </div><div class="return-type"><span class="name" data-ident="T">T</span></div><div class="function-name">expandIRCTagsImpl</div><div class="template-parameters" data-count="1">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="T">T</span></span></div></div>)</div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="name" data-ident="T">T</span></span></span> <span class="parameter-name name" data-ident="line"><a href="#param-line">line</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="extendedOutgoingColours"><a href="#param-extendedOutgoingColours">extendedOutgoingColours</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="strip"><a href="#param-strip">strip</a></span><span class="parameter-default-value">&#160;=&#160;false</span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-line"><a class="parameter-name" data-ident="line" href="#param-line">line</a> <span class="parameter-type"><span class="name" data-ident="T">T</span></span></dt><dd><div class="documentation-comment"><div><p>String line to expand IRC tags of.</p></div></div></dd><dt id="param-extendedOutgoingColours"><a class="parameter-name" data-ident="extendedOutgoingColours" href="#param-extendedOutgoingColours">extendedOutgoingColours</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether or not to use extended colours (16-99).</p></div></div></dd><dt id="param-strip"><a class="parameter-name" data-ident="strip" href="#param-strip">strip</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether to expand tags or strip them from the input line.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><span class="name" data-ident="T">T</span></span></div><div class="documentation-comment returns-description"><div><p>The passed <tt class="inline-code">line</tt> but with tags expanded to formatting and colouring.</p></div></div></div><h2 id="throws"><a class="header-anchor" href="#throws">Throws</a></h2><div class="documentation-comment throws-description"><div><p><a class="xref" href="std.string.indexOf.html">std.string.indexOf</a> (used internally) throws <a class="xref" href="std.utf.UTFException.html">UTFException</a>
+        if the starting index of a lookup doesn't represent a well-formed codepoint.</p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.irccolours.html">irccolours</a> 
+		<span class="type-separator">enums</span><ul><li><a class="enum" href="kameloso.irccolours.IRCColour.html">IRCColour</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.irccolours.expandIRCTags.1.html">expandIRCTags</a></li><li><a class="function current" href="kameloso.irccolours.expandIRCTagsImpl.html">expandIRCTagsImpl</a></li><li><a class="function" href="kameloso.irccolours.ircBold.html">ircBold</a></li><li><a class="function" href="kameloso.irccolours.ircColour.1.html">ircColour</a></li><li><a class="function" href="kameloso.irccolours.ircColourByHash.1.html">ircColourByHash</a></li><li><a class="function" href="kameloso.irccolours.ircColourByHashImpl.html">ircColourByHashImpl</a></li><li><a class="function" href="kameloso.irccolours.ircColourInto.html">ircColourInto</a></li><li><a class="function" href="kameloso.irccolours.ircItalics.html">ircItalics</a></li><li><a class="function" href="kameloso.irccolours.ircReset.html">ircReset</a></li><li><a class="function" href="kameloso.irccolours.ircUnderlined.html">ircUnderlined</a></li><li><a class="function" href="kameloso.irccolours.mapColours.html">mapColours</a></li><li><a class="function" href="kameloso.irccolours.mapColoursImpl.html">mapColoursImpl</a></li><li><a class="function" href="kameloso.irccolours.mapEffects.html">mapEffects</a></li><li><a class="function" href="kameloso.irccolours.mapEffectsImpl.html">mapEffectsImpl</a></li><li><a class="function" href="kameloso.irccolours.stripColours.html">stripColours</a></li><li><a class="function" href="kameloso.irccolours.stripEffects.html">stripEffects</a></li><li><a class="function" href="kameloso.irccolours.stripIRCTags.html">stripIRCTags</a></li></ul><span class="type-separator">variables</span><ul><li><a class="variable" href="kameloso.irccolours.ircANSIColourMap.html">ircANSIColourMap</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
