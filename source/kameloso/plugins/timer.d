@@ -37,6 +37,14 @@ import core.thread.fiber : Fiber;
         Toggle whether or not this plugin should do anything at all.
      +/
     @Enabler bool enabled = true;
+
+    version(TwitchSupport)
+    {
+        /++
+            Toggle whether or not to use Twitch announcements on Twitch servers.
+         +/
+        bool useAnnouncements = false;
+    }
 }
 
 
@@ -539,7 +547,7 @@ void handleNewTimer(
 
     timer.lastMessageCount = channel.messageCount;
     timer.lastTimestamp = event.time;
-    timer.fiber = createTimerFiber(plugin, event.channel.name, timer.name);
+    timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
     plugin.timersByChannel[event.channel.name][timer.name] = timer;
     channel.timerPointers[timer.name] = &plugin.timersByChannel[event.channel.name][timer.name];
     saveTimers(plugin);
@@ -896,7 +904,7 @@ void handleModifyTimerLines(
     void destroyUpdateSave()
     {
         destroy(timer.fiber);
-        timer.fiber = createTimerFiber(plugin, event.channel.name, timer.name);
+        timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
         saveTimers(plugin);
     }
 
@@ -984,7 +992,7 @@ void handleAddToTimer(
     void destroyUpdateSave()
     {
         destroy(timer.fiber);
-        timer.fiber = createTimerFiber(plugin, event.channel.name, timer.name);
+        timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
         saveTimers(plugin);
     }
 
@@ -1153,7 +1161,7 @@ void onAnyMessage(TimerPlugin plugin, const IRCEvent event)
     if (!channel)
     {
         // Race...
-        handleSelfjoin(plugin, event.channel.name, force: false);
+        handleSelfjoin(plugin, event.channel, force: false);
         channel = event.channel.name in plugin.channels;
     }
 
@@ -1301,7 +1309,7 @@ void onWelcome(TimerPlugin plugin, const IRCEvent _)
 void onSelfjoin(TimerPlugin plugin, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
-    handleSelfjoin(plugin, event.channel.name, force: false);
+    handleSelfjoin(plugin, event.channel, force: false);
 }
 
 
@@ -1321,17 +1329,17 @@ void onSelfjoin(TimerPlugin plugin, const IRCEvent event)
  +/
 void handleSelfjoin(
     TimerPlugin plugin,
-    const string channelName,
+    const IRCEvent.Channel eventChannel,
     const bool force = false)
 {
-    auto channel = channelName in plugin.channels;
-    auto channelTimers = channelName in plugin.timersByChannel;
+    auto channel = eventChannel.name in plugin.channels;
+    auto channelTimers = eventChannel.name in plugin.timersByChannel;
 
     if (!channel || force)
     {
         // No channel or forcing; create
-        plugin.channels[channelName] = TimerPlugin.Channel(channelName);  // as above
-        if (!channel) channel = channelName in plugin.channels;
+        plugin.channels[eventChannel.name] = TimerPlugin.Channel(eventChannel.name);  // as above
+        if (!channel) channel = eventChannel.name in plugin.channels;
     }
 
     if (channelTimers)
@@ -1346,7 +1354,7 @@ void handleSelfjoin(
             destroy(timer.fiber);
             timer.lastMessageCount = channel.messageCount;
             timer.lastTimestamp = nowInUnix;
-            timer.fiber = createTimerFiber(plugin, channelName, timer.name);
+            timer.fiber = createTimerFiber(plugin, eventChannel, timer.name);
             channel.timerPointers[timer.name] = &timer;  // Will this work in release mode?
         }
 
@@ -1365,12 +1373,12 @@ void handleSelfjoin(
 
     Params:
         plugin = The current [TimerPlugin].
-        channelName = String channel to which the timer belongs.
+        eventChannel = Channel from the [dialect.defs.IRCEvent|IRCEvent].
         name = Timer name, used as inner key in [TimerPlugin.timersByChannel].
  +/
 auto createTimerFiber(
     TimerPlugin plugin,
-    const string channelName,
+    const IRCEvent.Channel eventChannel,
     const string name)
 {
     import kameloso.constants : BufferSize;
@@ -1381,11 +1389,11 @@ auto createTimerFiber(
         import std.datetime.systime : Clock;
 
         // Channel pointer.
-        const channel = channelName in plugin.channels;
-        assert(channel, channelName ~ " not in plugin.channels");
+        const channel = eventChannel.name in plugin.channels;
+        assert(channel, eventChannel.name ~ " not in plugin.channels");
 
-        auto channelTimers = channelName in plugin.timersByChannel;
-        assert(channelTimers, channelName ~ " not in plugin.timersByChannel");
+        auto channelTimers = eventChannel.name in plugin.timersByChannel;
+        assert(channelTimers, eventChannel.name ~ " not in plugin.timersByChannel");
 
         auto timer = name in *channelTimers;
         assert(timer, name ~ " not in *channelTimers");
@@ -1444,7 +1452,7 @@ auto createTimerFiber(
                 message = message
                     .replace("$bot", nameOf(plugin, plugin.state.client.nickname))
                     .replace("$botNickname", plugin.state.client.nickname)
-                    .replace("$channel", channelName[1..$])
+                    .replace("$channel", eventChannel.name[1..$])
                     .replaceRandom();
 
                 version(TwitchSupport)
@@ -1452,11 +1460,21 @@ auto createTimerFiber(
                     if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
                     {
                         message = message
-                            .replace("$streamer", nameOf(plugin, channelName[1..$]))
-                            .replace("$streamerAccount", channelName[1..$]);
+                            .replace("$streamer", nameOf(plugin, eventChannel.name[1..$]))
+                            .replace("$streamerAccount", eventChannel.name[1..$]);
+
+                        if (plugin.timerSettings.useAnnouncements)
+                        {
+                            announce(
+                                plugin.state,
+                                eventChannel,
+                                message);
+                            return;
+                        }
                     }
                 }
-                chan(plugin.state, channelName, message);
+
+                chan(plugin.state, eventChannel.name, message);
             }
 
             updateTimer();
