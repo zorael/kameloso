@@ -52,7 +52,7 @@ private:
 
 import kameloso.plugins : IRCPluginState;
 import kameloso.irccolours : expandIRCTags, stripIRCTags;
-import kameloso.thread : ThreadMessage;
+import kameloso.thread : ThreadMessage, boxed;
 import dialect.defs;
 static import kameloso.common;
 
@@ -179,6 +179,70 @@ unittest
         assert((content == "content"), content);
         //assert(m.properties & Message.Property.fast);
     }
+}
+
+
+// announce
+/++
+    Sends an announcement to a Twitch channel.
+
+    Requires version `TwitchSupport`, without which it will just pass on to [chan].
+
+    Params:
+        state = The current plugin's [kameloso.plugins.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
+        channel = [dialect.defs.IRCEvent.Channel|Channel] in which to send the message.
+        content = Message body content to send.
+        colour = Colour of the announcement, one of "primary", "blue", "green", "orange", "purple".
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
+        caller = String name of the calling function, or something else that gives context.
+
+    See_Also:
+        [chan]
+ +/
+void announce(
+    ref IRCPluginState state,
+    const IRCEvent.Channel channel,
+    const string content,
+    const string colour = "primary",
+    const Message.Property properties = Message.Property.none,
+    const string caller = __FUNCTION__)
+{
+    version(TwitchSupport)
+    {
+        if (state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            import std.algorithm.comparison : among;
+
+            immutable colourArgument = colour.among!("primary", "blue", "green", "orange", "purple") ?
+                colour :
+                "primary";
+
+            Message m;
+
+            m.event.channel = channel;
+            m.event.content = content.stripIRCTags;
+            m.event.aux[0] = colourArgument;
+            m.properties = properties | Message.Property.announcement;
+            m.caller = caller;
+
+            auto messageBox = (properties & Message.Property.priority) ?
+                &state.priorityMessages :
+                &state.messages;
+
+            *messageBox ~= ThreadMessage.busMessage("twitch", boxed(m));
+            return;
+        }
+    }
+
+    // Non-Twitch, fall back to chan
+    chan(
+        state,
+        channel.name,
+        content,
+        properties,
+        caller);
 }
 
 
