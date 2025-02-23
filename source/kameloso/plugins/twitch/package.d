@@ -4523,6 +4523,7 @@ void onBusMessage(
     const string header,
     /*shared*/ Sendable content)
 {
+    import kameloso.constants : BufferSize;
     import kameloso.messaging : Message;
     import kameloso.thread : Boxed;
 
@@ -4537,15 +4538,12 @@ void onBusMessage(
         return;
     }
 
-    if (message.payload.event.type == IRCEvent.Type.QUERY)
+    if (message.payload.properties & Message.Property.whisper)
     {
         plugin.whisperBuffer.put(message.payload);
 
         if (!plugin.transient.whispererRunning)
         {
-            import kameloso.constants : BufferSize;
-            import core.thread.fiber : Fiber;
-
             void whispererDg()
             {
                 import kameloso.plugins.common.scheduling : delay;
@@ -4569,10 +4567,24 @@ void onBusMessage(
             whispererFiber.call();
         }
     }
+    else if (message.payload.properties & Message.Property.announcement)
+    {
+        void sendAnnouncementDg()
+        {
+            sendAnnouncement(
+                plugin,
+                message.payload.event.channel.id,
+                message.payload.event.content,
+                message.payload.event.aux[0]);
+        }
+
+        auto sendAnnouncementFiber = new Fiber(&sendAnnouncementDg, BufferSize.fiberStack);
+        sendAnnouncementFiber.call();
+    }
     else
     {
         import lu.conv : toString;
-        enum pattern = "Unknown message type <l>%s</> sent as TwitchPlugin bus message";
+        enum pattern = "Unknown message properties of <l>%s</> sent as TwitchPlugin bus message";
         logger.errorf(pattern, message.payload.event.type.toString());
     }
 }
