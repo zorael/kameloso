@@ -1455,6 +1455,8 @@ auto createTimerFiber(
                     .replace("$channel", eventChannel.name[1..$])
                     .replaceRandom();
 
+                bool announced;
+
                 version(TwitchSupport)
                 {
                     if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
@@ -1469,12 +1471,15 @@ auto createTimerFiber(
                                 plugin.state,
                                 eventChannel,
                                 message);
-                            return;
+                            announced = true;
                         }
                     }
                 }
 
-                chan(plugin.state, eventChannel.name, message);
+                if (!announced)
+                {
+                    chan(plugin.state, eventChannel.name, message);
+                }
             }
 
             updateTimer();
