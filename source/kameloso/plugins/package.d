@@ -408,7 +408,7 @@ public:
 
     version(Selftests)
     {
-        import std.typecons : Ternary;
+        private import std.typecons : Ternary;
 
         // selftest
         /++
@@ -417,7 +417,6 @@ public:
             See_Also:
                 [kameloso.plugins.Selftester]
          +/
-        version(Selftests)
         Ternary selftest(Selftester) @system;
     }
 }
@@ -2947,9 +2946,7 @@ private:
     import kameloso.thread : ScheduledDelegate, ScheduledFiber, ThreadMessage;
     import lu.container : RehashingAA;
     import std.array : Appender;
-    import std.concurrency : Tid;
     import core.thread.fiber : Fiber;
-    import kameloso.common;
 
     /++
         Numeric ID of the current connection, to disambiguate between multiple
