@@ -564,7 +564,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         {
             thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
             assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-            assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+            assert((thisFiber.payload.type != IRCEvent.Type.UNSET), "Uninitialised payload in carrying fiber");
 
             if (thisFiber.payload.channel.name == channelName) break inner;
 
@@ -1350,7 +1350,7 @@ in (Fiber.getThis(), "Tried to call `cycle` from outside a fiber")
     {
         auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
-        assert((thisFiber.payload != IRCEvent.init), "Uninitialised payload in carrying fiber");
+        assert((thisFiber.payload.type != IRCEvent.Type.UNSET), "Uninitialised payload in carrying fiber");
 
         const partEvent = thisFiber.payload;
 
@@ -1480,7 +1480,7 @@ void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
 
     if (aa.length)
     {
-        if (event == IRCEvent.init)
+        if (event.type == IRCEvent.Type.UNSET)
         {
             import std.json : JSONValue;
             import std.stdio : stdout, writeln;
@@ -1505,7 +1505,7 @@ void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
     {
         enum message = "There are presently no hostmasks defined.";
 
-        if (event == IRCEvent.init)
+        if (event.type == IRCEvent.Type.UNSET)
         {
             logger.info(message);
         }

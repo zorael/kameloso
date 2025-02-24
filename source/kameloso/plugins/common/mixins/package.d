@@ -153,7 +153,7 @@ mixin template WHOISFiberDelegate(
 
         while (true)
         {
-            assert((thisFiber.payload != IRCEvent.init),
+            assert((thisFiber.payload.type != IRCEvent.Type.UNSET),
                 "Uninitialised `payload` in " ~ typeof(thisFiber).stringof);
 
             immutable whoisEvent = thisFiber.payload;

@@ -3285,7 +3285,7 @@ void enqueue(Plugin, Fun)
     const bool inFiber,
     Fun fun,
     const string caller = __FUNCTION__)
-in ((event != IRCEvent.init), "Tried to `enqueue` with an init IRCEvent")
+in ((event.type != IRCEvent.Type.UNSET), "Tried to `enqueue` with an unset IRCEvent")
 in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 {
     import kameloso.constants : Timeout;

@@ -782,7 +782,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
             aa.remove(mask);
             if (!aa.length) aa[examplePlaceholderKey] = examplePlaceholderValue;
 
-            if (event == IRCEvent.init)
+            if (event.type == IRCEvent.Type.UNSET)
             {
                 enum pattern = `Removed hostmask "<l>%s</>".`;
                 logger.infof(pattern, mask);
