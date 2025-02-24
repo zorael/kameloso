@@ -245,6 +245,7 @@ public:
         json["timeThreshold"] = JSONValue(this.timeThreshold);
         json["messageCountStagger"] = JSONValue(this.messageCountStagger);
         json["timeStagger"] = JSONValue(this.timeStagger);
+        json["colour"] = JSONValue(this.colour);
         json["suspended"] = JSONValue(this.suspended);
         json["lines"] = null;
         json["lines"].array = null;
@@ -292,6 +293,9 @@ public:
 
         // Be careful with suspended since it was not in the original JSON scheme
         timer.suspended = json.getOrFallback("suspended", false);
+
+        // Likewise. Use the .init value as fallback
+        timer.colour = json.getOrFallback("colour", timer.colour);
 
         foreach (const lineJSON; json["lines"].array)
         {
