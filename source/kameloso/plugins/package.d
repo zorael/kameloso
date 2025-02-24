@@ -3017,9 +3017,6 @@ public:
      +/
     CoreSettings coreSettings;
 
-    deprecated("Use `IRCPluginState.coreSettings` instead")
-    alias settings = coreSettings;
-
     // connSettings
     /++
         The current program-wide [kameloso.pods.ConnectionSettings|ConnectionSettings].

@@ -62,14 +62,6 @@ KamelosoLogger logger;
 CoreSettings coreSettings;
 
 
-// settings
-/++
-    Deprecated alias to [coreSettings].
- +/
-deprecated("Use `kameloso.common.coreSettings` instead.")
-alias settings = coreSettings;
-
-
 // globalAbort
 /++
     Abort flag.

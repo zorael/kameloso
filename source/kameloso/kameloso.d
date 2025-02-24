@@ -230,13 +230,6 @@ public:
      +/
     CoreSettings* coreSettings;
 
-    // coreSettings
-    /++
-        Deprecated alias to [coreSettings].
-     +/
-    deprecated("Use `Kameloso.coreSettings` instead")
-    alias settings = coreSettings;
-
     // connSettings
     /++
         Settings relating to the connection between the bot and the IRC server.
