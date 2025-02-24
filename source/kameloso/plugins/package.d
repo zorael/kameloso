@@ -784,7 +784,7 @@ mixin template IRCPluginImpl(
                 import std.stdio : stdout, writeln, writefln;
 
                 writeln("-- ", uda.fqn, " @ ", event.type.toString());
-                writeln("   ...channelPolicy (", cast(uint)uda._channelPolicy, ')',
+                writeln("    ...channelPolicy (", cast(uint)uda._channelPolicy, ')',
                     " home:",  cast(bool)(uda._channelPolicy & ChannelPolicy.home),
                     " guest:", cast(bool)(uda._channelPolicy & ChannelPolicy.guest),
                     " any:",   cast(bool)(uda._channelPolicy & ChannelPolicy.any));
@@ -803,7 +803,7 @@ mixin template IRCPluginImpl(
                 {
                     static if (verbose)
                     {
-                        writeln("   ...ignore non-matching channel ", event.channel.name);
+                        writeln("    ...ignore non-matching channel ", event.channel.name);
                         if (state.coreSettings.flush) stdout.flush();
                     }
 
@@ -830,7 +830,7 @@ mixin template IRCPluginImpl(
                 // By process of elimination; not ok
                 static if (verbose)
                 {
-                    writeln("   ...ignore event originating from subchannel ",
+                    writeln("    ...ignore event originating from subchannel ",
                         event.subchannel.name, ':', event.subchannel.id);
                     if (state.coreSettings.flush) stdout.flush();
                 }
@@ -883,7 +883,7 @@ mixin template IRCPluginImpl(
                     {
                         static if (verbose)
                         {
-                            enum pattern = `   ...Command "%s"`;
+                            enum pattern = `    ...Command "%s"`;
                             writefln(pattern, command._word);
                             if (state.coreSettings.flush) stdout.flush();
                         }
@@ -893,7 +893,7 @@ mixin template IRCPluginImpl(
                         {
                             static if (verbose)
                             {
-                                writeln("   ...policy doesn't match; continue next Command");
+                                writeln("    ...policy doesn't match; continue next Command");
                                 if (state.coreSettings.flush) stdout.flush();
                             }
 
@@ -918,7 +918,7 @@ mixin template IRCPluginImpl(
                         {
                             static if (verbose)
                             {
-                                writeln("   ...command word matches!");
+                                writeln("    ...command word matches!");
                                 if (state.coreSettings.flush) stdout.flush();
                             }
 
@@ -947,7 +947,7 @@ mixin template IRCPluginImpl(
 
                             static if (verbose)
                             {
-                                enum pattern = `   ...Regex r"%s"`;
+                                enum pattern = `    ...Regex r"%s"`;
                                 writefln(pattern, regex._expression);
                                 if (state.coreSettings.flush) stdout.flush();
                             }
@@ -956,7 +956,7 @@ mixin template IRCPluginImpl(
                             {
                                 static if (verbose)
                                 {
-                                    writeln("   ...policy doesn't match; continue next Regex");
+                                    writeln("    ...policy doesn't match; continue next Regex");
                                     if (state.coreSettings.flush) stdout.flush();
                                 }
 
@@ -972,7 +972,7 @@ mixin template IRCPluginImpl(
                                 {
                                     static if (verbose)
                                     {
-                                        writeln("   ...expression matches!");
+                                        writeln("    ...expression matches!");
                                         if (state.coreSettings.flush) stdout.flush();
                                     }
 
@@ -985,7 +985,7 @@ mixin template IRCPluginImpl(
                                 {
                                     static if (verbose)
                                     {
-                                        enum matchPattern = `   ...matching "%s" against expression "%s" failed.`;
+                                        enum matchPattern = `    ...matching "%s" against expression "%s" failed.`;
                                         writefln(matchPattern, event.content, regex._expression);
                                         if (state.coreSettings.flush) stdout.flush();
                                     }
@@ -995,7 +995,7 @@ mixin template IRCPluginImpl(
                             {
                                 static if (verbose)
                                 {
-                                    writeln("   ...Regex exception: ", e.msg);
+                                    writeln("    ...Regex exception: ", e.msg);
                                     version(PrintStacktraces) writeln(e);
                                     if (state.coreSettings.flush) stdout.flush();
                                 }
@@ -1010,7 +1010,7 @@ mixin template IRCPluginImpl(
                     {
                         static if (verbose)
                         {
-                            writeln("   ...observer mode; skip");
+                            writeln("    ...observer mode; skip");
                             if (state.coreSettings.flush) stdout.flush();
                         }
 
@@ -1024,7 +1024,7 @@ mixin template IRCPluginImpl(
                     // {Command,Regex} exist implicitly but neither matched; skip
                     static if (verbose)
                     {
-                        writeln("   ...no Command nor Regex match; continue funloop");
+                        writeln("    ...no Command nor Regex match; continue funloop");
                         if (state.coreSettings.flush) stdout.flush();
                     }
 
@@ -1036,7 +1036,7 @@ mixin template IRCPluginImpl(
             {
                 static if (verbose)
                 {
-                    writeln("   ...Permissions.",
+                    writeln("    ...requires Permissions.",
                         uda._permissionsRequired.toString());
                     if (state.coreSettings.flush) stdout.flush();
                 }
@@ -1045,7 +1045,7 @@ mixin template IRCPluginImpl(
 
                 static if (verbose)
                 {
-                    writeln("   ...allow result is ", result.toString());
+                    writeln("    ...allow result is ", result.toString());
                     if (state.coreSettings.flush) stdout.flush();
                 }
 
@@ -1061,7 +1061,7 @@ mixin template IRCPluginImpl(
 
                     static if (verbose)
                     {
-                        enum pattern = "   ...%s WHOIS";
+                        enum pattern = "    ...%s WHOIS";
                         writefln(pattern, typeof(this).stringof);
                         if (state.coreSettings.flush) stdout.flush();
                     }
@@ -1096,7 +1096,7 @@ mixin template IRCPluginImpl(
 
             static if (verbose)
             {
-                writeln("   ...calling!");
+                writeln("    ...calling!");
                 if (state.coreSettings.flush) stdout.flush();
             }
 
@@ -2294,7 +2294,7 @@ auto prefixPolicyMatches(bool verbose)
     {
         import lu.conv : toString;
         import std.stdio : writefln, writeln;
-        writeln("...prefixPolicyMatches invoked! policy:", policy.toString());
+        writeln("    ...prefixPolicyMatches invoked! policy:", policy.toString());
     }
 
     bool strippedDisplayName;
@@ -2305,7 +2305,7 @@ auto prefixPolicyMatches(bool verbose)
     case direct:
         static if (verbose)
         {
-            writeln("    ...as such, just passes.");
+            writeln("        ...as such, just passes.");
         }
         return true;
 
@@ -2314,7 +2314,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("    ...but no prefix defined; defer to nickname case.");
+                writeln("        ...but no prefix defined; defer to nickname case.");
             }
             goto case nickname;
         }
@@ -2322,7 +2322,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                enum pattern = "    ...does start with prefix (%s)";
+                enum pattern = "        ...does start with prefix (%s)";
                 writefln(pattern, state.coreSettings.prefix);
             }
             event.content = event.content[state.coreSettings.prefix.length..$];
@@ -2331,7 +2331,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("    ...did not start with prefix but falling back to nickname check");
+                writeln("        ...did not start with prefix but falling back to nickname check");
             }
             goto case nickname;
         }
@@ -2342,7 +2342,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("    ...stripped away prepended '@'");
+                writeln("        ...stripped away prepended '@'");
             }
 
             // Using @name to refer to someone is not
@@ -2358,7 +2358,7 @@ auto prefixPolicyMatches(bool verbose)
             {
                 static if (verbose)
                 {
-                    writeln("    ...begins with displayName! stripping it");
+                    writeln("        ...begins with displayName! stripping it");
                 }
 
                 event.content = event.content
@@ -2368,7 +2368,7 @@ auto prefixPolicyMatches(bool verbose)
                 {
                     static if (verbose)
                     {
-                        enum pattern = "        ...further starts with prefix (%s)";
+                        enum pattern = "            ...further starts with prefix (%s)";
                         writefln(pattern, state.coreSettings.prefix);
                     }
                     event.content = event.content[state.coreSettings.prefix.length..$];
@@ -2387,7 +2387,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("    ...content begins with nickname! stripping it");
+                writeln("        ...content begins with nickname! stripping it");
             }
 
             event.content = event.content
@@ -2397,7 +2397,7 @@ auto prefixPolicyMatches(bool verbose)
             {
                 static if (verbose)
                 {
-                    enum pattern = "        ...further starts with prefix (%s)";
+                    enum pattern = "            ...further starts with prefix (%s)";
                     writefln(pattern, state.coreSettings.prefix);
                 }
 
@@ -2417,7 +2417,7 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writeln("    ...nickname required but not present; returning false.");
+                writeln("    ..nickname required but not present; returning false.");
             }
             return false;
         }
@@ -2467,10 +2467,10 @@ auto filterSender(bool verbose = false)
         import lu.conv : toString;
         import std.stdio : writeln;
 
-        writeln("filterSender of ", event.sender.nickname);
-        writeln("...permissions:", permissionsRequired.toString());
-        writeln("...account:", event.sender.account);
-        writeln("...class:", event.sender.class_.toString());
+        writeln("...filterSender of ", event.sender.nickname);
+        writeln("    ...permissions:", permissionsRequired.toString());
+        writeln("    ...account:", event.sender.account);
+        writeln("    ...class:", event.sender.class_.toString());
     }
 
     if (permissionsRequired == Permissions.ignore)
@@ -2499,8 +2499,8 @@ auto filterSender(bool verbose = false)
 
     static if (verbose)
     {
-        writeln("...timediff:", timediff);
-        writeln("...whoisExpired:", whoisExpired);
+        writeln("    ...timediff:", timediff);
+        writeln("    ...whoisExpired:", whoisExpired);
     }
 
     if (event.sender.account.length)
@@ -2521,7 +2521,7 @@ auto filterSender(bool verbose = false)
     {
         immutable isLogoutEvent = (event.type == IRCEvent.Type.ACCOUNT);
 
-        static if (verbose) writeln("...isLogoutEvent:", isLogoutEvent);
+        static if (verbose) writeln("    ...isLogoutEvent:", isLogoutEvent);
 
         with (Permissions)
         final switch (permissionsRequired)
@@ -2536,7 +2536,7 @@ auto filterSender(bool verbose = false)
             immutable verdict = (whoisExpired && !isLogoutEvent) ?
                 FilterResult.whois :
                 FilterResult.fail;
-            static if (verbose) writeln(verdict.toString());
+            static if (verbose) writeln("...filterSenderImpl verdict:", verdict.toString());
             return verdict;
 
         case anyone:
@@ -2544,7 +2544,7 @@ auto filterSender(bool verbose = false)
             immutable verdict = (whoisExpired && !isLogoutEvent) ?
                 FilterResult.whois :
                 FilterResult.pass;
-            static if (verbose) writeln(verdict.toString());
+            static if (verbose) writeln("...filterSenderImpl verdict:", verdict.toString());
             return verdict;
 
         case ignore:
