@@ -651,7 +651,7 @@ public:
                 foreach (ref scheduledFiber; plugin.state.scheduledFibers)
                 {
                     // All fibers should be at HOLD state but be conservative
-                    if (scheduledFiber.fiber.state != Fiber.State.EXEC)
+                    if (scheduledFiber.fiber && (scheduledFiber.fiber.state != Fiber.State.EXEC))
                     {
                         destroy(scheduledFiber.fiber);
                         scheduledFiber.fiber = null;
@@ -668,12 +668,12 @@ public:
 
                 plugin.state.scheduledDelegates = null;
 
-                foreach (immutable type, ref fibersForType; plugin.state.awaitingFibers)
+                foreach (ref fibersForType; plugin.state.awaitingFibers)
                 {
                     foreach (ref fiber; fibersForType)
                     {
                         // As above
-                        if (fiber.state != Fiber.State.EXEC)
+                        if (fiber && (fiber.state != Fiber.State.EXEC))
                         {
                             destroy(fiber);
                             fiber = null;
@@ -683,7 +683,7 @@ public:
 
                 plugin.state.awaitingFibers = null;
 
-                foreach (immutable type, ref dgsForType; plugin.state.awaitingDelegates)
+                foreach (ref dgsForType; plugin.state.awaitingDelegates)
                 {
                     foreach (ref dg; dgsForType)
                     {
