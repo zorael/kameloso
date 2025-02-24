@@ -272,7 +272,7 @@ unittest
     mode(state, "#channel", "+ov", "mydude");
     immutable m = state.outgoingMessages[][0];
 
-    assert((m.event.type == IRCEvent.Type.MODE), m.event.type.toString());
+    assert((m.event.type == IRCEvent.Type.MODE), m.event.type.toString);
     assert((m.event.channel.name == "#channel"), m.event.channel.name);
     assert((m.event.aux[0] == "+ov"), m.event.aux[0]);
     assert((m.event.content == "mydude"), m.event.content);

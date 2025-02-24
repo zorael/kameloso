@@ -179,7 +179,7 @@ void onCommandWhoami(AdminPlugin plugin, const IRCEvent event)
             event.sender.nickname,
             account,
             event.sender.hostmask,
-            event.sender.class_.toString(),
+            event.sender.class_.toString,
             event.channel.name);
     }
     else
@@ -189,7 +189,7 @@ void onCommandWhoami(AdminPlugin plugin, const IRCEvent event)
             event.sender.nickname,
             account,
             event.sender.hostmask,
-            event.sender.class_.toString());
+            event.sender.class_.toString);
     }
 
     privmsg(plugin.state, event.channel.name, event.sender.nickname, message);

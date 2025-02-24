@@ -1171,7 +1171,7 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
 
     foreach (const class_; classes[])
     {
-        immutable list = class_.toString();
+        immutable list = class_.toString;
         const listFromJSON = list in json;
 
         if (!listFromJSON)

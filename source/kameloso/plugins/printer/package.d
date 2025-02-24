@@ -643,7 +643,7 @@ void onISUPPORT(PrinterPlugin plugin, const IRCEvent _)
     logger.logf(
         pattern,
         plugin.state.server.network,
-        plugin.state.server.daemon.toString(),
+        plugin.state.server.daemon.toString,
         plugin.state.server.daemonstring);
 
     plugin.transient.printedISUPPORT = true;

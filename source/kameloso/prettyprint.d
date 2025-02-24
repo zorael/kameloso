@@ -1242,9 +1242,9 @@ private auto prettyformatImpl(
                 {
                     import lu.conv : toString;
 
-                    static if (__traits(compiles, content.toString()))
+                    static if (__traits(compiles, content.toString))
                     {
-                        args.value = content.toString();
+                        args.value = content.toString;
                     }
                     else
                     {

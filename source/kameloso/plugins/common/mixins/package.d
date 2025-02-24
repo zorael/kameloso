@@ -160,7 +160,7 @@ mixin template WHOISFiberDelegate(
 
             assert(whoisEventTypes[].canFind(whoisEvent.type),
                 "WHOIS fiber delegate was invoked with an unexpected event type: " ~
-                "`IRCEvent.Type." ~ whoisEvent.type.toString() ~'`');
+                "`IRCEvent.Type." ~ whoisEvent.type.toString ~'`');
 
             /++
                 Invoke `onSuccess`.

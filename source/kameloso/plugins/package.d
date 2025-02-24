@@ -783,7 +783,7 @@ mixin template IRCPluginImpl(
                 import lu.conv : toString;
                 import std.stdio : stdout, writeln, writefln;
 
-                writeln("-- ", uda.fqn, " @ ", event.type.toString());
+                writeln("-- ", uda.fqn, " @ ", event.type.toString);
                 writeln("    ...channelPolicy (", cast(uint)uda._channelPolicy, ')',
                     " home:",  cast(bool)(uda._channelPolicy & ChannelPolicy.home),
                     " guest:", cast(bool)(uda._channelPolicy & ChannelPolicy.guest),
@@ -1037,7 +1037,7 @@ mixin template IRCPluginImpl(
                 static if (verbose)
                 {
                     writeln("    ...requires Permissions.",
-                        uda._permissionsRequired.toString());
+                        uda._permissionsRequired.toString);
                     if (state.coreSettings.flush) stdout.flush();
                 }
 
@@ -1045,7 +1045,7 @@ mixin template IRCPluginImpl(
 
                 static if (verbose)
                 {
-                    writeln("    ...allow result is ", result.toString());
+                    writeln("    ...allow result is ", result.toString);
                     if (state.coreSettings.flush) stdout.flush();
                 }
 
@@ -2294,7 +2294,7 @@ auto prefixPolicyMatches(bool verbose)
     {
         import lu.conv : toString;
         import std.stdio : writefln, writeln;
-        writeln("    ...prefixPolicyMatches invoked! policy:", policy.toString());
+        writeln("    ...prefixPolicyMatches invoked! policy:", policy.toString);
     }
 
     bool strippedDisplayName;
@@ -2468,9 +2468,9 @@ auto filterSender(bool verbose = false)
         import std.stdio : writeln;
 
         writeln("...filterSender of ", event.sender.nickname);
-        writeln("    ...permissions:", permissionsRequired.toString());
+        writeln("    ...permissions:", permissionsRequired.toString);
         writeln("    ...account:", event.sender.account);
-        writeln("    ...class:", event.sender.class_.toString());
+        writeln("    ...class:", event.sender.class_.toString);
     }
 
     if (permissionsRequired == Permissions.ignore)
@@ -2512,7 +2512,7 @@ auto filterSender(bool verbose = false)
 
         static if (verbose)
         {
-            writeln("...filterSenderImpl verdict:", verdict.toString());
+            writeln("...filterSenderImpl verdict:", verdict.toString);
         }
 
         return verdict;
@@ -2536,7 +2536,7 @@ auto filterSender(bool verbose = false)
             immutable verdict = (whoisExpired && !isLogoutEvent) ?
                 FilterResult.whois :
                 FilterResult.fail;
-            static if (verbose) writeln("...filterSenderImpl verdict:", verdict.toString());
+            static if (verbose) writeln("...filterSenderImpl verdict:", verdict.toString);
             return verdict;
 
         case anyone:
@@ -2544,7 +2544,7 @@ auto filterSender(bool verbose = false)
             immutable verdict = (whoisExpired && !isLogoutEvent) ?
                 FilterResult.whois :
                 FilterResult.pass;
-            static if (verbose) writeln("...filterSenderImpl verdict:", verdict.toString());
+            static if (verbose) writeln("...filterSenderImpl verdict:", verdict.toString);
             return verdict;
 
         case ignore:
@@ -2807,7 +2807,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
                     "same time accepting non-message `IRCEvent.Type.%s events`";
                 immutable message = pattern.format(
                     uda.fqn,
-                    type.toString());
+                    type.toString);
                 assert(0, message);
             }
         }
@@ -3421,10 +3421,10 @@ private auto replay(Plugin, Fun)
             logger.logf(
                 pattern,
                 plugin.name,
-                replay.permissionsRequired.toString(),
+                replay.permissionsRequired.toString,
                 caller,
                 replay.event.sender.nickname,
-                replay.event.sender.class_.toString());
+                replay.event.sender.class_.toString);
         }
 
         version(ExplainReplay)
@@ -3442,10 +3442,10 @@ private auto replay(Plugin, Fun)
             logger.logf(
                 pattern,
                 plugin.name,
-                replay.permissionsRequired.toString(),
+                replay.permissionsRequired.toString,
                 caller,
                 replay.event.sender.nickname,
-                replay.event.sender.class_.toString());
+                replay.event.sender.class_.toString);
         }
 
         with (Permissions)
@@ -4576,7 +4576,7 @@ void memoryCorruptionCheckImpl(
         import lu.conv : toString;
         enum pattern = "[memoryCorruptionCheck] Event handler `%s` was called " ~
             "with an unexpected event type: `%s`";
-        writefln(pattern, functionName, event.type.toString());
+        writefln(pattern, functionName, event.type.toString);
         assertionFailed = true;
     }
 

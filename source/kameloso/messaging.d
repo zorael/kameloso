@@ -174,7 +174,7 @@ unittest
     immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
-        assert((type == IRCEvent.Type.CHAN), type.toString());
+        assert((type == IRCEvent.Type.CHAN), type.toString);
         assert((channel.name == "#channel"), channel.name);
         assert((content == "content"), content);
         //assert(m.properties & Message.Property.fast);
@@ -352,7 +352,7 @@ in (event.channel.name.length, "Tried to reply to a channel message but no chann
         {
             import lu.conv : toString;
             enum pattern = "Tried to <l>reply</> to an event of an unsupported type: <l>%s";
-            logger.errorf(pattern, event.type.toString());
+            logger.errorf(pattern, event.type.toString);
         }
     }
     else
@@ -380,7 +380,7 @@ unittest
     immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
-        assert((type == IRCEvent.Type.CHAN), type.toString());
+        assert((type == IRCEvent.Type.CHAN), type.toString);
         assert((content == "reply content"), content);
         assert((tags == "reply-parent-msg-id=some-reply-id"), tags);
         assert((m.properties == Message.Property.init));
@@ -441,7 +441,7 @@ unittest
     immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
-        assert((type == IRCEvent.Type.QUERY), type.toString());
+        assert((type == IRCEvent.Type.QUERY), type.toString);
         assert((target.nickname == "kameloso"), target.nickname);
         assert((content == "content"), content);
         assert((m.properties == Message.Property.init));
@@ -504,7 +504,7 @@ unittest
         immutable m = state.outgoingMessages[][0];
         with (m.event)
         {
-            assert((type == IRCEvent.Type.CHAN), type.toString());
+            assert((type == IRCEvent.Type.CHAN), type.toString);
             assert((channel.name == "#channel"), channel.name);
             assert((content == "content"), content);
             assert(!target.nickname.length, target.nickname);
@@ -519,7 +519,7 @@ unittest
         immutable m = state.outgoingMessages[][0];
         with (m.event)
         {
-            assert((type == IRCEvent.Type.QUERY), type.toString());
+            assert((type == IRCEvent.Type.QUERY), type.toString);
             assert(!channel.name.length, channel.name);
             assert((target.nickname == "kameloso"), target.nickname);
             assert((content == "content"), content);
@@ -594,7 +594,7 @@ unittest
         immutable m = state.outgoingMessages[][0];
         with (m.event)
         {
-            assert((type == IRCEvent.Type.EMOTE), type.toString());
+            assert((type == IRCEvent.Type.EMOTE), type.toString);
             assert((channel.name == "#channel"), channel.name);
             assert((content == "content"), content);
             assert(!target.nickname.length, target.nickname);
@@ -609,7 +609,7 @@ unittest
         immutable m = state.outgoingMessages[][0];
         with (m.event)
         {
-            assert((type == IRCEvent.Type.EMOTE), type.toString());
+            assert((type == IRCEvent.Type.EMOTE), type.toString);
             assert(!channel.name.length, channel.name);
             assert((target.nickname == "kameloso"), target.nickname);
             assert((content == "content"), content);
@@ -666,7 +666,7 @@ unittest
     immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
-        assert((type == IRCEvent.Type.MODE), type.toString());
+        assert((type == IRCEvent.Type.MODE), type.toString);
         assert((channel.name == "#channel"), channel.name);
         assert((content == "content"), content);
         assert((aux[0] == "+o"), aux[0]);
@@ -717,7 +717,7 @@ unittest
     immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
-        assert((type == IRCEvent.Type.TOPIC), type.toString());
+        assert((type == IRCEvent.Type.TOPIC), type.toString);
         assert((channel.name == "#channel"), channel.name);
         assert((content == "content"), content);
         assert(m.properties == Message.Property.init);
@@ -768,7 +768,7 @@ unittest
     immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
-        assert((type == IRCEvent.Type.INVITE), type.toString());
+        assert((type == IRCEvent.Type.INVITE), type.toString);
         assert((channel.name == "#channel"), channel.name);
         assert((target.nickname == "kameloso"), target.nickname);
         assert(m.properties == Message.Property.init);
@@ -818,7 +818,7 @@ unittest
     immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
-        assert((type == IRCEvent.Type.JOIN), type.toString());
+        assert((type == IRCEvent.Type.JOIN), type.toString);
         assert((channel.name == "#channel"), channel.name);
         assert(m.properties == Message.Property.init);
     }
@@ -871,7 +871,7 @@ unittest
     immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
-        assert((type == IRCEvent.Type.KICK), type.toString());
+        assert((type == IRCEvent.Type.KICK), type.toString);
         assert((channel.name == "#channel"), channel.name);
         assert((content == "content"), content);
         assert((target.nickname == "kameloso"), target.nickname);
@@ -922,7 +922,7 @@ unittest
     immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
-        assert((type == IRCEvent.Type.PART), type.toString());
+        assert((type == IRCEvent.Type.PART), type.toString);
         assert((channel.name == "#channel"), channel.name);
         assert((content == "reason"), content);
         assert(m.properties == Message.Property.init);
@@ -969,7 +969,7 @@ unittest
     immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
-        assert((type == IRCEvent.Type.QUIT), type.toString());
+        assert((type == IRCEvent.Type.QUIT), type.toString);
         assert((content == "reason"), content);
         assert(m.caller.length);
         assert(m.properties & (Message.Property.forced | Message.Property.priority | Message.Property.quiet));
@@ -1034,7 +1034,7 @@ unittest
     immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
-        assert((type == IRCEvent.Type.RPL_WHOISACCOUNT), type.toString());
+        assert((type == IRCEvent.Type.RPL_WHOISACCOUNT), type.toString);
         assert((target.nickname == "kameloso"), target.nickname);
         assert(m.properties & Message.Property.forced);
     }
@@ -1084,7 +1084,7 @@ unittest
     immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
-        assert((type == IRCEvent.Type.UNSET), type.toString());
+        assert((type == IRCEvent.Type.UNSET), type.toString);
         assert((content == "commands"), content);
         assert(m.properties == Message.Property.init);
     }
@@ -1135,7 +1135,7 @@ unittest
     immutable m = state.outgoingMessages[][0];
     with (m.event)
     {
-        assert((type == IRCEvent.Type.UNSET), type.toString());
+        assert((type == IRCEvent.Type.UNSET), type.toString);
         assert((content == "commands"), content);
         assert(m.properties & Message.Property.immediate);
     }
@@ -1243,7 +1243,7 @@ unittest
     {
         foreach (const message; state.messages[])
         {
-            assert((message.type == expectedLevels[i]), message.type.toString());
+            assert((message.type == expectedLevels[i]), message.type.toString);
             assert((message.content == expectedMessages[i]), message.content);
         }
     }

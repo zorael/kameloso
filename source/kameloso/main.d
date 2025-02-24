@@ -445,7 +445,7 @@ auto processMessages(
         case teardown:
             import lu.conv : toString;
             enum pattern = "onThreadMessage received unexpected message type: <l>%s";
-            logger.errorf(pattern, message.type.toString());
+            logger.errorf(pattern, message.type.toString);
             break;
         }
     }
@@ -675,7 +675,7 @@ auto processMessages(
             import lu.conv : toString;
             // Using toString here is not necessary but lowers compilation memory usage
             logger.error("<l>processMessages</>.<l>eventToServer</> missing case " ~
-                "for outgoing event type <l>", m.event.type.toString());
+                "for outgoing event type <l>", m.event.type.toString);
             break;
         }
 
@@ -1169,7 +1169,7 @@ auto mainLoop(Kameloso instance)
 
                 immutable message = text(
                     "`listenAttemptToNext` returned `",
-                    actionAfterListen.toString(),
+                    actionAfterListen.toString,
                     "`");
                 assert(0, message);
             }
@@ -1403,7 +1403,7 @@ auto listenAttemptToNext(Kameloso instance, const ListenAttempt attempt)
         import lu.conv : toString;
         import std.conv : text;
 
-        immutable message = text("listener yielded `", attempt.state.toString(), "` state");
+        immutable message = text("listener yielded `", attempt.state.toString, "` state");
         assert(0, message);
     }
 }
@@ -1846,7 +1846,7 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
                                 pattern,
                                 plugin.name,
                                 i,
-                                event.type.toString(),
+                                event.type.toString,
                                 carryingFiber.creator,
                                 carryingFiber.called+1);
                         }
@@ -1874,7 +1874,7 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
                                 pattern,
                                 plugin.name,
                                 i,
-                                event.type.toString());
+                                event.type.toString);
                         }
 
                         fiber.call();
@@ -1939,7 +1939,7 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
                             pattern,
                             plugin.name,
                             i,
-                            carryingFiber.payload.type.toString(),
+                            carryingFiber.payload.type.toString,
                             carryingFiber.creator);
                     }
                     else
@@ -3763,7 +3763,7 @@ auto startBot(Kameloso instance)
         case crash:  // ...
             import lu.conv : toString;
             import std.conv : text;
-            assert(0, text("`tryResolve` returned `", actionAfterResolve.toString(), "`"));
+            assert(0, text("`tryResolve` returned `", actionAfterResolve.toString, "`"));
         }
 
         /+
@@ -3848,7 +3848,7 @@ auto startBot(Kameloso instance)
         case crash:  // ...
             import lu.conv : toString;
             import std.conv : text;
-            assert(0, text("`tryConnect` returned `", actionAfterConnect.toString(), "`"));
+            assert(0, text("`tryConnect` returned `", actionAfterConnect.toString, "`"));
         }
 
         // Reinit with its own server.
@@ -4308,7 +4308,7 @@ auto checkInitialisationMessages(
                 "received unexpected message type: <t>%s";
             logger.errorf(
                 pattern,
-                message.type.toString());
+                message.type.toString);
             success = false;
             break;
         }
@@ -4451,7 +4451,7 @@ auto run(string[] args)
     case crash:  // ...
         import lu.conv : toString;
         import std.conv : text;
-        assert(0, text("`tryGetopt` returned `", actionAfterGetopt.toString(), "`"));
+        assert(0, text("`tryGetopt` returned `", actionAfterGetopt.toString, "`"));
     }
 
     if (!instance.coreSettings.headless || instance.coreSettings.force)
@@ -4532,7 +4532,7 @@ auto run(string[] args)
     case crash:  // ...
         import lu.conv : toString;
         import std.conv : text;
-        assert(0, text("`verifySettings` returned `", actionAfterVerification.toString(), "`"));
+        assert(0, text("`verifySettings` returned `", actionAfterVerification.toString, "`"));
     }
 
     // Resolve resource and private key/certificate paths.

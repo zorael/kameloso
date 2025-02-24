@@ -267,9 +267,9 @@ public:
         static foreach (const lv; EnumMembers!LogLevel)
         {
             mixin(
-"auto " ~ lv.toString() ~ "tint() const pure @safe nothrow @nogc
+"auto " ~ lv.toString ~ "tint() const pure @safe nothrow @nogc
 {
-    return tintImpl!(LogLevel." ~ lv.toString() ~ ");
+    return tintImpl!(LogLevel." ~ lv.toString ~ ");
 }");
         }
 
@@ -302,7 +302,7 @@ public:
         {
             static if (lv != LogLevel.off)
             {
-                mixin("alias " ~ lv.toString() ~ "tint = offtint;");
+                mixin("alias " ~ lv.toString ~ "tint = offtint;");
             }
         }
 
@@ -415,10 +415,10 @@ public:
             {
                 import lu.conv : toString;
 
-                static if (__traits(compiles, arg.toString()))
+                static if (__traits(compiles, arg.toString))
                 {
                     // Preferable
-                    messagebuffer.put(arg.toString());
+                    messagebuffer.put(arg.toString);
                 }
                 else
                 {
@@ -561,21 +561,21 @@ public:
     static foreach (const lv; EnumMembers!LogLevel)
     {
         mixin(
-"void " ~ lv.toString() ~ "(Args...)(auto ref Args args)
+"void " ~ lv.toString ~ "(Args...)(auto ref Args args)
 {
-    if (!headless) printImpl(LogLevel." ~ lv.toString() ~ ", args);
+    if (!headless) printImpl(LogLevel." ~ lv.toString ~ ", args);
     " ~ ((lv == LogLevel.fatal) ? fatalErrorMixin : string.init) ~ "
 }
 
-void " ~ lv.toString() ~ "f(Args...)(const string pattern, auto ref Args args)
+void " ~ lv.toString ~ "f(Args...)(const string pattern, auto ref Args args)
 {
-    if (!headless) printfImpl(LogLevel." ~ lv.toString() ~ ", pattern, args);
+    if (!headless) printfImpl(LogLevel." ~ lv.toString ~ ", pattern, args);
     " ~ ((lv == LogLevel.fatal) ? fatalErrorMixin : string.init) ~ "
 }
 
-void " ~ lv.toString() ~ "f(string pattern, Args...)(auto ref Args args)
+void " ~ lv.toString ~ "f(string pattern, Args...)(auto ref Args args)
 {
-    if (!headless) printfImpl!pattern(LogLevel." ~ lv.toString() ~ ", args);
+    if (!headless) printfImpl!pattern(LogLevel." ~ lv.toString ~ ", args);
     " ~ ((lv == LogLevel.fatal) ? fatalErrorMixin : string.init) ~ "
 }");
     }

@@ -467,7 +467,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         enum tracePattern = "%s: <i>%s<t> (%s)";
         logger.tracef(
             tracePattern,
-            verb.toString(),
+            verb.toString,
             url,
             caller);
     }

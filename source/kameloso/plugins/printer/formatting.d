@@ -115,10 +115,10 @@ void put(Flag!"colours" colours = No.colours, Sink, Args...)
         {
             import lu.conv : toString;
 
-            static if (__traits(compiles, arg.toString()))
+            static if (__traits(compiles, arg.toString))
             {
                 // Preferable
-                sink.put(arg.toString());
+                sink.put(arg.toString);
             }
             else
             {
@@ -218,7 +218,7 @@ void formatMessageMonochrome(Sink)
 
         sink.put("] [");
 
-        immutable typestring = event.type.toString().withoutTypePrefix;
+        immutable typestring = event.type.toString.withoutTypePrefix;
 
         if (plugin.printerSettings.uppercaseTypes)
         {
@@ -926,7 +926,7 @@ void formatMessageColoured(Sink)
         import std.datetime : DateTime;
         import std.datetime.systime : SysTime;
 
-        immutable rawTypestring = event.type.toString();
+        immutable rawTypestring = event.type.toString;
         immutable typestring = rawTypestring.withoutTypePrefix;
         immutable timestampCode = plugin.state.coreSettings.brightTerminal ? Timestamp.bright : Timestamp.dark;
 

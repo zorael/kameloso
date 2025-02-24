@@ -2072,7 +2072,7 @@ void onCommandEndPoll(TwitchPlugin plugin, const IRCEvent event)
             import std.format : format;
 
             enum pattern = "Poll ended; status %s";
-            immutable message = pattern.format(endedPoll.status.toString());
+            immutable message = pattern.format(endedPoll.status.toString);
             chan(plugin.state, event.channel.name, message);
         }
         else
@@ -3727,7 +3727,7 @@ unittest
         immutable changed = promoteUserFromBadges(class_, badges, false, false);
         assert(changed);
         enum expected = IRCUser.Class.registered;
-        assert((class_ == expected), class_.toString());
+        assert((class_ == expected), class_.toString);
     }
     {
         enum badges = "premium/1";
@@ -3735,7 +3735,7 @@ unittest
         immutable changed = promoteUserFromBadges(class_, badges, false, false);
         assert(!changed);
         enum expected = IRCUser.Class.anyone;
-        assert((class_ == expected), class_.toString());
+        assert((class_ == expected), class_.toString);
     }
     {
         enum badges = "subscriber/12,vip/1";
@@ -3743,7 +3743,7 @@ unittest
         immutable changed = promoteUserFromBadges(class_, badges, false, false);
         assert(changed);
         enum expected = IRCUser.Class.registered;  // because promoteVIPs false
-        assert((class_ == expected), class_.toString());
+        assert((class_ == expected), class_.toString);
     }
     {
         enum badges = "subscriber/12,vip/1";
@@ -3751,7 +3751,7 @@ unittest
         immutable changed = promoteUserFromBadges(class_, badges, true, true);
         assert(changed);
         enum expected = IRCUser.Class.elevated;
-        assert((class_ == expected), class_.toString());
+        assert((class_ == expected), class_.toString);
     }
     {
         enum badges = "moderator/1,subscriber/3012";
@@ -3759,7 +3759,7 @@ unittest
         immutable changed = promoteUserFromBadges(class_, badges, true, true);
         assert(changed);
         enum expected = IRCUser.Class.operator;
-        assert((class_ == expected), class_.toString());
+        assert((class_ == expected), class_.toString);
     }
     {
         enum badges = "moderator/1,subscriber/3012";
@@ -3767,7 +3767,7 @@ unittest
         immutable changed = promoteUserFromBadges(class_, badges, false, true);
         assert(changed);
         enum expected = IRCUser.Class.registered;
-        assert((class_ == expected), class_.toString());
+        assert((class_ == expected), class_.toString);
     }
     {
         enum badges = "broadcaster/1,subscriber/12,partner/1";
@@ -3775,7 +3775,7 @@ unittest
         immutable changed = promoteUserFromBadges(class_, badges, false, true);
         assert(changed);
         enum expected = IRCUser.Class.registered;  // not staff because broadcasters are identified elsewhere
-        assert((class_ == expected), class_.toString());
+        assert((class_ == expected), class_.toString);
     }
     {
         enum badges = "moderator/1";  // no comma splitter test
@@ -3783,7 +3783,7 @@ unittest
         immutable changed = promoteUserFromBadges(class_, badges, true, true);
         assert(changed);
         enum expected = IRCUser.Class.operator;
-        assert((class_ == expected), class_.toString());
+        assert((class_ == expected), class_.toString);
     }
     {
         enum badges = "subscriber/1";
@@ -3791,7 +3791,7 @@ unittest
         immutable changed = promoteUserFromBadges(class_, badges, true, true);
         assert(!changed);
         enum expected = IRCUser.Class.operator;
-        assert((class_ == expected), class_.toString());
+        assert((class_ == expected), class_.toString);
     }
     {
         enum badges = string.init;
@@ -3799,7 +3799,7 @@ unittest
         immutable changed = promoteUserFromBadges(class_, badges, true, true);
         assert(!changed);
         enum expected = IRCUser.Class.staff;
-        assert((class_ == expected), class_.toString());
+        assert((class_ == expected), class_.toString);
     }
     {
         enum badges = string.init;
@@ -3807,7 +3807,7 @@ unittest
         immutable changed = promoteUserFromBadges(class_, badges, false, false);
         assert(!changed);
         enum expected = IRCUser.Class.anyone;
-        assert((class_ == expected), class_.toString());
+        assert((class_ == expected), class_.toString);
     }
 }
 
@@ -4585,7 +4585,7 @@ void onBusMessage(
     {
         import lu.conv : toString;
         enum pattern = "Unknown message properties of <l>%s</> sent as TwitchPlugin bus message";
-        logger.errorf(pattern, message.payload.event.type.toString());
+        logger.errorf(pattern, message.payload.event.type.toString);
     }
 }
 

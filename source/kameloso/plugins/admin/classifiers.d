@@ -53,7 +53,7 @@ void manageClassLists(
         import std.format : format;
 
         enum pattern = "Usage: <b>%s%s<b> [add|del|list]";
-        immutable message = pattern.format(plugin.state.coreSettings.prefix, class_.toString());
+        immutable message = pattern.format(plugin.state.coreSettings.prefix, class_.toString);
         privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
     }
 
@@ -105,7 +105,7 @@ void listList(
     import std.format : format;
 
     immutable role = getNoun(NounForm.plural, class_);
-    immutable list = class_.toString();
+    immutable list = class_.toString;
 
     JSONStorage json;
     json.load(plugin.userFile);
@@ -615,7 +615,7 @@ auto alterAccountClassifier(
     JSONStorage json;
     json.load(plugin.userFile);
 
-    immutable list = class_.toString();
+    immutable list = class_.toString;
 
     if (add)
     {

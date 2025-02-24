@@ -83,7 +83,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
             ", built ",
             cast(string)KamelosoInfo.built,
             ", running on ",
-            os.toString());
+            os.toString);
         break;
 
     case CTCP_FINGER:
@@ -218,7 +218,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
     default:
         import lu.conv : toString;
         immutable message = "Missing `CTCP_` case entry for `IRCEvent.Type." ~
-            event.type.toString() ~ '`';
+            event.type.toString ~ '`';
         assert(0, message);
     }
 
@@ -305,7 +305,7 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
             {{
                 import lu.conv : toString;
 
-                enum typestring = type.toString();
+                enum typestring = type.toString;
 
                 static if (typestring.startsWith("CTCP_"))
                 {

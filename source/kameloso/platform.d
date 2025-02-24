@@ -52,7 +52,7 @@ auto currentEnvironment()
     import std.process : environment;
     import std.system : os;
 
-    enum osName = os.toString();
+    enum osName = os.toString;
 
     version(Windows)
     {

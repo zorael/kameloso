@@ -661,8 +661,8 @@ void handleModifyTimer(
             "stagger time <b>%s<b> seconds";
         immutable message = pattern.format(
             timer.name,
-            timer.type.toString(),
-            timer.condition.toString(),
+            timer.type.toString,
+            timer.condition.toString,
             timer.messageCountThreshold,
             timer.timeThreshold,
             timer.messageCountStagger,

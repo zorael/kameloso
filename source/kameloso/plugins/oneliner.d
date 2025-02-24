@@ -773,7 +773,7 @@ void handleModifyOneliner(
         immutable message = pattern.format(
             plugin.state.coreSettings.prefix,
             oneliner.trigger,
-            oneliner.type.toString(),
+            oneliner.type.toString,
             oneliner.cooldown);
         chan(plugin.state, event.channel.name, message);
     }
@@ -1297,7 +1297,7 @@ void listCommands(
                 plugin.state.coreSettings.prefix,
                 oneliner.trigger,
                 oneliner.responses.length,
-                oneliner.type.toString());
+                oneliner.type.toString);
             sendOneliner(plugin, event, message);
         }
     }

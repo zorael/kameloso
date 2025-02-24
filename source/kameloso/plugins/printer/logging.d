@@ -216,7 +216,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
                     user.ident, '@',
                     user.address, ':',
                     user.account, " -- ",
-                    user.class_.toString());//, "\n\n");
+                    user.class_.toString);//, "\n\n");
             }
 
             if (!errors)
