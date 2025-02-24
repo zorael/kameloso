@@ -586,6 +586,7 @@ void handleNewTimer(
     timer.lastMessageCount = channel.messageCount;
     timer.lastTimestamp = event.time;
     timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
+    timer.suspended = true;
     plugin.timersByChannel[event.channel.name][timer.name] = timer;
     channel.timerPointers[timer.name] = &plugin.timersByChannel[event.channel.name][timer.name];
     saveTimers(plugin);
@@ -593,7 +594,8 @@ void handleNewTimer(
     // Start monitor if not already running
     if (!plugin.monitorInstanceID) startTimerMonitor(plugin);
 
-    enum appendPattern = "New timer added! Use <b>%s%s add<b> to add lines.";
+    enum appendPattern = "New timer added! Use <b>%s%s add<b> to add lines " ~
+        "and <b>%1$s%2$s resume<b> to start it.";
     immutable message = appendPattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
     chan(plugin.state, event.channel.name, message);
 }
