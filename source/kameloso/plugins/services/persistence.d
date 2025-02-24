@@ -496,10 +496,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             else
             {
                 // No channel in the service state so just inherit this one
-                service.state.channels[channel.name] = IRCChannel.init;
-                auto stateChannel = channel.name in service.state.channels;
-                stateChannel.name = channel.name;
-                stateChannel.id = channel.id;
+                service.state.channels[channel.name] = IRCChannel(channel);
             }
         }
 
