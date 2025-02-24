@@ -294,6 +294,8 @@ void sendCommandHelpImpl(
 
     foreach (immutable syntax; command.syntaxes)
     {
+        if (!syntax.length) continue;
+
         immutable shouldNotTouch = syntax.startsWith("$header");
         immutable humanlyReadable = getHumanlyReadable(syntax);
         string contentLine;  // mutable
