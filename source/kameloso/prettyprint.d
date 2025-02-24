@@ -1227,7 +1227,7 @@ private auto prettyformatImpl(
             else
             {
                 FormatOtherMemberArguments args;
-                auto content = __traits(getMember, thing, memberstring);
+                const content = __traits(getMember, thing, memberstring);
                 args.typestring = T.stringof;
                 args.memberstring = memberstring;
                 args.typeWidth = typeWidth;
