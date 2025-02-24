@@ -156,6 +156,11 @@ public:
     size_t position;
 
     /++
+        The colour string to use with Twitch announcements.
+     +/
+    string colour = "primary";
+
+    /++
         Whether or not this [Timer] is suspended and should not output anything.
      +/
     bool suspended;
@@ -330,6 +335,34 @@ unittest
 }
 
 
+version(TwitchSupport)
+{
+    version(WithTwitchPlugin)
+    {
+        version = WantTwitchAnnouncementColourSyntax;
+    }
+}
+
+
+// twitchAnnouncementColourSyntax
+/++
+    Syntax string to use for the "colour" verb of `!timer`.
+
+    If Twitch support *and* the Twitch plugin is compiled in, it is a
+    humanly-readable syntax string, but it will be empty (and thus omitted from
+    Help command lists) if either versions are not declared.
+ +/
+version(WantTwitchAnnouncementColourSyntax)
+{
+    enum twitchAnnouncementColourSyntax = "$command colour [timer] [colour]";
+}
+else
+{
+    /// Ditto
+    enum twitchAnnouncementColourSyntax = string.init;
+}
+
+
 // onCommandTimer
 /++
     Adds, deletes or lists timers for the specified target channel.
@@ -344,11 +377,12 @@ unittest
         IRCEventHandler.Command()
             .word("timer")
             .policy(PrefixPolicy.prefixed)
-            .description("Adds, removes or lists timers.")
+            .description("Manages timers.")
             .addSyntax("$command new [name] [type] [condition] [message count threshold] " ~
                 "[time threshold] [optional stagger message count] [optional stagger time]")
             .addSyntax("$command modify [name] [type] [condition] [message count threshold] " ~
                 "[time threshold] [optional stagger message count] [optional stagger time]")
+            .addSyntax(twitchAnnouncementColourSyntax)
             .addSyntax("$command add [existing timer name] [new timer line]")
             .addSyntax("$command insert [timer name] [position] [new timer line]")
             .addSyntax("$command edit [timer name] [position] [new timer line]")
@@ -401,6 +435,10 @@ void onCommandTimer(TimerPlugin plugin, const IRCEvent event)
 
     case "resume":
         return handleSuspendTimer(plugin, event, slice, suspend: false);  // --> resume: true
+
+    case "colour":
+    case "color":
+        return handleColourTimer(plugin, event, slice);
 
     case "list":
         return handleListTimers(plugin, event);
@@ -1140,6 +1178,75 @@ void handleSuspendTimer(
 }
 
 
+// handleColourTimer
+/++
+    Assigns a colour to a timer. Used when timers are sent as Twitch announcements.
+
+    Params:
+        plugin = The current [TimerPlugin].
+        event = The [dialect.defs.IRCEvent|IRCEvent] that requested the suspend or resume.
+        slice = Relevant slice of the original request string.
+ +/
+void handleColourTimer(
+    TimerPlugin plugin,
+    const IRCEvent event,
+    /*const*/ string slice)
+{
+    import lu.string : SplitResults, splitInto;
+    import std.algorithm.comparison : among;
+    import std.format : format;
+    import std.uni : toLower;
+
+    void sendUsage()
+    {
+        enum pattern = "Usage: <b>%s%s colour<b> [timer name] " ~
+            "[colour; one of <b>primary<b>, <b>blue<b>, " ~
+            "<b>green<b>, <b>orange<b> or <b>purple<b>]";
+        immutable message = pattern.format(
+            plugin.state.coreSettings.prefix,
+            event.aux[$-1]);
+        chan(plugin.state, event.channel.name, message);
+    }
+
+    void sendNoSuchTimer()
+    {
+        enum message = "There is no timer by that name.";
+        chan(plugin.state, event.channel.name, message);
+    }
+
+    string name;  // mutable
+    string colourString;  // ditto
+    immutable results = slice.splitInto(name, colourString);
+    if (results != SplitResults.match) return sendUsage();
+
+    auto channel = event.channel.name in plugin.channels;
+    if (!channel) return sendNoSuchTimer();
+
+    auto channelTimers = event.channel.name in plugin.timersByChannel;
+    if (!channelTimers) return sendNoSuchTimer();
+
+    auto timer = name in *channelTimers;
+    if (!timer) return sendNoSuchTimer();
+
+    immutable colour = colourString.toLower();
+
+    if (!colour.among!("primary", "blue", "green", "orange", "purple"))
+    {
+        enum message = "Colour must be one of <b>primary<b>, <b>blue<b>, " ~
+            "<b>green<b>, <b>orange<b> or <b>purple<b>.";
+        chan(plugin.state, event.channel.name, message);
+    }
+    else
+    {
+        timer.colour = colour;
+        saveTimers(plugin);
+
+        enum message = "Colour changed.";
+        chan(plugin.state, event.channel.name, message);
+    }
+}
+
+
 // onAnyMessage
 /++
     Bumps the message count for any channel on incoming channel messages.
@@ -1470,7 +1577,8 @@ auto createTimerFiber(
                             announce(
                                 plugin.state,
                                 eventChannel,
-                                message);
+                                message,
+                                timer.colour);
                             announced = true;
                         }
                     }
