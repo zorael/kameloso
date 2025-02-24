@@ -463,7 +463,9 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
             Nested implementation function so we can properly handle channel and
             subchannel separately.
 
-            Insert channel IDs into and retrieve channel IDs from the channel cache.
+            Insert channel IDs into and retrieve channel IDs from entries in the
+            service state's `channels` AA.
+
             This allows us to keep track of channel IDs even if it is not sent
             in the event.
          +/
@@ -473,28 +475,31 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
         {
             if (!channel.name.length) return;
 
-            if (auto cachedChannel = channel.name in service.channelCache)
+            if (auto stateChannel = channel.name in service.state.channels)
             {
-                // Cached channel exists
-                if (!cachedChannel.id)
+                // Channel exists in service state
+                if (!stateChannel.id)
                 {
                     // It has no ID
                     if (channel.id)
                     {
                         // ...but the event does; inherit it
-                        cachedChannel.id = channel.id;
+                        stateChannel.id = channel.id;
                     }
                 }
-                else if (channel.id && (channel.id != cachedChannel.id))
+                else if (channel.id && (channel.id != stateChannel.id))
                 {
                     // It has an ID and it's different from the event's; insert it
-                    channel.id = cachedChannel.id;
+                    channel.id = stateChannel.id;
                 }
             }
             else
             {
-                // No cached channel so just assign this one
-                service.channelCache[channel.name] = channel;
+                // No channel in the service state so just inherit this one
+                service.state.channels[channel.name] = IRCChannel.init;
+                auto stateChannel = channel.name in service.state.channels;
+                stateChannel.name = channel.name;
+                stateChannel.id = channel.id;
             }
         }
 
@@ -1590,17 +1595,6 @@ private:
         Cache of users by channel and nickname.
      +/
     RehashingAA!(IRCUser[string][string]) channelUserCache;
-
-    version(TwitchSupport)
-    {
-        /++
-            Cache of [dialect.defs.IRCEvent.Channel|Channel]s, keyed by channel name.
-
-            This should not grow very large so there's probably no need to make
-            it a [lu.containers.RehashingAA|RehashingAA].
-         +/
-        IRCEvent.Channel[string] channelCache;
-    }
 
     /++
         Inherits a user into the cache.
