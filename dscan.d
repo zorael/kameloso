@@ -91,6 +91,7 @@ public auto main(string[] args)
 
     retval |= runDscanner(engines, expressions, target);
     retval |= buildDocs();
+    retval |= buildDocs("unittest");
 
     writeln();
     writeln(i"[+] done, return $(retval)");
@@ -257,10 +258,13 @@ auto runDscanner(
 /++
     Simply invokes `dub build -b docs`.`
 
+    Params:
+        buildConfiguration = Optional dub build configuration to build docs with.
+
     Returns:
         The shell return value of the command run.
  +/
-auto buildDocs()
+auto buildDocs(const string buildConfiguration = string.init)
 {
     import std.datetime.stopwatch : StopWatch;
     import std.process : execute;
@@ -268,7 +272,7 @@ auto buildDocs()
 
     StopWatch sw;
 
-    static immutable command =
+    auto command =
     [
         "dub",
         "build",
@@ -278,9 +282,17 @@ auto buildDocs()
         //"--vquiet",
     ];
 
+    if (buildConfiguration.length)
+    {
+        command ~= [ "-c", buildConfiguration ];
+    }
+
+    immutable buildConfigString = buildConfiguration.length ?
+        " (" ~ buildConfiguration ~ '}' :
+        string.init;
 
     writeln();
-    writeln("[+] building docs...");
+    writeln(i"[+] building docs$(buildConfigString)...");
 
     sw.start();
     const result = execute(command);
