@@ -610,7 +610,7 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
     }
 
     // Limit modifications to the configured class
-    if (event.sender.class_ < plugin.counterSettings.minimumPermissionsNeeded) return;
+    if (event.sender.class_ < plugin.settings.minimumPermissionsNeeded) return;
 
     assert(slice.length, "Empty slice after slicing");
     immutable sign = slice[0];
@@ -1055,7 +1055,7 @@ private:
     /++
         All Counter plugin settings.
      +/
-    CounterSettings counterSettings;
+    CounterSettings settings;
 
     /++
         [Counter]s by counter word by channel name.

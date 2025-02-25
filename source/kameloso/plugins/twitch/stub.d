@@ -43,7 +43,7 @@ private:
     /++
         All Twitch plugin settings.
      +/
-    kameloso.plugins.twitch.TwitchSettings twitchSettings;
+    kameloso.plugins.twitch.TwitchSettings settings;
 
     mixin IRCPluginImpl;
 }

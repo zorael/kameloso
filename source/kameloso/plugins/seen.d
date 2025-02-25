@@ -301,13 +301,13 @@ final class SeenPlugin : IRCPlugin
 private:  // Module-level private.
     import core.time : hours;
 
-    // seenSettings
+    // settings
     /++
         An instance of *settings* for the Seen plugin. We will define these
         below. The members of it will be saved to and loaded from the
         configuration file, for use in our module.
      +/
-    SeenSettings seenSettings;
+    SeenSettings settings;
 
 
     // seenUsers
@@ -620,7 +620,7 @@ void onSomeAction(SeenPlugin plugin, const IRCEvent event)
 
     //case MODE:
     default:
-        if (plugin.seenSettings.ignoreNonChatEvents) return;
+        if (plugin.settings.ignoreNonChatEvents) return;
         // Drop down
         break;
     }

@@ -157,7 +157,7 @@ final class SamePlugin : IRCPlugin
     /++
         All Same plugin settings gathered.
      +/
-    SameSettings sameSettings;
+    SameSettings settings;
 
     mixin IRCPluginImpl;
 }

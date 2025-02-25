@@ -232,9 +232,9 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 
-    if (!plugin.printerSettings.monitor || plugin.state.coreSettings.headless) return;
+    if (!plugin.settings.monitor || plugin.state.coreSettings.headless) return;
 
-    if (plugin.printerSettings.hideBlacklistedUsers && (event.sender.class_ == IRCUser.Class.blacklist)) return;
+    if (plugin.settings.hideBlacklistedUsers && (event.sender.class_ == IRCUser.Class.blacklist)) return;
 
     /++
         Return whether or not the current event should be squelched based on
@@ -321,8 +321,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                     plugin,
                     plugin.linebuffer,
                     event,
-                    bellOnMention: plugin.printerSettings.bellOnMention,
-                    bellOnError: plugin.printerSettings.bellOnError);
+                    bellOnMention: plugin.settings.bellOnMention,
+                    bellOnError: plugin.settings.bellOnError);
                 put = true;
             }
         }
@@ -333,8 +333,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                 plugin,
                 plugin.linebuffer,
                 event,
-                bellOnMention: plugin.printerSettings.bellOnMention,
-                bellOnError: plugin.printerSettings.bellOnError);
+                bellOnMention: plugin.settings.bellOnMention,
+                bellOnError: plugin.settings.bellOnError);
         }
 
         writeln(plugin.linebuffer[]);
@@ -367,7 +367,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case RPL_ENDOFMOTD:
     case ERR_NOMOTD:
         // Only show these if we're configured to
-        if (plugin.printerSettings.motd) goto default;
+        if (plugin.settings.motd) goto default;
         break;
 
     case RPL_WHOISACCOUNT:
@@ -422,7 +422,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                 event.sender.nickname,
                 event.target.nickname);
 
-        if (shouldSquelch && plugin.printerSettings.filterWhois)
+        if (shouldSquelch && plugin.settings.filterWhois)
         {
             break;
         }
@@ -464,7 +464,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case SELFMODE:
         // These event types are spammy and/or have low signal-to-noise ratio;
         // ignore if we're configured to
-        if (plugin.printerSettings.filterMost) break;
+        if (plugin.settings.filterMost) break;
         goto default;
 
     case JOIN:
@@ -474,7 +474,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 // Filter overly verbose JOINs and PARTs on Twitch if we're filtering
-                if (plugin.printerSettings.filterMost) break;
+                if (plugin.settings.filterMost) break;
             }
             goto default;
         }
@@ -528,7 +528,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                     event.sender.nickname,
                     event.target.nickname);
 
-            if (shouldSquelch && plugin.printerSettings.filterMost)
+            if (shouldSquelch && plugin.settings.filterMost)
             {
                 break;
             }
@@ -552,7 +552,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case PING:
         // Show the on-connect-ping-this type of events if !filterMost
         // Assume those containing dots are real pings for the server address
-        if (!plugin.printerSettings.filterMost && event.content.length) goto default;
+        if (!plugin.settings.filterMost && event.content.length) goto default;
         break;
 
     default:
@@ -584,8 +584,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 )
 void onLoggableEvent(PrinterPlugin plugin, const IRCEvent event)
 {
-    if (event.errors.length && plugin.printerSettings.logErrors) { /* Drop down */ }
-    else if (!plugin.printerSettings.logs) return;
+    if (event.errors.length && plugin.settings.logErrors) { /* Drop down */ }
+    else if (!plugin.settings.logs) return;
 
     onLoggableEventImpl(plugin, event);
 }
@@ -712,8 +712,8 @@ void initialise(PrinterPlugin plugin)
         }
     }
 
-    plugin.exclude = parseTypes(plugin.printerSettings.exclude, "exclude");
-    plugin.include = parseTypes(plugin.printerSettings.include, "include");
+    plugin.exclude = parseTypes(plugin.settings.exclude, "exclude");
+    plugin.include = parseTypes(plugin.settings.include, "include");
 }
 
 
@@ -752,13 +752,13 @@ void setup(PrinterPlugin plugin)
 
         if (plugin.isEnabled)
         {
-            if (plugin.printerSettings.monitor && plugin.printerSettings.daybreaks)
+            if (plugin.settings.monitor && plugin.settings.daybreaks)
             {
                 import kameloso.common : logger;
                 logger.info(datestamp);
             }
 
-            if (plugin.printerSettings.logs)
+            if (plugin.settings.logs)
             {
                 flushAllLogsImpl(plugin);
 
@@ -788,7 +788,7 @@ void setup(PrinterPlugin plugin)
  +/
 void initResources(PrinterPlugin plugin)
 {
-    if (!plugin.printerSettings.logs && !plugin.printerSettings.logErrors) return;
+    if (!plugin.settings.logs && !plugin.settings.logErrors) return;
 
     if (!establishLogLocation(plugin.logDirectory, plugin.transient.naggedAboutDir))
     {
@@ -812,7 +812,7 @@ void initResources(PrinterPlugin plugin)
  +/
 void teardown(PrinterPlugin plugin)
 {
-    if (plugin.printerSettings.bufferedWrites)
+    if (plugin.settings.bufferedWrites)
     {
         // Flush all logs before exiting
         flushAllLogsImpl(plugin);
@@ -1036,7 +1036,7 @@ package:
     /++
         All Printer plugin options gathered.
      +/
-    PrinterSettings printerSettings;
+    PrinterSettings settings;
 
     /++
         Transient state of this [PrinterPlugin] instance.

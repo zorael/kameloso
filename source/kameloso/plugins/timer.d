@@ -1578,7 +1578,7 @@ auto createTimerFiber(
                             .replace("$streamer", nameOf(plugin, eventChannel.name[1..$]))
                             .replace("$streamerAccount", eventChannel.name[1..$]);
 
-                        if (plugin.timerSettings.useAnnouncements)
+                        if (plugin.settings.useAnnouncements)
                         {
                             announce(
                                 plugin.state,
@@ -1884,7 +1884,7 @@ private:
     /++
         All Timer plugin settings.
      +/
-    TimerSettings timerSettings;
+    TimerSettings settings;
 
     /++
         Array of active channels' state.

@@ -429,7 +429,7 @@ auto getPollChoices(
         import std.algorithm.searching : startsWith;
         import std.uni : toLower;
 
-        if (plugin.pollSettings.forbidPrefixedChoices &&
+        if (plugin.settings.forbidPrefixedChoices &&
             rawChoice.startsWith(plugin.state.coreSettings.prefix))
         {
             /*return*/ sendChoiceMustNotStartWithPrefix();
@@ -529,7 +529,7 @@ void generatePollFiber(
                 continue;
             }
 
-            if (thisEvent.sender.class_ < plugin.pollSettings.minimumPermissionsNeeded)
+            if (thisEvent.sender.class_ < plugin.settings.minimumPermissionsNeeded)
             {
                 // User not authorised to vote. Yield and await a new event
                 Fiber.yield();
@@ -617,7 +617,7 @@ void generatePollFiber(
 
             case PART:
             case QUIT:
-                if (plugin.pollSettings.onlyOnlineUsersCount)
+                if (plugin.settings.onlyOnlineUsersCount)
                 {
                     if (auto previousVote = id in currentPoll.votes)
                     {
@@ -1095,7 +1095,7 @@ private:
     /++
         All Poll plugin settings.
      +/
-    PollSettings pollSettings;
+    PollSettings settings;
 
     /++
         Active polls by channel.

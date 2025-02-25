@@ -187,7 +187,7 @@ void onChannelMessage(NotePlugin plugin, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
 
-    if (plugin.noteSettings.playBackOnAnyActivity ||
+    if (plugin.settings.playBackOnAnyActivity ||
         (plugin.state.server.daemon == IRCServer.Daemon.twitch))
     {
         playbackNotes(plugin, event);
@@ -690,11 +690,11 @@ final class NotePlugin : IRCPlugin
 private:
     import lu.json : JSONStorage;
 
-    // noteSettings
+    // settings
     /++
         All Note plugin settings gathered.
      +/
-    NoteSettings noteSettings;
+    NoteSettings settings;
 
     // notes
     /++

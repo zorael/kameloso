@@ -197,9 +197,9 @@ auto resolvePath(PipelinePlugin plugin)
 
     string filename;  // mutable
 
-    if (plugin.pipelineSettings.path.length)
+    if (plugin.settings.path.length)
     {
-        filename = plugin.pipelineSettings.path;
+        filename = plugin.settings.path;
     }
     else
     {
@@ -207,7 +207,7 @@ auto resolvePath(PipelinePlugin plugin)
 
         filename = text(plugin.state.client.nickname, '@', plugin.state.server.address);
 
-        if (!plugin.pipelineSettings.fifoInWorkingDir)
+        if (!plugin.settings.fifoInWorkingDir)
         {
             import std.path : buildNormalizedPath;
             import std.process : environment;
@@ -215,7 +215,7 @@ auto resolvePath(PipelinePlugin plugin)
             // See notes at the top of the module.
             version(OSX)
             {
-                immutable useTMPDIR = plugin.pipelineSettings.useTMPDIR;
+                immutable useTMPDIR = plugin.settings.useTMPDIR;
             }
             else // Implicitly not Windows since Posix-only plugin
             {
@@ -620,7 +620,7 @@ final class PipelinePlugin : IRCPlugin
     /++
         All Pipeline settings gathered.
      +/
-    PipelineSettings pipelineSettings;
+    PipelineSettings settings;
 
     /++
         Transient state of this [PipelinePlugin] instance.

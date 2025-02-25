@@ -49,14 +49,14 @@ void onAnyEventImpl(AdminPlugin plugin, const IRCEvent event)
 
     bool wroteSomething;  // mutable
 
-    if (plugin.adminSettings.printRaw)
+    if (plugin.settings.printRaw)
     {
         if (event.tags.length) write('@', event.tags, ' ');
         writeln(event.raw, '$');
         wroteSomething = true;
     }
 
-    if (plugin.adminSettings.printEvents.length)
+    if (plugin.settings.printEvents.length)
     {
         if (plugin.eventTypesToPrint[event.type] ||
             plugin.eventTypesToPrint[IRCEvent.Type.ANY])
@@ -70,7 +70,7 @@ void onAnyEventImpl(AdminPlugin plugin, const IRCEvent event)
         }
     }
 
-    if (plugin.adminSettings.printBytes)
+    if (plugin.settings.printBytes)
     {
         import std.string : representation;
 
@@ -169,10 +169,10 @@ void onCommandPrintRawImpl(AdminPlugin plugin, const IRCEvent event)
 
     if (plugin.state.coreSettings.headless) return;
 
-    plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
+    plugin.settings.printRaw = !plugin.settings.printRaw;
 
     enum pattern = "Printing raw: <b>%s<b>";
-    immutable message = pattern.format(plugin.adminSettings.printRaw);
+    immutable message = pattern.format(plugin.settings.printRaw);
     privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
 }
 
@@ -190,10 +190,10 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const IRCEvent event)
 
     if (plugin.state.coreSettings.headless) return;
 
-    plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
+    plugin.settings.printBytes = !plugin.settings.printBytes;
 
     enum pattern = "Printing bytes: <b>%s<b>";
-    immutable message = pattern.format(plugin.adminSettings.printBytes);
+    immutable message = pattern.format(plugin.settings.printBytes);
     privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
 }
 
@@ -239,7 +239,7 @@ void onCommandPrintEventsImpl(
         }
 
         plugin.eventTypesToPrint[] = false;
-        plugin.adminSettings.printEvents = string.init;  // for easy detection if something is set
+        plugin.settings.printEvents = string.init;  // for easy detection if something is set
         return;
     }
 
@@ -247,7 +247,7 @@ void onCommandPrintEventsImpl(
 
     if (success)
     {
-        plugin.adminSettings.printEvents = input;  // as above
+        plugin.settings.printEvents = input;  // as above
 
         if (event == IRCEvent.init)
         {

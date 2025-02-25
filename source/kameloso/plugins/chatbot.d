@@ -213,7 +213,7 @@ private:
     /++
         All Chatbot plugin settings gathered.
      +/
-    ChatbotSettings chatbotSettings;
+    ChatbotSettings settings;
 
     mixin IRCPluginImpl;
 }

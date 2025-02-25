@@ -1430,7 +1430,7 @@ void sendOneliner(
 {
     version(TwitchSupport)
     {
-        if ((plugin.onelinerSettings.onelinersAsTwitchReplies) &&
+        if ((plugin.settings.onelinersAsTwitchReplies) &&
             (plugin.state.server.daemon == IRCServer.Daemon.twitch))
         {
             return reply(plugin.state, event, message);
@@ -1668,7 +1668,7 @@ private:
     /++
         All Oneliner plugin settings.
      +/
-    OnelinerSettings onelinerSettings;
+    OnelinerSettings settings;
 
     /++
         Associative array of oneliners; [Oneliner] array, keyed by trigger, keyed by channel.

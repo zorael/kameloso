@@ -257,7 +257,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
                         bellOnMention : false,
                         bellOnError: false);
 
-                    if (plugin.printerSettings.bufferedWrites)
+                    if (plugin.settings.bufferedWrites)
                     {
                         buffer.lines.put(plugin.linebuffer[].idup);
                         plugin.linebuffer.clear();
@@ -271,7 +271,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
                 else /*if (raw)*/
                 {
                     // Raw log
-                    if (plugin.printerSettings.bufferedWrites)
+                    if (plugin.settings.bufferedWrites)
                     {
                         buffer.lines.put(event.raw);
                     }
@@ -296,7 +296,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
 
                 if (!ensureDir(errBuffer.dir)) return;
 
-                if (plugin.printerSettings.bufferedWrites)
+                if (plugin.settings.bufferedWrites)
                 {
                     version(IncludeHeavyStuff)
                     {
@@ -363,7 +363,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
 
                     errBuffer.lines.put(separator80cLF);
                 }
-                else /*if (plugin.printerSettings.bufferedWrites)*/
+                else /*if (plugin.settings.bufferedWrites)*/
                 {
                     auto errFile = File(errBuffer.file, "a");
 
@@ -469,7 +469,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
     enum errorMarker = "<error>";
 
     // Write raw (if we should) early, before everything else
-    if (plugin.printerSettings.logRaw)
+    if (plugin.settings.logRaw)
     {
         writeEventToFile(
             plugin,
@@ -480,7 +480,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
             raw: true);
     }
 
-    if (event.errors.length && plugin.printerSettings.logErrors)
+    if (event.errors.length && plugin.settings.logErrors)
     {
         // This logs errors in guest channels. Consider making it configurable.
         writeEventToFile(
@@ -492,14 +492,14 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
             raw: false,
             errors: true);
 
-        if (plugin.printerSettings.bufferedWrites)
+        if (plugin.settings.bufferedWrites)
         {
             // Flush error buffer immediately
             flushLog(plugin, plugin.buffers[errorMarker]);
         }
     }
 
-    if (!plugin.printerSettings.logGuestChannels &&
+    if (!plugin.settings.logGuestChannels &&
         event.channel.name.length &&
         !plugin.state.bot.homeChannels.canFind(event.channel.name))
     {
@@ -525,7 +525,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
         // channels this user is in (that the bot is also in)
         foreach (immutable channelName, const foreachChannel; plugin.state.channels)
         {
-            if (!plugin.printerSettings.logGuestChannels &&
+            if (!plugin.settings.logGuestChannels &&
                 !plugin.state.bot.homeChannels.canFind(channelName))
             {
                 // Not logging all channels and this is not a home.
@@ -589,13 +589,13 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
         else if (event.sender.nickname.length)
         {
             // Not a channel; query or other server-wide message
-            if (plugin.printerSettings.logPrivateMessages)
+            if (plugin.settings.logPrivateMessages)
             {
                 writeEventToFile(plugin, event, event.sender.nickname);
             }
         }
         else if (
-            plugin.printerSettings.logServer &&
+            plugin.settings.logServer &&
             !event.sender.nickname.length &&
             event.sender.address.length)
         {
@@ -686,7 +686,7 @@ auto establishLogLocation(const string logLocation, ref bool naggedAboutDir)
  +/
 void flushAllLogsImpl(PrinterPlugin plugin)
 {
-    if (!plugin.printerSettings.logs || !plugin.printerSettings.bufferedWrites) return;
+    if (!plugin.settings.logs || !plugin.settings.bufferedWrites) return;
 
     foreach (ref buffer; plugin.buffers)
     {

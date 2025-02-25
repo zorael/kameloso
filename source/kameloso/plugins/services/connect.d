@@ -313,7 +313,7 @@ void joinChannels(ConnectService service)
     }
 
     with (ChannelRejoinBehaviour)
-    final switch (service.connectSettings.rejoinBehaviour)
+    final switch (service.settings.rejoinBehaviour)
     {
     case merge:
         /+
@@ -884,7 +884,7 @@ void onInvite(ConnectService service, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
 
-    if (!service.connectSettings.joinOnInvite)
+    if (!service.settings.joinOnInvite)
     {
         enum message = "Invited, but <i>joinOnInvite</> is set to false.";
         logger.log(message);
@@ -960,7 +960,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
                         // Proceed
                     }
                     else if (
-                        service.connectSettings.sasl &&
+                        service.settings.sasl &&
                         acceptsPlain &&
                         service.state.bot.password.length)
                     {
@@ -1073,7 +1073,7 @@ void onCapabilityNegotiation(ConnectService service, const IRCEvent event)
             switch (cap)
             {
             case "sasl":
-                if (service.connectSettings.exitOnSASLFailure)
+                if (service.settings.exitOnSASLFailure)
                 {
                     enum message = "SASL Negotiation Failure";
                     return quit(service.state, message);
@@ -1289,7 +1289,7 @@ void onSASLFailureImpl(ConnectService service)
         return immediate(service.state, message, properties);
     }
 
-    if (service.connectSettings.exitOnSASLFailure)
+    if (service.settings.exitOnSASLFailure)
     {
         enum message = "SASL Negotiation Failure";
         return quit(service.state, message);
@@ -1341,7 +1341,7 @@ void onWelcome(ConnectService service, const IRCEvent event)
     startPingMonitor(service);
 
     alias separator = ConnectSettings.sendAfterConnectSeparator;
-    auto toSendRange = service.connectSettings.sendAfterConnect.splitter(separator);
+    auto toSendRange = service.settings.sendAfterConnect.splitter(separator);
 
     foreach (immutable unstripped; toSendRange)
     {
@@ -1441,7 +1441,7 @@ void onWelcome(ConnectService service, const IRCEvent event)
         auto endOfMOTDFiber = new Fiber(&endOfMOTDDg, BufferSize.fiberStack);
         delay(service, endOfMOTDFiber, ConnectService.Timings.endOfMOTDTimeout);
 
-        if (service.connectSettings.regainNickname && !service.state.bot.hasGuestNickname &&
+        if (service.settings.regainNickname && !service.state.bot.hasGuestNickname &&
             (service.state.client.nickname != service.state.client.origNickname))
         {
             delay(service, ConnectService.Timings.nickRegainPeriodicity, yield: true);
@@ -1507,7 +1507,7 @@ void onQuit(ConnectService service, const IRCEvent event)
     mixin(memoryCorruptionCheck);
 
     if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
-        service.connectSettings.regainNickname &&
+        service.settings.regainNickname &&
         (event.sender.nickname == service.state.client.origNickname))
     {
         // The regain fiber will end itself when it is next triggered
@@ -1689,9 +1689,9 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
     import kameloso.thread : CarryingFiber;
     import core.time : seconds;
 
-    if (service.connectSettings.maxPingPeriodAllowed <= 0) return;
+    if (service.settings.maxPingPeriodAllowed <= 0) return;
 
-    immutable pingMonitorPeriodicity = service.connectSettings.maxPingPeriodAllowed.seconds;
+    immutable pingMonitorPeriodicity = service.settings.maxPingPeriodAllowed.seconds;
 
     static immutable timeToAllowForPingResponse = 30.seconds;
     static immutable briefWait = 1.seconds;
@@ -1730,7 +1730,7 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
             // Triggered by timer
             immutable nowInUnix = Clock.currTime.toUnixTime();
 
-            if ((nowInUnix - lastPongTimestamp) >= service.connectSettings.maxPingPeriodAllowed)
+            if ((nowInUnix - lastPongTimestamp) >= service.settings.maxPingPeriodAllowed)
             {
                 import kameloso.thread : ThreadMessage;
 
@@ -1772,7 +1772,7 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
                 // Remove current delay and re-delay at when the next PING check should be
                 undelay(service);
                 immutable elapsed = (nowInUnix - lastPongTimestamp);
-                immutable remaining = (service.connectSettings.maxPingPeriodAllowed - elapsed);
+                immutable remaining = (service.settings.maxPingPeriodAllowed - elapsed);
                 delay(service, remaining.seconds, yield: true);
             }
             continue;
@@ -2219,7 +2219,7 @@ private:
     /++
         All Connect service settings gathered.
      +/
-    ConnectSettings connectSettings;
+    ConnectSettings settings;
 
     /++
         Transient state of this [ConnectService] instance.

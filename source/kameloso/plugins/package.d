@@ -1717,14 +1717,14 @@ mixin template IRCPluginImpl(
 
         class FooPlugin : IRCPlugin
         {
-            FooSettings fooSettings;
+            FooSettings settings;
         }
 
         IRCPluginState state;
         IRCPlugin plugin = new IRCPlugin(state);
 
         pluign.setSettingByName("bar", 42);
-        assert(plugin.fooSettings.bar == 42);
+        assert(plugin.settings.bar == 42);
         ---
 
         Params:

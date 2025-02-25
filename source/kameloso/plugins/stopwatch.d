@@ -365,7 +365,7 @@ private:
     /++
         All Stopwatch plugin settings.
      +/
-    StopwatchSettings stopwatchSettings;
+    StopwatchSettings settings;
 
     /++
         Stopwatch start timestamps by user by channel.

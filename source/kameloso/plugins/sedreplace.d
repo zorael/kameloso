@@ -478,7 +478,7 @@ void onMessage(SedReplacePlugin plugin, const IRCEvent event)
 
                 immutable result = line.content.sedReplace(
                     event.content,
-                    relaxSyntax: plugin.sedReplaceSettings.relaxSyntax);
+                    relaxSyntax: plugin.settings.relaxSyntax);
 
                 if (!result.length) continue;
 
@@ -687,7 +687,7 @@ private:
     /++
         All sed-replace options gathered.
      +/
-    SedReplaceSettings sedReplaceSettings;
+    SedReplaceSettings settings;
 
     /++
         Lifetime of a [Line] in [prevlines], in seconds.

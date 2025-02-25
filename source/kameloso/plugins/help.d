@@ -228,7 +228,7 @@ void sendMessage(
         {
             import kameloso.messaging : reply;
 
-            event.type = plugin.helpSettings.repliesInQuery ?
+            event.type = plugin.settings.repliesInQuery ?
                 IRCEvent.Type.QUERY :
                 IRCEvent.Type.CHAN;
 
@@ -243,7 +243,7 @@ void sendMessage(
 
     privmsg(
         plugin.state,
-        (plugin.helpSettings.repliesInQuery ? string.init : event.channel.name),
+        (plugin.settings.repliesInQuery ? string.init : event.channel.name),
         event.sender.nickname,
         content,
         properties,
@@ -676,7 +676,7 @@ private:
     /++
         All Help plugin settings gathered.
      +/
-    HelpSettings helpSettings;
+    HelpSettings settings;
 
     mixin IRCPluginImpl;
 }

@@ -1835,7 +1835,7 @@ void initialise(AdminPlugin plugin)
 
     immutable success = parseTypesFromString(
         plugin,
-        plugin.adminSettings.printEvents);
+        plugin.settings.printEvents);
 
     if (!success) *plugin.state.abort = true;
 }
@@ -1941,16 +1941,16 @@ void onBusMessage(
 
         case "printraw":
             if (plugin.state.coreSettings.headless) return;
-            plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
+            plugin.settings.printRaw = !plugin.settings.printRaw;
             enum pattern = "Printing raw: <l>%s";
-            logger.infof(pattern, plugin.adminSettings.printRaw);
+            logger.infof(pattern, plugin.settings.printRaw);
             return;
 
         case "printbytes":
             if (plugin.state.coreSettings.headless) return;
-            plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
+            plugin.settings.printBytes = !plugin.settings.printBytes;
             enum pattern = "Printing bytes: <l>%s";
-            logger.infof(pattern, plugin.adminSettings.printBytes);
+            logger.infof(pattern, plugin.settings.printBytes);
             return;
 
         case "printevents":
@@ -2295,7 +2295,8 @@ package:
     /++
         All Admin options gathered.
      +/
-    AdminSettings adminSettings;
+    AdminSettings settings;
+
 
     version(Debug)
     {

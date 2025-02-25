@@ -477,7 +477,7 @@ void onAnyMessage(TwitchPlugin plugin, const IRCEvent event)
         IRCEvent.Type.QUERY))
     {
         activityDetected = (event.type != IRCEvent.Type.QUERY);
-        shouldBell = plugin.twitchSettings.bellOnMessage;
+        shouldBell = plugin.settings.bellOnMessage;
         canSkipImportantCheck = true;
     }
 
@@ -504,7 +504,7 @@ void onAnyMessage(TwitchPlugin plugin, const IRCEvent event)
         IRCEvent.Type.TWITCH_MILESTONE))
     {
         activityDetected = true;
-        shouldBell |= plugin.twitchSettings.bellOnImportant;
+        shouldBell |= plugin.settings.bellOnImportant;
     }
 
     if (shouldBell)
@@ -561,7 +561,7 @@ void onEmoteBearingMessage(TwitchPlugin plugin, const IRCEvent event)
 
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
-    if (plugin.twitchSettings.ecount && event.emotes.length)
+    if (plugin.settings.ecount && event.emotes.length)
     {
         import lu.string : advancePast;
         import std.algorithm.iteration : splitter;
@@ -697,14 +697,14 @@ void onUserstate(TwitchPlugin plugin, const IRCEvent event)
         registerOpMod();
     }
     else if (
-        !plugin.twitchSettings.promoteBroadcasters &&
+        !plugin.settings.promoteBroadcasters &&
         event.target.badges.canFind("broadcaster/"))
     {
         // All is also well
         registerOpMod();
     }
     else if (
-        !plugin.twitchSettings.promoteModerators &&
+        !plugin.settings.promoteModerators &&
         event.target.badges.canFind("moderator/"))
     {
         // Likewise
@@ -1149,7 +1149,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
          +/
         startRoomMonitors(plugin, event.channel.name);
 
-        if (plugin.twitchSettings.customEmotes)
+        if (plugin.settings.customEmotes)
         {
             import kameloso.plugins.twitch.emotes : baseDelayBetweenImports;
             import kameloso.plugins.common.scheduling : delay;
@@ -1237,7 +1237,7 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
     assert(event.channel.id);
     plugin.channelNamesByID[event.channel.id] = event.channel.name;
 
-    if (!plugin.twitchSettings.customEmotes || !plugin.twitchSettings.customEmotesEverywhere) return;
+    if (!plugin.settings.customEmotes || !plugin.settings.customEmotesEverywhere) return;
 
     if (const customChannelEmotes = event.channel.name in plugin.customChannelEmotes)
     {
@@ -1633,7 +1633,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
 
     void sendUsage()
     {
-        immutable pattern = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
+        immutable pattern = (plugin.settings.songrequestMode == SongRequestMode.youtube) ?
             "Usage: %s%s [YouTube link or video ID]" :
             "Usage: %s%s [Spotify link or track ID]";
         immutable message = pattern.format(plugin.state.coreSettings.prefix, event.aux[$-1]);
@@ -1642,10 +1642,10 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
 
     void sendMissingCredentials()
     {
-        immutable channelMessage = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
+        immutable channelMessage = (plugin.settings.songrequestMode == SongRequestMode.youtube) ?
             "Missing Google API credentials and/or YouTube playlist ID." :
             "Missing Spotify API credentials and/or Spotify playlist ID.";
-        immutable terminalMessage = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
+        immutable terminalMessage = (plugin.settings.songrequestMode == SongRequestMode.youtube) ?
             channelMessage ~ " Run the program with <l>--set twitch.googleKeygen</> to set it up." :
             channelMessage ~ " Run the program with <l>--set twitch.spotifyKeygen</> to set it up.";
         chan(plugin.state, event.channel.name, channelMessage);
@@ -1654,7 +1654,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
 
     void sendInvalidCredentials()
     {
-        immutable message = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
+        immutable message = (plugin.settings.songrequestMode == SongRequestMode.youtube) ?
             "Invalid Google API credentials." :
             "Invalid Spotify API credentials.";
         chan(plugin.state, event.channel.name, message);
@@ -1678,7 +1678,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
 
     void sendInvalidURL()
     {
-        immutable message = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
+        immutable message = (plugin.settings.songrequestMode == SongRequestMode.youtube) ?
             "Invalid YouTube video URL." :
             "Invalid Spotify track URL.";
         chan(plugin.state, event.channel.name, message);
@@ -1704,9 +1704,9 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
         chan(plugin.state, event.channel.name, message);
     }
 
-    if (plugin.twitchSettings.songrequestMode == SongRequestMode.disabled) return;
+    if (plugin.settings.songrequestMode == SongRequestMode.disabled) return;
 
-    if (event.sender.class_ < plugin.twitchSettings.songrequestPermsNeeded)
+    if (event.sender.class_ < plugin.settings.songrequestPermsNeeded)
     {
         return sendInsufficientPermissions();
     }
@@ -1725,7 +1725,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
         }
     }
 
-    if (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube)
+    if (plugin.settings.songrequestMode == SongRequestMode.youtube)
     {
         immutable url = event.content.stripped;
 
@@ -1813,7 +1813,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
 
         retryDelegate(plugin, &addYouTubeVideoDg);
     }
-    else if (plugin.twitchSettings.songrequestMode == SongRequestMode.spotify)
+    else if (plugin.settings.songrequestMode == SongRequestMode.spotify)
     {
         immutable url = event.content.stripped;
 
@@ -2287,7 +2287,7 @@ void onEndOfMOTD(TwitchPlugin plugin, const IRCEvent _)
 
     // Use a minimum of one worker thread, regardless of setting
     plugin.transient.workerTids.length =
-        max(plugin.twitchSettings.workerThreads, 1);
+        max(plugin.settings.workerThreads, 1);
 
     foreach (ref workerTid; plugin.transient.workerTids)
     {
@@ -2335,7 +2335,7 @@ void onCommandEcount(TwitchPlugin plugin, const IRCEvent event)
 
     mixin(memoryCorruptionCheck);
 
-    if (!plugin.twitchSettings.ecount) return;
+    if (!plugin.settings.ecount) return;
 
     void sendUsage()
     {
@@ -2446,7 +2446,7 @@ void onCommandWatchtime(TwitchPlugin plugin, const IRCEvent event)
 
     mixin(memoryCorruptionCheck);
 
-    if (!plugin.twitchSettings.watchtime) return;
+    if (!plugin.settings.watchtime) return;
 
     string slice = event.content.stripped;  // mutable
     string nickname;
@@ -2823,11 +2823,11 @@ void initialise(TwitchPlugin plugin)
     }
 
     immutable someKeygenWanted =
-        plugin.twitchSettings.keygen ||
-        plugin.twitchSettings.superKeygen ||
-        plugin.twitchSettings.googleKeygen ||
-        plugin.twitchSettings.youtubeKeygen ||
-        plugin.twitchSettings.spotifyKeygen;
+        plugin.settings.keygen ||
+        plugin.settings.superKeygen ||
+        plugin.settings.googleKeygen ||
+        plugin.settings.youtubeKeygen ||
+        plugin.settings.spotifyKeygen;
 
     if (!plugin.state.server.address.endsWith(".twitch.tv"))
     {
@@ -2866,50 +2866,50 @@ void initialise(TwitchPlugin plugin)
         enum separator = "---------------------------------------------------------------------";
 
         // Automatically keygen if no pass
-        if (plugin.twitchSettings.keygen ||
+        if (plugin.settings.keygen ||
             (!plugin.state.bot.pass.length && !plugin.state.coreSettings.force))
         {
             import kameloso.plugins.twitch.providers.twitch : requestTwitchKey;
             requestTwitchKey(plugin);
             if (*plugin.state.abort) return;
-            plugin.twitchSettings.keygen = false;
+            plugin.settings.keygen = false;
             plugin.state.messages ~= ThreadMessage.popCustomSetting("twitch.keygen");
             needSeparator = true;
         }
 
-        if (plugin.twitchSettings.superKeygen)
+        if (plugin.settings.superKeygen)
         {
             import kameloso.plugins.twitch.providers.twitch : requestTwitchSuperKey;
             if (needSeparator) logger.trace(separator);
             requestTwitchSuperKey(plugin);
             if (*plugin.state.abort) return;
-            plugin.twitchSettings.superKeygen = false;
+            plugin.settings.superKeygen = false;
             plugin.state.messages ~= ThreadMessage.popCustomSetting("twitch.superKeygen");
             needSeparator = true;
         }
 
-        if (plugin.twitchSettings.googleKeygen ||
-            plugin.twitchSettings.youtubeKeygen)
+        if (plugin.settings.googleKeygen ||
+            plugin.settings.youtubeKeygen)
         {
             import kameloso.plugins.twitch.providers.google : requestGoogleKeys;
             if (needSeparator) logger.trace(separator);
             requestGoogleKeys(plugin);
             if (*plugin.state.abort) return;
-            plugin.twitchSettings.googleKeygen = false;
-            plugin.twitchSettings.youtubeKeygen = false;
+            plugin.settings.googleKeygen = false;
+            plugin.settings.youtubeKeygen = false;
             plugin.state.messages ~= ThreadMessage.popCustomSetting("twitch.googleKeygen");
             plugin.state.messages ~= ThreadMessage.popCustomSetting("twitch.youtubeKeygen");
             needSeparator = true;
         }
 
-        if (plugin.twitchSettings.spotifyKeygen)
+        if (plugin.settings.spotifyKeygen)
         {
             import kameloso.plugins.twitch.providers.spotify : requestSpotifyKeys;
             if (needSeparator) logger.trace(separator);
             requestSpotifyKeys(plugin);
             if (*plugin.state.abort) return;
             plugin.state.messages ~= ThreadMessage.popCustomSetting("twitch.spotifyKeygen");
-            plugin.twitchSettings.spotifyKeygen = false;
+            plugin.settings.spotifyKeygen = false;
         }
     }
 }
@@ -3018,9 +3018,9 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                         room.stream.chattersSeen[viewer] = true;
 
                         // continue early if we shouldn't monitor watchtime
-                        if (!plugin.twitchSettings.watchtime) continue;
+                        if (!plugin.settings.watchtime) continue;
 
-                        if (plugin.twitchSettings.watchtimeExcludesLurkers)
+                        if (plugin.settings.watchtimeExcludesLurkers)
                         {
                             // Exclude lurkers from watchtime monitoring
                             if (viewer !in room.stream.activeViewers) continue;
@@ -3105,7 +3105,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                         rotateStream(room);
                         logger.info("Stream ended.");
 
-                        if (plugin.twitchSettings.watchtime && plugin.transient.viewerTimesDirty)
+                        if (plugin.settings.watchtime && plugin.transient.viewerTimesDirty)
                         {
                             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
                             plugin.transient.viewerTimesDirty = false;
@@ -3122,7 +3122,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                         logger.info("Stream started.");
                         reportCurrentGame(streamFromServer);
 
-                        /*if (plugin.twitchSettings.watchtime && plugin.transient.viewerTimesDirty)
+                        /*if (plugin.settings.watchtime && plugin.transient.viewerTimesDirty)
                         {
                             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
                             plugin.transient.viewerTimesDirty = false;
@@ -3142,7 +3142,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                         logger.info("Stream change detected.");
                         reportCurrentGame(streamFromServer);
 
-                        if (plugin.twitchSettings.watchtime && plugin.transient.viewerTimesDirty)
+                        if (plugin.settings.watchtime && plugin.transient.viewerTimesDirty)
                         {
                             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
                             plugin.transient.viewerTimesDirty = false;
@@ -3582,7 +3582,7 @@ in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
     {
         delay(plugin, savePeriodicity, yield: true);
 
-        if (plugin.twitchSettings.ecount &&
+        if (plugin.settings.ecount &&
             plugin.transient.ecountDirty &&
             plugin.ecount.length)
         {
@@ -3594,7 +3594,7 @@ in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
             Only save watchtimes if there's at least one broadcast currently ongoing.
             Since we save at broadcast stop there won't be anything new to save otherwise.
          +/
-        if (plugin.twitchSettings.watchtime && plugin.transient.viewerTimesDirty)
+        if (plugin.settings.watchtime && plugin.transient.viewerTimesDirty)
         {
             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
             plugin.transient.viewerTimesDirty = false;
@@ -3974,13 +3974,13 @@ void teardown(TwitchPlugin plugin)
         workerTid.prioritySend(true);
     }
 
-    if (plugin.twitchSettings.ecount && plugin.ecount.length)
+    if (plugin.settings.ecount && plugin.ecount.length)
     {
         // Might as well always save on exit. Ignore dirty flag.
         saveResourceToDisk(plugin.ecount, plugin.ecountFile);
     }
 
-    if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+    if (plugin.settings.watchtime && plugin.viewerTimesByChannel.length)
     {
         // As above
         saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
@@ -4000,7 +4000,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
     import std.algorithm.comparison : among;
     import std.typecons : Ternary;
 
-    if (plugin.twitchSettings.mapWhispersToChannel &&
+    if (plugin.settings.mapWhispersToChannel &&
         event.type.among!(IRCEvent.Type.QUERY, IRCEvent.Type.SELFQUERY))
     {
         import std.algorithm.searching : countUntil;
@@ -4026,7 +4026,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
     /+
         Embed custom emotes.
      +/
-    if (plugin.twitchSettings.customEmotes)
+    if (plugin.settings.customEmotes)
     {
         /+
             If the event is of a type that can contain custom emotes (which is any
@@ -4055,7 +4055,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
         {
             bool shouldEmbedCustomEmotes;
 
-            if (plugin.twitchSettings.customEmotesEverywhere)
+            if (plugin.settings.customEmotesEverywhere)
             {
                 // Always embed regardless of channel
                 shouldEmbedCustomEmotes = true;
@@ -4201,7 +4201,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             return false;
         }
 
-        if (plugin.twitchSettings.promoteBroadcasters)
+        if (plugin.settings.promoteBroadcasters)
         {
             // Already ensured channel has length in parent function
             if (user.nickname == event.channel.name[1..$])
@@ -4223,9 +4223,9 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             immutable changed = promoteUserFromBadges(
                 user.class_,
                 user.badges,
-                //plugin.twitchSettings.promoteBroadcasters,
-                plugin.twitchSettings.promoteModerators,
-                plugin.twitchSettings.promoteVIPs);
+                //plugin.settings.promoteBroadcasters,
+                plugin.settings.promoteModerators,
+                plugin.settings.promoteVIPs);
 
             if (changed)
             {
@@ -4237,13 +4237,13 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
         return false;
     }
 
-    if (!plugin.twitchSettings.promoteEverywhere && (isHomeChannel == Ternary.unknown))
+    if (!plugin.settings.promoteEverywhere && (isHomeChannel == Ternary.unknown))
     {
         import std.algorithm.searching : canFind;
         isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel.name);
     }
 
-    if (plugin.twitchSettings.promoteEverywhere || (isHomeChannel == Ternary.yes))
+    if (plugin.settings.promoteEverywhere || (isHomeChannel == Ternary.yes))
     {
         /+
             Badges may change on some events, and the promotion hysteresis in
@@ -4444,7 +4444,7 @@ void reload(TwitchPlugin plugin)
 {
     loadResources(plugin);
 
-    if (plugin.twitchSettings.customEmotes)
+    if (plugin.settings.customEmotes)
     {
         import kameloso.plugins.twitch.emotes : importCustomEmotes;
 
@@ -4999,7 +4999,7 @@ package:
     /++
         All Twitch plugin settings.
      +/
-    TwitchSettings twitchSettings;
+    TwitchSettings settings;
 
     /++
         Transient state of this [TwitchPlugin] instance.
@@ -5267,17 +5267,17 @@ package:
     override public bool isEnabled() const pure nothrow @nogc
     {
         immutable wantKeygen =
-            (twitchSettings.keygen ||
-            twitchSettings.superKeygen ||
-            twitchSettings.googleKeygen ||
-            twitchSettings.youtubeKeygen ||
-            twitchSettings.spotifyKeygen);
+            (this.settings.keygen ||
+            this.settings.superKeygen ||
+            this.settings.googleKeygen ||
+            this.settings.youtubeKeygen ||
+            this.settings.spotifyKeygen);
 
         return (
             wantKeygen ||  // Always enabled if we want to generate keys
-            (twitchSettings.enabled &&
-                (state.server.daemon == IRCServer.Daemon.twitch) ||
-                (state.server.daemon == IRCServer.Daemon.unset)));
+            (this.settings.enabled &&
+                (this.state.server.daemon == IRCServer.Daemon.twitch) ||
+                (this.state.server.daemon == IRCServer.Daemon.unset)));
     }
 
     mixin IRCPluginImpl;

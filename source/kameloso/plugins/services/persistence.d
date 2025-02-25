@@ -425,7 +425,7 @@ auto postprocess(PersistenceService service, ref IRCEvent event)
         import std.algorithm.searching : canFind;
 
         with (ChannelPolicy)
-        final switch (service.persistenceSettings.omniscienceLevel)
+        final switch (service.settings.omniscienceLevel)
         {
         case home:
             // omniscienceLevel requires a home channel
@@ -1556,7 +1556,7 @@ private:
     /++
         All Persistence settings gathered.
      +/
-    PersistenceSettings persistenceSettings;
+    PersistenceSettings settings;
 
     /++
         File with user definitions.

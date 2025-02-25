@@ -123,7 +123,7 @@ final class UnittestPlugin : IRCPlugin
     /++
         Unit test plugin settings.
      +/
-    UnittestSettings unittestSettings;
+    UnittestSettings settings;
 
     @Resource resFileWithoutSubdir = "unittest.delme";
     @Resource("unittest") resFileWithSubdir = "unittest.delme";
@@ -148,7 +148,7 @@ unittest
     assert((plugin.name == "unittest"), plugin.name);
 
     assert(!plugin.isEnabled);
-    plugin.unittestSettings.enabled = true;
+    plugin.settings.enabled = true;
     assert(plugin.isEnabled);
 
     assert((plugin.Introspection.allEventHandlerUDAsInModule.length > 2),

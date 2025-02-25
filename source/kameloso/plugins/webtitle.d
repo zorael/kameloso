@@ -156,7 +156,7 @@ void onMessage(WebtitlePlugin plugin, const IRCEvent event)
     mixin(memoryCorruptionCheck);
 
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
-    if (event.sender.class_ < plugin.webtitleSettings.minimumPermissionsNeeded) return;
+    if (event.sender.class_ < plugin.settings.minimumPermissionsNeeded) return;
 
     onMessageImpl(plugin, event);
 }
@@ -205,7 +205,7 @@ void onMessageImpl(WebtitlePlugin plugin, const IRCEvent event)
     // mutable so advancePast in lookupURLs works
     auto urls = findURLs(
         line: event.content,
-        max: plugin.webtitleSettings.maxURLsPerLine);
+        max: plugin.settings.maxURLsPerLine);
 
     if (urls.length)
     {
@@ -412,7 +412,7 @@ void onEndOfMotd(WebtitlePlugin plugin, const IRCEvent _)
 
     // Use a minimum of one worker thread, regardless of setting
     plugin.transient.workerTids.length =
-        max(plugin.webtitleSettings.workerThreads, 1);
+        max(plugin.settings.workerThreads, 1);
 
     foreach (ref workerTid; plugin.transient.workerTids)
     {
@@ -976,7 +976,7 @@ private:
     /++
         All Webtitle options gathered.
      +/
-    WebtitleSettings webtitleSettings;
+    WebtitleSettings settings;
 
     /++
         Transient state of this [WebtitlePlugin] instance.

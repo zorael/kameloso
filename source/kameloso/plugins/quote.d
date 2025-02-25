@@ -700,7 +700,7 @@ void sendQuoteToChannel(
     }
 
     const when = SysTime.fromUnixTime(quote.timestamp);
-    immutable timeString = getTimeStringFromTimestamp(when, plugin.quoteSettings.timePrecision);
+    immutable timeString = getTimeStringFromTimestamp(when, plugin.settings.timePrecision);
     immutable maybeSpace = timeString.length ? " " : "";
 
     enum pattern = "%s (<h>%s<h> #%d%s%s)";
@@ -1100,7 +1100,7 @@ Quote getQuoteBySearchTerms(
     {
         if (!flattenedQuote.canFind(searchTerms)) continue;
 
-        if (plugin.quoteSettings.alwaysPickFirstMatch)
+        if (plugin.settings.alwaysPickFirstMatch)
         {
             index = i;
             return quotes[index];
@@ -1126,7 +1126,7 @@ Quote getQuoteBySearchTerms(
     {
         if (!stripBoth(flattenedQuote).canFind(strippedSearchTerms)) continue;
 
-        if (plugin.quoteSettings.alwaysPickFirstMatch)
+        if (plugin.settings.alwaysPickFirstMatch)
         {
             index = i;
             return quotes[index];
@@ -1637,7 +1637,7 @@ private:
     /++
         All Quote plugin settings gathered.
      +/
-    QuoteSettings quoteSettings;
+    QuoteSettings settings;
 
     /++
         The in-memory JSON storage of all user quotes.

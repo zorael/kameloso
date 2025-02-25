@@ -220,7 +220,7 @@ void formatMessageMonochrome(Sink)
 
         immutable typestring = event.type.toString.withoutTypePrefix;
 
-        if (plugin.printerSettings.uppercaseTypes)
+        if (plugin.settings.uppercaseTypes)
         {
             sink.put(typestring);
         }
@@ -246,7 +246,7 @@ void formatMessageMonochrome(Sink)
 
             version(TwitchSupport)
             {
-                if (plugin.printerSettings.channelIDs && event.channel.id)
+                if (plugin.settings.channelIDs && event.channel.id)
                 {
                     .put(sink, ':', event.channel.id);
                 }
@@ -260,7 +260,7 @@ void formatMessageMonochrome(Sink)
 
                 version(TwitchSupport)
                 {
-                    if (plugin.printerSettings.channelIDs && event.subchannel.id)
+                    if (plugin.settings.channelIDs && event.subchannel.id)
                     {
                         .put(sink, ':', event.subchannel.id);
                     }
@@ -294,7 +294,7 @@ void formatMessageMonochrome(Sink)
                 sink.put(event.sender.displayName);
                 putDisplayName = true;
 
-                if (plugin.printerSettings.classNames)
+                if (plugin.settings.classNames)
                 {
                     .put(sink, '/', event.sender.class_);
                 }
@@ -312,13 +312,13 @@ void formatMessageMonochrome(Sink)
             // Can be no-nick special: [PING] *2716423853
             sink.put(event.sender.nickname);
 
-            if (plugin.printerSettings.classNames)
+            if (plugin.settings.classNames)
             {
                 .put(sink, '/', event.sender.class_);
             }
         }
 
-        if (plugin.printerSettings.accountNames)
+        if (plugin.settings.accountNames)
         {
             // No need to check for nickname.length, I think
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
@@ -331,7 +331,7 @@ void formatMessageMonochrome(Sink)
         version(TwitchSupport)
         {
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                plugin.printerSettings.twitchBadges &&
+                plugin.settings.twitchBadges &&
                 event.sender.badges.length &&
                 (event.sender.badges != "*"))
             {
@@ -390,7 +390,7 @@ void formatMessageMonochrome(Sink)
                 sink.put(event.target.displayName);
                 putDisplayName = true;
 
-                if (plugin.printerSettings.classNames)
+                if (plugin.settings.classNames)
                 {
                     .put(sink, '/', event.target.class_);
                 }
@@ -412,13 +412,13 @@ void formatMessageMonochrome(Sink)
         {
             sink.put(event.target.nickname);
 
-            if (plugin.printerSettings.classNames)
+            if (plugin.settings.classNames)
             {
                 .put(sink, '/', event.target.class_);
             }
         }
 
-        if (plugin.printerSettings.accountNames)
+        if (plugin.settings.accountNames)
         {
             // No need to check for nickname.length, I think
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
@@ -431,7 +431,7 @@ void formatMessageMonochrome(Sink)
         version(TwitchSupport)
         {
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                plugin.printerSettings.twitchBadges &&
+                plugin.settings.twitchBadges &&
                 event.target.badges.length &&
                 (event.target.badges != "*"))
             {
@@ -679,7 +679,7 @@ void formatMessageMonochrome(Sink)
         sink.clear();
     }
 
-    plugin.printerSettings.classNames = true;
+    plugin.settings.classNames = true;
     event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
     event.sender.class_ = IRCUser.Class.staff;
     //colour = "#3c507d";
@@ -698,7 +698,7 @@ void formatMessageMonochrome(Sink)
         event.sender.badges = string.init;
     }}
 
-    plugin.printerSettings.accountNames = true;
+    plugin.settings.accountNames = true;
     plugin.state.server.daemon = IRCServer.Daemon.inspircd;
     event.sender.class_ = IRCUser.Class.anyone;
     event.type = IRCEvent.Type.ACCOUNT;
@@ -744,7 +744,7 @@ void formatMessageMonochrome(Sink)
         sink.clear();
     }
 
-    plugin.printerSettings.classNames = false;
+    plugin.settings.classNames = false;
     event.type = IRCEvent.Type.CHAN;
     event.channel.name = "#nickname";
     event.num = 0;
@@ -764,7 +764,7 @@ void formatMessageMonochrome(Sink)
         sink.clear();
     }
 
-    plugin.printerSettings.channelIDs = true;
+    plugin.settings.channelIDs = true;
     event.channel.id = 123;
     event.subchannel.name = "#sub";
     event.subchannel.id = 456;
@@ -852,7 +852,7 @@ void formatMessageColoured(Sink)
         import kameloso.irccolours : ircANSIColourMap;
         import kameloso.terminal.colours : getColourByHash;
 
-        if (!plugin.printerSettings.colourfulNicknames)
+        if (!plugin.settings.colourfulNicknames)
         {
             // Don't differentiate between sender and target? Consistency?
             return plugin.state.coreSettings.brightTerminal ?
@@ -876,7 +876,7 @@ void formatMessageColoured(Sink)
         {
             if (!user.isServer &&
                 user.colour.length &&
-                plugin.printerSettings.truecolour &&
+                plugin.settings.truecolour &&
                 plugin.state.coreSettings.extendedColours)
             {
                 import kameloso.terminal.colours : applyTruecolour;
@@ -888,14 +888,14 @@ void formatMessageColoured(Sink)
                     rgb.g,
                     rgb.b,
                     brightTerminal: plugin.state.coreSettings.brightTerminal,
-                    normalise: plugin.printerSettings.normaliseTruecolour);
+                    normalise: plugin.settings.normaliseTruecolour);
                 return;
             }
         }
 
         immutable name = user.isServer ?
             user.address :
-            ((user.account.length && (byAccount || plugin.printerSettings.colourByAccount)) ?
+            ((user.account.length && (byAccount || plugin.settings.colourByAccount)) ?
                 user.account :
                 user.nickname);
 
@@ -962,7 +962,7 @@ void formatMessageColoured(Sink)
 
         sink.put(" [");
 
-        if (plugin.printerSettings.uppercaseTypes)
+        if (plugin.settings.uppercaseTypes)
         {
             sink.put(typestring);
         }
@@ -993,7 +993,7 @@ void formatMessageColoured(Sink)
 
             version(TwitchSupport)
             {
-                if (plugin.printerSettings.channelIDs && event.channel.id)
+                if (plugin.settings.channelIDs && event.channel.id)
                 {
                     .put(sink, ':', event.channel.id);
                 }
@@ -1015,7 +1015,7 @@ void formatMessageColoured(Sink)
 
                 version(TwitchSupport)
                 {
-                    if (plugin.printerSettings.channelIDs && event.subchannel.id)
+                    if (plugin.settings.channelIDs && event.subchannel.id)
                     {
                         .put(sink, ':', event.subchannel.id);
                     }
@@ -1054,7 +1054,7 @@ void formatMessageColoured(Sink)
                 sink.put(event.sender.displayName);
                 putDisplayName = true;
 
-                if (plugin.printerSettings.classNames)
+                if (plugin.settings.classNames)
                 {
                     sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     .put(sink, '/', event.sender.class_);
@@ -1063,7 +1063,7 @@ void formatMessageColoured(Sink)
                 if ((event.sender.displayName != event.sender.account) &&
                     !event.sender.displayName.asLowerCase.equal(event.sender.account))
                 {
-                    if (!plugin.printerSettings.classNames)
+                    if (!plugin.settings.classNames)
                     {
                         sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     }
@@ -1082,20 +1082,20 @@ void formatMessageColoured(Sink)
             // Can be no-nick special: [PING] *2716423853
             sink.put(event.sender.nickname);
 
-            if (plugin.printerSettings.classNames)
+            if (plugin.settings.classNames)
             {
                 sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 .put(sink, '/', event.sender.class_);
             }
         }
 
-        if (plugin.printerSettings.accountNames)
+        if (plugin.settings.accountNames)
         {
             // No need to check for nickname.length, I think
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.sender.account.length)
             {
-                if (!plugin.printerSettings.classNames)
+                if (!plugin.settings.classNames)
                 {
                     sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 }
@@ -1111,7 +1111,7 @@ void formatMessageColoured(Sink)
         version(TwitchSupport)
         {
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                plugin.printerSettings.twitchBadges &&
+                plugin.settings.twitchBadges &&
                 event.sender.badges.length &&
                 (event.sender.badges != "*"))
             {
@@ -1190,7 +1190,7 @@ void formatMessageColoured(Sink)
 
                 putDisplayName = true;
 
-                if (plugin.printerSettings.classNames)
+                if (plugin.settings.classNames)
                 {
                     sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     .put(sink, '/', event.target.class_);
@@ -1199,7 +1199,7 @@ void formatMessageColoured(Sink)
                 if ((event.target.displayName != event.target.account) &&
                     !event.target.displayName.asLowerCase.equal(event.target.account))
                 {
-                    if (!plugin.printerSettings.classNames)
+                    if (!plugin.settings.classNames)
                     {
                         sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                     }
@@ -1236,20 +1236,20 @@ void formatMessageColoured(Sink)
                 sink.put(event.target.nickname);
             }
 
-            if (plugin.printerSettings.classNames)
+            if (plugin.settings.classNames)
             {
                 sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 .put(sink, '/', event.target.class_);
             }
         }
 
-        if (plugin.printerSettings.accountNames)
+        if (plugin.settings.accountNames)
         {
             // No need to check for nickname.length, I think
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.target.account.length)
             {
-                if (!plugin.printerSettings.classNames)
+                if (!plugin.settings.classNames)
                 {
                     sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
                 }
@@ -1265,7 +1265,7 @@ void formatMessageColoured(Sink)
         version(TwitchSupport)
         {
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                plugin.printerSettings.twitchBadges &&
+                plugin.settings.twitchBadges &&
                 event.target.badges.length &&
                 (event.target.badges != "*"))
             {
@@ -1363,7 +1363,7 @@ void formatMessageColoured(Sink)
                     line: content,
                     emotes: emotes,
                     type: event.type,
-                    colourful: plugin.printerSettings.colourfulEmotes,
+                    colourful: plugin.settings.colourfulEmotes,
                     coreSettings: plugin.state.coreSettings);
             }
         }

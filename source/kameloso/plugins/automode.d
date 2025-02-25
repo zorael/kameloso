@@ -673,7 +673,7 @@ private:
     /++
         All Automode options gathered.
      +/
-    AutomodeSettings automodeSettings;
+    AutomodeSettings settings;
 
     /++
         Associative array of automodes.
@@ -699,7 +699,8 @@ private:
     version(TwitchSupport)
     override public bool isEnabled() const pure nothrow @nogc
     {
-        return automodeSettings.enabled && (state.server.daemon != IRCServer.Daemon.twitch);
+        return this.settings.enabled &&
+            (this.state.server.daemon != IRCServer.Daemon.twitch);
     }
 
     mixin IRCPluginImpl;

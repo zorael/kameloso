@@ -238,7 +238,7 @@ void onCommandTime(TimePlugin plugin, const IRCEvent event)
     {
         import std.format : format;
 
-        if (plugin.timeSettings.amPM)
+        if (plugin.settings.amPM)
         {
             immutable amPM = (hour < 12) ? "AM" : "PM";
             hour %= 12;
@@ -624,11 +624,11 @@ final class TimePlugin : IRCPlugin
 private:
     import lu.json : JSONStorage;
 
-    // timeSettings
+    // settings
     /++
         All Time plugin settings gathered.
      +/
-    TimeSettings timeSettings;
+    TimeSettings settings;
 
     // channelTimezones
     /++
