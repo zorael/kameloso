@@ -742,6 +742,7 @@ mixin template ChannelAwareness(
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.NICK)
+        .onEvent(IRCEvent.Type.SELFNICK)
         .when(Timing.setup)
         .chainable(true)
     )
