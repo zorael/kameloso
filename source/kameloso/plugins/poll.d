@@ -280,16 +280,9 @@ void onCommandPoll(PollPlugin plugin, const IRCEvent event)
         }
         else
         {
-            // Can't use a tertiary or it fails to build with older compilers
-            // Error: variable operator used before set
-            if (event.sender.class_ < IRCUser.Class.operator)
-            {
-                return sendNoOngoingPoll();
-            }
-            else
-            {
-                return sendUsage();
-            }
+            return (event.sender.class_ < IRCUser.Class.operator) ?
+                sendNoOngoingPoll() :
+                sendUsage();
         }
 
     case "status":

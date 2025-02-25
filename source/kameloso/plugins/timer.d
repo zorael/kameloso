@@ -249,12 +249,12 @@ public:
         json["suspended"] = JSONValue(this.suspended);
         json["lines"] = null;
         json["lines"].array = null;
-        //auto linesJSON = "lines" in json;
+
+        auto linesJSON = "lines" in json;
 
         foreach (immutable line; this.lines)
         {
-            //linesJSON.array ~= JSONValue(line);  // Doesn't work with older compilers
-            json["lines"].array ~= JSONValue(line);
+            linesJSON.array ~= JSONValue(line);
         }
 
         return json;
@@ -1656,12 +1656,12 @@ void saveTimers(TimerPlugin plugin)
     {
         json[channelName] = null;
         json[channelName].array = null;
-        //auto channelTimersJSON = channelName in json;
+
+        auto channelTimersJSON = channelName in json;
 
         foreach (const timer; timers)
         {
-            //channelTimersJSON.array ~= timer.toJSON();  // Doesn't work with older compilers
-            json[channelName].array ~= timer.toJSON();
+            channelTimersJSON.array ~= timer.toJSON();
         }
     }
 
