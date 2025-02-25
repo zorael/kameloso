@@ -288,7 +288,7 @@ auto buildDocs(const string buildConfiguration = string.init)
     }
 
     immutable buildConfigString = buildConfiguration.length ?
-        " (" ~ buildConfiguration ~ '}' :
+        " (" ~ buildConfiguration ~ ')' :
         string.init;
 
     writeln();
@@ -298,7 +298,7 @@ auto buildDocs(const string buildConfiguration = string.init)
     const result = execute(command);
     sw.stop();
 
-    writeln(i"[!] docs built in $(sw.peek), retval $(result.status)");
+    writeln(i"[!] built in $(sw.peek), retval $(result.status)");
     writeln();
     writeln(result.output.strip());
 
