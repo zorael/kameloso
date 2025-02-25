@@ -1169,9 +1169,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
                 Stagger imports a bit.
              +/
             immutable homeIndex = plugin.state.bot.homeChannels.countUntil(event.channel.name);
-            alias multiplier = homeIndex;
-            immutable delayUntilImport = Delays.delayBetweenImports * multiplier;
-
+            immutable delayUntilImport = homeIndex * Delays.delayBetweenImports;
             auto importEmotesFiber = new Fiber(&importEmotesDg, BufferSize.fiberStack);
             delay(plugin, importEmotesFiber, delayUntilImport);
         }
@@ -1227,9 +1225,10 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
 {
     import kameloso.plugins.twitch.emotes : Delays, importCustomEmotes;
     import kameloso.plugins.common.scheduling : delay;
+    import kameloso.constants : BufferSize;
     import std.algorithm.searching : countUntil;
     import core.thread.fiber : Fiber;
-    import kameloso.constants : BufferSize;
+    import core.time : Duration, seconds;
 
     mixin(memoryCorruptionCheck);
 
@@ -1249,20 +1248,25 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
     }
 
     /+
-        Delay Fiber.getThis() first and then import
+        Stagger imports a bit.
      +/
+    Duration delayUntilImport;
     immutable guestIndex = plugin.state.bot.guestChannels.countUntil(event.channel.name);
 
-    immutable delayMultiplier = (guestIndex != -1) ?
-        // It's a guest channel
-        cast(uint)(plugin.state.bot.homeChannels.length + guestIndex) :
-
+    if (guestIndex != -1)
+    {
+        // It's a guest channel, pad it behind home channels
+        immutable start = plugin.state.bot.homeChannels.length;
+        delayUntilImport = start.seconds + (guestIndex * Delays.delayBetweenImports);
+    }
+    else
+    {
         // Channel joined via piped command or admin join command
         // Invent a delay based on the hash of the channel name
         // padded by the number of home and guest channels
-        cast(uint)(plugin.state.bot.homeChannels.length +
-            plugin.state.bot.guestChannels.length +
-            (event.channel.name.hashOf % 5));
+        immutable start = (plugin.state.bot.homeChannels.length + plugin.state.bot.guestChannels.length);
+        delayUntilImport = start.seconds + ((event.channel.name.hashOf % 5) * Delays.delayBetweenImports);
+    }
 
     void importDg()
     {
@@ -1273,7 +1277,6 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
     }
 
     auto importFiber = new Fiber(&importDg, BufferSize.fiberStack);
-    immutable delayUntilImport = Delays.delayBetweenImports * delayMultiplier;
     delay(plugin, importFiber, delayUntilImport);
 }
 
@@ -4458,7 +4461,7 @@ void reload(TwitchPlugin plugin)
             import kameloso.constants : BufferSize;
             import std.algorithm.searching : countUntil;
             import core.thread.fiber : Fiber;
-            import core.time : seconds;
+            import core.time : Duration, seconds;
 
             //plugin.customChannelEmotes[channelName].emotes = null;
             customEmotes.emotes = null;
@@ -4472,12 +4475,16 @@ void reload(TwitchPlugin plugin)
                     id: plugin.customChannelEmotes[channelName].id);
             }
 
-            uint delayMultiplier;
+            /+
+                Stagger imports a bit.
+             +/
+            Duration delayUntilImport;
             immutable homeIndex = plugin.state.bot.homeChannels.countUntil(channelName);
 
             if (homeIndex != -1)
             {
-                delayMultiplier = cast(uint)homeIndex;
+                // It's a home channel
+                delayUntilImport = homeIndex * Delays.delayBetweenImports;
             }
             else
             {
@@ -4486,21 +4493,19 @@ void reload(TwitchPlugin plugin)
                 if (guestIndex != -1)
                 {
                     // Channel joined via piped command or admin join command
-                    delayMultiplier = cast(uint)(plugin.state.bot.homeChannels.length + guestIndex);
+                    immutable start = plugin.state.bot.homeChannels.length;
+                    delayUntilImport = start.seconds + (guestIndex * Delays.delayBetweenImports);
                 }
                 else
                 {
                     // Invent a delay based on the hash of the channel name
                     // padded by the number of home and guest channels
-                    delayMultiplier = cast(uint)
-                        (plugin.state.bot.homeChannels.length +
-                        plugin.state.bot.guestChannels.length +
-                        (channelName.hashOf % 5));
+                    immutable start = (plugin.state.bot.homeChannels.length + plugin.state.bot.guestChannels.length);
+                    delayUntilImport = start.seconds + ((channelName.hashOf % 5) * Delays.delayBetweenImports);
                 }
             }
 
             auto importFiber = new Fiber(&importDg, BufferSize.fiberStack);
-            immutable delayUntilImport = Delays.delayBetweenImports * delayMultiplier;
             delay(plugin, importFiber, delayUntilImport);
         }
     }
