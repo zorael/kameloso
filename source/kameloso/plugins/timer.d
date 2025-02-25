@@ -1722,6 +1722,24 @@ void reload(TimerPlugin plugin)
 }
 
 
+// teardown
+/++
+    Cleanly deinitialises the plugin in terms of its [Timer]
+    [core.thread.fiber.Fiber|Fiber]s.
+ +/
+void teardown(TimerPlugin plugin)
+{
+    foreach (ref channelTimers; plugin.timersByChannel)
+    {
+        foreach (ref timer; channelTimers)
+        {
+            destroy(timer.fiber);
+            timer.fiber = null;
+        }
+    }
+}
+
+
 // selftest
 /++
     Performs self-tests against another bot.
