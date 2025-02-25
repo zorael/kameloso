@@ -335,11 +335,17 @@ mixin template UserAwareness(
 
     // onUserAwarenessCatchSenderMixin
     /++
-        Proxies to
-        [kameloso.plugins.common.mixins.awareness.onUserAwarenessCatchSender|onUserAwarenessCatchSender].
+        Adds a user to the [kameloso.plugins.IRCPlugin|IRCPlugin]'s
+        [kameloso.plugins.IRCPluginState.users|IRCPluginState.users] array,
+        potentially including their services account name.
 
-        See_Also:
-            [kameloso.plugins.common.mixins.awareness.onUserAwarenessCatchSender|onUserAwarenessCatchSender]
+        Servers with the (enabled) capability `extended-join` will include the
+        account name of whoever joins in the event string. If it's there, catch
+        the user into the user array so we don't have to WHOIS them later.
+
+        May not be broken out into a separate top-level function as it must be
+        able to evaluate `__traits(compiles, { alias _ = .hasChannelAwareness; })`
+        at compile time.
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.JOIN)
@@ -354,7 +360,71 @@ mixin template UserAwareness(
     )
     void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const IRCEvent event) @system
     {
-        kameloso.plugins.common.mixins.awareness.onUserAwarenessCatchSender!channelPolicy(plugin, event);
+        import kameloso.plugins.common : catchUser;
+
+        with (IRCEvent.Type)
+        switch (event.type)
+        {
+        case ACCOUNT:
+        case AWAY:
+        case BACK:
+            static if (
+                (channelPolicy & ChannelPolicy.home) ||
+                (channelPolicy & ChannelPolicy.guest))
+            {
+                // These events don't carry a channel.
+                // Catch if there's already an entry. Trust that it's supposed
+                // to be there if it's there. (RPL_NAMREPLY probably populated it)
+
+                if (event.sender.nickname in plugin.state.users)
+                {
+                    return catchUser(plugin, event.sender);
+                }
+
+                static if (__traits(compiles, { alias _ = .hasChannelAwareness; }))
+                {
+                    // Catch the user if it's visible in some channel we're in.
+                    foreach (immutable channelName, const channel; plugin.state.channels)
+                    {
+                        import std.algorithm.searching : canFind;
+
+                        static if (channelPolicy & ChannelPolicy.home)
+                        {
+                            if (plugin.state.bot.homeChannels.canFind(channelName) &&
+                                (event.sender.nickname in channel.users))
+                            {
+                                // event is from a user that's in a home channel
+                                return catchUser(plugin, event.sender);
+                            }
+                        }
+
+                        static if (channelPolicy & ChannelPolicy.guest)
+                        {
+                            if (plugin.state.bot.guestChannels.canFind(channelName) &&
+                                (event.sender.nickname in channel.users))
+                            {
+                                // event is from a user that's in a guest channel
+                                return catchUser(plugin, event.sender);
+                            }
+                        }
+                    }
+                }
+            }
+            else static if (channelPolicy & ChannelPolicy.any)
+            {
+                // Catch everyone on ChannelPolicy.any
+                catchUser(plugin, event.sender);
+            }
+            else
+            {
+                // Do nothing, I guess?
+            }
+            break;
+
+        //case JOIN:
+        default:
+            catchUser(plugin, event.sender);
+        }
     }
 
     // onUserAwarenessNamesReplyMixin
@@ -450,82 +520,6 @@ void onUserAwarenessCatchTarget(IRCPlugin plugin, const IRCEvent event) @system
 {
     import kameloso.plugins.common : catchUser;
     catchUser(plugin, event.target);
-}
-
-
-// onUserAwarenessCatchSender
-/++
-    Adds a user to the [kameloso.plugins.IRCPlugin|IRCPlugin]'s
-    [kameloso.plugins.IRCPluginState.users|IRCPluginState.users] array,
-    potentially including their services account name.
-
-    Servers with the (enabled) capability `extended-join` will include the
-    account name of whoever joins in the event string. If it's there, catch
-    the user into the user array so we don't have to WHOIS them later.
- +/
-void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
-    (IRCPlugin plugin, const IRCEvent event) @system
-{
-    import kameloso.plugins.common : catchUser;
-
-    with (IRCEvent.Type)
-    switch (event.type)
-    {
-    case ACCOUNT:
-    case AWAY:
-    case BACK:
-        static if (
-            (channelPolicy == ChannelPolicy.home) ||
-            (channelPolicy == ChannelPolicy.guest))
-        {
-            // These events don't carry a channel.
-            // Catch if there's already an entry. Trust that it's supposed
-            // to be there if it's there. (RPL_NAMREPLY probably populated it)
-
-            if (event.sender.nickname in plugin.state.users)
-            {
-                return catchUser(plugin, event.sender);
-            }
-
-            static if (__traits(compiles, { alias _ = .hasChannelAwareness; }))
-            {
-                // Catch the user if it's visible in some channel we're in.
-
-                foreach (immutable channelName, const channel; plugin.state.channels)
-                {
-                    import std.algorithm.searching : canFind;
-
-                    static if (channelPolicy == ChannelPolicy.home)
-                    {
-                        auto channelArray = &plugin.state.bot.homeChannels;
-                    }
-                    else /*if (channelPolicy == ChannelPolicy.guest)*/
-                    {
-                        auto channelArray = &plugin.state.bot.guestChannels;
-                    }
-
-                    // Skip if the channel is not a home channel or a guest channel, respectively
-                    if (!(*channelArray).canFind(channelName)) continue;
-
-                    if (event.sender.nickname in channel.users)
-                    {
-                        // event is from a user that's in a home channel
-                        return catchUser(plugin, event.sender);
-                    }
-                }
-            }
-        }
-        else /*static if (channelPolicy == ChannelPolicy.any)*/
-        {
-            // Catch everyone on ChannelPolicy.any
-            catchUser(plugin, event.sender);
-        }
-        break;
-
-    //case JOIN:
-    default:
-        catchUser(plugin, event.sender);
-    }
 }
 
 
