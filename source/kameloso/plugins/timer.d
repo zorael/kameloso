@@ -1326,6 +1326,9 @@ void startTimerMonitor(TimerPlugin plugin)
             // Whether or not there are any timers at all, in any channel
             bool anyTimers;
 
+            // How much time is remaining until the next timer would trigger from time elapsed.
+            long timeUntilNextClosestTimeTrigger = long.max;
+
             // Walk through channels, trigger fibers
             foreach (immutable channelName, channel; plugin.channels)
             {
@@ -1342,7 +1345,7 @@ void startTimerMonitor(TimerPlugin plugin)
                     anyTimers = true;
 
                     // Get time here and cache it
-                    if (nowInUnix == 0) nowInUnix = Clock.currTime.toUnixTime();
+                    if (!nowInUnix) nowInUnix = Clock.currTime.toUnixTime();
 
                     if (!timerPtr.lines.length)
                     {
@@ -1353,16 +1356,22 @@ void startTimerMonitor(TimerPlugin plugin)
                         continue;  // line-less timers are never called
                     }
 
-                    immutable timeConditionMet =
-                        ((nowInUnix - timerPtr.lastTimestamp) >= timerPtr.timeThreshold);
-                    immutable messageConditionMet =
-                        ((channel.messageCount - timerPtr.lastMessageCount) >= timerPtr.messageCountThreshold);
+                    immutable timeSinceLast = (nowInUnix - timerPtr.lastTimestamp);
+                    immutable timeRemaining = (timerPtr.timeThreshold - timeSinceLast);
+                    immutable timeConditionMet = (timeRemaining <= 0);
+
+                    immutable messagesSinceLast = (channel.messageCount - timerPtr.lastMessageCount);
+                    immutable messagesRemaining = (timerPtr.messageCountThreshold - messagesSinceLast);
+                    immutable messageConditionMet = (messagesRemaining <= 0);
+
+                    bool satisfied;
 
                     if (timerPtr.condition == Timer.TimerCondition.both)
                     {
                         if (timeConditionMet && messageConditionMet)
                         {
                             timerPtr.fiber.call();
+                            satisfied = true;
                         }
                     }
                     else /*if (timerPtr.condition == Timer.TimerCondition.either)*/
@@ -1370,6 +1379,16 @@ void startTimerMonitor(TimerPlugin plugin)
                         if (timeConditionMet || messageConditionMet)
                         {
                             timerPtr.fiber.call();
+                            satisfied = true;
+                        }
+                    }
+
+                    if (!satisfied && !timeConditionMet)
+                    {
+                        if (timeRemaining < timeUntilNextClosestTimeTrigger)
+                        {
+                            // Update the time until the next closest time trigger
+                            timeUntilNextClosestTimeTrigger = timeRemaining;
                         }
                     }
                 }
@@ -1382,7 +1401,21 @@ void startTimerMonitor(TimerPlugin plugin)
                 return;
             }
 
-            delay(plugin, plugin.timerPeriodicity, yield: true);
+            static immutable timerPeriodicitySeconds = plugin.timerPeriodicity.total!"seconds";
+
+            if (timeUntilNextClosestTimeTrigger < timerPeriodicitySeconds)
+            {
+                import core.time : seconds;
+
+                // Sleep until the next closest time trigger
+                immutable timeUntilNextClosestTimeTriggerDuration = timeUntilNextClosestTimeTrigger.seconds;
+                delay(plugin, timeUntilNextClosestTimeTriggerDuration, yield: true);
+            }
+            else
+            {
+                // Sleep the normal periodicity
+                delay(plugin, plugin.timerPeriodicity, yield: true);
+            }
         }
     }
 
@@ -1908,8 +1941,7 @@ private:
     @Resource string timerFile = "timers.json";
 
     /++
-        How often to check whether timers should fire. A smaller number means
-        better precision, but also marginally higher gc pressure.
+        The baseline duration between timer checks.
      +/
     static immutable timerPeriodicity = 10.seconds;
 
