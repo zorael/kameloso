@@ -114,8 +114,7 @@ in (((channelName.length && id) ||
     }
 
     // Delay importing just a bit to cosmetically stagger the terminal output
-    static immutable initialDelay = 2.seconds;
-    delay(plugin, initialDelay, yield: true);
+    delay(plugin, Delays.initialDelayBeforeImports, yield: true);
 
     void reportSuccess(const string emoteImportName, const uint numAdded)
     {
@@ -179,6 +178,12 @@ in (((channelName.length && id) ||
             GC.disable();
             scope(exit) GC.enable();
 
+            if (i > 0)
+            {
+                // Delay between imports, but skip the delay for the first one
+                delay(plugin, Delays.delayBetweenImports, yield: true);
+            }
+
             try
             {
                 immutable numAdded = emoteImport.fun(
@@ -230,8 +235,7 @@ in (((channelName.length && id) ||
                     continue;  // skip the delay below
                 }
 
-                static immutable retryOnErrorDelay = 3.seconds;
-                delay(plugin, retryOnErrorDelay, yield: true);
+                delay(plugin, Delays.extraDelayAfterError, yield: true);
             }
         }
 
@@ -435,10 +439,29 @@ unittest
 }
 
 
-// baseDelayBetweenImports
+// Delays
 /++
-    The base delay between importing custom emotes, in seconds.
-
-    This is used to stagger the imports so that they don't all happen at once.
+    Delays used in the emote import process.
  +/
-static immutable baseDelayBetweenImports = 1.seconds;
+struct Delays
+{
+    /++
+        The initial delay before importing custom emotes.
+        This is mostly to stagger the terminal output.
+     +/
+    static immutable initialDelayBeforeImports = 2.seconds;
+
+    /++
+        The base delay between importing custom emotes.
+        This is used to stagger the imports so that they don't all happen at once.
+     +/
+    static immutable delayBetweenImports = 1.seconds;
+
+    /++
+        The extra delay to add after an error has occurred.
+        This is used to prevent hammering the API with requests.
+
+        The final duration will be `extraDelayAfterError + delayBetweenImports`.
+     +/
+    alias extraDelayAfterError = delayBetweenImports;
+}

@@ -1151,7 +1151,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
 
         if (plugin.settings.customEmotes)
         {
-            import kameloso.plugins.twitch.emotes : baseDelayBetweenImports;
+            import kameloso.plugins.twitch.emotes : Delays;
             import kameloso.plugins.common.scheduling : delay;
             import kameloso.constants : BufferSize;
             import std.algorithm.searching : countUntil;
@@ -1170,7 +1170,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
              +/
             immutable homeIndex = plugin.state.bot.homeChannels.countUntil(event.channel.name);
             alias multiplier = homeIndex;
-            immutable delayUntilImport = baseDelayBetweenImports * multiplier;
+            immutable delayUntilImport = Delays.delayBetweenImports * multiplier;
 
             auto importEmotesFiber = new Fiber(&importEmotesDg, BufferSize.fiberStack);
             delay(plugin, importEmotesFiber, delayUntilImport);
@@ -1225,7 +1225,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
 )
 void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.twitch.emotes : baseDelayBetweenImports, importCustomEmotes;
+    import kameloso.plugins.twitch.emotes : Delays, importCustomEmotes;
     import kameloso.plugins.common.scheduling : delay;
     import std.algorithm.searching : countUntil;
     import core.thread.fiber : Fiber;
@@ -1273,7 +1273,7 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
     }
 
     auto importFiber = new Fiber(&importDg, BufferSize.fiberStack);
-    immutable delayUntilImport = baseDelayBetweenImports * delayMultiplier;
+    immutable delayUntilImport = Delays.delayBetweenImports * delayMultiplier;
     delay(plugin, importFiber, delayUntilImport);
 }
 
@@ -4453,7 +4453,7 @@ void reload(TwitchPlugin plugin)
 
         foreach (immutable channelName, ref customEmotes; plugin.customChannelEmotes)
         {
-            import kameloso.plugins.twitch.emotes : baseDelayBetweenImports;
+            import kameloso.plugins.twitch.emotes : Delays;
             import kameloso.plugins.common.scheduling : delay;
             import kameloso.constants : BufferSize;
             import std.algorithm.searching : countUntil;
@@ -4500,7 +4500,7 @@ void reload(TwitchPlugin plugin)
             }
 
             auto importFiber = new Fiber(&importDg, BufferSize.fiberStack);
-            immutable delayUntilImport = baseDelayBetweenImports * delayMultiplier;
+            immutable delayUntilImport = Delays.delayBetweenImports * delayMultiplier;
             delay(plugin, importFiber, delayUntilImport);
         }
     }
