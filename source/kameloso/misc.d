@@ -194,10 +194,10 @@ void printGCStats()
             pausePattern,
             (profileStats.totalPauseTime.total!"hnsecs" / 10_000.0));
 
-        enum collectionPattern = "Collection time: <l>%.1,f</> ms";
+        /*enum collectionPattern = "Collection time: <l>%.1,f</> ms";
         logger.infof(
             collectionPattern,
-            (profileStats.totalCollectionTime.total!"hnsecs" / 10_000.0));
+            (profileStats.totalCollectionTime.total!"hnsecs" / 10_000.0));*/
     }
     else if (profileStats.numCollections > 1)
     {
@@ -209,11 +209,11 @@ void printGCStats()
             profileStats.numCollections,
             (profileStats.maxPauseTime.total!"hnsecs" / 10_000.0));
 
-        enum collectionPattern = "Sum of collection cycles: <l>%.1,f</> ms (max: <l>%.1,f</> ms)";
+        /*enum collectionPattern = "Sum of collection cycles: <l>%.1,f</> ms (max: <l>%.1,f</> ms)";
         logger.infof(
             collectionPattern,
             (profileStats.totalCollectionTime.total!"hnsecs" / 10_000.0),
-            (profileStats.maxCollectionTime.total!"hnsecs" / 10_000.0));
+            (profileStats.maxCollectionTime.total!"hnsecs" / 10_000.0));*/
     }
     /*else
     {
