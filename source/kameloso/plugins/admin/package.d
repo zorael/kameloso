@@ -1897,8 +1897,24 @@ void onBusMessage(
             case "status":
                 return onCommandStatusImpl(plugin);
 
+            case "gc.minimize":
+                GC.minimize();
+                if (plugin.state.coreSettings.headless) return;
+                logger.info("Memory minimised.");
+                break;
+        }
+
+        /+
+            Provide a heavy `gc.collect` verb that logs the amount of memory
+            collected and the time taken to do so, as well as a slimmer version
+            that just collects the garbage.
+         +/
+        version(IncludeHeavyStuff)
+        {
             case "gc.collect":
                 import core.time : MonoTime;
+
+                if (plugin.state.coreSettings.headless) return GC.collect();
 
                 // Only adds some 10 mb to compilation memory usage but it's
                 // very rarely needed, so keep it behind IncludeHeavyStuff
@@ -1915,11 +1931,16 @@ void onBusMessage(
                 immutable duration = (timestampPost - timestampPre);
 
                 enum pattern = "Collected <l>%,d</> bytes of garbage in <l>%s";
-                return logger.infof(pattern, memoryCollected, duration);
-
-            case "gc.minimize":
-                GC.minimize();
-                return logger.info("Memory minimised.");
+                logger.infof(pattern, memoryCollected, duration);
+                break;
+        }
+        else
+        {
+            case "gc.collect":
+                GC.collect();
+                if (plugin.state.coreSettings.headless) return
+                logger.info("Garbage collected.");
+                break;
         }
 
         case "user":
@@ -1944,22 +1965,24 @@ void onBusMessage(
             plugin.settings.printRaw = !plugin.settings.printRaw;
             enum pattern = "Printing raw: <l>%s";
             logger.infof(pattern, plugin.settings.printRaw);
-            return;
+            break;
 
         case "printbytes":
             if (plugin.state.coreSettings.headless) return;
             plugin.settings.printBytes = !plugin.settings.printBytes;
             enum pattern = "Printing bytes: <l>%s";
             logger.infof(pattern, plugin.settings.printBytes);
-            return;
+            break;
 
         case "printevents":
+            // headless is checked inside the function
             return onCommandPrintEventsImpl(plugin, slice, IRCEvent.init);
 
         case "fake":
             plugin.state.messages ~= ThreadMessage.fakeEvent(slice);
+            if (plugin.state.coreSettings.headless) return;
             logger.info("Faking event.");
-            return;
+            break;
     }
 
     case "gc.stats":
@@ -1969,14 +1992,13 @@ void onBusMessage(
 
     case "reconnect":
         plugin.state.priorityMessages ~= ThreadMessage.reconnect;
-        return;
+        break;
 
     case "reexec":
         plugin.state.priorityMessages ~= ThreadMessage.reconnect(string.init, boxed(true));
-        return;
+        break;
 
     case "quit":
-        import kameloso.messaging : quit;
         return slice.length ?
             quit(plugin.state, slice) :
             quit(plugin.state);
@@ -1989,6 +2011,8 @@ void onBusMessage(
 
         void setSettingBusDg()
         {
+            if (plugin.state.coreSettings.headless) return;
+
             auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
             assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
@@ -2004,14 +2028,19 @@ void onBusMessage(
             }
         }
 
-        return defer!Payload(plugin, &setSettingBusDg, slice);
+        defer!Payload(plugin, &setSettingBusDg, slice);
+        break;
 
     case "save":
-        logger.info("Saving configuration to disk.");
         plugin.state.messages ~= ThreadMessage.save;
-        return;
+        if (plugin.state.coreSettings.headless) return;
+        logger.info("Saving configuration to disk.");
+        break;
 
     case "reload":
+        plugin.state.messages ~= ThreadMessage.reload(slice);
+        if (plugin.state.coreSettings.headless) return;
+
         if (slice.length)
         {
             enum pattern = `Reloading plugin "<i>%s</>".`;
@@ -2021,9 +2050,7 @@ void onBusMessage(
         {
             logger.info("Reloading plugins.");
         }
-
-        plugin.state.messages ~= ThreadMessage.reload(slice);
-        return;
+        break;
 
     case "whitelist":
     case "elevated":
@@ -2042,7 +2069,8 @@ void onBusMessage(
             // verb_channel_nickname
             enum pattern = "Invalid bus message syntax; expected <l>%s</> " ~
                 "[verb] [channel] [nickname if add/del], got \"<l>%s</>\"";
-            return logger.warningf(pattern, verb, message.payload.strippedRight);
+            logger.warningf(pattern, verb, message.payload.strippedRight);
+            return;
         }
 
         immutable class_ = Enum!(IRCUser.Class).fromString(verb);
@@ -2051,22 +2079,18 @@ void onBusMessage(
         {
         case "add":
         case "del":
-            immutable user = slice;
+            alias user = slice;
 
             if (!user.length)
             {
-                return logger.warning("Invalid bus message syntax; no user supplied, " ~
+                logger.warning("Invalid bus message syntax; no user supplied, " ~
                     "only channel <l>", channelName);
+                return;
             }
 
-            if (subverb == "add")
-            {
-                return lookupEnlist(plugin, user, class_, channelName);
-            }
-            else /*if (subverb == "del")*/
-            {
-                return delist(plugin, user, class_, channelName);
-            }
+            return (subverb == "add") ?
+                lookupEnlist(plugin, user, class_, channelName) :
+                delist(plugin, user, class_, channelName);  // implicitly subverb == "del"
 
         case "list":
             return listList(plugin, channelName, class_);
@@ -2096,11 +2120,18 @@ void onBusMessage(
             {
                 enum invalidSyntaxMessage = "Invalid bus message syntax; " ~
                     "expected <l>hostmask add [account] [hostmask]";
-                return logger.warning(invalidSyntaxMessage);
+                logger.warning(invalidSyntaxMessage);
+                return;
             }
 
             IRCEvent lvalueEvent;
-            return modifyHostmaskDefinition(plugin, add: true, account, mask, lvalueEvent);
+            modifyHostmaskDefinition(
+                plugin,
+                add: true,
+                account,
+                mask,
+                lvalueEvent);
+            break;
 
         case "del":
         case "remove":
@@ -2108,15 +2139,23 @@ void onBusMessage(
             {
                 enum invalidSyntaxMessage = "Invalid bus message syntax; " ~
                     "expected <l>hostmask del [hostmask]";
-                return logger.warning(invalidSyntaxMessage);
+                logger.warning(invalidSyntaxMessage);
+                return;
             }
 
             IRCEvent lvalueEvent;
-            return modifyHostmaskDefinition(plugin, add: false, string.init, slice, lvalueEvent);
+            modifyHostmaskDefinition(
+                plugin,
+                add: false,
+                account: string.init,
+                mask: slice,
+                event: lvalueEvent);
+            break;
 
         case "list":
             IRCEvent lvalueEvent;
-            return listHostmaskDefinitions(plugin, lvalueEvent);
+            listHostmaskDefinitions(plugin, lvalueEvent);
+            break;
 
         default:
             enum pattern = "Invalid bus message <l>%s</> subverb <l>%s";
