@@ -1937,6 +1937,8 @@ void onBusMessage(
         else
         {
             case "gc.collect":
+                import core.memory : GC;
+
                 GC.collect();
                 if (plugin.state.coreSettings.headless) return
                 logger.info("Garbage collected.");
