@@ -40,7 +40,7 @@ mixin PluginRegistration!BashPlugin;
     /++
         Whether or not the Bash plugin should react to events at all.
      +/
-    @Enabler bool enabled = false;
+    @Enabler bool enabled = true;
 
     /++
         Minimum user class required for the plugin to react to events.
