@@ -46,6 +46,11 @@ mixin PluginRegistration!BashPlugin;
         Minimum user class required for the plugin to react to events.
      +/
     IRCUser.Class minimumPermissionsNeeded = IRCUser.Class.anyone;
+
+    /++
+        Whether or not to ignore SSL certificate verification errors when fetching quotes.
+     +/
+    bool verifySSLCertificate = false;
 }
 
 
@@ -144,10 +149,21 @@ void onEndOfMotd(BashPlugin plugin, const IRCEvent _)
 
     if (plugin.transient.workerTid == Tid.init)
     {
+        if (!plugin.settings.verifySSLCertificate)
+        {
+            import kameloso.common : logger;
+
+            enum startMessage = "Starting <l>bash</> worker thread with SSL certificate verification disabled.";
+            enum warningMessage = "Be aware that this is a security risk.";
+            logger.warning(startMessage);
+            logger.warning(warningMessage);
+        }
+
         plugin.transient.workerTid = spawn(
             &persistentQuerier,
             plugin.lookupBucket,
-            plugin.state.connSettings.caBundleFile);
+            plugin.state.connSettings.caBundleFile,
+            plugin.settings.verifySSLCertificate);
     }
 }
 
@@ -372,13 +388,15 @@ auto parseResponseIntoBashLookupResult(/*const*/ Response res)
     Params:
         url = URL string to fetch.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
+        verifyPeer = Whether or not to set `sslSetVerifyPeer = false` on the HTTP request.
 
     Returns:
         A [BashLookupResult] with contents based on what was read from the URL.
  +/
 auto sendHTTPRequestImpl(
     const string url,
-    const string caBundleFile)
+    const string caBundleFile,
+    const bool verifyPeer)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import requests.base : Response;
@@ -399,6 +417,7 @@ auto sendHTTPRequestImpl(
     req.keepAlive = false;
     req.timeout = Timeout.httpGET;
     req.addHeaders(headers);
+    req.sslSetVerifyPeer = verifyPeer;
     if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
 
     try
@@ -559,10 +578,12 @@ in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber"
             [BashLookupResult|BashLookupResult]s.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle, or an
             empty string if none should be needed.
+        verifyPeer = Whether or not to set `sslSetVerifyPeer = false` on the HTTP request.
  +/
 void persistentQuerier(
     MutexedAA!(BashLookupResult[int]) lookupBucket,
-    const string caBundleFile)
+    const string caBundleFile,
+    const bool verifyPeer)
 {
     version(Posix)
     {
@@ -572,14 +593,14 @@ void persistentQuerier(
 
     void onBashLookupRequest(string url, int id)
     {
-        auto result = sendHTTPRequestImpl(url, caBundleFile);
+        auto result = sendHTTPRequestImpl(url, caBundleFile, verifyPeer);
 
         if (result.code == 400)
         {
             // Sometimes it claims 400 Bad Request for no reason. Retry a few times
             foreach (immutable _; 0..3)
             {
-                result = sendHTTPRequestImpl(url, caBundleFile);
+                result = sendHTTPRequestImpl(url, caBundleFile, verifyPeer);
                 if (result.code != 400) break;
             }
         }
