@@ -122,7 +122,7 @@ void onCommandBash(BashPlugin plugin, const IRCEvent event)
         event.content[1..$] :
         event.content;
 
-    if (!quoteID.length || !quoteID.isNumeric) return sendUsage();
+    if (quoteID.length && !quoteID.isNumeric) return sendUsage();
 
     lookupQuote(plugin, quoteID, event);
 }
