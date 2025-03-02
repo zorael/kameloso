@@ -465,7 +465,7 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
             HTTPVerb.post,
             data,
             "application/json");
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(response.body);
 
         /*
         {
@@ -609,13 +609,13 @@ private void getGoogleTokens(
     immutable url = urlPattern.format(creds.googleClientID, creds.googleClientSecret, code);
     enum data = cast(ubyte[])"{}";
 
-    immutable res = sendHTTPRequestImpl(
+    immutable response = sendHTTPRequestImpl(
         url,
         string.init,  // authHeader
         caBundleFile,
         HTTPVerb.post,
         data);
-    immutable json = parseJSON(res.str);
+    immutable responseJSON = parseJSON(response.body);
 
     /*
     {
@@ -628,18 +628,19 @@ private void getGoogleTokens(
      */
 
 
-    if (json.type != JSONType.object)
+    if (responseJSON.type != JSONType.object)
     {
-        throw new UnexpectedJSONException("Wrong JSON type in token request response", json);
+        enum message = "Wrong JSON type in token request response";
+        throw new UnexpectedJSONException(message, responseJSON);
     }
 
-    if (immutable errorJSON = "error" in json)
+    if (immutable errorJSON = "error" in responseJSON)
     {
         throw new ErrorJSONException(errorJSON.str, *errorJSON);
     }
 
-    creds.googleAccessToken = json["access_token"].str;
-    creds.googleRefreshToken = json["refresh_token"].str;
+    creds.googleAccessToken = responseJSON["access_token"].str;
+    creds.googleRefreshToken = responseJSON["refresh_token"].str;
 }
 
 
@@ -678,21 +679,22 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
         creds.googleRefreshToken);
     enum data = cast(ubyte[])"{}";
 
-    immutable res = sendHTTPRequest(
+    immutable response = sendHTTPRequest(
         plugin,
         url,
         __FUNCTION__,
         string.init,  // authHeader
         HTTPVerb.post,
         data);
-    immutable json = parseJSON(res.str);
+    immutable responseJSON = parseJSON(response.body);
 
-    if (json.type != JSONType.object)
+    if (responseJSON.type != JSONType.object)
     {
-        throw new UnexpectedJSONException("Wrong JSON type in token refresh response", json);
+        enum message = "Wrong JSON type in token refresh response";
+        throw new UnexpectedJSONException(message, responseJSON);
     }
 
-    if (immutable errorJSON = "error" in json)
+    if (immutable errorJSON = "error" in responseJSON)
     {
         if (errorJSON.str == "invalid_grant")
         {
@@ -705,7 +707,7 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
         }
     }
 
-    creds.googleAccessToken = json["access_token"].str;
+    creds.googleAccessToken = responseJSON["access_token"].str;
     // refreshToken is not present and stays the same as before
 }
 
@@ -737,12 +739,12 @@ private auto validateGoogleToken(const Credentials creds, const string caBundleF
     enum urlHead = "https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=";
     immutable url = urlHead ~ creds.googleAccessToken;
 
-    immutable res = sendHTTPRequestImpl(
+    immutable response = sendHTTPRequestImpl(
         url,
         string.init,  // authHeader
         caBundleFile,
         HTTPVerb.get);
-    immutable json = parseJSON(res.str);
+    immutable responseJSON = parseJSON(response.body);
 
     /*
     {
@@ -761,15 +763,16 @@ private auto validateGoogleToken(const Credentials creds, const string caBundleF
     }
      */
 
-    if (json.type != JSONType.object)
+    if (responseJSON.type != JSONType.object)
     {
-        throw new UnexpectedJSONException("Wrong JSON type in token validation response", json);
+        enum message = "Wrong JSON type in token validation response";
+        throw new UnexpectedJSONException(message, responseJSON);
     }
 
-    if (immutable errorJSON = "error" in json)
+    if (immutable errorJSON = "error" in responseJSON)
     {
         throw new ErrorJSONException(errorJSON.str, *errorJSON);
     }
 
-    return json;
+    return responseJSON;
 }

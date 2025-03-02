@@ -56,7 +56,7 @@ in (id, "Tried to get BTTV emotes with an unset ID")
     {
         immutable url = "https://api.betterttv.net/3/cached/users/twitch/" ~ id.to!string;
         immutable response = sendHTTPRequest(plugin, url, caller);
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(response.body);
 
         /+
         {
@@ -205,7 +205,7 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
     enum url = "https://api.betterttv.net/3/cached/emotes/global";
 
     immutable response = sendHTTPRequest(plugin, url, caller);
-    immutable responseJSON = parseJSON(response.str);
+    immutable responseJSON = parseJSON(response.body);
 
     /+
     [

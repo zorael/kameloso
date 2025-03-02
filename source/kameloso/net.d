@@ -1702,7 +1702,7 @@ public:
 
     size_t nextWorkerIndex;
 
-    MutexedAA!(QueryResponse2[int]) responseBucket;
+    MutexedAA!(HTTPQueryResponse[int]) responseBucket;
 
     this(uint numWorkers) @system
     in ((numWorkers > 0), "Tried to spawn 0 workers")
@@ -1740,7 +1740,7 @@ public:
 }
 
 
-void persistentQuerier(MutexedAA!(QueryResponse2[int]) responseBucket) @system
+void persistentQuerier(MutexedAA!(HTTPQueryResponse[int]) responseBucket) @system
 {
     import std.typecons : Flag, No, Yes;
 
@@ -1781,7 +1781,7 @@ void persistentQuerier(MutexedAA!(QueryResponse2[int]) responseBucket) @system
             body: cast(ubyte[])body,
             contentType: contentType);
 
-        if (response != QueryResponse2.init)
+        if (response != HTTPQueryResponse.init)
         {
             responseBucket[id] = response;
         }
@@ -1915,7 +1915,7 @@ auto issueSyncHTTPRequest(
     if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
 
     Response res;
-    QueryResponse2 response;
+    HTTPQueryResponse response;
     response.url = url;
 
     try
@@ -1945,7 +1945,7 @@ auto issueSyncHTTPRequest(
 
         case unset:
         case unsupported:
-            assert(0, "Unset or unsupported HTTP verb passed to sendHTTPRequestImpl");
+            assert(0, "Unset or unsupported HTTP verb passed to issueSyncHTTPRequest");
         }
     }
     catch (Exception e)
@@ -2048,7 +2048,7 @@ final class EmptyResponseException : Exception
 /++
     Abstract class for Twitch JSON exceptions, to deduplicate catching.
  +/
-abstract class QueryResponse2Exception : Exception
+abstract class QueryResponseException : Exception
 {
 private:
     import std.json : JSONValue;
@@ -2266,12 +2266,12 @@ public:
 }
 
 
-// QueryResponse2
+// HTTPQueryResponse
 /++
     Embodies a response from a query to the Twitch servers. A string paired with
     a millisecond count of how long the query took, and some metadata about the request.
  +/
-struct QueryResponse2
+struct HTTPQueryResponse
 {
     private import core.time : Duration;
 

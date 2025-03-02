@@ -57,7 +57,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
     {
         immutable url = "https://7tv.io/v3/users/twitch/" ~ id.to!string;
         immutable response = sendHTTPRequest(plugin, url, caller);
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(response.body);
 
         /+
         {
@@ -239,7 +239,7 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 
     enum url = "https://7tv.io/v3/emote-sets/global";
     immutable response = sendHTTPRequest(plugin, url, caller);
-    immutable responseJSON = parseJSON(response.str);
+    immutable responseJSON = parseJSON(response.body);
 
     /+
     {

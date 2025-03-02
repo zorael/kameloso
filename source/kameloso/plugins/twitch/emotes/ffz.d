@@ -56,7 +56,7 @@ in (id, "Tried to get FFZ emotes with an unset ID")
     {
         immutable url = "https://api.frankerfacez.com/v1/room/id/" ~ id.to!string;
         immutable response = sendHTTPRequest(plugin, url, caller);
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(response.body);
 
         /+
         {
@@ -242,7 +242,7 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
     {
         immutable url = "https://api.frankerfacez.com/v1/set/global";
         immutable response = sendHTTPRequest(plugin, url, caller);
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(response.body);
 
         /+
         {

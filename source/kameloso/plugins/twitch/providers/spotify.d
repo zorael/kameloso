@@ -395,14 +395,14 @@ private void getSpotifyTokens(
         "&redirect_uri=http://localhost";
     immutable url = urlPattern.format(code);
 
-    immutable res = sendHTTPRequestImpl(
+    immutable response = sendHTTPRequestImpl(
         url,
         getSpotifyBase64Authorization(creds),
         caBundleFile,
         HTTPVerb.post,
         cast(ubyte[])null,
         "application/x-www-form-urlencoded");
-    immutable json = parseJSON(res.str);
+    immutable responseJSON = parseJSON(response.body);
 
     /*
     {
@@ -414,18 +414,19 @@ private void getSpotifyTokens(
     }
      */
 
-    if (json.type != JSONType.object)
+    if (responseJSON.type != JSONType.object)
     {
-        throw new UnexpectedJSONException("Wrong JSON type in token request response", json);
+        enum message = "Wrong JSON type in token request response";
+        throw new UnexpectedJSONException(message, responseJSON);
     }
 
-    if (immutable errorJSON = "error" in json)
+    if (immutable errorJSON = "error" in responseJSON)
     {
         throw new ErrorJSONException(errorJSON.str, *errorJSON);
     }
 
-    creds.spotifyAccessToken = json["access_token"].str;
-    creds.spotifyRefreshToken = json["refresh_token"].str;
+    creds.spotifyAccessToken = responseJSON["access_token"].str;
+    creds.spotifyRefreshToken = responseJSON["refresh_token"].str;
 }
 
 
@@ -458,7 +459,7 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
         "&grant_type=refresh_token";
     immutable url = urlPattern.format(creds.spotifyRefreshToken);
 
-    immutable res = sendHTTPRequest(
+    immutable response = sendHTTPRequest(
         plugin,
         url,
         __FUNCTION__,
@@ -466,7 +467,7 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
         HTTPVerb.post,
         cast(ubyte[])null,
         "application/x-www-form-urlencoded");
-    immutable json = parseJSON(res.str);
+    immutable responseJSON = parseJSON(response.body);
 
     /*
     {
@@ -477,17 +478,18 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
     }
      */
 
-    if (json.type != JSONType.object)
+    if (responseJSON.type != JSONType.object)
     {
-        throw new UnexpectedJSONException("Wrong JSON type in token refresh response", json);
+        enum message = "Wrong JSON type in token refresh response";
+        throw new UnexpectedJSONException(message, responseJSON);
     }
 
-    if (immutable errorJSON = "error" in json)
+    if (immutable errorJSON = "error" in responseJSON)
     {
         throw new ErrorJSONException(errorJSON.str, *errorJSON);
     }
 
-    creds.spotifyAccessToken = json["access_token"].str;
+    creds.spotifyAccessToken = responseJSON["access_token"].str;
     // refreshToken is not present and stays the same as before
 }
 
@@ -578,7 +580,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
             HTTPVerb.post,
             cast(ubyte[])null,
             "application/json");
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(response.body);
 
         /*
         {
@@ -677,7 +679,7 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
             url,
             __FUNCTION__,
             authorizationBearer);
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(response.body);
 
         /*
         {
@@ -774,11 +776,11 @@ private auto validateSpotifyToken(ref Credentials creds, const string caBundleFi
     enum url = "https://api.spotify.com/v1/me";
     immutable authorizationBearer = "Bearer " ~ creds.spotifyAccessToken;
 
-    immutable res = sendHTTPRequestImpl(
+    immutable response = sendHTTPRequestImpl(
         url,
         authorizationBearer,
         caBundleFile);
-    immutable json = parseJSON(res.str);
+    immutable responseJSON = parseJSON(response.body);
 
     /*
     {
@@ -806,15 +808,16 @@ private auto validateSpotifyToken(ref Credentials creds, const string caBundleFi
     }
      */
 
-    if (json.type != JSONType.object)
+    if (responseJSON.type != JSONType.object)
     {
-        throw new UnexpectedJSONException("Wrong JSON type in token validation response", json);
+        enum message = "Wrong JSON type in token validation response";
+        throw new UnexpectedJSONException(message, responseJSON);
     }
 
-    if (immutable errorJSON = "error" in json)
+    if (immutable errorJSON = "error" in responseJSON)
     {
         throw new ErrorJSONException(errorJSON.str, *errorJSON);
     }
 
-    return json;
+    return responseJSON;
 }

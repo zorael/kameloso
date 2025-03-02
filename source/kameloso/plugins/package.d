@@ -5442,11 +5442,11 @@ alias priority = Priority;
 
 
 import lu.container : MutexedAA;
-import kameloso.net : QueryResponse2;
+import kameloso.net : HTTPQueryResponse;
 import kameloso.tables : HTTPVerb;
 import std.typecons : Flag, No, Yes;
 
-QueryResponse2 sendHTTPRequest(
+HTTPQueryResponse sendHTTPRequest(
     IRCPlugin plugin,
     const string url,
     const string caller = __FUNCTION__,
@@ -5521,7 +5521,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         averageApproximateQueryTime(plugin, msecs_);
     }*/
 
-    if (response == QueryResponse2.init)
+    if (response == HTTPQueryResponse.init)
     {
         throw new EmptyResponseException("No response");
     }
@@ -5698,13 +5698,13 @@ in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
         {
             // Querier errored or otherwise gave up
             // No need to remove the id, it's not there
-            return QueryResponse2.init;
+            return HTTPQueryResponse.init;
         }
 
         //auto response = plugin.responseBucket[id];  // potential range error due to TOCTTOU
-        immutable response = querier.responseBucket.get(id, QueryResponse2.init);
+        immutable response = querier.responseBucket.get(id, HTTPQueryResponse.init);
 
-        if (response == QueryResponse2.init)
+        if (response == HTTPQueryResponse.init)
         {
             import kameloso.plugins.common.scheduling : delay;
             import kameloso.constants : Timeout;
@@ -5715,7 +5715,7 @@ in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
             if ((nowInUnix - startTimeInUnix) >= Timeout.Integers.httpGETSeconds)
             {
                 querier.responseBucket.remove(id);
-                return QueryResponse2.init;
+                return HTTPQueryResponse.init;
             }*/
 
             immutable now = MonoTime.currTime;
@@ -5723,7 +5723,7 @@ in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
             if ((now - start) >= Timeout.httpGET)
             {
                 querier.responseBucket.remove(id);
-                return QueryResponse2.init;
+                return HTTPQueryResponse.init;
             }
 
             /*version(BenchmarkHTTPRequests)

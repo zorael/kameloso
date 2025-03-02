@@ -22,6 +22,7 @@ private:
 
 import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
+import kameloso.net : HTTPQueryResponse;
 import kameloso.tables : HTTPVerb;
 import dialect.defs;
 import lu.container : MutexedAA;
@@ -29,50 +30,6 @@ import core.thread.fiber : Fiber;
 import core.time : Duration, seconds;
 
 package:
-
-
-// QueryResponse
-/++
-    Embodies a response from a query to the Twitch servers. A string paired with
-    a millisecond count of how long the query took, and some metadata about the request.
- +/
-struct QueryResponse
-{
-    /++
-        The URL that was queried.
-     +/
-    string url;
-
-    /++
-        The host that was queried.
-     +/
-    string host;
-
-    /++
-        Response body, may be several lines.
-     +/
-    string str;
-
-    /++
-        How long the query took, from issue to response.
-     +/
-    long msecs;
-
-    /++
-        The HTTP response code received.
-     +/
-    uint code;
-
-    /++
-        The message of any exception thrown while querying.
-     +/
-    string error;
-
-    /++
-        The message text of any exception thrown while querying.
-     +/
-    string exceptionText;
-}
 
 
 // retryDelegate
@@ -305,7 +262,7 @@ void printRetryDelegateException(/*const*/ Exception base)
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
 void persistentQuerier(
-    MutexedAA!(QueryResponse[int]) responseBucket,
+    MutexedAA!(HTTPQueryResponse[int]) responseBucket,
     const string caBundleFile)
 {
     import kameloso.thread : ThreadMessage;
@@ -340,7 +297,7 @@ void persistentQuerier(
             cast(ubyte[])body_,
             contentType);
 
-        if (response != QueryResponse.init)
+        if (response != HTTPQueryResponse.init)
         {
             responseBucket[id] = response;
         }
@@ -431,7 +388,7 @@ void persistentQuerier(
             not be attempted.
 
     Returns:
-        The [QueryResponse] that was discovered while monitoring the
+        The [HTTPQueryResponse] that was discovered while monitoring the
         [kameloso.plugins.twitch.TwitchPlugin.responseBucket|TwitchPlugin.responseBucket]
         as having been received from the server.
 
@@ -440,7 +397,7 @@ void persistentQuerier(
         [ErrorJSONException] if the response body was JSON but contained an `"error"` key.
         [TwitchQueryException] if there were other unrecoverable errors.
  +/
-QueryResponse sendHTTPRequest(
+HTTPQueryResponse sendHTTPRequest(
     TwitchPlugin plugin,
     const string url,
     const string caller = __FUNCTION__,
@@ -492,7 +449,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     {
         throw new TwitchQueryException(
             response.exceptionText,
-            response.str,
+            response.body,
             response.error,
             response.code);
     }
@@ -506,7 +463,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         averageApproximateQueryTime(plugin, msecs_);
     }
 
-    if (response == QueryResponse.init)
+    if (response == HTTPQueryResponse.init)
     {
         throw new EmptyResponseException("No response");
     }
@@ -514,7 +471,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     {
         throw new TwitchQueryException(
             response.error,
-            response.str,
+            response.body,
             response.error,
             response.code);
     }
@@ -574,7 +531,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
             enum genericErrorString = "Error";
             enum genericErrorMessageString = "An unspecified error occurred";
 
-            immutable json = parseJSON(response.str);
+            immutable json = parseJSON(response.body);
             uint code = response.code;
             string status;
             string message;
@@ -635,14 +592,14 @@ in (url.length, "Tried to send an HTTP request without a URL")
                 if (!plugin.state.coreSettings.headless)
                 {
                     import std.stdio : stdout, writeln;
-                    writeln(response.str);
+                    writeln(response.body);
                     stdout.flush();
                 }
             }
 
             throw new TwitchQueryException(
                 e.msg,
-                response.str,
+                response.body,
                 response.error,
                 response.code,
                 e.file.doublyBackslashed,
@@ -667,7 +624,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         contentType = "Content-Type" HTTP header to use.
 
     Returns:
-        A [QueryResponse] of the response from the server.
+        A [HTTPQueryResponse] of the response from the server.
  +/
 auto sendHTTPRequestImpl(
     const string url,
@@ -715,7 +672,7 @@ auto sendHTTPRequestImpl(
     if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
 
     Response res;
-    QueryResponse response;
+    HTTPQueryResponse response;
     response.url = url;
 
     try
@@ -760,11 +717,10 @@ auto sendHTTPRequestImpl(
 
     response.code = res.code;
     response.host = res.uri.host;
-    response.str = cast(string)res.responseBody;  //.idup?
+    response.body = cast(string)res.responseBody;  //.idup?
 
     immutable stats = res.getStats();
-    immutable totalMsecs = stats.connectTime + stats.recvTime + stats.sendTime;
-    response.msecs = totalMsecs.total!"msecs";
+    response.elapsed = stats.connectTime + stats.recvTime + stats.sendTime;
     return response;
 }
 
@@ -804,7 +760,7 @@ in (Fiber.getThis(), "Tried to call `getTwitchData` from outside a fiber")
 
     try
     {
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(response.body);
 
         if (responseJSON.type != JSONType.object)
         {
@@ -846,7 +802,7 @@ in (Fiber.getThis(), "Tried to call `getTwitchData` from outside a fiber")
 
         throw new TwitchQueryException(
             e.msg,
-            response.str,
+            response.body,
             response.error,
             response.code,
             e.file.doublyBackslashed,
@@ -892,7 +848,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
             chattersURL,
             caller,
             plugin.transient.authorizationBearer);
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(response.body);
 
         /*
         {
@@ -985,7 +941,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
     auto getValidationDg()
     {
-        QueryResponse response;
+        HTTPQueryResponse response;
 
         if (async)
         {
@@ -1041,11 +997,11 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             {
                 throw new TwitchQueryException(
                     response.exceptionText,
-                    response.str,
+                    response.body,
                     response.error,
                     response.code);
             }
-            else if (response == QueryResponse.init)
+            else if (response == HTTPQueryResponse.init)
             {
                 throw new TwitchQueryException("No response");
             }
@@ -1053,7 +1009,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             {
                 throw new TwitchQueryException(
                     response.error,
-                    response.str,
+                    response.body,
                     response.error,
                     response.code);
             }
@@ -1076,7 +1032,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
                         "status": 401
                     }
                      */
-                    immutable errorJSON = parseJSON(response.str);
+                    immutable errorJSON = parseJSON(response.body);
                     enum pattern = "%3d %s: %s";
 
                     immutable message = pattern.format(
@@ -1084,20 +1040,20 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
                         errorJSON["error"].str.unquoted,
                         errorJSON["message"].str.chomp.unquoted);
 
-                    throw new TwitchQueryException(message, response.str, response.error, response.code);
+                    throw new TwitchQueryException(message, response.body, response.error, response.code);
                 }
                 catch (JSONException e)
                 {
                     throw new TwitchQueryException(
                         e.msg,
-                        response.str,
+                        response.body,
                         response.error,
                         response.code);
                 }
             }
         }
 
-        immutable validationJSON = parseJSON(response.str);
+        immutable validationJSON = parseJSON(response.body);
 
         if (validationJSON.type != JSONType.object)
         {
@@ -1214,7 +1170,7 @@ in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber
             paginatedURL,
             caller,
             plugin.transient.authorizationBearer);
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(response.body);
         immutable dataJSON = "data" in responseJSON;
 
         if (!dataJSON)
@@ -1317,7 +1273,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 
     delay(plugin, plugin.transient.approximateQueryTime.msecs, yield: true);
     immutable response = waitForQueryResponse(plugin, id, url);
-    // response.str is the response body
+    // response.body is the response body
     assert(id !in plugin.responseBucket);
     ---
 
@@ -1326,7 +1282,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
         id = Numerical ID to use as key when storing the response in the bucket AA.
 
     Returns:
-        A [QueryResponse] as constructed by other parts of the program.
+        A [HTTPQueryResponse] as constructed by other parts of the program.
  +/
 auto waitForQueryResponse(TwitchPlugin plugin, const int id)
 in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber")
@@ -1350,13 +1306,13 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
         {
             // Querier errored or otherwise gave up
             // No need to remove the id, it's not there
-            return QueryResponse.init;
+            return HTTPQueryResponse.init;
         }
 
         //auto response = plugin.responseBucket[id];  // potential range error due to TOCTTOU
-        immutable response = plugin.responseBucket.get(id, QueryResponse.init);
+        immutable response = plugin.responseBucket.get(id, HTTPQueryResponse.init);
 
-        if (response == QueryResponse.init)
+        if (response == HTTPQueryResponse.init)
         {
             import kameloso.plugins.common.scheduling : delay;
             import kameloso.constants : Timeout;
@@ -1367,7 +1323,7 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
             if ((nowInUnix - startTimeInUnix) >= Timeout.Integers.httpGETSeconds)
             {
                 plugin.responseBucket.remove(id);
-                return QueryResponse.init;
+                return HTTPQueryResponse.init;
             }
 
             version(BenchmarkHTTPRequests)
@@ -1404,7 +1360,7 @@ in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber"
                 enum pattern = "HIT! elapsed: %s | response: %s | misses: %d";
                 immutable nowInUnix = Clock.currTime.toUnixTime();
                 immutable delta = (nowInUnix - startTimeInUnix);
-                writefln(pattern, delta, response.msecs, misses);
+                writefln(pattern, delta, response.elapsed, misses);
             }
 
             plugin.responseBucket.remove(id);
@@ -2191,7 +2147,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 HTTPVerb.get,
                 cast(ubyte[])null,
                 "application/json");
-            immutable responseJSON = parseJSON(response.str);
+            immutable responseJSON = parseJSON(response.body);
 
             if (responseJSON.type != JSONType.object)
             {
@@ -2321,7 +2277,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             HTTPVerb.post,
             cast(ubyte[])body_,
             "application/json");
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(response.body);
 
         if (responseJSON.type != JSONType.object)
         {
@@ -2414,7 +2370,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             HTTPVerb.patch,
             cast(ubyte[])body_,
             "application/json");
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(response.body);
 
         if (responseJSON.type != JSONType.object)
         {
@@ -2479,7 +2435,7 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
     {
         enum url = "https://api.twitchinsights.net/v1/bots/online";
         immutable response = sendHTTPRequest(plugin, url, caller);
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(response.body);
 
         /*
         {
@@ -2736,7 +2692,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 url,
                 caller,
                 authorizationBearer);
-            immutable responseJSON = parseJSON(response.str);
+            immutable responseJSON = parseJSON(response.body);
 
             /*
             {
@@ -3048,7 +3004,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
             HTTPVerb.post,
             cast(ubyte[])body_,
             "application/json");
-        immutable responseJSON = parseJSON(response.str);
+        immutable responseJSON = parseJSON(response.body);
 
         if (responseJSON.type != JSONType.object)
         {
@@ -3141,7 +3097,7 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
                 cast(ubyte[])body_,
                 "application/json");
 
-            responseJSON = parseJSON(response.str);  // body should be empty, but in case it isn't
+            responseJSON = parseJSON(response.body);  // body should be empty, but in case it isn't
             responseCode = response.code;
         }
         catch (ErrorJSONException e)
@@ -3314,7 +3270,7 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
                 cast(ubyte[])body_,
                 "application/json");
 
-            responseJSON = parseJSON(response.str);  // body should be empty, but in case it isn't
+            responseJSON = parseJSON(response.body);  // body should be empty, but in case it isn't
             responseCode = response.code;
         }
         catch (ErrorJSONException e)
@@ -3436,7 +3392,7 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
                 cast(ubyte[])body_,
                 "application/json");
 
-            responseJSON = parseJSON(response.str);  // body should be empty, but in case it isn't
+            responseJSON = parseJSON(response.body);  // body should be empty, but in case it isn't
             responseCode = response.code;
         }
         catch (ErrorJSONException e)

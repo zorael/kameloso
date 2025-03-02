@@ -2179,7 +2179,7 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
                 version(PrintStacktraces)
                 {
                     import std.stdio : stdout, writeln;
-                    writeln(response.str);
+                    writeln(response.body);
                     writeln("code: ", response.code);
                     stdout.flush();
                 }
@@ -4608,6 +4608,7 @@ final class TwitchPlugin : IRCPlugin
 private:
     import kameloso.constants : BufferSize;
     import kameloso.messaging : Message;
+    import kameloso.net : HTTPQueryResponse;
     import kameloso.terminal : TerminalToken;
     import lu.container : Buffer, CircularBuffer;
     import std.datetime.systime : SysTime;
@@ -5207,7 +5208,7 @@ package:
     /++
         Associative array of responses from async HTTP queries.
      +/
-    MutexedAA!(QueryResponse[int]) responseBucket;
+    MutexedAA!(HTTPQueryResponse[int]) responseBucket;
 
     @Resource("twitch")
     {
