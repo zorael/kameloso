@@ -23,6 +23,7 @@ version(WithWebtitlePlugin):
 private:
 
 import kameloso.plugins;
+import kameloso.net : HTTPQueryResponse;
 import requests.base : Response;
 import dialect.defs;
 import lu.container : MutexedAA;
@@ -88,24 +89,65 @@ struct TitleLookupResult
     string youtubeAuthor;
 
     /++
-        URL that was looked up.
      +/
-    string url;
-
-    /++
-        HTTP response status code.
-     +/
-    uint code;
-
-    /++
-        HTTP response body.
-     +/
-    string str;
+    HTTPQueryResponse response;
 
     /++
         Message text if an exception was thrown during the lookup.
      +/
     string exceptionText;
+
+    /++
+        FIXME
+     +/
+    this(const HTTPQueryResponse response)
+    {
+        import arsd.dom : Document;
+        import std.algorithm.searching : canFind, startsWith;
+
+        this.response = response;
+
+        enum unnamedPagePlaceholder = "(Unnamed page)";
+
+        if (!response.code || (response.code == 2) || (response.code >= 400))
+        {
+            // Invalid address, SSL error, 404, etc; no need to continue
+            return;
+        }
+
+        try
+        {
+            this.domain = response.finalURI.host.startsWith("www.") ?
+                response.finalURI.host[4..$] :
+                response.finalURI.host;
+
+            auto doc = new Document;
+            doc.parseGarbage(response.body);
+
+            this.title = doc.title.length ?
+                decodeEntities(doc.title) :
+                unnamedPagePlaceholder;
+
+            if (!descriptionExemptions.canFind(this.domain))
+            {
+                auto metaTags = doc.getElementsByTagName("meta");
+
+                foreach (/*const*/ tag; metaTags)
+                {
+                    if (tag.name == "description")
+                    {
+                        this.description = decodeEntities(tag.content);
+                        break;
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            // UnicodeException, UriException, ...
+            this.exceptionText = e.msg;
+        }
+    }
 }
 
 
@@ -237,222 +279,80 @@ void lookupURLs(
     import std.concurrency : send, spawn;
     import core.time : Duration;
 
+    void report(const TitleLookupResult result)
+    {
+        import kameloso.messaging : reply;
+        import std.format : format;
+
+        if (result.exceptionText.length)
+        {
+            logger.warning("HTTP exception: <l>", result.exceptionText);
+            return;
+        }
+
+        if ((result.response.code < 200) ||
+            (result.response.code > 299))
+        {
+            import kameloso.tables : getHTTPResponseCodeText;
+
+            enum pattern = "HTTP status <l>%03d</> (%s) fetching <l>%s";
+            logger.warningf(
+                pattern,
+                result.response.code,
+                getHTTPResponseCodeText(result.response.code),
+                result.response.url);
+            return;
+        }
+
+        if (!result.title.length)
+        {
+            enum pattern = "No title found <t>(%s)";
+            logger.infof(pattern, result.response.url);
+            return;
+        }
+
+        if (result.youtubeAuthor.length)
+        {
+            enum pattern = "[<b>youtube.com<b>] %s (uploaded by <h>%s<h>)";
+            immutable message = pattern.format(result.title, result.youtubeAuthor);
+            reply(plugin.state, event, message);
+        }
+        else
+        {
+            enum pattern = "[<b>%s<b>] %s%s";
+            immutable maybeDescription = result.description.length ?
+                " | "  ~ result.description :
+                string.init;
+
+            string line = pattern.format(
+                result.domain,
+                result.title,
+                maybeDescription);  // mutable
+
+            // "PRIVMSG #12345678901234567890123456789012345678901234567890 :".length == 61
+            enum maxLen = (512-2-61);
+
+            if (line.length > maxLen)
+            {
+                enum endingEllipsis = " [...]";
+                line = line[0..(maxLen-endingEllipsis.length)] ~ endingEllipsis;
+            }
+
+            reply(plugin.state, event, line);
+        }
+    }
+
     bool[string] uniques;
 
     foreach (immutable i, url; urls)
     {
+        import std.algorithm.searching : canFind;
+
         // If the URL contains an octothorpe fragment identifier, like
         // https://www.google.com/index.html#this%20bit
         // then strip that.
         url = url.advancePast('#', inherit: true);
         while (url[$-1] == '/') url = url[0..$-1];
-
-        if (url in uniques) continue;
-        uniques[url] = true;
-    }
-
-    void lookupURLsDg()
-    {
-        foreach (immutable url, _; uniques)
-        {
-            import kameloso.messaging : reply;
-            import std.format : format;
-
-            enum caughtPattern = "Caught URL: <l>%s";
-            logger.infof(caughtPattern, url);
-
-            const result = sendHTTPRequest(plugin, url);
-
-            if (result.exceptionText.length)
-            {
-                logger.warning("HTTP exception: <l>", result.exceptionText);
-                continue;
-            }
-
-            if ((result.code < 200) ||
-                (result.code > 299))
-            {
-                import kameloso.tables : getHTTPResponseCodeText;
-
-                enum pattern = "HTTP status <l>%03d</> (%s) fetching <l>%s";
-                logger.warningf(
-                    pattern,
-                    result.code,
-                    getHTTPResponseCodeText(result.code),
-                    result.url);
-                continue;
-            }
-
-            if (!result.title.length)
-            {
-                enum pattern = "No title found <t>(%s)";
-                logger.infof(pattern, url);
-                continue;
-            }
-
-            if (result.youtubeAuthor.length)
-            {
-                enum pattern = "[<b>youtube.com<b>] %s (uploaded by <h>%s<h>)";
-                immutable message = pattern.format(result.title, result.youtubeAuthor);
-                reply(plugin.state, event, message);
-            }
-            else
-            {
-                enum pattern = "[<b>%s<b>] %s%s";
-                immutable maybeDescription = result.description.length ?
-                    " | "  ~ result.description :
-                    string.init;
-
-                string line = pattern.format(
-                    result.domain,
-                    result.title,
-                    maybeDescription);  // mutable
-
-                // "PRIVMSG #12345678901234567890123456789012345678901234567890 :".length == 61
-                enum maxLen = (512-2-61);
-
-                if (line.length > maxLen)
-                {
-                    enum endingEllipsis = " [...]";
-                    line = line[0..(maxLen-endingEllipsis.length)] ~ endingEllipsis;
-                }
-
-                reply(plugin.state, event, line);
-            }
-        }
-    }
-
-    auto lookupURLsFiber = new Fiber(&lookupURLsDg, BufferSize.fiberStack);
-    delay(plugin, lookupURLsFiber, Duration.zero);
-}
-
-
-// waitForLookupResults
-/++
-    Given an `int` id, monitors the [WebtitlePlugin.lookupBucket|lookupBucket]
-    until a value with that key becomes available, delaying itself in between checks.
-
-    If it resolves, it returns that value. If it doesn't resolve within
-    [kameloso.constants.Timeout.httpGET|Timeout.httpGET]*2 seconds, it signals
-    failure by instead returning an empty [TitleLookupResult|TitleLookupResult.init].
-
-    Params:
-        plugin = The current [WebtitlePlugin].
-        id = `int` id key to monitor [WebtitlePlugin.lookupBucket] for.
-
-    Returns:
-        A [TitleLookupResult] as discovered in the [WebtitlePlugin.lookupBucket|lookupBucket],
-        or a [TitleLookupResult|TitleLookupResult.init] if there were none to be
-        found within [kameloso.constants.Timeout.httpGET|Timeout.httpGET] seconds.
- +/
-auto waitForLookupResults(WebtitlePlugin plugin, const int id)
-in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber")
-{
-    import core.time : MonoTime;
-
-    immutable start = MonoTime.currTime;
-    enum timeoutMultiplier = 2;
-
-    while (true)
-    {
-        immutable hasResult = plugin.lookupBucket.has(id);
-
-        if (!hasResult)
-        {
-            // Querier errored or otherwise gave up
-            // No need to remove the id, it's not there
-            return TitleLookupResult.init;
-        }
-
-        //auto result = plugin.lookupBucket[id];  // potential range error due to TOCTTOU
-        immutable result = plugin.lookupBucket.get(id, TitleLookupResult.init);
-
-        if (result == TitleLookupResult.init)
-        {
-            import kameloso.plugins.common.scheduling : delay;
-            import kameloso.constants : Timeout;
-            import core.time : msecs;
-
-            immutable now = MonoTime.currTime;
-
-            if ((now - start) >= (Timeout.httpGET * timeoutMultiplier))
-            {
-                plugin.lookupBucket.remove(id);
-                return result;
-            }
-
-            // Wait a bit before checking again
-            static immutable checkDelay = 200.msecs;
-            delay(plugin, checkDelay, yield: true);
-            continue;
-        }
-        else
-        {
-            // Got a result; remove it from the bucket and return it
-            plugin.lookupBucket.remove(id);
-            return result;
-        }
-    }
-}
-
-
-// onEndOfMotd
-/++
-    Starts the persistent querier worker thread on end of MOTD.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
-    .onEvent(IRCEvent.Type.ERR_NOMOTD)
-)
-void onEndOfMotd(WebtitlePlugin plugin, const IRCEvent _)
-{
-    import std.algorithm.comparison : max;
-
-    mixin(memoryCorruptionCheck);
-
-    // Use a minimum of one worker thread, regardless of setting
-    plugin.transient.workerTids.length =
-        max(plugin.settings.workerThreads, 1);
-
-    foreach (ref workerTid; plugin.transient.workerTids)
-    {
-        import std.concurrency : Tid, spawn;
-
-        if (workerTid != Tid.init) continue;  // to be safe
-
-        workerTid = spawn(
-            &persistentQuerier,
-            plugin.lookupBucket,
-            plugin.state.connSettings.caBundleFile);
-    }
-}
-
-
-// persistentQuerier
-/++
-    Persistent querier worker thread function.
-
-    Params:
-        lookupBucket = Associative array to fill with [TitleLookupResult]s.
-        caBundleFile = Path to `cacert.pem` file, or an empty string if none
-            should be needed.
- +/
-void persistentQuerier(
-    MutexedAA!(TitleLookupResult[int]) lookupBucket,
-    const string caBundleFile)
-{
-    version(Posix)
-    {
-        import kameloso.thread : setThreadName;
-        setThreadName("webworker");
-    }
-
-    void onTitleRequest(string url, int id)
-    {
-        import lu.string : advancePast;
-        import std.algorithm.searching : canFind, startsWith;
-
-        TitleLookupResult result;
 
         if (url.canFind("://i.imgur.com/"))
         {
@@ -460,249 +360,98 @@ void persistentQuerier(
             // Rewrite and look those up instead.
             url = rewriteDirectImgurURL(url);
         }
-        else if (url.canFind("youtube.com/watch?v=", "youtu.be/"))
-        {
-            // Do our own slicing instead of using regexes, because footprint.
-            string slice = url;  // mutable
 
-            slice.advancePast("http");
-            if (slice[0] == 's') slice = slice[1..$];
-            slice = slice["://".length..$];
+        if (url in uniques) continue;
+        uniques[url] = true;
+    }
 
-            if (slice.startsWith("www.")) slice = slice[4..$];
-
-            immutable startsWithThis = slice.startsWith(
-                "youtube.com/watch?v=",
-                "youtu.be/");
-
-            if (startsWithThis)
-            {
-                immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
-                result = sendHTTPRequestImpl(youtubeURL, caBundleFile);
-
-                if (result.exceptionText.length)
-                {
-                    // Either requests threw an exception or it's something like UnicodeException
-                    // Drop down and try the original URL
-                }
-                else if (!result.code || (result.code < 10) || (result.code >= 400))
-                {
-                    // Not sure when this can happen; drop down to the normal lookup
-                }
-                else
-                {
-                    import std.json : parseJSON;
-                    immutable youtubeJSON = parseJSON(cast(string)result.str);
-                    result.title = decodeEntities(youtubeJSON["title"].str);
-                    result.youtubeAuthor = decodeEntities(youtubeJSON["author_name"].str);
-                }
-            }
-        }
-
-        if (!result.title.length) // && !result.exceptionText.length)
+    void lookupURLsDg()
+    {
+        foreach (immutable origURL; uniques.byKey)
         {
             import kameloso.tables : trueThenFalse;
+            import lu.string : advancePast;
+            import std.algorithm.searching : canFind, startsWith;
 
-            foreach (immutable isFirstTime; trueThenFalse[])
+            enum caughtPattern = "Caught URL: <l>%s";
+            logger.infof(caughtPattern, origURL);
+
+            string url = origURL;  // mutable
+
+            if (url.canFind("youtube.com/watch?v=", "youtu.be/"))
             {
-                result = sendHTTPRequestImpl(url, caBundleFile);
+                // Do our own slicing instead of using regexes, because footprint.
+                string slice = url;  // mutable
 
-                if (result.exceptionText.length)
+                slice.advancePast("http");
+                if (slice[0] == 's') slice = slice[1..$];
+                slice = slice["://".length..$];
+
+                if (slice.startsWith("www.")) slice = slice[4..$];
+
+                immutable isYouTubeURL = slice.startsWith(
+                    "youtube.com/watch?v=",
+                    "youtu.be/");
+
+                if (isYouTubeURL)
                 {
-                    // Either requests threw an exception or it's something like UnicodeException
-                    break;  // drop down to abort
-                }
-                else if (!result.code || (result.code < 10))
-                {
-                    // SSL error?
-                    // Don't include >= 400; we might get a hit later by rewriting the url
-                    break;  // as above
-                }
-                else if (result.title.length && (result.code < 400))
-                {
-                    // Title found
-                    break;  // ditty
-                }
-                else if (isFirstTime)
-                {
-                    // Still the first iteration, try rewriting the URL
-                    if (url[$-1] == '/')
+                    immutable rewrittenYoutubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
+                    immutable response = sendHTTPRequest(plugin, rewrittenYoutubeURL);
+                    auto result = response.parseResponseIntoTitleLookupResult();
+
+                    if (result.exceptionText.length ||
+                        !result.title.length ||
+                        (result.response.code < 200) ||
+                        (result.response.code > 299))
                     {
-                        url = url[0..$-1];
+                        // Either requests threw an exception or it's something like UnicodeException
+                        // Drop down and try the original URL
                     }
                     else
                     {
-                        url ~= '/';
+                        import std.json : parseJSON;
+
+                        immutable youtubeJSON = parseJSON(response.body);
+                        result.title = decodeEntities(youtubeJSON["title"].str);
+                        result.youtubeAuthor = decodeEntities(youtubeJSON["author_name"].str);
+                        return report(result);
                     }
                 }
             }
-        }
 
-        if (result != TitleLookupResult.init)
-        {
-            // Modified in some way; store it
-            lookupBucket[id] = result;
-        }
-        else
-        {
-            // Signal failure by removing the key
-            lookupBucket.remove(id);
-        }
-    }
+            // If we're here it's not a YouTube link, barring bad parsing
+            foreach (immutable isFirstTime; trueThenFalse[])
+            {
+                immutable response = sendHTTPRequest(plugin, url);
+                immutable result = TitleLookupResult(response);
 
-    bool halt;
-
-    void onQuitMessage(bool)
-    {
-        halt = true;
-    }
-
-    // This avoids the GC allocating a closure, which is fine in this case, but do this anyway
-    scope onTitleRequestDg = &onTitleRequest;
-    scope onQuitMessageDg = &onQuitMessage;
-
-    while (!halt)
-    {
-        try
-        {
-            import std.concurrency : receive;
-            import std.variant : Variant;
-
-            receive(
-                onTitleRequestDg,
-                onQuitMessageDg,
-                (Variant v)
+                if (result.exceptionText.length ||
+                    !result.title.length ||
+                    (result.response.code < 200) ||
+                    (result.response.code > 299))
                 {
-                    import std.stdio : stdout, writeln;
-                    writeln("Webtitle worker received unknown Variant: ", v);
-                    stdout.flush();
+                    if (isFirstTime)
+                    {
+                        // Still the first iteration, try rewriting the URL
+                        if (url[$-1] == '/')
+                        {
+                            url = url[0..$-1];
+                        }
+                        else
+                        {
+                            url ~= '/';
+                        }
+                        continue;
+                    }
                 }
-            );
-        }
-        catch (Exception _)
-        {
-            // Probably a requests exception
-            /*writeln("Webtitle worker caught exception: ", e.msg);
-            version(PrintStacktraces) writeln(e);
-            stdout.flush();*/
+
+                report(result);
+            }
         }
     }
-}
 
-
-// sendHTTPRequest
-/++
-    Issues an HTTP request by sending the details to the persistent querier thread,
-    then returns the results after they become available in the shared associative array.
-
-    Params:
-        plugin = The current [WebtitlePlugin].
-        url = URL string to fetch.
-        recursing = Whether or not this is a recursive call.
-        id = Optional `int` id key to [WebtitlePlugin.lookupBucket].
-        caller = Optional name of the calling function.
-
-    Returns:
-        A [TitleLookupResult] with contents based on what was read from the URL.
- +/
-TitleLookupResult sendHTTPRequest(
-    WebtitlePlugin plugin,
-    const string url,
-    const bool recursing = false,
-    /*const*/ int id = 0,
-    const string caller = __FUNCTION__)
-in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
-in (url.length, "Tried to send an HTTP request without a URL")
-{
-    import kameloso.plugins.common.scheduling : delay;
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : send;
-    import core.time : msecs;
-
-    version(TraceHTTPRequests)
-    {
-        import kameloso.common : logger;
-
-        enum pattern = "get: <i>%s<t> (%s)";
-        logger.tracef(
-            pattern,
-            url,
-            caller);
-    }
-
-    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
-
-    if (!id) id = plugin.lookupBucket.uniqueKey;
-    plugin.getNextWorkerTid().send(url, id);
-
-    static immutable initialDelay = 500.msecs;
-    delay(plugin, initialDelay, yield: true);
-
-    immutable result = waitForLookupResults(plugin, id);
-
-    if ((result.code >= 500) && !recursing)
-    {
-        return sendHTTPRequest(
-            plugin,
-            url,
-            recursing: true,
-            id,
-            caller);
-    }
-
-    return result;
-}
-
-
-// sendHTTPRequestImpl
-/++
-    Fetches the contents of a URL, parses it into a [TitleLookupResult] and returns it.
-
-    Params:
-        url = URL string to fetch.
-        caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
-
-    Returns:
-        A [TitleLookupResult] with contents based on what was read from the URL.
- +/
-auto sendHTTPRequestImpl(
-    const string url,
-    const string caBundleFile)
-{
-    import kameloso.constants : KamelosoInfo, Timeout;
-    import requests.base : Response;
-    import requests.request : Request;
-
-    static string[string] headers;
-
-    if (!headers.length)
-    {
-        headers =
-        [
-            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
-        ];
-    }
-
-    auto req = Request();
-    //req.verbosity = 1;
-    req.keepAlive = false;
-    req.timeout = Timeout.httpGET;
-    req.addHeaders(headers);
-    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
-
-    try
-    {
-        return req
-            .get(url)
-            .parseResponseIntoTitleLookupResult();
-    }
-    catch (Exception e)
-    {
-        TitleLookupResult result;
-        result.url = url;
-        result.exceptionText = e.msg;
-        return result;
-    }
+    auto lookupURLsFiber = new Fiber(&lookupURLsDg, BufferSize.fiberStack);
+    lookupURLsFiber.call();
 }
 
 
@@ -716,19 +465,17 @@ auto sendHTTPRequestImpl(
     Returns:
         A [TitleLookupResult] with contents based on what was read from the URL.
  +/
-auto parseResponseIntoTitleLookupResult(/*const*/ Response res)
+auto parseResponseIntoTitleLookupResult(const HTTPQueryResponse response)
 {
     import arsd.dom : Document;
     import std.algorithm.searching : canFind, startsWith;
 
     TitleLookupResult result;
-    result.code = res.code;
-    result.url = res.uri.uri;
-    result.str = cast(string)res.responseBody;  // .idup?
+    result.response = response;
 
     enum unnamedPagePlaceholder = "(Unnamed page)";
 
-    if (!result.code || (result.code == 2) || (result.code >= 400))
+    if (!response.code || (response.code == 2) || (response.code >= 400))
     {
         // Invalid address, SSL error, 404, etc; no need to continue
         return result;
@@ -736,12 +483,12 @@ auto parseResponseIntoTitleLookupResult(/*const*/ Response res)
 
     try
     {
-        result.domain = res.finalURI.host.startsWith("www.") ?
-            res.finalURI.host[4..$] :
-            res.finalURI.host;
+        result.domain = response.finalURI.host.startsWith("www.") ?
+            response.finalURI.host[4..$] :
+            response.finalURI.host;
 
         auto doc = new Document;
-        doc.parseGarbage(result.str);
+        doc.parseGarbage(response.body);
 
         result.title = doc.title.length ?
             decodeEntities(doc.title) :
@@ -913,33 +660,6 @@ final class TitleFetchException : Exception
 }
 
 
-// setup
-/++
-    Initialises the lookup bucket, else its internal [core.sync.mutex.Mutex|Mutex]
-    will be null and cause a segfault when trying to lock it.
- +/
-void setup(WebtitlePlugin plugin)
-{
-    plugin.lookupBucket.setup();
-}
-
-
-// teardown
-/++
-    Stops the persistent querier worker threads.
- +/
-void teardown(WebtitlePlugin plugin)
-{
-    foreach (workerTid; plugin.transient.workerTids)
-    {
-        import std.concurrency : Tid, prioritySend;
-
-        if (workerTid == Tid.init) continue;
-        workerTid.prioritySend(true);
-    }
-}
-
-
 mixin PluginRegistration!WebtitlePlugin;
 
 public:
@@ -954,53 +674,10 @@ public:
 final class WebtitlePlugin : IRCPlugin
 {
 private:
-    import std.concurrency : Tid;
-    import core.time : msecs;
-
-    /++
-        Transient state variables, aggregated in a struct.
-     +/
-    static struct TransientState
-    {
-        /++
-            The thread IDs of the persistent worker threads.
-         +/
-        Tid[] workerTids;
-
-        /++
-            The index of the next worker thread to use.
-         +/
-        size_t currentWorkerTidIndex;
-    }
-
     /++
         All Webtitle options gathered.
      +/
     WebtitleSettings settings;
-
-    /++
-        Transient state of this [WebtitlePlugin] instance.
-     +/
-    TransientState transient;
-
-    /++
-        Lookup bucket.
-     +/
-    MutexedAA!(TitleLookupResult[int]) lookupBucket;
-
-    /++
-        Returns the next worker thread ID to use, cycling through them.
-     +/
-    auto getNextWorkerTid()
-    in (transient.workerTids.length, "Tried to get a worker Tid when there were none")
-    {
-        if (transient.currentWorkerTidIndex >= transient.workerTids.length)
-        {
-            transient.currentWorkerTidIndex = 0;
-        }
-
-        return transient.workerTids[transient.currentWorkerTidIndex++];
-    }
 
     mixin IRCPluginImpl;
 }
