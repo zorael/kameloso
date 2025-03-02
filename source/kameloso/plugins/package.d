@@ -78,6 +78,7 @@ public:
 abstract class IRCPlugin
 {
 private:
+    import kameloso.net : Querier;
     import kameloso.thread : Sendable;
     import std.array : Appender;
     import core.time : Duration;
@@ -3189,6 +3190,12 @@ public:
         Events to send to the IRC server.
      +/
     Appender!(Message[]) outgoingMessages;
+
+    // querier
+    /++
+        FIXME
+     +/
+    Querier querier;
 }
 
 
@@ -5432,3 +5439,333 @@ struct Priority
     ---
  +/
 alias priority = Priority;
+
+
+import lu.container : MutexedAA;
+import kameloso.net : QueryResponse2;
+import kameloso.tables : HTTPVerb;
+import std.typecons : Flag, No, Yes;
+
+QueryResponse2 sendHTTPRequest(
+    IRCPlugin plugin,
+    const string url,
+    const string caller = __FUNCTION__,
+    const string authorisationHeader = string.init,
+    const string clientID = string.init,
+    const bool verifyPeer = true,
+    shared string[string] customHeaders = null,
+    /*const*/ HTTPVerb verb = HTTPVerb.get,
+    /*const*/ ubyte[] body = null,
+    const string contentType = string.init,
+    int id = 0,
+    const bool recursing = false)
+in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
+in (url.length, "Tried to send an HTTP request without a URL")
+{
+    import kameloso.net : HTTPQueryException, EmptyResponseException, ErrorJSONException;
+    import kameloso.plugins.common.scheduling : delay;
+    import kameloso.thread : ThreadMessage;
+    import std.algorithm.searching : endsWith;
+    import std.concurrency : send;
+    import core.time : MonoTime, msecs;
+
+    version(TraceHTTPRequests)
+    {
+        import kameloso.common : logger;
+        import lu.conv : toString;
+
+        enum tracePattern = "%s: <i>%s<t> (%s)";
+        logger.tracef(
+            tracePattern,
+            verb.toString,
+            url,
+            caller);
+    }
+
+    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
+
+    immutable pre = MonoTime.currTime;
+    if (!id) id = plugin.state.querier.responseBucket.uniqueKey;
+
+    plugin.state.querier.nextWorker.send(
+        id,
+        url,
+        authorisationHeader,
+        clientID,
+        verifyPeer,
+        plugin.state.connSettings.caBundleFile,
+        customHeaders,
+        verb,
+        body.idup,
+        contentType);
+
+    //delay(plugin, plugin.transient.approximateQueryTime.msecs, yield: true);
+    delay(plugin, 200.msecs, yield: true);
+    immutable response = plugin.state.querier.awaitResponse(plugin, id);
+
+    if (response.exceptionText.length)
+    {
+        throw new HTTPQueryException(
+            response.exceptionText,
+            response.body,
+            response.error,
+            response.code);
+    }
+
+    /*if (response.host.endsWith(".twitch.tv"))
+    {
+        // Only update approximate query time for Twitch queries (skip those of custom emotes)
+        immutable post = MonoTime.currTime;
+        immutable diff = (post - pre);
+        immutable msecs_ = diff.total!"msecs";
+        averageApproximateQueryTime(plugin, msecs_);
+    }*/
+
+    if (response == QueryResponse2.init)
+    {
+        throw new EmptyResponseException("No response");
+    }
+    else if (response.code < 200)
+    {
+        throw new HTTPQueryException(
+            response.error,
+            response.body,
+            response.error,
+            response.code);
+    }
+    else if ((response.code >= 500) && !recursing)
+    {
+        return sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: authorisationHeader,
+            clientID: clientID,
+            verifyPeer: verifyPeer,
+            customHeaders: customHeaders,
+            verb: verb,
+            body: body,
+            contentType: contentType,
+            id: id,
+            recursing: true);
+    }
+    else if (response.code >= 400)
+    {
+        import std.format : format;
+        import std.json : JSONException;
+
+        try
+        {
+            import lu.json : getOrFallback;
+            import lu.string : unquoted;
+            import std.json : JSONValue, parseJSON;
+            import std.string : chomp;
+
+            // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+            /+
+            {
+                "error": "Unauthorized",
+                "message": "Client ID and OAuth token do not match",
+                "status": 401
+            }
+            {
+                "error": "Unknown Emote Set",
+                "error_code": 70441,
+                "status": "Not Found",
+                "status_code": 404
+            }
+            {
+                "message": "user not found"
+            }
+            {
+                "error": "Unauthorized",
+                "message": "Invalid OAuth token",
+                "status": 401
+            }
+            {
+                "error": "Unauthorized",
+                "message": "Missing scope: moderator:manage:chat_messages",
+                "status": 401
+            }
+             +/
+
+            enum genericErrorString = "Error";
+            enum genericErrorMessageString = "An unspecified error occurred";
+
+            immutable json = parseJSON(response.body);
+            uint code = response.code;
+            string status;
+            string message;
+
+            if (immutable statusCodeJSON = "status_code" in json)
+            {
+                code = cast(uint)(*statusCodeJSON).integer;
+                status = json.getOrFallback("status", genericErrorString);
+                message = json.getOrFallback("error", genericErrorMessageString);
+            }
+            else if (immutable errorJSON = "error" in json)
+            {
+                status = genericErrorString;
+                message = (*errorJSON).str;
+            }
+            else if (immutable statusJSON = "status" in json)
+            {
+                import std.json : JSONException;
+
+                code = cast(uint)(*statusJSON).integer;
+                status = json.getOrFallback("status", genericErrorString);
+                message = json.getOrFallback("error", genericErrorMessageString);
+            }
+            else if (immutable messageJSON = "message" in json)
+            {
+                status = genericErrorString;
+                message = (*messageJSON).str;
+            }
+            else
+            {
+                version(PrintStacktraces)
+                {
+                    if (!plugin.state.coreSettings.headless)
+                    {
+                        import std.stdio : stdout, writeln;
+                        writeln(json.toPrettyString);
+                        stdout.flush();
+                    }
+                }
+
+                status = genericErrorString;
+                message = genericErrorMessageString;
+            }
+
+            enum pattern = "%3d %s: %s";
+            immutable exceptionMessage = pattern.format(
+                code,
+                status.chomp.unquoted,
+                message.chomp.unquoted);
+
+            throw new ErrorJSONException(exceptionMessage, json);
+        }
+        catch (JSONException e)
+        {
+            import kameloso.string : doublyBackslashed;
+
+            version(PrintStacktraces)
+            {
+                if (!plugin.state.coreSettings.headless)
+                {
+                    import std.stdio : stdout, writeln;
+                    writeln(response.body);
+                    stdout.flush();
+                }
+            }
+
+            throw new HTTPQueryException(
+                e.msg,
+                response.body,
+                response.error,
+                response.code,
+                e.file.doublyBackslashed,
+                e.line);
+        }
+    }
+
+    return response;
+}
+
+private import kameloso.net : Querier;
+
+auto awaitResponse(Querier querier, IRCPlugin plugin, const int id)
+in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
+{
+    //import std.datetime.systime : Clock;
+    import core.time : MonoTime, seconds;
+
+    /*version(BenchmarkHTTPRequests)
+    {
+        import std.stdio : writefln;
+        uint misses;
+    }*/
+
+    //immutable startTimeInUnix = Clock.currTime.toUnixTime();
+    //double accumulatingTime = plugin.transient.approximateQueryTime;
+    immutable start = MonoTime.currTime;
+
+    while (true)
+    {
+        immutable hasResponse = querier.responseBucket.has(id);
+
+        if (!hasResponse)
+        {
+            // Querier errored or otherwise gave up
+            // No need to remove the id, it's not there
+            return QueryResponse2.init;
+        }
+
+        //auto response = plugin.responseBucket[id];  // potential range error due to TOCTTOU
+        immutable response = querier.responseBucket.get(id, QueryResponse2.init);
+
+        if (response == QueryResponse2.init)
+        {
+            import kameloso.plugins.common.scheduling : delay;
+            import kameloso.constants : Timeout;
+            import core.time : msecs;
+
+            /*immutable nowInUnix = Clock.currTime.toUnixTime();
+
+            if ((nowInUnix - startTimeInUnix) >= Timeout.Integers.httpGETSeconds)
+            {
+                querier.responseBucket.remove(id);
+                return QueryResponse2.init;
+            }*/
+
+            immutable now = MonoTime.currTime;
+
+            if ((now - start) >= Timeout.httpGET)
+            {
+                querier.responseBucket.remove(id);
+                return QueryResponse2.init;
+            }
+
+            /*version(BenchmarkHTTPRequests)
+            {
+                ++misses;
+                immutable oldAccumulatingTime = accumulatingTime;
+            }*/
+
+            // Miss; fired too early, there is no response available yet
+            /*alias QC = TwitchPlugin.QueryConstants;
+            accumulatingTime *= QC.growthMultiplier;
+            immutable briefWait = cast(long)(accumulatingTime / QC.retryTimeDivisor);
+
+            version(BenchmarkHTTPRequests)
+            {
+                enum pattern = "MISS %d! elapsed: %s | old: %d --> new: %d | wait: %d";
+                immutable delta = (nowInUnix - startTimeInUnix);
+                writefln(
+                    pattern,
+                    misses,
+                    delta,
+                    cast(long)oldAccumulatingTime,
+                    cast(long)accumulatingTime,
+                    cast(long)briefWait);
+            }*/
+
+            static immutable briefWait = 200.msecs;
+            delay(plugin, briefWait, yield: true);
+            continue;
+        }
+        else
+        {
+            /*version(BenchmarkHTTPRequests)
+            {
+                enum pattern = "HIT! elapsed: %s | response: %s | misses: %d";
+                immutable now = MonoTime.currTime;
+                immutable delta = (now - start);
+                writefln(pattern, delta, response.msecs, misses);
+            }*/
+
+            querier.responseBucket.remove(id);
+            return response;
+        }
+    }
+}

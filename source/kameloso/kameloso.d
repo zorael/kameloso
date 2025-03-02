@@ -21,7 +21,7 @@ final class Kameloso
 private:
     import kameloso.common : OutgoingLine, logger;
     import kameloso.constants : BufferSize;
-    import kameloso.net : Connection;
+    import kameloso.net : Connection, Querier;
     import kameloso.plugins : IRCPlugin;
     import kameloso.pods : ConnectionSettings, CoreSettings, IRCBot;
     import dialect.defs : IRCClient, IRCServer;
@@ -155,13 +155,15 @@ public:
     /++
         Constructor taking an `args` string array.
      +/
-    this(const string[] args) @safe
+    this(const string[] args)
     {
+        import kameloso.constants : ConnectionDefaultIntegers;
         static import kameloso.common;
 
         this._args = args.dup;
         this.conn = new Connection;
         this.coreSettings = &kameloso.common.coreSettings;
+        this.querier = new Querier(ConnectionDefaultIntegers.numWorkers);
     }
 
     // ctor
@@ -336,6 +338,12 @@ public:
      +/
     string[] customSettings;
 
+    // querier
+    /++
+        FIXME
+     +/
+    Querier querier;
+
     // connectionID
     /++
         Numeric ID of the current connection, to disambiguate between multiple
@@ -506,6 +514,7 @@ public:
         state.coreSettings = *this.coreSettings;
         state.connSettings = this.connSettings;
         state.abort = this.abort;
+        state.querier = this.querier;
 
         // Leverage kameloso.plugins.instantiatePlugins to construct all plugins.
         this.plugins = instantiatePlugins(state);

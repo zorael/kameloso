@@ -277,6 +277,11 @@ enum ConnectionDefaultIntegers
         How many times to attempt to connect to an IP before moving on to the next one.
      +/
     connectionRetries = 4,
+
+    /++
+        FIXME
+     +/
+    numWorkers = 6,
 }
 
 

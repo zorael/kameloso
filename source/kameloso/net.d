@@ -1685,3 +1685,628 @@ final class SocketSendException : Exception
         super(msg, file, line, nextInChain);
     }
 }
+
+
+
+private import lu.container : MutexedAA;
+
+
+final class Querier
+{
+private:
+    import std.concurrency : Tid, send, spawn;
+    private import core.thread.fiber : Fiber;
+
+public:
+    Tid[] workers;
+
+    size_t nextWorkerIndex;
+
+    MutexedAA!(QueryResponse2[int]) responseBucket;
+
+    this(uint numWorkers) @system
+    in ((numWorkers > 0), "Tried to spawn 0 workers")
+    {
+        responseBucket.setup();
+        workers.length = numWorkers;
+
+        foreach (immutable i; 0..numWorkers)
+        {
+            workers[i] = spawn(&persistentQuerier, responseBucket);
+        }
+    }
+
+    auto nextWorker()
+    in (workers.length, "No workers spawned")
+    {
+        if (nextWorkerIndex >= workers.length) nextWorkerIndex = 0;
+        return workers[nextWorkerIndex++];
+    }
+
+    void teardown() @system
+    {
+        import std.typecons : Flag, No, Yes;
+
+        foreach (immutable i; 0..workers.length)
+        {
+
+            workers[i].send(Yes.quit);
+            workers[i] = Tid.init;
+        }
+
+        workers = null;
+        nextWorkerIndex = 0L;
+    }
+}
+
+
+void persistentQuerier(MutexedAA!(QueryResponse2[int]) responseBucket) @system
+{
+    import std.typecons : Flag, No, Yes;
+
+    version(Posix)
+    {
+        import kameloso.thread : setThreadName;
+        setThreadName("querier");
+    }
+
+    void onHTTPRequest(
+        int id,
+        string url,
+        string authToken,
+        string clientID,
+        bool verifyPeer,
+        string caBundleFile,
+        shared string[string] customHeaders,
+        HTTPVerb verb,
+        immutable(ubyte)[] body,
+        string contentType)
+    {
+        scope(failure) responseBucket.remove(id);
+
+        version(BenchmarkHTTPRequests)
+        {
+            import core.time : MonoTime;
+            immutable pre = MonoTime.currTime;
+        }
+
+        immutable response = issueSyncHTTPRequest(
+            url: url,
+            authHeader: authToken,
+            clientID: clientID,
+            caBundleFile: caBundleFile,
+            verifyPeer: verifyPeer,
+            customHeaders: customHeaders,
+            verb: verb,
+            body: cast(ubyte[])body,
+            contentType: contentType);
+
+        if (response != QueryResponse2.init)
+        {
+            responseBucket[id] = response;
+        }
+        else
+        {
+            responseBucket.remove(id);
+        }
+
+        version(BenchmarkHTTPRequests)
+        {
+            import std.stdio : stdout, writefln;
+            immutable post = MonoTime.currTime;
+            enum pattern = "%s (%s)";
+            writefln(pattern, post-pre, url);
+            stdout.flush();
+        }
+    }
+
+    bool halt;
+
+    void onQuitMessage(Flag!"quit" quit)
+    {
+        halt = quit;
+    }
+
+    // This avoids the GC allocating a closure, which is fine in this case, but do this anyway
+    scope onHTTPRequestDg = &onHTTPRequest;
+    scope onQuitMessageDg = &onQuitMessage;
+
+    while (!halt)
+    {
+        import std.concurrency : receive;
+        import std.variant : Variant;
+
+        try
+        {
+            receive(
+                onHTTPRequestDg,
+                onQuitMessageDg,
+                (Variant v)
+                {
+                    import std.stdio : stdout, writeln;
+                    writeln("Querier received unknown Variant: ", v);
+                    stdout.flush();
+                }
+            );
+        }
+        catch (Exception e)
+        {
+            import std.stdio : stdout, writeln;
+
+            // Probably a requests exception
+            writeln("Querier caught exception: ", e.msg);
+            version(PrintStacktraces) writeln(e);
+            stdout.flush();
+        }
+    }
+}
+
+
+private import kameloso.tables : HTTPVerb;
+
+
+auto issueSyncHTTPRequest(
+    const string url,
+    const string authHeader,
+    const string clientID,
+    const string caBundleFile,
+    const bool verifyPeer,
+    shared const string[string] customHeaders = null,
+    /*const*/ HTTPVerb verb = HTTPVerb.get,
+    /*const*/ ubyte[] body = null,
+    /*const*/ string contentType = string.init) @system
+{
+    import kameloso.constants : KamelosoInfo, Timeout;
+    import requests.base : Response;
+    import requests.request : Request;
+    import std.range : only, zip;
+
+    static string[string] headers;
+
+    if (!headers.length)
+    {
+        headers =
+        [
+            "Client-ID" : clientID,
+            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
+            "Authorization" : authHeader,
+        ];
+    }
+
+    auto headerNames = only("Client-ID", "Authorization");
+    auto headerStrings = only(&clientID, &authHeader);
+    auto zipped = zip(headerNames, headerStrings);
+
+    foreach (immutable name, stringPtr; zipped)
+    {
+        if (!stringPtr.length)
+        {
+            headers.remove(name);
+        }
+        else if (auto header = name in headers)
+        {
+            if (*header != *stringPtr) *header = *stringPtr;
+        }
+        else
+        {
+            headers[name] = *stringPtr;
+        }
+    }
+
+    foreach (immutable name, const value; customHeaders)
+    {
+        headers[name] = value;
+    }
+
+    scope(exit)
+    {
+        foreach (immutable name, const _; customHeaders)
+        {
+            headers.remove(name);
+        }
+    }
+
+    auto req = Request();
+    //req.verbosity = 1;
+    req.keepAlive = true;
+    req.timeout = Timeout.httpGET;
+    req.addHeaders(headers);
+    req.sslSetVerifyPeer = verifyPeer;
+    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
+
+    Response res;
+    QueryResponse2 response;
+    response.url = url;
+
+    try
+    {
+        with (HTTPVerb)
+        final switch (verb)
+        {
+        case get:
+            res = req.get(url);
+            break;
+
+        case post:
+            res = req.post(url, body, contentType);
+            break;
+
+        case put:
+            res = req.put(url, body, contentType);
+            break;
+
+        case patch:
+            res = req.patch(url, body, contentType);
+            break;
+
+        case delete_:
+            res = req.execute("DELETE", url);
+            break;
+
+        case unset:
+        case unsupported:
+            assert(0, "Unset or unsupported HTTP verb passed to sendHTTPRequestImpl");
+        }
+    }
+    catch (Exception e)
+    {
+        import kameloso.constants : MagicErrorStrings;
+
+        response.exceptionText = (e.msg == MagicErrorStrings.sslContextCreationFailure) ?
+            MagicErrorStrings.sslLibraryNotFoundRewritten :
+            e.msg;
+        return response;
+    }
+
+    response.code = res.code;
+    response.host = res.uri.host;
+    response.body = cast(string)res.responseBody;  //.idup?
+
+    immutable stats = res.getStats();
+    response.elapsed = stats.connectTime + stats.recvTime + stats.sendTime;
+    return response;
+}
+
+
+final class HTTPQueryException : Exception
+{
+@safe:
+    /++
+        The response body that was received.
+     +/
+    string responseBody;
+
+    /++
+        The message of any thrown exception, if the query failed.
+     +/
+    string error;
+
+    /++
+        The HTTP code that was received.
+     +/
+    uint code;
+
+    /++
+        Create a new [HTTPQueryException], attaching a response body, an error
+        and an HTTP status code.
+     +/
+    this(
+        const string message,
+        const string responseBody,
+        const string error,
+        const uint code,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.responseBody = responseBody;
+        this.error = error;
+        this.code = code;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Create a new [HTTPQueryException], without attaching anything.
+     +/
+    this(
+        const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
+
+// EmptyResponseException
+/++
+    Exception, to be thrown when an API query to the Twitch servers failed,
+    with only an empty response received.
+ +/
+final class EmptyResponseException : Exception
+{
+@safe:
+    /++
+        Create a new [EmptyResponseException].
+     +/
+    this(
+        const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
+
+
+// TwitchJSONException
+/++
+    Abstract class for Twitch JSON exceptions, to deduplicate catching.
+ +/
+abstract class QueryResponse2Exception : Exception
+{
+private:
+    import std.json : JSONValue;
+
+public:
+    /++
+        Accessor to a [std.json.JSONValue|JSONValue] that this exception refers to.
+     +/
+    JSONValue json();
+
+    /++
+        Constructor.
+     +/
+    this(
+        const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
+
+// TwitchJSONException
+/++
+    Abstract class for Twitch JSON exceptions, to deduplicate catching.
+ +/
+abstract class QueryResponseJSONException : Exception
+{
+private:
+    import std.json : JSONValue;
+
+public:
+    /++
+        Accessor to a [std.json.JSONValue|JSONValue] that this exception refers to.
+     +/
+    JSONValue json();
+
+    /++
+        Constructor.
+     +/
+    this(
+        const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
+
+// UnexpectedJSONException
+/++
+    A normal [object.Exception|Exception] but where its type conveys the specific
+    context of a [std.json.JSONValue|JSONValue] having unexpected contents.
+
+    It optionally embeds the JSON.
+ +/
+final class UnexpectedJSONException : QueryResponseJSONException
+{
+private:
+    import std.json : JSONValue;
+
+    /++
+        [std.json.JSONValue|JSONValue] in question.
+     +/
+    JSONValue _json;
+
+public:
+    /++
+        Accessor to [_json].
+     +/
+    override JSONValue json()
+    {
+        return _json;
+    }
+
+    /++
+        Create a new [UnexpectedJSONException], attaching a [std.json.JSONValue|JSONValue].
+     +/
+    this(
+        const string message,
+        const JSONValue _json,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this._json = _json;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Constructor.
+     +/
+    this(
+        const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
+// ErrorJSONException
+/++
+    A normal [object.Exception|Exception] but where its type conveys the specific
+    context of a [std.json.JSONValue|JSONValue] having an `"error"` field.
+
+    It optionally embeds the JSON.
+ +/
+final class ErrorJSONException : QueryResponseJSONException
+{
+private:
+    import std.json : JSONValue;
+
+    /++
+        [std.json.JSONValue|JSONValue] in question.
+     +/
+    JSONValue _json;
+
+public:
+    /++
+        Accessor to [_json].
+     +/
+    override JSONValue json()
+    {
+        return _json;
+    }
+
+    /++
+        Create a new [ErrorJSONException], attaching a [std.json.JSONValue|JSONValue].
+     +/
+    this(
+        const string message,
+        const JSONValue _json,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this._json = _json;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Constructor.
+     +/
+    this(
+        const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
+// EmptyDataJSONException
+/++
+    Exception, to be thrown when an API query to the Twitch servers failed,
+    due to having received empty JSON data.
+
+    It is a normal [object.Exception|Exception] but with attached metadata.
+ +/
+final class EmptyDataJSONException : QueryResponseJSONException
+{
+private:
+    import std.json : JSONValue;
+
+    /++
+        The response body that was received.
+     +/
+    JSONValue _json;
+
+public:
+    /++
+        Accessor to [_json].
+     +/
+    override JSONValue json()
+    {
+        return _json;
+    }
+
+    /++
+        Create a new [EmptyDataJSONException], attaching a response body.
+     +/
+    this(
+        const string message,
+        const JSONValue _json,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this._json = _json;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Create a new [EmptyDataJSONException], without attaching anything.
+     +/
+    this(
+        const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
+// QueryResponse2
+/++
+    Embodies a response from a query to the Twitch servers. A string paired with
+    a millisecond count of how long the query took, and some metadata about the request.
+ +/
+struct QueryResponse2
+{
+    private import core.time : Duration;
+
+    /++
+        The URL that was queried.
+     +/
+    string url;
+
+    /++
+        The host that was queried.
+     +/
+    string host;
+
+    /++
+        Response body, may be several lines.
+     +/
+    string body;
+
+    /++
+        How long the query took, from issue to response.
+     +/
+    Duration elapsed;
+
+    /++
+        The HTTP response code received.
+     +/
+    uint code;
+
+    /++
+        The message of any exception thrown while querying.
+     +/
+    string error;
+
+    /++
+        The message text of any exception thrown while querying.
+     +/
+    string exceptionText;
+}
