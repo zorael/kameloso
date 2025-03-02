@@ -188,9 +188,14 @@ public:
     void teardown()
     {
         teardownPlugins();
+
         this.conn.teardown();
         destroy(this.conn);
         this.conn = null;
+
+        this.querier.teardown();
+        destroy(this.querier);
+        this.querier = null;
     }
 
     // args
