@@ -2167,35 +2167,6 @@ final class EmptyResponseException : Exception
 }
 
 
-// TwitchJSONException
-/++
-    Abstract class for Twitch JSON exceptions, to deduplicate catching.
- +/
-abstract class QueryResponseException : Exception
-{
-private:
-    import std.json : JSONValue;
-
-public:
-    /++
-        Accessor to a [std.json.JSONValue|JSONValue] that this exception refers to.
-     +/
-    JSONValue json();
-
-    /++
-        Constructor.
-     +/
-    this(
-        const string message,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        super(message, file, line, nextInChain);
-    }
-}
-
-
 // QueryResponseJSONException
 /++
     Abstract class for web query JSON exceptions, to deduplicate catching.
