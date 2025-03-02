@@ -24,7 +24,6 @@ import kameloso.plugins;
 import kameloso.plugins.common.mixins.awareness;
 import requests.base : Response;
 import dialect.defs;
-import lu.container : MutexedAA;
 import core.thread.fiber : Fiber;
 
 mixin MinimalAuthentication;
@@ -135,35 +134,26 @@ void onCommandBash(BashPlugin plugin, const IRCEvent event)
 
 // onEndOfMotd
 /++
-    Starts the persistent querier worker thread on end of MOTD.
+    Warns the user if SSL certificate verification is disabled.
  +/
 @(IRCEventHandler()
-    .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
-    .onEvent(IRCEvent.Type.ERR_NOMOTD)
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onEndOfMotd(BashPlugin plugin, const IRCEvent _)
+void onWelcome(BashPlugin plugin, const IRCEvent _)
 {
     import std.concurrency : Tid, spawn;
 
     mixin(memoryCorruptionCheck);
 
-    if (plugin.transient.workerTid == Tid.init)
+    if (!plugin.settings.verifySSLCertificate)
     {
-        if (!plugin.settings.verifySSLCertificate)
-        {
-            import kameloso.common : logger;
+        import kameloso.common : logger;
 
-            enum startMessage = "Starting <l>bash</> worker thread with SSL certificate verification disabled.";
-            enum warningMessage = "Be aware that this is a security risk.";
-            logger.warning(startMessage);
-            logger.warning(warningMessage);
-        }
-
-        plugin.transient.workerTid = spawn(
-            &persistentQuerier,
-            plugin.lookupBucket,
-            plugin.state.connSettings.caBundleFile,
-            plugin.settings.verifySSLCertificate);
+        enum startMessage = "The <l>bash</> plugin is configured to look up quotes " ~
+            "with SSL certificate verification <l>disabled</>.";
+        enum warningMessage = "Be aware that this is a security risk.";
+        logger.warning(startMessage);
+        logger.warning(warningMessage);
     }
 }
 
@@ -209,39 +199,43 @@ void lookupQuote(
 
     void lookupQuoteDg()
     {
-        const result = sendHTTPRequest(plugin, url);
+        immutable response = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            verifyPeer: plugin.settings.verifySSLCertificate);
 
-        if (result.exceptionText.length)
+        if (response.exceptionText.length)
         {
-            logger.warning("HTTP exception: <l>", result.exceptionText);
+            logger.warning("HTTP exception: <l>", response.exceptionText);
 
             version(PrintStacktraces)
             {
-                if (result.responseBody.length) logger.trace(result.responseBody);
+                if (response.body.length) logger.trace(response.body);
             }
 
             return sendFailedToFetch();
         }
 
-        if ((result.code < 200) ||
-            (result.code > 299))
+        if ((response.code < 200) ||
+            (response.code > 299))
         {
             import kameloso.tables : getHTTPResponseCodeText;
 
             enum pattern = "HTTP status <l>%03d</> (%s)";
             logger.warningf(
                 pattern,
-                result.code,
-                getHTTPResponseCodeText(result.code));
+                response.code,
+                getHTTPResponseCodeText(response.code));
 
             version(PrintStacktraces)
             {
-                if (result.responseBody.length) logger.trace(result.responseBody);
+                if (response.body.length) logger.trace(response.body);
             }
 
             return sendFailedToFetch();
         }
 
+        const result = parseResponseIntoBashLookupResult(response);
         if (!result.quoteID.length) return sendNoQuoteFound();
 
         // Seems okay, send it
@@ -275,7 +269,7 @@ void lookupQuote(
     }
 
     auto lookupQuoteFiber = new Fiber(&lookupQuoteDg, BufferSize.fiberStack);
-    delay(plugin, lookupQuoteFiber, Duration.zero);
+    lookupQuoteFiber.call();
 }
 
 
@@ -292,7 +286,7 @@ void lookupQuote(
     Returns:
         A [BashLookupResult] with contents based on the [requests.base.Response|Response].
  +/
-auto parseResponseIntoBashLookupResult(/*const*/ Response res)
+auto parseResponseIntoBashLookupResult(/*const*/ HTTPQueryResponse response)
 {
     import arsd.dom : Document, htmlEntitiesDecode;
     import lu.string : stripped;
@@ -302,8 +296,8 @@ auto parseResponseIntoBashLookupResult(/*const*/ Response res)
     import std.string : indexOf;
 
     BashLookupResult result;
-    result.code = res.code;
-    result.responseBody = cast(string)res.responseBody;  // .idup?
+    result.code = response.code;
+    result.responseBody = cast(string)response.body;  // .idup?
 
     auto attachErrorAndReturn()
     {
@@ -381,306 +375,6 @@ auto parseResponseIntoBashLookupResult(/*const*/ Response res)
 }
 
 
-// sendHTTPRequestImpl
-/++
-    Fetches the contents of a URL, parses it into a [BashLookupResult] and returns it.
-
-    Params:
-        url = URL string to fetch.
-        caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
-        verifyPeer = Whether or not to set `sslSetVerifyPeer = false` on the HTTP request.
-
-    Returns:
-        A [BashLookupResult] with contents based on what was read from the URL.
- +/
-auto sendHTTPRequestImpl(
-    const string url,
-    const string caBundleFile,
-    const bool verifyPeer)
-{
-    import kameloso.constants : KamelosoInfo, Timeout;
-    import requests.base : Response;
-    import requests.request : Request;
-
-    static string[string] headers;
-
-    if (!headers.length)
-    {
-        headers =
-        [
-            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
-        ];
-    }
-
-    auto req = Request();
-    //req.verbosity = 1;
-    req.keepAlive = false;
-    req.timeout = Timeout.httpGET;
-    req.addHeaders(headers);
-    req.sslSetVerifyPeer = verifyPeer;
-    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
-
-    try
-    {
-        return req
-            .get(url)
-            .parseResponseIntoBashLookupResult();
-    }
-    catch (Exception e)
-    {
-        BashLookupResult result;
-        //result.url = url;
-        result.exceptionText = e.msg;
-        return result;
-    }
-}
-
-
-// sendHTTPRequest
-/++
-    Issues an HTTP request by sending the details to the persistent querier thread,
-    then returns the results after they become available in the shared associative array.
-
-    Params:
-        plugin = The current [BashPlugin].
-        url = URL string to fetch.
-        recursing = Whether or not this is a recursive call.
-        id = Optional `int` id key to [BashPlugin.lookupBucket].
-        caller = Optional name of the calling function.
-
-    Returns:
-        A [BashLookupResult] with contents based on what was read from the URL.
- +/
-BashLookupResult sendHTTPRequest(
-    BashPlugin plugin,
-    const string url,
-    const bool recursing = false,
-    /*const*/ int id = 0,
-    const string caller = __FUNCTION__)
-in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
-in (url.length, "Tried to send an HTTP request without a URL")
-{
-    import kameloso.plugins.common.scheduling : delay;
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : send;
-    import core.time : msecs;
-
-    version(TraceHTTPRequests)
-    {
-        import kameloso.common : logger;
-
-        enum pattern = "get: <i>%s<t> (%s)";
-        logger.tracef(
-            pattern,
-            url,
-            caller);
-    }
-
-    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
-
-    if (!id) id = plugin.lookupBucket.uniqueKey;
-    plugin.transient.workerTid.send(url, id);
-
-    static immutable initialDelay = 500.msecs;
-    delay(plugin, initialDelay, yield: true);
-
-    auto result = waitForLookupResults(plugin, id);
-
-    if ((result.code >= 500) && !recursing)
-    {
-        return sendHTTPRequest(
-            plugin,
-            url,
-            recursing: true,
-            id,
-            caller);
-    }
-
-    return result;
-}
-
-
-// waitForLookupResults
-/++
-    Given an `int` id, monitors the [BashPlugin.lookupBucket|lookupBucket]
-    until a value with that key becomes available, delaying itself in between checks.
-
-    If it resolves, it returns that value. If it doesn't resolve within
-    [kameloso.constants.Timeout.httpGET|Timeout.httpGET]*2 seconds, it signals
-    failure by instead returning an empty [BashLookupResult|BashLookupResult.init].
-
-    Params:
-        plugin = The current [BashPlugin].
-        id = The `int` id key to monitor [BashPlugin.lookupBucket] for.
-
-    Returns:
-        A [BashLookupResult] as discovered in the [BashPlugin.lookupBucket|lookupBucket],
-        or a [BashLookupResult|BashLookupResult.init] if there were none to be
-        found within [kameloso.constants.Timeout.httpGET|Timeout.httpGET] seconds.
- +/
-auto waitForLookupResults(BashPlugin plugin, const int id)
-in (Fiber.getThis(), "Tried to call `waitForLookupResults` from outside a fiber")
-{
-    import core.time : MonoTime;
-
-    immutable start = MonoTime.currTime;
-    enum timeoutMultiplier = 2;
-
-    while (true)
-    {
-        immutable hasResult = plugin.lookupBucket.has(id);
-
-        if (!hasResult)
-        {
-            // Querier errored or otherwise gave up
-            // No need to remove the id, it's not there
-            return BashLookupResult.init;
-        }
-
-        //auto result = plugin.lookupBucket[id];  // potential range error due to TOCTTOU
-        auto result = plugin.lookupBucket.get(id, BashLookupResult.init);
-
-        if (result == BashLookupResult.init)
-        {
-            import kameloso.plugins.common.scheduling : delay;
-            import kameloso.constants : Timeout;
-            import core.time : msecs;
-
-            immutable now = MonoTime.currTime;
-
-            if ((now - start) >= (Timeout.httpGET * timeoutMultiplier))
-            {
-                plugin.lookupBucket.remove(id);
-                return result;
-            }
-
-            // Wait a bit before checking again
-            static immutable checkDelay = 200.msecs;
-            delay(plugin, checkDelay, yield: true);
-            continue;
-        }
-        else
-        {
-            // Got a result; remove it from the bucket and return it
-            plugin.lookupBucket.remove(id);
-            return result;
-        }
-    }
-}
-
-
-// persistentQuerier
-/++
-    Persistent querier worker thread function.
-
-    Params:
-        lookupBucket = A [lu.container.MutexedAA|MutexedAA] to fill with
-            [BashLookupResult|BashLookupResult]s.
-        caBundleFile = Path to a `cacert.pem` SSL certificate bundle, or an
-            empty string if none should be needed.
-        verifyPeer = Whether or not to set `sslSetVerifyPeer = false` on the HTTP request.
- +/
-void persistentQuerier(
-    MutexedAA!(BashLookupResult[int]) lookupBucket,
-    const string caBundleFile,
-    const bool verifyPeer)
-{
-    version(Posix)
-    {
-        import kameloso.thread : setThreadName;
-        setThreadName("bashworker");
-    }
-
-    void onBashLookupRequest(string url, int id)
-    {
-        auto result = sendHTTPRequestImpl(url, caBundleFile, verifyPeer);
-
-        if (result.code == 400)
-        {
-            // Sometimes it claims 400 Bad Request for no reason. Retry a few times
-            foreach (immutable _; 0..3)
-            {
-                result = sendHTTPRequestImpl(url, caBundleFile, verifyPeer);
-                if (result.code != 400) break;
-            }
-        }
-
-        if (result != BashLookupResult.init)
-        {
-            lookupBucket[id] = result;
-        }
-        else
-        {
-            lookupBucket.remove(id);
-        }
-    }
-
-    bool halt;
-
-    void onQuitMessage(bool)
-    {
-        halt = true;
-    }
-
-    // This avoids the GC allocating a closure, which is fine in this case, but do this anyway
-    scope onBashLookupRequestDg = &onBashLookupRequest;
-    scope onQuitMessageDg = &onQuitMessage;
-
-    while (!halt)
-    {
-        try
-        {
-            import std.concurrency : receive;
-            import std.variant : Variant;
-
-            receive(
-                onBashLookupRequestDg,
-                onQuitMessageDg,
-                (Variant v)
-                {
-                    import std.stdio : stdout, writeln;
-                    writeln("Bash worker received unknown Variant: ", v);
-                    stdout.flush();
-                }
-            );
-        }
-        catch (Exception _)
-        {
-            // Probably a requests exception
-            /*writeln("Bash worker caught exception: ", e.msg);
-            version(PrintStacktraces) writeln(e);
-            stdout.flush();*/
-        }
-    }
-}
-
-
-// setup
-/++
-    Initialises the lookup bucket, else its internal [core.sync.mutex.Mutex|Mutex]
-    will be null and cause a segfault when trying to lock it.
- +/
-void setup(BashPlugin plugin)
-{
-    plugin.lookupBucket.setup();
-}
-
-
-// teardown
-/++
-    Stops the persistent querier worker thread.
- +/
-void teardown(BashPlugin plugin)
-{
-    import std.concurrency : Tid, prioritySend;
-
-    if (plugin.transient.workerTid != Tid.init)
-    {
-        plugin.transient.workerTid.prioritySend(true);
-    }
-}
-
-
 // selftest
 /++
     Performs self-tests against another bot.
@@ -720,33 +414,10 @@ public:
 final class BashPlugin : IRCPlugin
 {
 private:
-    import std.concurrency : Tid;
-
-    /++
-        Transient state variables, aggregated in a struct.
-     +/
-    static struct TransientState
-    {
-        /++
-            The thread ID of the persistent worker thread.
-         +/
-        Tid workerTid;
-    }
-
     /++
         All Bash plugin settings gathered.
      +/
     BashSettings settings;
-
-    /++
-        Transient state of this [BashPlugin] instance.
-     +/
-    TransientState transient;
-
-    /++
-        Lookup bucket.
-     +/
-    MutexedAA!(BashLookupResult[int]) lookupBucket;
 
     mixin IRCPluginImpl;
 }
