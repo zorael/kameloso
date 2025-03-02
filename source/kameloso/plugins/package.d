@@ -5465,7 +5465,7 @@ HTTPQueryResponse sendHTTPRequest(
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
 {
-    import kameloso.net : HTTPQueryException, EmptyResponseException, ErrorJSONException;
+    import kameloso.net : HTTPRequest, HTTPQueryException, EmptyResponseException, ErrorJSONException;
     import kameloso.plugins.common.scheduling : delay;
     import kameloso.thread : ThreadMessage;
     import std.algorithm.searching : endsWith;
@@ -5490,7 +5490,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     immutable pre = MonoTime.currTime;
     if (!id) id = plugin.state.querier.responseBucket.uniqueKey;
 
-    plugin.state.querier.nextWorker.send(
+    auto request = HTTPRequest(
         id,
         url,
         authorisationHeader,
@@ -5501,6 +5501,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         verb,
         body.idup,
         contentType);
+    plugin.state.querier.nextWorker.send(request);
 
     //delay(plugin, plugin.transient.approximateQueryTime.msecs, yield: true);
     delay(plugin, 200.msecs, yield: true);

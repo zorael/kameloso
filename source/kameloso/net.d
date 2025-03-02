@@ -86,6 +86,7 @@ version(unittest) version = WindowsPlatform;
 private:
 
 import kameloso.constants : BufferSize, Timeout;
+import lu.container : MutexedAA;
 import core.time : Duration;
 
 public:
@@ -1687,8 +1688,47 @@ final class SocketSendException : Exception
 }
 
 
+struct HTTPRequest
+{
+private:
+    import kameloso.tables : HTTPVerb;
 
-private import lu.container : MutexedAA;
+public:
+    int id;
+    string url;
+    string authToken;
+    string clientID;
+    bool verifyPeer;
+    string caBundleFile;
+    shared string[string] customHeaders;
+    HTTPVerb verb;
+    immutable(ubyte)[] body;
+    string contentType;
+
+    this(
+        const int id,
+        const string url,
+        const string authToken,
+        const string clientID,
+        const bool verifyPeer,
+        const string caBundleFile,
+        shared string[string] customHeaders,
+        const HTTPVerb verb,
+        immutable(ubyte)[] body,
+        const string contentType)
+    {
+        this.id = id;
+        this.url = url;
+        this.authToken = authToken;
+        this.clientID = clientID;
+        this.verifyPeer = verifyPeer;
+        this.caBundleFile = caBundleFile;
+        this.customHeaders = customHeaders;
+        this.verb = verb;
+        this.body = body;
+        this.contentType = contentType;
+    }
+}
 
 
 final class Querier
@@ -1729,8 +1769,7 @@ public:
 
         foreach (immutable i; 0..workers.length)
         {
-
-            workers[i].send(Yes.quit);
+            workers[i].send(true);
             workers[i] = Tid.init;
         }
 
@@ -1742,27 +1781,15 @@ public:
 
 void persistentQuerier(MutexedAA!(HTTPQueryResponse[int]) responseBucket) @system
 {
-    import std.typecons : Flag, No, Yes;
-
     version(Posix)
     {
         import kameloso.thread : setThreadName;
         setThreadName("querier");
     }
 
-    void onHTTPRequest(
-        int id,
-        string url,
-        string authToken,
-        string clientID,
-        bool verifyPeer,
-        string caBundleFile,
-        shared string[string] customHeaders,
-        HTTPVerb verb,
-        immutable(ubyte)[] body,
-        string contentType)
+    void onHTTPRequestDg(HTTPRequest request)
     {
-        scope(failure) responseBucket.remove(id);
+        scope(failure) responseBucket.remove(request.id);
 
         version(BenchmarkHTTPRequests)
         {
@@ -1770,24 +1797,15 @@ void persistentQuerier(MutexedAA!(HTTPQueryResponse[int]) responseBucket) @syste
             immutable pre = MonoTime.currTime;
         }
 
-        immutable response = issueSyncHTTPRequest(
-            url: url,
-            authHeader: authToken,
-            clientID: clientID,
-            caBundleFile: caBundleFile,
-            verifyPeer: verifyPeer,
-            customHeaders: customHeaders,
-            verb: verb,
-            body: cast(ubyte[])body,
-            contentType: contentType);
+        immutable response = issueSyncHTTPRequest(request);
 
         if (response != HTTPQueryResponse.init)
         {
-            responseBucket[id] = response;
+            responseBucket[request.id] = response;
         }
         else
         {
-            responseBucket.remove(id);
+            responseBucket.remove(request.id);
         }
 
         version(BenchmarkHTTPRequests)
@@ -1802,14 +1820,14 @@ void persistentQuerier(MutexedAA!(HTTPQueryResponse[int]) responseBucket) @syste
 
     bool halt;
 
-    void onQuitMessage(Flag!"quit" quit)
+    void onQuitMessageDg(bool quit)
     {
         halt = quit;
     }
 
     // This avoids the GC allocating a closure, which is fine in this case, but do this anyway
-    scope onHTTPRequestDg = &onHTTPRequest;
-    scope onQuitMessageDg = &onQuitMessage;
+    scope scopeOnHTTPRequestDg = &onHTTPRequestDg;
+    scope scopeOnQuitMessageDg = &onQuitMessageDg;
 
     while (!halt)
     {
@@ -1819,8 +1837,8 @@ void persistentQuerier(MutexedAA!(HTTPQueryResponse[int]) responseBucket) @syste
         try
         {
             receive(
-                onHTTPRequestDg,
-                onQuitMessageDg,
+                scopeOnHTTPRequestDg,
+                scopeOnQuitMessageDg,
                 (Variant v)
                 {
                     import std.stdio : stdout, writeln;
@@ -1842,19 +1860,7 @@ void persistentQuerier(MutexedAA!(HTTPQueryResponse[int]) responseBucket) @syste
 }
 
 
-private import kameloso.tables : HTTPVerb;
-
-
-auto issueSyncHTTPRequest(
-    const string url,
-    const string authHeader,
-    const string clientID,
-    const string caBundleFile,
-    const bool verifyPeer,
-    shared const string[string] customHeaders = null,
-    /*const*/ HTTPVerb verb = HTTPVerb.get,
-    /*const*/ ubyte[] body = null,
-    /*const*/ string contentType = string.init) @system
+auto issueSyncHTTPRequest(const HTTPRequest request) @system
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import requests.base : Response;
@@ -1867,14 +1873,14 @@ auto issueSyncHTTPRequest(
     {
         headers =
         [
-            "Client-ID" : clientID,
+            "Client-ID" : request.clientID,
             "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
-            "Authorization" : authHeader,
+            "Authorization" : request.authToken,
         ];
     }
 
     auto headerNames = only("Client-ID", "Authorization");
-    auto headerStrings = only(&clientID, &authHeader);
+    auto headerStrings = only(&request.clientID, &request.authToken);
     auto zipped = zip(headerNames, headerStrings);
 
     foreach (immutable name, stringPtr; zipped)
@@ -1893,14 +1899,14 @@ auto issueSyncHTTPRequest(
         }
     }
 
-    foreach (immutable name, const value; customHeaders)
+    foreach (immutable name, const value; request.customHeaders)
     {
         headers[name] = value;
     }
 
     scope(exit)
     {
-        foreach (immutable name, const _; customHeaders)
+        foreach (immutable name, const _; request.customHeaders)
         {
             headers.remove(name);
         }
@@ -1911,36 +1917,38 @@ auto issueSyncHTTPRequest(
     req.keepAlive = true;
     req.timeout = Timeout.httpGET;
     req.addHeaders(headers);
-    req.sslSetVerifyPeer = verifyPeer;
-    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
+    req.sslSetVerifyPeer = request.verifyPeer;
+    if (request.caBundleFile.length) req.sslSetCaCert(request.caBundleFile);
 
     Response res;
     HTTPQueryResponse response;
-    response.url = url;
+    response.url = request.url;
 
     try
     {
+        import kameloso.tables : HTTPVerb;
+
         with (HTTPVerb)
-        final switch (verb)
+        final switch (request.verb)
         {
         case get:
-            res = req.get(url);
+            res = req.get(request.url);
             break;
 
         case post:
-            res = req.post(url, body, contentType);
+            res = req.post(request.url, request.body, request.contentType);
             break;
 
         case put:
-            res = req.put(url, body, contentType);
+            res = req.put(request.url, request.body, request.contentType);
             break;
 
         case patch:
-            res = req.patch(url, body, contentType);
+            res = req.patch(request.url, request.body, request.contentType);
             break;
 
         case delete_:
-            res = req.execute("DELETE", url);
+            res = req.execute("DELETE", request.url);
             break;
 
         case unset:
