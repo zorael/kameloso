@@ -107,12 +107,6 @@ public:
      +/
     bool promoteVIPs = true;
 
-    /++
-        How many worker threads to use, to offload the HTTP requests to.
-     +/
-    version(none)
-    uint workerThreads = 3;
-
     @Unserialisable
     {
         /++
@@ -3951,34 +3945,12 @@ unittest
 }
 
 
-// setup
-/++
-    Initialises the response bucket, else its internal [core.sync.mutex.Mutex|Mutex]
-    will be null and cause a segfault when trying to lock it.
- +/
-version(none)
-void setup(TwitchPlugin plugin)
-{
-    plugin.responseBucket.setup();
-}
-
-
 // teardown
 /++
     De-initialises the plugin. Shuts down any persistent worker threads.
  +/
 void teardown(TwitchPlugin plugin)
 {
-    import std.concurrency : Tid, send;
-
-    /*foreach (workerTid; plugin.transient.workerTids)
-    {
-        import std.concurrency : Tid, prioritySend;
-
-        if (workerTid == Tid.init) continue;
-        workerTid.prioritySend(true);
-    }*/
-
     if (plugin.settings.ecount && plugin.ecount.length)
     {
         // Might as well always save on exit. Ignore dirty flag.
@@ -4913,22 +4885,6 @@ package:
      +/
     static struct TransientState
     {
-    private:
-        import std.concurrency : Tid;
-
-    public:
-        /++
-            The thread IDs of the persistent worker threads.
-         +/
-        version(none)
-        Tid[] workerTids;
-
-        /++
-            The index of the next worker thread to use.
-         +/
-        version(none)
-        size_t currentWorkerTidIndex;
-
         /++
             Authorisation token for the "Authorization: Bearer <token>".
          +/
@@ -5246,21 +5202,6 @@ package:
         Buffer of messages to send as whispers.
      +/
     Buffer!(Message, No.dynamic, BufferSize.outbuffer) whisperBuffer;
-
-    /++
-        Returns the next worker thread ID to use, cycling through them.
-     +/
-    version(none)
-    auto getNextWorkerTid()
-    in (transient.workerTids.length, "Tried to get a worker Tid when there were none")
-    {
-        if (transient.currentWorkerTidIndex >= transient.workerTids.length)
-        {
-            transient.currentWorkerTidIndex = 0;
-        }
-
-        return transient.workerTids[transient.currentWorkerTidIndex++];
-    }
 
     // isEnabled
     /++
