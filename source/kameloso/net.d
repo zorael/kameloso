@@ -1915,7 +1915,7 @@ public:
                 import std.stdio : stdout, writefln;
                 immutable post = MonoTime.currTime;
                 enum pattern = "%s (%s)";
-                writefln(pattern, post-pre, url);
+                writefln(pattern, post-pre, request.url);
                 stdout.flush();
             }
         }
