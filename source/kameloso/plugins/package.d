@@ -5731,17 +5731,8 @@ auto awaitResponse(
     const int id)
 in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
 {
-    //import std.datetime.systime : Clock;
-    import core.time : MonoTime, seconds;
+    import core.time : MonoTime;
 
-    /*version(BenchmarkHTTPRequests)
-    {
-        import std.stdio : writefln;
-        uint misses;
-    }*/
-
-    //immutable startTimeInUnix = Clock.currTime.toUnixTime();
-    //double accumulatingTime = plugin.transient.approximateQueryTime;
     immutable start = MonoTime.currTime;
 
     while (true)
@@ -5764,14 +5755,7 @@ in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
             import kameloso.constants : Timeout;
             import core.time : msecs;
 
-            /*immutable nowInUnix = Clock.currTime.toUnixTime();
-
-            if ((nowInUnix - startTimeInUnix) >= Timeout.Integers.httpGETSeconds)
-            {
-                querier.responseBucket.remove(id);
-                return HTTPQueryResponse.init;
-            }*/
-
+            // Miss
             immutable now = MonoTime.currTime;
 
             if ((now - start) >= Timeout.httpGET)
@@ -5780,44 +5764,13 @@ in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
                 return HTTPQueryResponse.init;
             }
 
-            /*version(BenchmarkHTTPRequests)
-            {
-                ++misses;
-                immutable oldAccumulatingTime = accumulatingTime;
-            }*/
-
-            // Miss; fired too early, there is no response available yet
-            /*alias QC = TwitchPlugin.QueryConstants;
-            accumulatingTime *= QC.growthMultiplier;
-            immutable briefWait = cast(long)(accumulatingTime / QC.retryTimeDivisor);
-
-            version(BenchmarkHTTPRequests)
-            {
-                enum pattern = "MISS %d! elapsed: %s | old: %d --> new: %d | wait: %d";
-                immutable delta = (nowInUnix - startTimeInUnix);
-                writefln(
-                    pattern,
-                    misses,
-                    delta,
-                    cast(long)oldAccumulatingTime,
-                    cast(long)accumulatingTime,
-                    cast(long)briefWait);
-            }*/
-
             static immutable briefWait = 200.msecs;
             delay(plugin, briefWait, yield: true);
             continue;
         }
         else
         {
-            /*version(BenchmarkHTTPRequests)
-            {
-                enum pattern = "HIT! elapsed: %s | response: %s | misses: %d";
-                immutable now = MonoTime.currTime;
-                immutable delta = (now - start);
-                writefln(pattern, delta, response.msecs, misses);
-            }*/
-
+            // Hit
             querier.responseBucket.remove(id);
             return response;
         }
