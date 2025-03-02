@@ -164,8 +164,8 @@ in (((channelName.length && id) ||
     // Loop until the array is exhausted. Remove completed and/or failed imports.
     while (emoteImports.length)
     {
-        import kameloso.plugins.twitch.common : UnexpectedJSONException;
         import kameloso.plugins.common.scheduling : delay;
+        import kameloso.net : UnexpectedJSONException;
         import std.algorithm.mutation : SwapStrategy, remove;
         import core.memory : GC;
         import core.time : seconds;

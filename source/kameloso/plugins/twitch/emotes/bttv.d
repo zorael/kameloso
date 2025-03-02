@@ -48,7 +48,7 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotes` from outside a fiber")
 in (id, "Tried to get BTTV emotes with an unset ID")
 {
     import kameloso.plugins : sendHTTPRequest;
-    import kameloso.plugins.twitch.common : ErrorJSONException, UnexpectedJSONException;
+    import kameloso.net : ErrorJSONException, UnexpectedJSONException;
     import std.conv : to;
     import std.json : JSONType, parseJSON;
 
@@ -237,7 +237,7 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
 
     if (responseJSON.type != JSONType.array)
     {
-        import kameloso.plugins.twitch.common : UnexpectedJSONException;
+        import kameloso.net : UnexpectedJSONException;
         import std.conv : to;
 
         // toString doesn't work due to duplicate values in the enum

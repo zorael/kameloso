@@ -24,6 +24,10 @@ import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
 import kameloso.plugins.twitch.providers.common;
 import kameloso.common : logger;
+import kameloso.net :
+    ErrorJSONException,
+    HTTPQueryException,
+    UnexpectedJSONException;
 import core.thread.fiber : Fiber;
 
 public:

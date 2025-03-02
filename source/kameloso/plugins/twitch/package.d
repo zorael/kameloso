@@ -205,13 +205,19 @@ private:
 
 import kameloso.plugins.twitch.api;
 import kameloso.plugins.twitch.common;
-import dialect.postprocessors.twitch;  // To trigger the module ctor
 import kameloso.plugins;
 import kameloso.plugins.common.mixins.awareness;
 import kameloso.common : logger;
 import kameloso.messaging;
+import kameloso.net :
+    EmptyDataJSONException,
+    EmptyResponseException,
+    ErrorJSONException,
+    HTTPQueryException,
+    UnexpectedJSONException;
 import kameloso.thread : Sendable;
 import dialect.defs;
+import dialect.postprocessors.twitch;  // To trigger the module ctor
 import lu.container : MutexedAA, RehashingAA;
 import std.datetime.systime : SysTime;
 import std.json : JSONValue;
@@ -2790,7 +2796,7 @@ void onCommandCommercial(TwitchPlugin plugin, const IRCEvent event)
         enum message = "Empty response from server!";
         chan(plugin.state, event.channel.name, message);
     }
-    catch (TwitchQueryException e)
+    catch (HTTPQueryException e)
     {
         if (e.code == 400) // Bad Request
         {
@@ -3229,7 +3235,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
         {
             validationJSON = getValidation(plugin, plugin.state.bot.pass, async: true);
         }
-        catch (TwitchQueryException e)
+        catch (HTTPQueryException e)
         {
             if (plugin.state.coreSettings.headless)
             {

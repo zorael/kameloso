@@ -23,7 +23,13 @@ private:
 import kameloso.plugins;
 import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
-import kameloso.net : HTTPQueryResponse;
+import kameloso.net :
+    EmptyDataJSONException,
+    ErrorJSONException,
+    HTTPQueryException,
+    HTTPQueryResponse,
+    QueryResponseJSONException,
+    UnexpectedJSONException;
 import kameloso.tables : HTTPVerb;
 import dialect.defs;
 import lu.container : MutexedAA;
@@ -147,7 +153,7 @@ private auto handleRetryDelegateException(
         }
         return;  //continue;
     }
-    else if (auto e = cast(TwitchQueryException)base)
+    else if (auto e = cast(HTTPQueryException)base)
     {
         import kameloso.constants : MagicErrorStrings;
 
@@ -213,7 +219,7 @@ void printRetryDelegateException(/*const*/ Exception base)
 
     logger.trace(base);
 
-    if (auto e = cast(TwitchQueryException)base)
+    if (auto e = cast(HTTPQueryException)base)
     {
         //logger.trace(e);
 
@@ -233,7 +239,7 @@ void printRetryDelegateException(/*const*/ Exception base)
         // Must be before TwitchJSONException below
         //logger.trace(e);
     }
-    else if (auto e = cast(TwitchJSONException)base)
+    else if (auto e = cast(QueryResponseJSONException)base)
     {
         // UnexpectedJSONException or ErrorJSONException
         //logger.trace(e);
@@ -322,7 +328,7 @@ in (Fiber.getThis(), "Tried to call `getTwitchData` from outside a fiber")
     {
         import kameloso.string : doublyBackslashed;
 
-        throw new TwitchQueryException(
+        throw new HTTPQueryException(
             e.msg,
             response.body,
             response.error,
@@ -522,7 +528,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             // Copy/paste error handling...
             if (response.exceptionText.length)
             {
-                throw new TwitchQueryException(
+                throw new HTTPQueryException(
                     response.exceptionText,
                     response.body,
                     response.error,
@@ -530,11 +536,11 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             }
             else if (response == HTTPQueryResponse.init)
             {
-                throw new TwitchQueryException("No response");
+                throw new HTTPQueryException("No response");
             }
             else if (response.code < 10)
             {
-                throw new TwitchQueryException(
+                throw new HTTPQueryException(
                     response.error,
                     response.body,
                     response.error,
@@ -567,11 +573,11 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
                         errorJSON["error"].str.unquoted,
                         errorJSON["message"].str.chomp.unquoted);
 
-                    throw new TwitchQueryException(message, response.body, response.error, response.code);
+                    throw new HTTPQueryException(message, response.body, response.error, response.code);
                 }
                 catch (JSONException e)
                 {
-                    throw new TwitchQueryException(
+                    throw new HTTPQueryException(
                         e.msg,
                         response.body,
                         response.error,

@@ -24,6 +24,10 @@ import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
 import kameloso.plugins.twitch.providers.common;
 import kameloso.common : logger;
+import kameloso.net :
+    ErrorJSONException,
+    HTTPQueryException,
+    UnexpectedJSONException;
 import core.thread.fiber : Fiber;
 
 public:
@@ -507,7 +511,7 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
             throw new UnexpectedJSONException(message, responseJSON);
         }
     }
-    catch (TwitchQueryException e)
+    catch (HTTPQueryException e)
     {
         /*
         {
@@ -625,7 +629,6 @@ private void getGoogleTokens(
         "token_type": "Bearer"
     }
      */
-
 
     if (responseJSON.type != JSONType.object)
     {
