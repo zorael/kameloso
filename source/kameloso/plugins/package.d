@@ -5433,6 +5433,9 @@ struct Priority
     Helper alias to use the proper style guide and still be able to instantiate
     [Priority] instances with UFCS.
 
+    Non-string parameters may not be const or immutable, as they would not match
+    the concurrency `receive`` delegates in `persistentQuerier`s.
+
     Example:
     ---
     mixin PluginRegistration!(MyPlugin, 50.priority);
@@ -5452,7 +5455,7 @@ HTTPQueryResponse sendHTTPRequest(
     const string caller = __FUNCTION__,
     const string authorisationHeader = string.init,
     const string clientID = string.init,
-    const bool verifyPeer = true,
+    /*const*/ bool verifyPeer = true,
     shared string[string] customHeaders = null,
     /*const*/ HTTPVerb verb = HTTPVerb.get,
     /*const*/ ubyte[] body = null,

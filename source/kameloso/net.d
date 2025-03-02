@@ -1959,7 +1959,8 @@ auto issueSyncHTTPRequest(
     }
 
     response.code = res.code;
-    response.host = res.uri.host;
+    response.uri = res.uri;
+    response.finalURI = res.finalURI;
     response.body = cast(string)res.responseBody;  //.idup?
 
     immutable stats = res.getStats();
@@ -2273,17 +2274,25 @@ public:
  +/
 struct HTTPQueryResponse
 {
-    private import core.time : Duration;
+private:
+    import core.time : Duration;
+    import requests.uri : URI;
 
+public:
     /++
         The URL that was queried.
      +/
     string url;
 
     /++
-        The host that was queried.
+        The URI as reported in the response.
      +/
-    string host;
+    URI uri;
+
+    /++
+        The final URI as reported in the response, after redirects.
+     +/
+    URI finalURI;
 
     /++
         Response body, may be several lines.

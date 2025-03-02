@@ -454,7 +454,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
             response.code);
     }
 
-    if (response.host.endsWith(".twitch.tv"))
+    if (response.uri.host.endsWith(".twitch.tv"))
     {
         // Only update approximate query time for Twitch queries (skip those of custom emotes)
         immutable post = MonoTime.currTime;
@@ -716,7 +716,8 @@ auto sendHTTPRequestImpl(
     }
 
     response.code = res.code;
-    response.host = res.uri.host;
+    response.uri = res.uri;
+    response.finalURI = res.finalURI;
     response.body = cast(string)res.responseBody;  //.idup?
 
     immutable stats = res.getStats();
