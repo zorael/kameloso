@@ -389,6 +389,18 @@ public:
             instant failure to register on Twitch.
          +/
         twitchRegistrationFailConnectionRetryMsecs = 500,
+
+        /++
+            How long to wait after issuing an HTTP request before checking
+            whether a response has been received.
+         +/
+        httpQueryInitialWaitMsecs = 200,
+
+        /++
+            How long to wait between checks for a response after the initial
+            wait period.
+         +/
+        httpQueryWaitBetweenChecksMsecs = 100,
     }
 
     /++
@@ -465,6 +477,17 @@ public:
         Timeout for HTTP GET requests.
      +/
     static immutable httpGET = Integers.httpGETSeconds.seconds;
+
+    /++
+        How long to wait after issuing an HTTP request before checking whether a
+        response has been received.
+     +/
+    static immutable httpQueryInitialWait = Integers.httpQueryInitialWaitMsecs.msecs;
+
+    /++
+        How long to wait between checks for a response after the initial wait period.
+     +/
+    static immutable httpQueryWaitBetweenChecks = Integers.httpQueryWaitBetweenChecksMsecs.msecs;
 }
 
 

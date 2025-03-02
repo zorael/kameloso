@@ -5492,6 +5492,7 @@ HTTPQueryResponse sendHTTPRequest(
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
 {
+    import kameloso.constants : Timeout;
     import kameloso.net :
         HTTPRequest,
         HTTPQueryException,
@@ -5532,7 +5533,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         contentType);
     plugin.state.querier.nextWorker.send(request);
 
-    delay(plugin, 200.msecs, yield: true);
+    delay(plugin, Timeout.httpQueryInitialWait, yield: true);
     immutable response = plugin.state.querier.awaitResponse(plugin, id);
 
     if (response.exceptionText.length)
@@ -5719,6 +5720,7 @@ auto awaitResponse(
     const int id)
 in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
 {
+    import kameloso.constants : Timeout;
     import core.time : MonoTime;
 
     immutable start = MonoTime.currTime;
@@ -5752,8 +5754,7 @@ in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
                 return HTTPQueryResponse.init;
             }
 
-            static immutable briefWait = 200.msecs;
-            delay(plugin, briefWait, yield: true);
+            delay(plugin, Timeout.httpQueryWaitBetweenChecks, yield: true);
             continue;
         }
         else
