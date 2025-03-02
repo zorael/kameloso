@@ -5501,7 +5501,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     import kameloso.thread : ThreadMessage;
     import std.algorithm.searching : endsWith;
     import std.concurrency : send;
-    import core.time : MonoTime, msecs;
+    import core.time : msecs;
 
     version(TraceHTTPRequests)
     {
@@ -5517,8 +5517,6 @@ in (url.length, "Tried to send an HTTP request without a URL")
     }
 
     plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
-
-    //immutable pre = MonoTime.currTime;
     if (!id) id = plugin.state.querier.responseBucket.uniqueKey;
 
     auto request = HTTPRequest(
@@ -5534,7 +5532,6 @@ in (url.length, "Tried to send an HTTP request without a URL")
         contentType);
     plugin.state.querier.nextWorker.send(request);
 
-    //delay(plugin, plugin.transient.approximateQueryTime.msecs, yield: true);
     delay(plugin, 200.msecs, yield: true);
     immutable response = plugin.state.querier.awaitResponse(plugin, id);
 
@@ -5546,15 +5543,6 @@ in (url.length, "Tried to send an HTTP request without a URL")
             response.error,
             response.code);
     }
-
-    /*if (response.host.endsWith(".twitch.tv"))
-    {
-        // Only update approximate query time for Twitch queries (skip those of custom emotes)
-        immutable post = MonoTime.currTime;
-        immutable diff = (post - pre);
-        immutable msecs_ = diff.total!"msecs";
-        averageApproximateQueryTime(plugin, msecs_);
-    }*/
 
     if (response == HTTPQueryResponse.init)
     {

@@ -2092,7 +2092,7 @@ auto issueSyncHTTPRequest(const HTTPRequest request) @system
 
 // HTTPQueryException
 /++
-    Exception, to be thrown when an API query to the Twitch servers failed.
+    Exception, to be thrown when a web request, such as an API query, failed.
  +/
 final class HTTPQueryException : Exception
 {
@@ -2147,8 +2147,8 @@ final class HTTPQueryException : Exception
 
 // EmptyResponseException
 /++
-    Exception, to be thrown when an API query to the Twitch servers failed,
-    with only an empty response received.
+    Exception, to be thrown when an API query failed, with only an empty
+    response received.
  +/
 final class EmptyResponseException : Exception
 {
@@ -2306,8 +2306,8 @@ public:
 
 // EmptyDataJSONException
 /++
-    Exception, to be thrown when an API query to the Twitch servers failed,
-    due to having received empty JSON data.
+    Exception, to be thrown when an API query failed, due to having received
+    empty JSON data.
 
     It is a normal [object.Exception|Exception] but with attached metadata.
  +/
@@ -2360,8 +2360,7 @@ public:
 
 // HTTPQueryResponse
 /++
-    Embodies a response from a query to the Twitch servers. A string paired with
-    a millisecond count of how long the query took, and some metadata about the request.
+    Embodies the notion of a response to a web request.
  +/
 struct HTTPQueryResponse
 {
