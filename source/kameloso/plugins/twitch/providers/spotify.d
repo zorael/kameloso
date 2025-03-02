@@ -383,7 +383,7 @@ private void getSpotifyTokens(
     const string code,
     const string caBundleFile)
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequestImpl;
+    import kameloso.net : HTTPRequest, issueSyncHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.format : format;
     import std.json : JSONType, parseJSON;
@@ -395,13 +395,15 @@ private void getSpotifyTokens(
         "&redirect_uri=http://localhost";
     immutable url = urlPattern.format(code);
 
-    immutable response = sendHTTPRequestImpl(
-        url,
-        getSpotifyBase64Authorization(creds),
-        caBundleFile,
-        HTTPVerb.post,
-        cast(ubyte[])null,
-        "application/x-www-form-urlencoded");
+    const request = HTTPRequest(
+        id: 0,
+        url: url,
+        authorisationHeader: getSpotifyBase64Authorization(creds),
+        caBundleFile: caBundleFile,
+        verb: HTTPVerb.post,
+        contentType: "application/x-www-form-urlencoded");
+
+    immutable response = issueSyncHTTPRequest(request);
     immutable responseJSON = parseJSON(response.body);
 
     /*
@@ -448,7 +450,7 @@ private void getSpotifyTokens(
 private void refreshSpotifyToken(TwitchPlugin plugin, ref Credentials creds)
 in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.plugins : sendHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.format : format;
     import std.json : JSONType, parseJSON;
@@ -460,13 +462,11 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
     immutable url = urlPattern.format(creds.spotifyRefreshToken);
 
     immutable response = sendHTTPRequest(
-        plugin,
-        url,
-        __FUNCTION__,
-        getSpotifyBase64Authorization(creds),
-        HTTPVerb.post,
-        cast(ubyte[])null,
-        "application/x-www-form-urlencoded");
+        plugin: plugin,
+        url: url,
+        authorisationHeader: getSpotifyBase64Authorization(creds),
+        verb: HTTPVerb.post,
+        contentType: "application/x-www-form-urlencoded");
     immutable responseJSON = parseJSON(response.body);
 
     /*
@@ -545,7 +545,7 @@ auto addTrackToSpotifyPlaylist(
     const bool recursing = false)
 in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a fiber")
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.plugins : sendHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.algorithm.searching : endsWith;
     import std.format : format;
@@ -573,13 +573,11 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
     try
     {
         immutable response = sendHTTPRequest(
-            plugin,
-            url,
-            __FUNCTION__,
-            authorizationBearer,
-            HTTPVerb.post,
-            cast(ubyte[])null,
-            "application/json");
+            plugin: plugin,
+            url: url,
+            caller: __FUNCTION__,
+            authorisationHeader: authorizationBearer,
+            verb: HTTPVerb.post);
         immutable responseJSON = parseJSON(response.body);
 
         /*
@@ -657,7 +655,7 @@ auto getSpotifyTrackByID(
     bool recursing = false)
 in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.plugins : sendHTTPRequest;
     import std.algorithm.searching : endsWith;
     import std.format : format;
     import std.json : JSONType, parseJSON;
@@ -675,10 +673,10 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
     try
     {
         immutable response = sendHTTPRequest(
-            plugin,
-            url,
-            __FUNCTION__,
-            authorizationBearer);
+            plugin: plugin,
+            url: url,
+            caller: __FUNCTION__,
+            authorisationHeader: authorizationBearer);
         immutable responseJSON = parseJSON(response.body);
 
         /*
@@ -770,16 +768,18 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
  +/
 private auto validateSpotifyToken(ref Credentials creds, const string caBundleFile)
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequestImpl;
+    import kameloso.net : HTTPRequest, issueSyncHTTPRequest;
     import std.json : JSONType, parseJSON;
 
     enum url = "https://api.spotify.com/v1/me";
     immutable authorizationBearer = "Bearer " ~ creds.spotifyAccessToken;
 
-    immutable response = sendHTTPRequestImpl(
-        url,
-        authorizationBearer,
-        caBundleFile);
+    const request = HTTPRequest(
+        id: 0,
+        url: url,
+        authorisationHeader: authorizationBearer,
+        caBundleFile: caBundleFile);
+    immutable response = issueSyncHTTPRequest(request);
     immutable responseJSON = parseJSON(response.body);
 
     /*

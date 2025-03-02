@@ -47,7 +47,7 @@ uint getBTTVEmotes(
 in (Fiber.getThis(), "Tried to call `getBTTVEmotes` from outside a fiber")
 in (id, "Tried to get BTTV emotes with an unset ID")
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.plugins : sendHTTPRequest;
     import kameloso.plugins.twitch.common : ErrorJSONException, UnexpectedJSONException;
     import std.conv : to;
     import std.json : JSONType, parseJSON;
@@ -55,7 +55,12 @@ in (id, "Tried to get BTTV emotes with an unset ID")
     try
     {
         immutable url = "https://api.betterttv.net/3/cached/users/twitch/" ~ id.to!string;
-        immutable response = sendHTTPRequest(plugin, url, caller);
+
+        immutable response = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller);
+
         immutable responseJSON = parseJSON(response.body);
 
         /+
@@ -199,12 +204,16 @@ uint getBTTVEmotesGlobal(
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.plugins : sendHTTPRequest;
     import std.json : JSONType, parseJSON;
 
     enum url = "https://api.betterttv.net/3/cached/emotes/global";
 
-    immutable response = sendHTTPRequest(plugin, url, caller);
+    immutable response = sendHTTPRequest(
+        plugin: plugin,
+        url: url,
+        caller: caller);
+
     immutable responseJSON = parseJSON(response.body);
 
     /+

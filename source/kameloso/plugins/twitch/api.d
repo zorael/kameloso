@@ -20,6 +20,7 @@ version(WithTwitchPlugin):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
 import kameloso.net : HTTPQueryResponse;
@@ -261,6 +262,7 @@ void printRetryDelegateException(/*const*/ Exception base)
             response values keyed by a unique numerical ID.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
+version(none)
 void persistentQuerier(
     MutexedAA!(HTTPQueryResponse[int]) responseBucket,
     const string caBundleFile)
@@ -276,7 +278,7 @@ void persistentQuerier(
     void onHTTPRequest(
         int id,
         string url,
-        string authToken,
+        string authorisationHeader,
         HTTPVerb verb,
         immutable(ubyte)[] body_,
         string contentType)
@@ -291,7 +293,7 @@ void persistentQuerier(
 
         immutable response = sendHTTPRequestImpl(
             url,
-            authToken,
+            authorisationHeader,
             caBundleFile,
             verb,
             cast(ubyte[])body_,
@@ -397,6 +399,7 @@ void persistentQuerier(
         [ErrorJSONException] if the response body was JSON but contained an `"error"` key.
         [TwitchQueryException] if there were other unrecoverable errors.
  +/
+version(none)
 HTTPQueryResponse sendHTTPRequest(
     TwitchPlugin plugin,
     const string url,
@@ -626,6 +629,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     Returns:
         A [HTTPQueryResponse] of the response from the server.
  +/
+version(none)
 auto sendHTTPRequestImpl(
     const string url,
     const string authHeader,
@@ -938,7 +942,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
     authToken = authToken.startsWith("oauth:") ?
         authToken[6..$] :
         authToken;
-    immutable authorizationHeader = "OAuth " ~ authToken;
+    immutable authorisationHeader = "OAuth " ~ authToken;
 
     auto getValidationDg()
     {
@@ -949,10 +953,10 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             try
             {
                 response = sendHTTPRequest(
-                    plugin,
-                    url,
-                    caller,
-                    authorizationHeader);
+                    plugin: plugin,
+                    url: url,
+                    caller: caller,
+                    authorisationHeader: authorisationHeader);
             }
             catch (ErrorJSONException e)
             {
@@ -981,6 +985,8 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         }
         else
         {
+            import kameloso.net : HTTPRequest, issueSyncHTTPRequest;
+
             version(TraceHTTPRequests)
             {
                 import kameloso.common : logger;
@@ -988,10 +994,13 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
                 logger.tracef(tracePattern, url, __FUNCTION__);
             }
 
-            response = sendHTTPRequestImpl(
-                url,
-                authorizationHeader,
-                plugin.state.connSettings.caBundleFile);
+            const request = HTTPRequest(
+                id: 0,
+                url: url,
+                authorisationHeader: authorisationHeader        ,
+                caBundleFile: plugin.state.connSettings.caBundleFile);
+
+            response = issueSyncHTTPRequest(request);
 
             // Copy/paste error handling...
             if (response.exceptionText.length)
@@ -1285,6 +1294,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     Returns:
         A [HTTPQueryResponse] as constructed by other parts of the program.
  +/
+version(none)
 auto waitForQueryResponse(TwitchPlugin plugin, const int id)
 in (Fiber.getThis(), "Tried to call `waitForQueryResponse` from outside a fiber")
 {
@@ -1618,13 +1628,14 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
     void modifyChannelDg()
     {
         cast(void)sendHTTPRequest(
-            plugin,
-            url,
-            caller,
-            authorizationBearer,
-            HTTPVerb.patch,
-            cast(ubyte[])sink[],
-            "application/json");
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: authorizationBearer,
+            clientID : TwitchPlugin.clientID,
+            verb: HTTPVerb.patch,
+            body: cast(ubyte[])sink[],
+            contentType: "application/json");
     }
 
     retryDelegate(plugin, &modifyChannelDg);
@@ -1776,13 +1787,14 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
     void startCommercialDg()
     {
         cast(void)sendHTTPRequest(
-            plugin,
-            url,
-            caller,
-            authorizationBearer,
-            HTTPVerb.post,
-            cast(ubyte[])body_,
-            "application/json");
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: authorizationBearer,
+            clientID: TwitchPlugin.clientID,
+            verb: HTTPVerb.post,
+            body: cast(ubyte[])body_,
+            contentType: "application/json");
     }
 
     retryDelegate(plugin, &startCommercialDg);
@@ -2141,13 +2153,14 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 text(url, "&after=", after) :
                 url;
             immutable response = sendHTTPRequest(
-                plugin,
-                paginatedURL,
-                caller,
-                authorizationBearer,
-                HTTPVerb.get,
-                cast(ubyte[])null,
-                "application/json");
+                plugin: plugin,
+                url: paginatedURL,
+                caller: caller,
+                authorisationHeader: authorizationBearer,
+                clientID: TwitchPlugin.clientID,
+                verb: HTTPVerb.get,
+                body: cast(ubyte[])null,
+                contentType: "application/json");
             immutable responseJSON = parseJSON(response.body);
 
             if (responseJSON.type != JSONType.object)
@@ -2271,13 +2284,14 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
     auto createPollDg()
     {
         immutable response = sendHTTPRequest(
-            plugin,
-            url,
-            caller,
-            authorizationBearer,
-            HTTPVerb.post,
-            cast(ubyte[])body_,
-            "application/json");
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: authorizationBearer,
+            clientID: TwitchPlugin.clientID,
+            verb: HTTPVerb.post,
+            body: cast(ubyte[])body_,
+            contentType: "application/json");
         immutable responseJSON = parseJSON(response.body);
 
         if (responseJSON.type != JSONType.object)
@@ -2364,13 +2378,14 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
     auto endPollDg()
     {
         immutable response = sendHTTPRequest(
-            plugin,
-            url,
-            caller,
-            authorizationBearer,
-            HTTPVerb.patch,
-            cast(ubyte[])body_,
-            "application/json");
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: authorizationBearer,
+            clientID: TwitchPlugin.clientID,
+            verb: HTTPVerb.patch,
+            body: cast(ubyte[])body_,
+            contentType: "application/json");
         immutable responseJSON = parseJSON(response.body);
 
         if (responseJSON.type != JSONType.object)
@@ -2435,7 +2450,11 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
     auto getBotListDg()
     {
         enum url = "https://api.twitchinsights.net/v1/bots/online";
-        immutable response = sendHTTPRequest(plugin, url, caller);
+        immutable response = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            clientID: TwitchPlugin.clientID);
         immutable responseJSON = parseJSON(response.body);
 
         /*
@@ -2689,10 +2708,11 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 subsequentURL ~ after :
                 firstURL;
             immutable response = sendHTTPRequest(
-                plugin,
-                url,
-                caller,
-                authorizationBearer);
+                plugin: plugin,
+                url: url,
+                caller: caller,
+                authorisationHeader: authorizationBearer,
+                clientID: TwitchPlugin.clientID);
             immutable responseJSON = parseJSON(response.body);
 
             /*
@@ -2911,11 +2931,12 @@ in (channelName.length, "Tried to delete a message without providing a channel n
     auto deleteDg()
     {
         return sendHTTPRequest(
-            plugin,
-            url,
-            caller,
-            plugin.transient.authorizationBearer,
-            HTTPVerb.delete_);
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: plugin.transient.authorizationBearer,
+            clientID: TwitchPlugin.clientID,
+            verb: HTTPVerb.delete_);
     }
 
     static immutable failedDeleteRetry = 100.msecs;
@@ -2998,13 +3019,14 @@ in (userID, "Tried to timeout a user with an unset user ID")
         import std.json : JSONType, parseJSON;
 
         immutable response = sendHTTPRequest(
-            plugin,
-            url,
-            caller,
-            plugin.transient.authorizationBearer,
-            HTTPVerb.post,
-            cast(ubyte[])body_,
-            "application/json");
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: plugin.transient.authorizationBearer,
+            clientID: TwitchPlugin.clientID,
+            verb: HTTPVerb.post,
+            body: cast(ubyte[])body_,
+            contentType: "application/json");
         immutable responseJSON = parseJSON(response.body);
 
         if (responseJSON.type != JSONType.object)
@@ -3091,12 +3113,14 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
         try
         {
             immutable response = sendHTTPRequest(
-                plugin,
-                url,caller,
-                plugin.transient.authorizationBearer,
-                HTTPVerb.post,
-                cast(ubyte[])body_,
-                "application/json");
+                plugin: plugin,
+                url: url,
+                caller: caller,
+                authorisationHeader: plugin.transient.authorizationBearer,
+                clientID: TwitchPlugin.clientID,
+                verb: HTTPVerb.post,
+                body: cast(ubyte[])body_,
+                contentType: "application/json");
 
             responseJSON = parseJSON(response.body);  // body should be empty, but in case it isn't
             responseCode = response.code;
@@ -3264,12 +3288,14 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
         try
         {
             immutable response = sendHTTPRequest(
-                plugin,
-                url,caller,
-                plugin.transient.authorizationBearer,
-                HTTPVerb.post,
-                cast(ubyte[])body_,
-                "application/json");
+                plugin: plugin,
+                url: url,
+                caller: caller,
+                authorisationHeader: plugin.transient.authorizationBearer,
+                clientID: TwitchPlugin.clientID,
+                verb: HTTPVerb.post,
+                body: cast(ubyte[])body_,
+                contentType: "application/json");
 
             responseJSON = parseJSON(response.body);  // body should be empty, but in case it isn't
             responseCode = response.code;
@@ -3386,12 +3412,14 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
         try
         {
             immutable response = sendHTTPRequest(
-                plugin,
-                url,caller,
-                plugin.transient.authorizationBearer,
-                HTTPVerb.post,
-                cast(ubyte[])body_,
-                "application/json");
+                plugin: plugin,
+                url: url,
+                caller: caller,
+                authorisationHeader: plugin.transient.authorizationBearer,
+                clientID: TwitchPlugin.clientID,
+                verb: HTTPVerb.post,
+                body: cast(ubyte[])body_,
+                contentType: "application/json");
 
             responseJSON = parseJSON(response.body);  // body should be empty, but in case it isn't
             responseCode = response.code;

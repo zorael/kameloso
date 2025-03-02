@@ -55,7 +55,9 @@ debug version = Debug;
 
 private:
 
+import kameloso.net : Querier;
 import kameloso.pods : CoreSettings;
+import kameloso.tables : HTTPVerb;
 import kameloso.thread : CarryingFiber;
 import dialect.defs;
 import std.traits : ParameterStorageClass;
@@ -63,6 +65,8 @@ import std.typecons : Flag, No, Yes;
 import core.thread.fiber : Fiber;
 
 public:
+
+import kameloso.net : HTTPQueryResponse;
 
 
 // IRCPlugin
@@ -78,7 +82,6 @@ public:
 abstract class IRCPlugin
 {
 private:
-    import kameloso.net : Querier;
     import kameloso.thread : Sendable;
     import std.array : Appender;
     import core.time : Duration;
@@ -5444,11 +5447,35 @@ struct Priority
 alias priority = Priority;
 
 
-import lu.container : MutexedAA;
-import kameloso.net : HTTPQueryResponse;
-import kameloso.tables : HTTPVerb;
-import std.typecons : Flag, No, Yes;
+// sendHTTPRequest
+/++
+    Sends an HTTP request and returns the response.
 
+    Params:
+        plugin = The plugin that is sending the request.
+        url = The URL to send the request to.
+        caller = The name of the function that called this function.
+        authorisationHeader = Optional authorisation header to use.
+        clientID = Optional client ID to use.
+        verifyPeer = Optionally whether to verify the peer.
+        customHeaders = Optional custom headers to send.
+        verb = Optionally the HTTP verb to use.
+        body = Optional body to send.
+        contentType = Optional content type to use.
+        id = The unique ID of the request.
+        recursing = Whether this is a recursive call.
+
+    Returns:
+        The response to the request.
+
+    Throws:
+        [kameloso.net.HTTPQueryException|HTTPQueryException] if an unspecific error occurs.
+        [kameloso.net.EmptyResponseException|EmptyResponseException] if the response is empty.
+        [kameloso.net.ErrorJSONException|ErrorJSONException] if the response is a JSON error.
+
+    See_Also:
+        [kameloso.net.HTTPQueryResponse|HTTPQueryResponse]
+ +/
 HTTPQueryResponse sendHTTPRequest(
     IRCPlugin plugin,
     const string url,
@@ -5465,7 +5492,11 @@ HTTPQueryResponse sendHTTPRequest(
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
 {
-    import kameloso.net : HTTPRequest, HTTPQueryException, EmptyResponseException, ErrorJSONException;
+    import kameloso.net :
+        HTTPRequest,
+        HTTPQueryException,
+        EmptyResponseException,
+        ErrorJSONException;
     import kameloso.plugins.common.scheduling : delay;
     import kameloso.thread : ThreadMessage;
     import std.algorithm.searching : endsWith;
@@ -5487,7 +5518,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
     plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
 
-    immutable pre = MonoTime.currTime;
+    //immutable pre = MonoTime.currTime;
     if (!id) id = plugin.state.querier.responseBucket.uniqueKey;
 
     auto request = HTTPRequest(
@@ -5676,9 +5707,28 @@ in (url.length, "Tried to send an HTTP request without a URL")
     return response;
 }
 
-private import kameloso.net : Querier;
 
-auto awaitResponse(Querier querier, IRCPlugin plugin, const int id)
+// awaitResponse
+/++
+    Awaits a response from the querier.
+
+    Params:
+        querier = The querier to await a response from.
+        plugin = The plugin that is awaiting the response.
+        id = The ID of the request to await a response for.
+
+    Returns:
+        The response to the request.
+
+    Throws:
+        [kameloso.net.HTTPQueryException|HTTPQueryException] if an unspecific error occurs.
+        [kameloso.net.EmptyResponseException|EmptyResponseException] if the response is empty.
+        [kameloso.net.ErrorJSONException|ErrorJSONException] if the response is a JSON error.
+ +/
+auto awaitResponse(
+    Querier querier,
+    IRCPlugin plugin,
+    const int id)
 in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
 {
     //import std.datetime.systime : Clock;

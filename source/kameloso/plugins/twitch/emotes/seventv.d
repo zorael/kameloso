@@ -47,7 +47,7 @@ uint get7tvEmotes(
 in (Fiber.getThis(), "Tried to call `get7tvEmotes` from outside a fiber")
 in (id, "Tried to get 7tv emotes with an unset ID")
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.plugins : sendHTTPRequest;
     import kameloso.plugins.twitch.common : ErrorJSONException, UnexpectedJSONException;
     import lu.conv : toString;
     import std.conv : to;
@@ -56,7 +56,12 @@ in (id, "Tried to get 7tv emotes with an unset ID")
     try
     {
         immutable url = "https://7tv.io/v3/users/twitch/" ~ id.to!string;
-        immutable response = sendHTTPRequest(plugin, url, caller);
+
+        immutable response = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller);
+
         immutable responseJSON = parseJSON(response.body);
 
         /+
@@ -233,12 +238,17 @@ uint get7tvEmotesGlobal(
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.plugins : sendHTTPRequest;
     import kameloso.plugins.twitch.common : UnexpectedJSONException;
     import std.json : JSONType, parseJSON;
 
     enum url = "https://7tv.io/v3/emote-sets/global";
-    immutable response = sendHTTPRequest(plugin, url, caller);
+
+    immutable response = sendHTTPRequest(
+        plugin: plugin,
+        url: url,
+        caller: caller);
+
     immutable responseJSON = parseJSON(response.body);
 
     /+

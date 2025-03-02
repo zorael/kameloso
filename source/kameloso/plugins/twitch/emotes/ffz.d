@@ -47,7 +47,7 @@ uint getFFZEmotes(
 in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
 in (id, "Tried to get FFZ emotes with an unset ID")
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.plugins : sendHTTPRequest;
     import kameloso.plugins.twitch.common : ErrorJSONException, UnexpectedJSONException;
     import std.conv : to;
     import std.json : JSONType, parseJSON;
@@ -55,7 +55,12 @@ in (id, "Tried to get FFZ emotes with an unset ID")
     try
     {
         immutable url = "https://api.frankerfacez.com/v1/room/id/" ~ id.to!string;
-        immutable response = sendHTTPRequest(plugin, url, caller);
+
+        immutable response = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller);
+
         immutable responseJSON = parseJSON(response.body);
 
         /+
@@ -234,14 +239,19 @@ uint getFFZEmotesGlobal(
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.plugins : sendHTTPRequest;
     import kameloso.plugins.twitch.common : UnexpectedJSONException;
     import std.json : JSONType, parseJSON;
 
     try
     {
         immutable url = "https://api.frankerfacez.com/v1/set/global";
-        immutable response = sendHTTPRequest(plugin, url, caller);
+
+        immutable response = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller);
+
         immutable responseJSON = parseJSON(response.body);
 
         /+

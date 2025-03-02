@@ -420,7 +420,7 @@ auto addVideoToYouTubePlaylist(
     const bool recursing = false)
 in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a fiber")
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.plugins : sendHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.algorithm.searching : endsWith;
     import std.format : format;
@@ -458,13 +458,12 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
     try
     {
         immutable response = sendHTTPRequest(
-            plugin,
-            url,
-            __FUNCTION__,
-            authorizationBearer,
-            HTTPVerb.post,
-            data,
-            "application/json");
+            plugin: plugin,
+            url: url,
+            authorisationHeader: authorizationBearer,
+            verb: HTTPVerb.post,
+            body: data,
+            contentType: "application/json");
         immutable responseJSON = parseJSON(response.body);
 
         /*
@@ -594,7 +593,7 @@ private void getGoogleTokens(
     const string code,
     const string caBundleFile)
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequestImpl;
+    import kameloso.net : HTTPRequest, issueSyncHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.format : format;
     import std.json : JSONType, parseJSON;
@@ -607,14 +606,14 @@ private void getGoogleTokens(
         "&redirect_uri=http://localhost";
 
     immutable url = urlPattern.format(creds.googleClientID, creds.googleClientSecret, code);
-    enum data = cast(ubyte[])"{}";
 
-    immutable response = sendHTTPRequestImpl(
-        url,
-        string.init,  // authHeader
-        caBundleFile,
-        HTTPVerb.post,
-        data);
+    const request = HTTPRequest(
+        id: 0,
+        url: url,
+        caBundleFile: caBundleFile,
+        verb: HTTPVerb.post);
+
+    immutable response = issueSyncHTTPRequest(request);
     immutable responseJSON = parseJSON(response.body);
 
     /*
@@ -662,7 +661,7 @@ private void getGoogleTokens(
 private void refreshGoogleToken(TwitchPlugin plugin, ref Credentials creds)
 in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequest;
+    import kameloso.plugins : sendHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.format : format;
     import std.json : JSONType, parseJSON;
@@ -677,15 +676,12 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
         creds.googleClientID,
         creds.googleClientSecret,
         creds.googleRefreshToken);
-    enum data = cast(ubyte[])"{}";
 
     immutable response = sendHTTPRequest(
-        plugin,
-        url,
-        __FUNCTION__,
-        string.init,  // authHeader
-        HTTPVerb.post,
-        data);
+        plugin: plugin,
+        url: url,
+        verb: HTTPVerb.post);
+
     immutable responseJSON = parseJSON(response.body);
 
     if (responseJSON.type != JSONType.object)
@@ -732,18 +728,19 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
  +/
 private auto validateGoogleToken(const Credentials creds, const string caBundleFile)
 {
-    import kameloso.plugins.twitch.api : sendHTTPRequestImpl;
+    import kameloso.net: HTTPRequest, issueSyncHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.json : JSONType, parseJSON;
 
     enum urlHead = "https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=";
     immutable url = urlHead ~ creds.googleAccessToken;
 
-    immutable response = sendHTTPRequestImpl(
-        url,
-        string.init,  // authHeader
-        caBundleFile,
-        HTTPVerb.get);
+    const request = HTTPRequest(
+        id: 0,
+        url: url,
+        caBundleFile: caBundleFile);
+
+    immutable response = issueSyncHTTPRequest(request);
     immutable responseJSON = parseJSON(response.body);
 
     /*

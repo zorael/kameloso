@@ -110,6 +110,7 @@ public:
     /++
         How many worker threads to use, to offload the HTTP requests to.
      +/
+    version(none)
     uint workerThreads = 3;
 
     @Unserialisable
@@ -2289,7 +2290,7 @@ void onEndOfMOTD(TwitchPlugin plugin, const IRCEvent _)
     plugin.transient.authorizationBearer = "Bearer " ~ pass;
 
     // Use a minimum of one worker thread, regardless of setting
-    plugin.transient.workerTids.length =
+    /*plugin.transient.workerTids.length =
         max(plugin.settings.workerThreads, 1);
 
     foreach (ref workerTid; plugin.transient.workerTids)
@@ -2302,7 +2303,7 @@ void onEndOfMOTD(TwitchPlugin plugin, const IRCEvent _)
             &persistentQuerier,
             plugin.responseBucket,
             plugin.state.connSettings.caBundleFile);
-    }
+    }*/
 
     startValidator(plugin);
     startSaver(plugin);
@@ -3955,6 +3956,7 @@ unittest
     Initialises the response bucket, else its internal [core.sync.mutex.Mutex|Mutex]
     will be null and cause a segfault when trying to lock it.
  +/
+version(none)
 void setup(TwitchPlugin plugin)
 {
     plugin.responseBucket.setup();
@@ -3969,13 +3971,13 @@ void teardown(TwitchPlugin plugin)
 {
     import std.concurrency : Tid, send;
 
-    foreach (workerTid; plugin.transient.workerTids)
+    /*foreach (workerTid; plugin.transient.workerTids)
     {
         import std.concurrency : Tid, prioritySend;
 
         if (workerTid == Tid.init) continue;
         workerTid.prioritySend(true);
-    }
+    }*/
 
     if (plugin.settings.ecount && plugin.ecount.length)
     {
@@ -4918,11 +4920,13 @@ package:
         /++
             The thread IDs of the persistent worker threads.
          +/
+        version(none)
         Tid[] workerTids;
 
         /++
             The index of the next worker thread to use.
          +/
+        version(none)
         size_t currentWorkerTidIndex;
 
         /++
@@ -5246,6 +5250,7 @@ package:
     /++
         Returns the next worker thread ID to use, cycling through them.
      +/
+    version(none)
     auto getNextWorkerTid()
     in (transient.workerTids.length, "Tried to get a worker Tid when there were none")
     {

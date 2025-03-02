@@ -1688,38 +1688,107 @@ final class SocketSendException : Exception
 }
 
 
+// HTTPRequest
+/++
+    Embodies the notion of an HTTP request.
+
+    Values aggregated in a struct for easier passing around.
+ +/
 struct HTTPRequest
 {
 private:
     import kameloso.tables : HTTPVerb;
 
 public:
+    /++
+        Unique ID of the request, in terms of an index of [Querier.responseBucket].
+     +/
     int id;
+
+    /++
+        URL of the request.
+     +/
     string url;
-    string authToken;
+
+    /++
+        The value of the `Authorization` header, like "`Bearer asdfasdfkljasfl"`.
+     +/
+    string authorisationHeader;
+
+    /++
+        The value of the `Client-ID` header.
+     +/
     string clientID;
+
+    /++
+        Whether or not to verify peers, to allow it being overridden to false.
+     +/
     bool verifyPeer;
+
+    /++
+        Path to a certificate bundle file.
+     +/
     string caBundleFile;
+
+    /++
+        A `string[string]` associative array of custom headers.
+     +/
     shared string[string] customHeaders;
+
+    /++
+        The HTTP verb of the request.
+     +/
     HTTPVerb verb;
+
+    /++
+        The textual body of the request, as an `ubyte[]` array.
+     +/
     immutable(ubyte)[] body;
+
+    /++
+        The HTTP content type of the request.
+     +/
     string contentType;
 
+    /++
+        The name of the calling function.
+     +/
+    string caller;
+
+    /++
+        Constructor.
+
+        Use named arguments to only assign values to certain parameters.
+
+        Params:
+            id = Unique ID of the request.
+            url = URL of the request.
+            authorisationHeader = Optional value of a `Authorization` header.
+            clientID = Optional value of a `Client-ID` header.
+            verifyPeer = Optionally whether or not to verify peers.
+            caBundleFile = Optional path to a certificate bundle file.
+            customHeaders = Optional `string[string]` associative array of custom headers.
+            verb = Optional HTTP verb, default [kameloso.tables.HTTPVerb.get|get].
+            body = Optional textual body.
+            contentType = Optional HTTP content type of the request, default "application/json".
+            caller = Name of the calling function.
+     +/
     this(
         const int id,
         const string url,
-        const string authToken,
-        const string clientID,
-        const bool verifyPeer,
-        const string caBundleFile,
-        shared string[string] customHeaders,
-        const HTTPVerb verb,
-        immutable(ubyte)[] body,
-        const string contentType)
+        const string authorisationHeader = string.init,
+        const string clientID = string.init,
+        const bool verifyPeer = true,
+        const string caBundleFile = string.init,
+        shared string[string] customHeaders = null,
+        const HTTPVerb verb = HTTPVerb.get,
+        immutable(ubyte)[] body = null,
+        const string contentType = "application/json",
+        const string caller = __FUNCTION__)
     {
         this.id = id;
         this.url = url;
-        this.authToken = authToken;
+        this.authorisationHeader = authorisationHeader;
         this.clientID = clientID;
         this.verifyPeer = verifyPeer;
         this.caBundleFile = caBundleFile;
@@ -1727,23 +1796,42 @@ public:
         this.verb = verb;
         this.body = body;
         this.contentType = contentType;
+        this.caller = caller;
     }
 }
 
 
+/++
+    Querier.
+ +/
 final class Querier
 {
 private:
     import std.concurrency : Tid, send, spawn;
-    private import core.thread.fiber : Fiber;
+    import core.thread.fiber : Fiber;
 
-public:
+    /++
+        [std.concurrency.Tid|Tid] array of worker threads.
+     +/
     Tid[] workers;
 
+    /++
+        Index of the next worker to use.
+     +/
     size_t nextWorkerIndex;
 
+public:
+    /++
+        Responses to HTTP queries.
+     +/
     MutexedAA!(HTTPQueryResponse[int]) responseBucket;
 
+    /++
+        Constructor.
+
+        Params:
+            numWorkers = Number of worker threads to spawn.
+     +/
     this(uint numWorkers) @system
     in ((numWorkers > 0), "Tried to spawn 0 workers")
     {
@@ -1752,10 +1840,16 @@ public:
 
         foreach (immutable i; 0..numWorkers)
         {
-            workers[i] = spawn(&persistentQuerier, responseBucket);
+            workers[i] = spawn(&Querier.listenInThread, responseBucket);
         }
     }
 
+    /++
+        Yields the next worker in line.
+
+        Returns:
+            The next worker [std.concurrency.Tid|Tid].
+     +/
     auto nextWorker()
     in (workers.length, "No workers spawned")
     {
@@ -1763,6 +1857,9 @@ public:
         return workers[nextWorkerIndex++];
     }
 
+    /++
+        Effectively a destructor. Stops all workers.
+     +/
     void teardown() @system
     {
         import std.typecons : Flag, No, Yes;
@@ -1776,90 +1873,106 @@ public:
         workers = null;
         nextWorkerIndex = 0L;
     }
+
+    /++
+        When spawned as a separate thread, listens for concurrency messages to
+        issue HTTP requests.
+
+        Params:
+            responseBucket = The associative array into which to put responses.
+     +/
+    static void listenInThread(MutexedAA!(HTTPQueryResponse[int]) responseBucket) @system
+    {
+        version(Posix)
+        {
+            import kameloso.thread : setThreadName;
+            setThreadName("querier");
+        }
+
+        void onHTTPRequestDg(HTTPRequest request)
+        {
+            scope(failure) responseBucket.remove(request.id);
+
+            version(BenchmarkHTTPRequests)
+            {
+                import core.time : MonoTime;
+                immutable pre = MonoTime.currTime;
+            }
+
+            immutable response = issueSyncHTTPRequest(request);
+
+            if (response != HTTPQueryResponse.init)
+            {
+                responseBucket[request.id] = response;
+            }
+            else
+            {
+                responseBucket.remove(request.id);
+            }
+
+            version(BenchmarkHTTPRequests)
+            {
+                import std.stdio : stdout, writefln;
+                immutable post = MonoTime.currTime;
+                enum pattern = "%s (%s)";
+                writefln(pattern, post-pre, url);
+                stdout.flush();
+            }
+        }
+
+        bool halt;
+
+        void onQuitMessageDg(bool quit)
+        {
+            halt = quit;
+        }
+
+        // This avoids the GC allocating a closure, which is fine in this case, but do this anyway
+        scope scopeOnHTTPRequestDg = &onHTTPRequestDg;
+        scope scopeOnQuitMessageDg = &onQuitMessageDg;
+
+        while (!halt)
+        {
+            import std.concurrency : receive;
+            import std.variant : Variant;
+
+            try
+            {
+                receive(
+                    scopeOnHTTPRequestDg,
+                    scopeOnQuitMessageDg,
+                    (Variant v)
+                    {
+                        import std.stdio : stdout, writeln;
+                        writeln("Querier received unknown Variant: ", v);
+                        stdout.flush();
+                    }
+                );
+            }
+            catch (Exception e)
+            {
+                import std.stdio : stdout, writeln;
+
+                // Probably a requests exception
+                writeln("Querier caught exception: ", e.msg);
+                version(PrintStacktraces) writeln(e);
+                stdout.flush();
+            }
+        }
+    }
 }
 
 
-void persistentQuerier(MutexedAA!(HTTPQueryResponse[int]) responseBucket) @system
-{
-    version(Posix)
-    {
-        import kameloso.thread : setThreadName;
-        setThreadName("querier");
-    }
+// issueSyncHTTPRequest
+/++
+    Issues a synchronous HTTP request.
 
-    void onHTTPRequestDg(HTTPRequest request)
-    {
-        scope(failure) responseBucket.remove(request.id);
+    Params:
+        request = The [HTTPRequest] to issue.
 
-        version(BenchmarkHTTPRequests)
-        {
-            import core.time : MonoTime;
-            immutable pre = MonoTime.currTime;
-        }
-
-        immutable response = issueSyncHTTPRequest(request);
-
-        if (response != HTTPQueryResponse.init)
-        {
-            responseBucket[request.id] = response;
-        }
-        else
-        {
-            responseBucket.remove(request.id);
-        }
-
-        version(BenchmarkHTTPRequests)
-        {
-            import std.stdio : stdout, writefln;
-            immutable post = MonoTime.currTime;
-            enum pattern = "%s (%s)";
-            writefln(pattern, post-pre, url);
-            stdout.flush();
-        }
-    }
-
-    bool halt;
-
-    void onQuitMessageDg(bool quit)
-    {
-        halt = quit;
-    }
-
-    // This avoids the GC allocating a closure, which is fine in this case, but do this anyway
-    scope scopeOnHTTPRequestDg = &onHTTPRequestDg;
-    scope scopeOnQuitMessageDg = &onQuitMessageDg;
-
-    while (!halt)
-    {
-        import std.concurrency : receive;
-        import std.variant : Variant;
-
-        try
-        {
-            receive(
-                scopeOnHTTPRequestDg,
-                scopeOnQuitMessageDg,
-                (Variant v)
-                {
-                    import std.stdio : stdout, writeln;
-                    writeln("Querier received unknown Variant: ", v);
-                    stdout.flush();
-                }
-            );
-        }
-        catch (Exception e)
-        {
-            import std.stdio : stdout, writeln;
-
-            // Probably a requests exception
-            writeln("Querier caught exception: ", e.msg);
-            version(PrintStacktraces) writeln(e);
-            stdout.flush();
-        }
-    }
-}
-
-
+    Returns:
+        The response to the request.
+ +/
 auto issueSyncHTTPRequest(const HTTPRequest request) @system
 {
     import kameloso.constants : KamelosoInfo, Timeout;
@@ -1875,12 +1988,12 @@ auto issueSyncHTTPRequest(const HTTPRequest request) @system
         [
             "Client-ID" : request.clientID,
             "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
-            "Authorization" : request.authToken,
+            "Authorization" : request.authorisationHeader,
         ];
     }
 
     auto headerNames = only("Client-ID", "Authorization");
-    auto headerStrings = only(&request.clientID, &request.authToken);
+    auto headerStrings = only(&request.clientID, &request.authorisationHeader);
     auto zipped = zip(headerNames, headerStrings);
 
     foreach (immutable name, stringPtr; zipped)
@@ -1977,6 +2090,10 @@ auto issueSyncHTTPRequest(const HTTPRequest request) @system
 }
 
 
+// HTTPQueryException
+/++
+    Exception, to be thrown when an API query to the Twitch servers failed.
+ +/
 final class HTTPQueryException : Exception
 {
 @safe:
@@ -2028,7 +2145,6 @@ final class HTTPQueryException : Exception
 }
 
 
-
 // EmptyResponseException
 /++
     Exception, to be thrown when an API query to the Twitch servers failed,
@@ -2049,8 +2165,6 @@ final class EmptyResponseException : Exception
         super(message, file, line, nextInChain);
     }
 }
-
-
 
 
 // TwitchJSONException
@@ -2082,10 +2196,9 @@ public:
 }
 
 
-
-// TwitchJSONException
+// QueryResponseJSONException
 /++
-    Abstract class for Twitch JSON exceptions, to deduplicate catching.
+    Abstract class for web query JSON exceptions, to deduplicate catching.
  +/
 abstract class QueryResponseJSONException : Exception
 {
@@ -2110,7 +2223,6 @@ public:
         super(message, file, line, nextInChain);
     }
 }
-
 
 
 // UnexpectedJSONException
@@ -2283,8 +2395,8 @@ public:
 struct HTTPQueryResponse
 {
 private:
-    import core.time : Duration;
     import requests.uri : URI;
+    import core.time : Duration;
 
 public:
     /++
