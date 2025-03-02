@@ -5723,6 +5723,8 @@ in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
     import kameloso.constants : Timeout;
     import core.time : MonoTime;
 
+    scope(exit) querier.responseBucket.remove(id);
+
     immutable start = MonoTime.currTime;
 
     while (true)
@@ -5732,7 +5734,6 @@ in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
         if (!hasResponse)
         {
             // Querier errored or otherwise gave up
-            // No need to remove the id, it's not there
             return HTTPQueryResponse.init;
         }
 
@@ -5750,7 +5751,7 @@ in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
 
             if ((now - start) >= Timeout.httpGET)
             {
-                querier.responseBucket.remove(id);
+                //querier.responseBucket.remove(id);
                 return HTTPQueryResponse.init;
             }
 
@@ -5760,7 +5761,7 @@ in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
         else
         {
             // Hit
-            querier.responseBucket.remove(id);
+            //querier.responseBucket.remove(id);
             return response;
         }
     }
