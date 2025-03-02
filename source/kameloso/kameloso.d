@@ -345,7 +345,7 @@ public:
 
     // querier
     /++
-        FIXME
+        Program-wide [kameloso.net.Querier|Querier] instance.
      +/
     Querier querier;
 

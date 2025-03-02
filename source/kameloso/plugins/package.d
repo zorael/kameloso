@@ -3196,7 +3196,7 @@ public:
 
     // querier
     /++
-        FIXME
+        A reference to the program-wide [kameloso.net.Querier|Querier].
      +/
     Querier querier;
 }

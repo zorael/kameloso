@@ -89,6 +89,7 @@ struct TitleLookupResult
     string youtubeAuthor;
 
     /++
+        The HTTP response that was received when fetching the URL.
      +/
     HTTPQueryResponse response;
 
@@ -98,7 +99,7 @@ struct TitleLookupResult
     string exceptionText;
 
     /++
-        FIXME
+        Constructor.
      +/
     this(const HTTPQueryResponse response)
     {
