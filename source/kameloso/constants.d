@@ -279,7 +279,8 @@ enum ConnectionDefaultIntegers
     connectionRetries = 4,
 
     /++
-        FIXME
+        How many querier workers to spawn. This is the number of threads that
+        will be used to send messages to the server in parallel.
      +/
     numWorkers = 6,
 }

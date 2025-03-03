@@ -132,7 +132,7 @@ void onCommandBash(BashPlugin plugin, const IRCEvent event)
 }
 
 
-// onEndOfMotd
+// onWelcome
 /++
     Warns the user if SSL certificate verification is disabled.
  +/
@@ -141,8 +141,6 @@ void onCommandBash(BashPlugin plugin, const IRCEvent event)
 )
 void onWelcome(BashPlugin plugin, const IRCEvent _)
 {
-    import std.concurrency : Tid, spawn;
-
     mixin(memoryCorruptionCheck);
 
     if (!plugin.settings.verifySSLCertificate)

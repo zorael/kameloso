@@ -750,6 +750,7 @@ in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber
         responseMsecs = The new measurement of how many milliseconds the last
             query took to complete.
  +/
+version(none)
 void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 {
     import std.algorithm.comparison : min;

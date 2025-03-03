@@ -182,7 +182,7 @@ void startQueries(ChanQueryService service)
     }
 
     auto queryFiber = new CarryingFiber!IRCEvent(&queryDg, BufferSize.fiberStack);
-    delay(service, queryFiber, Duration.zero);
+    queryFiber.call();
 }
 
 

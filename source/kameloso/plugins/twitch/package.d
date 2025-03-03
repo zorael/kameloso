@@ -2276,9 +2276,7 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
 )
 void onEndOfMOTD(TwitchPlugin plugin, const IRCEvent _)
 {
-    import std.algorithm.comparison : max;
     import std.algorithm.searching : startsWith;
-    import std.concurrency : spawn;
 
     mixin(memoryCorruptionCheck);
 
@@ -2288,22 +2286,6 @@ void onEndOfMOTD(TwitchPlugin plugin, const IRCEvent _)
         plugin.state.bot.pass[6..$] :
         plugin.state.bot.pass;
     plugin.transient.authorizationBearer = "Bearer " ~ pass;
-
-    // Use a minimum of one worker thread, regardless of setting
-    /*plugin.transient.workerTids.length =
-        max(plugin.settings.workerThreads, 1);
-
-    foreach (ref workerTid; plugin.transient.workerTids)
-    {
-        import std.concurrency : Tid, spawn;
-
-        if (workerTid != Tid.init) continue;  // to be safe
-
-        workerTid = spawn(
-            &persistentQuerier,
-            plugin.responseBucket,
-            plugin.state.connSettings.caBundleFile);
-    }*/
 
     startValidator(plugin);
     startSaver(plugin);
@@ -2953,7 +2935,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
     import kameloso.plugins.common.scheduling : delay;
     import kameloso.constants : BufferSize;
     import std.datetime.systime : Clock;
-    import core.time : Duration, MonoTime, hours, seconds;
+    import core.time : MonoTime, hours, seconds;
 
     // How often to poll the servers for various information about a channel.
     static immutable monitorUpdatePeriodicity = 60.seconds;
@@ -3197,11 +3179,9 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
     auto uptimeMonitorFiber = new Fiber(&uptimeMonitorDg, BufferSize.fiberStack);
     auto chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
     auto cacheFollowersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
-
-    // Detach by delaying zero seconds
-    delay(plugin, uptimeMonitorFiber, Duration.zero);
-    delay(plugin, chatterMonitorFiber, Duration.zero);
-    delay(plugin, cacheFollowersFiber, Duration.zero);
+    uptimeMonitorFiber.call();
+    chatterMonitorFiber.call();
+    cacheFollowersFiber.call();
 }
 
 
@@ -4111,7 +4091,6 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 import kameloso.plugins.common.scheduling : delay;
                 import kameloso.constants : BufferSize;
                 import core.thread.fiber : Fiber;
-                import core.time : Duration;
 
                 // We don't know the channel name, so look it up.
 
@@ -4150,11 +4129,11 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                     }
                 }
 
-                auto getChannelNameFiber = new Fiber(&getChannelNameDg, BufferSize.fiberStack);
-                delay(plugin, getChannelNameFiber, Duration.zero);
-
-                // Set an empty string so we don't do this again before the results are in
+                // Set an empty string so we don't branch here again before the results are in
                 plugin.channelNamesByID[sharedChannelID] = string.init;
+
+                auto getChannelNameFiber = new Fiber(&getChannelNameDg, BufferSize.fiberStack);
+                getChannelNameFiber.call();
             }
         }
 
@@ -4899,15 +4878,7 @@ package:
         /++
             The bot's numeric account/ID.
          +/
-        uint botID;
-
-        /++
-            How long a Twitch HTTP query usually takes.
-
-            It tries its best to self-balance the number based on how long queries
-            actually take. Start off conservatively.
-         +/
-        long approximateQueryTime = 700;
+        ulong botID;
 
         /++
             Effective bell after [kameloso.terminal.isTerminal] checks.
@@ -5118,38 +5089,6 @@ package:
         The Twitch application ID for the kameloso bot.
      +/
     enum clientID = "tjyryd2ojnqr8a51ml19kn1yi2n0v1";
-
-    // QueryConstants
-    /++
-        Constants used when scheduling API queries.
-     +/
-    enum QueryConstants : double
-    {
-        /++
-            The multiplier of how much the query time should temporarily increase
-            when it turned out to be a bit short.
-         +/
-        growthMultiplier = 1.1,
-
-        /++
-            The divisor of how much to wait before retrying a query, after the
-            timed waited turned out to be a bit short.
-         +/
-        retryTimeDivisor = 3,
-
-        /++
-            By how many milliseconds to pad measurements of how long a query took
-            to be on the conservative side.
-         +/
-        measurementPadding = 30,
-
-        /++
-            The weight to assign the current approximate query time before
-            making a weighted average based on a new value. This gives the
-            averaging some inertia.
-         +/
-        averagingWeight = 3,
-    }
 
     /++
         How many times to retry a Twitch server query.

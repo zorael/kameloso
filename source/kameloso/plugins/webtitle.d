@@ -275,9 +275,7 @@ void lookupURLs(
     import kameloso.plugins.common.scheduling : delay;
     import kameloso.common : logger;
     import kameloso.constants : BufferSize;
-    import lu.array: uniqueKey;
     import lu.string : advancePast;
-    import std.concurrency : send, spawn;
     import core.time : Duration;
 
     void report(const TitleLookupResult result)

@@ -5436,9 +5436,6 @@ struct Priority
     Helper alias to use the proper style guide and still be able to instantiate
     [Priority] instances with UFCS.
 
-    Non-string parameters may not be const or immutable, as they would not match
-    the concurrency `receive`` delegates in `persistentQuerier`s.
-
     Example:
     ---
     mixin PluginRegistration!(MyPlugin, 50.priority);
@@ -5450,6 +5447,10 @@ alias priority = Priority;
 // sendHTTPRequest
 /++
     Sends an HTTP request and returns the response.
+
+    As an optimisation, constructs an [HTTPRequest] object and sends it to the
+    [kameloso.net.HTTPQuerier|HTTPQuerier] as an aggregate, instead of sending
+    the individual parameters. (This blows up compilation memory usage otherwise.)
 
     Params:
         plugin = The plugin that is sending the request.
@@ -5475,6 +5476,7 @@ alias priority = Priority;
 
     See_Also:
         [kameloso.net.HTTPQueryResponse|HTTPQueryResponse]
+        [kameloso.net.issueHTTPRequest|issueHTTPRequest]
  +/
 HTTPQueryResponse sendHTTPRequest(
     IRCPlugin plugin,
@@ -5482,12 +5484,12 @@ HTTPQueryResponse sendHTTPRequest(
     const string caller = __FUNCTION__,
     const string authorisationHeader = string.init,
     const string clientID = string.init,
-    /*const*/ bool verifyPeer = true,
+    const bool verifyPeer = true,
     shared string[string] customHeaders = null,
-    /*const*/ HTTPVerb verb = HTTPVerb.get,
-    /*const*/ ubyte[] body = null,
+    const HTTPVerb verb = HTTPVerb.get,
+    const ubyte[] body = null,
     const string contentType = string.init,
-    int id = 0,
+    /*const*/ int id = 0,
     const bool recursing = false)
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
@@ -5531,8 +5533,8 @@ in (url.length, "Tried to send an HTTP request without a URL")
         verb,
         body.idup,
         contentType);
-    plugin.state.querier.nextWorker.send(request);
 
+    plugin.state.querier.nextWorker.send(request);
     delay(plugin, Timeout.httpQueryInitialWait, yield: true);
     immutable response = plugin.state.querier.awaitResponse(plugin, id);
 
@@ -5547,7 +5549,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
     if (response == HTTPQueryResponse.init)
     {
-        throw new EmptyResponseException("No response");
+        throw new EmptyResponseException;
     }
     else if (response.code < 200)
     {

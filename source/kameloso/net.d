@@ -86,7 +86,6 @@ version(unittest) version = WindowsPlatform;
 private:
 
 import kameloso.constants : BufferSize, Timeout;
-import lu.container : MutexedAA;
 import core.time : Duration;
 
 public:
@@ -1763,7 +1762,7 @@ public:
         Params:
             id = Unique ID of the request.
             url = URL of the request.
-            authorisationHeader = Optional value of a `Authorization` header.
+            authorisationHeader = Optional value of an `Authorization` header.
             clientID = Optional value of a `Client-ID` header.
             verifyPeer = Optionally whether or not to verify peers.
             caBundleFile = Optional path to a certificate bundle file.
@@ -1807,7 +1806,8 @@ public:
 final class Querier
 {
 private:
-    import std.concurrency : Tid, send, spawn;
+    import lu.container : MutexedAA;
+    import std.concurrency : Tid;
     import core.thread.fiber : Fiber;
 
     /++
@@ -1840,12 +1840,13 @@ public:
 
         foreach (immutable i; 0..numWorkers)
         {
-            workers[i] = spawn(&Querier.listenInThread, responseBucket);
+            import std.concurrency : spawn;
+            workers[i] = spawn(&Querier.listenInThread, responseBucket, i);
         }
     }
 
     /++
-        Yields the next worker in line.
+        Yields the [std.concurrency.Tid|Tid] of the next worker in line.
 
         Returns:
             The next worker [std.concurrency.Tid|Tid].
@@ -1866,7 +1867,8 @@ public:
 
         foreach (immutable i; 0..workers.length)
         {
-            workers[i].send(true);
+            import std.concurrency : prioritySend;
+            workers[i].prioritySend(true);
             workers[i] = Tid.init;
         }
 
@@ -1875,18 +1877,26 @@ public:
     }
 
     /++
-        When spawned as a separate thread, listens for concurrency messages to
-        issue HTTP requests.
+        Listens for concurrency messages to issue HTTP requests.
+
+        Intended to be spawned in a separate thread.
 
         Params:
             responseBucket = The associative array into which to put responses.
+            id = The ID of the worker, referring to its index in
+                [Querier.workers].
      +/
-    static void listenInThread(MutexedAA!(HTTPQueryResponse[int]) responseBucket) @system
+    static void listenInThread(
+        MutexedAA!(HTTPQueryResponse[int]) responseBucket,
+        const uint id) @system
     {
         version(Posix)
         {
             import kameloso.thread : setThreadName;
-            setThreadName("querier");
+            import std.conv : text;
+
+            immutable name = text("querier-", id);
+            setThreadName(name);
         }
 
         void onHTTPRequestDg(HTTPRequest request)
@@ -1980,6 +1990,34 @@ auto issueSyncHTTPRequest(const HTTPRequest request) @system
     import requests.request : Request;
     import std.range : only, zip;
 
+    auto issueRequest(Request req)
+    {
+        import kameloso.tables : HTTPVerb;
+
+        with (HTTPVerb)
+        final switch (request.verb)
+        {
+        case get:
+            return req.get(request.url);
+
+        case post:
+            return req.post(request.url, request.body, request.contentType);
+
+        case put:
+            return req.put(request.url, request.body, request.contentType);
+
+        case patch:
+            return req.patch(request.url, request.body, request.contentType);
+
+        case delete_:
+            return req.execute("DELETE", request.url);
+
+        case unset:
+        case unsupported:
+            assert(0, "Unset or unsupported HTTP verb passed to issueSyncHTTPRequest");
+        }
+    }
+
     static string[string] headers;
 
     if (!headers.length)
@@ -2033,41 +2071,21 @@ auto issueSyncHTTPRequest(const HTTPRequest request) @system
     req.sslSetVerifyPeer = request.verifyPeer;
     if (request.caBundleFile.length) req.sslSetCaCert(request.caBundleFile);
 
-    Response res;
     HTTPQueryResponse response;
     response.url = request.url;
 
     try
     {
-        import kameloso.tables : HTTPVerb;
+        auto res = issueRequest(req);  // may not be const
+        response.code = res.code;
+        response.uri = res.uri;
+        response.finalURI = res.finalURI;
+        response.body = cast(string)res.responseBody;  // requires mutable
 
-        with (HTTPVerb)
-        final switch (request.verb)
-        {
-        case get:
-            res = req.get(request.url);
-            break;
+        immutable stats = res.getStats();
+        response.elapsed = stats.connectTime + stats.recvTime + stats.sendTime;
 
-        case post:
-            res = req.post(request.url, request.body, request.contentType);
-            break;
-
-        case put:
-            res = req.put(request.url, request.body, request.contentType);
-            break;
-
-        case patch:
-            res = req.patch(request.url, request.body, request.contentType);
-            break;
-
-        case delete_:
-            res = req.execute("DELETE", request.url);
-            break;
-
-        case unset:
-        case unsupported:
-            assert(0, "Unset or unsupported HTTP verb passed to issueSyncHTTPRequest");
-        }
+        return response;
     }
     catch (Exception e)
     {
@@ -2078,15 +2096,6 @@ auto issueSyncHTTPRequest(const HTTPRequest request) @system
             e.msg;
         return response;
     }
-
-    response.code = res.code;
-    response.uri = res.uri;
-    response.finalURI = res.finalURI;
-    response.body = cast(string)res.responseBody;  //.idup?
-
-    immutable stats = res.getStats();
-    response.elapsed = stats.connectTime + stats.recvTime + stats.sendTime;
-    return response;
 }
 
 
@@ -2157,7 +2166,7 @@ final class EmptyResponseException : Exception
         Create a new [EmptyResponseException].
      +/
     this(
-        const string message,
+        const string message = "No response",
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -2240,7 +2249,7 @@ public:
         Constructor.
      +/
     this(
-        const string message,
+        const string message = "Unexpected JSON",
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -2348,7 +2357,7 @@ public:
         Create a new [EmptyDataJSONException], without attaching anything.
      +/
     this(
-        const string message,
+        const string message = "Empty JSON data",
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
