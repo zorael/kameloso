@@ -303,11 +303,10 @@ your <w>BOT</> account.
     writeln();
     logger.info("Validating...");
 
-    immutable validation = getTokenExpiry(plugin, plugin.state.bot.pass);
+    immutable results = getTokenExpiry(plugin, plugin.state.bot.pass);
     if (*plugin.state.abort) return;
 
-    immutable delta = (validation.expiresWhen - Clock.currTime);
-    immutable numDays = delta.total!"days";
+    immutable numDays = results.expiresIn.total!"days";
 
     enum isValidPattern = "Your key is valid for another <l>%d</> days.";
     logger.infof(isValidPattern, numDays);
@@ -410,18 +409,17 @@ your main <w>STREAMER</> account.
     writeln();
     logger.info("Validating...");
 
-    immutable validation = getTokenExpiry(plugin, inputCreds.broadcasterKey);
+    immutable results = getTokenExpiry(plugin, inputCreds.broadcasterKey);
     if (*plugin.state.abort) return;
 
-    immutable delta = (validation.expiresWhen - Clock.currTime);
-    immutable numDays = delta.total!"days";
+    immutable numDays = results.expiresIn.total!"days";
 
     enum isValidPattern = "Your elevated authorisation key for channel <l>#%s</> " ~
         "is valid for another <l>%d</> days.";
-    logger.infof(isValidPattern, validation.login, numDays);
+    logger.infof(isValidPattern, results.login, numDays);
     logger.trace();
 
-    immutable channel = '#' ~ validation.login;
+    immutable channel = '#' ~ results.login;
 
     auto creds = channel in plugin.secretsByChannel;
     if (!creds)
@@ -434,8 +432,9 @@ your main <w>STREAMER</> account.
         inputCreds.meldInto!(MeldingStrategy.aggressive)(*creds);
     }
 
+    immutable expiresWhen = (Clock.currTime + results.expiresIn);
     creds.broadcasterBearerToken = "Bearer " ~ creds.broadcasterKey;
-    creds.broadcasterKeyExpiry = validation.expiresWhen.toUnixTime();
+    creds.broadcasterKeyExpiry = expiresWhen.toUnixTime();
     saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
 }
 
@@ -567,29 +566,15 @@ auto getTokenExpiry(TwitchPlugin plugin, const string authToken)
 in (Fiber.getThis(), "Tried to call `getTokenExpiry` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : getValidation;
-    import std.datetime.systime : Clock, SysTime;
-
-    static struct ValidationResult
-    {
-        string login;
-        SysTime expiresWhen;
-    }
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
         try
         {
-            immutable validationJSON = getValidation(plugin, authToken, async: false);
-
-            ValidationResult result;
-            result.login = validationJSON["login"].str;
-            result.expiresWhen =
-                SysTime.fromUnixTime(Clock.currTime.toUnixTime() +
-                validationJSON["expires_in"].integer);
-
-            plugin.state.client.nickname = result.login;
+            immutable results = getValidation(plugin, authToken, async: true);
+            plugin.state.client.nickname = results.login;
             plugin.state.updates |= typeof(plugin.state.updates).client;
-            return result;
+            return results;
         }
         catch (Exception e)
         {

@@ -263,13 +263,13 @@ void printRetryDelegateException(/*const*/ Exception base)
         caller = Name of the calling function.
 
     Returns:
-        A singular user or channel regardless of how many were asked for in the URL.
-        If nothing was found, an exception is thrown instead.
+        The JSON for a singular user or channel regardless of how many were asked
+        for in the URL. If nothing was found, an exception is thrown instead.
 
     Throws:
         [EmptyDataJSONException] if the `"data"` field is empty for some reason.
         [UnexpectedJSONException] on unexpected JSON.
-        [TwitchQueryException] on other JSON errors.
+        [HTTPQueryException] on other JSON errors.
  +/
 auto getTwitchData(
     TwitchPlugin plugin,
@@ -364,8 +364,29 @@ auto getChatters(
 in (Fiber.getThis(), "Tried to call `getChatters` from outside a fiber")
 in (broadcaster.length, "Tried to get chatters with an empty broadcaster string")
 {
+    import std.algorithm.iteration : map;
+    import std.array : array;
     import std.conv : text;
-    import std.json : JSONType, parseJSON;
+    import std.json : JSONType, JSONValue, parseJSON;
+
+    static struct Chatters
+    {
+        string broadcaster;
+        string[] moderators;
+        string[] vips;
+        string[] staff;
+        string[] admins;
+        string[] globalMods;
+        string[] viewers;
+        uint chatterCount;
+    }
+
+    static auto mapJSONArrayToStringArray(const JSONValue json)
+    {
+        return json.array
+            .map!(a => a.str)
+            .array;
+    }
 
     immutable chattersURL = text("https://tmi.twitch.tv/group/user/", broadcaster, "/chatters");
 
@@ -419,8 +440,17 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        // Don't return `chattersJSON`, as we would lose "chatter_count".
-        return responseJSON;
+        Chatters chatters;
+        chatters.broadcaster = (*chattersJSON)["broadcster"].array[0].str;
+        chatters.moderators = mapJSONArrayToStringArray((*chattersJSON)["moderators"]);
+        chatters.vips = mapJSONArrayToStringArray((*chattersJSON)["vips"]);
+        chatters.staff = mapJSONArrayToStringArray((*chattersJSON)["staff"]);
+        chatters.admins = mapJSONArrayToStringArray((*chattersJSON)["admins"]);
+        chatters.globalMods = mapJSONArrayToStringArray((*chattersJSON)["global_mods"]);
+        chatters.viewers = mapJSONArrayToStringArray((*chattersJSON)["viewers"]);
+        chatters.chatterCount = cast(uint)(*chattersJSON)["chatter_count"].integer;
+
+        return chatters;
     }
 
     return retryDelegate(plugin, &getChattersDg);
@@ -445,7 +475,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON received.
-        [TwitchQueryException] on other failure.
+        [HTTPQueryException] on other failure.
  +/
 auto getValidation(
     TwitchPlugin plugin,
@@ -456,7 +486,17 @@ in (Fiber.getThis(), "Tried to call `getValidation` from outside a fiber")
 in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
     import std.algorithm.searching : startsWith;
+    import std.conv : to;
     import std.json : JSONType, parseJSON;
+    import core.time : Duration, seconds;
+
+    static struct ValidationResults
+    {
+        string clientID;
+        string login;
+        ulong userID;
+        Duration expiresIn;
+    }
 
     enum url = "https://id.twitch.tv/oauth2/validate";
 
@@ -586,6 +626,40 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             }
         }
 
+        /*
+        {
+            "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+            "expires_in": 5114683,
+            "login": "mechawob",
+            "scopes": [
+                "channel:moderate",
+                "chat:edit",
+                "chat:read",
+                "moderation:read",
+                "moderator:manage:announcements",
+                "moderator:manage:automod",
+                "moderator:manage:automod_settings",
+                "moderator:manage:banned_users",
+                "moderator:manage:blocked_terms",
+                "moderator:manage:chat_messages",
+                "moderator:manage:chat_settings",
+                "moderator:manage:shield_mode",
+                "moderator:manage:shoutouts",
+                "moderator:manage:unban_requests",
+                "moderator:manage:warnings",
+                "moderator:read:chatters",
+                "moderator:read:followers",
+                "user:manage:whispers",
+                "user:read:follows",
+                "user:read:subscriptions",
+                "user:write:chat",
+                "whispers:edit",
+                "whispers:read"
+            ],
+            "user_id": "790938342"
+        }
+         */
+
         immutable validationJSON = parseJSON(response.body);
 
         if (validationJSON.type != JSONType.object)
@@ -602,7 +676,13 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             throw new UnexpectedJSONException(message, validationJSON);
         }
 
-        return validationJSON;
+        ValidationResults results;
+        results.clientID = validationJSON["client_id"].str;
+        results.login = validationJSON["login"].str;
+        results.userID = validationJSON["user_id"].str.to!ulong;
+        results.expiresIn = validationJSON["expires_in"].integer.seconds;
+
+        return results;
     }
 
     return retryDelegate(plugin, &getValidationDg, async: true, endlessly: true);
@@ -619,12 +699,16 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         id = The numerical identifier for the channel.
+        caller = Name of the calling function.
 
     Returns:
         An associative array of [std.json.JSONValue|JSONValue]s keyed by nickname string,
         containing followers.
  +/
-auto getFollowers(TwitchPlugin plugin, const ulong id)
+auto getFollowers(
+    TwitchPlugin plugin,
+    const ulong id,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getFollowers` from outside a fiber")
 in (id, "Tried to get followers with an unset ID")
 {
@@ -634,7 +718,7 @@ in (id, "Tried to get followers with an unset ID")
 
     auto getFollowersDg()
     {
-        const entitiesArrayJSON = getMultipleTwitchData(plugin, url);
+        const entitiesArrayJSON = getMultipleTwitchData(plugin, url, caller);
         Follower[string] allFollowers;
 
         /+
@@ -734,52 +818,6 @@ in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber
 }
 
 
-// averageApproximateQueryTime
-/++
-    Given a query time measurement, calculate a new approximate query time based on
-    the weighted averages of the old value and said new measurement.
-
-    The old value is given a weight of
-    [kameloso.plugins.twitch.TwitchPlugin.QueryConstants.averagingWeight|averagingWeight]
-    and the new measurement a weight of 1. Additionally the measurement is padded by
-    [kameloso.plugins.twitch.TwitchPlugin.QueryConstants.measurementPadding|measurementPadding]
-    to be on the safe side.
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        responseMsecs = The new measurement of how many milliseconds the last
-            query took to complete.
- +/
-version(none)
-void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
-{
-    import std.algorithm.comparison : min;
-
-    enum maxDeltaToResponse = 5000;
-
-    immutable current = plugin.transient.approximateQueryTime;
-    alias weight = TwitchPlugin.QueryConstants.averagingWeight;
-    alias padding = TwitchPlugin.QueryConstants.measurementPadding;
-    immutable responseAdjusted = cast(long)min(responseMsecs, (current + maxDeltaToResponse));
-    immutable average = ((weight * current) + (responseAdjusted + padding)) / (weight + 1);
-
-    version(BenchmarkHTTPRequests)
-    {
-        import std.stdio : writefln;
-        enum pattern = "time:%s | response: %d~%d (+%d) | new average:%s";
-        writefln(
-            pattern,
-            current,
-            responseMsecs,
-            responseAdjusted,
-            cast(long)padding,
-            average);
-    }
-
-    plugin.transient.approximateQueryTime = cast(long)average;
-}
-
-
 // getTwitchUser
 /++
     Fetches information about a Twitch user and returns it in the form of a
@@ -793,6 +831,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
         id = Optional numeric ID of user to look up, if no `givenName` given.
         searchByDisplayName = Whether or not to also attempt to look up `givenName`
             as a display name.
+        caller = Name of the calling function.
 
     Returns:
         Voldemort aggregate struct with `nickname`, `displayName` and `id` members.
@@ -801,7 +840,8 @@ auto getTwitchUser(
     TwitchPlugin plugin,
     const string givenName = string.init,
     const ulong id = 0,
-    const bool searchByDisplayName = false)
+    const bool searchByDisplayName = false,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getTwitchUser` from outside a fiber")
 in ((givenName.length || id),
     "Tried to get Twitch user without supplying a name nor an ID")
@@ -850,7 +890,7 @@ in ((givenName.length || id),
 
     auto getTwitchUserDg()
     {
-        immutable userJSON = getTwitchData(plugin, userURL);
+        immutable userJSON = getTwitchData(plugin, userURL, caller);
 
         if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
         {
@@ -880,6 +920,7 @@ in ((givenName.length || id),
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         name = Name of game to look up.
         id = Numerical ID of game to look up.
+        caller = Name of the calling function.
 
     Returns:
         Voldemort aggregate struct with `id` and `name` members.
@@ -887,7 +928,8 @@ in ((givenName.length || id),
 auto getTwitchGame(
     TwitchPlugin plugin,
     const string name,
-    const ulong id = 0)
+    const ulong id = 0,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getTwitchGame` from outside a fiber")
 in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor game ID")
 {
@@ -905,7 +947,7 @@ in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor ga
 
     auto getTwitchGameDg()
     {
-        immutable gameJSON = getTwitchData(plugin, gameURL);
+        immutable gameJSON = getTwitchData(plugin, gameURL, caller);
 
         /*
         {
@@ -933,8 +975,11 @@ in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor ga
         channelName = Name of channel to modify.
         title = Optional channel title to set.
         caller = Name of the calling function.
+
+    Returns:
+        A Voldemort with the HTTP status code of the operation.
  +/
-void setChannelTitle(
+auto setChannelTitle(
     TwitchPlugin plugin,
     const string channelName,
     const string title,
@@ -942,7 +987,7 @@ void setChannelTitle(
 in (Fiber.getThis(), "Tried to call `setChannelTitle` from outside a fiber")
 in (channelName.length, "Tried to change a the channel title with an empty channel name string")
 {
-    modifyChannelImpl(plugin, channelName, title, 0, caller);
+    return modifyChannelImpl(plugin, channelName, title, 0, caller);
 }
 
 
@@ -957,8 +1002,11 @@ in (channelName.length, "Tried to change a the channel title with an empty chann
         channelName = Name of channel to modify.
         gameID = Optional game ID to set the channel as playing.
         caller = Name of the calling function.
+
+    Returns:
+        A Voldemort with the HTTP status code of the operation.
  +/
-void setChannelGame(
+auto setChannelGame(
     TwitchPlugin plugin,
     const string channelName,
     const ulong gameID,
@@ -966,7 +1014,7 @@ void setChannelGame(
 in (Fiber.getThis(), "Tried to call `setChannelGame` from outside a fiber")
 in (gameID, "Tried to set the channel game with an empty channel name string")
 {
-    modifyChannelImpl(plugin, channelName, string.init, gameID, caller);
+    return modifyChannelImpl(plugin, channelName, string.init, gameID, caller);
 }
 
 
@@ -982,8 +1030,11 @@ in (gameID, "Tried to set the channel game with an empty channel name string")
         title = Optional channel title to set.
         gameID = Optional game ID to set the channel as playing.
         caller = Name of the calling function.
+
+    Returns:
+        A Voldemort with the HTTP status code of the operation.
  +/
-private void modifyChannelImpl(
+private auto modifyChannelImpl(
     TwitchPlugin plugin,
     const string channelName,
     const string title,
@@ -995,6 +1046,12 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
 {
     import std.array : Appender;
     import std.conv : to;
+
+    static struct ModifyChannelResults
+    {
+        uint code;
+        auto success() const { return (code == 204); }
+    }
 
     const room = channelName in plugin.rooms;
     assert(room, "Tried to modify a channel for which there existed no room");
@@ -1024,9 +1081,9 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
 
     sink.put('}');
 
-    void modifyChannelDg()
+    auto modifyChannelDg()
     {
-        cast(void)sendHTTPRequest(
+        immutable response = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
@@ -1035,9 +1092,11 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
             verb: HTTPVerb.patch,
             body: cast(ubyte[])sink[],
             contentType: "application/json");
+
+        return ModifyChannelResults(response.code);
     }
 
-    retryDelegate(plugin, &modifyChannelDg);
+    return retryDelegate(plugin, &modifyChannelDg);
 }
 
 
@@ -1051,10 +1110,15 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to fetch information about.
+        caller = Name of the calling function.
+
+    Returns:
+        A Voldemort with the channel information.
  +/
 auto getChannel(
     TwitchPlugin plugin,
-    const string channelName)
+    const string channelName,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getChannel` from outside a fiber")
 in (channelName.length, "Tried to fetch a channel with an empty channel name string")
 {
@@ -1078,7 +1142,7 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
 
     auto getChannelDg()
     {
-        immutable gameDataJSON = getTwitchData(plugin, url);
+        immutable gameDataJSON = getTwitchData(plugin, url, caller);
 
         /+
         {
@@ -1159,8 +1223,11 @@ out (token; token.length, "`getBroadcasterAuthorisation` returned an empty strin
         channelName = Name of channel to run commercials for.
         lengthString = Length to play the commercial for, as a string.
         caller = Name of the calling function.
+
+    Returns:
+        A Voldemort with information about the commercial start.
  +/
-void startCommercial(
+auto startCommercial(
     TwitchPlugin plugin,
     const string channelName,
     const string lengthString,
@@ -1168,7 +1235,19 @@ void startCommercial(
 in (Fiber.getThis(), "Tried to call `startCommercial` from outside a fiber")
 in (channelName.length, "Tried to start a commercial with an empty channel name string")
 {
+    import lu.json : getOrFallback;
     import std.format : format;
+    import std.json : JSONType, parseJSON;
+
+    static struct StartCommercialResults
+    {
+        uint code;
+        string message;
+        uint durationSeconds;
+        uint retryAfter;
+
+        auto success() const { return (code == 200); }
+    }
 
     const room = channelName in plugin.rooms;
     assert(room, "Tried to look up start commercial in a channel for which there existed no room");
@@ -1183,9 +1262,9 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
     immutable body_ = bodyPattern.format(room.id, lengthString);
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
-    void startCommercialDg()
+    auto startCommercialDg()
     {
-        cast(void)sendHTTPRequest(
+        immutable response = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
@@ -1194,9 +1273,61 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             verb: HTTPVerb.post,
             body: cast(ubyte[])body_,
             contentType: "application/json");
+        immutable responseJSON = parseJSON(response.body);
+
+        /*
+        {
+            "data": [
+                {
+                    "length" : 60,
+                    "message" : "",
+                    "retry_after" : 480
+                }
+            ]
+        }
+         */
+
+        if (responseJSON.type != JSONType.object)
+        {
+            enum message = "`startCommercial` response has unexpected JSON " ~
+                "(wrong JSON type)";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        immutable dataJSON = "data" in responseJSON;
+
+        if (!dataJSON)
+        {
+            enum message = "`startCommercial` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        if (dataJSON.type != JSONType.array)
+        {
+            enum message = "`startCommercial` response has unexpected JSON " ~
+                `("data" key is of wrong JSON type)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        if (!dataJSON.array.length)
+        {
+            enum message = "`startCommercial` response has unexpected JSON " ~
+                `(zero-length "data")`;
+            throw new EmptyDataJSONException(message, responseJSON);
+        }
+
+        immutable commercialInfoJSON = (*dataJSON).array[0];
+
+        StartCommercialResults results;
+        results.code = response.code;
+        results.message = commercialInfoJSON.getOrFallback("message", string.init);
+        results.durationSeconds = commercialInfoJSON.getOrFallback("length", 0);
+        results.retryAfter = commercialInfoJSON.getOrFallback("retry_after", 0);
+        return results;
     }
 
-    retryDelegate(plugin, &startCommercialDg);
+    return retryDelegate(plugin, &startCommercialDg);
 }
 
 
@@ -1625,9 +1756,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
         caller = Name of the calling function.
 
     Returns:
-        An array of [std.json.JSONValue|JSONValue]s with
-        the response returned when creating the poll. On failure, an empty
-        [std.json.JSONValue|JSONValue] is instead returned.
+        A [TwitchPoll] instance.
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON.
@@ -1741,7 +1870,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
         caller = Name of the calling function.
 
     Returns:
-        The [std.json.JSONValue|JSONValue] of the first response returned when ending the poll.
+        A [TwitchPoll] instance.
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON.
@@ -1786,6 +1915,44 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             body: cast(ubyte[])body_,
             contentType: "application/json");
         immutable responseJSON = parseJSON(response.body);
+
+        /*
+        {
+            "data": [
+                {
+                    "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                    "broadcaster_id": "141981764",
+                    "broadcaster_name": "TwitchDev",
+                    "broadcaster_login": "twitchdev",
+                    "title": "Heads or Tails?",
+                    "choices": [
+                        {
+                        "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                        "title": "Heads",
+                        "votes": 0,
+                        "channel_points_votes": 0,
+                        "bits_votes": 0
+                        },
+                        {
+                        "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                        "title": "Tails",
+                        "votes": 0,
+                        "channel_points_votes": 0,
+                        "bits_votes": 0
+                        }
+                    ],
+                    "bits_voting_enabled": false,
+                    "bits_per_vote": 0,
+                    "channel_points_voting_enabled": true,
+                    "channel_points_per_vote": 100,
+                    "status": "TERMINATED",
+                    "duration": 1800,
+                    "started_at": "2021-03-19T06:08:33.871278372Z",
+                    "ended_at": "2021-03-19T06:11:26.746889614Z"
+                }
+            ]
+        }
+         */
 
         if (responseJSON.type != JSONType.object)
         {
@@ -1937,12 +2104,16 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         loginName = Account name of user whose stream to fetch information of.
+        caller = Name of the calling function.
 
     Returns:
         A [kameloso.plugins.twitch.TwitchPlugin.Room.Stream|Room.Stream]
         populated with all (relevant) information.
  +/
-auto getStream(TwitchPlugin plugin, const string loginName)
+auto getStream(
+    TwitchPlugin plugin,
+    const string loginName,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getStream` from outside a fiber")
 in (loginName.length, "Tried to get a stream with an empty login name string")
 {
@@ -1950,6 +2121,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
     import std.array : array;
     import std.conv : to;
     import std.datetime.systime : SysTime;
+    import std.json : JSONType;
 
     immutable streamURL = "https://api.twitch.tv/helix/streams?user_login=" ~ loginName;
 
@@ -1957,7 +2129,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
     {
         try
         {
-            immutable streamJSON = getTwitchData(plugin, streamURL);
+            immutable streamJSON = getTwitchData(plugin, streamURL, caller);
 
             /*
             {
@@ -2004,20 +2176,33 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             }
              */
 
-            auto stream = TwitchPlugin.Room.Stream(streamJSON["id"].str.to!ulong);
+            const dataJSON = "data" in streamJSON;
+
+            if (!dataJSON)
+            {
+                enum message = "`getStream` response has unexpected JSON " ~
+                    `(no "data" key)`;
+                throw new UnexpectedJSONException(message, streamJSON);
+            }
+
+            if (dataJSON.type != JSONType.array)
+            {
+                enum message = "`getStream` response has unexpected JSON " ~
+                    `("data" key is of wrong JSON type)`;
+                throw new UnexpectedJSONException(message, streamJSON);
+            }
+
+            if (!dataJSON.array.length)
+            {
+                /*enum message = "`getStream` response has unexpected JSON " ~
+                    `(zero-length "data")`;
+                throw new EmptyDataJSONException(message, streamJSON);*/
+                return TwitchPlugin.Room.Stream.init;
+            }
+
+            immutable firstStreamJSON = dataJSON.array[0];
+            auto stream = TwitchPlugin.Room.Stream.fromJSON(firstStreamJSON);
             stream.live = true;
-            stream.userID = streamJSON["user_id"].str.to!ulong;
-            stream.userLogin = streamJSON["user_login"].str;
-            stream.userDisplayName = streamJSON["user_name"].str;
-            stream.gameID = streamJSON["game_id"].str.to!ulong;
-            stream.gameName = streamJSON["game_name"].str;
-            stream.title = streamJSON["title"].str;
-            stream.startTime = SysTime.fromISOExtString(streamJSON["started_at"].str);
-            stream.numViewers = streamJSON["viewer_count"].integer;
-            stream.tags = streamJSON["tags"]
-                .array
-                .map!(tag => tag.str)
-                .array;
             return stream;
         }
         catch (EmptyDataJSONException _)
@@ -2215,13 +2400,15 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         login = Login name of other streamer to prepare a shoutout for.
+        caller = Name of the calling function.
 
     Returns:
         Voldemort `Shoutout` struct.
  +/
 auto createShoutout(
     TwitchPlugin plugin,
-    const string login)
+    const string login,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `createShoutout` from outside a fiber")
 in (login.length, "Tried to create a shoutout with an empty login name string")
 {
@@ -2249,11 +2436,11 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
         try
         {
             immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ login;
-            immutable userJSON = getTwitchData(plugin, userURL);
+            immutable userJSON = getTwitchData(plugin, userURL, caller);
             immutable id = userJSON["id"].str;
             //immutable login = userJSON["login"].str;
             immutable channelURL = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ id;
-            immutable channelJSON = getTwitchData(plugin, channelURL);
+            immutable channelJSON = getTwitchData(plugin, channelURL, caller);
 
             shoutout.state = Shoutout.ShoutoutState.success;
             shoutout.displayName = channelJSON["broadcaster_name"].str;
@@ -2474,7 +2661,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
         caller = Name of the calling function.
 
     Returns:
-        The HTTP response code received.
+        A Voldemort struct with the HTTP response code.
 
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#send-whisper
@@ -2488,6 +2675,12 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
 {
     import std.array : replace;
     import std.format : format;
+
+    static struct WhisperResult
+    {
+        uint code;
+        auto success() const { return (code == 204); }
+    }
 
     enum urlPattern = "https://api.twitch.tv/helix/whispers" ~
         "?from_user_id=%d" ~
@@ -2594,7 +2787,7 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
             break;
         }
 
-        return responseCode;
+        return WhisperResult(responseCode);
     }
 
     return retryDelegate(plugin, &sendWhisperDg);
@@ -2627,7 +2820,7 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
         caller = Name of the calling function.
 
     Returns:
-        The HTTP response code received.
+        A Voldemort struct with the HTTP response code.
 
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#send-chat-announcement
@@ -2643,6 +2836,12 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
     import std.algorithm.comparison : among;
     import std.array : replace;
     import std.format : format;
+
+    static struct AnnouncementResults
+    {
+        uint code;
+        auto success() const { return (code == 204); }
+    }
 
     enum urlPattern = "https://api.twitch.tv/helix/chat/announcements" ~
         "?broadcaster_id=%d" ~
@@ -2748,7 +2947,7 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
             break;
         }
 
-        return responseCode;
+        return AnnouncementResults(responseCode);
     }
 
     return retryDelegate(plugin, &sendAnnouncementDg);
@@ -2769,7 +2968,7 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
         caller = Name of the calling function.
 
     Returns:
-        The HTTP response code received.
+        A Voldemort struct with the HTTP response code.
 
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#warn-chat-user
@@ -2784,6 +2983,12 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
 {
     import std.array : replace;
     import std.format : format;
+
+    static struct WarnResults
+    {
+        uint code;
+        auto success() const { return (code == 200); }
+    }
 
     enum urlPattern = "https://api.twitch.tv/helix/moderation/warnings" ~
         "?broadcaster_id=%d" ~
@@ -2901,7 +3106,7 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
             writeln(responseJSON.toPrettyString);*/
         }
 
-        return responseCode;
+        return WarnResults(responseCode);
     }
 
     return retryDelegate(plugin, &warnUserDg);

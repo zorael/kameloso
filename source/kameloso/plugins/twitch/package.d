@@ -774,7 +774,7 @@ void onSelfpart(TwitchPlugin plugin, const IRCEvent event)
         // Close it and rotate, in case someone has a pointer to it
         // copied from nested functions in uptimeMonitorDg
         room.stream.live = false;
-        room.stream.stopTime = Clock.currTime;
+        room.stream.endedAt = Clock.currTime;
         room.stream.chattersSeen = null;
         appendToStreamHistory(plugin, room.stream);
         room.stream = TwitchPlugin.Room.Stream.init;
@@ -840,10 +840,10 @@ void reportStreamTime(
         // Remove fractional seconds from the current timestamp
         auto now = Clock.currTime;
         now.fracSecs = Duration.zero;
-        immutable delta = (now - room.stream.startTime);
+        immutable delta = (now - room.stream.startedAt);
         immutable timestring = timeSince!(7, 1)(delta);
 
-        if (room.stream.numViewersMax > 0)
+        if (room.stream.viewerCountMax > 0)
         {
             enum pattern = "%s has been live streaming %s for %s, currently with %d viewers. " ~
                 "(Maximum this stream has so far been %d concurrent viewers.)";
@@ -851,8 +851,8 @@ void reportStreamTime(
                 room.broadcasterDisplayName,
                 room.stream.gameName,
                 timestring,
-                room.stream.numViewers,
-                room.stream.numViewersMax);
+                room.stream.viewerCount,
+                room.stream.viewerCountMax);
             return chan(plugin.state, room.channelName, message);
         }
         else
@@ -878,13 +878,13 @@ void reportStreamTime(
     }
 
     const previousStream = TwitchPlugin.Room.Stream.fromJSON(json.array[$-1]);
-    immutable delta = (previousStream.stopTime - previousStream.startTime);
+    immutable delta = (previousStream.endedAt - previousStream.startedAt);
     immutable timestring = timeSince!(7, 1)(delta);
     immutable gameName = previousStream.gameName.length ?
         previousStream.gameName :
         "something";
 
-    if (previousStream.numViewersMax > 0)
+    if (previousStream.viewerCountMax > 0)
     {
         enum pattern = "%s is currently not streaming. " ~
             "Last streamed %s on %4d-%02d-%02d for %s, " ~
@@ -892,11 +892,11 @@ void reportStreamTime(
         immutable message = pattern.format(
             room.broadcasterDisplayName,
             gameName,
-            previousStream.stopTime.year,
-            cast(uint)previousStream.stopTime.month,
-            previousStream.stopTime.day,
+            previousStream.endedAt.year,
+            cast(uint)previousStream.endedAt.month,
+            previousStream.endedAt.day,
             timestring,
-            previousStream.numViewersMax);
+            previousStream.viewerCountMax);
         return chan(plugin.state, room.channelName, message);
     }
     else
@@ -906,9 +906,9 @@ void reportStreamTime(
         immutable message = pattern.format(
             room.broadcasterDisplayName,
             gameName,
-            previousStream.stopTime.year,
-            cast(uint)previousStream.stopTime.month,
-            previousStream.stopTime.day,
+            previousStream.endedAt.year,
+            cast(uint)previousStream.endedAt.month,
+            previousStream.endedAt.day,
             timestring);
         return chan(plugin.state, room.channelName, message);
     }
@@ -2951,6 +2951,9 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
         MonoTime lastBotUpdateTime;
         string[] botBlacklist;
 
+        uint newChattersSinceLastRehash;
+        enum rehashThreshold = 128;
+
         while (true)
         {
             room = channelName in plugin.rooms;
@@ -2973,26 +2976,24 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                     lastBotUpdateTime = now;
                 }
 
-                immutable chattersJSON = getChatters(plugin, room.broadcasterName);
+                const chatters = getChatters(plugin, room.broadcasterName);
 
-                static immutable string[6] chatterTypes =
+                const string[][7-1] chattersByCategory =
                 [
-                    "admins",
-                    //"broadcaster",
-                    "global_mods",
-                    "moderators",
-                    "staff",
-                    "viewers",
-                    "vips",
+                    //chatters.broadcaster,
+                    chatters.moderators,
+                    chatters.vips,
+                    chatters.staff,
+                    chatters.admins,
+                    chatters.globalMods,
+                    chatters.viewers,
                 ];
 
-                foreach (immutable chatterType; chatterTypes[])
+                foreach (const chattersInCategory; chattersByCategory[])
                 {
-                    foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
+                    foreach (const viewer; chattersInCategory)
                     {
                         import std.algorithm.searching : canFind, endsWith;
-
-                        immutable viewer = viewerJSON.str;
 
                         if (viewer.endsWith("bot") ||
                             botBlacklist.canFind(viewer) ||
@@ -3001,7 +3002,11 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                             continue;
                         }
 
-                        room.stream.chattersSeen[viewer] = true;
+                        if (viewer !in room.stream.chattersSeen)
+                        {
+                            room.stream.chattersSeen[viewer] = true;
+                            ++newChattersSinceLastRehash;
+                        }
 
                         // continue early if we shouldn't monitor watchtime
                         if (!plugin.settings.watchtime) continue;
@@ -3039,6 +3044,12 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                 // Just swallow the exception and retry next time
             }
 
+            if (newChattersSinceLastRehash >= rehashThreshold)
+            {
+                room.stream.chattersSeen.rehash();
+                newChattersSinceLastRehash = 0;
+            }
+
             delay(plugin, monitorUpdatePeriodicity, yield: true);
         }
     }
@@ -3048,7 +3059,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
         static void closeStream(TwitchPlugin.Room* room)
         {
             room.stream.live = false;
-            room.stream.stopTime = Clock.currTime;
+            room.stream.endedAt = Clock.currTime;
             room.stream.chattersSeen = null;
         }
 
@@ -3207,13 +3218,46 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
     import core.time : minutes;
 
     static immutable retryDelay = 1.minutes;
-    JSONValue validationJSON;
 
-    while (!plugin.transient.botID)
+    while (true)
     {
         try
         {
-            validationJSON = getValidation(plugin, plugin.state.bot.pass, async: true);
+            immutable results = getValidation(plugin, plugin.state.bot.pass, async: true);
+            plugin.transient.botID = results.userID;
+
+            enum expiryMessage = "Twitch authorisation key expired";
+            immutable now = Clock.currTime;
+            immutable expiresWhen = (now + results.expiresIn);
+
+            if (plugin.state.coreSettings.headless)
+            {
+                void onExpiryHeadlessDg()
+                {
+                    quit(plugin.state, expiryMessage);
+                }
+
+                delay(plugin, &onExpiryHeadlessDg, results.expiresIn);
+            }
+            else
+            {
+                void onExpiryDg()
+                {
+                    enum message = "Your Twitch authorisation key has expired. " ~
+                        "Run the program with <l>--set twitch.keygen/> to generate a new one.";
+                    logger.error(message);
+                    quit(plugin.state, expiryMessage);
+                }
+
+                generateExpiryReminders(
+                    plugin,
+                    expiresWhen,
+                    "Your Twitch authorisation key",
+                    &onExpiryDg);
+            }
+
+            // Validated
+            return;
         }
         catch (HTTPQueryException e)
         {
@@ -3272,70 +3316,6 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
             }
             continue;
         }
-
-        const userIDJSON = "user_id" in validationJSON;
-        if (!userIDJSON)
-        {
-            // No key in response?
-            delay(plugin, retryDelay, yield: true);
-            continue;
-        }
-
-        plugin.transient.botID = userIDJSON.str.to!uint;  // ensures while loop break
-        //break;
-    }
-
-    // Validation successful
-    /+
-    {
-        "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
-        "expires_in": 5036421,
-        "login": "zorael",
-        "scopes": [
-            "bits:read",
-            "channel:moderate",
-            "channel:read:subscriptions",
-            "channel_editor",
-            "chat:edit",
-            "chat:read",
-            "user:edit:broadcast",
-            "whispers:edit",
-            "whispers:read"
-        ],
-        "user_id": "22216721"
-    }
-     +/
-
-    enum expiryMessage = "Twitch authorisation key expired";
-    immutable expiresIn = validationJSON["expires_in"].integer;
-    immutable now = Clock.currTime;
-    immutable expiresWhen = SysTime.fromUnixTime(now.toUnixTime() + expiresIn);
-
-    if (plugin.state.coreSettings.headless)
-    {
-        void onExpiryHeadlessDg()
-        {
-            quit(plugin.state, expiryMessage);
-        }
-
-        immutable delta = (expiresWhen - now);
-        delay(plugin, &onExpiryHeadlessDg, delta);
-    }
-    else
-    {
-        void onExpiryDg()
-        {
-            enum message = "Your Twitch authorisation key has expired. " ~
-                "Run the program with <l>--set twitch.keygen/> to generate a new one.";
-            logger.error(message);
-            quit(plugin.state, expiryMessage);
-        }
-
-        generateExpiryReminders(
-            plugin,
-            expiresWhen,
-            "Your Twitch authorisation key",
-            &onExpiryDg);
     }
 }
 
@@ -4570,6 +4550,7 @@ private:
     import kameloso.net : HTTPQueryResponse;
     import kameloso.terminal : TerminalToken;
     import lu.container : Buffer, CircularBuffer;
+    import std.conv : to;
     import std.datetime.systime : SysTime;
 
 package:
@@ -4644,23 +4625,34 @@ package:
             /++
                 When the stream started.
              +/
-            SysTime startTime;
+            SysTime startedAt;
 
             /++
                 When the stream ended.
              +/
-            SysTime stopTime;
+            SysTime endedAt;
+
+            /++
+                How long the stream had been running after terminating it.
+             +/
+            Duration duration;
 
             /++
                 How many people were viewing the stream the last time the monitor
                 [core.thread.fiber.Fiber|Fiber] checked.
              +/
-            long numViewers;
+            long viewerCount;
 
             /++
                 The maximum number of people seen watching this stream.
              +/
-            long numViewersMax;
+            long viewerCountMax;
+
+            /++
+                Status of the stream, when it has ended. Can be one of
+                "`TERMINATED`" and "`ARCHIVED`".
+             +/
+            string status;
 
             /++
                 Users seen in the channel.
@@ -4693,16 +4685,17 @@ package:
             {
                 assert(_id, "Stream not properly initialised");
 
-                this.userDisplayName = updated.userDisplayName;
                 this.gameID = updated.gameID;
                 this.gameName = updated.gameName;
                 this.title = updated.title;
-                this.numViewers = updated.numViewers;
+                this.viewerCount = updated.viewerCount;
                 this.tags = updated.tags.dup;
+                this.endedAt = updated.endedAt;
+                this.status = updated.status;
 
-                if (this.numViewers > this.numViewersMax)
+                if (this.viewerCount > this.viewerCountMax)
                 {
-                    this.numViewersMax = this.numViewers;
+                    this.viewerCountMax = this.viewerCount;
                 }
             }
 
@@ -4729,14 +4722,20 @@ package:
                 json = null;
                 json.object = null;
 
-                json["id"] = JSONValue(this._id);
-                json["gameID"] = JSONValue(this.gameID);
-                json["gameName"] = JSONValue(this.gameName);
+                json["id"] = JSONValue(this._id.to!string);
+                json["user_id"] = JSONValue(this.userID);
+                json["user_login"] = JSONValue(this.userLogin);
+                json["user_name"] = JSONValue(this.userDisplayName);
+                json["game_id"] = JSONValue(this.gameID);
+                json["game_name"] = JSONValue(this.gameName);
                 json["title"] = JSONValue(this.title);
-                json["startTimeUnix"] = JSONValue(this.startTime.toUnixTime());
-                json["stopTimeUnix"] = JSONValue(this.stopTime.toUnixTime());
-                json["numViewersMax"] = JSONValue(this.numViewersMax);
+                json["started_at"] = JSONValue(this.startedAt.toUnixTime().to!string);
+                json["status"] = JSONValue(this.status);
+                json["viewer_count"] = JSONValue(this.viewerCount);
+                json["viewer_count_max"] = JSONValue(this.viewerCountMax);
                 json["tags"] = JSONValue(this.tags);
+                json["ended_at"] = JSONValue(this.endedAt.toUnixTime().to!string);
+                json["duration"] = JSONValue(this.duration.total!"seconds");
 
                 return json;
             }
@@ -4752,27 +4751,123 @@ package:
              +/
             static auto fromJSON(const JSONValue json)
             {
+                import lu.json : getOrFallback;
                 import std.algorithm.iteration : map;
                 import std.array : array;
 
-                auto stream = Stream(cast(uint)json["id"].integer);
-                stream.gameID = cast(uint)json["gameID"].integer;
-                stream.gameName = json["gameName"].str;
+                /*
+                {
+                    "data": [
+                        {
+                            "game_id": "506415",
+                            "game_name": "Sekiro: Shadows Die Twice",
+                            "id": "47686742845",
+                            "is_mature": false,
+                            "language": "en",
+                            "started_at": "2022-12-26T16:47:58Z",
+                            "tag_ids": [
+                                "6ea6bca4-4712-4ab9-a906-e3336a9d8039"
+                            ],
+                            "tags": [
+                                "darksouls",
+                                "voiceactor",
+                                "challengerunner",
+                                "chill",
+                                "rpg",
+                                "survival",
+                                "creativeprofanity",
+                                "simlish",
+                                "English"
+                            ],
+                            "thumbnail_url": "https:\/\/static-cdn.jtvnw.net\/previews-ttv\/live_user_lobosjr-{width}x{height}.jpg",
+                            "title": "it's been so long! | fresh run",
+                            "type": "live",
+                            "user_id": "28640725",
+                            "user_login": "lobosjr",
+                            "user_name": "LobosJr",
+                            "viewer_count": 2341
+                        }
+                    ],
+                    "pagination": {
+                        "cursor": "eyJiIjp7IkN1cnNvciI6ImV5SnpJam95TXpReExqUTBOelV3T1RZMk9URXdORFFzSW1RaU9tWmhiSE5sTENKMElqcDBjblZsZlE9PSJ9LCJhIjp7IkN1cnNvciI6IiJ9fQ"
+                    }
+                }
+                 */
+                /*
+                {
+                    "data": [
+                        {
+                        "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                        "broadcaster_id": "141981764",
+                        "broadcaster_name": "TwitchDev",
+                        "broadcaster_login": "twitchdev",
+                        "title": "Heads or Tails?",
+                        "choices": [
+                            {
+                            "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                            "title": "Heads",
+                            "votes": 0,
+                            "channel_points_votes": 0,
+                            "bits_votes": 0
+                            },
+                            {
+                            "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                            "title": "Tails",
+                            "votes": 0,
+                            "channel_points_votes": 0,
+                            "bits_votes": 0
+                            }
+                        ],
+                        "bits_voting_enabled": false,
+                        "bits_per_vote": 0,
+                        "channel_points_voting_enabled": true,
+                        "channel_points_per_vote": 100,
+                        "status": "TERMINATED",
+                        "duration": 1800,
+                        "started_at": "2021-03-19T06:08:33.871278372Z",
+                        "ended_at": "2021-03-19T06:11:26.746889614Z"
+                        }
+                    ]
+                }
+                 */
+                /*
+                {
+                    "data": [],
+                    "pagination": {}
+                }
+                 */
+                if ("data" in json)
+                {
+                    enum message = "`Stream.fromJSON` was called with JSON " ~
+                        `still containing a top-level "data" key`;
+                    throw new UnexpectedJSONException(message);
+                }
+
+                auto stream = Stream(json["id"].str.to!ulong);
+                stream.userID = json["user_id"].integer;
+                stream.userLogin = json["user_login"].str;
+                stream.userDisplayName = json["user_name"].str;
+                stream.gameID = cast(uint)json["game_id"].integer;
+                stream.gameName = json["game_name"].str;
                 stream.title = json["title"].str;
-                stream.startTime = SysTime.fromUnixTime(json["startTimeUnix"].integer);
-                stream.stopTime = SysTime.fromUnixTime(json["stopTimeUnix"].integer);
-                stream.tags = json["tags"].array
+                stream.startedAt = SysTime.fromISOExtString(json["started_at"].str);
+                stream.status = json.getOrFallback("status");
+                stream.viewerCount = json.getOrFallback!ulong("viewer_count");
+                stream.viewerCountMax = json.getOrFallback!ulong("viewer_count_max");
+                stream.tags = json["tags"]
+                    .array
                     .map!(tag => tag.str)
                     .array;
 
-                if (const numViewersMaxJSON = "numViewersMax" in json)
+                if (const endedAtJSON = "ended_at" in json)
                 {
-                    stream.numViewersMax = numViewersMaxJSON.integer;
+                    stream.endedAt = SysTime.fromISOExtString(endedAtJSON.str);
                 }
-                else
+
+                if (const durationJSON = "duration" in json)
                 {
-                    // Legacy
-                    stream.numViewersMax = json["maxViewerCount"].integer;
+                    import core.time : seconds;
+                    stream.duration = durationJSON.integer.seconds;
                 }
 
                 return stream;
