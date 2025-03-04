@@ -281,10 +281,11 @@ in (Fiber.getThis(), "Tried to call `getTwitchData` from outside a fiber")
 
     // Request here outside try-catch to let exceptions fall through
     immutable response = sendHTTPRequest(
-        plugin,
-        url,
-        caller,
-        plugin.transient.authorizationBearer);
+        plugin: plugin,
+        url: url,
+        caller: caller,
+        authorisationHeader: plugin.transient.authorizationBearer,
+        clientID: TwitchPlugin.clientID);
 
     try
     {
@@ -393,10 +394,11 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
     auto getChattersDg()
     {
         immutable response = sendHTTPRequest(
-            plugin,
-            chattersURL,
-            caller,
-            plugin.transient.authorizationBearer);
+            plugin: plugin,
+            url: chattersURL,
+            caller: caller,
+            authorisationHeader: plugin.transient.authorizationBearer,
+            clientID: TwitchPlugin.clientID);
         immutable responseJSON = parseJSON(response.body);
 
         /*
@@ -781,10 +783,11 @@ in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber
             text(url, "&after=", after) :
             url;
         immutable response = sendHTTPRequest(
-            plugin,
-            paginatedURL,
-            caller,
-            plugin.transient.authorizationBearer);
+            plugin: plugin,
+            url: paginatedURL,
+            caller: caller,
+            authorisationHeader: plugin.transient.authorizationBearer,
+            clientID: TwitchPlugin.clientID);
         immutable responseJSON = parseJSON(response.body);
         immutable dataJSON = "data" in responseJSON;
 
@@ -825,9 +828,9 @@ in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber
 
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        givenName = Optional name of user to look up, if no `id` given.
-        id = Optional numeric ID of user to look up, if no `givenName` given.
-        searchByDisplayName = Whether or not to also attempt to look up `givenName`
+        name = Optional name of user to look up, if no `id` given.
+        id = Optional numeric ID of user to look up, if no `name` given.
+        searchByDisplayName = Whether or not to also attempt to look up `name`
             as a display name.
         caller = Name of the calling function.
 
@@ -836,12 +839,12 @@ in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber
  +/
 auto getTwitchUser(
     TwitchPlugin plugin,
-    const string givenName = string.init,
+    const string name = string.init,
     const ulong id = 0,
     const bool searchByDisplayName = false,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getTwitchUser` from outside a fiber")
-in ((givenName.length || id),
+in ((name.length || id),
     "Tried to get Twitch user without supplying a name nor an ID")
 {
     import std.conv : to;
@@ -856,7 +859,7 @@ in ((givenName.length || id),
 
     User user;
 
-    if (const stored = givenName in plugin.state.users)
+    if (const stored = name in plugin.state.users)
     {
         // Stored user
         user.nickname = stored.nickname;
@@ -870,7 +873,7 @@ in ((givenName.length || id),
     {
         foreach (const stored; plugin.state.users.aaOf)
         {
-            if (stored.displayName == givenName)
+            if (stored.displayName == name)
             {
                 // Found user by displayName
                 user.nickname = stored.nickname;
@@ -882,8 +885,8 @@ in ((givenName.length || id),
     }
 
     // None on record, look up
-    immutable userURL = givenName.length ?
-        "https://api.twitch.tv/helix/users?login=" ~ givenName :
+    immutable userURL = name.length ?
+        "https://api.twitch.tv/helix/users?login=" ~ name :
         "https://api.twitch.tv/helix/users?id=" ~ id.to!string;
 
     auto getTwitchUserDg()
@@ -1086,7 +1089,7 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
             url: url,
             caller: caller,
             authorisationHeader: authorizationBearer,
-            clientID : TwitchPlugin.clientID,
+            clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.patch,
             body: cast(ubyte[])sink[],
             contentType: "application/json");
@@ -2017,8 +2020,7 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
         immutable response = sendHTTPRequest(
             plugin: plugin,
             url: url,
-            caller: caller,
-            clientID: TwitchPlugin.clientID);
+            caller: caller);
         immutable responseJSON = parseJSON(response.body);
 
         /*

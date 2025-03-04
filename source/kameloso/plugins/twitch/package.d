@@ -339,6 +339,8 @@ package struct Credentials
      +/
     static auto fromJSON(const JSONValue json)
     {
+        import lu.json : getOrFallback;
+
         Credentials creds;
 
         creds.broadcasterKey = json["broadcasterKey"].str;
@@ -352,18 +354,8 @@ package struct Credentials
         creds.spotifyAccessToken = json["spotifyAccessToken"].str;
         creds.spotifyRefreshToken = json["spotifyRefreshToken"].str;
         creds.spotifyPlaylistID = json["spotifyPlaylistID"].str;
-
-        if (const broadcasterBearerToken = "broadcasterBearerToken" in json)
-        {
-            // New field, be conservative for a few releases
-            creds.broadcasterBearerToken = broadcasterBearerToken.str;
-        }
-
-        if (const broadcasterExpiry = "broadcasterKeyExpiry" in json)
-        {
-            // New field, be conservative for a few releases
-            creds.broadcasterKeyExpiry = broadcasterExpiry.integer;
-        }
+        creds.broadcasterBearerToken = json["broadcasterBearerToken"].str;
+        creds.broadcasterKeyExpiry = json["broadcasterKeyExpiry"].integer;
 
         return creds;
     }
@@ -698,14 +690,14 @@ void onUserstate(TwitchPlugin plugin, const IRCEvent event)
         registerOpMod();
     }
     else if (
-        !plugin.settings.promoteBroadcasters &&
+        plugin.settings.promoteBroadcasters &&
         event.target.badges.canFind("broadcaster/"))
     {
         // All is also well
         registerOpMod();
     }
     else if (
-        !plugin.settings.promoteModerators &&
+        plugin.settings.promoteModerators &&
         event.target.badges.canFind("moderator/"))
     {
         // Likewise
@@ -1013,7 +1005,10 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
         {
             import std.format : format;
 
-            immutable user = getTwitchUser(plugin, name, 0, searchByDisplayName: true);
+            immutable user = getTwitchUser(
+                plugin: plugin,
+                name: name,
+                searchByDisplayName: true);
             if (!user.nickname.length) return sendNoSuchUser(name);
 
             enum pattern = "%s is currently not a follower.";
@@ -2063,9 +2058,9 @@ void onCommandEndPoll(TwitchPlugin plugin, const IRCEvent event)
         }
 
         const endedPoll = endPoll(
-            plugin,
-            event.channel.name,
-            polls[0].pollID,
+            plugin: plugin,
+            channelName: event.channel.name,
+            pollID: polls[0].pollID,
             terminate: true);
 
         alias Status = typeof(endedPoll.status);
@@ -2447,13 +2442,16 @@ void onCommandWatchtime(TwitchPlugin plugin, const IRCEvent event)
     }
     else
     {
-        string givenName = slice.advancePast(' ', inherit: true);  // mutable
-        if (givenName.startsWith('@')) givenName = givenName[1..$];
-        immutable user = getTwitchUser(plugin, givenName, 0, searchByDisplayName: true);
+        string name = slice.advancePast(' ', inherit: true);  // mutable
+        if (name.startsWith('@')) name = name[1..$];
+        immutable user = getTwitchUser(
+            plugin: plugin,
+            name: name,
+            searchByDisplayName: true);
 
         if (!user.nickname.length)
         {
-            immutable message = "No such user: " ~ givenName;
+            immutable message = "No such user: " ~ name;
             return chan(plugin.state, event.channel.name, message);
         }
 
@@ -3223,7 +3221,10 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
     {
         try
         {
-            immutable results = getValidation(plugin, plugin.state.bot.pass, async: true);
+            immutable results = getValidation(
+                plugin: plugin,
+                authToken: plugin.state.bot.pass,
+                async: true);
             plugin.transient.botID = results.userID;
 
             enum expiryMessage = "Twitch authorisation key expired";
@@ -4022,7 +4023,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 embedCustomEmotes(
                     content: event.content,
                     emotes: event.emotes,
-                    customEmotes: customEmotes ? *customEmotes : null,
+                    customEmotes: (customEmotes ? *customEmotes : null),
                     customGlobalEmotes: plugin.customGlobalEmotes);
 
                 if (event.target.nickname.length && event.altcontent.length)
@@ -4030,7 +4031,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                     embedCustomEmotes(
                         content: event.altcontent,
                         emotes: event.aux[$-2],
-                        customEmotes: customEmotes ? *customEmotes : null,
+                        customEmotes: (customEmotes ? *customEmotes : null),
                         customGlobalEmotes: plugin.customGlobalEmotes);
                 }
             }
@@ -4090,7 +4091,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                     }
 
                     immutable twitchUser = getTwitchUser(
-                        plugin,
+                        plugin: plugin,
                         id: sharedChannelID);
 
                     if (!twitchUser.nickname.length)
