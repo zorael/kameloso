@@ -351,8 +351,8 @@ in (Fiber.getThis(), "Tried to call `getTwitchData` from outside a fiber")
         caller = Name of the calling function.
 
     Returns:
-        A [std.json.JSONValue|JSONValue] with "`chatters`" and "`chatter_count`" keys.
-        If nothing was found, an exception is thrown instead.
+        A Voldemort struct with `broadcaster`, `moderators`, `vips`, `staff`,
+        `admins`, `globalMods`, `viewers` and `chatterCount` members.
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON.
@@ -470,8 +470,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
         caller = Name of the calling function.
 
     Returns:
-        A [std.json.JSONValue|JSONValue] with the validation information JSON of the
-        current authorisation header/client ID pair.
+        A Voldemort struct with `clientID`, `login`, `userID` and `expiresIn` members.
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON received.
@@ -702,8 +701,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         caller = Name of the calling function.
 
     Returns:
-        An associative array of [std.json.JSONValue|JSONValue]s keyed by nickname string,
-        containing followers.
+        An associative array of [Follower]s keyed by nickname string.
  +/
 auto getFollowers(
     TwitchPlugin plugin,
