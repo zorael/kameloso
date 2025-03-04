@@ -284,18 +284,14 @@ public:
         timer.timeThreshold = json["timeThreshold"].integer;
         timer.messageCountStagger = json["messageCountStagger"].integer;
         timer.timeStagger = json["timeStagger"].integer;
+        timer.suspended = json["suspended"].boolean;
+        timer.colour = json["colour"].str;
         timer.type = (json["type"].integer == cast(int)TimerType.random) ?
             TimerType.random :
             TimerType.ordered;
         timer.condition = (json["condition"].integer == cast(int)TimerCondition.both) ?
             TimerCondition.both :
             TimerCondition.either;
-
-        // Be careful with suspended since it was not in the original JSON scheme
-        timer.suspended = json.getOrFallback("suspended", false);
-
-        // Likewise. Use the .init value as fallback
-        timer.colour = json.getOrFallback("colour", timer.colour);
 
         foreach (const lineJSON; json["lines"].array)
         {

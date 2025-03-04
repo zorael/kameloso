@@ -142,29 +142,14 @@ public:
      +/
     static auto fromJSON(const JSONValue json)
     {
-        import std.json : JSONException, JSONType;
-
         Counter counter;
 
-        if (json.type == JSONType.integer)
-        {
-            // Old format
-            counter.count = json.integer;
-        }
-        else if (json.type == JSONType.object)
-        {
-            // New format
-            counter.count = json["count"].integer;
-            counter.word = json["word"].str;
-            counter.patternQuery = json["patternQuery"].str;
-            counter.patternIncrement = json["patternIncrement"].str;
-            counter.patternDecrement = json["patternDecrement"].str;
-            counter.patternAssign = json["patternAssign"].str;
-        }
-        else
-        {
-            throw new JSONException("Malformed counter file entry");
-        }
+        counter.count = json["count"].integer;
+        counter.word = json["word"].str;
+        counter.patternQuery = json["patternQuery"].str;
+        counter.patternIncrement = json["patternIncrement"].str;
+        counter.patternDecrement = json["patternDecrement"].str;
+        counter.patternAssign = json["patternAssign"].str;
 
         return counter;
     }

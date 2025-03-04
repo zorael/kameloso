@@ -227,10 +227,8 @@ public:
 
         Oneliner oneliner;
         oneliner.trigger = json["trigger"].str;
-
-        // Be careful with cooldown and alias since they were not in the original JSON scheme
-        oneliner.cooldown = json.getOrFallback("cooldown", Oneliner.init.cooldown);
-        oneliner.alias_ = json.getOrFallback("alias");
+        oneliner.cooldown = cast(uint)json["cooldown"].integer;
+        oneliner.alias_ = json["alias"].str;
 
         switch (json["type"].integer)
         {

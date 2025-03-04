@@ -339,8 +339,6 @@ package struct Credentials
      +/
     static auto fromJSON(const JSONValue json)
     {
-        import lu.json : getOrFallback;
-
         Credentials creds;
 
         creds.broadcasterKey = json["broadcasterKey"].str;
