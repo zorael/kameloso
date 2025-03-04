@@ -90,6 +90,11 @@ public:
      +/
     long timestamp;
 
+    /++
+        The nickname of the user who added the quote.
+     +/
+    string creator;
+
     // toJSON
     /++
         Serialises this [Quote] into a [std.json.JSONValue|JSONValue].
@@ -102,6 +107,7 @@ public:
         JSONValue json;
         json["line"] = JSONValue(this.line);
         json["timestamp"] = JSONValue(this.timestamp);
+        json["creator"] = JSONValue(this.creator);
         return json;
     }
 
@@ -117,9 +123,12 @@ public:
      +/
     static auto fromJSON(const JSONValue json)
     {
+        import lu.json : getOrFallback;
+
         Quote quote;
         quote.line = json["line"].str;
         quote.timestamp = json["timestamp"].integer;
+        quote.creator = json.getOrFallback("creator");
         return quote;
     }
 }
@@ -354,6 +363,7 @@ void onCommandAddQuote(QuotePlugin plugin, const IRCEvent event)
     Quote quote;
     quote.line = line.strippedRight;
     quote.timestamp = event.time;
+    quote.creator = event.sender.nickname;
 
     plugin.quotes[event.channel.name][nickname] ~= quote;
     immutable pos = plugin.quotes[event.channel.name][nickname].length+(-1);
