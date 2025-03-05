@@ -728,13 +728,16 @@ void onUserstate(TwitchPlugin plugin, const IRCEvent event)
 )
 void onGlobalUserstate(TwitchPlugin plugin, const IRCEvent _)
 {
-    import kameloso.plugins.twitch.emotes : importCustomEmotes;
-
     mixin(memoryCorruptionCheck);
 
-    // dialect sets the display name during parsing
-    //assert(plugin.state.client.displayName == event.target.displayName);
-    importCustomEmotes(plugin);
+    if (plugin.settings.customEmotes)
+    {
+        import kameloso.plugins.twitch.emotes : importCustomEmotes;
+
+        // dialect sets the display name during parsing
+        //assert(plugin.state.client.displayName == event.target.displayName);
+        importCustomEmotes(plugin);
+    }
 }
 
 
