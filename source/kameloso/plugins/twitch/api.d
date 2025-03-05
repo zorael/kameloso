@@ -1367,6 +1367,28 @@ public:
             How many votes were placed with channel points on this choice.
          +/
         uint channelPointsVotes;
+
+        /++
+            Constructs a new [Choice] from a passed [std.json.JSONValue|JSONValue]
+            as received from API calls.
+
+            Params:
+                json = JSON to parse.
+
+            Returns:
+                A new [Choice] with values derived from the passed `json`.
+         +/
+        static auto fromJSON(const JSONValue json)
+        {
+            import std.conv : to;
+
+            TwitchPoll.Choice choice;
+            choice.id = json["id"].str;
+            choice.title = json["title"].str;
+            choice.votes = json["votes"].str.to!uint;
+            choice.channelPointsVotes = json["channel_points_votes"].str.to!uint;
+            return choice;
+        }
     }
 
     /++
@@ -1615,12 +1637,7 @@ public:
 
         foreach (const choiceJSON; json["choices"].array)
         {
-            TwitchPoll.Choice choice;
-            choice.id = choiceJSON["id"].str;
-            choice.title = choiceJSON["title"].str;
-            choice.votes = choiceJSON["votes"].str.to!uint;
-            choice.channelPointsVotes = choiceJSON["channel_points_votes"].str.to!uint;
-            poll.choices ~= choice;
+            poll.choices ~= TwitchPoll.Choice.fromJSON(choiceJSON);
         }
 
         return poll;
