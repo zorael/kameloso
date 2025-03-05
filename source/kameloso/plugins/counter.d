@@ -143,14 +143,12 @@ public:
     static auto fromJSON(const JSONValue json)
     {
         Counter counter;
-
         counter.count = json["count"].integer;
         counter.word = json["word"].str;
         counter.patternQuery = json["patternQuery"].str;
         counter.patternIncrement = json["patternIncrement"].str;
         counter.patternDecrement = json["patternDecrement"].str;
         counter.patternAssign = json["patternAssign"].str;
-
         return counter;
     }
 
