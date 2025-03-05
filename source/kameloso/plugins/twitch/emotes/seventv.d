@@ -49,7 +49,6 @@ in (id, "Tried to get 7tv emotes with an unset ID")
 {
     import kameloso.plugins : sendHTTPRequest;
     import kameloso.net : ErrorJSONException, UnexpectedJSONException;
-    import lu.conv : toString;
     import std.conv : to;
     import std.json : JSONType, parseJSON;
 

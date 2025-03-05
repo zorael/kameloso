@@ -567,22 +567,9 @@ in (Fiber.getThis(), "Tried to call `getTokenExpiry` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : getValidation;
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
-    {
-        try
-        {
-            immutable results = getValidation(plugin, authToken, async: true);
-            plugin.state.client.nickname = results.login;
-            plugin.state.updates |= typeof(plugin.state.updates).client;
-            return results;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
-    }
+    immutable results = getValidation(plugin, authToken, async: true);
 
-    assert(0, "Unreachable");
+    plugin.state.client.nickname = results.login;
+    plugin.state.updates |= typeof(plugin.state.updates).client;
+    return results;
 }

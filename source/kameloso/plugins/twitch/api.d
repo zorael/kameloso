@@ -365,8 +365,6 @@ auto getChatters(
 in (Fiber.getThis(), "Tried to call `getChatters` from outside a fiber")
 in (broadcaster.length, "Tried to get chatters with an empty broadcaster string")
 {
-    import std.algorithm.iteration : map;
-    import std.array : array;
     import std.conv : text;
     import std.json : JSONType, JSONValue, parseJSON;
 
@@ -380,13 +378,33 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
         string[] globalMods;
         string[] viewers;
         uint chatterCount;
-    }
 
-    static auto mapJSONArrayToStringArray(const JSONValue json)
-    {
-        return json.array
-            .map!(a => a.str)
-            .array;
+        static auto fromJSON(const JSONValue json)
+        {
+            static auto mapJSONArrayToStringArray(const JSONValue json)
+            {
+                import std.algorithm.iteration : map;
+                import std.array : array;
+
+                return json.array
+                    .map!(a => a.str)
+                    .array;
+            }
+
+            Chatters chatters;
+            chatters.broadcaster = json["broadcster"].array[0].str;
+            chatters.moderators = mapJSONArrayToStringArray(json["moderators"]);
+            chatters.vips = mapJSONArrayToStringArray(json["vips"]);
+            chatters.staff = mapJSONArrayToStringArray(json["staff"]);
+            chatters.admins = mapJSONArrayToStringArray(json["admins"]);
+            chatters.globalMods = mapJSONArrayToStringArray(json["global_mods"]);
+            chatters.viewers = mapJSONArrayToStringArray(json["viewers"]);
+            chatters.chatterCount = cast(uint)json["chatter_count"].integer;
+            return chatters;
+        }
+
+        uint code;
+        auto success() const { return (code == 200); }
     }
 
     immutable chattersURL = text("https://tmi.twitch.tv/group/user/", broadcaster, "/chatters");
@@ -399,6 +417,57 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
             caller: caller,
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID);
+
+        switch (response.code)
+        {
+        case 200:
+            // 200 OK
+            /+
+                Successfully retrieved the broadcaster’s list of chatters.
+             +/
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                The broadcaster_id query parameter is required.
+                The ID in the broadcaster_id query parameter is not valid.
+                The moderator_id query parameter is required.
+                The ID in the moderator_id query parameter is not valid.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The ID in the moderator_id query parameter must match the
+                user ID in the access token.
+                The Authorization header is required and must contain a user access token.
+                The user access token must include the moderator:read:chatters scope.
+                The access token is not valid.
+                The client ID specified in the Client-Id header does not match
+                the client ID specified in the access token.
+             +/
+            goto default;
+
+        case 403:
+            // 403 Forbidden
+            /+
+                The user in the moderator_id query parameter is not one of the
+                broadcaster's moderators.
+             +/
+            goto default;
+
+        default:
+            /*import kameloso.common : logger;
+            enum pattern = "Failed to get chatters: <l>%d";
+            logger.errorf(pattern, response.code);*/
+
+            Chatters results;
+            results.code = response.code;
+            return results;
+        }
+
         immutable responseJSON = parseJSON(response.body);
 
         /*
@@ -442,16 +511,8 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        Chatters chatters;
-        chatters.broadcaster = (*chattersJSON)["broadcster"].array[0].str;
-        chatters.moderators = mapJSONArrayToStringArray((*chattersJSON)["moderators"]);
-        chatters.vips = mapJSONArrayToStringArray((*chattersJSON)["vips"]);
-        chatters.staff = mapJSONArrayToStringArray((*chattersJSON)["staff"]);
-        chatters.admins = mapJSONArrayToStringArray((*chattersJSON)["admins"]);
-        chatters.globalMods = mapJSONArrayToStringArray((*chattersJSON)["global_mods"]);
-        chatters.viewers = mapJSONArrayToStringArray((*chattersJSON)["viewers"]);
-        chatters.chatterCount = cast(uint)(*chattersJSON)["chatter_count"].integer;
-
+        auto chatters = Chatters.fromJSON(*chattersJSON);
+        chatters.code = response.code;
         return chatters;
     }
 
@@ -782,12 +843,14 @@ in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber
         immutable paginatedURL = after.length ?
             text(url, "&after=", after) :
             url;
+
         immutable response = sendHTTPRequest(
             plugin: plugin,
             url: paginatedURL,
             caller: caller,
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID);
+
         immutable responseJSON = parseJSON(response.body);
         immutable dataJSON = "data" in responseJSON;
 
@@ -988,7 +1051,12 @@ auto setChannelTitle(
 in (Fiber.getThis(), "Tried to call `setChannelTitle` from outside a fiber")
 in (channelName.length, "Tried to change a the channel title with an empty channel name string")
 {
-    return modifyChannelImpl(plugin, channelName, title, 0, caller);
+    return modifyChannelImpl(
+        plugin: plugin,
+        channelName: channelName,
+        title: title,
+        gameID: 0,
+        caller: caller);
 }
 
 
@@ -1015,7 +1083,12 @@ auto setChannelGame(
 in (Fiber.getThis(), "Tried to call `setChannelGame` from outside a fiber")
 in (gameID, "Tried to set the channel game with an empty channel name string")
 {
-    return modifyChannelImpl(plugin, channelName, string.init, gameID, caller);
+    return modifyChannelImpl(
+        plugin: plugin,
+        channelName: channelName,
+        title: string.init,
+        gameID: gameID,
+        caller: caller);
 }
 
 
@@ -1093,6 +1166,71 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
             verb: HTTPVerb.patch,
             body: cast(ubyte[])sink[],
             contentType: "application/json");
+
+        switch (response.code)
+        {
+        case 204:
+            // 204 No Content
+            /+
+                Successfully updated the channel’s properties.
+             +/
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                The broadcaster_id query parameter is required.
+                The request must update at least one property.
+                The title field may not contain an empty string.
+                The ID in game_id is not valid.
+                To update the delay field, the broadcaster must have partner status.
+                The list in the tags field exceeds the maximum number of tags allowed.
+                A tag in the tags field exceeds the maximum length allowed.
+                A tag in the tags field is empty.
+                A tag in the tags field contains special characters or spaces.
+                One or more tags in the tags field failed AutoMod review.
+                Game restricted for user's age and region
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                User requests CCL for a channel they don’t own
+                The ID in broadcaster_id must match the user ID found in the OAuth token.
+                The Authorization header is required and must specify a user access token.
+                The OAuth token must include the channel:manage:broadcast scope.
+                The OAuth token is not valid.
+                The ID in the Client-Id header must match the Client ID in the OAuth token.
+             +/
+            goto default;
+
+        case 403:
+            // 403 Forbidden
+            /+
+                User requested gaming CCLs to be added to their channel
+                Unallowed CCLs declared for underaged authorized user in a restricted country
+             +/
+            goto default;
+
+        case 429:
+            // 429 Too Many Requests
+            /+
+                User set the Branded Content flag too frequently
+             +/
+            goto default;
+
+        case 500:
+            // 500 Internal Server Error
+            goto default;
+
+        default:
+            /*import kameloso.common : logger;
+            enum pattern = "Failed to modify channel: <l>%d";
+            logger.errorf(pattern, response.code);*/
+            // Drop down
+            break;
+        }
 
         return ModifyChannelResults(response.code);
     }
@@ -1251,7 +1389,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
     }
 
     const room = channelName in plugin.rooms;
-    assert(room, "Tried to look up start commercial in a channel for which there existed no room");
+    assert(room, "Tried to start commercial in a channel for which there existed no room");
 
     enum url = "https://api.twitch.tv/helix/channels/commercial";
     enum bodyPattern = `
@@ -1274,6 +1412,69 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             verb: HTTPVerb.post,
             body: cast(ubyte[])body_,
             contentType: "application/json");
+
+        switch (response.code)
+        {
+        case 200:
+            // 200 OK
+            /+
+                Successfully started the commercial.
+             +/
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                The broadcaster_id query parameter is required.
+                The length query parameter is required.
+                The ID in broadcaster_id is not valid.
+                To start a commercial, the broadcaster must be streaming live.
+                The broadcaster may not run another commercial until the cooldown
+                period expires. The retry_after field in the previous start
+                commercial response specifies the amount of time the broadcaster
+                must wait between running commercials.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The ID in broadcaster_id must match the user ID found in the request’s OAuth token.
+                The Authorization header is required and must contain a user access token.
+                The user access token must include the channel:edit:commercial scope.
+                The OAuth token is not valid.
+                The client ID specified in the Client-Id header does not match
+                the client ID specified in the OAuth token.
+             +/
+            goto default;
+
+        case 404:
+            // 404 Not Found
+            /+
+                The ID in broadcaster_id was not found.
+             +/
+            goto default;
+
+        case 429:
+            // 429 Too Many Requests
+            /+
+                The broadcaster may not run another commercial until the cooldown
+                period expires. The retry_after field in the previous start
+                commercial response specifies the amount of time the broadcaster
+                must wait between running commercials.
+             +/
+            goto default;
+
+        default:
+            /*import kameloso.common : logger;
+            enum pattern = "Failed to start commercial: <l>%d";
+            logger.errorf(pattern, response.code);*/
+
+            StartCommercialResults results;
+            results.code = response.code;
+            return results;
+        }
+
         immutable responseJSON = parseJSON(response.body);
 
         /*
@@ -1660,7 +1861,7 @@ public:
         caller = Name of the calling function.
 
     Returns:
-        An array of Voldemort `TwitchPoll` structs.
+        A Voldemort containing an array of [TwitchPoll]s.
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON.
@@ -1678,6 +1879,13 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
     import std.json : JSONType, parseJSON;
     import std.datetime.systime : SysTime;
 
+    static struct GetPollResults
+    {
+        TwitchPoll[] polls;
+        uint code;
+        auto success() const { return (code == 200); }
+    }
+
     const room = channelName in plugin.rooms;
     assert(room, "Tried to get polls of a channel for which there existed no room");
 
@@ -1689,17 +1897,18 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
 
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
+    // Keep these outside to stop exceptions from restarting the process
+    GetPollResults results;
+    string after;
+
     auto getPollsDg()
     {
-        TwitchPoll[] polls;
-        string after;
-        uint retry;
-
         do
         {
             immutable paginatedURL = after.length ?
                 text(url, "&after=", after) :
                 url;
+
             immutable response = sendHTTPRequest(
                 plugin: plugin,
                 url: paginatedURL,
@@ -1709,12 +1918,55 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 verb: HTTPVerb.get,
                 body: cast(ubyte[])null,
                 contentType: "application/json");
+
+            switch (response.code)
+            {
+            case 200:
+                // 200 OK
+                /+
+                    Successfully retrieved the broadcaster's polls.
+                 +/
+                break;
+
+            case 400:
+                // 400 Bad Request
+                /+
+                    The broadcaster_id query parameter is required.
+                 +/
+                goto default;
+
+            case 401:
+                // 401 Unauthorized
+                /+
+                    The ID in broadcaster_id must match the user ID in the access token.
+                    The Authorization header is required and must contain a user access token.
+                    The user access token is missing the channel:read:polls scope.
+                    The access token is not valid.
+                    The client ID specified in the Client-Id header must match
+                    the client ID specified in the access token.
+                 +/
+                goto default;
+
+            case 404:
+                // 404 Not Found
+                /+
+                    None of the IDs in the id query parameters were found.
+                 +/
+                goto default;
+
+            default:
+                /*import kameloso.common : logger;
+                enum pattern = "Failed to get polls: <l>%d";
+                logger.errorf(pattern, response.code);*/
+                results.code = response.code;
+                return results;
+            }
+
             immutable responseJSON = parseJSON(response.body);
 
             if (responseJSON.type != JSONType.object)
             {
-                // Invalid response in some way, retry until we reach the limit
-                if (++retry < TwitchPlugin.delegateRetries) continue;
+                // Invalid response in some way
                 enum message = "`getPolls` response has unexpected JSON " ~
                     "(wrong JSON type)";
                 throw new UnexpectedJSONException(message, responseJSON);
@@ -1725,8 +1977,6 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
             if (!dataJSON)
             {
                 // For some reason we received an object that didn't contain data
-                // Retry as above
-                if (++retry < TwitchPlugin.delegateRetries) continue;
                 enum message = "`getPolls` response has unexpected JSON " ~
                     `(no "data" key)`;
                 throw new UnexpectedJSONException(message, responseJSON);
@@ -1740,19 +1990,16 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 throw new EmptyDataJSONException(message, responseJSON);
             }
 
-            // See TwitchPoll.fromJSON for response layout
-            retry = 0;
-
             foreach (const pollJSON; dataJSON.array)
             {
-                polls ~= TwitchPoll.fromJSON(pollJSON);
+                results.polls ~= TwitchPoll.fromJSON(pollJSON);
             }
 
             after = responseJSON["after"].str;
         }
         while (after.length);
 
-        return polls;
+        return results;
     }
 
     return retryDelegate(plugin, &getPollsDg);
@@ -1793,6 +2040,13 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
     import std.array : Appender, replace;
     import std.format : format;
     import std.json : JSONType, parseJSON;
+
+    static struct CreatePollResults
+    {
+        TwitchPoll poll;
+        uint code;
+        auto success() const { return (code == 200); }
+    }
 
     const room = channelName in plugin.rooms;
     assert(room, "Tried to create a poll in a channel for which there existed no room");
@@ -1838,6 +2092,57 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             verb: HTTPVerb.post,
             body: cast(ubyte[])body_,
             contentType: "application/json");
+
+        switch (response.code)
+        {
+        case 200:
+            // 200 OK
+            /+
+                Successfully created the poll.
+             +/
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                The broadcaster_id field is required.
+                The title field is required.
+                The choices field is required.
+                The duration field is required.
+                The value in duration is outside the allowed range of values.
+                The value in channel_points_per_vote is outside the allowed range of values.
+                The value in bits_per_vote is outside the allowed range of values.
+                The poll's title is too long.
+                The choice's title is too long.
+                The choice's title failed AutoMod checks.
+                The number of choices in the poll may not be less than 2 or greater that 5.
+                The broadcaster already has a poll that's running; you may not
+                create another poll until the current poll completes.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The ID in broadcaster_id must match the user ID in the access token.
+                The Authorization header is required and must contain a user access token.
+                The user access token is missing the channel:manage:polls scope.
+                The access token is not valid.
+                The client ID specified in the Client-Id header does not match
+                the client ID specified in the access token.
+             +/
+            goto default;
+
+        default:
+            /*import kameloso.common : logger;
+            enum pattern = "Failed to create poll: <l>%d";
+            logger.errorf(pattern, response.code);*/
+
+            CreatePollResults results;
+            results.code = response.code;
+            return results;
+        }
+
         immutable responseJSON = parseJSON(response.body);
 
         if (responseJSON.type != JSONType.object)
@@ -1866,7 +2171,10 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             throw new EmptyDataJSONException(message, responseJSON);
         }
 
-        return TwitchPoll.fromJSON(dataJSON.array[0]);
+        CreatePollResults results;
+        results.code = response.code;
+        results.poll = TwitchPoll.fromJSON(dataJSON.array[0]);
+        return results;
     }
 
     return retryDelegate(plugin, &createPollDg);
@@ -1906,6 +2214,13 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
+    static struct EndPollResults
+    {
+        TwitchPoll poll;
+        uint code;
+        auto success() const { return (code == 200); }
+    }
+
     const room = channelName in plugin.rooms;
     assert(room, "Tried to end a poll in a channel for which there existed no room");
 
@@ -1932,6 +2247,49 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             verb: HTTPVerb.patch,
             body: cast(ubyte[])body_,
             contentType: "application/json");
+
+        switch (response.code)
+        {
+        case 200:
+            // 200 OK
+            /+
+                Successfully ended the poll.
+             +/
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                The broadcaster_id field is required.
+                The id field is required.
+                The status field is required.
+                The value in the status field is not valid.
+                The poll must be active to terminate or archive it.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The ID in broadcaster_id must match the user ID in the user access token.
+                The Authorization header is required and must contain a user access token.
+                The user access token must include the channel:manage:polls scope.
+                The access token is not valid.
+                The client ID specified in the Client-Id header must match the
+                client ID specified in the access token.
+             +/
+            goto default;
+
+        default:
+            /*import kameloso.common : logger;
+            enum pattern = "Failed to end poll: <l>%d";
+            logger.errorf(pattern, response.code);*/
+
+            EndPollResults results;
+            results.code = response.code;
+            return results;
+        }
+
         immutable responseJSON = parseJSON(response.body);
 
         /*
@@ -1998,7 +2356,10 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             throw new EmptyDataJSONException(message, responseJSON);
         }
 
-        return TwitchPoll.fromJSON(dataJSON.array[0]);
+        EndPollResults results;
+        results.code = response.code;
+        results.poll = TwitchPoll.fromJSON(dataJSON.array[0]);
+        return results;
     }
 
     return retryDelegate(plugin, &endPollDg);
@@ -2034,10 +2395,12 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
     auto getBotListDg()
     {
         enum url = "https://api.twitchinsights.net/v1/bots/online";
+
         immutable response = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller);
+
         immutable responseJSON = parseJSON(response.body);
 
         /*
@@ -2252,7 +2615,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
         caller = Name of the calling function.
 
     Returns:
-        An array of Voldemort subscribers.
+        A Voldemort containing an array of subscribers.
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON.
@@ -2270,50 +2633,94 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
-    const room = channelName in plugin.rooms;
-    assert(room, "Tried to get subscribers of a channel for which there existed no room");
-
-    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-
-    auto getSubscribersDg()
+    static struct GetSubscribersResults
     {
-        static struct User
-        {
-            string name;
-            string displayName;
-            ulong id;
-        }
-
         static struct Subscription
         {
+            static struct User
+            {
+                string name;
+                string displayName;
+                ulong id;
+            }
+
             User user;
             User gifter;
             bool wasGift;
             uint number;
-            uint total;
         }
 
-        Appender!(Subscription[]) subs;
-        string after;
-        uint number;
-        uint retry;
+        Subscription[] subs;
+        uint total;
+        uint code;
+        auto success() const { return code == 200; }
+    }
 
-        immutable firstURL = "https://api.twitch.tv/helix/subscriptions?broadcaster_id=" ~ room.id.to!string;
-        immutable subsequentURL = totalOnly ?
-            firstURL ~ "&first=1&after=" :
-            firstURL ~ "&after=";
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to get subscribers of a channel for which there existed no room");
 
+    GetSubscribersResults results;
+    Appender!(GetSubscribersResults.Subscription[]) subs;
+    string after;
+    uint number;
+
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+    immutable firstURL = "https://api.twitch.tv/helix/subscriptions?broadcaster_id=" ~ room.id.to!string;
+    immutable subsequentURL = totalOnly ?
+        firstURL ~ "&first=1&after=" :
+        firstURL ~ "&after=";
+
+    auto getSubscribersDg()
+    {
         do
         {
             immutable url = after.length ?
                 subsequentURL ~ after :
                 firstURL;
+
             immutable response = sendHTTPRequest(
                 plugin: plugin,
                 url: url,
                 caller: caller,
                 authorisationHeader: authorizationBearer,
                 clientID: TwitchPlugin.clientID);
+
+            switch (response.code)
+            {
+            case 200:
+                // 200 OK
+                /+
+                    Successfully retrieved the broadcaster’s list of subscribers.
+                 +/
+                break;
+
+            case 400:
+                // 400 Bad Request
+                /+
+                    The broadcaster_id query parameter is required.
+                 +/
+                goto default;
+
+            case 401:
+                // 401 Unauthorized
+                /+
+                    The ID in broadcaster_id must match the user ID found in the request’s OAuth token.
+                    The Authorization header is required and must contain a user access token.
+                    The user access token must include the channel:read:subscriptions scope.
+                    The access token is not valid.
+                    The client ID specified in the Client-Id header does not match
+                    the client ID specified in the access token.
+                 +/
+                goto default;
+
+            default:
+                /*import kameloso.common : logger;
+                enum pattern = "Failed to get subscribers: <l>%d";
+                logger.errorf(pattern, response.code);*/
+                results.code = response.code;
+                return results;
+            }
+
             immutable responseJSON = parseJSON(response.body);
 
             /*
@@ -2344,8 +2751,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
 
             if (responseJSON.type != JSONType.object)
             {
-                // Invalid response in some way, retry until we reach the limit
-                if (++retry < TwitchPlugin.delegateRetries) continue;
+                // Invalid response in some way
                 enum message = "`getSubscribers` response has unexpected JSON";
                 throw new UnexpectedJSONException(message, responseJSON);
             }
@@ -2354,31 +2760,24 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
 
             if (!dataJSON)
             {
-                // As above
-                if (++retry < TwitchPlugin.delegateRetries) continue;
                 enum message = "`getSubscribers` response has unexpected JSON " ~
                     `(no "data" key)`;
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
-            immutable total = cast(uint)responseJSON["total"].integer;
+            results.total = cast(uint)responseJSON["total"].integer;
 
             if (totalOnly)
             {
                 // We only want the total number of subscribers
-                Subscription sub;
-                sub.total = total;
-                subs.put(sub);
-                return subs[];
+                return results;
             }
 
-            if (!subs[].length) subs.reserve(total);
-
-            retry = 0;
+            if (!subs[].length) subs.reserve(results.total);
 
             foreach (immutable subJSON; dataJSON.array)
             {
-                Subscription sub;
+                GetSubscribersResults.Subscription sub;
                 sub.user.id = subJSON["user_id"].str.to!ulong;
                 sub.user.name = subJSON["user_login"].str;
                 sub.user.displayName = subJSON["user_name"].str;
@@ -2386,7 +2785,6 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 sub.gifter.id = subJSON["gifter_id"].str.to!ulong;
                 sub.gifter.name = subJSON["gifter_login"].str;
                 sub.gifter.displayName = subJSON["gifter_name"].str;
-                if (number == 0) sub.total = total;
                 sub.number = number++;
                 subs.put(sub);
             }
@@ -2401,16 +2799,18 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
         }
         while (after.length);
 
-        return subs[];
+        results.subs = subs[];
+        return results;
     }
 
     return retryDelegate(plugin, &getSubscribersDg);
 }
 
 
-// createShoutout
+// getUserPlayedGame
 /++
-    Prepares a `Shoutout` Voldemort struct with information needed to compose a shoutout.
+    Prepares a Voldemort struct with information about what game a user is or was
+    last seen playing.
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
@@ -2420,20 +2820,20 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
         caller = Name of the calling function.
 
     Returns:
-        Voldemort `Shoutout` struct.
+        Voldemort `UserPlayedGameResults` struct.
  +/
-auto createShoutout(
+auto getUserPlayedGame(
     TwitchPlugin plugin,
     const string login,
     const string caller = __FUNCTION__)
-in (Fiber.getThis(), "Tried to call `createShoutout` from outside a fiber")
-in (login.length, "Tried to create a shoutout with an empty login name string")
+in (Fiber.getThis(), "Tried to call `getUserPlayedGame` from outside a fiber")
+in (login.length, "Tried to call `getUserPlayedGame` with an empty login name string")
 {
     import std.json : JSONType;
 
-    static struct Shoutout
+    static struct UserPlayedGameResults
     {
-        enum ShoutoutState
+        enum State
         {
             success,
             noSuchUser,
@@ -2441,15 +2841,13 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
             otherError,
         }
 
-        ShoutoutState state;
+        State state;
         string displayName;
         string gameName;
     }
 
-    auto shoutoutDg()
+    auto getUserPlayedGameDg()
     {
-        Shoutout shoutout;
-
         try
         {
             immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ login;
@@ -2459,10 +2857,11 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
             immutable channelURL = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ id;
             immutable channelJSON = getTwitchData(plugin, channelURL, caller);
 
-            shoutout.state = Shoutout.ShoutoutState.success;
-            shoutout.displayName = channelJSON["broadcaster_name"].str;
-            shoutout.gameName = channelJSON["game_name"].str;
-            return shoutout;
+            UserPlayedGameResults results;
+            results.state = UserPlayedGameResults.State.success;
+            results.displayName = channelJSON["broadcaster_name"].str;
+            results.gameName = channelJSON["game_name"].str;
+            return results;
         }
         catch (ErrorJSONException e)
         {
@@ -2470,25 +2869,141 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
                 (e.json["error"].str == "Bad Request") &&
                 (e.json["message"].str == "Invalid username(s), email(s), or ID(s). Bad Identifiers."))
             {
-                shoutout.state = Shoutout.ShoutoutState.noSuchUser;
-                return shoutout;
+                UserPlayedGameResults results;
+                results.state = UserPlayedGameResults.State.noSuchUser;
+                return results;
             }
 
-            shoutout.state = Shoutout.ShoutoutState.otherError;
-            return shoutout;
+            UserPlayedGameResults results;
+            results.state = UserPlayedGameResults.State.otherError;
+            return results;
         }
         catch (EmptyDataJSONException _)
         {
-            shoutout.state = Shoutout.ShoutoutState.noSuchUser;
-            return shoutout;
+            UserPlayedGameResults results;
+            results.state = UserPlayedGameResults.State.noSuchUser;
+            return results;
         }
-        catch (Exception e)
+        /*catch (Exception e)
         {
             throw e;
-        }
+        }*/
     }
 
-    return retryDelegate(plugin, &shoutoutDg);
+    return retryDelegate(plugin, &getUserPlayedGameDg);
+}
+
+
+// sendShoutout
+/++
+    Sends a native Twitch shoutout.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
+        sourceChannelID = ID of the channel sending the shoutout.
+        targetChannelID = ID of the channel receiving the shoutout.
+        caller = Name of the calling function.
+
+    Returns:
+        A `ShoutoutResults` Voldemort struct.
+ +/
+auto sendShoutout(
+    TwitchPlugin plugin,
+    const ulong sourceChannelID,
+    const ulong targetChannelID,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis(), "Tried to call `sendShoutout` from outside a fiber")
+in (sourceChannelID, "Tried to call `sendShoutout` with an unset source channel ID")
+in (targetChannelID, "Tried to call `sendShoutout` with an unset target channel ID")
+{
+    import std.format : format;
+
+    static struct ShoutoutResults
+    {
+        uint code;
+        auto success() const { return (code == 204); }
+    }
+
+    enum urlPattern = "https://api.twitch.tv/helix/chat/shoutouts" ~
+        "?from_broadcaster_id=%d" ~
+        "&to_broadcaster_id=%d" ~
+        "&moderator_id=%d";
+
+    immutable url = urlPattern.format(sourceChannelID, targetChannelID, plugin.transient.botID);
+
+    auto sendShoutoutDg()
+    {
+        immutable response = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: plugin.transient.authorizationBearer,
+            clientID: TwitchPlugin.clientID,
+            verb: HTTPVerb.post);
+
+        switch (response.code)
+        {
+        case 204:
+            // 204 No Content
+            /+
+                Successfully sent the specified broadcaster a Shoutout.
+             +/
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                The from_broadcaster_id query parameter is required.
+                The ID in the from_broadcaster_id query parameter is not valid.
+                The to_broadcaster_id query parameter is required.
+                The ID in the to_broadcaster_id query parameter is not valid.
+                The broadcaster may not give themselves a Shoutout.
+                The broadcaster is not streaming live or does not have one or more viewers.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The ID in moderator_id must match the user ID in the user access token.
+                The Authorization header is required and must contain a user access token.
+                The user access token must include the moderator:manage:shoutouts scope.
+                The access token is not valid.
+                The client ID specified in the Client-Id header does not match
+                the client ID specified in the access token.
+             +/
+            goto default;
+
+        case 403:
+            // 403 Forbidden
+            /+
+                The user in moderator_id is not one of the broadcaster's moderators.
+                The broadcaster may not send the specified broadcaster a Shoutout.
+             +/
+            goto default;
+
+        case 429:
+            // 429 Too Many Requests
+            /+
+                The broadcaster exceeded the number of Shoutouts they may send
+                within a given window. See the endpoint's Rate Limits.
+                The broadcaster exceeded the number of Shoutouts they may send
+                the same broadcaster within a given window. See the endpoint's Rate Limits.
+             +/
+            goto default;
+
+        default:
+            /*import kameloso.common : logger;
+            enum pattern = "Failed to send shoutout: <l>%d";
+            logger.errorf(pattern, response.code);*/
+            // Drop down
+            break;
+        }
+
+        return ShoutoutResults(response.code);
+    }
+
+    return retryDelegate(plugin, &sendShoutoutDg);
 }
 
 
@@ -2519,6 +3034,12 @@ in (channelName.length, "Tried to delete a message without providing a channel n
     import std.format : format;
     import core.time : msecs;
 
+    static struct DeleteResults
+    {
+        uint code;
+        auto success() const { return (code == 204) || (code == 404); }
+    }
+
     const room = channelName in plugin.rooms;
     assert(room, "Tried to delete a message in a nonexistent room");
 
@@ -2529,17 +3050,71 @@ in (channelName.length, "Tried to delete a message without providing a channel n
         (messageID.length ?
             "&message_id=%s" :
             "%s");
+
     immutable url = urlPattern.format(room.id, plugin.transient.botID, messageID);
 
     auto deleteDg()
     {
-        return sendHTTPRequest(
+        immutable response = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.delete_);
+
+        switch (response.code)
+        {
+        case 204:
+            // 204 No Content
+            /+
+                Successfully removed the specified messages.
+             +/
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                You may not delete another moderator's messages.
+                You may not delete the broadcaster's messages.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The Authorization header is required and must contain a user access token.
+                The user access token is missing the moderator:manage:chat_messages scope.
+                The OAuth token is not valid.
+                The client ID specified in the Client-Id header does not match
+                the client ID specified in the OAuth token.
+             +/
+            goto default;
+
+        case 403:
+            // 403 Forbidden
+            /+
+                The user in moderator_id is not one of the broadcaster's moderators.
+             +/
+            goto default;
+
+        case 404:
+            // 404 Not Found
+            /+
+                The ID in message_id was not found.
+                The specified message was created more than 6 hours ago.
+             +/
+            break;
+
+        default:
+            /*import kameloso.common : logger;
+            enum pattern = "Failed to delete message: <l>%d";
+            logger.errorf(pattern, response.code);*/
+            // Drop down
+            break;
+        }
+
+        return DeleteResults(response.code);
     }
 
     static immutable failedDeleteRetry = 100.msecs;
@@ -2558,6 +3133,7 @@ in (channelName.length, "Tried to delete a message without providing a channel n
         durationSeconds = Duration of timeout in seconds.
         reason = Timeout reason.
         caller = Name of the calling function.
+        recursing = Whether or not this function is recursing into itself.
 
     Returns:
         A Voldemort struct with information about the timeout action.
@@ -2574,7 +3150,8 @@ auto timeoutUser(
     const ulong userID,
     const uint durationSeconds,
     const string reason = string.init,
-    const string caller = __FUNCTION__)
+    const string caller = __FUNCTION__,
+    const bool recursing = false)
 in (Fiber.getThis(), "Tried to call `timeoutUser` from outside a fiber")
 in (channelName.length, "Tried to timeout a user without providing a channel")
 in (userID, "Tried to timeout a user with an unset user ID")
@@ -2582,11 +3159,12 @@ in (userID, "Tried to timeout a user with an unset user ID")
     import std.algorithm.comparison : min;
     import std.conv : to;
     import std.format : format;
+    import std.json : JSONValue;
 
     const room = channelName in plugin.rooms;
     assert(room, "Tried to timeout a user in a nonexistent room");
 
-    static struct Timeout
+    static struct TimeoutResults
     {
         ulong broadcasterID;
         ulong moderatorID;
@@ -2594,7 +3172,23 @@ in (userID, "Tried to timeout a user with an unset user ID")
         string createdAt;
         string endTime;
         uint code;
+
+        auto success() const { return (code == 200); }
+
+        static auto fromJSON(const JSONValue json)
+        {
+            TimeoutResults results;
+            results.broadcasterID = json["broadcaster_id"].str.to!ulong;
+            results.moderatorID = json["moderator_id"].str.to!ulong;
+            results.userID = json["user_id"].str.to!ulong;
+            results.createdAt = json["created_at"].str;
+            results.endTime = json["end_time"].str;
+            return results;
+        }
     }
+
+    // Work around forward-declaration of auto return type
+    if (true == false) return TimeoutResults.init;
 
     enum maxDurationSeconds = 1_209_600;  // 14 days
 
@@ -2632,6 +3226,89 @@ in (userID, "Tried to timeout a user with an unset user ID")
             contentType: "application/json");
         immutable responseJSON = parseJSON(response.body);
 
+        switch (response.code)
+        {
+        case 200:
+            // 200 OK
+            /+
+                Successfully banned the user or placed them in a timeout.
+             +/
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                The broadcaster_id query parameter is required.
+                The moderator_id query parameter is required.
+                The user_id field is required.
+                The text in the reason field is too long.
+                The value in the duration field is not valid.
+                The user specified in the user_id field may not be banned.
+                The user specified in the user_id field may not be put in a timeout.
+                The user specified in the user_id field is already banned.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The ID in moderator_id must match the user ID in the access token.
+                The Authorization header is required and must contain a user access token.
+                The user access token must include the moderator:manage:banned_users scope.
+                The access token is not valid.
+                The client ID specified in the Client-Id header does not match
+                the client ID specified in the access token.
+             +/
+            goto default;
+
+        case 403:
+            // 403 Forbidden
+            /+
+                The user in moderator_id is not one of the broadcaster's moderators.
+             +/
+            goto default;
+
+        case 409:
+            // 409 Conflict
+            /+
+                You may not update the user's ban state while someone else is
+                updating the state. For example, someone else is currently
+                banning the user or putting them in a timeout, moving the user
+                from a timeout to a ban, or removing the user from a ban or timeout.
+                Please retry your request.
+             +/
+            if (!recursing)
+            {
+                // Retry once
+                return timeoutUser(
+                    plugin: plugin,
+                    channelName: channelName,
+                    userID: userID,
+                    durationSeconds: durationSeconds,
+                    reason: reason,
+                    caller: caller,
+                    recursing: true);
+            }
+            goto default;
+
+        case 429:
+            // 429 Too Many Requests
+            /+
+                The app has exceeded the number of requests it may make per
+                minute for this broadcaster.
+             +/
+            goto default;
+
+        default:
+            /*import kameloso.common : logger;
+            enum pattern = "Failed to delete message: <l>%d";
+            logger.errorf(pattern, response.code);*/
+
+            TimeoutResults results;
+            results.code = response.code;
+            return results;
+        }
+
         if (responseJSON.type != JSONType.object)
         {
             enum message = "`timeoutUser` response has unexpected JSON " ~
@@ -2648,14 +3325,9 @@ in (userID, "Tried to timeout a user with an unset user ID")
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        Timeout timeout;
-        timeout.broadcasterID = (*dataJSON)["broadcaster_id"].str.to!ulong;
-        timeout.moderatorID = (*dataJSON)["moderator_id"].str.to!ulong;
-        timeout.userID = (*dataJSON)["user_id"].str.to!ulong;
-        timeout.createdAt = (*dataJSON)["created_at"].str;
-        timeout.endTime = (*dataJSON)["end_time"].str;
-        timeout.code = response.code;
-        return timeout;
+        auto results = TimeoutResults.fromJSON(*dataJSON);
+        results.code = response.code;
+        return results;
     }
 
     return retryDelegate(plugin, &timeoutDg);
@@ -2714,37 +3386,23 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
 
     auto sendWhisperDg()
     {
-        import std.json : JSONValue, parseJSON;
+        immutable response = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: plugin.transient.authorizationBearer,
+            clientID: TwitchPlugin.clientID,
+            verb: HTTPVerb.post,
+            body: cast(ubyte[])body_,
+            contentType: "application/json");
 
-        JSONValue responseJSON;
-        uint responseCode;
-
-        try
-        {
-            immutable response = sendHTTPRequest(
-                plugin: plugin,
-                url: url,
-                caller: caller,
-                authorisationHeader: plugin.transient.authorizationBearer,
-                clientID: TwitchPlugin.clientID,
-                verb: HTTPVerb.post,
-                body: cast(ubyte[])body_,
-                contentType: "application/json");
-
-            responseJSON = parseJSON(response.body);  // body should be empty, but in case it isn't
-            responseCode = response.code;
-        }
-        catch (ErrorJSONException e)
-        {
-            responseJSON = e.json;
-            responseCode = cast(uint)e.json["status"].integer;
-        }
-
-        switch (responseCode)
+        switch (response.code)
         {
         case 204:
             // 204 No Content
-            // Successfully sent the whisper message or the message was silently dropped.
+            /+
+                Successfully sent the whisper message or the message was silently dropped.
+             +/
             break;
 
         case 400:
@@ -2801,10 +3459,11 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
             /*import kameloso.common : logger;
             enum pattern = "Failed to send whisper: <l>%s";
             logger.errorf(pattern, responseJSON["message"].str);*/
+            // Drop down
             break;
         }
 
-        return WhisperResult(responseCode);
+        return WhisperResult(response.code);
     }
 
     return retryDelegate(plugin, &sendWhisperDg);
@@ -2889,43 +3548,30 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
     immutable colourArgument = colour.among!("primary", "blue", "green", "orange", "purple") ?
         colour :
         "primary";
+
     immutable url = urlPattern.format(channelID, plugin.transient.botID);
     immutable messageArgument = message.replace(`"`, `\"`);  // won't work with already escaped quotes
     immutable body_ = bodyPattern.format(messageArgument, colourArgument);
 
     auto sendAnnouncementDg()
     {
-        import std.json : JSONValue, parseJSON;
+        immutable response = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: plugin.transient.authorizationBearer,
+            clientID: TwitchPlugin.clientID,
+            verb: HTTPVerb.post,
+            body: cast(ubyte[])body_,
+            contentType: "application/json");
 
-        JSONValue responseJSON;
-        uint responseCode;
-
-        try
-        {
-            immutable response = sendHTTPRequest(
-                plugin: plugin,
-                url: url,
-                caller: caller,
-                authorisationHeader: plugin.transient.authorizationBearer,
-                clientID: TwitchPlugin.clientID,
-                verb: HTTPVerb.post,
-                body: cast(ubyte[])body_,
-                contentType: "application/json");
-
-            responseJSON = parseJSON(response.body);  // body should be empty, but in case it isn't
-            responseCode = response.code;
-        }
-        catch (ErrorJSONException e)
-        {
-            responseJSON = e.json;
-            responseCode = cast(uint)e.json["status"].integer;
-        }
-
-        switch (responseCode)
+        switch (response.code)
         {
         case 204:
             // 204 No Content
-            // Successfully sent the announcement
+            /+
+                Successfully sent the announcement
+             +/
             break;
 
         case 400:
@@ -2959,12 +3605,13 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
 
         default:
             /*import kameloso.common : logger;
-            enum pattern = "Failed to send announcement; response code <l>%d";
-            logger.errorf(pattern, responseCode);*/
+            enum pattern = "Failed to send announcement: <l>%d";
+            logger.errorf(pattern, response.code);*/
+            // Drop down
             break;
         }
 
-        return AnnouncementResults(responseCode);
+        return AnnouncementResults(response.code);
     }
 
     return retryDelegate(plugin, &sendAnnouncementDg);
@@ -3025,37 +3672,23 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
 
     auto warnUserDg()
     {
-        import std.json : JSONValue, parseJSON;
+        immutable response = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: plugin.transient.authorizationBearer,
+            clientID: TwitchPlugin.clientID,
+            verb: HTTPVerb.post,
+            body: cast(ubyte[])body_,
+            contentType: "application/json");
 
-        JSONValue responseJSON;
-        uint responseCode;
-
-        try
-        {
-            immutable response = sendHTTPRequest(
-                plugin: plugin,
-                url: url,
-                caller: caller,
-                authorisationHeader: plugin.transient.authorizationBearer,
-                clientID: TwitchPlugin.clientID,
-                verb: HTTPVerb.post,
-                body: cast(ubyte[])body_,
-                contentType: "application/json");
-
-            responseJSON = parseJSON(response.body);  // body should be empty, but in case it isn't
-            responseCode = response.code;
-        }
-        catch (ErrorJSONException e)
-        {
-            responseJSON = e.json;
-            responseCode = cast(uint)e.json["status"].integer;
-        }
-
-        switch (responseCode)
+        switch (response.code)
         {
         case 200:
             // 200 OK
-            // Successfully warned the user
+            /+
+                Successfully warned the user
+             +/
             break;
 
         case 400:
@@ -3116,14 +3749,27 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
 
         default:
             /*import kameloso.common : logger;
-            import std.stdio : writeln;
-
-            enum message = "Failed to warn user";
-            logger.error(message);
-            writeln(responseJSON.toPrettyString);*/
+            enum pattern = "Failed to send warning: <l>%d";
+            logger.errorf(pattern, response.code);*/
+            // Drop down
+            break;
         }
 
-        return WarnResults(responseCode);
+        /*
+        {
+            "data": [
+                {
+                "broadcaster_id": "404040",
+                "user_id": "9876",
+                "moderator_id": "404041",
+                "reason": "stop doing that!"
+                }
+            ]
+        }
+         */
+
+        // We don't really care about the response, so skip parsing it.
+        return WarnResults(response.code);
     }
 
     return retryDelegate(plugin, &warnUserDg);

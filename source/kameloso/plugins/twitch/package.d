@@ -1396,10 +1396,10 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
         }
     }
 
-    immutable shoutout = createShoutout(plugin, login);
+    immutable userPlayedGame = getUserPlayedGame(plugin, login);
 
-    with (typeof(shoutout).ShoutoutState)
-    final switch (shoutout.state)
+    with (typeof(userPlayedGame).State)
+    final switch (userPlayedGame.state)
     {
     case success:
         // Drop down
@@ -1418,7 +1418,7 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
     const stream = getStream(plugin, login);
     string lastSeenPlayingPattern = "%s";  // mutable
 
-    if (shoutout.gameName.length)
+    if (userPlayedGame.gameName.length)
     {
         lastSeenPlayingPattern = stream.live ?
             " (currently playing %s)" :
@@ -1426,7 +1426,7 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
     }
 
     immutable pattern = "Shoutout to %s! Visit them at https://twitch.tv/%s !" ~ lastSeenPlayingPattern;
-    immutable message = pattern.format(shoutout.displayName, login, shoutout.gameName);
+    immutable message = pattern.format(userPlayedGame.displayName, login, userPlayedGame.gameName);
 
     foreach (immutable i; 0..numTimes)
     {
@@ -1572,8 +1572,8 @@ void onCommandSubs(TwitchPlugin plugin, const IRCEvent event)
     try
     {
         enum pattern = "%s has %d subscribers.";
-        const subs = getSubscribers(plugin, event.channel.name, totalOnly: true);
-        immutable message = pattern.format(room.broadcasterDisplayName, subs[0].total);
+        const results = getSubscribers(plugin, event.channel.name, totalOnly: true);
+        immutable message = pattern.format(room.broadcasterDisplayName, results.total);
         chan(plugin.state, event.channel.name, message);
     }
     catch (MissingBroadcasterTokenException e)
@@ -1972,9 +1972,9 @@ void onCommandStartPoll(TwitchPlugin plugin, const IRCEvent event)
 
     try
     {
-        const poll = createPoll(plugin, event.channel.name, title, durationString, choices);
+        const results = createPoll(plugin, event.channel.name, title, durationString, choices);
         enum pattern = `Poll "%s" created.`;
-        immutable message = pattern.format(poll.title);
+        immutable message = pattern.format(results.poll.title);
         chan(plugin.state, event.channel.name, message);
     }
     catch (ErrorJSONException e)
@@ -2050,29 +2050,29 @@ void onCommandEndPoll(TwitchPlugin plugin, const IRCEvent event)
 
     try
     {
-        const polls = getPolls(plugin, event.channel.name);
+        const results = getPolls(plugin, event.channel.name);
 
-        if (!polls.length)
+        if (!results.polls.length)
         {
             enum message = "There are no active polls to end.";
             return chan(plugin.state, event.channel.name, message);
         }
 
-        const endedPoll = endPoll(
+        const endResults = endPoll(
             plugin: plugin,
             channelName: event.channel.name,
-            pollID: polls[0].pollID,
+            pollID: results.polls[0].pollID,
             terminate: true);
 
-        alias Status = typeof(endedPoll.status);
+        alias Status = typeof(endResults.poll.status);
 
-        if (endedPoll.status != Status.active)
+        if (endResults.poll.status != Status.active)
         {
             import lu.conv : toString;
             import std.format : format;
 
             enum pattern = "Poll ended; status %s";
-            immutable message = pattern.format(endedPoll.status.toString);
+            immutable message = pattern.format(endResults.poll.status.toString);
             chan(plugin.state, event.channel.name, message);
         }
         else
@@ -2160,9 +2160,9 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
 
         try
         {
-            immutable response = deleteMessage(plugin, event.channel.name, storedEvent.id);
+            immutable results = deleteMessage(plugin, event.channel.name, storedEvent.id);
 
-            if ((response.code >= 200) && (response.code < 300))
+            if (results.success)
             {
                 return true;
             }
@@ -2172,14 +2172,6 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
 
                 enum pattern = "Failed to delete a message from <h>%s</> in <l>%s";
                 logger.warningf(pattern, nameOf(storedEvent.sender), event.channel.name);
-
-                version(PrintStacktraces)
-                {
-                    import std.stdio : stdout, writeln;
-                    writeln(response.body);
-                    writeln("code: ", response.code);
-                    stdout.flush();
-                }
                 return false;
             }
         }

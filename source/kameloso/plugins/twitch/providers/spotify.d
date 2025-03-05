@@ -221,6 +221,7 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
         "&redirect_uri=http://localhost" ~
         "&response_type=code" ~
         "&scope=playlist-modify-private playlist-modify-public";
+
     immutable url = urlPattern.format(creds.spotifyClientID, creds.spotifyClientSecret);
 
     Pid browser;
@@ -463,6 +464,7 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
     enum urlPattern = node ~
         "?refresh_token=%s" ~
         "&grant_type=refresh_token";
+
     immutable url = urlPattern.format(creds.spotifyRefreshToken);
 
     immutable response = sendHTTPRequest(
@@ -471,6 +473,7 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
         authorisationHeader: getSpotifyBase64Authorization(creds),
         verb: HTTPVerb.post,
         contentType: "application/x-www-form-urlencoded");
+
     immutable responseJSON = parseJSON(response.body);
 
     /*
@@ -582,6 +585,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
             caller: __FUNCTION__,
             authorisationHeader: authorizationBearer,
             verb: HTTPVerb.post);
+
         immutable responseJSON = parseJSON(response.body);
 
         /*
@@ -681,6 +685,7 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
             url: url,
             caller: __FUNCTION__,
             authorisationHeader: authorizationBearer);
+
         immutable responseJSON = parseJSON(response.body);
 
         /*
@@ -783,6 +788,7 @@ private auto validateSpotifyToken(ref Credentials creds, const string caBundleFi
         url: url,
         authorisationHeader: authorizationBearer,
         caBundleFile: caBundleFile);
+
     immutable response = issueSyncHTTPRequest(request);
     immutable responseJSON = parseJSON(response.body);
 

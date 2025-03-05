@@ -5464,6 +5464,8 @@ alias priority = Priority;
         body = Optional body to send.
         contentType = Optional content type to use.
         id = The unique ID of the request.
+        passthrough = Optionally whether or not to return the response as-is,
+            even if it - for instance - contains an "`error`" key.
         recursing = Whether this is a recursive call.
 
     Returns:
@@ -5490,6 +5492,7 @@ HTTPQueryResponse sendHTTPRequest(
     const ubyte[] body = null,
     const string contentType = string.init,
     /*const*/ int id = 0,
+    const bool passthrough = false,
     const bool recursing = false)
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
@@ -5545,6 +5548,11 @@ in (url.length, "Tried to send an HTTP request without a URL")
             response.body,
             response.error,
             response.code);
+    }
+
+    if (passthrough)
+    {
+        return response;
     }
 
     if (response == HTTPQueryResponse.init)

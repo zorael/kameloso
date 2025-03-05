@@ -166,9 +166,7 @@ in (((channelName.length && id) ||
     {
         import kameloso.plugins.common.scheduling : delay;
         import kameloso.net : UnexpectedJSONException;
-        import std.algorithm.mutation : SwapStrategy, remove;
         import core.memory : GC;
-        import core.time : seconds;
 
         size_t[] toRemove;
         toRemove.reserve(emoteImports.length);
@@ -241,6 +239,7 @@ in (((channelName.length && id) ||
 
         foreach_reverse (immutable i; toRemove)
         {
+            import std.algorithm.mutation : SwapStrategy, remove;
             // Remove completed and/or repeatedly failing imports
             emoteImports = emoteImports.remove!(SwapStrategy.unstable)(i);
         }
@@ -286,7 +285,6 @@ void embedCustomEmotes(
     const bool[dstring] customGlobalEmotes)
 {
     import lu.string : strippedRight;
-    import std.algorithm.comparison : among;
     import std.array : Appender;
     import std.conv : to;
     import std.string : indexOf;
@@ -313,6 +311,7 @@ void embedCustomEmotes(
 
     static bool isEmoteCharacter(const dchar dc)
     {
+        import std.algorithm.comparison : among;
         // Unsure about '-' and '(' but be conservative and keep
         return (
             ((dc >= dchar('a')) && (dc <= dchar('z'))) ||
