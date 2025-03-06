@@ -545,6 +545,42 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         }
     }
 
+    auto throwIfHasErrorKey(const JSONValue json)
+    {
+        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+        /*
+        {
+            "error": "Unauthorized",
+            "message": "Client ID and OAuth token do not match",
+            "status": 401
+        }
+         */
+
+        const errorJSON = "error" in json;
+        if (!errorJSON) return;
+
+        const statusJSON = "status" in *errorJSON;
+        if (!statusJSON) return;
+
+        if (statusJSON.integer == 401)
+        {
+            switch ((*errorJSON)["message"].str)
+            {
+            case "invalid access token":
+                enum message = "API token has expired";
+                throw new InvalidCredentialsException(message, *errorJSON);
+
+            case "missing authorization token":
+                enum message = "Missing API token";
+                throw new InvalidCredentialsException(message, *errorJSON);
+
+            default:
+                //drop down
+                break;
+            }
+        }
+    }
+
     enum url = "https://id.twitch.tv/oauth2/validate";
 
     // Validation needs an "Authorization: OAuth xxx" header, as opposed to the
@@ -560,38 +596,11 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
         if (async)
         {
-            try
-            {
-                response = sendHTTPRequest(
-                    plugin: plugin,
-                    url: url,
-                    caller: caller,
-                    authorisationHeader: authorisationHeader);
-            }
-            catch (ErrorJSONException e)
-            {
-                if (const statusJSON = "status" in e.json)
-                {
-                    if (statusJSON.integer == 401)
-                    {
-                        switch (e.json["message"].str)
-                        {
-                        case "invalid access token":
-                            enum message = "API token has expired";
-                            throw new InvalidCredentialsException(message, e.json);
-
-                        case "missing authorization token":
-                            enum message = "Missing API token";
-                            throw new InvalidCredentialsException(message, e.json);
-
-                        default:
-                            //drop down
-                            break;
-                        }
-                    }
-                }
-                throw e;
-            }
+            response = sendHTTPRequest(
+                plugin: plugin,
+                url: url,
+                caller: caller,
+                authorisationHeader: authorisationHeader);
         }
         else
         {
@@ -622,66 +631,23 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             }
             else if (response == HTTPQueryResponse.init)
             {
-                throw new HTTPQueryException("No response");
-            }
-            else if (response.code < 10)
-            {
-                throw new HTTPQueryException(
-                    response.error,
-                    response.body,
-                    response.error,
-                    response.code);
-            }
-            else if (response.code >= 400)
-            {
-                import std.format : format;
-                import std.json : JSONException;
-
-                try
-                {
-                    import lu.string : unquoted;
-                    import std.json : parseJSON;
-                    import std.string : chomp;
-
-                    // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-                    /*
-                    {
-                        "error": "Unauthorized",
-                        "message": "Client ID and OAuth token do not match",
-                        "status": 401
-                    }
-                     */
-                    immutable errorJSON = parseJSON(response.body);
-                    enum pattern = "%3d %s: %s";
-
-                    immutable message = pattern.format(
-                        errorJSON["status"].integer,
-                        errorJSON["error"].str.unquoted,
-                        errorJSON["message"].str.chomp.unquoted);
-
-                    throw new HTTPQueryException(message, response.body, response.error, response.code);
-                }
-                catch (JSONException e)
-                {
-                    throw new HTTPQueryException(
-                        e.msg,
-                        response.body,
-                        response.error,
-                        response.code);
-                }
+                import kameloso.net : EmptyResponseException;
+                throw new EmptyResponseException;
             }
         }
 
-        immutable validationJSON = parseJSON(response.body);
+        immutable responseJSON = parseJSON(response.body);
 
-        if ("client_id" !in validationJSON)
+        throwIfHasErrorKey(responseJSON);
+
+        if ("client_id" !in responseJSON)
         {
             enum message = "`getValidation` response has unexpected JSON " ~
                 `(no "client_id" key)`;
-            throw new UnexpectedJSONException(message, validationJSON);
+            throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        return ValidationResults(response.code, validationJSON);
+        return ValidationResults(response.code, responseJSON);
     }
 
     return retryDelegate(plugin, &getValidationDg, async: true, endlessly: true);
@@ -1068,12 +1034,6 @@ in ((name.length || id),
 
         immutable firstUserJSON = dataJSON.array[0];
 
-        /*if ((firstUserJSON.type != JSONType.object) || ("id" !in *firstUserJSON))
-        {
-            // No such user
-            return GetUserResults(response.code);
-        }*/
-
         return GetUserResults(response.code, firstUserJSON);
     }
 
@@ -1132,10 +1092,10 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
             {
                 "data": [
                     {
-                    "id": "33214",
-                    "name": "Fortnite",
-                    "box_art_url": "https://static-cdn.jtvnw.net/ttv-boxart/33214-{width}x{height}.jpg",
-                    "igdb_id": "1905"
+                        "id": "33214",
+                        "name": "Fortnite",
+                        "box_art_url": "https://static-cdn.jtvnw.net/ttv-boxart/33214-{width}x{height}.jpg",
+                        "igdb_id": "1905"
                     }
                 ]
             }
@@ -1225,12 +1185,6 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
 
         immutable firstGameJSON = dataJSON.array[0];
 
-        /*if ((firstGameJSON.type != JSONType.object) || ("id" !in *firstGameJSON))
-        {
-            // No such user
-            return GetGameResults(response.code);
-        }*/
-
         return GetGameResults(response.code, firstGameJSON);
     }
 
@@ -1265,7 +1219,6 @@ in (channelName.length, "Tried to change a the channel title with an empty chann
         plugin: plugin,
         channelName: channelName,
         title: title,
-        gameID: 0,
         caller: caller);
 }
 
@@ -1296,7 +1249,6 @@ in (gameID, "Tried to set the channel game with an empty channel name string")
     return modifyChannelImpl(
         plugin: plugin,
         channelName: channelName,
-        title: string.init,
         gameID: gameID,
         caller: caller);
 }
@@ -1321,8 +1273,8 @@ in (gameID, "Tried to set the channel game with an empty channel name string")
 private auto modifyChannelImpl(
     TwitchPlugin plugin,
     const string channelName,
-    const string title,
-    const ulong gameID,
+    const string title = string.init,
+    const ulong gameID = 0,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `modifyChannel` from outside a fiber")
 in (channelName.length, "Tried to modify a channel with an empty channel name string")
@@ -1627,17 +1579,11 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
 
         if (!dataJSON.array.length)
         {
-            // No such user
+            // No such channel
             return GetChannelResults(response.code);
         }
 
         immutable firstChannelJSON = dataJSON.array[0];
-
-        /*if ((firstChannelJSON.type != JSONType.object) || ("id" !in *firstChannelJSON))
-        {
-            // No such user
-            return GetChannelResults(response.code);
-        }*/
 
         return GetChannelResults(response.code, firstChannelJSON);
     }
@@ -1756,7 +1702,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
     "length": %s
 }`;
 
-    immutable body_ = bodyPattern.format(room.id, lengthString);
+    immutable body = bodyPattern.format(room.id, lengthString);
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
     auto startCommercialDg()
@@ -1768,7 +1714,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             authorisationHeader: authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.post,
-            body: cast(ubyte[])body_,
+            body: cast(ubyte[])body,
             contentType: "application/json");
 
         immutable responseJSON = parseJSON(response.body);
@@ -2433,7 +2379,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
     }
 
     immutable escapedTitle = title.replace(`"`, `\"`);
-    immutable body_ = bodyPattern.format(
+    immutable body = bodyPattern.format(
         room.id,
         escapedTitle,
         sink[],
@@ -2449,7 +2395,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             authorisationHeader: authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.post,
-            body: cast(ubyte[])body_,
+            body: cast(ubyte[])body,
             contentType: "application/json");
 
         immutable responseJSON = parseJSON(response.body);
@@ -2605,7 +2551,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
 }`;
 
     immutable status = terminate ? "TERMINATED" : "ARCHIVED";
-    immutable body_ = bodyPattern.format(room.id, pollID, status);
+    immutable body = bodyPattern.format(room.id, pollID, status);
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
     auto endPollDg()
@@ -2617,7 +2563,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             authorisationHeader: authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.patch,
-            body: cast(ubyte[])body_,
+            body: cast(ubyte[])body,
             contentType: "application/json");
 
         immutable responseJSON = parseJSON(response.body);
@@ -2714,7 +2660,6 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
 
         if (!dataJSON)
         {
-            // For some reason we received an object that didn't contain data
             enum message = "`endPoll` response has unexpected JSON " ~
                 `(no "data" key)`;
             throw new UnexpectedJSONException(message, responseJSON);
@@ -2722,7 +2667,6 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
 
         if (!dataJSON.array.length)
         {
-            // data exists but is empty
             enum message = "`endPoll` response has unexpected JSON " ~
                 `(zero-length "data")`;
             throw new EmptyDataJSONException(message, responseJSON);
@@ -2825,6 +2769,13 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
 
         if (immutable errorJSON = "error" in responseJSON)
         {
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(responseJSON.toPrettyString);
+                printStacktrace();
+            }
+
             return GetBotListResults(response.code, errorJSON.str);
         }
 
@@ -3650,7 +3601,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
 }`;
 
     immutable url = urlPattern.format(room.id, plugin.transient.botID);
-    immutable body_ = bodyPattern.format(
+    immutable body = bodyPattern.format(
         userID,
         min(durationSeconds, maxDurationSeconds),
         reason);
@@ -3666,7 +3617,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.post,
-            body: cast(ubyte[])body_,
+            body: cast(ubyte[])body,
             contentType: "application/json");
 
         immutable responseJSON = parseJSON(response.body);
@@ -3841,7 +3792,7 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
 
     immutable url = urlPattern.format(plugin.transient.botID, userID);
     immutable messageArgument = message.replace(`"`, `\"`);  // won't work with already escaped quotes
-    immutable body_ = bodyPattern.format(messageArgument);
+    immutable body = bodyPattern.format(messageArgument);
 
     auto sendWhisperDg()
     {
@@ -3852,7 +3803,7 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.post,
-            body: cast(ubyte[])body_,
+            body: cast(ubyte[])body,
             contentType: "application/json");
 
         switch (response.code)
@@ -4012,7 +3963,7 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
 
     immutable url = urlPattern.format(channelID, plugin.transient.botID);
     immutable messageArgument = message.replace(`"`, `\"`);  // won't work with already escaped quotes
-    immutable body_ = bodyPattern.format(messageArgument, colourArgument);
+    immutable body = bodyPattern.format(messageArgument, colourArgument);
 
     auto sendAnnouncementDg()
     {
@@ -4023,7 +3974,7 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.post,
-            body: cast(ubyte[])body_,
+            body: cast(ubyte[])body,
             contentType: "application/json");
 
         switch (response.code)
@@ -4134,7 +4085,7 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
 
     immutable url = urlPattern.format(channelID, plugin.transient.botID);
     immutable reasonArgument = reason.replace(`"`, `\"`);  // won't work with already escaped quotes
-    immutable body_ = bodyPattern.format(userID, reasonArgument);
+    immutable body = bodyPattern.format(userID, reasonArgument);
 
     auto warnUserDg()
     {
@@ -4145,7 +4096,7 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.post,
-            body: cast(ubyte[])body_,
+            body: cast(ubyte[])body,
             contentType: "application/json");
 
         immutable responseJSON = parseJSON(response.body);
@@ -4237,10 +4188,10 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
         {
             "data": [
                 {
-                "broadcaster_id": "404040",
-                "user_id": "9876",
-                "moderator_id": "404041",
-                "reason": "stop doing that!"
+                    "broadcaster_id": "404040",
+                    "user_id": "9876",
+                    "moderator_id": "404041",
+                    "reason": "stop doing that!"
                 }
             ]
         }
