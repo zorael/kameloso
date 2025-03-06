@@ -36,6 +36,16 @@ import lu.container : MutexedAA;
 import core.thread.fiber : Fiber;
 import core.time : Duration, seconds;
 
+/+
+    Used to print debug information in API functions.
+ +/
+version(PrintStacktraces)
+{
+    import kameloso.misc : printStacktrace;
+    import std.stdio : writeln;
+    import std.json : parseJSON;
+}
+
 package:
 
 
@@ -373,9 +383,12 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
             goto default;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to get chatters: <l>%d";
-            logger.errorf(pattern, response.code);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             return Chatters(response.code);
         }
 
@@ -769,9 +782,12 @@ in (id, "Tried to get followers with an unset ID")
                 goto default;
 
             default:
-                /*import kameloso.common : logger;
-                enum pattern = "Failed to get followers: <l>%d";
-                logger.errorf(pattern, response.code);*/
+                version(PrintStacktraces)
+                {
+                    writeln(response.code);
+                    writeln(parseJSON(response.body).toPrettyString);
+                    printStacktrace();
+                }
                 return GetFollowersResults(response.code);
             }
 
@@ -998,9 +1014,12 @@ in ((name.length || id),
             goto default;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to get user: <l>%d";
-            logger.errorf(pattern, response.code);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             return GetUserResults(response.code);
         }
 
@@ -1144,9 +1163,12 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
             goto default;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to get game: <l>%d";
-            logger.errorf(pattern, response.code);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             return GetGameResults(response.code);
         }
 
@@ -1386,9 +1408,12 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
             goto default;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to modify channel: <l>%d";
-            logger.errorf(pattern, response.code);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             // Drop down
             break;
         }
@@ -1539,9 +1564,12 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
             goto default;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to get channel: <l>%d";
-            logger.errorf(pattern, response.code);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             return GetChannelResults(response.code);
         }
 
@@ -1755,9 +1783,12 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             goto default;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to start commercial: <l>%d";
-            logger.errorf(pattern, response.code);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             return StartCommercialResults(response.code);
         }
 
@@ -2208,9 +2239,12 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 goto default;
 
             default:
-                /*import kameloso.common : logger;
-                enum pattern = "Failed to get polls: <l>%d";
-                logger.errorf(pattern, response.code);*/
+                version(PrintStacktraces)
+                {
+                    writeln(response.code);
+                    writeln(parseJSON(response.body).toPrettyString);
+                    printStacktrace();
+                }
                 return GetPollResults(response.code);
             }
 
@@ -2386,9 +2420,12 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             goto default;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to create poll: <l>%d";
-            logger.errorf(pattern, response.code);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             return CreatePollResults(response.code);
         }
 
@@ -2527,9 +2564,12 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             goto default;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to end poll: <l>%d";
-            logger.errorf(pattern, response.code);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             return EndPollResults(response.code);
         }
 
@@ -2795,9 +2835,12 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             goto default;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to get stream: <l>%d";
-            logger.errorf(pattern, response.code);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             return GetStreamResults(response.code);
         }
 
@@ -3034,9 +3077,12 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 goto default;
 
             default:
-                /*import kameloso.common : logger;
-                enum pattern = "Failed to get subscribers: <l>%d";
-                logger.errorf(pattern, response.code);*/
+                version(PrintStacktraces)
+                {
+                    writeln(response.code);
+                    writeln(parseJSON(response.body).toPrettyString);
+                    printStacktrace();
+                }
                 return GetSubscribersResults(response.code);
             }
 
@@ -3191,9 +3237,12 @@ in (targetChannelID, "Tried to call `sendShoutout` with an unset target channel 
             goto default;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to send shoutout: <l>%d";
-            logger.errorf(pattern, response.code);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             // Drop down
             break;
         }
@@ -3305,9 +3354,12 @@ in (channelName.length, "Tried to delete a message without providing a channel n
             break;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to delete message: <l>%d";
-            logger.errorf(pattern, response.code);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             // Drop down
             break;
         }
@@ -3540,9 +3592,12 @@ in (userID, "Tried to timeout a user with an unset user ID")
             goto default;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to delete message: <l>%d";
-            logger.errorf(pattern, response.code);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             return TimeoutResults(response.code);
         }
 
@@ -3708,9 +3763,12 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
             goto default;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to send whisper: <l>%s";
-            logger.errorf(pattern, responseJSON["message"].str);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             // Drop down
             break;
         }
@@ -3856,9 +3914,12 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
             goto default;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to send announcement: <l>%d";
-            logger.errorf(pattern, response.code);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             // Drop down
             break;
         }
@@ -4000,9 +4061,12 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
             goto default;
 
         default:
-            /*import kameloso.common : logger;
-            enum pattern = "Failed to send warning: <l>%d";
-            logger.errorf(pattern, response.code);*/
+            version(PrintStacktraces)
+            {
+                writeln(response.code);
+                writeln(parseJSON(response.body).toPrettyString);
+                printStacktrace();
+            }
             // Drop down
             break;
         }
