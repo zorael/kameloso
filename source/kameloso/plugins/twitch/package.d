@@ -4859,6 +4859,10 @@ package:
                 {
                     this.endedAt = SysTime.fromISOExtString(endedAtJSON.str);
                 }
+                else
+                {
+                    this.live = true;
+                }
 
                 if (const durationJSON = "duration" in json)
                 {
