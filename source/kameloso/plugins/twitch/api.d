@@ -43,7 +43,6 @@ version(PrintStacktraces)
 {
     import kameloso.misc : printStacktrace;
     import std.stdio : writeln;
-    import std.json : parseJSON;
 }
 
 package:
@@ -294,6 +293,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
     static struct Chatters
     {
         uint code;
+        string error;
         string broadcaster;
         string[] moderators;
         string[] vips;
@@ -306,6 +306,12 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
         auto success() const { return (code == 200); }
 
         this(const uint code) { this.code = code; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
 
         this(const uint code, const JSONValue json)
         {
@@ -341,6 +347,8 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
             caller: caller,
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID);
+
+        immutable responseJSON = parseJSON(response.body);
 
         switch (response.code)
         {
@@ -386,13 +394,19 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
+                writeln(responseJSON.toPrettyString);
                 printStacktrace();
             }
-            return Chatters(response.code);
-        }
 
-        immutable responseJSON = parseJSON(response.body);
+            if (immutable errorJSON = "error" in responseJSON)
+            {
+                return Chatters(response.code, errorJSON.str);
+            }
+            else
+            {
+                return Chatters(response.code);
+            }
+        }
 
         /*
         {
@@ -476,6 +490,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
     static struct ValidationResults
     {
         uint code;
+        //string error;
         string clientID;
         string login;
         ulong userID;
@@ -484,6 +499,12 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         auto success() const { return (code == 200); }
 
         this(const uint code) { this.code = code; }
+
+        /*this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }*/
 
         this(const uint code, const JSONValue json)
         {
@@ -710,11 +731,18 @@ in (id, "Tried to get followers with an unset ID")
     static struct GetFollowersResults
     {
         uint code;
+        string error;
         Follower[string] followers;
 
         auto success() const { return (code == 200); }
 
         this(const uint code) { this.code = code; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
 
         this(const uint code, /*const*/ Follower[string] followers)
         {
@@ -744,6 +772,8 @@ in (id, "Tried to get followers with an unset ID")
                 caller: caller,
                 authorisationHeader: plugin.transient.authorizationBearer, //authorizationBearer,
                 clientID: TwitchPlugin.clientID);
+
+            immutable responseJSON = parseJSON(response.body);
 
             switch (response.code)
             {
@@ -785,10 +815,18 @@ in (id, "Tried to get followers with an unset ID")
                 version(PrintStacktraces)
                 {
                     writeln(response.code);
-                    writeln(parseJSON(response.body).toPrettyString);
+                    writeln(responseJSON.toPrettyString);
                     printStacktrace();
                 }
-                return GetFollowersResults(response.code);
+
+                if (immutable errorJSON = "error" in responseJSON)
+                {
+                    return GetFollowersResults(response.code, errorJSON.str);
+                }
+                else
+                {
+                    return GetFollowersResults(response.code);
+                }
             }
 
             /*
@@ -810,8 +848,6 @@ in (id, "Tried to get followers with an unset ID")
              */
 
             responseCode = response.code;
-
-            immutable responseJSON = parseJSON(response.body);
 
             if (responseJSON.type != JSONType.object)
             {
@@ -902,15 +938,19 @@ in ((name.length || id),
     static struct GetUserResults
     {
         uint code;
+        string error;
         ulong id;
         string login;
         string displayName;
 
         auto success() const { return (id && (code == 200)); }
 
-        this(const uint code)
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const string error)
         {
             this.code = code;
+            this.error = error;
         }
 
         this(const uint code, const JSONValue json)
@@ -946,7 +986,7 @@ in ((name.length || id),
             this.id = user.id;
             this.login = user.nickname;
             this.displayName = user.displayName;
-            this.code = 200;
+            this.code = 200;  // success
         }
     }
 
@@ -983,6 +1023,8 @@ in ((name.length || id),
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID);
 
+        immutable responseJSON = parseJSON(response.body);
+
         switch (response.code)
         {
         case 200:
@@ -1017,13 +1059,19 @@ in ((name.length || id),
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
+                writeln(responseJSON.toPrettyString);
                 printStacktrace();
             }
-            return GetUserResults(response.code);
-        }
 
-        immutable responseJSON = parseJSON(response.body);
+            if (immutable errorJSON = "error" in responseJSON)
+            {
+                return GetUserResults(response.code, errorJSON.str);
+            }
+            else
+            {
+                return GetUserResults(response.code);
+            }
+        }
 
         if (responseJSON.type != JSONType.object)
         {
@@ -1093,12 +1141,19 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
     static struct GetGameResults
     {
         uint code;
+        string error;
         ulong id;
         string name;
 
         auto success() const { return (id && (code == 200)); }
 
         this(const uint code) { this.code = code; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
 
         this(const uint code, const JSONValue json)
         {
@@ -1134,6 +1189,8 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID);
 
+        immutable responseJSON = parseJSON(response.body);
+
         switch (response.code)
         {
         case 200:
@@ -1166,13 +1223,19 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
+                writeln(responseJSON.toPrettyString);
                 printStacktrace();
             }
-            return GetGameResults(response.code);
-        }
 
-        immutable responseJSON = parseJSON(response.body);
+            if (immutable errorJSON = "error" in responseJSON)
+            {
+                return GetGameResults(response.code, errorJSON.str);
+            }
+            else
+            {
+                return GetGameResults(response.code);
+            }
+        }
 
         if (responseJSON.type != JSONType.object)
         {
@@ -1411,7 +1474,6 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
                 printStacktrace();
             }
             // Drop down
@@ -1455,6 +1517,7 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
     static struct GetChannelResults
     {
         uint code;
+        string error;
         ulong id;
         ulong gameID;
         string gameName;
@@ -1464,6 +1527,12 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
         auto success() const { return (gameID && (code == 200));  }
 
         this(const uint code) { this.code = code; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
 
         this(const uint code, const JSONValue json)
         {
@@ -1535,6 +1604,8 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID);
 
+        immutable responseJSON = parseJSON(response.body);
+
         switch (response.code)
         {
         case 200:
@@ -1567,13 +1638,19 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
+                writeln(responseJSON.toPrettyString);
                 printStacktrace();
             }
-            return GetChannelResults(response.code);
-        }
 
-        immutable responseJSON = parseJSON(response.body);
+            if (immutable errorJSON = "error" in responseJSON)
+            {
+                return GetChannelResults(response.code, errorJSON.str);
+            }
+            else
+            {
+                return GetChannelResults(response.code);
+            }
+        }
 
         if (responseJSON.type != JSONType.object)
         {
@@ -1677,6 +1754,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
     static struct StartCommercialResults
     {
         uint code;
+        string error;
         string message;
         uint durationSeconds;
         uint retryAfter;
@@ -1684,6 +1762,12 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
         auto success() const { return (code == 200); }
 
         this(const uint code) { this.code = code; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
 
         this(const uint code, const JSONValue json)
         {
@@ -1729,6 +1813,8 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             verb: HTTPVerb.post,
             body: cast(ubyte[])body_,
             contentType: "application/json");
+
+        immutable responseJSON = parseJSON(response.body);
 
         switch (response.code)
         {
@@ -1786,13 +1872,19 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
+                writeln(responseJSON.toPrettyString);
                 printStacktrace();
             }
-            return StartCommercialResults(response.code);
-        }
 
-        immutable responseJSON = parseJSON(response.body);
+            if (immutable errorJSON = "error" in responseJSON)
+            {
+                return StartCommercialResults(response.code, errorJSON.str);
+            }
+            else
+            {
+                return StartCommercialResults(response.code);
+            }
+        }
 
         if (responseJSON.type != JSONType.object)
         {
@@ -2163,7 +2255,22 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
     static struct GetPollResults
     {
         uint code;
+        string error;
         TwitchPoll[] polls;
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, /*const*/ TwitchPoll[] polls)
+        {
+            this.code = code;
+            this.polls = polls;
+        }
 
         auto success() const { return (polls.length && (code == 200)); }
     }
@@ -2202,6 +2309,8 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 verb: HTTPVerb.get,
                 body: cast(ubyte[])null,
                 contentType: "application/json");
+
+            immutable responseJSON = parseJSON(response.body);
 
             switch (response.code)
             {
@@ -2242,15 +2351,21 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 version(PrintStacktraces)
                 {
                     writeln(response.code);
-                    writeln(parseJSON(response.body).toPrettyString);
+                    writeln(responseJSON.toPrettyString);
                     printStacktrace();
                 }
-                return GetPollResults(response.code);
+
+                if (immutable errorJSON = "error" in responseJSON)
+                {
+                    return GetPollResults(response.code, errorJSON.str);
+                }
+                else
+                {
+                    return GetPollResults(response.code);
+                }
             }
 
             responseCode = response.code;
-
-            immutable responseJSON = parseJSON(response.body);
 
             if (responseJSON.type != JSONType.object)
             {
@@ -2330,8 +2445,24 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
     static struct CreatePollResults
     {
         uint code;
+        string error;
         TwitchPoll poll;
+
         auto success() const { return (code == 200); }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, /*const*/ TwitchPoll poll)
+        {
+            this.code = code;
+            this.poll = poll;
+        }
     }
 
     const room = channelName in plugin.rooms;
@@ -2379,6 +2510,8 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             body: cast(ubyte[])body_,
             contentType: "application/json");
 
+        immutable responseJSON = parseJSON(response.body);
+
         switch (response.code)
         {
         case 200:
@@ -2423,13 +2556,19 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
+                writeln(responseJSON.toPrettyString);
                 printStacktrace();
             }
-            return CreatePollResults(response.code);
-        }
 
-        immutable responseJSON = parseJSON(response.body);
+            if (immutable errorJSON = "error" in responseJSON)
+            {
+                return CreatePollResults(response.code, errorJSON.str);
+            }
+            else
+            {
+                return CreatePollResults(response.code);
+            }
+        }
 
         if (responseJSON.type != JSONType.object)
         {
@@ -2500,8 +2639,24 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
     static struct EndPollResults
     {
         uint code;
+        string error;
         TwitchPoll poll;
+
         auto success() const { return (code == 200); }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, /*const*/ TwitchPoll poll)
+        {
+            this.code = code;
+            this.poll = poll;
+        }
     }
 
     const room = channelName in plugin.rooms;
@@ -2530,6 +2685,8 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             verb: HTTPVerb.patch,
             body: cast(ubyte[])body_,
             contentType: "application/json");
+
+        immutable responseJSON = parseJSON(response.body);
 
         switch (response.code)
         {
@@ -2567,13 +2724,19 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
+                writeln(responseJSON.toPrettyString);
                 printStacktrace();
             }
-            return EndPollResults(response.code);
-        }
 
-        immutable responseJSON = parseJSON(response.body);
+            if (immutable errorJSON = "error" in responseJSON)
+            {
+                return EndPollResults(response.code, errorJSON.str);
+            }
+            else
+            {
+                return EndPollResults(response.code);
+            }
+        }
 
         /*
         {
@@ -2675,8 +2838,24 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
     static struct GetBotListResults
     {
         uint code;
+        string error;
         string[] bots;
+
         auto success() const { return (code == 200); }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, /*const*/ string[] bots)
+        {
+            this.code = code;
+            this.bots = bots;
+        }
     }
 
     auto getBotListDg()
@@ -2723,6 +2902,11 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
             // Invalid response in some way, retry until we reach the limit
             enum message = "`getBotList` response has unexpected JSON";
             throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        if (immutable errorJSON = "error" in responseJSON)
+        {
+            return GetBotListResults(response.code, errorJSON.str);
         }
 
         immutable botsJSON = "bots" in responseJSON;
@@ -2793,8 +2977,24 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
     static struct GetStreamResults
     {
         uint code;
+        string error;
         TwitchPlugin.Room.Stream stream;
+
         auto success() const { return (code == 200); }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, /*const*/ TwitchPlugin.Room.Stream stream)
+        {
+            this.code = code;
+            this.stream = stream;
+        }
     }
 
     immutable url = "https://api.twitch.tv/helix/streams?user_login=" ~ loginName;
@@ -2807,6 +3007,8 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             caller: caller,
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID);
+
+        immutable responseJSON = parseJSON(response.body);
 
         switch (response.code)
         {
@@ -2838,10 +3040,18 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
+                writeln(responseJSON.toPrettyString);
                 printStacktrace();
             }
-            return GetStreamResults(response.code);
+
+            if (immutable errorJSON = "error" in responseJSON)
+            {
+                return GetStreamResults(response.code, errorJSON.str);
+            }
+            else
+            {
+                return GetStreamResults(response.code);
+            }
         }
 
         /*
@@ -2889,8 +3099,6 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
         }
          */
 
-        immutable responseJSON = parseJSON(response.body);
-
         if (responseJSON.type != JSONType.object)
         {
             enum message = "`getStream` response has unexpected JSON " ~
@@ -2898,7 +3106,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        const dataJSON = "data" in responseJSON;
+        immutable dataJSON = "data" in responseJSON;
 
         if (!dataJSON)
         {
@@ -3011,10 +3219,35 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
         }
 
         uint code;
+        string error;
         uint totalNumSubscribers;
         Subscription[] subs;
 
         auto success() const { return code == 200; }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, const uint totalNumSubscribers)
+        {
+            this.code = code;
+            this.totalNumSubscribers = totalNumSubscribers;
+        }
+
+        this(
+            const uint code,
+            const uint totalNumSubscribers,
+            /*const*/ Subscription[] subs)
+        {
+            this.code = code;
+            this.totalNumSubscribers = totalNumSubscribers;
+            this.subs = subs;
+        }
     }
 
     const room = channelName in plugin.rooms;
@@ -3048,6 +3281,8 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 authorisationHeader: authorizationBearer,
                 clientID: TwitchPlugin.clientID);
 
+            immutable responseJSON = parseJSON(response.body);
+
             switch (response.code)
             {
             case 200:
@@ -3080,15 +3315,21 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 version(PrintStacktraces)
                 {
                     writeln(response.code);
-                    writeln(parseJSON(response.body).toPrettyString);
+                    writeln(responseJSON.toPrettyString);
                     printStacktrace();
                 }
-                return GetSubscribersResults(response.code);
+
+                if (immutable errorJSON = "error" in responseJSON)
+                {
+                    return GetSubscribersResults(response.code, errorJSON.str);
+                }
+                else
+                {
+                    return GetSubscribersResults(response.code);
+                }
             }
 
             responseCode = response.code;
-
-            immutable responseJSON = parseJSON(response.body);
 
             if (responseJSON.type != JSONType.object)
             {
@@ -3240,7 +3481,6 @@ in (targetChannelID, "Tried to call `sendShoutout` with an unset target channel 
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
                 printStacktrace();
             }
             // Drop down
@@ -3357,7 +3597,6 @@ in (channelName.length, "Tried to delete a message without providing a channel n
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
                 printStacktrace();
             }
             // Drop down
@@ -3416,6 +3655,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
     static struct TimeoutResults
     {
         uint code;
+        string error;
         bool alreadyBanned;  // FIXME
         ulong broadcasterID;
         ulong moderatorID;
@@ -3426,6 +3666,12 @@ in (userID, "Tried to timeout a user with an unset user ID")
         auto success() const { return (code == 200); }
 
         this(const uint code) { this.code = code; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
 
         this(const uint code, const bool alreadyBanned)
         {
@@ -3518,6 +3764,8 @@ in (userID, "Tried to timeout a user with an unset user ID")
             body: cast(ubyte[])body_,
             contentType: "application/json");
 
+        immutable responseJSON = parseJSON(response.body);
+
         switch (response.code)
         {
         case 200:
@@ -3595,13 +3843,19 @@ in (userID, "Tried to timeout a user with an unset user ID")
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
+                writeln(responseJSON.toPrettyString);
                 printStacktrace();
             }
-            return TimeoutResults(response.code);
-        }
 
-        immutable responseJSON = parseJSON(response.body);
+            if (immutable errorJSON = "error" in responseJSON)
+            {
+                return TimeoutResults(response.code, errorJSON.str);
+            }
+            else
+            {
+                return TimeoutResults(response.code);
+            }
+        }
 
         if (responseJSON.type != JSONType.object)
         {
@@ -3616,7 +3870,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
         {
             if (immutable errorJSON = "error" in responseJSON)
             {
-                if (responseJSON["message"].str == "user is already banned")
+                if ((*errorJSON)["message"].str == "user is already banned")
                 {
                     return TimeoutResults(response.code, alreadyBanned: true);
                 }
@@ -3766,7 +4020,6 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
                 printStacktrace();
             }
             // Drop down
@@ -3917,7 +4170,6 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
                 printStacktrace();
             }
             // Drop down
@@ -3960,10 +4212,13 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
 {
     import std.array : replace;
     import std.format : format;
+    import std.json : parseJSON;
 
     static struct WarnResults
     {
         uint code;
+        string error;
+
         auto success() const { return (code == 200); }
     }
 
@@ -3994,6 +4249,8 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
             verb: HTTPVerb.post,
             body: cast(ubyte[])body_,
             contentType: "application/json");
+
+        immutable responseJSON = parseJSON(response.body);
 
         switch (response.code)
         {
@@ -4064,11 +4321,18 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
             version(PrintStacktraces)
             {
                 writeln(response.code);
-                writeln(parseJSON(response.body).toPrettyString);
+                writeln(responseJSON.toPrettyString);
                 printStacktrace();
             }
-            // Drop down
-            break;
+
+            if (immutable errorJSON = "error" in responseJSON)
+            {
+                return WarnResults(response.code, errorJSON.str);
+            }
+            else
+            {
+                return WarnResults(response.code);
+            }
         }
 
         /*
@@ -4083,8 +4347,6 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
             ]
         }
          */
-
-        // We don't really care about the response, so skip parsing it.
         return WarnResults(response.code);
     }
 

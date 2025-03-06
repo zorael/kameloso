@@ -1455,15 +1455,13 @@ void onCommandVanish(TwitchPlugin plugin, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
 
-    try
-    {
-        cast(void)timeoutUser(plugin, event.channel.name, event.sender.id, 1);
-    }
-    catch (ErrorJSONException e)
+    const result = timeoutUser(plugin, event.channel.name, event.sender.id, 1);
+
+    if (!result.success)
     {
         import kameloso.plugins.common : nameOf;
-        enum pattern = "Failed to vanish <l>%s</> in <l>%s</> <t>(%s)";
-        logger.warningf(pattern, nameOf(event.sender), event.channel.name, e.msg);
+        enum pattern = "Failed to vanish <l>%s</> in <l>%s</> (<t>%d</>)";
+        logger.warningf(pattern, nameOf(event.sender), event.channel.name, result.code);
     }
 }
 
@@ -1967,9 +1965,13 @@ void onCommandStartPoll(TwitchPlugin plugin, const IRCEvent event)
     try
     {
         const results = createPoll(plugin, event.channel.name, title, durationString, choices);
-        enum pattern = `Poll "%s" created.`;
-        immutable message = pattern.format(results.poll.title);
-        chan(plugin.state, event.channel.name, message);
+
+        if (results.success)
+        {
+            enum pattern = `Poll "%s" created.`;
+            immutable message = pattern.format(results.poll.title);
+            chan(plugin.state, event.channel.name, message);
+        }
     }
     catch (ErrorJSONException e)
     {
@@ -2044,9 +2046,9 @@ void onCommandEndPoll(TwitchPlugin plugin, const IRCEvent event)
 
     try
     {
-        const results = getPolls(plugin, event.channel.name);
+        const getResults = getPolls(plugin, event.channel.name);
 
-        if (!results.polls.length)
+        if (!getResults.polls.length)
         {
             enum message = "There are no active polls to end.";
             return chan(plugin.state, event.channel.name, message);
@@ -2055,7 +2057,7 @@ void onCommandEndPoll(TwitchPlugin plugin, const IRCEvent event)
         const endResults = endPoll(
             plugin: plugin,
             channelName: event.channel.name,
-            pollID: results.polls[0].pollID,
+            pollID: getResults.polls[0].pollID,
             terminate: true);
 
         alias Status = typeof(endResults.poll.status);
