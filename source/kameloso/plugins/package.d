@@ -5464,8 +5464,6 @@ alias priority = Priority;
         body = Optional body to send.
         contentType = Optional content type to use.
         id = The unique ID of the request.
-        passthrough = Optionally whether or not to return the response as-is,
-            even if it - for instance - contains an "`error`" key.
         recursing = Whether this is a recursive call.
 
     Returns:
@@ -5480,7 +5478,7 @@ alias priority = Priority;
         [kameloso.net.HTTPQueryResponse|HTTPQueryResponse]
         [kameloso.net.issueHTTPRequest|issueHTTPRequest]
  +/
-HTTPQueryResponse sendHTTPRequest(
+auto sendHTTPRequest(
     IRCPlugin plugin,
     const string url,
     const string caller = __FUNCTION__,
@@ -5492,7 +5490,6 @@ HTTPQueryResponse sendHTTPRequest(
     const ubyte[] body = null,
     const string contentType = string.init,
     /*const*/ int id = 0,
-    const bool passthrough = false,
     const bool recursing = false)
 in (Fiber.getThis(), "Tried to call `sendHTTPRequest` from outside a fiber")
 in (url.length, "Tried to send an HTTP request without a URL")
@@ -5508,6 +5505,9 @@ in (url.length, "Tried to send an HTTP request without a URL")
     import std.algorithm.searching : endsWith;
     import std.concurrency : send;
     import core.time : msecs;
+
+    // Work around forward-declaration of auto return type
+    if (true == false) return HTTPQueryResponse.init;
 
     version(TraceHTTPRequests)
     {
@@ -5526,16 +5526,17 @@ in (url.length, "Tried to send an HTTP request without a URL")
     if (!id) id = plugin.state.querier.responseBucket.uniqueKey;
 
     auto request = HTTPRequest(
-        id,
-        url,
-        authorisationHeader,
-        clientID,
-        verifyPeer,
-        plugin.state.connSettings.caBundleFile,
-        customHeaders,
-        verb,
-        body.idup,
-        contentType);
+        id: id,
+        url: url,
+        authorisationHeader: authorisationHeader,
+        clientID: clientID,
+        verifyPeer: verifyPeer,
+        caBundleFile: plugin.state.connSettings.caBundleFile,
+        customHeaders: customHeaders,
+        verb: verb,
+        body: body.idup,
+        contentType: contentType,
+        caller: caller);
 
     plugin.state.querier.nextWorker.send(request);
     delay(plugin, Timeout.httpQueryInitialWait, yield: true);
@@ -5550,22 +5551,9 @@ in (url.length, "Tried to send an HTTP request without a URL")
             response.code);
     }
 
-    if (passthrough)
-    {
-        return response;
-    }
-
     if (response == HTTPQueryResponse.init)
     {
         throw new EmptyResponseException;
-    }
-    else if (response.code < 200)
-    {
-        throw new HTTPQueryException(
-            response.error,
-            response.body,
-            response.error,
-            response.code);
     }
     else if ((response.code >= 500) && !recursing)
     {
@@ -5582,125 +5570,6 @@ in (url.length, "Tried to send an HTTP request without a URL")
             contentType: contentType,
             id: id,
             recursing: true);
-    }
-    else if (response.code >= 400)
-    {
-        import std.format : format;
-        import std.json : JSONException;
-
-        try
-        {
-            import lu.json : getOrFallback;
-            import lu.string : unquoted;
-            import std.json : JSONValue, parseJSON;
-            import std.string : chomp;
-
-            // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-            /+
-            {
-                "error": "Unauthorized",
-                "message": "Client ID and OAuth token do not match",
-                "status": 401
-            }
-            {
-                "error": "Unknown Emote Set",
-                "error_code": 70441,
-                "status": "Not Found",
-                "status_code": 404
-            }
-            {
-                "message": "user not found"
-            }
-            {
-                "error": "Unauthorized",
-                "message": "Invalid OAuth token",
-                "status": 401
-            }
-            {
-                "error": "Unauthorized",
-                "message": "Missing scope: moderator:manage:chat_messages",
-                "status": 401
-            }
-             +/
-
-            enum genericErrorString = "Error";
-            enum genericErrorMessageString = "An unspecified error occurred";
-
-            immutable json = parseJSON(response.body);
-            uint code = response.code;
-            string status;
-            string message;
-
-            if (immutable statusCodeJSON = "status_code" in json)
-            {
-                code = cast(uint)(*statusCodeJSON).integer;
-                status = json.getOrFallback("status", genericErrorString);
-                message = json.getOrFallback("error", genericErrorMessageString);
-            }
-            else if (immutable errorJSON = "error" in json)
-            {
-                status = genericErrorString;
-                message = (*errorJSON).str;
-            }
-            else if (immutable statusJSON = "status" in json)
-            {
-                import std.json : JSONException;
-
-                code = cast(uint)(*statusJSON).integer;
-                status = json.getOrFallback("status", genericErrorString);
-                message = json.getOrFallback("error", genericErrorMessageString);
-            }
-            else if (immutable messageJSON = "message" in json)
-            {
-                status = genericErrorString;
-                message = (*messageJSON).str;
-            }
-            else
-            {
-                version(PrintStacktraces)
-                {
-                    if (!plugin.state.coreSettings.headless)
-                    {
-                        import std.stdio : stdout, writeln;
-                        writeln(json.toPrettyString);
-                        stdout.flush();
-                    }
-                }
-
-                status = genericErrorString;
-                message = genericErrorMessageString;
-            }
-
-            enum pattern = "%3d %s: %s";
-            immutable exceptionMessage = pattern.format(
-                code,
-                status.chomp.unquoted,
-                message.chomp.unquoted);
-
-            throw new ErrorJSONException(exceptionMessage, json);
-        }
-        catch (JSONException e)
-        {
-            import kameloso.string : doublyBackslashed;
-
-            version(PrintStacktraces)
-            {
-                if (!plugin.state.coreSettings.headless)
-                {
-                    import std.stdio : stdout, writeln;
-                    writeln(response.body);
-                    stdout.flush();
-                }
-            }
-
-            throw new HTTPQueryException(
-                e.msg,
-                response.body,
-                response.error,
-                response.code,
-                e.file.doublyBackslashed,
-                e.line);
-        }
     }
 
     return response;
