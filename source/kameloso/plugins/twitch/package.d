@@ -4744,7 +4744,7 @@ package:
                 Returns:
                     A new [Stream] with values from the passed `json`.
              +/
-            this(const JSONValue json, const bool live = false)
+            this(const JSONValue json)
             {
                 import lu.json : getOrFallback;
                 import std.algorithm.iteration : map;

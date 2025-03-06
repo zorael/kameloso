@@ -781,7 +781,7 @@ in (id, "Tried to get followers with an unset ID")
                 // 200 OK
                 /+
                     Successfully retrieved the broadcaster’s list of followers.
-                +/
+                 +/
                 break;
 
             case 400:
@@ -790,7 +790,7 @@ in (id, "Tried to get followers with an unset ID")
                     Possible reasons:
                     The broadcaster_id query parameter is required.
                     The broadcaster_id query parameter is not valid.
-                +/
+                 +/
                 goto default;
 
             case 401:
@@ -808,7 +808,7 @@ in (id, "Tried to get followers with an unset ID")
                     The user_id parameter was specified but either the user access
                     token is missing the moderator:read:followers scope or the user
                     is not the broadcaster or moderator for the specified channel
-                +/
+                 +/
                 goto default;
 
             default:
@@ -883,7 +883,7 @@ in (id, "Tried to get followers with an unset ID")
                     },
                     ...
                 ]
-                */
+                 */
                 immutable key = followerJSON["user_name"].str;
                 followers[key] = Follower(followerJSON);
             }
@@ -1168,7 +1168,7 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
                     }
                 ]
             }
-            */
+             */
 
             this.code = code;
             this.id = json["id"].str.to!ulong;
