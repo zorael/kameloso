@@ -432,13 +432,6 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
         }
          */
 
-        if (responseJSON.type != JSONType.object)
-        {
-            enum message = "`getChatters` response has unexpected JSON " ~
-                "(wrong JSON type)";
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
         immutable chattersJSON = "chatters" in responseJSON;
 
         if (!chattersJSON)
@@ -682,13 +675,6 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
         immutable validationJSON = parseJSON(response.body);
 
-        if (validationJSON.type != JSONType.object)
-        {
-            enum message = "`getValidation` response has unexpected JSON " ~
-                "(wrong JSON type)";
-            throw new UnexpectedJSONException(message, validationJSON);
-        }
-
         if ("client_id" !in validationJSON)
         {
             enum message = "`getValidation` response has unexpected JSON " ~
@@ -848,13 +834,6 @@ in (id, "Tried to get followers with an unset ID")
              */
 
             responseCode = response.code;
-
-            if (responseJSON.type != JSONType.object)
-            {
-                enum message = "`getFollowers` response has unexpected JSON " ~
-                    "(wrong JSON type)";
-                throw new UnexpectedJSONException(message, responseJSON);
-            }
 
             immutable dataJSON = "data" in responseJSON;
 
@@ -1073,13 +1052,6 @@ in ((name.length || id),
             }
         }
 
-        if (responseJSON.type != JSONType.object)
-        {
-            enum message = "`getUser` response has unexpected JSON " ~
-                "(wrong JSON type)";
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
         immutable dataJSON = "data" in responseJSON;
 
         if (!dataJSON)
@@ -1235,13 +1207,6 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
             {
                 return GetGameResults(response.code);
             }
-        }
-
-        if (responseJSON.type != JSONType.object)
-        {
-            enum message = "`getGame` response has unexpected JSON " ~
-                "(wrong JSON type)";
-            throw new UnexpectedJSONException(message, responseJSON);
         }
 
         immutable dataJSON = "data" in responseJSON;
@@ -1652,13 +1617,6 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
             }
         }
 
-        if (responseJSON.type != JSONType.object)
-        {
-            enum message = "`getChannel` response has unexpected JSON " ~
-                "(wrong JSON type)";
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
         immutable dataJSON = "data" in responseJSON;
 
         if (!dataJSON)
@@ -1884,13 +1842,6 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             {
                 return StartCommercialResults(response.code);
             }
-        }
-
-        if (responseJSON.type != JSONType.object)
-        {
-            enum message = "`startCommercial` response has unexpected JSON " ~
-                "(wrong JSON type)";
-            throw new UnexpectedJSONException(message, responseJSON);
         }
 
         immutable dataJSON = "data" in responseJSON;
@@ -2367,14 +2318,6 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
 
             responseCode = response.code;
 
-            if (responseJSON.type != JSONType.object)
-            {
-                // Invalid response in some way
-                enum message = "`getPolls` response has unexpected JSON " ~
-                    "(wrong JSON type)";
-                throw new UnexpectedJSONException(message, responseJSON);
-            }
-
             immutable dataJSON = "data" in responseJSON;
 
             if (!dataJSON)
@@ -2568,14 +2511,6 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             {
                 return CreatePollResults(response.code);
             }
-        }
-
-        if (responseJSON.type != JSONType.object)
-        {
-            // Invalid response in some way
-            enum message = "`createPoll` response has unexpected JSON " ~
-                "(wrong JSON type)";
-            throw new UnexpectedJSONException(message, responseJSON);
         }
 
         immutable dataJSON = "data" in responseJSON;
@@ -2776,14 +2711,6 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
         }
          */
 
-        if (responseJSON.type != JSONType.object)
-        {
-            // Invalid response in some way
-            enum message = "`endPoll` response has unexpected JSON " ~
-                "(wrong JSON type)";
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
         immutable dataJSON = "data" in responseJSON;
 
         if (!dataJSON)
@@ -2896,13 +2823,6 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
             ]
         }
          */
-
-        if (responseJSON.type != JSONType.object)
-        {
-            // Invalid response in some way, retry until we reach the limit
-            enum message = "`getBotList` response has unexpected JSON";
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
 
         if (immutable errorJSON = "error" in responseJSON)
         {
@@ -3098,13 +3018,6 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             "pagination": {}
         }
          */
-
-        if (responseJSON.type != JSONType.object)
-        {
-            enum message = "`getStream` response has unexpected JSON " ~
-                "(wrong JSON type)";
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
 
         immutable dataJSON = "data" in responseJSON;
 
@@ -3330,13 +3243,6 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             }
 
             responseCode = response.code;
-
-            if (responseJSON.type != JSONType.object)
-            {
-                // Invalid response in some way
-                enum message = "`getSubscribers` response has unexpected JSON";
-                throw new UnexpectedJSONException(message, responseJSON);
-            }
 
             immutable dataJSON = "data" in responseJSON;
 
@@ -3855,13 +3761,6 @@ in (userID, "Tried to timeout a user with an unset user ID")
             {
                 return TimeoutResults(response.code);
             }
-        }
-
-        if (responseJSON.type != JSONType.object)
-        {
-            enum message = "`timeoutUser` response has unexpected JSON " ~
-                "(wrong JSON type)";
-            throw new UnexpectedJSONException(message, responseJSON);
         }
 
         immutable dataJSON = "data" in responseJSON;
