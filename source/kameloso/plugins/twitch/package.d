@@ -1041,7 +1041,8 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
         // done immediately after joining so there should be no time for
         // !followage queries to sneak in.
         // Luckily we're inside a fiber so we can cache it ourselves.
-        room.followers = getFollowers(plugin, room.id);
+        auto results = getFollowers(plugin, room.id);  // must be mutable
+        room.followers = results.followers;
         room.followersLastCached = event.time;
     }
 
@@ -1057,7 +1058,8 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
     if (event.time > (room.followersLastCached + minimumSecondsBetweenRecaches))
     {
         // No match, but minimumSecondsBetweenRecaches passed since last recache
-        room.followers = getFollowers(plugin, room.id);
+        auto results = getFollowers(plugin, room.id);
+        room.followers = results.followers;
         room.followersLastCached = event.time;
         found = reportFromCache(name);
         if (found) return;
@@ -3162,7 +3164,8 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
 
             try
             {
-                room.followers = getFollowers(plugin, room.id);
+                auto results = getFollowers(plugin, room.id);
+                room.followers = results.followers;
                 room.followersLastCached = now.toUnixTime();
             }
             catch (Exception _)

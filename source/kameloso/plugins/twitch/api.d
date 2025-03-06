@@ -253,93 +253,6 @@ void printRetryDelegateException(/*const*/ Exception base)
 }
 
 
-// getTwitchData
-/++
-    By following a passed URL, queries Twitch servers for an entity (user or channel).
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        url = The URL to follow.
-        caller = Name of the calling function.
-
-    Returns:
-        The JSON for a singular user or channel regardless of how many were asked
-        for in the URL. If nothing was found, an exception is thrown instead.
-
-    Throws:
-        [EmptyDataJSONException] if the `"data"` field is empty for some reason.
-        [UnexpectedJSONException] on unexpected JSON.
-        [HTTPQueryException] on other JSON errors.
- +/
-auto getTwitchData(
-    TwitchPlugin plugin,
-    const string url,
-    const string caller = __FUNCTION__)
-in (Fiber.getThis(), "Tried to call `getTwitchData` from outside a fiber")
-{
-    import std.json : JSONException, JSONType, parseJSON;
-
-    // Request here outside try-catch to let exceptions fall through
-    immutable response = sendHTTPRequest(
-        plugin: plugin,
-        url: url,
-        caller: caller,
-        authorisationHeader: plugin.transient.authorizationBearer,
-        clientID: TwitchPlugin.clientID);
-
-    try
-    {
-        immutable responseJSON = parseJSON(response.body);
-
-        if (responseJSON.type != JSONType.object)
-        {
-            enum message = "`getTwitchData` response has unexpected JSON " ~
-                "(wrong JSON type)";
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        immutable dataJSON = "data" in responseJSON;
-
-        if (!dataJSON)
-        {
-            enum message = "`getTwitchData` response has unexpected JSON " ~
-                `(no "data" key)`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        if (dataJSON.array.length == 1)
-        {
-            return dataJSON.array[0];
-        }
-        else if (!dataJSON.array.length)
-        {
-            // data exists but is empty
-            enum message = "`getTwitchData` response has unexpected JSON " ~
-                `(zero-length "data")`;
-            throw new EmptyDataJSONException(message, responseJSON);
-        }
-        else
-        {
-            enum message = "`getTwitchData` response has unexpected JSON " ~
-                `("data" value is not a 1-length array)`;
-            throw new UnexpectedJSONException(message, *dataJSON);
-        }
-    }
-    catch (JSONException e)
-    {
-        import kameloso.string : doublyBackslashed;
-
-        throw new HTTPQueryException(
-            e.msg,
-            response.body,
-            response.error,
-            response.code,
-            e.file.doublyBackslashed,
-            e.line);
-    }
-}
-
-
 // getChatters
 /++
     Get the JSON representation of everyone currently in a broadcaster's channel.
@@ -778,112 +691,164 @@ auto getFollowers(
 in (Fiber.getThis(), "Tried to call `getFollowers` from outside a fiber")
 in (id, "Tried to get followers with an unset ID")
 {
-    import std.conv : to;
+    import std.conv : text, to;
+    import std.json : JSONType, JSONValue, parseJSON;
+
+    static struct GetFollowersResults
+    {
+        uint code;
+        Follower[string] followers;
+
+        auto success() const { return (code == 200); }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, /*const*/ Follower[string] followers)
+        {
+            this.code = code;
+            this.followers = followers;
+        }
+    }
+
+    //immutable authorizationBearer = getBroadcasterAuthorisation(plugin, id);
 
     immutable url = "https://api.twitch.tv/helix/channels/followers?first=100&broadcaster_id=" ~ id.to!string;
+    Follower[string] followers;
+    string after;
+    uint responseCode;
 
     auto getFollowersDg()
     {
-        const entitiesArrayJSON = getMultipleTwitchData(plugin, url, caller);
-        Follower[string] allFollowers;
-
-        /+
+        do
         {
-            "user_id": "11111",
-            "user_name": "UserDisplayName",
-            "user_login": "userloginname",
-            "followed_at": "2022-05-24T22:22:08Z",
-        },
-         +/
+            immutable paginatedURL = after.length ?
+                text(url, "&after=", after) :
+                url;
 
-        foreach (entityJSON; entitiesArrayJSON)
-        {
-            immutable key = entityJSON["user_name"].str;
-            allFollowers[key] = Follower(entityJSON);
+            immutable response = sendHTTPRequest(
+                plugin: plugin,
+                url: paginatedURL,
+                caller: caller,
+                authorisationHeader: plugin.transient.authorizationBearer, //authorizationBearer,
+                clientID: TwitchPlugin.clientID);
+
+            switch (response.code)
+            {
+            case 200:
+                // 200 OK
+                /+
+                    Successfully retrieved the broadcaster’s list of followers.
+                +/
+                break;
+
+            case 400:
+                // 400 Bad Request
+                /+
+                    Possible reasons:
+                    The broadcaster_id query parameter is required.
+                    The broadcaster_id query parameter is not valid.
+                +/
+                goto default;
+
+            case 401:
+                // 401 Unauthorized
+                /+
+                    Possible reasons:
+                    The ID in the broadcaster_id query parameter must match the user
+                    ID in the access token or the user must be a moderator for the
+                    specified broadcaster.
+                    The Authorization header is required and must contain a user access token.
+                    The user access token is missing the moderator:read:followers scope.
+                    The OAuth token is not valid.
+                    The client ID specified in the Client-Id header does not match
+                    the client ID specified in the OAuth token.
+                    The user_id parameter was specified but either the user access
+                    token is missing the moderator:read:followers scope or the user
+                    is not the broadcaster or moderator for the specified channel
+                +/
+                goto default;
+
+            default:
+                /*import kameloso.common : logger;
+                enum pattern = "Failed to get followers: <l>%d";
+                logger.errorf(pattern, response.code);*/
+                return GetFollowersResults(response.code);
+            }
+
+            /*
+            {
+                "total": 8
+                "data": [
+                    {
+                    "user_id": "11111",
+                    "user_name": "UserDisplayName",
+                    "user_login": "userloginname",
+                    "followed_at": "2022-05-24T22:22:08Z",
+                    },
+                    ...
+                ],
+                "pagination": {
+                    "cursor": "eyJiIjpudWxsLCJhIjp7Ik9mZnNldCI6NX19"
+                }
+            }
+             */
+
+            responseCode = response.code;
+
+            immutable responseJSON = parseJSON(response.body);
+
+            if (responseJSON.type != JSONType.object)
+            {
+                enum message = "`getFollowers` response has unexpected JSON " ~
+                    "(wrong JSON type)";
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
+
+            immutable dataJSON = "data" in responseJSON;
+
+            if (!dataJSON)
+            {
+                enum message = "`getFollowers` response has unexpected JSON " ~
+                    `(no "data" key)`;
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
+
+            if (!dataJSON.array.length)
+            {
+                // No followers
+                return GetFollowersResults(response.code, followers);
+            }
+
+            foreach (followerJSON; dataJSON.array)
+            {
+                /*
+                "data": [
+                    {
+                    "user_id": "11111",
+                    "user_name": "UserDisplayName",
+                    "user_login": "userloginname",
+                    "followed_at": "2022-05-24T22:22:08Z",
+                    },
+                    ...
+                ]
+                */
+                immutable key = followerJSON["user_name"].str;
+                followers[key] = Follower(followerJSON);
+            }
+
+            immutable cursor = "cursor" in responseJSON["pagination"];
+
+            after = cursor ?
+                cursor.str :
+                string.init;
         }
+        while (after.length);
 
-        return allFollowers;
+        followers.rehash();
+        return GetFollowersResults(responseCode, followers);
     }
 
     return retryDelegate(plugin, &getFollowersDg);
-}
-
-
-// getMultipleTwitchData
-/++
-    By following a passed URL, queries Twitch servers for an array of entities
-    (such as users or channels).
-
-    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        url = The URL to follow.
-        caller = Name of the calling function.
-
-    Returns:
-        A [std.json.JSONValue|JSONValue] of type `array` containing all returned
-        entities, over all paginated queries.
-
-    Throws:
-        [UnexpectedJSONException] on unexpected JSON received.
- +/
-auto getMultipleTwitchData(
-    TwitchPlugin plugin,
-    const string url,
-    const string caller = __FUNCTION__)
-in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber")
-{
-    import std.conv : text;
-    import std.json : JSONValue, parseJSON;
-
-    JSONValue allEntitiesJSON;
-    allEntitiesJSON = null;
-    allEntitiesJSON.array = null;
-    string after;
-    uint retry;
-
-    do
-    {
-        immutable paginatedURL = after.length ?
-            text(url, "&after=", after) :
-            url;
-
-        immutable response = sendHTTPRequest(
-            plugin: plugin,
-            url: paginatedURL,
-            caller: caller,
-            authorisationHeader: plugin.transient.authorizationBearer,
-            clientID: TwitchPlugin.clientID);
-
-        immutable responseJSON = parseJSON(response.body);
-        immutable dataJSON = "data" in responseJSON;
-
-        if (!dataJSON)
-        {
-            // Invalid response in some way, retry until we reach the limit
-            if (++retry < TwitchPlugin.delegateRetries) continue;
-            enum message = "`getMultipleTwitchData` response has unexpected JSON " ~
-                `(no "data" key)`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        retry = 0;
-
-        foreach (thisResponseJSON; dataJSON.array)
-        {
-            allEntitiesJSON.array ~= thisResponseJSON;
-        }
-
-        immutable cursor = "cursor" in responseJSON["pagination"];
-
-        after = cursor ?
-            cursor.str :
-            string.init;
-    }
-    while (after.length);
-
-    return allEntitiesJSON.array;
 }
 
 
@@ -3124,101 +3089,6 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
     }
 
     return retryDelegate(plugin, &getSubscribersDg);
-}
-
-
-// getUserPlayedGame
-/++
-    Prepares a Voldemort struct with information about what game a user is or was
-    last seen playing.
-
-    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        login = Login name of other streamer to prepare a shoutout for.
-        caller = Name of the calling function.
-
-    Returns:
-        Voldemort `UserPlayedGameResults` struct.
- +/
-version(none)
-auto getUserPlayedGame(
-    TwitchPlugin plugin,
-    const string login,
-    const string caller = __FUNCTION__)
-in (Fiber.getThis(), "Tried to call `getUserPlayedGame` from outside a fiber")
-in (login.length, "Tried to call `getUserPlayedGame` with an empty login name string")
-{
-    import std.json : JSONType;
-
-    static struct UserPlayedGameResults
-    {
-        enum State
-        {
-            success,
-            noSuchUser,
-            noChannel,
-            otherError,
-        }
-
-        uint code;
-        State state;
-        string displayName;
-        string gameName;
-
-        auto success() const { return (id && (code == 200)); }
-    }
-
-    auto getUserPlayedGameDg()
-    {
-        const channelResults = getChannel(
-            plugin: plugin,
-            channelName: login,
-            caller: caller);
-        try
-        {
-            immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ login;
-            immutable userJSON = getTwitchData(plugin, userURL, caller);
-            immutable id = userJSON["id"].str;
-            //immutable login = userJSON["login"].str;
-            immutable channelURL = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ id;
-            immutable channelJSON = getTwitchData(plugin, channelURL, caller);
-
-            UserPlayedGameResults results;
-            results.state = UserPlayedGameResults.State.success;
-            results.displayName = channelJSON["broadcaster_name"].str;
-            results.gameName = channelJSON["game_name"].str;
-            return results;
-        }
-        catch (ErrorJSONException e)
-        {
-            if ((e.json["status"].integer = 400) &&
-                (e.json["error"].str == "Bad Request") &&
-                (e.json["message"].str == "Invalid username(s), email(s), or ID(s). Bad Identifiers."))
-            {
-                UserPlayedGameResults results;
-                results.state = UserPlayedGameResults.State.noSuchUser;
-                return results;
-            }
-
-            UserPlayedGameResults results;
-            results.state = UserPlayedGameResults.State.otherError;
-            return results;
-        }
-        catch (EmptyDataJSONException _)
-        {
-            UserPlayedGameResults results;
-            results.state = UserPlayedGameResults.State.noSuchUser;
-            return results;
-        }
-        /*catch (Exception e)
-        {
-            throw e;
-        }*/
-    }
-
-    return retryDelegate(plugin, &getUserPlayedGameDg);
 }
 
 
