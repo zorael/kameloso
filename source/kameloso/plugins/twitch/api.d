@@ -612,8 +612,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
             response = issueSyncHTTPRequest(request);
 
-            // Copy/paste error handling...
-            if (response.exceptionText.length)
+            if (response.exceptionText.length || (response.code < 10))
             {
                 throw new HTTPQueryException(
                     response.exceptionText,

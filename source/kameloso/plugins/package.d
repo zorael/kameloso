@@ -5542,7 +5542,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     delay(plugin, Timeout.httpQueryInitialWait, yield: true);
     immutable response = plugin.state.querier.awaitResponse(plugin, id);
 
-    if (response.exceptionText.length)
+    if (response.exceptionText.length || (response.code < 10))
     {
         throw new HTTPQueryException(
             response.exceptionText,
