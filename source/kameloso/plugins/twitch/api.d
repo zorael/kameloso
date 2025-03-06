@@ -370,6 +370,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
     static struct Chatters
     {
+        uint code;
         string broadcaster;
         string[] moderators;
         string[] vips;
@@ -379,7 +380,11 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
         string[] viewers;
         uint chatterCount;
 
-        static auto fromJSON(const JSONValue json)
+        auto success() const { return (code == 200); }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const JSONValue json)
         {
             static auto mapJSONArrayToStringArray(const JSONValue json)
             {
@@ -391,20 +396,16 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
                     .array;
             }
 
-            Chatters chatters;
-            chatters.broadcaster = json["broadcster"].array[0].str;
-            chatters.moderators = mapJSONArrayToStringArray(json["moderators"]);
-            chatters.vips = mapJSONArrayToStringArray(json["vips"]);
-            chatters.staff = mapJSONArrayToStringArray(json["staff"]);
-            chatters.admins = mapJSONArrayToStringArray(json["admins"]);
-            chatters.globalMods = mapJSONArrayToStringArray(json["global_mods"]);
-            chatters.viewers = mapJSONArrayToStringArray(json["viewers"]);
-            chatters.chatterCount = cast(uint)json["chatter_count"].integer;
-            return chatters;
+            this.code = code;
+            this.broadcaster = json["broadcster"].array[0].str;
+            this.moderators = mapJSONArrayToStringArray(json["moderators"]);
+            this.vips = mapJSONArrayToStringArray(json["vips"]);
+            this.staff = mapJSONArrayToStringArray(json["staff"]);
+            this.admins = mapJSONArrayToStringArray(json["admins"]);
+            this.globalMods = mapJSONArrayToStringArray(json["global_mods"]);
+            this.viewers = mapJSONArrayToStringArray(json["viewers"]);
+            this.chatterCount = cast(uint)json["chatter_count"].integer;
         }
-
-        uint code;
-        auto success() const { return (code == 200); }
     }
 
     immutable chattersURL = text("https://tmi.twitch.tv/group/user/", broadcaster, "/chatters");
@@ -462,10 +463,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
             /*import kameloso.common : logger;
             enum pattern = "Failed to get chatters: <l>%d";
             logger.errorf(pattern, response.code);*/
-
-            Chatters results;
-            results.code = response.code;
-            return results;
+            return Chatters(response.code);
         }
 
         immutable responseJSON = parseJSON(response.body);
@@ -511,9 +509,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        auto chatters = Chatters.fromJSON(*chattersJSON);
-        chatters.code = response.code;
-        return chatters;
+        return Chatters(response.code, *chattersJSON);
     }
 
     return retryDelegate(plugin, &getChattersDg);
@@ -548,16 +544,65 @@ in (Fiber.getThis(), "Tried to call `getValidation` from outside a fiber")
 in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
     import std.algorithm.searching : startsWith;
-    import std.conv : to;
-    import std.json : JSONType, parseJSON;
+    import std.json : JSONType, JSONValue, parseJSON;
     import core.time : Duration, seconds;
 
     static struct ValidationResults
     {
+        uint code;
         string clientID;
         string login;
         ulong userID;
         Duration expiresIn;
+
+        auto success() const { return (code == 200); }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const JSONValue json)
+        {
+            import std.conv : to;
+
+            /*
+            {
+                "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+                "expires_in": 5114683,
+                "login": "mechawob",
+                "scopes": [
+                    "channel:moderate",
+                    "chat:edit",
+                    "chat:read",
+                    "moderation:read",
+                    "moderator:manage:announcements",
+                    "moderator:manage:automod",
+                    "moderator:manage:automod_settings",
+                    "moderator:manage:banned_users",
+                    "moderator:manage:blocked_terms",
+                    "moderator:manage:chat_messages",
+                    "moderator:manage:chat_settings",
+                    "moderator:manage:shield_mode",
+                    "moderator:manage:shoutouts",
+                    "moderator:manage:unban_requests",
+                    "moderator:manage:warnings",
+                    "moderator:read:chatters",
+                    "moderator:read:followers",
+                    "user:manage:whispers",
+                    "user:read:follows",
+                    "user:read:subscriptions",
+                    "user:write:chat",
+                    "whispers:edit",
+                    "whispers:read"
+                ],
+                "user_id": "790938342"
+            }
+             */
+
+            this.code = code;
+            this.clientID = json["client_id"].str;
+            this.login = json["login"].str;
+            this.userID = json["user_id"].str.to!ulong;
+            this.expiresIn = json["expires_in"].integer.seconds;
+        }
     }
 
     enum url = "https://id.twitch.tv/oauth2/validate";
@@ -688,40 +733,6 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             }
         }
 
-        /*
-        {
-            "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
-            "expires_in": 5114683,
-            "login": "mechawob",
-            "scopes": [
-                "channel:moderate",
-                "chat:edit",
-                "chat:read",
-                "moderation:read",
-                "moderator:manage:announcements",
-                "moderator:manage:automod",
-                "moderator:manage:automod_settings",
-                "moderator:manage:banned_users",
-                "moderator:manage:blocked_terms",
-                "moderator:manage:chat_messages",
-                "moderator:manage:chat_settings",
-                "moderator:manage:shield_mode",
-                "moderator:manage:shoutouts",
-                "moderator:manage:unban_requests",
-                "moderator:manage:warnings",
-                "moderator:read:chatters",
-                "moderator:read:followers",
-                "user:manage:whispers",
-                "user:read:follows",
-                "user:read:subscriptions",
-                "user:write:chat",
-                "whispers:edit",
-                "whispers:read"
-            ],
-            "user_id": "790938342"
-        }
-         */
-
         immutable validationJSON = parseJSON(response.body);
 
         if (validationJSON.type != JSONType.object)
@@ -738,13 +749,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             throw new UnexpectedJSONException(message, validationJSON);
         }
 
-        ValidationResults results;
-        results.clientID = validationJSON["client_id"].str;
-        results.login = validationJSON["login"].str;
-        results.userID = validationJSON["user_id"].str.to!ulong;
-        results.expiresIn = validationJSON["expires_in"].integer.seconds;
-
-        return results;
+        return ValidationResults(response.code, validationJSON);
     }
 
     return retryDelegate(plugin, &getValidationDg, async: true, endlessly: true);
@@ -794,7 +799,7 @@ in (id, "Tried to get followers with an unset ID")
         foreach (entityJSON; entitiesArrayJSON)
         {
             immutable key = entityJSON["user_name"].str;
-            allFollowers[key] = Follower.fromJSON(entityJSON);
+            allFollowers[key] = Follower(entityJSON);
         }
 
         return allFollowers;
@@ -882,7 +887,7 @@ in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber
 }
 
 
-// getTwitchUser
+// getUser
 /++
     Fetches information about a Twitch user and returns it in the form of a
     Voldemort struct with nickname, display name and account ID members.
@@ -900,35 +905,74 @@ in (Fiber.getThis(), "Tried to call `getMultipleTwitchData` from outside a fiber
     Returns:
         Voldemort aggregate struct with `nickname`, `displayName` and `id` members.
  +/
-auto getTwitchUser(
+auto getUser(
     TwitchPlugin plugin,
     const string name = string.init,
     const ulong id = 0,
     const bool searchByDisplayName = false,
     const string caller = __FUNCTION__)
-in (Fiber.getThis(), "Tried to call `getTwitchUser` from outside a fiber")
+in (Fiber.getThis(), "Tried to call `getUser` from outside a fiber")
 in ((name.length || id),
     "Tried to get Twitch user without supplying a name nor an ID")
 {
     import std.conv : to;
-    import std.json : JSONType;
+    import std.json : JSONType, JSONValue, parseJSON;
 
-    static struct User
+    static struct GetUserResults
     {
-        string nickname;
-        string displayName;
+        uint code;
         ulong id;
-    }
+        string login;
+        string displayName;
 
-    User user;
+        auto success() const { return (id && (code == 200)); }
+
+        this(const uint code)
+        {
+            this.code = code;
+        }
+
+        this(const uint code, const JSONValue json)
+        {
+            /*
+            {
+                "data": [
+                    {
+                        "id": "141981764",
+                        "login": "twitchdev",
+                        "display_name": "TwitchDev",
+                        "type": "",
+                        "broadcaster_type": "partner",
+                        "description": "Supporting third-party developers building Twitch integrations from chatbots to game integrations.",
+                        "profile_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/8a6381c7-d0c0-4576-b179-38bd5ce1d6af-profile_image-300x300.png",
+                        "offline_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/3f13ab61-ec78-4fe6-8481-8682cb3b0ac2-channel_offline_image-1920x1080.png",
+                        "view_count": 5980557,
+                        "email": "not-real@email.com",
+                        "created_at": "2016-12-14T20:32:28Z"
+                    }
+                ]
+            }
+             */
+
+            this.code = code;
+            this.id = json["id"].str.to!ulong;
+            this.login = json["login"].str;
+            this.displayName = json["display_name"].str;
+        }
+
+        this(const IRCUser user)
+        {
+            this.id = user.id;
+            this.login = user.nickname;
+            this.displayName = user.displayName;
+            this.code = 200;
+        }
+    }
 
     if (const stored = name in plugin.state.users)
     {
         // Stored user
-        user.nickname = stored.nickname;
-        user.displayName = stored.displayName;
-        user.id = stored.id;
-        return user;
+        return GetUserResults(*stored);
     }
 
     // No such luck
@@ -939,40 +983,102 @@ in ((name.length || id),
             if (stored.displayName == name)
             {
                 // Found user by displayName
-                user.nickname = stored.nickname;
-                user.displayName = stored.displayName;
-                user.id = stored.id;
-                return user;
+                return GetUserResults(stored);
             }
         }
     }
 
     // None on record, look up
-    immutable userURL = name.length ?
+    immutable url = name.length ?
         "https://api.twitch.tv/helix/users?login=" ~ name :
         "https://api.twitch.tv/helix/users?id=" ~ id.to!string;
 
-    auto getTwitchUserDg()
+    auto getUserDg()
     {
-        immutable userJSON = getTwitchData(plugin, userURL, caller);
+        immutable response = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: plugin.transient.authorizationBearer,
+            clientID: TwitchPlugin.clientID);
 
-        if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
+        switch (response.code)
         {
-            // No such user
-            return user; //User.init;
+        case 200:
+            // 200 OK
+            /+
+                Successfully retrieved the specified users’ information.
+             +/
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                The *id* or *login* query parameter is required unless the
+                request uses a user access token.
+                The request exceeded the maximum allowed number of *id* and/or
+                *login* query parameters.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The Authorization header is required and must contain an app
+                access token or user access token.
+                The access token is not valid.
+                The ID specified in the Client-Id header does not match the
+                client ID specified in the access token.
+             +/
+            goto default;
+
+        default:
+            /*import kameloso.common : logger;
+            enum pattern = "Failed to get user: <l>%d";
+            logger.errorf(pattern, response.code);*/
+            return GetUserResults(response.code);
         }
 
-        user.nickname = userJSON["login"].str;
-        user.displayName = userJSON["display_name"].str;
-        user.id = userJSON["id"].str.to!ulong;
-        return user;
+        immutable responseJSON = parseJSON(response.body);
+
+        if (responseJSON.type != JSONType.object)
+        {
+            enum message = "`getUser` response has unexpected JSON " ~
+                "(wrong JSON type)";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        immutable dataJSON = "data" in responseJSON;
+
+        if (!dataJSON)
+        {
+            enum message = "`getUser` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        if (!dataJSON.array.length)
+        {
+            // No such user
+            return GetUserResults(response.code);
+        }
+
+        immutable firstUserJSON = dataJSON.array[0];
+
+        /*if ((firstUserJSON.type != JSONType.object) || ("id" !in *firstUserJSON))
+        {
+            // No such user
+            return GetUserResults(response.code);
+        }*/
+
+        return GetUserResults(response.code, firstUserJSON);
     }
 
-    return retryDelegate(plugin, &getTwitchUserDg);
+    return retryDelegate(plugin, &getUserDg);
 }
 
 
-// getTwitchGame
+// getGame
 /++
     Fetches information about a game; its numerical ID and full name.
 
@@ -989,42 +1095,132 @@ in ((name.length || id),
     Returns:
         Voldemort aggregate struct with `id` and `name` members.
  +/
-auto getTwitchGame(
+auto getGame(
     TwitchPlugin plugin,
-    const string name,
+    const string name = string.init,
     const ulong id = 0,
     const string caller = __FUNCTION__)
-in (Fiber.getThis(), "Tried to call `getTwitchGame` from outside a fiber")
-in ((name.length || id), "Tried to call `getTwitchGame` with no game name nor game ID")
+in (Fiber.getThis(), "Tried to call `getGame` from outside a fiber")
+in ((name.length || id), "Tried to call `getGame` with no game name nor game ID")
 {
     import std.conv : to;
+    import std.json : JSONType, JSONValue, parseJSON;
 
-    static struct Game
+    static struct GetGameResults
     {
+        uint code;
         ulong id;
         string name;
+
+        auto success() const { return (id && (code == 200)); }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const JSONValue json)
+        {
+            /*
+            {
+                "data": [
+                    {
+                    "id": "33214",
+                    "name": "Fortnite",
+                    "box_art_url": "https://static-cdn.jtvnw.net/ttv-boxart/33214-{width}x{height}.jpg",
+                    "igdb_id": "1905"
+                    }
+                ]
+            }
+            */
+
+            this.code = code;
+            this.id = json["id"].str.to!ulong;
+            this.name = json["name"].str;
+        }
     }
 
-    immutable gameURL = id ?
+    immutable url = id ?
         "https://api.twitch.tv/helix/games?id=" ~ id.to!string :
         "https://api.twitch.tv/helix/games?name=" ~ name;
 
-    auto getTwitchGameDg()
+    auto getGameDg()
     {
-        immutable gameJSON = getTwitchData(plugin, gameURL, caller);
+        immutable response = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: plugin.transient.authorizationBearer,
+            clientID: TwitchPlugin.clientID);
 
-        /*
+        switch (response.code)
         {
-            "id": "512953",
-            "name": "Elden Ring",
-            "box_art_url": "https://static-cdn.jtvnw.net/ttv-boxart/512953_IGDB-{width}x{height}.jpg"
-        }
-         */
+        case 200:
+            // 200 OK
+            /+
+                Successfully retrieved the specified games.
+             +/
+            break;
 
-        return Game(gameJSON["id"].str.to!ulong, gameJSON["name"].str);
+        case 400:
+            // 400 Bad Request
+            /+
+                The request must specify the id or name or igdb_id query parameter.
+                The combined number of game IDs (id and igdb_id) and game names
+                that youspecify in the request must not exceed 100.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The Authorization header is required and must specify an app
+                access token or user access token.
+                The access token is not valid.
+                The ID in the Client-Id header must match the client ID in the access token.
+             +/
+            goto default;
+
+        default:
+            /*import kameloso.common : logger;
+            enum pattern = "Failed to get game: <l>%d";
+            logger.errorf(pattern, response.code);*/
+            return GetGameResults(response.code);
+        }
+
+        immutable responseJSON = parseJSON(response.body);
+
+        if (responseJSON.type != JSONType.object)
+        {
+            enum message = "`getGame` response has unexpected JSON " ~
+                "(wrong JSON type)";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        immutable dataJSON = "data" in responseJSON;
+
+        if (!dataJSON)
+        {
+            enum message = "`getGame` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        if (!dataJSON.array.length)
+        {
+            // No such game
+            return GetGameResults(response.code);
+        }
+
+        immutable firstGameJSON = dataJSON.array[0];
+
+        /*if ((firstGameJSON.type != JSONType.object) || ("id" !in *firstGameJSON))
+        {
+            // No such user
+            return GetGameResults(response.code);
+        }*/
+
+        return GetGameResults(response.code, firstGameJSON);
     }
 
-    return retryDelegate(plugin, &getTwitchGameDg);
+    return retryDelegate(plugin, &getGameDg);
 }
 
 
@@ -1249,6 +1445,7 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to fetch information about.
+        channelID = Numerical ID of channel to fetch information about.
         caller = Name of the calling function.
 
     Returns:
@@ -1256,59 +1453,166 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
  +/
 auto getChannel(
     TwitchPlugin plugin,
-    const string channelName,
+    const string channelName = string.init,
+    const ulong channelID = 0,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getChannel` from outside a fiber")
-in (channelName.length, "Tried to fetch a channel with an empty channel name string")
+in ((channelName.length || channelID), "Tried to fetch a channel with no information to query with")
 {
-    import std.algorithm.iteration : map;
-    import std.array : array;
     import std.conv : to;
-    import std.json : parseJSON;
+    import std.json : JSONType, JSONValue, parseJSON;
 
-    const room = channelName in plugin.rooms;
-    assert(room, "Tried to look up a channel for which there existed no room");
-
-    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ room.id.to!string;
-
-    static struct Channel
+    static struct GetChannelResults
     {
+        uint code;
+        ulong id;
         ulong gameID;
         string gameName;
         string[] tags;
         string title;
+
+        auto success() const { return (gameID && (code == 200));  }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const JSONValue json)
+        {
+            import std.algorithm.iteration : map;
+            import std.array : array;
+
+            /*
+            {
+                "data": [
+                    {
+                        "broadcaster_id": "22216721",
+                        "broadcaster_language": "en",
+                        "broadcaster_login": "zorael",
+                        "broadcaster_name": "zorael",
+                        "delay": 0,
+                        "game_id": "",
+                        "game_name": "",
+                        "tags": [],
+                        "title": "bleph"
+                    }
+                ]
+            }
+             */
+
+            this.code = code;
+            this.id = json["broadcaster_id"].str.to!ulong;
+            this.gameID = json["game_id"].str.to!ulong;
+            this.gameName = json["game_name"].str;
+            this.tags = json["tags"].array
+                .map!(tagJSON => tagJSON.str)
+                .array;
+            this.title = json["title"].str;
+        }
     }
+
+    ulong id;
+
+    if (channelID)
+    {
+        id = channelID;
+    }
+    else
+    {
+        if (const room = channelName in plugin.rooms)
+        {
+            id = room.id;
+        }
+        else
+        {
+            const results = getUser(
+                plugin: plugin,
+                name: channelName,
+                caller: caller);
+
+            if (!results.success) return GetChannelResults(results.code);
+
+            id = results.id;
+        }
+    }
+
+    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ id.to!string;
 
     auto getChannelDg()
     {
-        immutable gameDataJSON = getTwitchData(plugin, url, caller);
+        immutable response = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: plugin.transient.authorizationBearer,
+            clientID: TwitchPlugin.clientID);
 
-        /+
+        switch (response.code)
         {
-            "data": [
-                {
-                    "broadcaster_id": "22216721",
-                    "broadcaster_language": "en",
-                    "broadcaster_login": "zorael",
-                    "broadcaster_name": "zorael",
-                    "delay": 0,
-                    "game_id": "",
-                    "game_name": "",
-                    "tags": [],
-                    "title": "bleph"
-                }
-            ]
-        }
-         +/
+        case 200:
+            // 200 OK
+            /+
+                Successfully retrieved the specified games.
+             +/
+            break;
 
-        Channel channel;
-        channel.gameID = gameDataJSON["game_id"].str.to!ulong;
-        channel.gameName = gameDataJSON["game_name"].str;
-        channel.tags = gameDataJSON["tags"].array
-            .map!(tagJSON => tagJSON.str)
-            .array;
-        channel.title = gameDataJSON["title"].str;
-        return channel;
+        case 400:
+            // 400 Bad Request
+            /+
+                The request must specify the id or name or igdb_id query parameter.
+                The combined number of game IDs (id and igdb_id) and game names
+                that you specify in the request must not exceed 100.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The Authorization header is required and must specify an app
+                access token or user access token.
+                The access token is not valid.
+                The ID in the Client-Id header must match the client ID in the access token.
+             +/
+            goto default;
+
+        default:
+            /*import kameloso.common : logger;
+            enum pattern = "Failed to get channel: <l>%d";
+            logger.errorf(pattern, response.code);*/
+            return GetChannelResults(response.code);
+        }
+
+        immutable responseJSON = parseJSON(response.body);
+
+        if (responseJSON.type != JSONType.object)
+        {
+            enum message = "`getChannel` response has unexpected JSON " ~
+                "(wrong JSON type)";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        immutable dataJSON = "data" in responseJSON;
+
+        if (!dataJSON)
+        {
+            enum message = "`getChannel` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        if (!dataJSON.array.length)
+        {
+            // No such user
+            return GetChannelResults(response.code);
+        }
+
+        immutable firstChannelJSON = dataJSON.array[0];
+
+        /*if ((firstChannelJSON.type != JSONType.object) || ("id" !in *firstChannelJSON))
+        {
+            // No such user
+            return GetChannelResults(response.code);
+        }*/
+
+        return GetChannelResults(response.code, firstChannelJSON);
     }
 
     return retryDelegate(plugin, &getChannelDg);
@@ -1374,9 +1678,8 @@ auto startCommercial(
 in (Fiber.getThis(), "Tried to call `startCommercial` from outside a fiber")
 in (channelName.length, "Tried to start a commercial with an empty channel name string")
 {
-    import lu.json : getOrFallback;
     import std.format : format;
-    import std.json : JSONType, parseJSON;
+    import std.json : JSONType, JSONValue, parseJSON;
 
     static struct StartCommercialResults
     {
@@ -1386,6 +1689,27 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
         uint retryAfter;
 
         auto success() const { return (code == 200); }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const JSONValue json)
+        {
+            /*
+            {
+                "data": [
+                    {
+                        "length" : 60,
+                        "message" : "",
+                        "retry_after" : 480
+                    }
+                ]
+            }
+             */
+            this.code = code;
+            this.message = json["message"].str;
+            this.durationSeconds = cast(uint)json["length"].integer;
+            this.retryAfter = cast(uint)json["retry_after"].integer;
+        }
     }
 
     const room = channelName in plugin.rooms;
@@ -1469,25 +1793,10 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             /*import kameloso.common : logger;
             enum pattern = "Failed to start commercial: <l>%d";
             logger.errorf(pattern, response.code);*/
-
-            StartCommercialResults results;
-            results.code = response.code;
-            return results;
+            return StartCommercialResults(response.code);
         }
 
         immutable responseJSON = parseJSON(response.body);
-
-        /*
-        {
-            "data": [
-                {
-                    "length" : 60,
-                    "message" : "",
-                    "retry_after" : 480
-                }
-            ]
-        }
-         */
 
         if (responseJSON.type != JSONType.object)
         {
@@ -1505,13 +1814,6 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             throw new UnexpectedJSONException(message, responseJSON);
         }
 
-        if (dataJSON.type != JSONType.array)
-        {
-            enum message = "`startCommercial` response has unexpected JSON " ~
-                `("data" key is of wrong JSON type)`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
         if (!dataJSON.array.length)
         {
             enum message = "`startCommercial` response has unexpected JSON " ~
@@ -1520,13 +1822,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
         }
 
         immutable commercialInfoJSON = (*dataJSON).array[0];
-
-        StartCommercialResults results;
-        results.code = response.code;
-        results.message = commercialInfoJSON.getOrFallback("message", string.init);
-        results.durationSeconds = commercialInfoJSON.getOrFallback("length", 0);
-        results.retryAfter = commercialInfoJSON.getOrFallback("retry_after", 0);
-        return results;
+        return StartCommercialResults(response.code, commercialInfoJSON);
     }
 
     return retryDelegate(plugin, &startCommercialDg);
@@ -1575,20 +1871,15 @@ public:
 
             Params:
                 json = JSON to parse.
-
-            Returns:
-                A new [Choice] with values derived from the passed `json`.
          +/
-        static auto fromJSON(const JSONValue json)
+        this(const JSONValue json)
         {
             import std.conv : to;
 
-            TwitchPoll.Choice choice;
-            choice.id = json["id"].str;
-            choice.title = json["title"].str;
-            choice.votes = json["votes"].str.to!uint;
-            choice.channelPointsVotes = json["channel_points_votes"].str.to!uint;
-            return choice;
+            this.id = json["id"].str;
+            this.title = json["title"].str;
+            this.votes = json["votes"].str.to!uint;
+            this.channelPointsVotes = json["channel_points_votes"].str.to!uint;
         }
     }
 
@@ -1699,11 +1990,8 @@ public:
 
         Params:
             json = JSON to parse.
-
-        Returns:
-            A new [TwitchPoll] with values derived from the passed `json`.
      +/
-    static auto fromJSON(const JSONValue json)
+    this(const JSONValue json)
     {
         import std.conv : to;
 
@@ -1782,16 +2070,15 @@ public:
         }
          */
 
-        TwitchPoll poll;
-        poll.pollID = json["id"].str;
-        poll.title = json["title"].str;
-        poll.broadcasterID = json["broadcaster_id"].str.to!ulong;
-        poll.broadcasterLogin = json["broadcaster_login"].str;
-        poll.broadcasterDisplayName = json["broadcaster_name"].str;
-        poll.channelPointsVotingEnabled = json["channel_points_voting_enabled"].boolean;
-        poll.channelPointsPerVote = json["channel_points_per_vote"].str.to!uint;
-        poll.duration = cast(uint)json["duration"].integer;
-        poll.startedAt = SysTime.fromISOExtString(json["started_at"].str);
+        this.pollID = json["id"].str;
+        this.title = json["title"].str;
+        this.broadcasterID = json["broadcaster_id"].str.to!ulong;
+        this.broadcasterLogin = json["broadcaster_login"].str;
+        this.broadcasterDisplayName = json["broadcaster_name"].str;
+        this.channelPointsVotingEnabled = json["channel_points_voting_enabled"].boolean;
+        this.channelPointsPerVote = json["channel_points_per_vote"].str.to!uint;
+        this.duration = cast(uint)json["duration"].integer;
+        this.startedAt = SysTime.fromISOExtString(json["started_at"].str);
 
         if (const endedAtJSON = "ended_at" in json)
         {
@@ -1799,7 +2086,7 @@ public:
 
             if (endedAtJSON.type == JSONType.string)
             {
-                poll.endedAt = SysTime.fromISOExtString(endedAtJSON.str);
+                this.endedAt = SysTime.fromISOExtString(endedAtJSON.str);
             }
             else
             {
@@ -1811,37 +2098,35 @@ public:
         switch (json["status"].str)
         {
         case "ACTIVE":
-            poll.status = active;
+            this.status = active;
             break;
 
         case "COMPLETED":
-            poll.status = completed;
+            this.status = completed;
             break;
 
         case "TERMINATED":
-            poll.status = terminated;
+            this.status = terminated;
             break;
 
         case "ARCHIVED":
-            poll.status = archived;
+            this.status = archived;
             break;
 
         case "MODERATED":
-            poll.status = moderated;
+            this.status = moderated;
             break;
 
         //case "INVALID":
         default:
-            poll.status = invalid;
+            this.status = invalid;
             break;
         }
 
         foreach (const choiceJSON; json["choices"].array)
         {
-            poll.choices ~= TwitchPoll.Choice.fromJSON(choiceJSON);
+            this.choices ~= TwitchPoll.Choice(choiceJSON);
         }
-
-        return poll;
     }
 }
 
@@ -1881,9 +2166,10 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
 
     static struct GetPollResults
     {
-        TwitchPoll[] polls;
         uint code;
-        auto success() const { return (code == 200); }
+        TwitchPoll[] polls;
+
+        auto success() const { return (polls.length && (code == 200)); }
     }
 
     const room = channelName in plugin.rooms;
@@ -1897,12 +2183,14 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
 
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
-    // Keep these outside to stop exceptions from restarting the process
-    GetPollResults results;
+    // Keep these outside
+    TwitchPoll[] polls;
     string after;
 
     auto getPollsDg()
     {
+        uint responseCode;
+
         do
         {
             immutable paginatedURL = after.length ?
@@ -1958,9 +2246,10 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 /*import kameloso.common : logger;
                 enum pattern = "Failed to get polls: <l>%d";
                 logger.errorf(pattern, response.code);*/
-                results.code = response.code;
-                return results;
+                return GetPollResults(response.code);
             }
+
+            responseCode = response.code;
 
             immutable responseJSON = parseJSON(response.body);
 
@@ -1984,22 +2273,20 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
 
             if (!dataJSON.array.length)
             {
-                // data exists but is empty
-                enum message = "`getPolls` response has unexpected JSON " ~
-                    `(zero-length "data")`;
-                throw new EmptyDataJSONException(message, responseJSON);
+                // no polls to get?
+                return GetPollResults(response.code);
             }
 
             foreach (const pollJSON; dataJSON.array)
             {
-                results.polls ~= TwitchPoll.fromJSON(pollJSON);
+                polls ~= TwitchPoll(pollJSON);
             }
 
             after = responseJSON["after"].str;
         }
         while (after.length);
 
-        return results;
+        return GetPollResults(responseCode, polls);
     }
 
     return retryDelegate(plugin, &getPollsDg);
@@ -2043,8 +2330,8 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
 
     static struct CreatePollResults
     {
-        TwitchPoll poll;
         uint code;
+        TwitchPoll poll;
         auto success() const { return (code == 200); }
     }
 
@@ -2137,10 +2424,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             /*import kameloso.common : logger;
             enum pattern = "Failed to create poll: <l>%d";
             logger.errorf(pattern, response.code);*/
-
-            CreatePollResults results;
-            results.code = response.code;
-            return results;
+            return CreatePollResults(response.code);
         }
 
         immutable responseJSON = parseJSON(response.body);
@@ -2171,10 +2455,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             throw new EmptyDataJSONException(message, responseJSON);
         }
 
-        CreatePollResults results;
-        results.code = response.code;
-        results.poll = TwitchPoll.fromJSON(dataJSON.array[0]);
-        return results;
+        return CreatePollResults(response.code, TwitchPoll(dataJSON.array[0]));
     }
 
     return retryDelegate(plugin, &createPollDg);
@@ -2216,8 +2497,8 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
 
     static struct EndPollResults
     {
-        TwitchPoll poll;
         uint code;
+        TwitchPoll poll;
         auto success() const { return (code == 200); }
     }
 
@@ -2284,10 +2565,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             /*import kameloso.common : logger;
             enum pattern = "Failed to end poll: <l>%d";
             logger.errorf(pattern, response.code);*/
-
-            EndPollResults results;
-            results.code = response.code;
-            return results;
+            return EndPollResults(response.code);
         }
 
         immutable responseJSON = parseJSON(response.body);
@@ -2356,10 +2634,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             throw new EmptyDataJSONException(message, responseJSON);
         }
 
-        EndPollResults results;
-        results.code = response.code;
-        results.poll = TwitchPoll.fromJSON(dataJSON.array[0]);
-        return results;
+        return EndPollResults(response.code, TwitchPoll(dataJSON.array[0]));
     }
 
     return retryDelegate(plugin, &endPollDg);
@@ -2391,6 +2666,13 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
     import std.algorithm.searching : endsWith;
     import std.array : Appender;
     import std.json : JSONType, parseJSON;
+
+    static struct GetBotListResults
+    {
+        uint code;
+        string[] bots;
+        auto success() const { return (code == 200); }
+    }
 
     auto getBotListDg()
     {
@@ -2470,7 +2752,7 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
             }
         }
 
-        return sink[];
+        return GetBotListResults(response.code, sink[]);
     }
 
     return retryDelegate(plugin, &getBotListDg);
@@ -2501,99 +2783,131 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
     import std.array : array;
     import std.conv : to;
     import std.datetime.systime : SysTime;
-    import std.json : JSONType;
+    import std.json : JSONType, parseJSON;
 
-    immutable streamURL = "https://api.twitch.tv/helix/streams?user_login=" ~ loginName;
+    static struct GetStreamResults
+    {
+        uint code;
+        TwitchPlugin.Room.Stream stream;
+        auto success() const { return (code == 200); }
+    }
+
+    immutable url = "https://api.twitch.tv/helix/streams?user_login=" ~ loginName;
 
     auto getStreamDg()
     {
-        try
+        immutable response = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: plugin.transient.authorizationBearer,
+            clientID: TwitchPlugin.clientID);
+
+        switch (response.code)
         {
-            immutable streamJSON = getTwitchData(plugin, streamURL, caller);
+        case 200:
+            // 200 OK
+            /+
+                Successfully retrieved the list of streams.
+             +/
+            break;
 
-            /*
-            {
-                "data": [
-                    {
-                        "game_id": "506415",
-                        "game_name": "Sekiro: Shadows Die Twice",
-                        "id": "47686742845",
-                        "is_mature": false,
-                        "language": "en",
-                        "started_at": "2022-12-26T16:47:58Z",
-                        "tag_ids": [
-                            "6ea6bca4-4712-4ab9-a906-e3336a9d8039"
-                        ],
-                        "tags": [
-                            "darksouls",
-                            "voiceactor",
-                            "challengerunner",
-                            "chill",
-                            "rpg",
-                            "survival",
-                            "creativeprofanity",
-                            "simlish",
-                            "English"
-                        ],
-                        "thumbnail_url": "https:\/\/static-cdn.jtvnw.net\/previews-ttv\/live_user_lobosjr-{width}x{height}.jpg",
-                        "title": "it's been so long! | fresh run",
-                        "type": "live",
-                        "user_id": "28640725",
-                        "user_login": "lobosjr",
-                        "user_name": "LobosJr",
-                        "viewer_count": 2341
-                    }
-                ],
-                "pagination": {
-                    "cursor": "eyJiIjp7IkN1cnNvciI6ImV5SnpJam95TXpReExqUTBOelV3T1RZMk9URXdORFFzSW1RaU9tWmhiSE5sTENKMElqcDBjblZsZlE9PSJ9LCJhIjp7IkN1cnNvciI6IiJ9fQ"
-                }
-            }
-             */
-            /*
-            {
-                "data": [],
-                "pagination": {}
-            }
-             */
+        case 400:
+            // 400 Bad Request
+            /+
+                The value in the type query parameter is not valid.
+             +/
+            goto default;
 
-            const dataJSON = "data" in streamJSON;
+        case 401:
+            // 401 Unauthorized
+            /+
+                The Authorization header is required and must specify an app
+                access token or user access token.
+                The access token is not valid.
+                The ID in the Client-Id header must match the Client ID in the access token.
+             +/
+            goto default;
 
-            if (!dataJSON)
-            {
-                enum message = "`getStream` response has unexpected JSON " ~
-                    `(no "data" key)`;
-                throw new UnexpectedJSONException(message, streamJSON);
-            }
-
-            if (dataJSON.type != JSONType.array)
-            {
-                enum message = "`getStream` response has unexpected JSON " ~
-                    `("data" key is of wrong JSON type)`;
-                throw new UnexpectedJSONException(message, streamJSON);
-            }
-
-            if (!dataJSON.array.length)
-            {
-                /*enum message = "`getStream` response has unexpected JSON " ~
-                    `(zero-length "data")`;
-                throw new EmptyDataJSONException(message, streamJSON);*/
-                return TwitchPlugin.Room.Stream.init;
-            }
-
-            immutable firstStreamJSON = dataJSON.array[0];
-            auto stream = TwitchPlugin.Room.Stream.fromJSON(firstStreamJSON);
-            stream.live = true;
-            return stream;
+        default:
+            /*import kameloso.common : logger;
+            enum pattern = "Failed to get stream: <l>%d";
+            logger.errorf(pattern, response.code);*/
+            return GetStreamResults(response.code);
         }
-        catch (EmptyDataJSONException _)
+
+        /*
+        {
+            "data": [
+                {
+                    "game_id": "506415",
+                    "game_name": "Sekiro: Shadows Die Twice",
+                    "id": "47686742845",
+                    "is_mature": false,
+                    "language": "en",
+                    "started_at": "2022-12-26T16:47:58Z",
+                    "tag_ids": [
+                        "6ea6bca4-4712-4ab9-a906-e3336a9d8039"
+                    ],
+                    "tags": [
+                        "darksouls",
+                        "voiceactor",
+                        "challengerunner",
+                        "chill",
+                        "rpg",
+                        "survival",
+                        "creativeprofanity",
+                        "simlish",
+                        "English"
+                    ],
+                    "thumbnail_url": "https:\/\/static-cdn.jtvnw.net\/previews-ttv\/live_user_lobosjr-{width}x{height}.jpg",
+                    "title": "it's been so long! | fresh run",
+                    "type": "live",
+                    "user_id": "28640725",
+                    "user_login": "lobosjr",
+                    "user_name": "LobosJr",
+                    "viewer_count": 2341
+                }
+            ],
+            "pagination": {
+                "cursor": "eyJiIjp7IkN1cnNvciI6ImV5SnpJam95TXpReExqUTBOelV3T1RZMk9URXdORFFzSW1RaU9tWmhiSE5sTENKMElqcDBjblZsZlE9PSJ9LCJhIjp7IkN1cnNvciI6IiJ9fQ"
+            }
+        }
+         */
+        /*
+        {
+            "data": [],
+            "pagination": {}
+        }
+         */
+
+        immutable responseJSON = parseJSON(response.body);
+
+        if (responseJSON.type != JSONType.object)
+        {
+            enum message = "`getStream` response has unexpected JSON " ~
+                "(wrong JSON type)";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        const dataJSON = "data" in responseJSON;
+
+        if (!dataJSON)
+        {
+            enum message = "`getStream` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        if (!dataJSON.array.length)
         {
             // Stream is down
-            return TwitchPlugin.Room.Stream.init;
+            return GetStreamResults(response.code);
         }
-        catch (Exception e)
-        {
-            throw e;
-        }
+
+        immutable firstStreamJSON = dataJSON.array[0];
+        auto stream = TwitchPlugin.Room.Stream(firstStreamJSON);
+        return GetStreamResults(response.code, stream);
     }
 
     return retryDelegate(plugin, &getStreamDg);
@@ -2631,7 +2945,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
     import std.array : Appender;
     import std.conv : to;
     import std.format : format;
-    import std.json : JSONType, parseJSON;
+    import std.json : JSONType, JSONValue, parseJSON;
 
     static struct GetSubscribersResults
     {
@@ -2648,21 +2962,60 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             User gifter;
             bool wasGift;
             uint number;
+
+            this(const JSONValue json, const uint number)
+            {
+                /*
+                {
+                    "data": [
+                        {
+                            "broadcaster_id": "141981764",
+                            "broadcaster_login": "twitchdev",
+                            "broadcaster_name": "TwitchDev",
+                            "gifter_id": "12826",
+                            "gifter_login": "twitch",
+                            "gifter_name": "Twitch",
+                            "is_gift": true,
+                            "tier": "1000",
+                            "plan_name": "Channel Subscription (twitchdev)",
+                            "user_id": "527115020",
+                            "user_name": "twitchgaming",
+                            "user_login": "twitchgaming"
+                        },
+                    ],
+                    "pagination": {
+                        "cursor": "xxxx"
+                    },
+                    "total": 13,
+                    "points": 13
+                }
+                 */
+
+                this.user.id = json["user_id"].str.to!ulong;
+                this.user.name = json["user_login"].str;
+                this.user.displayName = json["user_name"].str;
+                this.wasGift = json["is_gift"].boolean;
+                this.gifter.id = json["gifter_id"].str.to!ulong;
+                this.gifter.name = json["gifter_login"].str;
+                this.gifter.displayName = json["gifter_name"].str;
+                this.number = number;
+            }
         }
 
-        Subscription[] subs;
-        uint total;
         uint code;
+        uint totalNumSubscribers;
+        Subscription[] subs;
+
         auto success() const { return code == 200; }
     }
 
     const room = channelName in plugin.rooms;
     assert(room, "Tried to get subscribers of a channel for which there existed no room");
 
-    GetSubscribersResults results;
     Appender!(GetSubscribersResults.Subscription[]) subs;
     string after;
-    uint number;
+    uint numberCounter;
+    uint totalNumSubscribers;
 
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
     immutable firstURL = "https://api.twitch.tv/helix/subscriptions?broadcaster_id=" ~ room.id.to!string;
@@ -2672,6 +3025,8 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
 
     auto getSubscribersDg()
     {
+        uint responseCode;
+
         do
         {
             immutable url = after.length ?
@@ -2717,37 +3072,12 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 /*import kameloso.common : logger;
                 enum pattern = "Failed to get subscribers: <l>%d";
                 logger.errorf(pattern, response.code);*/
-                results.code = response.code;
-                return results;
+                return GetSubscribersResults(response.code);
             }
+
+            responseCode = response.code;
 
             immutable responseJSON = parseJSON(response.body);
-
-            /*
-            {
-                "data": [
-                    {
-                        "broadcaster_id": "141981764",
-                        "broadcaster_login": "twitchdev",
-                        "broadcaster_name": "TwitchDev",
-                        "gifter_id": "12826",
-                        "gifter_login": "twitch",
-                        "gifter_name": "Twitch",
-                        "is_gift": true,
-                        "tier": "1000",
-                        "plan_name": "Channel Subscription (twitchdev)",
-                        "user_id": "527115020",
-                        "user_name": "twitchgaming",
-                        "user_login": "twitchgaming"
-                    },
-                ],
-                "pagination": {
-                    "cursor": "xxxx"
-                },
-                "total": 13,
-                "points": 13
-            }
-             */
 
             if (responseJSON.type != JSONType.object)
             {
@@ -2765,28 +3095,19 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
-            results.total = cast(uint)responseJSON["total"].integer;
+            if (!totalNumSubscribers) totalNumSubscribers = cast(uint)responseJSON["total"].integer;
 
             if (totalOnly)
             {
                 // We only want the total number of subscribers
-                return results;
+                return GetSubscribersResults(response.code, totalNumSubscribers);
             }
 
-            if (!subs[].length) subs.reserve(results.total);
+            if (!subs[].length) subs.reserve(totalNumSubscribers);
 
             foreach (immutable subJSON; dataJSON.array)
             {
-                GetSubscribersResults.Subscription sub;
-                sub.user.id = subJSON["user_id"].str.to!ulong;
-                sub.user.name = subJSON["user_login"].str;
-                sub.user.displayName = subJSON["user_name"].str;
-                sub.wasGift = subJSON["is_gift"].boolean;
-                sub.gifter.id = subJSON["gifter_id"].str.to!ulong;
-                sub.gifter.name = subJSON["gifter_login"].str;
-                sub.gifter.displayName = subJSON["gifter_name"].str;
-                sub.number = number++;
-                subs.put(sub);
+                subs.put(GetSubscribersResults.Subscription(subJSON, numberCounter++));
             }
 
             immutable paginationJSON = "pagination" in responseJSON;
@@ -2799,8 +3120,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
         }
         while (after.length);
 
-        results.subs = subs[];
-        return results;
+        return GetSubscribersResults(responseCode, totalNumSubscribers, subs[]);
     }
 
     return retryDelegate(plugin, &getSubscribersDg);
@@ -2822,6 +3142,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
     Returns:
         Voldemort `UserPlayedGameResults` struct.
  +/
+version(none)
 auto getUserPlayedGame(
     TwitchPlugin plugin,
     const string login,
@@ -2841,13 +3162,20 @@ in (login.length, "Tried to call `getUserPlayedGame` with an empty login name st
             otherError,
         }
 
+        uint code;
         State state;
         string displayName;
         string gameName;
+
+        auto success() const { return (id && (code == 200)); }
     }
 
     auto getUserPlayedGameDg()
     {
+        const channelResults = getChannel(
+            plugin: plugin,
+            channelName: login,
+            caller: caller);
         try
         {
             immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ login;
@@ -3157,7 +3485,6 @@ in (channelName.length, "Tried to timeout a user without providing a channel")
 in (userID, "Tried to timeout a user with an unset user ID")
 {
     import std.algorithm.comparison : min;
-    import std.conv : to;
     import std.format : format;
     import std.json : JSONValue;
 
@@ -3166,24 +3493,68 @@ in (userID, "Tried to timeout a user with an unset user ID")
 
     static struct TimeoutResults
     {
+        uint code;
+        bool alreadyBanned;  // FIXME
         ulong broadcasterID;
         ulong moderatorID;
         ulong userID;
         string createdAt;
         string endTime;
-        uint code;
 
         auto success() const { return (code == 200); }
 
-        static auto fromJSON(const JSONValue json)
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const bool alreadyBanned)
         {
-            TimeoutResults results;
-            results.broadcasterID = json["broadcaster_id"].str.to!ulong;
-            results.moderatorID = json["moderator_id"].str.to!ulong;
-            results.userID = json["user_id"].str.to!ulong;
-            results.createdAt = json["created_at"].str;
-            results.endTime = json["end_time"].str;
-            return results;
+            this.code = code;
+            this.alreadyBanned = alreadyBanned;
+        }
+
+        this(const uint code, const JSONValue json)
+        {
+            import std.conv : to;
+
+            /*
+            {
+                "data": [
+                    {
+                    "broadcaster_id": "1234",
+                    "moderator_id": "5678",
+                    "user_id": "9876",
+                    "created_at": "2021-09-28T18:22:31Z",
+                    "end_time": null
+                    }
+                ]
+            }
+             */
+            /*
+            {
+                "data": [
+                    {
+                    "broadcaster_id": "1234",
+                    "moderator_id": "5678",
+                    "user_id": "9876",
+                    "created_at": "2021-09-28T19:27:31Z",
+                    "end_time": "2021-09-28T19:22:31Z"
+                    }
+                ]
+            }
+             */
+            /*
+            {
+                "error": "Bad Request",
+                "status": 400,
+                "message": "user is already banned"
+            }
+             */
+
+            this.code = code;
+            this.broadcasterID = json["broadcaster_id"].str.to!ulong;
+            this.moderatorID = json["moderator_id"].str.to!ulong;
+            this.userID = json["user_id"].str.to!ulong;
+            this.createdAt = json["created_at"].str;
+            this.endTime = json["end_time"].str;
         }
     }
 
@@ -3224,7 +3595,6 @@ in (userID, "Tried to timeout a user with an unset user ID")
             verb: HTTPVerb.post,
             body: cast(ubyte[])body_,
             contentType: "application/json");
-        immutable responseJSON = parseJSON(response.body);
 
         switch (response.code)
         {
@@ -3303,11 +3673,10 @@ in (userID, "Tried to timeout a user with an unset user ID")
             /*import kameloso.common : logger;
             enum pattern = "Failed to delete message: <l>%d";
             logger.errorf(pattern, response.code);*/
-
-            TimeoutResults results;
-            results.code = response.code;
-            return results;
+            return TimeoutResults(response.code);
         }
+
+        immutable responseJSON = parseJSON(response.body);
 
         if (responseJSON.type != JSONType.object)
         {
@@ -3320,14 +3689,27 @@ in (userID, "Tried to timeout a user with an unset user ID")
 
         if (!dataJSON)
         {
-            enum message = "`timeoutUser` response has unexpected JSON " ~
-                `(no "data" key)`;
-            throw new UnexpectedJSONException(message, responseJSON);
+            if (immutable errorJSON = "error" in responseJSON)
+            {
+                if (responseJSON["message"].str == "user is already banned")
+                {
+                    return TimeoutResults(response.code, alreadyBanned: true);
+                }
+                else
+                {
+                    enum message = "`timeoutUser` response has errors";
+                    throw new ErrorJSONException(message, *errorJSON);
+                }
+            }
+            else
+            {
+                enum message = "`timeoutUser` response has unexpected JSON " ~
+                    `(no "data" key)`;
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
         }
 
-        auto results = TimeoutResults.fromJSON(*dataJSON);
-        results.code = response.code;
-        return results;
+        return TimeoutResults(response.code, *dataJSON);
     }
 
     return retryDelegate(plugin, &timeoutDg);

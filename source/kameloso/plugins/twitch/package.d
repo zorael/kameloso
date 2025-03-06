@@ -333,29 +333,22 @@ package struct Credentials
 
         Params:
             json = JSON representation of some [Credentials].
-
-        Returns:
-            A new [Credentials] with values from the passed `json`.
      +/
-    static auto fromJSON(const JSONValue json)
+    this(const JSONValue json)
     {
-        Credentials creds;
-
-        creds.broadcasterKey = json["broadcasterKey"].str;
-        creds.googleClientID = json["googleClientID"].str;
-        creds.googleClientSecret = json["googleClientSecret"].str;
-        creds.googleAccessToken = json["googleAccessToken"].str;
-        creds.googleRefreshToken = json["googleRefreshToken"].str;
-        creds.youtubePlaylistID = json["youtubePlaylistID"].str;
-        creds.spotifyClientID = json["spotifyClientID"].str;
-        creds.spotifyClientSecret = json["spotifyClientSecret"].str;
-        creds.spotifyAccessToken = json["spotifyAccessToken"].str;
-        creds.spotifyRefreshToken = json["spotifyRefreshToken"].str;
-        creds.spotifyPlaylistID = json["spotifyPlaylistID"].str;
-        creds.broadcasterBearerToken = json["broadcasterBearerToken"].str;
-        creds.broadcasterKeyExpiry = json["broadcasterKeyExpiry"].integer;
-
-        return creds;
+        this.broadcasterKey = json["broadcasterKey"].str;
+        this.googleClientID = json["googleClientID"].str;
+        this.googleClientSecret = json["googleClientSecret"].str;
+        this.googleAccessToken = json["googleAccessToken"].str;
+        this.googleRefreshToken = json["googleRefreshToken"].str;
+        this.youtubePlaylistID = json["youtubePlaylistID"].str;
+        this.spotifyClientID = json["spotifyClientID"].str;
+        this.spotifyClientSecret = json["spotifyClientSecret"].str;
+        this.spotifyAccessToken = json["spotifyAccessToken"].str;
+        this.spotifyRefreshToken = json["spotifyRefreshToken"].str;
+        this.spotifyPlaylistID = json["spotifyPlaylistID"].str;
+        this.broadcasterBearerToken = json["broadcasterBearerToken"].str;
+        this.broadcasterKeyExpiry = json["broadcasterKeyExpiry"].integer;
     }
 }
 
@@ -393,17 +386,13 @@ public:
      +/
     ulong id;
 
-    // fromJSON
     /++
         Constructs a [Follower] from a JSON representation.
 
         Params:
             json = JSON representation of a follower.
-
-        Returns:
-            A new [Follower] with values derived from the passed JSON.
      +/
-    static auto fromJSON(const JSONValue json)
+    this(const JSONValue json)
     {
         import std.conv : to;
 
@@ -416,12 +405,10 @@ public:
         },
          +/
 
-        Follower follower;
-        follower.id = json["user_id"].str.to!uint;
-        follower.displayName = json["user_name"].str;
-        follower.login = json["user_login"].str;
-        follower.when = SysTime.fromISOExtString(json["followed_at"].str);
-        return follower;
+        this.id = json["user_id"].str.to!uint;
+        this.displayName = json["user_name"].str;
+        this.login = json["user_login"].str;
+        this.when = SysTime.fromISOExtString(json["followed_at"].str);
     }
 }
 
@@ -870,7 +857,7 @@ void reportStreamTime(
         return chan(plugin.state, room.channelName, message);
     }
 
-    const previousStream = TwitchPlugin.Room.Stream.fromJSON(json.array[$-1]);
+    const previousStream = TwitchPlugin.Room.Stream(json.array[$-1]);
     immutable delta = (previousStream.endedAt - previousStream.startedAt);
     immutable timestring = timeSince!(7, 1)(delta);
     immutable gameName = previousStream.gameName.length ?
@@ -1006,14 +993,15 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
         {
             import std.format : format;
 
-            immutable user = getTwitchUser(
+            immutable results = getUser(
                 plugin: plugin,
                 name: name,
                 searchByDisplayName: true);
-            if (!user.nickname.length) return sendNoSuchUser(name);
+
+            if (!results.login.length) return sendNoSuchUser(name);
 
             enum pattern = "%s is currently not a follower.";
-            immutable message = pattern.format(user.displayName);
+            immutable message = pattern.format(results.displayName);
             chan(plugin.state, event.channel.name, message);
         }
         else
@@ -1116,23 +1104,23 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
             Additionally send the user to other plugins by way of a message to be
             picked up by the main event loop.
          +/
-        const twitchUser = getTwitchUser(plugin, string.init, room.id);
-        if (!twitchUser.nickname.length) return;  // No such user? Something is deeply wrong
+        const results = getUser(plugin, string.init, room.id);
+        if (!results.login.length) return;  // No such user? Something is deeply wrong
 
-        room.broadcasterDisplayName = twitchUser.displayName;
-        auto storedUser = twitchUser.nickname in plugin.state.users;
+        room.broadcasterDisplayName = results.displayName;
+        auto storedUser = results.login in plugin.state.users;
 
         if (!storedUser)
         {
             // Forge a new IRCUser
             auto newUser = IRCUser(
-                twitchUser.nickname,
-                twitchUser.nickname,
-                twitchUser.nickname ~ ".tmi.twitch.tv");
+                results.login,
+                results.login,
+                results.login ~ ".tmi.twitch.tv");
             newUser.account = newUser.nickname;
             newUser.class_ = IRCUser.Class.anyone;
-            newUser.displayName = twitchUser.displayName;
-            newUser.id = twitchUser.id;
+            newUser.displayName = results.displayName;
+            newUser.id = results.id;
             plugin.state.users[newUser.nickname] = newUser;
             storedUser = newUser.nickname in plugin.state.users;
         }
@@ -1340,11 +1328,11 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
         chan(plugin.state, event.channel.name, message);
     }
 
-    void sendUserHasNoChannel()
+    /*void sendUserHasNoChannel()
     {
         enum message = "Impossible error; user has no channel?";
         chan(plugin.state, event.channel.name, message);
-    }
+    }*/
 
     void sendNoShoutoutOfCurrentChannel()
     {
@@ -1396,37 +1384,41 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
         }
     }
 
-    immutable userPlayedGame = getUserPlayedGame(plugin, login);
+    const getChannelResults = getChannel(
+        plugin: plugin,
+        channelName: login);
 
-    with (typeof(userPlayedGame).State)
-    final switch (userPlayedGame.state)
+    if (!getChannelResults.success)
     {
-    case success:
-        // Drop down
-        break;
-
-    case noSuchUser:
-        return sendNoSuchUser(login);
-
-    case noChannel:
-        return sendUserHasNoChannel();
-
-    case otherError:
-        return sendOtherError();
+        if (!getChannelResults.id)
+        {
+            return sendNoSuchUser(login);
+        }
+        else
+        {
+            return sendOtherError();
+        }
     }
 
-    const stream = getStream(plugin, login);
+    const getStreamResults = getStream(plugin, login);
     string lastSeenPlayingPattern = "%s";  // mutable
 
-    if (userPlayedGame.gameName.length)
+    if (getChannelResults.gameName.length)
     {
-        lastSeenPlayingPattern = stream.live ?
+        lastSeenPlayingPattern = getStreamResults.stream.live ?
             " (currently playing %s)" :
             " (last seen playing %s)";
     }
 
+    const getUserResults = getUser(
+        plugin: plugin,
+        name: login);
+
     immutable pattern = "Shoutout to %s! Visit them at https://twitch.tv/%s !" ~ lastSeenPlayingPattern;
-    immutable message = pattern.format(userPlayedGame.displayName, login, userPlayedGame.gameName);
+    immutable message = pattern.format(
+        getUserResults.displayName,
+        login,
+        getChannelResults.gameName);
 
     foreach (immutable i; 0..numTimes)
     {
@@ -1573,7 +1565,7 @@ void onCommandSubs(TwitchPlugin plugin, const IRCEvent event)
     {
         enum pattern = "%s has %d subscribers.";
         const results = getSubscribers(plugin, event.channel.name, totalOnly: true);
-        immutable message = pattern.format(room.broadcasterDisplayName, results.total);
+        immutable message = pattern.format(room.broadcasterDisplayName, results.totalNumSubscribers);
         chan(plugin.state, event.channel.name, message);
     }
     catch (MissingBroadcasterTokenException e)
@@ -2437,18 +2429,19 @@ void onCommandWatchtime(TwitchPlugin plugin, const IRCEvent event)
     {
         string name = slice.advancePast(' ', inherit: true);  // mutable
         if (name.startsWith('@')) name = name[1..$];
-        immutable user = getTwitchUser(
+
+        immutable user = getUser(
             plugin: plugin,
             name: name,
             searchByDisplayName: true);
 
-        if (!user.nickname.length)
+        if (!user.login.length)
         {
             immutable message = "No such user: " ~ name;
             return chan(plugin.state, event.channel.name, message);
         }
 
-        nickname = user.nickname;
+        nickname = user.login;
         displayName = user.displayName;
     }
 
@@ -2640,7 +2633,7 @@ void onCommandSetGame(TwitchPlugin plugin, const IRCEvent event)
 
         if (!numberSupplied)
         {
-            immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent);
+            immutable gameInfo = getGame(plugin, specified.encodeComponent);
             gameID = gameInfo.id;
             name = gameInfo.name;
         }
@@ -2650,7 +2643,9 @@ void onCommandSetGame(TwitchPlugin plugin, const IRCEvent event)
         }
         else /*if (id.length)*/
         {
-            immutable gameInfo = getTwitchGame(plugin, string.init, gameID);
+            immutable gameInfo = getGame(
+                plugin: plugin,
+                id: gameID);
             name = gameInfo.name;
         }
 
@@ -2836,7 +2831,7 @@ void initialise(TwitchPlugin plugin)
 
         foreach (immutable channelName, credsJSON; secretsJSON.storage.object)
         {
-            plugin.secretsByChannel[channelName] = Credentials.fromJSON(credsJSON);
+            plugin.secretsByChannel[channelName] = Credentials(credsJSON);
         }
 
         bool needSeparator;
@@ -2963,7 +2958,8 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
 
                 if (sinceLastBotUpdate >= botUpdatePeriodicity)
                 {
-                    botBlacklist = getBotList(plugin);
+                    auto results = getBotList(plugin);  // must be mutable
+                    botBlacklist = results.bots;
                     lastBotUpdateTime = now;
                 }
 
@@ -3081,9 +3077,9 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
 
             try
             {
-                auto streamFromServer = getStream(plugin, room.broadcasterName);  // must not be const nor immutable
+                auto getStreamResults = getStream(plugin, room.broadcasterName);  // must not be const nor immutable
 
-                if (!streamFromServer.id)  // == TwitchPlugin.Room.Stream.init)
+                if (!getStreamResults.stream.id)  // == TwitchPlugin.Room.Stream.init)
                 {
                     // Stream down
                     if (room.stream.live)
@@ -3106,9 +3102,9 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                     if (!room.stream.id)
                     {
                         // New stream!
-                        room.stream = streamFromServer;
+                        room.stream = getStreamResults.stream;
                         logger.info("Stream started.");
-                        reportCurrentGame(streamFromServer);
+                        reportCurrentGame(getStreamResults.stream);
 
                         /*if (plugin.settings.watchtime && plugin.transient.viewerTimesDirty)
                         {
@@ -3116,19 +3112,19 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                             plugin.transient.viewerTimesDirty = false;
                         }*/
                     }
-                    else if (room.stream.id == streamFromServer.id)
+                    else if (room.stream.id == getStreamResults.stream.id)
                     {
                         // Same stream running, just update it
-                        room.stream.update(streamFromServer);
+                        room.stream.update(getStreamResults.stream);
                     }
                     else /*if (room.stream.id != streamFromServer.id)*/
                     {
                         // New stream, but stale one exists. Rotate and insert
                         closeStream(room);
                         rotateStream(room);
-                        room.stream = streamFromServer;
+                        room.stream = getStreamResults.stream;
                         logger.info("Stream change detected.");
-                        reportCurrentGame(streamFromServer);
+                        reportCurrentGame(getStreamResults.stream);
 
                         if (plugin.settings.watchtime && plugin.transient.viewerTimesDirty)
                         {
@@ -4078,22 +4074,22 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
                     scope(failure)
                     {
-                        // getTwitchUser throws if the user ID is invalid
+                        // getUser throws if the user ID is invalid
                         // plus we throw ourselves if the user ID does not have a channel
                         plugin.channelNamesByID.remove(sharedChannelID);
                     }
 
-                    immutable twitchUser = getTwitchUser(
+                    immutable results = getUser(
                         plugin: plugin,
                         id: sharedChannelID);
 
-                    if (!twitchUser.nickname.length)
+                    if (!results.success)
                     {
                         // Can this ever happen?
                         throw new Exception("Failed to resolve channel name from user ID");
                     }
 
-                    immutable channelName = '#' ~ twitchUser.nickname;
+                    immutable channelName = '#' ~ results.login;
                     plugin.channelNamesByID[sharedChannelID] = channelName;
 
                     if (plugin.state.coreSettings.trace)
@@ -4365,7 +4361,7 @@ void loadResources(TwitchPlugin plugin)
 
     foreach (immutable channelName, credsJSON; secretsJSON.storage.object)
     {
-        plugin.secretsByChannel[channelName] = Credentials.fromJSON(credsJSON);
+        plugin.secretsByChannel[channelName] = Credentials(credsJSON);
     }
 
     plugin.secretsByChannel.rehash();
@@ -4743,7 +4739,7 @@ package:
                 Returns:
                     A new [Stream] with values from the passed `json`.
              +/
-            static auto fromJSON(const JSONValue json)
+            this(const JSONValue json, const bool live = false)
             {
                 import lu.json : getOrFallback;
                 import std.algorithm.iteration : map;
@@ -4832,39 +4828,38 @@ package:
                  */
                 if ("data" in json)
                 {
-                    enum message = "`Stream.fromJSON` was called with JSON " ~
+                    enum message = "`Stream` ctor was called with JSON " ~
                         `still containing a top-level "data" key`;
                     throw new UnexpectedJSONException(message);
                 }
 
-                auto stream = Stream(json["id"].str.to!ulong);
-                stream.userID = json["user_id"].integer;
-                stream.userLogin = json["user_login"].str;
-                stream.userDisplayName = json["user_name"].str;
-                stream.gameID = cast(uint)json["game_id"].integer;
-                stream.gameName = json["game_name"].str;
-                stream.title = json["title"].str;
-                stream.startedAt = SysTime.fromISOExtString(json["started_at"].str);
-                stream.status = json.getOrFallback("status");
-                stream.viewerCount = json.getOrFallback!ulong("viewer_count");
-                stream.viewerCountMax = json.getOrFallback!ulong("viewer_count_max");
-                stream.tags = json["tags"]
+                //auto stream = Stream(json["id"].str.to!ulong);
+                this._id = json["id"].str.to!ulong;
+                this.userID = json["user_id"].integer;
+                this.userLogin = json["user_login"].str;
+                this.userDisplayName = json["user_name"].str;
+                this.gameID = cast(uint)json["game_id"].integer;
+                this.gameName = json["game_name"].str;
+                this.title = json["title"].str;
+                this.startedAt = SysTime.fromISOExtString(json["started_at"].str);
+                this.status = json.getOrFallback("status");
+                this.viewerCount = json.getOrFallback!ulong("viewer_count");
+                this.viewerCountMax = json.getOrFallback!ulong("viewer_count_max");
+                this.tags = json["tags"]
                     .array
                     .map!(tag => tag.str)
                     .array;
 
                 if (const endedAtJSON = "ended_at" in json)
                 {
-                    stream.endedAt = SysTime.fromISOExtString(endedAtJSON.str);
+                    this.endedAt = SysTime.fromISOExtString(endedAtJSON.str);
                 }
 
                 if (const durationJSON = "duration" in json)
                 {
                     import core.time : seconds;
-                    stream.duration = durationJSON.integer.seconds;
+                    this.duration = durationJSON.integer.seconds;
                 }
-
-                return stream;
             }
         }
 
