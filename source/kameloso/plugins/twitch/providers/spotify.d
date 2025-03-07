@@ -42,10 +42,10 @@ public:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
 
     Throws:
-        [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
 
-        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
+        [kameloso.net.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 void requestSpotifyKeys(TwitchPlugin plugin)
@@ -377,10 +377,10 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
         caBundleFile = Path to a `cacert.pem` bundle file.
 
     Throws:
-        [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
 
-        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
+        [kameloso.net.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 private void getSpotifyTokens(
@@ -446,10 +446,10 @@ private void getSpotifyTokens(
         creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
 
     Throws:
-        [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
 
-        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
+        [kameloso.net.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 private void refreshSpotifyToken(TwitchPlugin plugin, ref Credentials creds)
@@ -539,10 +539,10 @@ private auto getSpotifyBase64Authorization(const Credentials creds)
         A [std.json.JSONValue|JSONValue] of the response.
 
     Throws:
-        [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
 
-        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
+        [kameloso.net.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 auto addTrackToSpotifyPlaylist(
@@ -650,10 +650,10 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
         A [std.json.JSONValue|JSONValue] of the response.
 
     Throws:
-        [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
 
-        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
+        [kameloso.net.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 auto getSpotifyTrackByID(
@@ -769,10 +769,10 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
         The server [std.json.JSONValue|JSONValue] response.
 
     Throws:
-        [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
 
-        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
+        [kameloso.net.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 private auto validateSpotifyToken(ref Credentials creds, const string caBundleFile)

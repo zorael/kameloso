@@ -124,11 +124,13 @@ in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outsi
             terminal output will be skipped.
 
     Throws:
-        [MissingBroadcasterTokenException] if the delegate throws it.
-        [InvalidCredentialsException] likewise.
-        [EmptyDataJSONException] also.
-        [ErrorJSONException] if the delegate throws it and the JSON embedded
-            contains an error code in the 400-499 range.
+        [kameloso.plugins.twitch.common.MissingBroadcasterTokenException|MissingBroadcasterTokenException]
+        if the delegate throws it.
+        [kameloso.plugins.twitch.common.InvalidCredentialsException|InvalidCredentialsException]
+        likewise.
+        [kameloso.net.EmptyDataJSONException|EmptyDataJSONException] also.
+        [kameloso.net.ErrorJSONException|ErrorJSONExceptoin] if the delegate
+        throws it and the JSON embedded contains an error code in the 400-499 range.
         [object.Exception|Exception] if the delegate throws it and `endlessly` is not passed.
  +/
 private auto handleRetryDelegateException(
@@ -279,6 +281,9 @@ void printRetryDelegateException(/*const*/ Exception base)
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#get-chatters
  +/
 auto getChatters(
     TwitchPlugin plugin,
@@ -465,8 +470,13 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
         A Voldemort struct with `clientID`, `login`, `userID` and `expiresIn` members.
 
     Throws:
-        [UnexpectedJSONException] on unexpected JSON received.
-        [HTTPQueryException] on other failure.
+        [kameloso.plugins.twitch.common.InvalidCredentialsException|InvalidCredentialsException]
+        on invalid credentials.
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
+        [kameloso.net.HTTPQueryException|HTTPQueryException] on other failure.
+
+    See_Also:
+        https://dev.twitch.tv/docs/authentication/validate-tokens
  +/
 auto getValidation(
     TwitchPlugin plugin,
@@ -668,6 +678,12 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
     Returns:
         An associative array of [Follower]s keyed by nickname string.
+
+    Throws:
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#get-channel-followers
  +/
 auto getFollowers(
     TwitchPlugin plugin,
@@ -865,6 +881,12 @@ in (id, "Tried to get followers with an unset ID")
 
     Returns:
         Voldemort aggregate struct with `nickname`, `displayName` and `id` members.
+
+    Throws:
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#get-users
  +/
 auto getUser(
     TwitchPlugin plugin,
@@ -1057,6 +1079,12 @@ in ((name.length || id),
 
     Returns:
         Voldemort aggregate struct with `id` and `name` members.
+
+    Throws:
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#get-games
  +/
 auto getGame(
     TwitchPlugin plugin,
@@ -1269,6 +1297,9 @@ in (gameID, "Tried to set the channel game with an empty channel name string")
 
     Returns:
         A Voldemort with the HTTP status code of the operation.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#modify-channel-information
  +/
 private auto modifyChannelImpl(
     TwitchPlugin plugin,
@@ -1418,6 +1449,12 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
 
     Returns:
         A Voldemort with the channel information.
+
+    Throws:
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#get-channel-information
  +/
 auto getChannel(
     TwitchPlugin plugin,
@@ -1642,6 +1679,14 @@ out (token; token.length, "`getBroadcasterAuthorisation` returned an empty strin
 
     Returns:
         A Voldemort with information about the commercial start.
+
+    Throws:
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
+        [kameloso.net.EmptyDataJSONException|EmptyDataJSONException] if the
+        response contained an empty `data` array.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#start-commercial
  +/
 auto startCommercial(
     TwitchPlugin plugin,
@@ -2133,8 +2178,10 @@ public:
         A Voldemort containing an array of [TwitchPoll]s.
 
     Throws:
-        [UnexpectedJSONException] on unexpected JSON.
-        [EmptyDataJSONException] if the JSON has a `"data"` key but it is empty.
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#get-polls
  +/
 auto getPolls(
     TwitchPlugin plugin,
@@ -2313,8 +2360,12 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
         A [TwitchPoll] instance.
 
     Throws:
-        [UnexpectedJSONException] on unexpected JSON.
-        [EmptyDataJSONException] if the JSON has a `"data"` key but it is empty.
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
+        [kameloso.net.EmptyDataJSONException|EmptyDataJSONException] if the
+        response contained an empty `data` array.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#create-poll
  +/
 auto createPoll(
     TwitchPlugin plugin,
@@ -2501,8 +2552,12 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
         A [TwitchPoll] instance.
 
     Throws:
-        [UnexpectedJSONException] on unexpected JSON.
-        [EmptyDataJSONException] if the JSON has a `"data"` key but it is empty.
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
+        [kameloso.net.EmptyDataJSONException|EmptyDataJSONException] if the
+        response contained an empty `data` array.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#end-poll
  +/
 auto endPoll(
     TwitchPlugin plugin,
@@ -2694,7 +2749,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
         A `string[]` array of online bot account names.
 
     Throws:
-        [UnexpectedJSONException] on unexpected JSON.
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
 
     See_Also:
         https://twitchinsights.net/bots
@@ -2830,6 +2885,12 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
     Returns:
         A [kameloso.plugins.twitch.TwitchPlugin.Room.Stream|Room.Stream]
         populated with all (relevant) information.
+
+    Throws:
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#get-streams
  +/
 auto getStream(
     TwitchPlugin plugin,
@@ -3011,7 +3072,10 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
         A Voldemort containing an array of subscribers.
 
     Throws:
-        [UnexpectedJSONException] on unexpected JSON.
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#get-broadcaster-subscriptions
  +/
 auto getSubscribers(
     TwitchPlugin plugin,
@@ -3247,6 +3311,9 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
 
     Returns:
         A `ShoutoutResults` Voldemort struct.
+
+    See_Also:
+        https://dev.twitch.tv/docs/api/reference/#send-a-shoutout
  +/
 auto sendShoutout(
     TwitchPlugin plugin,
@@ -3484,7 +3551,9 @@ in (channelName.length, "Tried to delete a message without providing a channel n
         A Voldemort struct with information about the timeout action.
 
     Throws:
-        [UnexpectedJSONException] on unexpected JSON.
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
+        [kameloso.net.ErrorJSONException|ErrorJSONException] if the
+        response contained an `error` object.
 
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#create-a-banned-event

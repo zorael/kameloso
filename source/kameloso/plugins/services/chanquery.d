@@ -85,7 +85,7 @@ void onPing(ChanQueryService service, const IRCEvent _)
     Starts the routine to query channels and users for information about them.
 
     Channels are queried first. If the server doesn't support WHOIS, or if
-    [kameloso.plugins.common.settings.CoreSettings.eagerLookups|CoreSettings.eagerLookups]
+    [kameloso.plugins.pods.CoreSettings.eagerLookups|CoreSettings.eagerLookups]
     is `false`, users are not WHOISed.
  +/
 void startQueries(ChanQueryService service)

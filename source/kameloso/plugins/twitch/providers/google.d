@@ -42,7 +42,7 @@ public:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
 
     Throws:
-        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
+        [kameloso.net.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 void requestGoogleKeys(TwitchPlugin plugin)
@@ -411,10 +411,10 @@ instead of your email address.)
         A [std.json.JSONValue|JSONValue] of the response.
 
     Throws:
-        [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
 
-        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
+        [kameloso.net.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 auto addVideoToYouTubePlaylist(
@@ -587,10 +587,10 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
         caBundleFile = Path to a `cacert.pem` bundle file.
 
     Throws:
-        [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
 
-        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
+        [kameloso.net.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 private void getGoogleTokens(
@@ -656,10 +656,10 @@ private void getGoogleTokens(
         creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
 
     Throws:
-        [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
 
-        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
+        [kameloso.net.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 private void refreshGoogleToken(TwitchPlugin plugin, ref Credentials creds)
@@ -724,10 +724,10 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
         The server [std.json.JSONValue|JSONValue] response.
 
     Throws:
-        [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
 
-        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
+        [kameloso.net.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 private auto validateGoogleToken(const Credentials creds, const string caBundleFile)

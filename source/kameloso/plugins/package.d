@@ -5449,7 +5449,7 @@ alias priority = Priority;
     Sends an HTTP request and returns the response.
 
     As an optimisation, constructs an [HTTPRequest] object and sends it to the
-    [kameloso.net.HTTPQuerier|HTTPQuerier] as an aggregate, instead of sending
+    [kameloso.net.Querier|Querier] as an aggregate, instead of sending
     the individual parameters. (This blows up compilation memory usage otherwise.)
 
     Params:
@@ -5471,12 +5471,11 @@ alias priority = Priority;
 
     Throws:
         [kameloso.net.HTTPQueryException|HTTPQueryException] if an unspecific error occurs.
-        [kameloso.net.EmptyResponseException|EmptyResponseException] if the response is empty.
-        [kameloso.net.ErrorJSONException|ErrorJSONException] if the response is a JSON error.
 
     See_Also:
         [kameloso.net.HTTPQueryResponse|HTTPQueryResponse]
-        [kameloso.net.issueHTTPRequest|issueHTTPRequest]
+        [kameloso.net.issueSyncHTTPRequest|issueSyncHTTPRequest]
+        [kameloso.net.Querier|Querier]
  +/
 auto sendHTTPRequest(
     IRCPlugin plugin,
@@ -5587,11 +5586,6 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
     Returns:
         The response to the request.
-
-    Throws:
-        [kameloso.net.HTTPQueryException|HTTPQueryException] if an unspecific error occurs.
-        [kameloso.net.EmptyResponseException|EmptyResponseException] if the response is empty.
-        [kameloso.net.ErrorJSONException|ErrorJSONException] if the response is a JSON error.
  +/
 auto awaitResponse(
     Querier querier,

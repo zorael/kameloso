@@ -1439,7 +1439,7 @@ void initAccountResources(PersistenceService service)
     Reads, completes and saves the hostmasks JSON file, creating one if it doesn't exist.
 
     Throws:
-        [kameloso.plugins.IRCPluginInitialisationException|IRCPluginInitialisationException]
+        [kameloso.plugins.common.IRCPluginInitialisationException|IRCPluginInitialisationException]
         on failure loading the `hostmasks.json` file.
  +/
 void initHostmaskResources(PersistenceService service)
