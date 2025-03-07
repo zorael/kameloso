@@ -421,12 +421,6 @@ private void getSpotifyTokens(
     }
      */
 
-    if (responseJSON.type != JSONType.object)
-    {
-        enum message = "Wrong JSON type in token request response";
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
-
     if (immutable errorJSON = "error" in responseJSON)
     {
         throw new ErrorJSONException(errorJSON.str, *errorJSON);
@@ -484,12 +478,6 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
         "scope": "playlist-modify-private playlist-modify-public"
     }
      */
-
-    if (responseJSON.type != JSONType.object)
-    {
-        enum message = "Wrong JSON type in token refresh response";
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
 
     if (immutable errorJSON = "error" in responseJSON)
     {
@@ -817,12 +805,6 @@ private auto validateSpotifyToken(ref Credentials creds, const string caBundleFi
         "uri": "spotify:user:zorael"
     }
      */
-
-    if (responseJSON.type != JSONType.object)
-    {
-        enum message = "Wrong JSON type in token validation response";
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
 
     if (immutable errorJSON = "error" in responseJSON)
     {

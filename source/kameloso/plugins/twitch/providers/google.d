@@ -631,12 +631,6 @@ private void getGoogleTokens(
     }
      */
 
-    if (responseJSON.type != JSONType.object)
-    {
-        enum message = "Wrong JSON type in token request response";
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
-
     if (immutable errorJSON = "error" in responseJSON)
     {
         throw new ErrorJSONException(errorJSON.str, *errorJSON);
@@ -687,12 +681,6 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
         verb: HTTPVerb.post);
 
     immutable responseJSON = parseJSON(response.body);
-
-    if (responseJSON.type != JSONType.object)
-    {
-        enum message = "Wrong JSON type in token refresh response";
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
 
     if (immutable errorJSON = "error" in responseJSON)
     {
@@ -763,12 +751,6 @@ private auto validateGoogleToken(const Credentials creds, const string caBundleF
         "scope": "https:\/\/www.googleapis.com\/auth\/youtube"
     }
      */
-
-    if (responseJSON.type != JSONType.object)
-    {
-        enum message = "Wrong JSON type in token validation response";
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
 
     if (immutable errorJSON = "error" in responseJSON)
     {

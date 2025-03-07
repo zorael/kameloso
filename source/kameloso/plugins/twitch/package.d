@@ -1776,18 +1776,19 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
             try
             {
                 import kameloso.plugins.twitch.providers.google : addVideoToYouTubePlaylist;
-                import std.json : JSONType;
 
                 immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
 
-                if ((json.type != JSONType.object) || ("snippet" !in json))
+                immutable snippetJSON = "snippet" in json;
+
+                if (!snippetJSON)
                 {
                     logger.error("Unexpected JSON in YouTube response.");
                     logger.trace(json.toPrettyString);
                     return;
                 }
 
-                immutable title = json["snippet"]["title"].str;
+                immutable title = (*snippetJSON)["title"].str;
                 //immutable position = json["snippet"]["position"].integer;
                 room.songrequestHistory[event.sender.nickname] = event.time;
                 return sendAddedToYouTubePlaylist(title);
@@ -1852,11 +1853,12 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
         try
         {
             import kameloso.plugins.twitch.providers.spotify : addTrackToSpotifyPlaylist, getSpotifyTrackByID;
-            import std.json : JSONType;
 
             immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
 
-            if ((json.type != JSONType.object) || ("snapshot_id" !in json))
+            immutable snapshotIDJSON = "snapshot_id" in json;
+
+            if (!snapshotIDJSON)
             {
                 logger.error("Unexpected JSON in Spotify response.");
                 logger.trace(json.toPrettyString);
@@ -1867,6 +1869,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
                 plugin,
                 *creds,
                 trackID);
+
             immutable artist = trackJSON["artists"].array[0].object["name"].str;
             immutable track = trackJSON["name"].str;
             room.songrequestHistory[event.sender.nickname] = event.time;
