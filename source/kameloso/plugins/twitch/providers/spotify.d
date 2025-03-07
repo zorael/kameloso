@@ -331,23 +331,12 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
     writeln();
     logger.info("Validating...");
 
-    immutable validationJSON = validateSpotifyToken(creds, plugin.state.connSettings.caBundleFile);
+    const results = validateSpotifyToken(creds, plugin.state.connSettings.caBundleFile);
     if (*plugin.state.abort) return;
 
-    scope(failure)
+    if (!results.success)
     {
-        import std.stdio : writeln;
-        writeln(validationJSON.toPrettyString);
-    }
-
-    if (immutable errorJSON = "error" in validationJSON)
-    {
-        throw new ErrorJSONException((*errorJSON)["message"].str, *errorJSON);
-    }
-    else if ("display_name" !in validationJSON)
-    {
-        enum unexpectedJSONMessage = "Unexpected JSON response from server";
-        throw new UnexpectedJSONException(unexpectedJSONMessage, validationJSON);
+        throw new Exception(results.error);
     }
 
     logger.info("All done!");
@@ -391,7 +380,7 @@ private void getSpotifyTokens(
     import kameloso.net : HTTPRequest, issueSyncHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.format : format;
-    import std.json : JSONType, parseJSON;
+    import std.json : parseJSON;
 
     enum node = "https://accounts.spotify.com/api/token";
     enum urlPattern = node ~
@@ -452,7 +441,7 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
     import kameloso.plugins : sendHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.format : format;
-    import std.json : JSONType, parseJSON;
+    import std.json : parseJSON;
 
     enum node = "https://accounts.spotify.com/api/token";
     enum urlPattern = node ~
@@ -524,7 +513,7 @@ private auto getSpotifyBase64Authorization(const Credentials creds)
         recursing = Whether or not the function is recursing into itself.
 
     Returns:
-        A [std.json.JSONValue|JSONValue] of the response.
+        A Voldemort of the results.
 
     Throws:
         [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
@@ -544,7 +533,34 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
     import kameloso.tables : HTTPVerb;
     import std.algorithm.searching : endsWith;
     import std.format : format;
-    import std.json : JSONType, parseJSON;
+    import std.json : JSONValue, parseJSON;
+
+    static struct AddTrackResults
+    {
+        uint code;
+        string error;
+        string snapshotID;
+
+        auto success() const { return code == 201; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, const JSONValue json)
+        {
+            /*
+            {
+                "snapshot_id" : "[redacted]"
+            }
+             */
+
+            this.code = code;
+            this.snapshotID = json["snapshot_id"].str;
+        }
+    }
 
     // https://api.spotify.com/v1/playlists/0nqAHNphIb3Qhh5CmD7fg5/tracks?uris=spotify:track:594WPgqPOOy0PqLvScovNO
 
@@ -565,61 +581,54 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
         authorizationBearer = "Bearer " ~ creds.spotifyAccessToken;
     }
 
-    try
+    immutable response = sendHTTPRequest(
+        plugin: plugin,
+        url: url,
+        caller: __FUNCTION__,
+        authorisationHeader: authorizationBearer,
+        verb: HTTPVerb.post);
+
+    immutable responseJSON = parseJSON(response.body);
+
+    if (response.code == 200) // ("snapshot_id" in responseJSON)
     {
-        immutable response = sendHTTPRequest(
-            plugin: plugin,
-            url: url,
-            caller: __FUNCTION__,
-            authorisationHeader: authorizationBearer,
-            verb: HTTPVerb.post);
+        // Seems to have worked
+        return AddTrackResults(response.code, responseJSON);
+    }
 
-        immutable responseJSON = parseJSON(response.body);
-
-        /*
-        {
-            "snapshot_id" : "[redacted]"
-        }
-         */
-
-        if ("snapshot_id" in responseJSON)
-        {
-            return responseJSON;
-        }
-        else
-        {
-            enum message = "Unexpected JSON when adding a track to a Spotify playlist";
-            throw new UnexpectedJSONException(message, responseJSON);
+    /*
+    {
+        "error": {
+            "status": 401,
+            "message": "The access token expired"
         }
     }
-    catch (ErrorJSONException e)
+     */
+
+    immutable errorJSON = "error" in responseJSON;
+
+    if (!errorJSON)
     {
-        /*
-        {
-            "error": {
-                "status": 401,
-                "message": "The access token expired"
-            }
-        }
-         */
-        if (const messageJSON = "message" in e.json)
-        {
-            if (messageJSON.str == "The access token expired")
-            {
-                if (!recursing)
-                {
-                    refreshSpotifyToken(plugin, creds);
-                    saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-                    return addTrackToSpotifyPlaylist(plugin, creds, trackID, recursing: true);
-                }
+        enum message = "Unexpected JSON when adding a track to a Spotify playlist";
+        throw new UnexpectedJSONException(message, responseJSON);
+    }
 
-                throw new InvalidCredentialsException(messageJSON.str, e.json);
-            }
+    immutable messageJSON = "message" in *errorJSON;
 
-            throw new ErrorJSONException(messageJSON.str, e.json);
+    if (messageJSON.str == "The access token expired")
+    {
+        if (!recursing)
+        {
+            refreshSpotifyToken(plugin, creds);
+            saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+            return addTrackToSpotifyPlaylist(plugin, creds, trackID, recursing: true);
         }
 
-        throw e;
+        throw new InvalidCredentialsException(messageJSON.str, responseJSON);
+    }
+    else
+    {
+        return AddTrackResults(response.code, messageJSON.str);
     }
 }
 
@@ -635,7 +644,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
         recursing = Whether or not the function is recursing into itself.
 
     Returns:
-        A [std.json.JSONValue|JSONValue] of the response.
+        A Voldemort of the results.
 
     Throws:
         [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
@@ -654,7 +663,60 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
     import kameloso.plugins : sendHTTPRequest;
     import std.algorithm.searching : endsWith;
     import std.format : format;
-    import std.json : JSONType, parseJSON;
+    import std.json : JSONValue, parseJSON;
+
+    static struct GetTrackResults
+    {
+        uint code;
+        string error;
+        string album;
+        string artist;
+        string name;
+        string url;
+
+        auto success() const { return code == 200; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, const JSONValue json)
+        {
+            /*
+            {
+                "album": { ... },
+                "artists": [ ... ],
+                "available_markets": [ ... ],
+                "disc_number": 1,
+                "duration_ms": 52466,
+                "explicit": false,
+                "external_ids": {
+                    "isrc": "GBKBH0502201"
+                },
+                "external_urls": {
+                    "spotify": "https:\/\/open.spotify.com\/track\/70XGut7ZJrEK9h9Is1s3gt"
+                },
+                "href": "https:\/\/api.spotify.com\/v1\/tracks\/70XGut7ZJrEK9h9Is1s3gt",
+                "id": "70XGut7ZJrEK9h9Is1s3gt",
+                "is_local": false,
+                "name": "Prelude",
+                "popularity": 30,
+                "preview_url": null,
+                "track_number": 1,
+                "type": "track",
+                "uri": "spotify:track:70XGut7ZJrEK9h9Is1s3gt"
+            }
+             */
+
+            this.code = code;
+            this.album = json["album"]["name"].str;
+            this.artist = json["artists"].array[0]["name"].str;
+            this.name = json["name"].str;
+            this.url = json["external_urls"]["spotify"].str;
+        }
+    }
 
     static string authorizationBearer;
 
@@ -666,80 +728,53 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
     enum urlPattern = "https://api.spotify.com/v1/tracks/%s";
     immutable url = urlPattern.format(trackID);
 
-    try
+    immutable response = sendHTTPRequest(
+        plugin: plugin,
+        url: url,
+        caller: __FUNCTION__,
+        authorisationHeader: authorizationBearer);
+
+    immutable responseJSON = parseJSON(response.body);
+
+    if (response.code == 200) // ("name" in responseJSON)
     {
-        immutable response = sendHTTPRequest(
-            plugin: plugin,
-            url: url,
-            caller: __FUNCTION__,
-            authorisationHeader: authorizationBearer);
+        // Seems to have worked
+        return GetTrackResults(response.code, responseJSON);
+    }
 
-        immutable responseJSON = parseJSON(response.body);
-
-        /*
-        {
-            "album": { ... },
-            "artists": [ ... ],
-            "available_markets": [ ... ],
-            "disc_number": 1,
-            "duration_ms": 52466,
-            "explicit": false,
-            "external_ids": {
-            "isrc": "GBKBH0502201"
-            },
-            "external_urls": {
-            "spotify": "https:\/\/open.spotify.com\/track\/70XGut7ZJrEK9h9Is1s3gt"
-            },
-            "href": "https:\/\/api.spotify.com\/v1\/tracks\/70XGut7ZJrEK9h9Is1s3gt",
-            "id": "70XGut7ZJrEK9h9Is1s3gt",
-            "is_local": false,
-            "name": "Prelude",
-            "popularity": 30,
-            "preview_url": null,
-            "track_number": 1,
-            "type": "track",
-            "uri": "spotify:track:70XGut7ZJrEK9h9Is1s3gt"
-        }
-         */
-
-        if ("name" in responseJSON)
-        {
-            return responseJSON;
-        }
-        else
-        {
-            enum message = "Unknown JSON when looking up a Spotify track";
-            throw new UnexpectedJSONException(message, responseJSON);
+    /*
+    {
+        "error": {
+            "status": 401,
+            "message": "The access token expired"
         }
     }
-    catch (ErrorJSONException e)
+     */
+
+    immutable errorJSON = "error" in responseJSON;
+
+    if (!errorJSON)
     {
-        /*
-        {
-            "error": {
-                "status": 401,
-                "message": "The access token expired"
-            }
-        }
-         */
-        if (const messageJSON = "message" in e.json)
-        {
-            if (messageJSON.str == "The access token expired")
-            {
-                if (!recursing)
-                {
-                    refreshSpotifyToken(plugin, creds);
-                    saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-                    return getSpotifyTrackByID(plugin, creds, trackID, recursing: true);
-                }
+        enum message = "Unknown JSON when looking up a Spotify track";
+        throw new UnexpectedJSONException(message, responseJSON);
+    }
 
-                throw new InvalidCredentialsException(messageJSON.str, e.json);
-            }
+    immutable messageJSON = "message" in *errorJSON;
 
-            throw new ErrorJSONException(messageJSON.str, e.json);
+    if (messageJSON.str == "The access token expired")
+    {
+        if (!recursing)
+        {
+            refreshSpotifyToken(plugin, creds);
+            saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+            return getSpotifyTrackByID(plugin, creds, trackID, recursing: true);
         }
 
-        throw e;
+        throw new InvalidCredentialsException(messageJSON.str, responseJSON);
+    }
+    else
+    {
+        return GetTrackResults(response.code, messageJSON.str);
     }
 }
 
@@ -754,7 +789,7 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
         caBundleFile = Path to a `cacert.pem` bundle file.
 
     Returns:
-        The server [std.json.JSONValue|JSONValue] response.
+        A Voldemort of the results.
 
     Throws:
         [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
@@ -766,7 +801,50 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
 private auto validateSpotifyToken(ref Credentials creds, const string caBundleFile)
 {
     import kameloso.net : HTTPRequest, issueSyncHTTPRequest;
-    import std.json : JSONType, parseJSON;
+    import std.json : JSONValue, parseJSON;
+
+    static struct SpotifyValidationResults
+    {
+        uint code;
+        string error;
+        string id;
+        string displayName;
+        string url;
+
+        auto success() const { return code == 200; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, const JSONValue json)
+        {
+            /*
+            {
+                "display_name": "zorael",
+                "external_urls": {
+                    "spotify": "https:\/\/open.spotify.com\/user\/zorael"
+                },
+                "followers": {
+                    "href": null,
+                    "total": 0
+                },
+                "href": "https:\/\/api.spotify.com\/v1\/users\/zorael",
+                "id": "zorael",
+                "images": [],
+                "type": "user",
+                "uri": "spotify:user:zorael"
+            }
+             */
+
+            this.code = code;
+            this.id = json["id"].str;
+            this.displayName = json["display_name"].str;
+            this.url = json["external_urls"]["spotify"].str;
+        }
+    }
 
     enum url = "https://api.spotify.com/v1/me";
     immutable authorizationBearer = "Bearer " ~ creds.spotifyAccessToken;
@@ -788,28 +866,18 @@ private auto validateSpotifyToken(ref Credentials creds, const string caBundleFi
         }
     }
      */
-    /*
-    {
-        "display_name": "zorael",
-        "external_urls": {
-            "spotify": "https:\/\/open.spotify.com\/user\/zorael"
-        },
-        "followers": {
-            "href": null,
-            "total": 0
-        },
-        "href": "https:\/\/api.spotify.com\/v1\/users\/zorael",
-        "id": "zorael",
-        "images": [],
-        "type": "user",
-        "uri": "spotify:user:zorael"
-    }
-     */
 
-    if (immutable errorJSON = "error" in responseJSON)
+    if ("id" in responseJSON)
     {
-        throw new ErrorJSONException(errorJSON.str, *errorJSON);
+        return SpotifyValidationResults(response.code, responseJSON);
     }
-
-    return responseJSON;
+    else if (immutable errorJSON = "error" in responseJSON)
+    {
+        return SpotifyValidationResults(response.code, (*errorJSON)["message"].str);
+    }
+    else
+    {
+        enum message = "Unexpected JSON response from server";
+        throw new UnexpectedJSONException(message, responseJSON);
+    }
 }

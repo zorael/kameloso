@@ -358,23 +358,12 @@ instead of your email address.)
     writeln();
     logger.info("Validating...");
 
-    immutable validationJSON = validateGoogleToken(creds, plugin.state.connSettings.caBundleFile);
+    const results = validateGoogleToken(creds, plugin.state.connSettings.caBundleFile);
     if (*plugin.state.abort) return;
 
-    scope(failure)
+    if (!results.success)
     {
-        import std.stdio : writeln;
-        writeln(validationJSON.toPrettyString);
-    }
-
-    if (immutable errorJSON = "error" in validationJSON)
-    {
-        throw new ErrorJSONException(validationJSON["error_description"].str, *errorJSON);
-    }
-    else if ("expires_in" !in validationJSON)
-    {
-        enum unexpectedJSONMessage = "Unexpected JSON response from server";
-        throw new UnexpectedJSONException(unexpectedJSONMessage, validationJSON);
+        throw new Exception(results.error);
     }
 
     logger.info("All done!");
@@ -408,7 +397,7 @@ instead of your email address.)
         recursing = Whether or not the function is recursing into itself.
 
     Returns:
-        A [std.json.JSONValue|JSONValue] of the response.
+        A Voldemort of the results.
 
     Throws:
         [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
@@ -428,7 +417,62 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
     import kameloso.tables : HTTPVerb;
     import std.algorithm.searching : endsWith;
     import std.format : format;
-    import std.json : JSONType, parseJSON;
+    import std.json : JSONValue, parseJSON;
+
+    static struct AddVideoResults
+    {
+        uint code;
+        string title;
+        string description;
+        string ownerChannelTitle;
+        uint position;
+
+        auto success() const { return (code == 200); }
+
+        this(const uint code, const JSONValue json)
+        {
+            import std.array : replace;
+
+            /*
+            {
+                "kind": "youtube#playlistItem",
+                "etag": "QG1leAsBIlxoG2Y4MxMsV_zIaD8",
+                "id": "UExNNnd5dmt2ME9GTVVfc0IwRUZyWDdUd0pZUHdkMUYwRi4xMkVGQjNCMUM1N0RFNEUx",
+                "snippet": {
+                    "publishedAt": "2022-05-24T22:03:44Z",
+                    "channelId": "UC_iiOE42xes48ZXeQ4FkKAw",
+                    "title": "How Do Sinkholes Form?",
+                    "description": "CAN CONTAIN NEWLINES",
+                    "thumbnails": {
+                        "default": {
+                            "url": "https://i.ytimg.com/vi/e-DVIQPqS8E/default.jpg",
+                            "width": 120,
+                            "height": 90
+                        },
+                    },
+                    "channelTitle": "zorael",
+                    "playlistId": "PLM6wyvkv0OFMU_sB0EFrX7TwJYPwd1F0F",
+                    "position": 5,
+                    "resourceId": {
+                        "kind": "youtube#video",
+                        "videoId": "e-DVIQPqS8E"
+                    },
+                    "videoOwnerChannelTitle": "Practical Engineering",
+                    "videoOwnerChannelId": "UCMOqf8ab-42UUQIdVoKwjlQ"
+                }
+            }
+             */
+
+            this.code = code;
+            const snippetJSON = "snippet" in json;
+            this.title = (*snippetJSON)["title"].str;
+            this.ownerChannelTitle = (*snippetJSON)["videoOwnerChannelTitle"].str;
+            this.position = cast(uint)(*snippetJSON)["position"].integer;
+            this.description = (*snippetJSON)["description"].str
+                .replace('\r', ' ')
+                .replace('\n', ' ');
+        }
+    }
 
     enum url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet";
 
@@ -459,121 +503,77 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
 
     auto data = cast(ubyte[])dataPattern.format(creds.youtubePlaylistID, videoID);
 
-    try
+    immutable response = sendHTTPRequest(
+        plugin: plugin,
+        url: url,
+        authorisationHeader: authorizationBearer,
+        verb: HTTPVerb.post,
+        body: data,
+        contentType: "application/json");
+
+    immutable responseJSON = parseJSON(response.body);
+
+    if (response.code == 200) // ("id" in responseJSON)
     {
-        immutable response = sendHTTPRequest(
-            plugin: plugin,
-            url: url,
-            authorisationHeader: authorizationBearer,
-            verb: HTTPVerb.post,
-            body: data,
-            contentType: "application/json");
+        // Seems to have worked
+        return AddVideoResults(response.code, responseJSON);
+    }
 
-        immutable responseJSON = parseJSON(response.body);
-
-        /*
-        {
-            "kind": "youtube#playlistItem",
-            "etag": "QG1leAsBIlxoG2Y4MxMsV_zIaD8",
-            "id": "UExNNnd5dmt2ME9GTVVfc0IwRUZyWDdUd0pZUHdkMUYwRi4xMkVGQjNCMUM1N0RFNEUx",
-            "snippet": {
-                "publishedAt": "2022-05-24T22:03:44Z",
-                "channelId": "UC_iiOE42xes48ZXeQ4FkKAw",
-                "title": "How Do Sinkholes Form?",
-                "description": "CAN CONTAIN NEWLINES",
-                "thumbnails": {
-                    "default": {
-                        "url": "https://i.ytimg.com/vi/e-DVIQPqS8E/default.jpg",
-                        "width": 120,
-                        "height": 90
-                    },
-                },
-                "channelTitle": "zorael",
-                "playlistId": "PLM6wyvkv0OFMU_sB0EFrX7TwJYPwd1F0F",
-                "position": 5,
-                "resourceId": {
-                    "kind": "youtube#video",
-                    "videoId": "e-DVIQPqS8E"
-                },
-                "videoOwnerChannelTitle": "Practical Engineering",
-                "videoOwnerChannelId": "UCMOqf8ab-42UUQIdVoKwjlQ"
-            }
+    /*
+    {
+        "error": {
+            "code": 401,
+            "message": "Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.",
+            "errors": [
+                {
+                    "message": "Invalid Credentials",
+                    "domain": "global",
+                    "reason": "authError",
+                    "location": "Authorization",
+                    "locationType": "header"
+                }
+            ],
+            "status": "UNAUTHENTICATED"
         }
-         */
+    }
+     */
 
-        if ("id" in responseJSON)
+    immutable errorJSON = "error" in responseJSON;
+
+    if (!errorJSON)
+    {
+        enum message = "Unexpected JSON when handling error after failing " ~
+            "to add a video to a YouTube playlist";
+        throw new UnexpectedJSONException(message, responseJSON);
+    }
+
+    immutable statusJSON = "status" in *errorJSON;
+
+    if (statusJSON.str == "UNAUTHENTICATED")
+    {
+        if (!recursing)
         {
-            // Seems to have worked
-            return responseJSON;
+            refreshGoogleToken(plugin, creds);
+            saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+            return addVideoToYouTubePlaylist(plugin, creds, videoID, recursing: true);
+        }
+
+        immutable errorAAJSON = "errors" in *errorJSON;
+
+        if (errorAAJSON && (errorAAJSON.array.length > 0))
+        {
+            immutable message = errorAAJSON.array[0].object["message"].str;
+            throw new InvalidCredentialsException(message, *errorJSON);
         }
         else
         {
-            enum message = "Unexpected JSON when adding a video to a YouTube playlist";
-            throw new UnexpectedJSONException(message, responseJSON);
+            enum message = "A non-specific error occurred.";
+            throw new ErrorJSONException(message, *errorJSON);
         }
     }
-    catch (HTTPQueryException e)
-    {
-        /*
-        {
-            "error": {
-                "code": 401,
-                "message": "Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.",
-                "errors": [
-                    {
-                        "message": "Invalid Credentials",
-                        "domain": "global",
-                        "reason": "authError",
-                        "location": "Authorization",
-                        "locationType": "header"
-                    }
-                ],
-                "status": "UNAUTHENTICATED"
-            }
-        }
-         */
 
-        immutable responseJSON = parseJSON(e.responseBody);
-        immutable errorJSON = "error" in responseJSON;
-
-        if (!errorJSON)
-        {
-            enum message = "Unexpected JSON when handling error after failing " ~
-                "to add a video to a YouTube playlist";
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        if (immutable statusJSON = "status" in *errorJSON)
-        {
-            if (statusJSON.str == "UNAUTHENTICATED")
-            {
-                if (!recursing)
-                {
-                    refreshGoogleToken(plugin, creds);
-                    saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-                    return addVideoToYouTubePlaylist(plugin, creds, videoID, recursing: true);
-                }
-
-                immutable errorAAJSON = "errors" in *errorJSON;
-
-                if (errorAAJSON &&
-                    (errorAAJSON.type == JSONType.array) &&
-                    (errorAAJSON.array.length > 0))
-                {
-                    immutable message = errorAAJSON.array[0].object["message"].str;
-                    throw new InvalidCredentialsException(message, *errorJSON);
-                }
-                else
-                {
-                    enum message = "A non-specific error occurred.";
-                    throw new ErrorJSONException(message, *errorJSON);
-                }
-            }
-        }
-
-        // If we're here, the above didn't match
-        throw new ErrorJSONException((*errorJSON)["message"].str, *errorJSON);
-    }
+    // If we're here, the above didn't match
+    throw new ErrorJSONException((*errorJSON)["message"].str, *errorJSON);
 }
 
 
@@ -601,7 +601,7 @@ private void getGoogleTokens(
     import kameloso.net : HTTPRequest, issueSyncHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.format : format;
-    import std.json : JSONType, parseJSON;
+    import std.json : parseJSON;
 
     enum urlPattern = "https://oauth2.googleapis.com/token" ~
         "?client_id=%s" ~
@@ -662,7 +662,7 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
     import kameloso.plugins : sendHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.format : format;
-    import std.json : JSONType, parseJSON;
+    import std.json : parseJSON;
 
     enum urlPattern = "https://oauth2.googleapis.com/token" ~
         "?client_id=%s" ~
@@ -709,7 +709,7 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
         caBundleFile = Path to a `cacert.pem` bundle file.
 
     Returns:
-        The server [std.json.JSONValue|JSONValue] response.
+        A Voldemort of the results.
 
     Throws:
         [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
@@ -721,8 +721,29 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
 private auto validateGoogleToken(const Credentials creds, const string caBundleFile)
 {
     import kameloso.net: HTTPRequest, issueSyncHTTPRequest;
-    import kameloso.tables : HTTPVerb;
-    import std.json : JSONType, parseJSON;
+    import std.json : JSONValue, parseJSON;
+    import core.time : Duration, seconds;
+
+    static struct GoogleValidationResults
+    {
+        uint code;
+        string error;
+        Duration expiresIn;
+
+        auto success() const { return (code == 200); }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, const JSONValue json)
+        {
+            this.code = code;
+            this.expiresIn = json["expires_in"].integer.seconds;
+        }
+    }
 
     enum urlHead = "https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=";
     immutable url = urlHead ~ creds.googleAccessToken;
@@ -752,10 +773,17 @@ private auto validateGoogleToken(const Credentials creds, const string caBundleF
     }
      */
 
-    if (immutable errorJSON = "error" in responseJSON)
+    if ("expires_in" in responseJSON)
     {
-        throw new ErrorJSONException(errorJSON.str, *errorJSON);
+        return GoogleValidationResults(response.code, responseJSON);
     }
-
-    return responseJSON;
+    else if (immutable errorDescriptionJSON = "error_description" in responseJSON)
+    {
+        return GoogleValidationResults(response.code, *errorDescriptionJSON);
+    }
+    else
+    {
+        enum message = "Unexpected JSON response from server";
+        throw new UnexpectedJSONException(message, responseJSON);
+    }
 }

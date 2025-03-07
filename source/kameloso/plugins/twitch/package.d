@@ -1777,21 +1777,15 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
             {
                 import kameloso.plugins.twitch.providers.google : addVideoToYouTubePlaylist;
 
-                immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
+                const results = addVideoToYouTubePlaylist(plugin, *creds, videoID);
 
-                immutable snippetJSON = "snippet" in json;
-
-                if (!snippetJSON)
+                if (!results.success)
                 {
-                    logger.error("Unexpected JSON in YouTube response.");
-                    logger.trace(json.toPrettyString);
-                    return;
+                    return sendNonspecificError();
                 }
 
-                immutable title = (*snippetJSON)["title"].str;
-                //immutable position = json["snippet"]["position"].integer;
                 room.songrequestHistory[event.sender.nickname] = event.time;
-                return sendAddedToYouTubePlaylist(title);
+                return sendAddedToYouTubePlaylist(results.title);
             }
             catch (InvalidCredentialsException _)
             {
@@ -1850,36 +1844,39 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
             return sendInvalidURL();
         }
 
-        try
+        void addSpotifyTrackDg()
         {
-            import kameloso.plugins.twitch.providers.spotify : addTrackToSpotifyPlaylist, getSpotifyTrackByID;
-
-            immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
-
-            immutable snapshotIDJSON = "snapshot_id" in json;
-
-            if (!snapshotIDJSON)
+            try
             {
-                logger.error("Unexpected JSON in Spotify response.");
-                logger.trace(json.toPrettyString);
-                return;
+                import kameloso.plugins.twitch.providers.spotify : addTrackToSpotifyPlaylist, getSpotifyTrackByID;
+
+                const addResults = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
+
+                if (!addResults.success)
+                {
+                    return sendNonspecificError();
+                }
+
+                const getTrackResults = getSpotifyTrackByID(
+                    plugin,
+                    *creds,
+                    trackID);
+
+                room.songrequestHistory[event.sender.nickname] = event.time;
+                return sendAddedToSpotifyPlaylist(getTrackResults.artist, getTrackResults.name);
             }
-
-            const trackJSON = getSpotifyTrackByID(
-                plugin,
-                *creds,
-                trackID);
-
-            immutable artist = trackJSON["artists"].array[0].object["name"].str;
-            immutable track = trackJSON["name"].str;
-            room.songrequestHistory[event.sender.nickname] = event.time;
-            return sendAddedToSpotifyPlaylist(artist, track);
+            catch (InvalidCredentialsException _)
+            {
+                return sendInvalidCredentials();
+            }
+            catch (ErrorJSONException _)
+            {
+                return sendNonspecificError();
+            }
+            // Let other exceptions fall through
         }
-        catch (ErrorJSONException _)
-        {
-            return sendInvalidURL();
-        }
-        // Let other exceptions fall through
+
+        retryDelegate(plugin, &addSpotifyTrackDg);
     }
 }
 
