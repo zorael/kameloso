@@ -3583,7 +3583,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
     }
 
     // Work around forward-declaration of auto return type
-    if (true == false) return TimeoutResults.init;
+    if (false) return TimeoutResults.init;
 
     enum maxDurationSeconds = 1_209_600;  // 14 days
 

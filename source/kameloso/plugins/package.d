@@ -5507,7 +5507,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
     import core.time : msecs;
 
     // Work around forward-declaration of auto return type
-    if (true == false) return HTTPQueryResponse.init;
+    if (false) return HTTPQueryResponse.init;
 
     version(TraceHTTPRequests)
     {
