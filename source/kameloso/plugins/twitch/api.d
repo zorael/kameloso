@@ -3794,8 +3794,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
                 }
                 else
                 {
-                    enum message = "`timeoutUser` response has errors";
-                    throw new ErrorJSONException(message, *errorJSON);
+                    return TimeoutResults(response.code, (*errorJSON)["message"].str);
                 }
             }
             else

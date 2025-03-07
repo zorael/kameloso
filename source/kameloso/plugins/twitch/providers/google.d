@@ -24,10 +24,7 @@ import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
 import kameloso.plugins.twitch.providers.common;
 import kameloso.common : logger;
-import kameloso.net :
-    ErrorJSONException,
-    HTTPQueryException,
-    UnexpectedJSONException;
+import kameloso.net : HTTPQueryException, UnexpectedJSONException;
 import core.thread.fiber : Fiber;
 
 public:
@@ -40,10 +37,6 @@ public:
 
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-
-    Throws:
-        [kameloso.net.ErrorJSONException|ErrorJSONException]
-        if the returned JSON has an `"error"` field.
  +/
 void requestGoogleKeys(TwitchPlugin plugin)
 {
@@ -363,7 +356,10 @@ instead of your email address.)
 
     if (!results.success)
     {
-        throw new Exception(results.error);
+        enum pattern = "Failed to validate Google token: <l>%s";
+        logger.errorf(pattern, results.error);
+        *plugin.state.abort = true;
+        return;
     }
 
     logger.info("All done!");
@@ -400,11 +396,7 @@ instead of your email address.)
         A Voldemort of the results.
 
     Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
-        on unexpected JSON.
-
-        [kameloso.net.ErrorJSONException|ErrorJSONException]
-        if the returned JSON has an `"error"` field.
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON.
  +/
 auto addVideoToYouTubePlaylist(
     TwitchPlugin plugin,
@@ -422,12 +414,19 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
     static struct AddVideoResults
     {
         uint code;
+        string error;
         string title;
         string description;
         string ownerChannelTitle;
         uint position;
 
         auto success() const { return (code == 200); }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
 
         this(const uint code, const JSONValue json)
         {
@@ -565,15 +564,9 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
             immutable message = errorAAJSON.array[0].object["message"].str;
             throw new InvalidCredentialsException(message, *errorJSON);
         }
-        else
-        {
-            enum message = "A non-specific error occurred.";
-            throw new ErrorJSONException(message, *errorJSON);
-        }
     }
 
-    // If we're here, the above didn't match
-    throw new ErrorJSONException((*errorJSON)["message"].str, *errorJSON);
+    return AddVideoResults(response.code, (*errorJSON)["message"].str);
 }
 
 
@@ -586,22 +579,53 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
         code = Google authorisation code.
         caBundleFile = Path to a `cacert.pem` bundle file.
 
-    Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
-        on unexpected JSON.
+    Returns:
+        A Voldemort of the results.
 
-        [kameloso.net.ErrorJSONException|ErrorJSONException]
-        if the returned JSON has an `"error"` field.
+    Throws:
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON.
  +/
-private void getGoogleTokens(
-    ref Credentials creds,
+private auto getGoogleTokens(
+    const Credentials creds,
     const string code,
     const string caBundleFile)
 {
     import kameloso.net : HTTPRequest, issueSyncHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.format : format;
-    import std.json : parseJSON;
+    import std.json : JSONValue, parseJSON;
+
+    static struct GetTokenResults
+    {
+        uint code;
+        string error;
+        string accessToken;
+        string refreshToken;
+
+        auto success() const { return (code == 200); }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, const JSONValue json)
+        {
+            /*
+            {
+                "access_token": "[redacted]"
+                "expires_in": 3599,
+                "refresh_token": "[redacted]",
+                "scope": "https://www.googleapis.com/auth/youtube",
+                "token_type": "Bearer"
+            }
+             */
+            this.code = code;
+            this.accessToken = json["access_token"].str;
+            this.refreshToken = json["refresh_token"].str;
+        }
+    }
 
     enum urlPattern = "https://oauth2.googleapis.com/token" ~
         "?client_id=%s" ~
@@ -621,23 +645,21 @@ private void getGoogleTokens(
     immutable response = issueSyncHTTPRequest(request);
     immutable responseJSON = parseJSON(response.body);
 
-    /*
+    if (response.code == 200) // ("access_token" in responseJSON)
     {
-        "access_token": "[redacted]"
-        "expires_in": 3599,
-        "refresh_token": "[redacted]",
-        "scope": "https://www.googleapis.com/auth/youtube",
-        "token_type": "Bearer"
-    }
-     */
-
-    if (immutable errorJSON = "error" in responseJSON)
-    {
-        throw new ErrorJSONException(errorJSON.str, *errorJSON);
+        return GetTokenResults(response.code, responseJSON);
     }
 
-    creds.googleAccessToken = responseJSON["access_token"].str;
-    creds.googleRefreshToken = responseJSON["refresh_token"].str;
+    immutable errorJSON = "error" in responseJSON;
+
+    if (!errorJSON)
+    {
+        enum message = "Unexpected JSON when handling error after failing " ~
+            "to get Google tokens";
+        throw new UnexpectedJSONException(message, responseJSON);
+    }
+
+    return GetTokenResults(response.code, (*errorJSON)["message"].str);
 }
 
 
@@ -649,20 +671,41 @@ private void getGoogleTokens(
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
 
+    Returns:
+        A Voldemort of the results.
+
     Throws:
         [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
-
-        [kameloso.net.ErrorJSONException|ErrorJSONException]
-        if the returned JSON has an `"error"` field.
  +/
-private void refreshGoogleToken(TwitchPlugin plugin, ref Credentials creds)
+private auto refreshGoogleToken(TwitchPlugin plugin, ref Credentials creds)
 in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
 {
     import kameloso.plugins : sendHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.format : format;
-    import std.json : parseJSON;
+    import std.json : JSONValue, parseJSON;
+
+    static struct RefreshTokenResults
+    {
+        uint code;
+        string error;
+        string accessToken;
+
+        auto success() const { return (code == 200); }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, const JSONValue json)
+        {
+            this.code = code;
+            this.accessToken = json["access_token"].str;
+        }
+    }
 
     enum urlPattern = "https://oauth2.googleapis.com/token" ~
         "?client_id=%s" ~
@@ -682,21 +725,27 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
 
     immutable responseJSON = parseJSON(response.body);
 
-    if (immutable errorJSON = "error" in responseJSON)
+    if (response.code == 200) // ("access_token" in responseJSON)
     {
-        if (errorJSON.str == "invalid_grant")
-        {
-            enum message = "Invalid grant";
-            throw new InvalidCredentialsException(message, *errorJSON);
-        }
-        else
-        {
-            throw new ErrorJSONException(errorJSON.str, *errorJSON);
-        }
+        return RefreshTokenResults(response.code, responseJSON);
     }
 
-    creds.googleAccessToken = responseJSON["access_token"].str;
-    // refreshToken is not present and stays the same as before
+    immutable errorJSON = "error" in responseJSON;
+
+    if (!errorJSON)
+    {
+        enum message = "Unexpected JSON when handling error after failing " ~
+            "to refresh a Google token";
+        throw new UnexpectedJSONException(message, responseJSON);
+    }
+
+    if (errorJSON.str == "invalid_grant")
+    {
+        enum message = "Invalid grant";
+        throw new InvalidCredentialsException(message, *errorJSON);
+    }
+
+    return RefreshTokenResults(response.code, errorJSON.str);
 }
 
 
@@ -712,11 +761,7 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
         A Voldemort of the results.
 
     Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
-        on unexpected JSON.
-
-        [kameloso.net.ErrorJSONException|ErrorJSONException]
-        if the returned JSON has an `"error"` field.
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON.
  +/
 private auto validateGoogleToken(const Credentials creds, const string caBundleFile)
 {
@@ -740,6 +785,16 @@ private auto validateGoogleToken(const Credentials creds, const string caBundleF
 
         this(const uint code, const JSONValue json)
         {
+            /*
+            {
+                "access_type": "offline",
+                "aud": "[redacted]",
+                "azp": "[redacted]",
+                "exp": "[redacted]",
+                "expires_in": "3599",
+                "scope": "https:\/\/www.googleapis.com\/auth\/youtube"
+            }
+             */
             this.code = code;
             this.expiresIn = json["expires_in"].integer.seconds;
         }
@@ -756,34 +811,26 @@ private auto validateGoogleToken(const Credentials creds, const string caBundleF
     immutable response = issueSyncHTTPRequest(request);
     immutable responseJSON = parseJSON(response.body);
 
+    if (response.code == 200)  // ("expires_in" in responseJSON)
+    {
+        return GoogleValidationResults(response.code, responseJSON);
+    }
+
     /*
     {
         "error": "invalid_token",
         "error_description": "Invalid Value"
     }
      */
-    /*
-    {
-        "access_type": "offline",
-        "aud": "[redacted]",
-        "azp": "[redacted]",
-        "exp": "[redacted]",
-        "expires_in": "3599",
-        "scope": "https:\/\/www.googleapis.com\/auth\/youtube"
-    }
-     */
 
-    if ("expires_in" in responseJSON)
+    immutable errorDescriptionJSON = "error_description" in responseJSON;
+
+    if (!errorDescriptionJSON)
     {
-        return GoogleValidationResults(response.code, responseJSON);
-    }
-    else if (immutable errorDescriptionJSON = "error_description" in responseJSON)
-    {
-        return GoogleValidationResults(response.code, *errorDescriptionJSON);
-    }
-    else
-    {
-        enum message = "Unexpected JSON response from server";
+        enum message = "Unexpected JSON when handling error after failing " ~
+            "to validate a Google token";
         throw new UnexpectedJSONException(message, responseJSON);
     }
+
+    return GoogleValidationResults(response.code, *errorDescriptionJSON);
 }

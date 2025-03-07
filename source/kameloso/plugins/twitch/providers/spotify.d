@@ -24,10 +24,7 @@ import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
 import kameloso.plugins.twitch.providers.common;
 import kameloso.common : logger;
-import kameloso.net :
-    ErrorJSONException,
-    HTTPQueryException,
-    UnexpectedJSONException;
+import kameloso.net : HTTPQueryException, UnexpectedJSONException;
 import core.thread.fiber : Fiber;
 
 public:
@@ -42,11 +39,7 @@ public:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
 
     Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
-        on unexpected JSON.
-
-        [kameloso.net.ErrorJSONException|ErrorJSONException]
-        if the returned JSON has an `"error"` field.
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON.
  +/
 void requestSpotifyKeys(TwitchPlugin plugin)
 {
@@ -326,7 +319,18 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
     }
 
     // All done, fetch
-    getSpotifyTokens(creds, code, plugin.state.connSettings.caBundleFile);
+    const getTokenResults = getSpotifyTokens(creds, code, plugin.state.connSettings.caBundleFile);
+
+    if (!getTokenResults.success)
+    {
+        enum pattern = "Failed to get Spotify tokens: <l>%s";
+        logger.errorf(pattern, getTokenResults.error);
+        *plugin.state.abort = true;
+        return;
+    }
+
+    creds.spotifyAccessToken = getTokenResults.accessToken;
+    creds.spotifyRefreshToken = getTokenResults.refreshToken;
 
     writeln();
     logger.info("Validating...");
@@ -336,7 +340,10 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
 
     if (!results.success)
     {
-        throw new Exception(results.error);
+        enum pattern = "Failed to validate Spotify tokens: <l>%s";
+        logger.errorf(pattern, results.error);
+        *plugin.state.abort = true;
+        return;
     }
 
     logger.info("All done!");
@@ -365,22 +372,61 @@ Click <i>Agree</> to authorise the use of this program with your account.`;
         code = Spotify authorisation code.
         caBundleFile = Path to a `cacert.pem` bundle file.
 
-    Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
-        on unexpected JSON.
+    Returns:
+        A Voldemort of the results.
 
-        [kameloso.net.ErrorJSONException|ErrorJSONException]
-        if the returned JSON has an `"error"` field.
+    Throws:
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON.
  +/
-private void getSpotifyTokens(
-    ref Credentials creds,
+private auto getSpotifyTokens(
+    const Credentials creds,
     const string code,
     const string caBundleFile)
 {
     import kameloso.net : HTTPRequest, issueSyncHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.format : format;
-    import std.json : parseJSON;
+    import std.json : JSONValue, parseJSON;
+    import core.time : Duration, seconds;
+
+    static struct GetTokenResults
+    {
+        uint code;
+        string error;
+        string accessToken;
+        string tokenType;
+        string refreshToken;
+        string scope_;
+        Duration expiresIn;
+
+        auto success() const { return (code == 200); }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, const JSONValue json)
+        {
+            /*
+            {
+                "access_token": "[redacted]",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "refresh_token": "[redacted]",
+                "scope": "playlist-modify-private playlist-modify-public"
+            }
+             */
+
+            this.code = code;
+            this.accessToken = json["access_token"].str;
+            this.tokenType = json["token_type"].str;
+            this.refreshToken = json["refresh_token"].str;
+            this.scope_ = json["scope"].str;
+            this.expiresIn = json["expires_in"].integer.seconds;
+        }
+    }
 
     enum node = "https://accounts.spotify.com/api/token";
     enum urlPattern = node ~
@@ -400,23 +446,20 @@ private void getSpotifyTokens(
     immutable response = issueSyncHTTPRequest(request);
     immutable responseJSON = parseJSON(response.body);
 
-    /*
+    if (response.code == 200) // ("access_token" in responseJSON)
     {
-        "access_token": "[redacted]",
-        "token_type": "Bearer",
-        "expires_in": 3600,
-        "refresh_token": "[redacted]",
-        "scope": "playlist-modify-private playlist-modify-public"
-    }
-     */
-
-    if (immutable errorJSON = "error" in responseJSON)
-    {
-        throw new ErrorJSONException(errorJSON.str, *errorJSON);
+        return GetTokenResults(response.code, responseJSON);
     }
 
-    creds.spotifyAccessToken = responseJSON["access_token"].str;
-    creds.spotifyRefreshToken = responseJSON["refresh_token"].str;
+    immutable errorJSON = "error" in responseJSON;
+
+    if (!errorJSON)
+    {
+        enum message = "Unexpected JSON when fetching Spotify tokens";
+        throw new UnexpectedJSONException(message, responseJSON);
+    }
+
+    return GetTokenResults(response.code, (*errorJSON)["message"].str);
 }
 
 
@@ -428,20 +471,58 @@ private void getSpotifyTokens(
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         creds = [kameloso.plugins.twitch.Credentials|Credentials] aggregate.
 
-    Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
-        on unexpected JSON.
+    Returns:
+        A Voldemort of the results.
 
-        [kameloso.net.ErrorJSONException|ErrorJSONException]
-        if the returned JSON has an `"error"` field.
+    Throws:
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON.
  +/
-private void refreshSpotifyToken(TwitchPlugin plugin, ref Credentials creds)
+private auto refreshSpotifyToken(
+    TwitchPlugin plugin,
+    const Credentials creds)
 in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
 {
     import kameloso.plugins : sendHTTPRequest;
     import kameloso.tables : HTTPVerb;
     import std.format : format;
-    import std.json : parseJSON;
+    import std.json : JSONValue, parseJSON;
+    import core.time : Duration, seconds;
+
+    static struct RefreshTokenResults
+    {
+        uint code;
+        string error;
+        string accessToken;
+        string tokenType;
+        string scope_;
+        Duration expiresIn;
+
+        auto success() const { return (code == 200); }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, const JSONValue json)
+        {
+            /*
+            {
+                "access_token": "[redacted]",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "scope": "playlist-modify-private playlist-modify-public"
+            }
+             */
+
+            this.code = code;
+            this.accessToken = json["access_token"].str;
+            this.tokenType = json["token_type"].str;
+            this.scope_ = json["scope"].str;
+            this.expiresIn = json["expires_in"].integer.seconds;
+        }
+    }
 
     enum node = "https://accounts.spotify.com/api/token";
     enum urlPattern = node ~
@@ -459,22 +540,20 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
 
     immutable responseJSON = parseJSON(response.body);
 
-    /*
+    if (response.code == 200) // ("access_token" in responseJSON)
     {
-        "access_token": "[redacted]",
-        "token_type": "Bearer",
-        "expires_in": 3600,
-        "scope": "playlist-modify-private playlist-modify-public"
-    }
-     */
-
-    if (immutable errorJSON = "error" in responseJSON)
-    {
-        throw new ErrorJSONException(errorJSON.str, *errorJSON);
+        return RefreshTokenResults(response.code, responseJSON);
     }
 
-    creds.spotifyAccessToken = responseJSON["access_token"].str;
-    // refreshToken is not present and stays the same as before
+    immutable errorJSON = "error" in responseJSON;
+
+    if (!errorJSON)
+    {
+        enum message = "Unexpected JSON when refreshing a Spotify token";
+        throw new UnexpectedJSONException(message, responseJSON);
+    }
+
+    return RefreshTokenResults(response.code, (*errorJSON)["message"].str);
 }
 
 
@@ -516,11 +595,7 @@ private auto getSpotifyBase64Authorization(const Credentials creds)
         A Voldemort of the results.
 
     Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
-        on unexpected JSON.
-
-        [kameloso.net.ErrorJSONException|ErrorJSONException]
-        if the returned JSON has an `"error"` field.
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON.
  +/
 auto addTrackToSpotifyPlaylist(
     TwitchPlugin plugin,
@@ -619,17 +694,22 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
     {
         if (!recursing)
         {
-            refreshSpotifyToken(plugin, creds);
+            const results = refreshSpotifyToken(plugin, creds);
+
+            if (!results.success)
+            {
+                return AddTrackResults(response.code, results.error);
+            }
+
+            creds.spotifyAccessToken = results.accessToken;
             saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
             return addTrackToSpotifyPlaylist(plugin, creds, trackID, recursing: true);
         }
 
         throw new InvalidCredentialsException(messageJSON.str, responseJSON);
     }
-    else
-    {
-        return AddTrackResults(response.code, messageJSON.str);
-    }
+
+    return AddTrackResults(response.code, messageJSON.str);
 }
 
 
@@ -647,11 +727,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
         A Voldemort of the results.
 
     Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
-        on unexpected JSON.
-
-        [kameloso.net.ErrorJSONException|ErrorJSONException]
-        if the returned JSON has an `"error"` field.
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON.
  +/
 auto getSpotifyTrackByID(
     TwitchPlugin plugin,
@@ -765,17 +841,22 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
     {
         if (!recursing)
         {
-            refreshSpotifyToken(plugin, creds);
+            const results = refreshSpotifyToken(plugin, creds);
+
+            if (!results.success)
+            {
+                return GetTrackResults(response.code, results.error);
+            }
+
+            creds.spotifyAccessToken = results.accessToken;
             saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
             return getSpotifyTrackByID(plugin, creds, trackID, recursing: true);
         }
 
         throw new InvalidCredentialsException(messageJSON.str, responseJSON);
     }
-    else
-    {
-        return GetTrackResults(response.code, messageJSON.str);
-    }
+
+    return GetTrackResults(response.code, messageJSON.str);
 }
 
 
@@ -792,11 +873,7 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
         A Voldemort of the results.
 
     Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException]
-        on unexpected JSON.
-
-        [kameloso.net.ErrorJSONException|ErrorJSONException]
-        if the returned JSON has an `"error"` field.
+        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON.
  +/
 private auto validateSpotifyToken(ref Credentials creds, const string caBundleFile)
 {
@@ -858,6 +935,12 @@ private auto validateSpotifyToken(ref Credentials creds, const string caBundleFi
     immutable response = issueSyncHTTPRequest(request);
     immutable responseJSON = parseJSON(response.body);
 
+    if (response.code == 200) // ("id" in responseJSON)
+    {
+        // Seems to have worked
+        return SpotifyValidationResults(response.code, responseJSON);
+    }
+
     /*
     {
         "error": {
@@ -867,17 +950,13 @@ private auto validateSpotifyToken(ref Credentials creds, const string caBundleFi
     }
      */
 
-    if ("id" in responseJSON)
+    immutable errorJSON = "error" in responseJSON;
+
+    if (!errorJSON)
     {
-        return SpotifyValidationResults(response.code, responseJSON);
-    }
-    else if (immutable errorJSON = "error" in responseJSON)
-    {
-        return SpotifyValidationResults(response.code, (*errorJSON)["message"].str);
-    }
-    else
-    {
-        enum message = "Unexpected JSON response from server";
+        enum message = "Unexpected JSON when validating a Spotify token";
         throw new UnexpectedJSONException(message, responseJSON);
     }
+
+    return SpotifyValidationResults(response.code, (*errorJSON)["message"].str);
 }
