@@ -52,154 +52,152 @@ in (id, "Tried to get 7tv emotes with an unset ID")
     import std.conv : to;
     import std.json : JSONType, parseJSON;
 
-    try
+    immutable url = "https://7tv.io/v3/users/twitch/" ~ id.to!string;
+
+    immutable response = sendHTTPRequest(
+        plugin: plugin,
+        url: url,
+        caller: caller);
+
+    immutable responseJSON = parseJSON(response.body);
+
+    /*
     {
-        immutable url = "https://7tv.io/v3/users/twitch/" ~ id.to!string;
-
-        immutable response = sendHTTPRequest(
-            plugin: plugin,
-            url: url,
-            caller: caller);
-
-        immutable responseJSON = parseJSON(response.body);
-
-        /+
-        {
-            "display_name": "LobosJr",
-            "emote_capacity": 1000,
-            "emote_set": {
-                "capacity": 1000,
-                "emote_count": 872,
-                "emotes": [
-                    {
-                        "actor_id": null,
-                        "data": {
-                            "animated": true,
-                            "flags": 0,
-                            "host": {
-                                "files": [],
-                                "url": "\/\/cdn.7tv.app\/emote\/60ae2e3db2ecb01505c6f69d"
-                            },
-                            "id": "60ae2e3db2ecb01505c6f69d",
-                            "lifecycle": 3,
-                            "listed": true,
-                            "name": "ViolinTime",
-                            "owner": {
-                                "avatar_url": "\/\/static-cdn.jtvnw.net\/jtv_user_pictures\/583dd5ac-2fe8-4ead-a20d-e10770118c5f-profile_image-70x70.png",
-                                "display_name": "heCrzy",
-                                "id": "60635b50452cea4685f26b34",
-                                "roles": [
-                                    "62b48deb791a15a25c2a0354"
-                                ],
-                                "style": {},
-                                "username": "hecrzy"
-                            },
-                            "state": [
-                                "LISTED",
-                                "PERSONAL"
-                            ]
-                        },
+        "display_name": "LobosJr",
+        "emote_capacity": 1000,
+        "emote_set": {
+            "capacity": 1000,
+            "emote_count": 872,
+            "emotes": [
+                {
+                    "actor_id": null,
+                    "data": {
+                        "animated": true,
                         "flags": 0,
+                        "host": {
+                            "files": [],
+                            "url": "\/\/cdn.7tv.app\/emote\/60ae2e3db2ecb01505c6f69d"
+                        },
                         "id": "60ae2e3db2ecb01505c6f69d",
+                        "lifecycle": 3,
+                        "listed": true,
                         "name": "ViolinTime",
-                        "timestamp": 1657657741507
-                    },
-                    {
-                        "actor_id": null,
-                        "data": {
-                            "animated": false,
-                            "flags": 0,
-                            "host": {
-                                "files": [],
-                            "url": "\/\/cdn.7tv.app\/emote\/60ae3e54259ac5a73e56a426"
-                            },
-                            "id": "60ae3e54259ac5a73e56a426",
-                            "lifecycle": 3,
-                            "listed": true,
-                            "name": "Hmm",
-                            "owner": {
-                                "avatar_url": "\/\/static-cdn.jtvnw.net\/jtv_user_pictures\/4207f38c-73f0-4487-a7b2-07ccb27667d1-profile_image-70x70.png",
-                                "display_name": "LNSc",
-                                "id": "60772a85a807bed00612d1ee",
-                                "roles": [
-                                    "62b48deb791a15a25c2a0354"
-                                ],
-                                "style": {},
-                                "username": "lnsc"
-                            },
-                            "state": [
-                                "LISTED",
-                                "PERSONAL"
-                            ]
+                        "owner": {
+                            "avatar_url": "\/\/static-cdn.jtvnw.net\/jtv_user_pictures\/583dd5ac-2fe8-4ead-a20d-e10770118c5f-profile_image-70x70.png",
+                            "display_name": "heCrzy",
+                            "id": "60635b50452cea4685f26b34",
+                            "roles": [
+                                "62b48deb791a15a25c2a0354"
+                            ],
+                            "style": {},
+                            "username": "hecrzy"
                         },
-                        "flags": 0,
-                        "id": "60ae3e54259ac5a73e56a426",
-                        "name": "Hmm",
-                        "timestamp": 1657657741507
+                        "state": [
+                            "LISTED",
+                            "PERSONAL"
+                        ]
                     },
-            [...]
-         +/
-
-        if (responseJSON.type != JSONType.object)
-        {
-            // toString doesn't work due to duplicate values in the enum
-            immutable message = "Wrong JSON type: " ~ responseJSON.type.to!string;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        immutable emoteSetJSON = "emote_set" in responseJSON;
-
-        if (!emoteSetJSON)
-        {
-            enum message = `No "emote_set" key`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        if (emoteSetJSON.type != JSONType.object) return 0;  // No emotes
-
-        immutable emotesJSON = "emotes" in *emoteSetJSON;
-
-        if (!emotesJSON)
-        {
-            enum message = `No "emotes" key`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        uint numAdded;
-
-        foreach (immutable emoteJSON; emotesJSON.array)
-        {
-            immutable emoteName = emoteJSON["name"].str;
-            (*emoteMap)[emoteName] = true;
-            ++numAdded;
-        }
-
-        // All done
-        return numAdded;
-    }
-    catch (ErrorJSONException e)
+                    "flags": 0,
+                    "id": "60ae2e3db2ecb01505c6f69d",
+                    "name": "ViolinTime",
+                    "timestamp": 1657657741507
+                },
+                {
+                    "actor_id": null,
+                    "data": {
+                        "animated": false,
+                        "flags": 0,
+                        "host": {
+                            "files": [],
+                        "url": "\/\/cdn.7tv.app\/emote\/60ae3e54259ac5a73e56a426"
+                        },
+                        "id": "60ae3e54259ac5a73e56a426",
+                        "lifecycle": 3,
+                        "listed": true,
+                        "name": "Hmm",
+                        "owner": {
+                            "avatar_url": "\/\/static-cdn.jtvnw.net\/jtv_user_pictures\/4207f38c-73f0-4487-a7b2-07ccb27667d1-profile_image-70x70.png",
+                            "display_name": "LNSc",
+                            "id": "60772a85a807bed00612d1ee",
+                            "roles": [
+                                "62b48deb791a15a25c2a0354"
+                            ],
+                            "style": {},
+                            "username": "lnsc"
+                        },
+                        "state": [
+                            "LISTED",
+                            "PERSONAL"
+                        ]
+                    },
+                    "flags": 0,
+                    "id": "60ae3e54259ac5a73e56a426",
+                    "name": "Hmm",
+                    "timestamp": 1657657741507
+                },
+        [...]
+     */
+    /*
     {
-        /+
-        {
-            "error": "Unknown User",
-            "error_code": 70442,
-            "status": "Not Found",
-            "status_code": 404
-        }
-         +/
+        "display_name": "zorael",
+        "emote_capacity": 1000,
+        "emote_set": null,
+        "emote_set_id": null,
+        "id": "22216721",
+        "linked_at": 1684771392706,
+        "platform": "TWITCH",
+        "user": {
+            "avatar_url": "https:\/\/static-cdn.jtvnw.net\/jtv_user_pictures\/eafaed16-ad74-40e1-ac4a-1c40fafb78f9-profile_image-300x300.jpeg",
+            "connections": [
+                {
+                    "display_name": "zorael",
+                    "emote_capacity": 1000,
+                    "emote_set": null,
+                    "emote_set_id": null,
+                    "id": "22216721",
+                    "linked_at": 1684771392706,
+                    "platform": "TWITCH",
+                    "username": "zorael"
+                }
+            ],
+            "created_at": 1684771392000,
+            "display_name": "zorael",
+            "id": "01H1236JG00005HNCSM10T04VJ",
+            "roles": [
+                "01G68MMQFR0007J6GNM9E2M0TM"
+            ],
+            "style": {},
+            "username": "zorael"
+        },
+        "username": "zorael"
+    }
+     */
+    /*
+    {
+        "error": "user not found",
+        "error_code": 12000,
+        "status": "Not Found"
+    }
+     */
+    /*
+    {
+        "error": "Unknown User",
+        "error_code": 70442,
+        "status": "Not Found",
+        "status_code": 404
+    }
+     */
 
-        const errorJSON = "error" in e.json;
+    immutable emoteSetJSON = "emote_set" in responseJSON;
 
-        if (errorJSON)
+    if (!emoteSetJSON)
+    {
+        if (immutable errorJSON = "error" in responseJSON)
         {
             switch (errorJSON.str)
             {
-            case "Unknown User":
-                // This should never happen but stop attempt if it does
-                return 0;
-
-            case "user not found":
-                // User has no user-specific 7tv emotes; benign failure
+            case "user not found":  // User has no user-specific 7tv emotes; benign failure
+            case "Unknown User":  // This should never happen but stop attempt if it does
                 return 0;
 
             default:
@@ -207,12 +205,31 @@ in (id, "Tried to get 7tv emotes with an unset ID")
             }
         }
 
-        throw e;
+        enum message = `No "emote_set" key`;
+        throw new UnexpectedJSONException(message, responseJSON);
     }
-    catch (Exception e)
+
+    if (emoteSetJSON.type != JSONType.object) return 0;  // Benign, no emotes
+
+    immutable emotesJSON = "emotes" in *emoteSetJSON;
+
+    if (!emotesJSON)
     {
-        throw e;
+        enum message = `No "emotes" key`;
+        throw new UnexpectedJSONException(message, responseJSON);
     }
+
+    uint numAdded;
+
+    foreach (immutable emoteJSON; emotesJSON.array)
+    {
+        immutable emoteName = emoteJSON["name"].str;
+        (*emoteMap)[emoteName] = true;
+        ++numAdded;
+    }
+
+    // All done
+    return numAdded;
 }
 
 
@@ -250,7 +267,7 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 
     immutable responseJSON = parseJSON(response.body);
 
-    /+
+    /*
     {
         "capacity": 50,
         "emote_count": 40,
@@ -290,16 +307,7 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
             },
         }
     }
-     +/
-
-    if (responseJSON.type != JSONType.object)
-    {
-        import std.conv : to;
-
-        // toString doesn't work due to duplicate values in the enum
-        immutable message = "Wrong JSON type: " ~ responseJSON.type.to!string;
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
+     */
 
     immutable emotesJSON = "emotes" in responseJSON;
 

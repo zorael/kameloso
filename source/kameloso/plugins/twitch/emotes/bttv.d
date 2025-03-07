@@ -52,134 +52,117 @@ in (id, "Tried to get BTTV emotes with an unset ID")
     import std.conv : to;
     import std.json : JSONType, parseJSON;
 
-    try
+    immutable url = "https://api.betterttv.net/3/cached/users/twitch/" ~ id.to!string;
+
+    immutable response = sendHTTPRequest(
+        plugin: plugin,
+        url: url,
+        caller: caller);
+
+    immutable responseJSON = parseJSON(response.body);
+
+    /*
     {
-        immutable url = "https://api.betterttv.net/3/cached/users/twitch/" ~ id.to!string;
-
-        immutable response = sendHTTPRequest(
-            plugin: plugin,
-            url: url,
-            caller: caller);
-
-        immutable responseJSON = parseJSON(response.body);
-
-        /+
-        {
-            "avatar": "https:\/\/static-cdn.jtvnw.net\/jtv_user_pictures\/lobosjr-profile_image-b5e3a6c3556aed54-300x300.png",
-            "bots": [
-                "lobotjr",
-                "dumj01"
-            ],
-            "channelEmotes": [
-                {
-                    "animated": false,
-                    "code": "FeelsDennyMan",
-                    "id": "58a9cde206e70d0465b2b47e",
-                    "imageType": "png",
-                    "userId": "5575430f9cd396156bd1430c"
-                },
-                {
-                    "animated": true,
-                    "code": "lobosSHAKE",
-                    "id": "5b007dc718b2f46a14d40242",
-                    "imageType": "gif",
-                    "userId": "5575430f9cd396156bd1430c"
+        "avatar": "https:\/\/static-cdn.jtvnw.net\/jtv_user_pictures\/lobosjr-profile_image-b5e3a6c3556aed54-300x300.png",
+        "bots": [
+            "lobotjr",
+            "dumj01"
+        ],
+        "channelEmotes": [
+            {
+                "animated": false,
+                "code": "FeelsDennyMan",
+                "id": "58a9cde206e70d0465b2b47e",
+                "imageType": "png",
+                "userId": "5575430f9cd396156bd1430c"
+            },
+            {
+                "animated": true,
+                "code": "lobosSHAKE",
+                "id": "5b007dc718b2f46a14d40242",
+                "imageType": "gif",
+                "userId": "5575430f9cd396156bd1430c"
+            }
+        ],
+        "id": "5575430f9cd396156bd1430c",
+        "sharedEmotes": [
+            {
+                "animated": true,
+                "code": "(ditto)",
+                "id": "554da1a289d53f2d12781907",
+                "imageType": "gif",
+                "user": {
+                    "displayName": "NightDev",
+                    "id": "5561169bd6b9d206222a8c19",
+                    "name": "nightdev",
+                    "providerId": "29045896"
                 }
-            ],
-            "id": "5575430f9cd396156bd1430c",
-            "sharedEmotes": [
-                {
-                    "animated": true,
-                    "code": "(ditto)",
-                    "id": "554da1a289d53f2d12781907",
-                    "imageType": "gif",
-                    "user": {
-                        "displayName": "NightDev",
-                        "id": "5561169bd6b9d206222a8c19",
-                        "name": "nightdev",
-                        "providerId": "29045896"
-                    }
+            },
+            {
+                "animated": true,
+                "code": "WolfPls",
+                "height": 28,
+                "id": "55fdff6e7a4f04b172c506c0",
+                "imageType": "gif",
+                "user": {
+                    "displayName": "bearzly",
+                    "id": "5573551240fa91166bb18c67",
+                    "name": "bearzly",
+                    "providerId": "23239904"
                 },
-                {
-                    "animated": true,
-                    "code": "WolfPls",
-                    "height": 28,
-                    "id": "55fdff6e7a4f04b172c506c0",
-                    "imageType": "gif",
-                    "user": {
-                        "displayName": "bearzly",
-                        "id": "5573551240fa91166bb18c67",
-                        "name": "bearzly",
-                        "providerId": "23239904"
-                    },
-                    "width": 21
-                }
-            ]
-        }
-         +/
-
-        if (responseJSON.type != JSONType.object)
-        {
-            import std.conv : to;
-
-            // toString doesn't work due to duplicate values in the enum
-            immutable message = "Wrong JSON type: " ~ responseJSON.type.to!string;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        immutable channelEmotesJSON = "channelEmotes" in responseJSON;
-
-        if (!channelEmotesJSON)
-        {
-            enum message = `No "channelEmotes" key`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        immutable sharedEmotesJSON = "sharedEmotes" in responseJSON;
-
-        if (!sharedEmotesJSON)
-        {
-            enum message = `No "sharedEmotes" key`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        foreach (const emoteJSON; channelEmotesJSON.array)
-        {
-            immutable emoteName = emoteJSON["code"].str;
-            (*emoteMap)[emoteName] = true;
-        }
-
-        uint numAdded;
-
-        foreach (const emoteJSON; sharedEmotesJSON.array)
-        {
-            immutable emoteName = emoteJSON["code"].str;
-            (*emoteMap)[emoteName] = true;
-            ++numAdded;
-        }
-
-        // All done
-        return numAdded;
+                "width": 21
+            }
+        ]
     }
-    catch (ErrorJSONException e)
+     */
+    /*
     {
-        if (e.json.type == JSONType.object)
-        {
-            const messageJSON = "message" in e.json;
+        "message": "user not found"
+    }
+     */
 
-            if (messageJSON && (messageJSON.str == "user not found"))
+    immutable channelEmotesJSON = "channelEmotes" in responseJSON;
+
+    if (!channelEmotesJSON)
+    {
+        if (immutable messageJSON = "message" in responseJSON)
+        {
+            if (messageJSON.str == "user not found")
             {
                 // Benign
                 return 0;
             }
-            // Drop down
         }
-        throw e;
+
+        enum message = `No "channelEmotes" key`;
+        throw new UnexpectedJSONException(message, responseJSON);
     }
-    catch (Exception e)
+
+    immutable sharedEmotesJSON = "sharedEmotes" in responseJSON;
+
+    if (!sharedEmotesJSON)
     {
-        throw e;
+        enum message = `No "sharedEmotes" key`;
+        throw new UnexpectedJSONException(message, responseJSON);
     }
+
+    foreach (const emoteJSON; channelEmotesJSON.array)
+    {
+        immutable emoteName = emoteJSON["code"].str;
+        (*emoteMap)[emoteName] = true;
+    }
+
+    uint numAdded;
+
+    foreach (const emoteJSON; sharedEmotesJSON.array)
+    {
+        immutable emoteName = emoteJSON["code"].str;
+        (*emoteMap)[emoteName] = true;
+        ++numAdded;
+    }
+
+    // All done
+    return numAdded;
 }
 
 
@@ -216,7 +199,7 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
 
     immutable responseJSON = parseJSON(response.body);
 
-    /+
+    /*
     [
         {
             "animated": false,
@@ -233,17 +216,7 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
             "userId": "5561169bd6b9d206222a8c19"
         }
     ]
-     +/
-
-    if (responseJSON.type != JSONType.array)
-    {
-        import kameloso.net : UnexpectedJSONException;
-        import std.conv : to;
-
-        // toString doesn't work due to duplicate values in the enum
-        immutable message = "Wrong JSON type: " ~ responseJSON.type.to!string;
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
+     */
 
     uint numAdded;
 
