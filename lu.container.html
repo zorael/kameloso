@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>lu.container (lu.container)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>lu.container</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> </div><div><div class="documentation-comment synopsis"><div><p>Containers of varying quality.</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="lu.container.mutexedAA.1.html">mutexedAA</a><div class="simplified-prototype" style="max-width: 18ch;"><span class="lang-feature">auto</span>  <span class="name">mutexedAA</span>()</div></dt><dd><div><p>Convenience function to create and setup a <a class="xref" href="lu.container.MutexedAA.html">MutexedAA</a> instance in one go.
+    <a class="xref" href="lu.container.MutexedAA.setup.html">MutexedAA.setup</a> need as such not be called.</p></div></dd><dt><a href="lu.container.mutexedAA.2.html">mutexedAA</a><div class="simplified-prototype" style="max-width: 26ch;"><span class="lang-feature">auto</span>  <span class="name">mutexedAA</span>(AA orig)</div></dt><dd><div><p>Convenience function to create and setup a <a class="xref" href="lu.container.MutexedAA.html">MutexedAA</a> instance.
+    Overload that inherits an original associative array, or optionally duplicates it.
+    Infers the types to instantiate the <a class="xref" href="lu.container.MutexedAA.html">MutexedAA</a> with from the AA passed.</p></div></dd><dt><a href="lu.container.rehashingAA.html">rehashingAA</a><div class="simplified-prototype" style="max-width: 26ch;"><span class="lang-feature">auto</span>  <span class="name">rehashingAA</span>(AA aa)</div></dt><dd><div><p>Convenience helper to instantiate a <a class="xref" href="lu.container.RehashingAA.html">RehashingAA</a> instance with an
+    existing associative array.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="struct"><a class="header-anchor" href="#struct">Structs</a></h3><dl class="member-list native"><dt><a href="lu.container.Buffer.html">Buffer</a><div class="simplified-prototype" style="max-width: 88ch;"><span class="builtin-type">struct</span> <span class="name">Buffer</span><span class="template-params">(T, Flag!&quot;dynamic&quot; dynamic = No.dynamic, size_t originalSize = 128)</span></div></dt><dd><div><p>Simple buffer/queue for storing and fetching items of any type <tt class="inline-code">T</tt>.
+    Does not use manual memory allocation.</p></div></dd><dt><a href="lu.container.CircularBuffer.html">CircularBuffer</a><div class="simplified-prototype" style="max-width: 95ch;"><span class="builtin-type">struct</span> <span class="name">CircularBuffer</span><span class="template-params">(T, Flag!&quot;dynamic&quot; dynamic = No.dynamic, size_t originalSize = 16)</span></div></dt><dd><div><p>Simple circular-ish buffer for storing items of type <tt class="inline-code">T</tt> that discards elements
+    when the maximum size is reached. Does not use manual memory allocation.</p></div></dd><dt><a href="lu.container.MutexedAA.html">MutexedAA</a><div class="simplified-prototype" style="max-width: 36ch;"><span class="builtin-type">struct</span> <span class="name">MutexedAA</span><span class="template-params">(AA : V[K], V, K)</span></div></dt><dd><div><p>An associative array and a <a class="xref" href="core.sync.mutex.Mutex.html">Mutex</a>. Wraps associative
+    array operations in mutex locks.</p></div></dd><dt><a href="lu.container.RehashingAA.html">RehashingAA</a><div class="simplified-prototype" style="max-width: 38ch;"><span class="builtin-type">struct</span> <span class="name">RehashingAA</span><span class="template-params">(AA : V[K], V, K)</span></div></dt><dd><div><p>A wrapper around a native associative array that you can controllably set to
+    automatically rehash as entries are added.</p></div></dd></dl><div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted with-line-wrappers"><span class="br">1 </span>{
+<span class="br">2 </span>    <span class="hid">Buffer</span>!<span class="type">string</span> <span class="hid">buffer</span>;
+<span class="br">3 </span>
+<span class="br">4 </span>    <span class="hid">buffer</span>.<span class="hid">put</span>(<span class="str">&quot;abc&quot;</span>);
+<span class="br">5 </span>    <span class="hid">buffer</span>.<span class="hid">put</span>(<span class="str">&quot;def&quot;</span>);
+<span class="br">6 </span>    <span class="kwrd">assert</span>(!<span class="hid">buffer</span>.<span class="hid">empty</span>);
+<span class="br">7 </span>    <span class="kwrd">assert</span>(<span class="hid">buffer</span>.<span class="hid">front</span> == <span class="str">&quot;abc&quot;</span>);
+<span class="br">8 </span>    <span class="hid">buffer</span>.<span class="hid">popFront</span>();
+<span class="br">9 </span>    <span class="kwrd">assert</span>(<span class="hid">buffer</span>.<span class="hid">front</span> == <span class="str">&quot;def&quot;</span>);
+<span class="br">10 </span>    <span class="hid">buffer</span>.<span class="hid">popFront</span>();
+<span class="br">11 </span>    <span class="kwrd">assert</span>(<span class="hid">buffer</span>.<span class="hid">empty</span>);
+<span class="br">12 </span>}
+<span class="br">13 </span>{
+<span class="br">14 </span>    <span class="hid">Buffer</span>!(<span class="type">char</span>, <span class="hid">Yes</span>.<span class="hid">dynamic</span>, <span class="num">3</span>) <span class="hid">buffer</span>;
+<span class="br">15 </span>
+<span class="br">16 </span>    <span class="kwrd">assert</span>(!<span class="hid">buffer</span>.<span class="hid">buf</span>.<span class="hid">length</span>);
+<span class="br">17 </span>    <span class="hid">buffer</span> ~= <span class="str">'a'</span>;
+<span class="br">18 </span>    <span class="kwrd">assert</span>(<span class="hid">buffer</span>.<span class="hid">buf</span>.<span class="hid">length</span> == <span class="num">3</span>);
+<span class="br">19 </span>    <span class="hid">buffer</span> ~= <span class="str">'b'</span>;
+<span class="br">20 </span>    <span class="hid">buffer</span> ~= <span class="str">'c'</span>;
+<span class="br">21 </span>    <span class="kwrd">assert</span>(<span class="hid">buffer</span>.<span class="hid">length</span> == <span class="num">3</span>);
+<span class="br">22 </span>    <span class="hid">buffer</span> ~= <span class="str">'d'</span>;
+<span class="br">23 </span>    <span class="kwrd">assert</span>(<span class="hid">buffer</span>.<span class="hid">buf</span>.<span class="hid">length</span> &gt; <span class="num">3</span>);
+<span class="br">24 </span>    <span class="kwrd">assert</span>(<span class="hid">buffer</span>[<span class="num">0</span>..<span class="num">5</span>] == <span class="str">&quot;abcd&quot;</span>);
+<span class="br">25 </span>    <span class="hid">buffer</span>.<span class="hid">clear</span>();
+<span class="br">26 </span>    <span class="kwrd">assert</span>(<span class="hid">buffer</span>.<span class="hid">empty</span>);
+<span class="br">27 </span>}
+<span class="br">28 </span>{
+<span class="br">29 </span>    <span class="hid">CircularBuffer</span>!(<span class="type">int</span>, <span class="hid">Yes</span>.<span class="hid">dynamic</span>) <span class="hid">buf</span>;
+<span class="br">30 </span>    <span class="hid">buf</span>.<span class="hid">resize</span>(<span class="num">3</span>);
+<span class="br">31 </span>    <span class="hid">buf</span>.<span class="hid">put</span>(<span class="num">1</span>);
+<span class="br">32 </span>    <span class="hid">buf</span>.<span class="hid">put</span>(<span class="num">2</span>);
+<span class="br">33 </span>    <span class="hid">buf</span>.<span class="hid">put</span>(<span class="num">3</span>);
+<span class="br">34 </span>    <span class="hid">but</span>.<span class="hid">put</span>(<span class="num">4</span>);
+<span class="br">35 </span>    <span class="kwrd">assert</span>(<span class="hid">buf</span>.<span class="hid">front</span> == <span class="num">4</span>);
+<span class="br">36 </span>    <span class="kwrd">assert</span>(<span class="hid">buf</span>.<span class="hid">buf</span> == [ <span class="num">4</span>, <span class="num">2</span>, <span class="num">3</span> ]);
+<span class="br">37 </span>}}
+<span class="br">38 </span>{
+<span class="br">39 </span>    <span class="hid">RehashingAA</span>!(<span class="type">int</span>[<span class="type">string</span>]) <span class="hid">aa</span>;
+<span class="br">40 </span>    <span class="hid">aa</span>.<span class="hid">minimumNeededForRehash</span> = <span class="num">2</span>;
+<span class="br">41 </span>
+<span class="br">42 </span>    <span class="hid">aa</span>[<span class="str">&quot;abc&quot;</span>] = <span class="num">123</span>;
+<span class="br">43 </span>    <span class="hid">aa</span>[<span class="str">&quot;def&quot;</span>] = <span class="num">456</span>;
+<span class="br">44 </span>    <span class="kwrd">assert</span>((<span class="hid">aa</span>.<span class="hid">newKeysSinceLastRehash</span> == <span class="num">2</span>), <span class="hid">aa</span>.<span class="hid">newKeysSinceLastRehash</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">45 </span>    <span class="kwrd">assert</span>((<span class="hid">aa</span>.<span class="hid">numRehashes</span> == <span class="num">0</span>), <span class="hid">aa</span>.<span class="hid">numRehashes</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">46 </span>    <span class="hid">aa</span>[<span class="str">&quot;ghi&quot;</span>] = <span class="num">789</span>;
+<span class="br">47 </span>    <span class="kwrd">assert</span>((<span class="hid">aa</span>.<span class="hid">numRehashes</span> == <span class="num">1</span>), <span class="hid">aa</span>.<span class="hid">numRehashes</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">48 </span>    <span class="kwrd">assert</span>((<span class="hid">aa</span>.<span class="hid">newKeysSinceLastRehash</span> == <span class="num">0</span>), <span class="hid">aa</span>.<span class="hid">newKeysSinceLastRehash</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">49 </span>    <span class="hid">aa</span>.<span class="hid">rehash</span>();
+<span class="br">50 </span>    <span class="kwrd">assert</span>((<span class="hid">aa</span>.<span class="hid">numRehashes</span> == <span class="num">2</span>), <span class="hid">aa</span>.<span class="hid">numRehashes</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">51 </span>
+<span class="br">52 </span>    <span class="kwrd">auto</span> <span class="hid">realAA</span> = <span class="kwrd">cast</span>(<span class="type">int</span>[<span class="type">string</span>])<span class="hid">aa</span>;
+<span class="br">53 </span>    <span class="kwrd">assert</span>(<span class="str">&quot;abc&quot;</span> <span class="kwrd">in</span> <span class="hid">realAA</span>);
+<span class="br">54 </span>    <span class="kwrd">assert</span>(<span class="str">&quot;def&quot;</span> <span class="kwrd">in</span> <span class="hid">realAA</span>);
+<span class="br">55 </span>
+<span class="br">56 </span>    <span class="kwrd">auto</span> <span class="hid">alsoRealAA</span> = <span class="hid">aa</span>.<span class="hid">aaOf</span>;
+<span class="br">57 </span>    <span class="kwrd">assert</span>(<span class="str">&quot;ghi&quot;</span> <span class="kwrd">in</span> <span class="hid">realAA</span>);
+<span class="br">58 </span>    <span class="kwrd">assert</span>(<span class="str">&quot;jkl&quot;</span> !<span class="kwrd">in</span> <span class="hid">realAA</span>);
+<span class="br">59 </span>
+<span class="br">60 </span>    <span class="kwrd">auto</span> <span class="hid">aa2</span> = <span class="hid">aa</span>.<span class="hid">dup</span>;
+<span class="br">61 </span>    <span class="hid">aa2</span>[<span class="str">&quot;jkl&quot;</span>] = <span class="num">123</span>;
+<span class="br">62 </span>    <span class="kwrd">assert</span>(<span class="str">&quot;jkl&quot;</span> <span class="kwrd">in</span> <span class="hid">aa2</span>);
+<span class="br">63 </span>    <span class="kwrd">assert</span>(<span class="str">&quot;jkl&quot;</span> !<span class="kwrd">in</span> <span class="hid">aa</span>);
+<span class="br">64 </span>}
+<span class="br">65 </span>{
+<span class="br">66 </span>    <span class="hid">MutexedAA</span>!(<span class="type">string</span>[<span class="type">int</span>]) <span class="hid">aa</span>;
+<span class="br">67 </span>    <span class="hid">aa</span>.<span class="hid">setup</span>();  <span class="com">// important!</span>
+<span class="br">68 </span>
+<span class="br">69 </span>    <span class="hid">aa</span>[<span class="num">1</span>] = <span class="str">&quot;one&quot;</span>;
+<span class="br">70 </span>    <span class="hid">aa</span>[<span class="num">2</span>] = <span class="str">&quot;two&quot;</span>;
+<span class="br">71 </span>    <span class="hid">aa</span>[<span class="num">3</span>] = <span class="str">&quot;three&quot;</span>;
+<span class="br">72 </span>
+<span class="br">73 </span>    <span class="kwrd">auto</span> <span class="hid">hasOne</span> = <span class="hid">aa</span>.<span class="hid">has</span>(<span class="num">1</span>);
+<span class="br">74 </span>    <span class="kwrd">assert</span>(<span class="hid">hasOne</span>);
+<span class="br">75 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>[<span class="num">1</span>] == <span class="str">&quot;one&quot;</span>);
+<span class="br">76 </span>
+<span class="br">77 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>[<span class="num">2</span>] == <span class="str">&quot;two&quot;</span>);
+<span class="br">78 </span>
+<span class="br">79 </span>    <span class="kwrd">auto</span> <span class="hid">three</span> = <span class="hid">aa</span>.<span class="hid">get</span>(<span class="num">3</span>);
+<span class="br">80 </span>    <span class="kwrd">assert</span>(<span class="hid">three</span> == <span class="str">&quot;three&quot;</span>);
+<span class="br">81 </span>
+<span class="br">82 </span>    <span class="kwrd">auto</span> <span class="hid">four</span> = <span class="hid">aa</span>.<span class="hid">get</span>(<span class="num">4</span>, <span class="str">&quot;four&quot;</span>);
+<span class="br">83 </span>    <span class="kwrd">assert</span>(<span class="hid">four</span> == <span class="str">&quot;four&quot;</span>);
+<span class="br">84 </span>
+<span class="br">85 </span>    <span class="kwrd">auto</span> <span class="hid">five</span> = <span class="hid">aa</span>.<span class="hid">require</span>(<span class="num">5</span>, <span class="str">&quot;five&quot;</span>);
+<span class="br">86 </span>    <span class="kwrd">assert</span>(<span class="hid">five</span> == <span class="str">&quot;five&quot;</span>);
+<span class="br">87 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>[<span class="num">5</span>] == <span class="str">&quot;five&quot;</span>);
+<span class="br">88 </span>
+<span class="br">89 </span>    <span class="kwrd">auto</span> <span class="hid">keys</span> = <span class="hid">aa</span>.<span class="hid">keys</span>;
+<span class="br">90 </span>    <span class="kwrd">assert</span>(<span class="hid">keys</span>.<span class="hid">canFind</span>(<span class="num">1</span>));
+<span class="br">91 </span>    <span class="kwrd">assert</span>(<span class="hid">keys</span>.<span class="hid">canFind</span>(<span class="num">5</span>));
+<span class="br">92 </span>    <span class="kwrd">assert</span>(!<span class="hid">keys</span>.<span class="hid">canFind</span>(<span class="num">6</span>));
+<span class="br">93 </span>
+<span class="br">94 </span>    <span class="kwrd">auto</span> <span class="hid">values</span> = <span class="hid">aa</span>.<span class="hid">values</span>;
+<span class="br">95 </span>    <span class="kwrd">assert</span>(<span class="hid">values</span>.<span class="hid">canFind</span>(<span class="str">&quot;one&quot;</span>));
+<span class="br">96 </span>    <span class="kwrd">assert</span>(<span class="hid">values</span>.<span class="hid">canFind</span>(<span class="str">&quot;four&quot;</span>));
+<span class="br">97 </span>    <span class="kwrd">assert</span>(!<span class="hid">values</span>.<span class="hid">canFind</span>(<span class="str">&quot;six&quot;</span>));
+<span class="br">98 </span>
+<span class="br">99 </span>    <span class="hid">aa</span>.<span class="hid">rehash</span>();
+<span class="br">100 </span>}</pre></div></div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module" href="lu.array.html">array</a></li><li><a class="module" href="lu.assert_.html">assert_</a></li><li><a class="module" href="lu.common.html">common</a></li><li><a class="module current" href="lu.container.html">container</a></li><li><a class="module" href="lu.conv.html">conv</a></li><li><a class="module" href="lu.deltastrings.html">deltastrings</a></li><li><a class="module" href="lu.json.html">json</a></li><li><a class="module" href="lu.meld.html">meld</a></li><li><a class="module" href="lu.misc.html">misc</a></li><li><a class="module" href="lu.numeric.html">numeric</a></li><li><a class="module" href="lu.objmanip.html">objmanip</a></li><li><a class="module" href="lu.semver.html">semver</a></li><li><a class="module" href="lu.serialisation.html">serialisation</a></li><li><a class="module" href="lu.string.html">string</a></li><li><a class="module" href="lu.traits.html">traits</a></li><li><a class="module" href="lu.typecons.html">typecons</a></li><li><a class="module" href="lu.uda.html">uda</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>meldInto (lu.meld.meldInto)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>meldInto</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.meld.html">meld</a> </div><div><div class="documentation-comment synopsis"><div><p>Takes two arrays and melds them together, making a union of the two.</p><p>It only overwrites members that are <tt class="inline-code">T.init</tt>, so only unset
+    fields get their values overwritten by the melding array. Supply a
+    template parameter <a class="xref" href="lu.meld.MeldingStrategy.html#aggressive">MeldingStrategy.aggressive</a> to make it overwrite if the
+    melding array's field is not <tt class="inline-code">T.init</tt>. Furthermore use
+    <a class="xref" href="lu.meld.MeldingStrategy.html#overwriting">MeldingStrategy.overwriting</a> if working with bool members.</p></div></div></div><div class="annotated-prototype"><ol class="overloads"><li class="overload-option"><a href="lu.meld.meldInto.1.html"><span class="overload-signature"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">meldInto</span>(QualThing meldThis, Thing intoThis)</span></a></li><li class="active-overload-option"><span class="overload-signature"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">meldInto</span>(Array1 meldThis, Array2 intoThis)</span><div class="function-prototype"><div class="attributes">pure nothrow </div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">meldInto</div><div class="template-parameters" data-count="3">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><a class="name" data-ident="MeldingStrategy" href="lu.meld.MeldingStrategy.html" title="lu.meld.MeldingStrategy">MeldingStrategy</a> <span class="name" data-ident="strategy">strategy</span> = <a class="name" data-ident="MeldingStrategy" href="lu.meld.MeldingStrategy.html#conservative" title="lu.meld.MeldingStrategy">MeldingStrategy.conservative</a></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Array1">Array1</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Array2">Array2</span></span></div></div>)</div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">auto</span> <span class="storage-class">ref</span> <span class="name" data-ident="Array1">Array1</span></span></span> <span class="parameter-name name" data-ident="meldThis"><a href="#param-meldThis">meldThis</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">ref</span> <span class="name" data-ident="Array2">Array2</span></span></span> <span class="parameter-name name" data-ident="intoThis"><a href="#param-intoThis">intoThis</a></span></div><span class="paren">)</span></div></div><div class="template-constraint"> <a class="lang-feature" href="http://dpldocs.info/template-constraints">if</a> (<div class="template-constraint-expression"><div class="andand-left"><div class="andand-left"><a class="name" data-ident="isMerelyArray" href="lu.traits.isMerelyArray.html" title="lu.traits.isMerelyArray">isMerelyArray</a>!<span class="name" data-ident="Array1">Array1</span> &amp;&amp; </div><div class="andand-right"><a class="name" data-ident="isMerelyArray" href="lu.traits.isMerelyArray.html" title="lu.traits.isMerelyArray">isMerelyArray</a>!<span class="name" data-ident="Array2">Array2</span></div> &amp;&amp; </div><div class="andand-right"><span class="name" data-ident="isMutable">isMutable</span>!<span class="name" data-ident="Array2">Array2</span></div></div>)</div><div class="function-contracts"></div></div></li><li class="overload-option"><a href="lu.meld.meldInto.3.html"><span class="overload-signature"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">meldInto</span>(QualAA meldThis, AA intoThis)</span></a></li></ol></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-strategy"><a class="parameter-name" data-ident="strategy" href="#param-strategy">strategy</a></dt><dd><div class="documentation-comment"><div><p>To what extent the source object should overwrite set
+            (non-<tt class="inline-code">init</tt>) values in the receiving object.</p></div></div></dd><dt id="param-meldThis"><a class="parameter-name" data-ident="meldThis" href="#param-meldThis">meldThis</a> <span class="parameter-type"><span class="name" data-ident="Array1">Array1</span></span></dt><dd><div class="documentation-comment"><div><p>Array to meld (source).</p></div></div></dd><dt id="param-intoThis"><a class="parameter-name" data-ident="intoThis" href="#param-intoThis">intoThis</a> <span class="parameter-type"><span class="name" data-ident="Array2">Array2</span></span></dt><dd><div class="documentation-comment"><div><p>Reference to the array to meld (target).</p></div></div></dd></dl><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="type">int</span>[] <span class="hid">arr1</span> = [ <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span> ];
+<span class="type">int</span>[] <span class="hid">arr2</span> = [ <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span> ];
+<span class="hid">arr1</span>.<span class="hid">meldInto</span>!(<span class="hid">MeldingStrategy</span>.<span class="hid">conservative</span>)(<span class="hid">arr2</span>);
+
+<span class="kwrd">assert</span>(<span class="hid">arr2</span> == [ <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span> ]);</pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">conv</span> : <span class="hid">to</span>;
+
+{
+    <span class="kwrd">auto</span> <span class="hid">arr1</span> = [ <span class="num">123</span>, <span class="num">0</span>, <span class="num">789</span>, <span class="num">0</span>, <span class="num">456</span>, <span class="num">0</span> ];
+    <span class="kwrd">auto</span> <span class="hid">arr2</span> = [ <span class="num">0</span>, <span class="num">456</span>, <span class="num">0</span>, <span class="num">123</span>, <span class="num">0</span>, <span class="num">789</span> ];
+    <span class="hid">arr1</span>.<span class="hid">meldInto</span>!(<span class="hid">MeldingStrategy</span>.<span class="hid">conservative</span>)(<span class="hid">arr2</span>);
+    <span class="kwrd">assert</span>((<span class="hid">arr2</span> == [ <span class="num">123</span>, <span class="num">456</span>, <span class="num">789</span>, <span class="num">123</span>, <span class="num">456</span>, <span class="num">789</span> ]), <span class="hid">arr2</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="kwrd">auto</span> <span class="hid">arr1</span> = [ <span class="str">'Z'</span>, <span class="type">char</span>.<span class="hid">init</span>, <span class="str">'Z'</span>, <span class="type">char</span>.<span class="hid">init</span>, <span class="str">'Z'</span> ];
+    <span class="kwrd">auto</span> <span class="hid">arr2</span> = [ <span class="str">'A'</span>, <span class="str">'B'</span>, <span class="str">'C'</span>, <span class="str">'D'</span>, <span class="str">'E'</span>, <span class="str">'F'</span> ];
+    <span class="hid">arr1</span>.<span class="hid">meldInto</span>!(<span class="hid">MeldingStrategy</span>.<span class="hid">aggressive</span>)(<span class="hid">arr2</span>);
+    <span class="kwrd">assert</span>((<span class="hid">arr2</span> == [ <span class="str">'Z'</span>, <span class="str">'B'</span>, <span class="str">'Z'</span>, <span class="str">'D'</span>, <span class="str">'Z'</span>, <span class="str">'F'</span> ]), <span class="hid">arr2</span>.<span class="hid">to</span>!<span class="type">string</span>);
+
+    <span class="kwrd">auto</span> <span class="hid">arr3</span> = [ <span class="type">char</span>.<span class="hid">init</span>, <span class="str">'X'</span> ];
+    <span class="hid">arr1</span>.<span class="hid">meldInto</span>(<span class="hid">arr3</span>);
+    <span class="kwrd">assert</span>((<span class="hid">arr3</span> == [ <span class="str">'Z'</span>, <span class="str">'X'</span>, <span class="str">'Z'</span>, <span class="type">char</span>.<span class="hid">init</span>, <span class="str">'Z'</span> ]), <span class="hid">arr3</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="type">char</span>[<span class="num">5</span>] <span class="hid">arr1</span> = [ <span class="str">'1'</span>, <span class="str">'2'</span>, <span class="str">'3'</span>, <span class="str">'4'</span>, <span class="str">'5'</span> ];
+    <span class="type">char</span>[] <span class="hid">arr2</span>;
+    <span class="hid">arr1</span>.<span class="hid">meldInto</span>(<span class="hid">arr2</span>);
+    <span class="kwrd">assert</span>((<span class="hid">arr1</span> == <span class="hid">arr2</span>), <span class="hid">arr2</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="type">int</span>[<span class="num">3</span>] <span class="hid">arr1</span> = [ <span class="num">1</span>, <span class="num">0</span>, <span class="num">3</span> ];
+    <span class="type">int</span>[<span class="num">3</span>] <span class="hid">arr2</span> = [ <span class="num">0</span>, <span class="num">2</span>, <span class="num">0</span> ];
+    <span class="hid">arr1</span>.<span class="hid">meldInto</span>(<span class="hid">arr2</span>);
+    <span class="kwrd">assert</span>((<span class="hid">arr2</span> == [ <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span> ]), <span class="hid">arr2</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="type">int</span>[] <span class="hid">dyn</span> = <span class="kwrd">new</span> <span class="type">int</span>[<span class="num">3</span>];
+    <span class="type">int</span>[<span class="num">4</span>] <span class="hid">stat</span> = [ <span class="num">9</span>, <span class="num">2</span>, <span class="num">0</span>, <span class="num">4</span> ];
+    <span class="hid">dyn</span> = [ <span class="num">1</span>, <span class="num">0</span>, <span class="num">3</span> ];
+    <span class="hid">dyn</span>.<span class="hid">meldInto</span>!(<span class="hid">MeldingStrategy</span>.<span class="hid">conservative</span>)(<span class="hid">stat</span>);
+    <span class="kwrd">assert</span>((<span class="hid">stat</span> == [ <span class="num">9</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span> ]), <span class="hid">stat</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.meld.html">meld</a> 
+		<span class="type-separator">enums</span><ul><li><a class="enum" href="lu.meld.MeldingStrategy.html">MeldingStrategy</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function current" href="lu.meld.meldInto.1.html">meldInto</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
