@@ -512,6 +512,19 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
 
     immutable responseJSON = parseJSON(response.body);
 
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import kameloso.misc : printStacktrace;
+            import std.stdio : writeln;
+
+            writeln(response.code);
+            writeln(responseJSON.toPrettyString);
+            printStacktrace();
+        }
+    }
+
     if (response.code == 200) // ("id" in responseJSON)
     {
         // Seems to have worked
@@ -645,6 +658,19 @@ private auto getGoogleTokens(
     immutable response = issueSyncHTTPRequest(request);
     immutable responseJSON = parseJSON(response.body);
 
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import kameloso.misc : printStacktrace;
+            import std.stdio : writeln;
+
+            writeln(response.code);
+            writeln(responseJSON.toPrettyString);
+            printStacktrace();
+        }
+    }
+
     if (response.code == 200) // ("access_token" in responseJSON)
     {
         return GetTokenResults(response.code, responseJSON);
@@ -724,6 +750,19 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
         verb: HTTPVerb.post);
 
     immutable responseJSON = parseJSON(response.body);
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import kameloso.misc : printStacktrace;
+            import std.stdio : writeln;
+
+            writeln(response.code);
+            writeln(responseJSON.toPrettyString);
+            printStacktrace();
+        }
+    }
 
     if (response.code == 200) // ("access_token" in responseJSON)
     {
@@ -810,6 +849,19 @@ private auto validateGoogleToken(const Credentials creds, const string caBundleF
 
     immutable response = issueSyncHTTPRequest(request);
     immutable responseJSON = parseJSON(response.body);
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import kameloso.misc : printStacktrace;
+            import std.stdio : writeln;
+
+            writeln(response.code);
+            writeln(responseJSON.toPrettyString);
+            printStacktrace();
+        }
+    }
 
     if (response.code == 200)  // ("expires_in" in responseJSON)
     {

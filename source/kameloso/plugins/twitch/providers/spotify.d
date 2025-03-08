@@ -446,6 +446,19 @@ private auto getSpotifyTokens(
     immutable response = issueSyncHTTPRequest(request);
     immutable responseJSON = parseJSON(response.body);
 
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import kameloso.misc : printStacktrace;
+            import std.stdio : writeln;
+
+            writeln(response.code);
+            writeln(responseJSON.toPrettyString);
+            printStacktrace();
+        }
+    }
+
     if (response.code == 200) // ("access_token" in responseJSON)
     {
         return GetTokenResults(response.code, responseJSON);
@@ -539,6 +552,19 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
         contentType: "application/x-www-form-urlencoded");
 
     immutable responseJSON = parseJSON(response.body);
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import kameloso.misc : printStacktrace;
+            import std.stdio : writeln;
+
+            writeln(response.code);
+            writeln(responseJSON.toPrettyString);
+            printStacktrace();
+        }
+    }
 
     if (response.code == 200) // ("access_token" in responseJSON)
     {
@@ -664,6 +690,19 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
         verb: HTTPVerb.post);
 
     immutable responseJSON = parseJSON(response.body);
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import kameloso.misc : printStacktrace;
+            import std.stdio : writeln;
+
+            writeln(response.code);
+            writeln(responseJSON.toPrettyString);
+            printStacktrace();
+        }
+    }
 
     if (response.code == 200) // ("snapshot_id" in responseJSON)
     {
@@ -812,6 +851,19 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
 
     immutable responseJSON = parseJSON(response.body);
 
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import kameloso.misc : printStacktrace;
+            import std.stdio : writeln;
+
+            writeln(response.code);
+            writeln(responseJSON.toPrettyString);
+            printStacktrace();
+        }
+    }
+
     if (response.code == 200) // ("name" in responseJSON)
     {
         // Seems to have worked
@@ -934,6 +986,19 @@ private auto validateSpotifyToken(ref Credentials creds, const string caBundleFi
 
     immutable response = issueSyncHTTPRequest(request);
     immutable responseJSON = parseJSON(response.body);
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import kameloso.misc : printStacktrace;
+            import std.stdio : writeln;
+
+            writeln(response.code);
+            writeln(responseJSON.toPrettyString);
+            printStacktrace();
+        }
+    }
 
     if (response.code == 200) // ("id" in responseJSON)
     {
