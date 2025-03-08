@@ -894,11 +894,11 @@ void updateUser(
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
-    .fiber(true)
 )
 void onWelcome(PersistenceService service, const IRCEvent _)
 {
-    import kameloso.plugins.common.scheduling : delay;
+    import kameloso.constants : BufferSize;
+    import core.thread.fiber : Fiber;
     import core.time : hours;
 
     mixin(memoryCorruptionCheck);
@@ -909,12 +909,20 @@ void onWelcome(PersistenceService service, const IRCEvent _)
     static immutable cacheEntryAgeCheckPeriodicity = 1.hours;
     enum cacheEntryMaxAgeSeconds = 12 * 3600;  // 12 hours
 
-    while (true)
+    void purgeOldCacheEntriesDg()
     {
-        // Delay first so we don't purge immediately after loading
-        delay(service, cacheEntryAgeCheckPeriodicity, yield: true);
-        purgeOldCacheEntries(service, cacheEntryMaxAgeSeconds);
+        while (true)
+        {
+            import kameloso.plugins.common.scheduling : delay;
+
+            // Delay first so we don't purge immediately after loading
+            delay(service, cacheEntryAgeCheckPeriodicity, yield: true);
+            purgeOldCacheEntries(service, cacheEntryMaxAgeSeconds);
+        }
     }
+
+    auto purgeOldCacheEntriesFiber = new Fiber(&purgeOldCacheEntriesDg, BufferSize.fiberStack);
+    purgeOldCacheEntriesFiber.call();
 }
 
 
@@ -1037,10 +1045,10 @@ void purgeOldCacheEntries(
 
     immutable now = Clock.currTime.toUnixTime();
 
-    foreach (ref channelUsers; service.channelUserCache.aaOf)
+    foreach (immutable channelName, _; service.channelUserCache.aaOf)
     {
         alias userTooOldPred = (user) => (now - user.updated) > cacheEntryMaxAgeSeconds;
-        pruneAA!userTooOldPred(channelUsers);
+        pruneAA!userTooOldPred(service.channelUserCache.aaOf[channelName]);
     }
 
     alias emptyChannelPred = (channelUsers) => !channelUsers.length;
