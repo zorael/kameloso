@@ -293,10 +293,12 @@ in (Fiber.getThis(), "Tried to call `getChatters` from outside a fiber")
 in (broadcaster.length, "Tried to get chatters with an empty broadcaster string")
 {
     import std.conv : text;
-    import std.json : JSONType, JSONValue, parseJSON;
+    import std.json : parseJSON;
 
     static struct Chatters
     {
+        private import std.json : JSONValue;
+
         uint code;
         string error;
         string broadcaster;
@@ -487,11 +489,12 @@ in (Fiber.getThis(), "Tried to call `getValidation` from outside a fiber")
 in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
     import std.algorithm.searching : startsWith;
-    import std.json : JSONType, JSONValue, parseJSON;
-    import core.time : Duration, seconds;
+    import std.json : JSONValue, parseJSON;
 
     static struct ValidationResults
     {
+        private import core.time : Duration, seconds;
+
         uint code;
         //string error;
         string clientID;
@@ -693,7 +696,7 @@ in (Fiber.getThis(), "Tried to call `getFollowers` from outside a fiber")
 in (id, "Tried to get followers with an unset ID")
 {
     import std.conv : text, to;
-    import std.json : JSONType, JSONValue, parseJSON;
+    import std.json : parseJSON;
 
     static struct GetFollowersResults
     {
@@ -899,10 +902,12 @@ in ((name.length || id),
     "Tried to get Twitch user without supplying a name nor an ID")
 {
     import std.conv : to;
-    import std.json : JSONType, JSONValue, parseJSON;
+    import std.json : parseJSON;
 
     static struct GetUserResults
     {
+        private import std.json : JSONValue;
+
         uint code;
         string error;
         ulong id;
@@ -1095,10 +1100,12 @@ in (Fiber.getThis(), "Tried to call `getGame` from outside a fiber")
 in ((name.length || id), "Tried to call `getGame` with no game name nor game ID")
 {
     import std.conv : to;
-    import std.json : JSONType, JSONValue, parseJSON;
+    import std.json : parseJSON;
 
     static struct GetGameResults
     {
+        private import std.json : JSONValue;
+
         uint code;
         string error;
         ulong id;
@@ -1465,10 +1472,12 @@ in (Fiber.getThis(), "Tried to call `getChannel` from outside a fiber")
 in ((channelName.length || channelID), "Tried to fetch a channel with no information to query with")
 {
     import std.conv : to;
-    import std.json : JSONType, JSONValue, parseJSON;
+    import std.json : parseJSON;
 
     static struct GetChannelResults
     {
+        private import std.json : JSONValue;
+
         uint code;
         string error;
         ulong id;
@@ -1697,10 +1706,12 @@ in (Fiber.getThis(), "Tried to call `startCommercial` from outside a fiber")
 in (channelName.length, "Tried to start a commercial with an empty channel name string")
 {
     import std.format : format;
-    import std.json : JSONType, JSONValue, parseJSON;
+    import std.json : parseJSON;
 
     static struct StartCommercialResults
     {
+        private import std.json : JSONValue;
+
         uint code;
         string error;
         string message;
@@ -2192,8 +2203,7 @@ in (Fiber.getThis(), "Tried to call `getPolls` from outside a fiber")
 in (channelName.length, "Tried to get polls with an empty channel name string")
 {
     import std.conv : text;
-    import std.json : JSONType, parseJSON;
-    import std.datetime.systime : SysTime;
+    import std.json : parseJSON;
 
     static struct GetPollResults
     {
@@ -2379,7 +2389,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
 {
     import std.array : Appender, replace;
     import std.format : format;
-    import std.json : JSONType, parseJSON;
+    import std.json : parseJSON;
 
     static struct CreatePollResults
     {
@@ -2569,7 +2579,7 @@ in (Fiber.getThis(), "Tried to call `endPoll` from outside a fiber")
 in (channelName.length, "Tried to end a poll with an empty channel name string")
 {
     import std.format : format;
-    import std.json : JSONType, parseJSON;
+    import std.json : parseJSON;
 
     static struct EndPollResults
     {
@@ -2756,9 +2766,8 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
  +/
 auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
 {
-    import std.algorithm.searching : endsWith;
     import std.array : Appender;
-    import std.json : JSONType, parseJSON;
+    import std.json : parseJSON;
 
     static struct GetBotListResults
     {
@@ -2849,6 +2858,8 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
 
         foreach (const botEntryJSON; botsJSON.array)
         {
+            import std.algorithm.searching : endsWith;
+
             /*
             [
                 "commanderroot",
@@ -2899,11 +2910,7 @@ auto getStream(
 in (Fiber.getThis(), "Tried to call `getStream` from outside a fiber")
 in (loginName.length, "Tried to get a stream with an empty login name string")
 {
-    import std.algorithm.iteration : map;
-    import std.array : array;
-    import std.conv : to;
-    import std.datetime.systime : SysTime;
-    import std.json : JSONType, parseJSON;
+    import std.json : parseJSON;
 
     static struct GetStreamResults
     {
@@ -3087,13 +3094,14 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
 {
     import std.array : Appender;
     import std.conv : to;
-    import std.format : format;
-    import std.json : JSONType, JSONValue, parseJSON;
+    import std.json : parseJSON;
 
     static struct GetSubscribersResults
     {
         static struct Subscription
         {
+            private import std.json : JSONValue;
+
             static struct User
             {
                 string name;
@@ -3572,14 +3580,12 @@ in (userID, "Tried to timeout a user with an unset user ID")
 {
     import std.algorithm.comparison : min;
     import std.format : format;
-    import std.json : JSONValue;
-    import std.datetime.systime : SysTime;
-
-    const room = channelName in plugin.rooms;
-    assert(room, "Tried to timeout a user in a nonexistent room");
 
     static struct TimeoutResults
     {
+        private import std.datetime.systime : SysTime;
+        private import std.json : JSONValue;
+
         uint code;
         string error;
         bool alreadyBanned;  // FIXME
@@ -3663,6 +3669,9 @@ in (userID, "Tried to timeout a user with an unset user ID")
 
     // Work around forward-declaration of auto return type
     if (false) return TimeoutResults.init;
+
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to timeout a user in a nonexistent room");
 
     enum maxDurationSeconds = 1_209_600;  // 14 days
 
