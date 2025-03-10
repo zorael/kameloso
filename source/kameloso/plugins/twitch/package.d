@@ -3607,9 +3607,9 @@ auto promoteUserFromBadges(
     const bool promoteModerators,
     const bool promoteVIPs) pure @safe
 {
-    import std.string : indexOf;
     import std.algorithm.comparison : among;
     import std.algorithm.iteration : splitter;
+    import std.algorithm.searching : countUntil;
 
     if (class_ >= IRCUser.Class.operator) return false;  // already as high as we go
 
@@ -3622,8 +3622,8 @@ auto promoteUserFromBadges(
         // Optimise this a bit because it's such a hotspot
         if (!badge[0].among!('s', 'v', 'm', /*'b'*/)) continue;
 
-        immutable slashPos = badge.indexOf('/');
-        if (!slashPos) break;  // something's wrong
+        immutable slashPos = badge.countUntil('/');
+        if (slashPos == -1) break;  // something's wrong, should never happen
 
         immutable badgePart = badge[0..slashPos];
 
@@ -3780,13 +3780,12 @@ unittest
         badges = A reference to the comma-separated string of badges to sort in place.
         badgeOrder = The order of badges to sort by.
  +/
-void sortBadges(ref string badges, const string[] badgeOrder)
+void sortBadges(ref string badges, const string[] badgeOrder) @safe
 {
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : countUntil;
     import std.algorithm.sorting : sort;
     import std.array : Appender, join;
-    import std.string : indexOf;
 
     static Appender!(string[]) sink;
     scope(exit) sink.clear();
@@ -3795,11 +3794,15 @@ void sortBadges(ref string badges, const string[] badgeOrder)
     bool inOrder = true;
     auto range = badges.splitter(',');
 
+    // The number behind the slash can sometimes be text
+    // predictions/NAH\sNEVER,subscriber/1,predictions/pink-2,premium/1
+    // predictions/YEP\sLETSGOOO,subscriber/16,predictions/blue-1,sub-gifter/10
+
     foreach (immutable badge; range)
     {
         if (!badge.length) continue;  // should never happen
 
-        immutable slashIndex = badge.indexOf('/');
+        immutable slashIndex = badge.countUntil('/');
 
         if (slashIndex == -1)
         {
@@ -3825,8 +3828,8 @@ void sortBadges(ref string badges, const string[] badgeOrder)
     auto compareBadges(const string a, const string b)
     {
         // Slashes are guaranteed to be present, we already checked
-        immutable aSlashIndex = a.indexOf('/');
-        immutable bSlashIndex = b.indexOf('/');
+        immutable aSlashIndex = a.countUntil('/');
+        immutable bSlashIndex = b.countUntil('/');
 
         immutable aBadgeIndex = badgeOrder.countUntil(a[0..aSlashIndex]);
         immutable bBadgeIndex = badgeOrder.countUntil(b[0..bSlashIndex]);
