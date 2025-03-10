@@ -1450,6 +1450,26 @@ mixin template TwitchAwareness(
             event.channel.name,
             event.target);
     }
+
+    // onTwitchAwarenessDetectTargetModeratorMixin
+    /++
+        Detects moderator-ness from a `USERSTATE` event. Broadcasters are also moderators.
+
+        See_Also:
+            [onTwitchAwarenessDetectModerator]
+     +/
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.USERSTATE)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+        .chainable(true)
+    )
+    void onTwitchAwarenessDetectTargetModeratorMixin(IRCPlugin plugin, const IRCEvent event) @system
+    {
+        kameloso.plugins.common.mixins.awareness.onTwitchAwarenessDetectTargetModerator(
+            plugin,
+            event);
+    }
 }
 
 
@@ -1489,6 +1509,51 @@ void onTwitchAwarenessUserCarrierImpl(
     }
 
     catchUser(plugin, user);  // <-- this one
+}
+
+
+// onTwitchAwarenessDetectTargetModerator
+/++
+    Detects moderator-ness from a `USERSTATE` event. Broadcasters are also moderators.
+
+    If the target user is a moderator, add them to the list of ops in the plugin's
+    state's [dialect.defs.IRCChannel.mods|IRCChannel.mods] associative array.
+
+    See_Also:
+        [onTwitchAwarenessDetectTargetModeratorMixin]
+ +/
+version(TwitchSupport)
+void onTwitchAwarenessDetectTargetModerator(
+    IRCPlugin plugin,
+    const IRCEvent event) @system
+{
+    import lu.string : advancePast;
+    import std.algorithm.searching : canFind;
+
+    string slice = event.tags;  // mutable
+    if (!slice.length) return;
+
+    // badge-info=;badges=moderator/1;color=#5F9EA0;display-name=Zorael;emote-sets=0,185411,771853,1511983;mod=1;subscriber=0;user-type=mod
+    // Currently badge-info is only used for subscribers, so use badges
+    slice.advancePast("badges=", inherit: true);
+    if (!slice.length) return;
+
+    immutable badges = slice.advancePast(';', inherit: true);
+    if (!badges.length) return;
+
+    if (badges.canFind("moderator/", "broadcaster/"))
+    {
+        auto channel = ensureChannel(plugin, event.channel);
+
+        if (auto ops = 'o' in channel.mods)
+        {
+            (*ops)[event.target.nickname] = true;
+        }
+        else
+        {
+            channel.mods['o'][event.target.nickname] = true;
+        }
+    }
 }
 
 
