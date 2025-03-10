@@ -145,16 +145,29 @@ in (channelName.length, "Tried to send a channel message but no channel was give
             m.event.content = content.stripIRCTags;
             strippedTags = true;
 
+            bool moderatornessKnown;
+
             if (auto channel = channelName in state.channels)
             {
                 if (auto ops = 'o' in channel.mods)
                 {
                     if (state.client.nickname in *ops)
                     {
-                        // We are a moderator and can as such send things fast
+                        // We know we are a moderator and can as such send things fast
                         m.properties |= Message.Property.fast;
                     }
+
+                    moderatornessKnown = true;
                 }
+            }
+
+            if (!moderatornessKnown)
+            {
+                /+
+                    Assume we are a moderator.
+                    The calling plugin may not be mixing in TwitchAwareness.
+                 +/
+                m.properties |= Message.Property.fast;
             }
         }
     }
