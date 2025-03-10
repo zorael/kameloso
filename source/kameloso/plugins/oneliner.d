@@ -219,7 +219,6 @@ public:
      +/
     static auto fromJSON(const JSONValue json)
     {
-        import lu.json : getOrFallback;
         import core.memory : GC;
 
         GC.disable();

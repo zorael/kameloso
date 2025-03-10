@@ -123,12 +123,12 @@ public:
      +/
     static auto fromJSON(const JSONValue json)
     {
-        import lu.json : getOrFallback;
+        import lu.json : safelyGet;
 
         Quote quote;
         quote.line = json["line"].str;
         quote.timestamp = json["timestamp"].integer;
-        quote.creator = json.getOrFallback("creator");
+        quote.creator = json.safelyGet("creator");
         return quote;
     }
 }

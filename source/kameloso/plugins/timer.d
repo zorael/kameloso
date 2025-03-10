@@ -272,7 +272,7 @@ public:
      +/
     static auto fromJSON(const JSONValue json)
     {
-        import lu.json : getOrFallback;
+        import lu.json : safelyGet;
         import core.memory : GC;
 
         GC.disable();
@@ -292,7 +292,7 @@ public:
             TimerCondition.both :
             TimerCondition.either;
 
-        timer.colour = json.getOrFallback("colour", timer.colour);
+        timer.colour = json.safelyGet("colour", timer.colour);
 
         foreach (const lineJSON; json["lines"].array)
         {

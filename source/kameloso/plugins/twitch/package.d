@@ -4749,7 +4749,7 @@ package:
              +/
             this(const JSONValue json)
             {
-                import lu.json : getOrFallback;
+                import lu.json : safelyGet;
                 import std.algorithm.iteration : map;
                 import std.array : array;
 
@@ -4850,9 +4850,9 @@ package:
                 this.gameName = json["game_name"].str;
                 this.title = json["title"].str;
                 this.startedAt = SysTime.fromISOExtString(json["started_at"].str);
-                this.status = json.getOrFallback("status");
-                this.viewerCount = json.getOrFallback!ulong("viewer_count");
-                this.viewerCountMax = json.getOrFallback!ulong("viewer_count_max");
+                this.status = json.safelyGet("status");
+                this.viewerCount = json.safelyGet!ulong("viewer_count");
+                this.viewerCountMax = json.safelyGet!ulong("viewer_count_max");
                 this.tags = json["tags"]
                     .array
                     .map!(tag => tag.str)
