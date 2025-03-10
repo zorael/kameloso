@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>IRCPluginState.updates (kameloso.plugins.IRCPluginState.updates)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>IRCPluginState.updates</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.IRCPluginState.html">IRCPluginState</a> </div><div><div class="documentation-comment synopsis"><div><p>Bitfield of in what way the plugin state was altered during postprocessing
+        or event handler execution.</p></div></div></div><div class="annotated-prototype"><div class="declaration-prototype"><div class="parent-prototype"><span class="builtin-type">struct</span> <span class="name">IRCPluginState</span></div><div><div class="attributes"></div><a href="kameloso.plugins.IRCPluginState.Update.html" title="kameloso.plugins.IRCPluginState.Update"><tt class="highlighted"><a class="hid" href="kameloso.plugins.IRCPluginState.Update.html" title="kameloso.plugins.IRCPluginState.Update">Update</a></tt></a> <span class="name">updates</span>;</div></div></div><div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">if</span> (<span class="hid">state</span>.<span class="hid">updates</span> &amp; <span class="hid">IRCPluginState</span>.<span class="hid">Update</span>.<span class="hid">bot</span>)
+{
+    <span class="com">// state.bot was marked as updated</span>
+    <span class="hid">state</span>.<span class="hid">updates</span> |= <span class="hid">IRCPluginState</span>.<span class="hid">Update</span>.<span class="hid">server</span>;
+    <span class="com">// state.server now marked as updated</span>
+}</pre></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.IRCPluginState.html">IRCPluginState</a> 
+		<span class="type-separator">constructors</span><ul><li><a class="constructor" href="kameloso.plugins.IRCPluginState.this.html">this</a></li></ul><span class="type-separator">enums</span><ul><li><a class="enum" href="kameloso.plugins.IRCPluginState.Update.html">Update</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.IRCPluginState.connectionID.html">connectionID</a></li><li><a class="function" href="kameloso.plugins.IRCPluginState.updateSchedule.html">updateSchedule</a></li></ul><span class="type-separator">variables</span><ul><li><a class="variable" href="kameloso.plugins.IRCPluginState._connectionID.html">_connectionID</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.abort.html">abort</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.awaitingDelegates.html">awaitingDelegates</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.awaitingFibers.html">awaitingFibers</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.bot.html">bot</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.channels.html">channels</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.client.html">client</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.connSettings.html">connSettings</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.coreSettings.html">coreSettings</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.deferredActions.html">deferredActions</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.hasPendingReplays.html">hasPendingReplays</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.messages.html">messages</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.nextScheduledTimestamp.html">nextScheduledTimestamp</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.outgoingMessages.html">outgoingMessages</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.pendingReplays.html">pendingReplays</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.priorityMessages.html">priorityMessages</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.querier.html">querier</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.readyReplays.html">readyReplays</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.scheduledDelegates.html">scheduledDelegates</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.scheduledFibers.html">scheduledFibers</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.server.html">server</a></li><li><a class="variable current" href="kameloso.plugins.IRCPluginState.updates.html">updates</a></li><li><a class="variable" href="kameloso.plugins.IRCPluginState.users.html">users</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
