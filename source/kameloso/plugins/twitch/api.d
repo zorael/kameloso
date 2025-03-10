@@ -3538,7 +3538,7 @@ in (channelName.length, "Tried to delete a message without providing a channel n
     }
 
     static immutable failedDeleteRetry = 100.msecs;
-    return retryDelegate(plugin, &deleteDg, async: true, endlessly: true, failedDeleteRetry);
+    return retryDelegate(plugin, &deleteDg, retryDelay: failedDeleteRetry);
 }
 
 
