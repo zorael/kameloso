@@ -3573,6 +3573,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
     import std.algorithm.comparison : min;
     import std.format : format;
     import std.json : JSONValue;
+    import std.datetime.systime : SysTime;
 
     const room = channelName in plugin.rooms;
     assert(room, "Tried to timeout a user in a nonexistent room");
@@ -3585,8 +3586,8 @@ in (userID, "Tried to timeout a user with an unset user ID")
         ulong broadcasterID;
         ulong moderatorID;
         ulong userID;
-        string createdAt;
-        string endTime;
+        SysTime createdAt;
+        SysTime endTime;
 
         auto success() const { return (code == 200); }
 
@@ -3607,16 +3608,17 @@ in (userID, "Tried to timeout a user with an unset user ID")
         this(const uint code, const JSONValue json)
         {
             import std.conv : to;
+            import std.json : JSONType;
 
             /*
             {
                 "data": [
                     {
-                    "broadcaster_id": "1234",
-                    "moderator_id": "5678",
-                    "user_id": "9876",
-                    "created_at": "2021-09-28T18:22:31Z",
-                    "end_time": null
+                        "broadcaster_id": "1234",
+                        "moderator_id": "5678",
+                        "user_id": "9876",
+                        "created_at": "2021-09-28T18:22:31Z",
+                        "end_time": null
                     }
                 ]
             }
@@ -3625,11 +3627,11 @@ in (userID, "Tried to timeout a user with an unset user ID")
             {
                 "data": [
                     {
-                    "broadcaster_id": "1234",
-                    "moderator_id": "5678",
-                    "user_id": "9876",
-                    "created_at": "2021-09-28T19:27:31Z",
-                    "end_time": "2021-09-28T19:22:31Z"
+                        "broadcaster_id": "1234",
+                        "moderator_id": "5678",
+                        "user_id": "9876",
+                        "created_at": "2021-09-28T19:27:31Z",
+                        "end_time": "2021-09-28T19:22:31Z"
                     }
                 ]
             }
@@ -3646,8 +3648,16 @@ in (userID, "Tried to timeout a user with an unset user ID")
             this.broadcasterID = json["broadcaster_id"].str.to!ulong;
             this.moderatorID = json["moderator_id"].str.to!ulong;
             this.userID = json["user_id"].str.to!ulong;
-            this.createdAt = json["created_at"].str;
-            this.endTime = json["end_time"].str;
+            this.createdAt = SysTime.fromISOExtString(json["created_at"].str);
+
+            const endTimeJSON = "end_time" in json;
+
+            if (endTimeJSON.type == JSONType.string)
+            {
+                // end_time can be JSONType.string or JSONType.null_
+                // If it is null_, calling endTimeJSON.str would throw
+                this.endTime = SysTime.fromISOExtString(endTimeJSON.str);
+            }
         }
     }
 
