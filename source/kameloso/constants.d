@@ -416,7 +416,7 @@ public:
 
     /++
         The amount of time to spend with a shortened receive timeout.
-        After this, it reverts to [Timeout.receiveMsecs].
+        After this, it reverts to [Timeout.receive].
      +/
     static immutable maxShortenDuration = Integers.maxShortenDurationHnsecs.hnsecs;
 
@@ -523,7 +523,7 @@ enum ConnectionDefaultFloats : double
 
         FIXME: Tweak value.
      +/
-    messageRateTwitchFast = 3.0,
+    messageRateTwitchFast = 2.0,
 
     /++
         How many messages to immediately send in one go, before throttling kicks in.
@@ -531,7 +531,7 @@ enum ConnectionDefaultFloats : double
 
         FIXME: Tweak value.
      +/
-    messageBurstTwitchFast = 10.0,
+    messageBurstTwitchFast = 3.0,
 
     /++
         How many messages to send per second, maximum. For *slow* sends on Twitch servers.
