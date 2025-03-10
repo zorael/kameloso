@@ -906,6 +906,30 @@ mixin template ChannelAwareness(
 }
 
 
+// ensureChannel
+/++
+    Ensures a [dialect.defs.IRCChannel|IRCChannel] exists in the
+    [kameloso.plugins.IRCPlugin|IRCPlugin]'s
+    [kameloso.plugins.IRCPluginState.channels|IRCPluginState.channels] associative array.
+
+    Params:
+        plugin = The [kameloso.plugins.IRCPlugin|IRCPlugin] this relates to.
+        channel = The [dialect.defs.IRCEvent.Channel|IRCEvent.Channel] to ensure
+            an [dialect.defs.IRCChannel|IRCChannel] object for.
+
+    Returns:
+        A pointer to a [dialect.defs.IRCChannel|IRCChannel] object.
+ +/
+auto ensureChannel(IRCPlugin plugin, const IRCEvent.Channel channel)
+{
+    auto stateChannel = channel.name in plugin.state.channels;
+    if (stateChannel) return stateChannel;
+
+    plugin.state.channels[channel.name] = IRCChannel(channel);
+    return channel.name in plugin.state.channels;
+}
+
+
 // onChannelAwarenessSelfjoin
 /++
     Create a new [dialect.defs.IRCChannel|IRCChannel] in the the
@@ -915,10 +939,7 @@ mixin template ChannelAwareness(
  +/
 void onChannelAwarenessSelfjoin(IRCPlugin plugin, const IRCEvent event)
 {
-    if (event.channel.name in plugin.state.channels) return;
-
-    plugin.state.channels[event.channel.name] = IRCChannel.init;
-    plugin.state.channels[event.channel.name].name = event.channel.name;
+    cast()ensureChannel(plugin, event.channel);
 }
 
 
