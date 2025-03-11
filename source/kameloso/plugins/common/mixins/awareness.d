@@ -1470,6 +1470,26 @@ mixin template TwitchAwareness(
             plugin,
             event);
     }
+
+    // onTwitchAwarenessCatchRoomIDMixin
+    /++
+        Catches the room ID from a `ROOMSTATE` event.
+
+        See_Also:
+            [onTwitchAwarenessCatchRoomID]
+     +/
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.ROOMSTATE)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+        .chainable(true)
+    )
+    void onTwitchAwarenessCatchRoomIDMixin(IRCPlugin plugin, const IRCEvent event) @system
+    {
+        kameloso.plugins.common.mixins.awareness.onTwitchAwarenessCatchRoomID(
+            plugin,
+            event);
+    }
 }
 
 
@@ -1564,6 +1584,23 @@ void onTwitchAwarenessDetectTargetModerator(
         // Doesn't seem to be a moderator
         registerOpMod(isOp: false);
     }
+}
+
+
+// onTwitchAwarenessCatchRoomID
+/++
+    Catches the room ID from a `ROOMSTATE` event.
+
+    See_Also:
+        [onTwitchAwarenessCatchRoomIDMixin]
+ +/
+version(TwitchSupport)
+void onTwitchAwarenessCatchRoomID(IRCPlugin plugin, const IRCEvent event)
+{
+    if (!event.channel.id) return;
+
+    auto channel = ensureChannel(plugin, event.channel);
+    channel.id = event.channel.id;
 }
 
 
