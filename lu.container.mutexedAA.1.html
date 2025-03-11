@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>mutexedAA (lu.container.mutexedAA)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>mutexedAA</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.container.html">container</a> </div><div><div class="documentation-comment synopsis"><div><p>Convenience function to create and setup a <a class="xref" href="lu.container.MutexedAA.html">MutexedAA</a> instance in one go.
+    <a class="xref" href="lu.container.MutexedAA.setup.html">MutexedAA.setup</a> need as such not be called.</p></div></div></div><div class="annotated-prototype"><ol class="overloads"><li class="active-overload-option"><span class="overload-signature"><span class="lang-feature">auto</span>  <span class="name">mutexedAA</span>()</span><div class="function-prototype"><div class="attributes"></div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">mutexedAA</div><div class="template-parameters" data-count="3">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="AA">AA</span> : <span class="name" data-ident="V">V</span>[<span class="name" data-ident="K">K</span>]</span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="V">V</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="K">K</span></span></div></div>)</div><div class="runtime-parameters" data-count="0"><div class="parameters-list toplevel"><span class="paren">(</span><span class="paren">)</span></div></div><div class="template-constraint"> <a class="lang-feature" href="http://dpldocs.info/template-constraints">if</a> (<div class="template-constraint-expression">__traits(<span class="name" data-ident="isAssociativeArray">isAssociativeArray</span>, <span class="name" data-ident="AA">AA</span>)</div>)</div><div class="function-contracts"></div></div></li><li class="overload-option"><a href="lu.container.mutexedAA.2.html"><span class="overload-signature"><span class="lang-feature">auto</span>  <span class="name">mutexedAA</span>(AA orig)</span></a></li></ol></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-AA"><a class="parameter-name" data-ident="AA" href="#param-AA">AA</a></dt><dd><div class="documentation-comment"><div><p>Associative array type.</p></div></div></dd><dt id="param-V"><a class="parameter-name" data-ident="V" href="#param-V">V</a></dt><dd><div class="documentation-comment"><div><p>Value type.</p></div></div></dd><dt id="param-K"><a class="parameter-name" data-ident="K" href="#param-K">K</a></dt><dd><div class="documentation-comment"><div><p>Key type.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>A new <a class="xref" href="lu.container.MutexedAA.html">MutexedAA</a> instance.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="hid">MutexedAA</span>!(<span class="type">string</span>[<span class="type">int</span>]) <span class="hid">aa</span>;
+<span class="hid">aa</span>.<span class="hid">setup</span>();  <span class="com">// important!</span>
+
+<span class="kwrd">auto</span> <span class="hid">aa2</span> = <span class="hid">mutexedAA</span>!(<span class="type">string</span>[<span class="type">int</span>]);
+<span class="com">// no need to setup</span></pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted">{
+    <span class="hid">MutexedAA</span>!(<span class="type">string</span>[<span class="type">int</span>]) <span class="hid">aa</span>;
+    <span class="kwrd">assert</span>(!<span class="hid">aa</span>.<span class="hid">isReady</span>);  <span class="com">// internal mutex not instantiated, requires .setup()</span>
+}
+{
+    <span class="kwrd">auto</span> <span class="hid">aa</span> = <span class="hid">mutexedAA</span>!(<span class="type">string</span>[<span class="type">int</span>]);
+    <span class="kwrd">assert</span>(<span class="hid">aa</span>.<span class="hid">isReady</span>);  <span class="com">// mutex is in place already, no need to .setup()</span>
+}</pre></div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="lu.container.MutexedAA.html">MutexedAA</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.container.html">container</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function current" href="lu.container.mutexedAA.1.html">mutexedAA</a></li><li><a class="function" href="lu.container.rehashingAA.html">rehashingAA</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="lu.container.Buffer.html">Buffer</a></li><li><a class="struct" href="lu.container.CircularBuffer.html">CircularBuffer</a></li><li><a class="struct" href="lu.container.MutexedAA.html">MutexedAA</a></li><li><a class="struct" href="lu.container.RehashingAA.html">RehashingAA</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

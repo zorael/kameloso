@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>dialect.postprocessors.twitch (dialect.postprocessors.twitch)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>dialect.postprocessors.twitch</h1><div class="breadcrumbs"><a class="breadcrumb" href="dialect.html">dialect</a> <a class="breadcrumb" href="dialect.postprocessors.html">postprocessors</a> </div><div><div class="documentation-comment synopsis"><div><p>The Twitch postprocessor processes <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a>s after
+    they are parsed, and deals with Twitch-specifics. Those include extracting
+    the colour someone's name should be printed in, their alias/&quot;display name&quot;
+    (generally their nickname cased), converting the event to some event types
+    unique to Twitch, etc.</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="class"><a class="header-anchor" href="#class">Classes</a></h3><dl class="member-list native"><dt><a href="dialect.postprocessors.twitch.TwitchPostprocessor.html">TwitchPostprocessor</a><div class="simplified-prototype" style="max-width: 27ch;"><span class="builtin-type">class</span> <span class="name">TwitchPostprocessor</span></div></dt><dd><div><p>Twitch-specific postprocessor.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="dialect.postprocessors.twitch.appendToErrors.html">appendToErrors</a><div class="simplified-prototype" style="max-width: 56ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">appendToErrors</span>(IRCEvent event, string message)</div></dt><dd><div><p>Appends an error to an <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a>'s error string member.</p></div></dd><dt><a href="dialect.postprocessors.twitch.deduplicateBadges.html">deduplicateBadges</a><div class="simplified-prototype" style="max-width: 56ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">deduplicateBadges</span>(string badges, string badge)</div></dt><dd><div><p>Deduplicates a badge in a comma-separated list of badges.</p></div></dd><dt><a href="dialect.postprocessors.twitch.parseTwitchTags.html">parseTwitchTags</a><div class="simplified-prototype" style="max-width: 60ch;"><span class="lang-feature">auto</span>  <span class="name">parseTwitchTags</span>(IRCParser parser, IRCEvent event)</div></dt><dd><div><p>Parses a Twitch event's IRCv3 tags.</p></div></dd><dt><a href="dialect.postprocessors.twitch.printTags.html">printTags</a><div class="simplified-prototype" style="max-width: 33ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">printTags</span>(IRCEvent event)</div></dt><dd><div><p>Prints the tags of an <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a> to the console.</p></div></dd><dt><a href="dialect.postprocessors.twitch.switchOnMsgID.html">switchOnMsgID</a><div class="simplified-prototype" style="max-width: 72ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">switchOnMsgID</span>(IRCEvent event, string msgID, bool onlySetType)</div></dt><dd><div><p>Switches on a message ID string and resolves the type of an
+    <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a>.</p></div></dd><dt><a href="dialect.postprocessors.twitch.warnAboutOverwrittenNumber.html">warnAboutOverwrittenNumber</a><div class="simplified-prototype" style="max-width: 151ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">warnAboutOverwrittenNumber</span>(IRCEvent event, string name, Old oldValue, New newValue, string key, string tagType, bool printTagsOnExit)</div></dt><dd><div><p>Warns about twhen a numeric member of an
+    <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a> is to be overwritten.</p></div></dd><dt><a href="dialect.postprocessors.twitch.warnAboutOverwrittenString.html">warnAboutOverwrittenString</a><div class="simplified-prototype" style="max-width: 158ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">warnAboutOverwrittenString</span>(IRCEvent event, string name, string oldValue, string newValue, string key, string tagType, bool printTagsOnExit)</div></dt><dd><div><p>Warns about twhen a string member of an
+    <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a> is to be overwritten.</p></div></dd></dl><div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="dialect.html">dialect</a> <a class="parent" href="dialect.postprocessors.html">postprocessors</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module current" href="dialect.postprocessors.twitch.html">twitch</a></li></ul><span class="type-separator">aliases</span><ul><li><a class="alias" href="dialect.postprocessors.priority.html">priority</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="dialect.postprocessors.instantiatePostprocessors.html">instantiatePostprocessors</a></li><li><a class="function" href="dialect.postprocessors.registerPostprocessor.html">registerPostprocessor</a></li></ul><span class="type-separator">interfaces</span><ul><li><a class="interface" href="dialect.postprocessors.Postprocessor.html">Postprocessor</a></li></ul><span class="type-separator">mixin templates</span><ul><li><a class="mixin-template" href="dialect.postprocessors.PostprocessorRegistration.html">PostprocessorRegistration</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="dialect.postprocessors.PostprocessorRegistrationEntry.html">PostprocessorRegistrationEntry</a></li><li><a class="struct" href="dialect.postprocessors.Priority.html">Priority</a></li></ul><span class="type-separator">variables</span><ul><li><a class="variable" href="dialect.postprocessors.registeredPostprocessors.html">registeredPostprocessors</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

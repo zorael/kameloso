@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>MutexedAA.values (lu.container.MutexedAA.values)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>MutexedAA.values</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.container.html">container</a> <a class="breadcrumb" href="lu.container.MutexedAA.html">MutexedAA</a> </div><div><div class="documentation-comment synopsis"><div><p>Returns a new dynamic array of all the values in the internal associative array.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="parent-prototype"><span class="builtin-type">struct</span> <span class="name">MutexedAA</span><span class="template-params">(AA : V[K], V, K)</span></div><div><div class="attributes"></div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">values</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="0"><div class="parameters-list toplevel"><span class="paren">(</span><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div></div><div><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>A new <tt class="inline-code">V[]</tt> of all the AA values.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="hid">MutexedAA</span>!(<span class="type">int</span>[<span class="type">int</span>]) <span class="hid">aa</span>;
+<span class="hid">aa</span>.<span class="hid">setup</span>();  <span class="com">// important!</span>
+<span class="hid">aa</span>[<span class="num">1</span>] = <span class="num">42</span>;
+<span class="hid">aa</span>[<span class="num">2</span>] = <span class="num">99</span>;
+
+<span class="kwrd">auto</span> <span class="hid">values</span> = <span class="hid">aa</span>.<span class="hid">values</span>;
+<span class="kwrd">assert</span>( <span class="hid">values</span>.<span class="hid">canFind</span>(<span class="num">42</span>));
+<span class="kwrd">assert</span>( <span class="hid">values</span>.<span class="hid">canFind</span>(<span class="num">99</span>));
+<span class="kwrd">assert</span>(!<span class="hid">values</span>.<span class="hid">canFind</span>(<span class="num">0</span>));</pre></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.container.html">container</a> <a class="parent" href="lu.container.MutexedAA.html">MutexedAA</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function" href="lu.container.MutexedAA.aaOf.html">aaOf</a></li><li><a class="function" href="lu.container.MutexedAA.clear.html">clear</a></li><li><a class="function" href="lu.container.MutexedAA.get.html">get</a></li><li><a class="function" href="lu.container.MutexedAA.has.html">has</a></li><li><a class="function" href="lu.container.MutexedAA.isReady.html">isReady</a></li><li><a class="function" href="lu.container.MutexedAA.keys.html">keys</a></li><li><a class="function" href="lu.container.MutexedAA.length.html">length</a></li><li><a class="function" href="lu.container.MutexedAA.opEquals.1.html">opEquals</a></li><li><a class="function" href="lu.container.MutexedAA.opIndex.html">opIndex</a></li><li><a class="function" href="lu.container.MutexedAA.opIndexAssign.html">opIndexAssign</a></li><li><a class="function" href="lu.container.MutexedAA.opIndexOpAssign.html">opIndexOpAssign</a></li><li><a class="function" href="lu.container.MutexedAA.opIndexUnary.html">opIndexUnary</a></li><li><a class="function" href="lu.container.MutexedAA.rehash.html">rehash</a></li><li><a class="function" href="lu.container.MutexedAA.remove.html">remove</a></li><li><a class="function" href="lu.container.MutexedAA.require.html">require</a></li><li><a class="function" href="lu.container.MutexedAA.setup.html">setup</a></li><li><a class="function" href="lu.container.MutexedAA.uniqueKey.html">uniqueKey</a></li><li><a class="function" href="lu.container.MutexedAA.update.html">update</a></li><li><a class="function current" href="lu.container.MutexedAA.values.html">values</a></li></ul><span class="type-separator">variables</span><ul><li><a class="variable" href="lu.container.MutexedAA.aa.html">aa</a></li><li><a class="variable" href="lu.container.MutexedAA.mutex.html">mutex</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
