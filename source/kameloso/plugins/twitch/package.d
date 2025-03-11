@@ -647,60 +647,34 @@ void onUserstate(TwitchPlugin plugin, const IRCEvent event)
 
     mixin(memoryCorruptionCheck);
 
-    void registerOpMod()
+    auto channel = event.channel.name in plugin.state.channels;
+
+    if (!channel)
     {
-        if (auto channel = event.channel.name in plugin.state.channels)
+        // Race?
+        plugin.state.channels[event.channel.name] = IRCChannel(event.channel);
+        channel = event.channel.name in plugin.state.channels;
+    }
+
+    if (const ops = 'o' in channel.mods)
+    {
+        if (plugin.state.client.nickname in *ops)
         {
-            if (auto ops = 'o' in channel.mods)
-            {
-                if (plugin.state.client.nickname !in *ops)
-                {
-                    (*ops)[plugin.state.client.nickname] = true;
-                }
-            }
-            else
-            {
-                channel.mods['o'][plugin.state.client.nickname] = true;
-            }
-        }
-        else
-        {
-            // When can this happen?
+            // Is operator
+            return;
         }
     }
 
-    if (event.target.class_ >= IRCUser.Class.operator)
-    {
-        // All is well
-        registerOpMod();
-    }
-    else if (
-        plugin.settings.promoteBroadcasters &&
-        event.target.badges.canFind("broadcaster/"))
-    {
-        // All is also well
-        registerOpMod();
-    }
-    else if (
-        plugin.settings.promoteModerators &&
-        event.target.badges.canFind("moderator/"))
-    {
-        // Likewise
-        registerOpMod();
-    }
-    else
-    {
-        // It's a home channel yet we don't seem to be a moderator
-        auto room = getRoom(plugin, event.channel);
+    // If we're here, we're not an operator yet it's a home channel
+    auto room = getRoom(plugin, event.channel);
 
-        if (!room.sawUserstate)
-        {
-            // First USERSTATE; warn about not being mod
-            room.sawUserstate = true;
-            enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
-                "Consider elevating it to such to avoid being as rate-limited.";
-            logger.warningf(pattern, event.channel.name);
-        }
+    if (!room.sawUserstate)
+    {
+        // First USERSTATE; warn about not being mod
+        room.sawUserstate = true;
+        enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
+            "Consider elevating it to such to avoid being as rate-limited.";
+        logger.warningf(pattern, event.channel.name);
     }
 }
 

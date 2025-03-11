@@ -1527,32 +1527,42 @@ void onTwitchAwarenessDetectTargetModerator(
     IRCPlugin plugin,
     const IRCEvent event) @system
 {
-    import lu.string : advancePast;
+    import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
 
-    string slice = event.tags;  // mutable
-    if (!slice.length) return;
-
-    // badge-info=;badges=moderator/1;color=#5F9EA0;display-name=Zorael;emote-sets=0,185411,771853,1511983;mod=1;subscriber=0;user-type=mod
-    // Currently badge-info is only used for subscribers, so use badges
-    slice.advancePast("badges=", inherit: true);
-    if (!slice.length) return;
-
-    immutable badges = slice.advancePast(';', inherit: true);
-    if (!badges.length) return;
-
-    if (badges.canFind("moderator/", "broadcaster/"))
+    void registerOpMod(const bool isOp)
     {
         auto channel = ensureChannel(plugin, event.channel);
 
         if (auto ops = 'o' in channel.mods)
         {
-            (*ops)[event.target.nickname] = true;
+            if (event.target.nickname !in *ops)
+            {
+                (*ops)[event.target.nickname] = isOp;
+            }
         }
         else
         {
-            channel.mods['o'][event.target.nickname] = true;
+            channel.mods['o'][event.target.nickname] = isOp;
         }
+    }
+
+    if (event.target.class_.among!(IRCUser.Class.operator, IRCUser.Class.staff))
+    {
+        // Moderator or broadcaster
+        // We can't go by class_ >= operator, as that would incorrectly flag
+        // admins as moderators (which they aren't neccessarily)
+        registerOpMod(isOp: true);
+    }
+    else if (event.target.badges.canFind("broadcaster/", "moderator/"))
+    {
+        // The class should always already have been set during postprocessing, but just in case
+        registerOpMod(isOp: true);
+    }
+    else
+    {
+        // Doesn't seem to be a moderator
+        registerOpMod(isOp: false);
     }
 }
 
