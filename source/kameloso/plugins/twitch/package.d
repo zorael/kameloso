@@ -450,9 +450,9 @@ void onAnyMessage(TwitchPlugin plugin, const IRCEvent event)
 
     // bellOnMessage check
     if (event.type.among!
-        (IRCEvent.Type.CHAN,
-        IRCEvent.Type.EMOTE,
-        IRCEvent.Type.QUERY))
+            (IRCEvent.Type.CHAN,
+            IRCEvent.Type.EMOTE,
+            IRCEvent.Type.QUERY))
     {
         activityDetected = (event.type != IRCEvent.Type.QUERY);
         shouldBell = plugin.settings.bellOnMessage;

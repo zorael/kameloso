@@ -1554,7 +1554,7 @@ void onTwitchAwarenessUserCarrierImpl(
 version(TwitchSupport)
 void onTwitchAwarenessDetectTargetModerator(
     IRCPlugin plugin,
-    const IRCEvent event) @system
+    const IRCEvent event) @safe
 {
     import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
@@ -1604,7 +1604,7 @@ void onTwitchAwarenessDetectTargetModerator(
         [onTwitchAwarenessCatchRoomIDMixin]
  +/
 version(TwitchSupport)
-void onTwitchAwarenessCatchRoomID(IRCPlugin plugin, const IRCEvent event)
+void onTwitchAwarenessCatchRoomID(IRCPlugin plugin, const IRCEvent event) @safe
 {
     if (!event.channel.id) return;
 
