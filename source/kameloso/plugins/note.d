@@ -37,7 +37,12 @@ import dialect.defs;
 version(WithChanQueryService) {}
 else
 {
-    pragma(msg, "Warning: The `Note` plugin will work but not well without the `ChanQuery` service.");
+    enum chanQueriesMessage1 = "Warning: The `Note` plugin will work but not " ~
+        "well without the `ChanQuery` service.";
+    enum chanQueriesMessage2 = "Consider enabling it by declaring " ~
+        "version `WithChanQueryService` in your build configuration.";
+    pragma(msg, chanQueriesMessage1);
+    pragma(msg, chanQueriesMessage2);
 }
 
 mixin MinimalAuthentication;
