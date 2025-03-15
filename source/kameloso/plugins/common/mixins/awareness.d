@@ -1329,7 +1329,7 @@ void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const IRCEvent event)
     of pruning the plugin's [kameloso.plugins.IRCPluginState.users|IRCPluginState.users]
     array of old entries.
 
-    Twitch awareness needs channel awareness, or it is meaningless.
+    Twitch awareness needs user awareness, or it is meaningless.
 
     Params:
         channelPolicy = What [kameloso.plugins.ChannelPolicy|ChannelPolicy]
@@ -1363,11 +1363,11 @@ mixin template TwitchAwareness(
      +/
     package enum hasTwitchAwareness = true;
 
-    static if (!__traits(compiles, { alias _ = .hasChannelAwareness; }))
+    static if (!__traits(compiles, { alias _ = .hasUserAwareness; }))
     {
         import std.format : format;
 
-        enum pattern = "`%s` is missing a `ChannelAwareness` mixin " ~
+        enum pattern = "`%s` is missing a `UserAwareness` mixin " ~
             "(needed for `TwitchAwareness`)";
         enum message = pattern.format(module_);
         static assert(0, message);
@@ -1411,10 +1411,13 @@ mixin template TwitchAwareness(
     )
     void onTwitchAwarenessSenderCarryingEventMixin(IRCPlugin plugin, const IRCEvent event) @system
     {
+        enum hasChannelAwareness = __traits(compiles, { alias _ = .hasChannelAwareness; });
+
         kameloso.plugins.common.mixins.awareness.onTwitchAwarenessUserCarrierImpl(
             plugin,
             event.channel.name,
-            event.sender);
+            event.sender,
+            hasChannelAwareness);
     }
 
     // onTwitchAwarenessTargetCarryingEventMixin
@@ -1445,10 +1448,13 @@ mixin template TwitchAwareness(
     )
     void onTwitchAwarenessTargetCarryingEventMixin(IRCPlugin plugin, const IRCEvent event) @system
     {
+        enum hasChannelAwareness = __traits(compiles, { alias _ = .hasChannelAwareness; });
+
         kameloso.plugins.common.mixins.awareness.onTwitchAwarenessUserCarrierImpl(
             plugin,
             event.channel.name,
-            event.target);
+            event.target,
+            hasChannelAwareness);
     }
 
     // onTwitchAwarenessDetectTargetModeratorMixin
@@ -1458,6 +1464,7 @@ mixin template TwitchAwareness(
         See_Also:
             [onTwitchAwarenessDetectModerator]
      +/
+    static if (__traits(compiles, { alias _ = .hasChannelAwareness; }))
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.USERSTATE)
         .channelPolicy(channelPolicy)
@@ -1478,6 +1485,7 @@ mixin template TwitchAwareness(
         See_Also:
             [onTwitchAwarenessCatchRoomID]
      +/
+    static if (__traits(compiles, { alias _ = .hasChannelAwareness; }))
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.ROOMSTATE)
         .channelPolicy(channelPolicy)
@@ -1509,7 +1517,8 @@ version(TwitchSupport)
 void onTwitchAwarenessUserCarrierImpl(
     IRCPlugin plugin,
     const string channelName,
-    const IRCUser user) @system
+    const IRCUser user,
+    const bool hasChannelAwareness) @system
 {
     import kameloso.plugins.common : catchUser;
 
@@ -1517,18 +1526,18 @@ void onTwitchAwarenessUserCarrierImpl(
 
     if (!user.nickname) return;
 
-    // Move the catchUser call here to populate the users array with users in guest channels
-    //catchUser(plugin, user);
-
-    auto channel = channelName in plugin.state.channels;
-    if (!channel) return;
-
-    if (user.nickname !in channel.users)
+    if (hasChannelAwareness)
     {
-        channel.users[user.nickname] = true;
+        auto channel = channelName in plugin.state.channels;
+        if (!channel) return;
+
+        if (user.nickname !in channel.users)
+        {
+            channel.users[user.nickname] = true;
+        }
     }
 
-    catchUser(plugin, user);  // <-- this one
+    catchUser(plugin, user);
 }
 
 
@@ -1626,11 +1635,11 @@ mixin template TwitchAwareness(
      +/
     package enum hasTwitchAwareness = true;
 
-    static if (!__traits(compiles, { alias _ = .hasChannelAwareness; }))
+    static if (!__traits(compiles, { alias _ = .hasUserAwareness; }))
     {
         import std.format : format;
 
-        enum pattern = "`%s` is missing a `ChannelAwareness` mixin " ~
+        enum pattern = "`%s` is missing a `UserAwareness` mixin " ~
             "(needed for `TwitchAwareness`)";
         enum message = pattern.format(module_);
         static assert(0, message);
