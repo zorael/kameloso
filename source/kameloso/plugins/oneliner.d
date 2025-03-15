@@ -1643,7 +1643,6 @@ auto selftest(OnelinerPlugin plugin, Selftester s)
 
 
 mixin UserAwareness;
-mixin ChannelAwareness;
 mixin PluginRegistration!OnelinerPlugin;
 
 version(TwitchSupport)

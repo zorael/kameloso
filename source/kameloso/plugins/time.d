@@ -606,9 +606,7 @@ mixin PluginRegistration!TimePlugin;
 
 version(TwitchSupport)
 {
-    import kameloso.plugins.common.mixins.awareness : ChannelAwareness, TwitchAwareness;
-
-    mixin ChannelAwareness;  // Only needed to get TwitchAwareness in
+    import kameloso.plugins.common.mixins.awareness : TwitchAwareness;
     mixin TwitchAwareness;
 }
 
