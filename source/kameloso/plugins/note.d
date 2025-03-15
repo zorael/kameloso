@@ -291,11 +291,19 @@ void playbackNotes(
     if (event.channel.name.length)
     {
         // Try channel notes first, then drop down to private notes
-        playbackNotesImpl(plugin, event.channel.name, user, background);
+        playbackNotesImpl(
+            plugin: plugin,
+            channelName: event.channel.name,
+            user: user,
+            background: background);
     }
 
     // Private notes
-    playbackNotesImpl(plugin, string.init, user, background);
+    playbackNotesImpl(
+        plugin: plugin,
+        channelName: string.init,
+        user: user,
+        background: background);
 }
 
 
