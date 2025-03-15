@@ -1524,7 +1524,7 @@ void onTwitchAwarenessUserCarrierImpl(
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
-    if (!user.nickname) return;
+    if (user.isServer) return;
 
     if (hasChannelAwareness)
     {
