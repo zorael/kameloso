@@ -447,11 +447,7 @@ in ((!add || mode.length), "Tried to add an empty automode")
         {
             auto channelmodes = channelName in plugin.automodes;
             if (!channelmodes) return;
-
-            if (id in *channelmodes)
-            {
-                (*channelmodes).remove(id);
-            }
+            (*channelmodes).remove(id);
         }
 
         saveAutomodes(plugin);
