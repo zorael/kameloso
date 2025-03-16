@@ -341,16 +341,29 @@ in (event.channel.name.length, "Tried to reply to a channel message but no chann
             m.properties = properties;
             m.caller = caller;
 
+            bool moderatornessKnown;
+
             if (auto channel = m.event.channel.name in state.channels)
             {
                 if (auto ops = 'o' in channel.mods)
                 {
                     if (state.client.nickname in *ops)
                     {
-                        // We are a moderator and can as such send things fast
+                        // We know we are a moderator and can as such send things fast
                         m.properties |= Message.Property.fast;
                     }
+
+                    moderatornessKnown = true;
                 }
+            }
+
+            if (!moderatornessKnown)
+            {
+                /+
+                    Assume we are a moderator.
+                    The calling plugin may not be mixing in TwitchAwareness.
+                 +/
+                m.properties |= Message.Property.fast;
             }
 
             state.outgoingMessages ~= m;
@@ -396,7 +409,7 @@ unittest
         assert((type == IRCEvent.Type.CHAN), type.toString);
         assert((content == "reply content"), content);
         assert((tags == "reply-parent-msg-id=some-reply-id"), tags);
-        assert((m.properties == Message.Property.init));
+        assert((m.properties & Message.Property.fast));
     }
 }
 
