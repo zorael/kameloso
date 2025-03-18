@@ -79,7 +79,7 @@ void onAnyMessage(SamePlugin plugin, const IRCEvent event)
 }
 
 
-// onAnyMessageRegex
+// onRegexMessageSame
 /++
     Reacts to the messages which match the text "same" with some optional
     punctuation afterwards.
@@ -98,7 +98,7 @@ version(MatchWithRegex)
             .description("Same.")
     )
 )
-void onAnyMessageRegex(SamePlugin plugin, const IRCEvent event)
+void onRegexMessageSame(SamePlugin plugin, const IRCEvent event)
 {
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
