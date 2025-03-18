@@ -3213,7 +3213,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
                 void onExpiryDg()
                 {
                     enum message = "Your Twitch authorisation key has expired. " ~
-                        "Run the program with <l>--set twitch.keygen/> to generate a new one.";
+                        "Run the program with <l>--set twitch.keygen</> to generate a new one.";
                     logger.error(message);
                     quit(plugin.state, expiryMessage);
                 }
