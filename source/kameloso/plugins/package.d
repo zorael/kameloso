@@ -4461,7 +4461,8 @@ auto memoryCorruptionCheck(Flag!"assertOnError" assertOnError = Yes.assertOnErro
 
         enum _lastDotPos = __FUNCTION__.countUntilLastOccurrenceOf('.');
 
-        static if ((_lastDotPos != -1) &&
+        static if (
+            (_lastDotPos != -1) &&
             isSomeFunction!(mixin(__FUNCTION__[0.._lastDotPos])))
         {
             static immutable _funName = __FUNCTION__[0.._lastDotPos];
@@ -4510,15 +4511,19 @@ auto memoryCorruptionCheck(Flag!"assertOnError" assertOnError = Yes.assertOnErro
         }
         else
         {
-            enum _message = \"`\" ~ _funName ~ \"` mixes in `memoryCorruptionCheck` \" ~
+            import std.format : format;
+            enum _pattern = \"`%s` mixes in `memoryCorruptionCheck` \" ~
                 \"but does itself not have an `IRCPlugin` parameter.\";
+            enum _message = _pattern.format(_funName);
             static assert(0, _message);
         }
     }
     else
     {
-        enum _message = \"`\" ~ _funName ~ \"` mixes in `memoryCorruptionCheck` \" ~
+        import std.format : format;
+        enum _pattern = \"`%s` mixes in `memoryCorruptionCheck` \" ~
             \"but does itself not have an `IRCEvent` parameter.\";
+        enum _message = _pattern.format(_funName);
         static assert(0, _message);
     }
 
@@ -4526,8 +4531,10 @@ auto memoryCorruptionCheck(Flag!"assertOnError" assertOnError = Yes.assertOnErro
 
     static if (_udaIndex == -1)
     {
-        enum _message = \"`\" ~ _funName ~ \"` mixes in `memoryCorruptionCheck` \" ~
+        import std.format : format;
+        enum _pattern = \"`%s` mixes in `memoryCorruptionCheck` \" ~
             \"but is not annotated with an `IRCEventHandler`.\";
+        enum _message = _pattern.format(_funName);
         static assert(0, _message);
     }
 
