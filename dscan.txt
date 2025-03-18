@@ -8,3 +8,5 @@ Variable benignAbort is never modified
 Variable .+UserExisted is never modified
 formatting\.d.+Variable displayNameMatch is never modified
 twitch/package\.d.+Variable results is never modified
+same\.d.+Parameter .+ is never used
+same\.d.+Public declaration .+ is undocumented
