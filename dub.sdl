@@ -214,6 +214,7 @@ configuration "unittest" {
         "TwitchSupport" \
         "WithTwitchPlugin" \
         "TwitchWarnings" \
+        "WithSamePlugin" \
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
@@ -236,6 +237,7 @@ configuration "unittest-lowmem" {
         "TwitchSupport" \
         "WithTwitchPlugin" \
         "TwitchWarnings" \
+        "WithSamePlugin" \
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
