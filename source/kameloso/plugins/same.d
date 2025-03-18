@@ -110,7 +110,7 @@ void onAnyMessage(SamePlugin plugin, const IRCEvent event)
     // Reply only if we should
     if (event.content == "same")
     {
-        chan(plugin.state, event.channel, "same");
+        chan(plugin.state, event.channel.name, "same");
     }
 }
 
@@ -139,7 +139,7 @@ void onAnyMessageRegex(SamePlugin plugin, const IRCEvent event)
     if (event.sender.class_ == IRCUser.Class.blacklist) return;
 
     // Reply always, since the function wouldn't have been called if the message didn't match
-    chan(plugin.state, event.channel, event.content);
+    chan(plugin.state, event.channel.name, event.content);
 }
 
 
