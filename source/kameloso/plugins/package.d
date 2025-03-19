@@ -403,12 +403,12 @@ public:
 
         Params:
             user = [dialect.defs.IRCUser|IRCUser] to inherit.
-            channel = The channel context of the user.
+            channelName = The channel context of the user.
 
         See_Also:
             [kameloso.plugins.IRCPluginImpl.putUser]
      +/
-    void putUser(const IRCUser user, const string channel) @system;
+    void putUser(const IRCUser user, const string channelName) @system;
 
     version(Selftests)
     {
@@ -2245,10 +2245,10 @@ mixin template IRCPluginImpl(
 
         Params:
             user = The user to inherit.
-            channel = The channel context of the user.
+            channelName = The channel context of the user.
      +/
     pragma(inline, true)
-    override public void putUser(const IRCUser user, const string channel) @system
+    override public void putUser(const IRCUser user, const string channelName) @system
     {
         putUserImpl(user);
     }
