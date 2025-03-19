@@ -2092,23 +2092,27 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
                 if (auto carryingFiber = cast(CarryingFiber!IRCEvent)scheduledFiber.fiber)
                 {
                     enum pattern = "<l>%s</>.scheduledFibers[%d] " ~
+                        "type <l>%s</> " ~
                         "creator <l>%s";
 
                     logger.tracef(
                         pattern,
                         plugin.name,
                         i,
-                        carryingFiber.creator);
+                        typeof(carryingFiber).stringof,
+                        scheduledFiber.creator);
                 }
                 else
                 {
                     enum pattern = "<l>%s</>.scheduledFibers[%d] " ~
-                        "(probably) plain fiber";
+                        "type <l>unknown/plain</> " ~
+                        "creator <l>%s";
 
                     logger.tracef(
                         pattern,
                         plugin.name,
-                        i);
+                        i,
+                        scheduledFiber.creator);
                 }
             }
 
