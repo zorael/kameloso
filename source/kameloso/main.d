@@ -277,7 +277,9 @@ auto processMessages(
         case busMessage:
             foreach (plugin; instance.plugins)
             {
-                plugin.onBusMessage(message.content, cast()message.payload);
+                plugin.onBusMessage(
+                    header: message.content,
+                    content: cast()message.payload);
             }
             break;
 
@@ -394,7 +396,9 @@ auto processMessages(
 
             foreach (plugin; instance.plugins)
             {
-                plugin.putUser(user, message.content);
+                plugin.putUser(
+                    user: user,
+                    channelName: message.content);
             }
             break;
 
@@ -2573,9 +2577,9 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
 
                 immutable expression = action.context;
                 immutable success = applyCustomSettings(
-                    instance.plugins,
-                    *instance.coreSettings,
-                    [ expression ],
+                    plugins: instance.plugins,
+                    coreSettings: *instance.coreSettings,
+                    customSettings: [ expression ],
                     toPluginsOnly: false);  // include settings
 
                 fiber.payload[0] = success;
@@ -2806,9 +2810,9 @@ auto tryConnect(Kameloso instance)
 
     auto connector = new Generator!ConnectionAttempt(() =>
         connectFiber(
-            instance.conn,
+            conn: instance.conn,
             connectionRetries: ConnectionDefaultIntegers.connectionRetries,
-            instance.abort));
+            abort: instance.abort));
 
     scope(exit)
     {
@@ -3111,9 +3115,9 @@ auto tryResolve(Kameloso instance, const bool firstConnect)
 
     auto resolver = new Generator!ResolveAttempt(() =>
         resolveFiber(
-            instance.conn,
-            instance.parser.server.address,
-            instance.parser.server.port,
+            conn: instance.conn,
+            address: instance.parser.server.address,
+            port: instance.parser.server.port,
             useIPv6: instance.connSettings.ipv6,
             abort: instance.abort));
 
@@ -4618,9 +4622,9 @@ auto run(string[] args)
         {
             import kameloso.config : notifyAboutMissingSettings;
             notifyAboutMissingSettings(
-                instance.missingConfigurationEntries,
-                args[0],
-                instance.coreSettings.configFile);
+                missingEntries: instance.missingConfigurationEntries,
+                binaryPath: args[0],
+                configFile: instance.coreSettings.configFile);
         }
     }
     catch (ConvException e)
