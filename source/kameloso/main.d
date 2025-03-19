@@ -3456,7 +3456,7 @@ void resolvePaths(Kameloso instance) @safe
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
 
     Returns:
-        A [RunState] aggregate of state variables derived from a program run.
+        A Voldemort of state variables derived from a program run.
  +/
 auto startBot(Kameloso instance)
 {
@@ -3471,11 +3471,35 @@ auto startBot(Kameloso instance)
     import std.algorithm.comparison : among;
     import core.time : Duration;
 
-    // Save a backup snapshot of the client, for restoring upon reconnections
-    IRCClient backupClient = instance.parser.client;
+    static struct RunState
+    {
+        /++
+            Enum denoting what we should do next loop in an execution attempt.
+         +/
+        Next next;
+
+        /++
+            Bool whether this is the first connection attempt or if we have
+            connected at least once already.
+         +/
+        bool firstConnect = true;
+
+        /++
+            Whether or not "Exiting..." should be printed at program exit.
+         +/
+        bool silentExit;
+
+        /++
+            Shell return value to exit with.
+         +/
+        int retval;
+    }
 
     // Persistent state variables
     RunState attempt;
+
+    // Save a backup snapshot of the client, for restoring upon reconnections
+    IRCClient backupClient = instance.parser.client;
 
     enum bellString = "" ~ cast(char)(TerminalToken.bell);
     immutable bell = isTerminal ? bellString : string.init;
@@ -4151,35 +4175,6 @@ void printSummary(const Kameloso instance) @safe
     logger.infof(timeConnectedPattern, totalTime.timeSince!(7, 1));
     enum receivedPattern = "Total received: <l>%,d</> bytes";
     logger.infof(receivedPattern, totalBytesReceived);
-}
-
-
-// RunState
-/++
-    Aggregate of state values used in an execution of the program.
- +/
-struct RunState
-{
-    /++
-        Enum denoting what we should do next loop in an execution attempt.
-     +/
-    Next next;
-
-    /++
-        Bool whether this is the first connection attempt or if we have
-        connected at least once already.
-     +/
-    bool firstConnect = true;
-
-    /++
-        Whether or not "Exiting..." should be printed at program exit.
-     +/
-    bool silentExit;
-
-    /++
-        Shell return value to exit with.
-     +/
-    int retval;
 }
 
 
