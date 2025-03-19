@@ -4129,6 +4129,8 @@ void printSummary(const Kameloso instance) @safe
         enum fullDatePattern = "%d-%02d-%02d " ~ onlyTimePattern;
 
         auto start = SysTime.fromUnixTime(entry.startTime);
+        auto stop = SysTime.fromUnixTime(entry.stopTime);
+
         immutable startString = fullDatePattern.format(
             start.year,
             cast(uint)start.month,
@@ -4137,10 +4139,10 @@ void printSummary(const Kameloso instance) @safe
             start.minute,
             start.second);
 
-        auto stop = SysTime.fromUnixTime(entry.stopTime);
         immutable sameDay =
             (start.year == stop.year) &&
             (start.dayOfGregorianCal == stop.dayOfGregorianCal);
+
         immutable stopString = sameDay ?
             onlyTimePattern.format(
                 stop.hour,
