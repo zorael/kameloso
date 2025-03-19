@@ -4210,7 +4210,7 @@ void echoQuitMessage(Kameloso instance, const string reason) @safe
 }
 
 
-// prettyPrintStartScreen
+// prettyprintStartScreen
 /++
     Prints a pretty start screen.
 
@@ -4218,7 +4218,7 @@ void echoQuitMessage(Kameloso instance, const string reason) @safe
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         arg0 = The name of the program, as passed on the command line.
  +/
-void prettyPrintStartScreen(const Kameloso instance, const string arg0)
+void prettyprintStartScreen(const Kameloso instance, const string arg0)
 {
     import kameloso.misc : printVersionInfo;
     import kameloso.prettyprint : prettyprint;
@@ -4512,7 +4512,7 @@ auto run(string[] args)
 
     if (!instance.coreSettings.headless && !instance.transient.numReexecs)
     {
-        prettyPrintStartScreen(instance, args[0]);
+        prettyprintStartScreen(instance, args[0]);
     }
 
     // Verify that settings are as they should be (nickname exists and not too long, etc)
