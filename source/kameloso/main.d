@@ -1165,12 +1165,9 @@ auto mainLoop(Kameloso instance)
             case unset:  // ditto
             case crash:  // ...
                 import lu.conv : toString;
-                import std.conv : text;
-
-                immutable message = text(
-                    "`listenAttemptToNext` returned `",
-                    actionAfterListen.toString,
-                    "`");
+                import std.format : format;
+                enum pattern = "`listenAttemptToNext` returned `Next.%s`";
+                immutable message = pattern.format(actionAfterListen.toString);
                 assert(0, message);
             }
         }
@@ -3762,8 +3759,10 @@ auto startBot(Kameloso instance)
         case retry:  // ...
         case crash:  // ...
             import lu.conv : toString;
-            import std.conv : text;
-            assert(0, text("`tryResolve` returned `", actionAfterResolve.toString, "`"));
+            import std.format : format;
+            enum pattern = "`tryResolve` returned `Next.%s`";
+            immutable message = pattern.format(actionAfterResolve.toString);
+            assert(0, message);
         }
 
         /+
@@ -3847,8 +3846,10 @@ auto startBot(Kameloso instance)
         case retry:  // ...
         case crash:  // ...
             import lu.conv : toString;
-            import std.conv : text;
-            assert(0, text("`tryConnect` returned `", actionAfterConnect.toString, "`"));
+            import std.format : format;
+            enum pattern = "`tryConnect` returned `Next.%s`";
+            immutable message = pattern.format(actionAfterConnect.toString);
+            assert(0, message);
         }
 
         // Reinit with its own server.
@@ -4450,8 +4451,10 @@ auto run(string[] args)
     case retry:  // ...
     case crash:  // ...
         import lu.conv : toString;
-        import std.conv : text;
-        assert(0, text("`tryGetopt` returned `", actionAfterGetopt.toString, "`"));
+        import std.format : format;
+        enum pattern = "`tryGetopt` returned `Next.%s`";
+        immutable message = pattern.format(actionAfterGetopt.toString);
+        assert(0, message);
     }
 
     if (!instance.coreSettings.headless || instance.coreSettings.force)
@@ -4531,8 +4534,10 @@ auto run(string[] args)
     case retry:  // ...
     case crash:  // ...
         import lu.conv : toString;
-        import std.conv : text;
-        assert(0, text("`verifySettings` returned `", actionAfterVerification.toString, "`"));
+        import std.format : format;
+        enum pattern = "`verifySettings` returned `Next.%s`";
+        immutable message = pattern.format(actionAfterVerification.toString);
+        assert(0, message);
     }
 
     // Resolve resource and private key/certificate paths.
