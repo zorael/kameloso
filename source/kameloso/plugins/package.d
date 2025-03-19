@@ -5545,8 +5545,8 @@ in (url.length, "Tried to send an HTTP request without a URL")
         caller: caller);
 
     plugin.state.querier.nextWorker.send(request);
-    delay(plugin, Timeout.httpQueryInitialWait, yield: true);
-    immutable response = plugin.state.querier.awaitResponse(plugin, id);
+    delay(plugin, Timeout.httpQueryInitialWait, yield: true, caller: caller);
+    immutable response = plugin.state.querier.awaitResponse(plugin, id, caller);
 
     if (response.exceptionText.length || (response.code < 10))
     {
@@ -5590,6 +5590,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         querier = The querier to await a response from.
         plugin = The plugin that is awaiting the response.
         id = The ID of the request to await a response for.
+        caller = The name of the function that called this function.
 
     Returns:
         The response to the request.
@@ -5597,7 +5598,8 @@ in (url.length, "Tried to send an HTTP request without a URL")
 auto awaitResponse(
     Querier querier,
     IRCPlugin plugin,
-    const int id)
+    const int id,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
 {
     import kameloso.constants : Timeout;
@@ -5635,7 +5637,7 @@ in (Fiber.getThis(), "Tried to call `awaitResponse` from outside a fiber")
                 return HTTPQueryResponse.init;
             }
 
-            delay(plugin, Timeout.httpQueryWaitBetweenChecks, yield: true);
+            delay(plugin, Timeout.httpQueryWaitBetweenChecks, yield: true, caller: caller);
             continue;
         }
         else
