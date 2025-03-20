@@ -157,13 +157,11 @@ public:
      +/
     this(const string[] args)
     {
-        import kameloso.constants : ConnectionDefaultIntegers;
         static import kameloso.common;
 
         this._args = args.dup;
         this.conn = new Connection;
         this.coreSettings = &kameloso.common.coreSettings;
-        this.querier = new Querier(ConnectionDefaultIntegers.numWorkers);
     }
 
     // ctor
@@ -183,7 +181,10 @@ public:
 
     // teardown
     /++
-        Teardown plugins and connection.
+        Teardown plugins, connection and Querier.
+
+        The Querier may be null if a call to instantiate it via [instantiateQuerier]
+        was never made. The connection is always instantiated in the constructor.
      +/
     void teardown()
     {
@@ -193,9 +194,23 @@ public:
         destroy(this.conn);
         this.conn = null;
 
-        this.querier.teardown();
-        destroy(this.querier);
-        this.querier = null;
+        if (querier)
+        {
+            this.querier.teardown();
+            destroy(this.querier);
+            this.querier = null;
+        }
+    }
+
+    // instantiateQuerier
+    /++
+        Instantiates the [kameloso.net.Querier|Querier], spawning its worker threads.
+     +/
+    void instantiateQuerier()
+    in (!this.querier, "Tried to instantiate the Querier but it was already instantiated")
+    {
+        import kameloso.constants : ConnectionDefaultIntegers;
+        this.querier = new Querier(ConnectionDefaultIntegers.numWorkers);
     }
 
     // args

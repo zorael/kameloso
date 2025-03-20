@@ -4404,7 +4404,8 @@ auto run(string[] args)
     {
         /+
             Teardown the instance here to end the Querier threads.
-            Otherwise the program will hang on thread_joinAll() in main.
+            Depending on how far into the program we are,
+            it may hang on thread_joinAll() in main.
          +/
         instance.teardown();
         destroy(instance);
@@ -4687,6 +4688,10 @@ auto run(string[] args)
             logger.trace();
         }
     }
+
+    // Start the Querier threads before initialising plugins, in case some wants
+    // to do web access during initialisation.
+    instance.instantiateQuerier();
 
     // Plugins were instantiated but not initialised, so do that here
     try
