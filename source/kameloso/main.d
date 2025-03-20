@@ -4405,7 +4405,7 @@ auto run(string[] args)
         /+
             Teardown the instance here to end the Querier threads.
             Depending on how far into the program we are,
-            it may hang on thread_joinAll() in main.
+            it may otherwise hang on thread_joinAll() in main.
          +/
         instance.teardown();
         destroy(instance);

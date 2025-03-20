@@ -3804,10 +3804,8 @@ void sortBadges(ref string badges, const string[] badgeOrder) @safe
         // Slashes are guaranteed to be present, we already checked
         immutable aSlashIndex = a.countUntil('/');
         immutable bSlashIndex = b.countUntil('/');
-
         immutable aBadgeIndex = badgeOrder.countUntil(a[0..aSlashIndex]);
         immutable bBadgeIndex = badgeOrder.countUntil(b[0..bSlashIndex]);
-
         return size_t(aBadgeIndex) < size_t(bBadgeIndex);
     }
 
