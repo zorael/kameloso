@@ -1326,7 +1326,7 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
 
     void sendNoSuchUser(const string target)
     {
-        immutable message = "No such user: " ~ target;
+        immutable message = "No such user " ~ target ~ " (or the user has never streamed)";
         chan(plugin.state, event.channel.name, message);
     }
 
