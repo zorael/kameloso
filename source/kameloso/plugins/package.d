@@ -5528,7 +5528,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
             caller);
     }
 
-    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout;
+    plugin.state.priorityMessages ~= ThreadMessage.shortenReceiveTimeout(caller: caller);
     if (!id) id = plugin.state.querier.responseBucket.uniqueKey;
 
     auto request = HTTPRequest(
