@@ -347,9 +347,38 @@ struct ThreadMessage
     bool quiet;
 
     /++
+        Name of calling function.
+     +/
+    string caller;
+
+    /++
         Whether or not this message has been processed.
      +/
     bool exhausted;
+
+    /++
+        Constructor.
+
+        Params:
+            type = [MessageType] of this thread message.
+            content = Optional content string.
+            payload = Optional boxed [Sendable] payload.
+            quiet = Whether or not to pass a flag for the action to be done quietly.
+            caller = Name of calling function.
+     +/
+    this(
+        const MessageType type,
+        const string content = string.init,
+        shared Sendable payload = null,
+        const bool quiet = false,
+        const string caller = __FUNCTION__)
+    {
+        this.type = type;
+        this.content = content;
+        this.payload = payload;
+        this.quiet = quiet;
+        this.caller = caller;
+    }
 
     /++
         An `opDispatch`, constructing one function for each member in [MessageType].
@@ -368,9 +397,15 @@ struct ThreadMessage
     static auto opDispatch(string memberstring)
         (const string content = string.init,
         shared Sendable payload = null,
-        const bool quiet = false)
+        const bool quiet = false,
+        const string caller = __FUNCTION__)
     {
-        mixin("return ThreadMessage(MessageType." ~ memberstring ~ ", content, payload, quiet);");
+        mixin("return ThreadMessage(
+            type: MessageType." ~ memberstring ~ ",
+            content: content,
+            payload: payload,
+            quiet: quiet,
+            caller: caller);");
     }
 }
 
