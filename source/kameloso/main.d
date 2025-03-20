@@ -4306,6 +4306,13 @@ auto checkInitialisationMessages(
             writeConfigurationFile(instance, instance.coreSettings.configFile);
             break;
 
+        case shortenReceiveTimeout:
+            enum pattern = "Function <l>%s</> tried to shorten the receive timeout " ~
+                "before the main loop had started.";
+            logger.errorf(pattern, message.caller);
+            success = false;
+            break;
+
         default:
             import lu.conv : toString;
             import std.stdio : stdout;
