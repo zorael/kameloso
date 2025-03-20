@@ -1459,9 +1459,16 @@ void onCommandVanish(TwitchPlugin plugin, const IRCEvent event)
 
     if (!result.success)
     {
-        import kameloso.plugins.common : nameOf;
-        enum pattern = "Failed to vanish <l>%s</> in <l>%s</> (<t>%d</>)";
-        logger.warningf(pattern, nameOf(event.sender), event.channel.name, result.code);
+        if (result.alreadyBanned || result.targetIsBroadcaster)
+        {
+            // It failed but with good reason
+        }
+        else
+        {
+            import kameloso.plugins.common : nameOf;
+            enum pattern = "Failed to vanish <l>%s</> in <l>%s</>: <l>%s</> (<t>%d</>)";
+            logger.warningf(pattern, nameOf(event.sender), event.channel.name, result.error, result.code);
+        }
     }
 }
 

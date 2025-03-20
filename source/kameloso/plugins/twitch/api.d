@@ -3588,7 +3588,8 @@ in (userID, "Tried to timeout a user with an unset user ID")
 
         uint code;
         string error;
-        bool alreadyBanned;  // FIXME
+        bool alreadyBanned;
+        bool targetIsBroadcaster;
         ulong broadcasterID;
         ulong moderatorID;
         ulong userID;
@@ -3605,10 +3606,14 @@ in (userID, "Tried to timeout a user with an unset user ID")
             this.error = error;
         }
 
-        this(const uint code, const bool alreadyBanned)
+        this(
+            const uint code,
+            const bool alreadyBanned,
+            const bool targetIsBroadcaster)
         {
             this.code = code;
             this.alreadyBanned = alreadyBanned;
+            this.targetIsBroadcaster = targetIsBroadcaster;
         }
 
         this(const uint code, const JSONValue json)
@@ -3640,13 +3645,6 @@ in (userID, "Tried to timeout a user with an unset user ID")
                         "end_time": "2021-09-28T19:22:31Z"
                     }
                 ]
-            }
-             */
-            /*
-            {
-                "error": "Bad Request",
-                "status": 400,
-                "message": "user is already banned"
             }
              */
 
@@ -3731,7 +3729,53 @@ in (userID, "Tried to timeout a user with an unset user ID")
                 The user specified in the user_id field may not be put in a timeout.
                 The user specified in the user_id field is already banned.
              +/
-            goto default;
+
+            /*
+            {
+                "error": "Bad Request",
+                "status": 400,
+                "message": "user is already banned"
+            }
+             */
+            /*
+            {
+                "error": "Bad Request",
+                "message": "The user specified in the user_id field may not be banned\/timed out.",
+                "status": 400
+            }
+             */
+
+            if (immutable messageJSON = "message" in responseJSON)
+            {
+                immutable message = messageJSON.str;
+                immutable alreadyBanned =
+                    (message == "user is already banned");
+                immutable targetIsBroadcaster =
+                    (message == "The user specified in the user_id field may not be banned/timed out.");
+
+                if (alreadyBanned || targetIsBroadcaster)
+                {
+                    return TimeoutResults(
+                        response.code,
+                        alreadyBanned: alreadyBanned,
+                        targetIsBroadcaster: targetIsBroadcaster);
+                }
+                else
+                {
+                    version(PrintStacktraces)
+                    {
+                        writeln(response.code);
+                        writeln(responseJSON.toPrettyString);
+                        printStacktrace();
+                    }
+
+                    return TimeoutResults(response.code, message);
+                }
+            }
+            else
+            {
+                goto default;
+            }
 
         case 401:
             // 401 Unauthorized
@@ -3791,37 +3835,16 @@ in (userID, "Tried to timeout a user with an unset user ID")
                 printStacktrace();
             }
 
-            if (immutable errorJSON = "error" in responseJSON)
-            {
-                return TimeoutResults(response.code, errorJSON.str);
-            }
-            else
-            {
-                return TimeoutResults(response.code);
-            }
+            return TimeoutResults(response.code);
         }
 
         immutable dataJSON = "data" in responseJSON;
 
         if (!dataJSON)
         {
-            if (immutable errorJSON = "error" in responseJSON)
-            {
-                if ((*errorJSON)["message"].str == "user is already banned")
-                {
-                    return TimeoutResults(response.code, alreadyBanned: true);
-                }
-                else
-                {
-                    return TimeoutResults(response.code, (*errorJSON)["message"].str);
-                }
-            }
-            else
-            {
-                enum message = "`timeoutUser` response has unexpected JSON " ~
-                    `(no "data" key)`;
-                throw new UnexpectedJSONException(message, responseJSON);
-            }
+            enum message = "`timeoutUser` response has unexpected JSON " ~
+                `(no "data" key)`;
+            throw new UnexpectedJSONException(message, responseJSON);
         }
 
         return TimeoutResults(response.code, *dataJSON);
