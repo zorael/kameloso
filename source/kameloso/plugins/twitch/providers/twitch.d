@@ -567,7 +567,7 @@ in (Fiber.getThis(), "Tried to call `getTokenExpiry` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : getValidation;
 
-    immutable results = getValidation(plugin, authToken, async: true);
+    immutable results = getValidation(plugin, authToken, async: false);
 
     plugin.state.client.nickname = results.login;
     plugin.state.updates |= typeof(plugin.state.updates).client;
