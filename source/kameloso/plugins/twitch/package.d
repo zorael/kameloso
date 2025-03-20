@@ -909,12 +909,24 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
     string slice = event.content.stripped;  // mutable
     if ((slice.length) && (slice[0] == '@')) slice = slice[1..$];
 
+    if (event.sender.class_ < IRCUser.Class.elevated)
+    {
+        // Not elevated or higher, so not allowed to query for others
+        slice = string.init;
+    }
+
     immutable otherNameSpecified = slice.length &&
         !slice.among(event.sender.nickname, event.sender.displayName);
 
     void sendNoSuchUser(const string name)
     {
         immutable message = "No such user: " ~ name;
+        chan(plugin.state, event.channel.name, message);
+    }
+
+    void sendCannotFollowSelf()
+    {
+        enum message = "You cannot follow yourself.";
         chan(plugin.state, event.channel.name, message);
     }
 
@@ -1008,6 +1020,19 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
         return false;
     }
 
+    void recacheFollowers()
+    {
+        if (plugin.state.coreSettings.trace)
+        {
+            enum pattern = "Re-caching followers for channel <l>%s</> ...";
+            logger.infof(pattern, event.channel.name);
+        }
+
+        auto results = getFollowers(plugin, room.id);  // must be mutable
+        room.followers = results.followers;
+        room.followersLastCached = event.time;
+    }
+
     if (!room.followers.length)
     {
         // Followers have not yet been cached!
@@ -1015,26 +1040,27 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
         // done immediately after joining so there should be no time for
         // !followage queries to sneak in.
         // Luckily we're inside a fiber so we can cache it ourselves.
-        auto results = getFollowers(plugin, room.id);  // must be mutable
-        room.followers = results.followers;
-        room.followersLastCached = event.time;
+        recacheFollowers();
     }
 
     immutable name = slice.length ?
         slice :
         event.sender.nickname;
 
+    if (name == event.channel.name[1..$])
+    {
+        return sendCannotFollowSelf();
+    }
+
     bool found = reportFromCache(name);  // mutable for reuse
     if (found) return;
 
-    enum minimumSecondsBetweenRecaches = 10;
+    enum minimumSecondsBetweenRecaches = 60*60*24;  // 24 hours
 
     if (event.time > (room.followersLastCached + minimumSecondsBetweenRecaches))
     {
         // No match, but minimumSecondsBetweenRecaches passed since last recache
-        auto results = getFollowers(plugin, room.id);
-        room.followers = results.followers;
-        room.followersLastCached = event.time;
+        recacheFollowers();
         found = reportFromCache(name);
         if (found) return;
     }
