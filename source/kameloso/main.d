@@ -4399,6 +4399,18 @@ auto run(string[] args)
 
     // Set up the Kameloso instance.
     auto instance = new Kameloso(args);
+
+    scope(exit)
+    {
+        /+
+            Teardown the instance here to end the Querier threads.
+            Otherwise the program will hang on thread_joinAll() in main.
+         +/
+        instance.teardown();
+        destroy(instance);
+        instance = null;
+    }
+
     postInstanceSetup();
 
     scope(exit)
@@ -4600,14 +4612,6 @@ auto run(string[] args)
     // initialising plugins (who will make a copy of it). Knowing this is useful
     // when authenticating.
     instance.parser.client.origNickname = instance.parser.client.nickname;
-
-    scope(success)
-    {
-        // Tearing down tears down plugins too
-        instance.teardown();
-        destroy(instance);
-        instance = null;
-    }
 
     // Initialise plugins outside the loop once, for the error messages
     try
