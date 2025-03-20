@@ -244,7 +244,7 @@ void announce(
                 &state.priorityMessages :
                 &state.messages;
 
-            *messageBox ~= ThreadMessage.busMessage("twitch", boxed(m));
+            *messageBox ~= ThreadMessage.busMessage("twitch", boxed(m), caller: caller);
             return;
         }
     }
@@ -324,7 +324,7 @@ in (event.channel.name.length, "Tried to reply to a channel message but no chann
                     &state.priorityMessages :
                     &state.messages;
 
-                *messageBox ~= ThreadMessage.busMessage("twitch", boxed(m));
+                *messageBox ~= ThreadMessage.busMessage("twitch", boxed(m), caller: caller);
                 return;
             }
         }
