@@ -4614,6 +4614,10 @@ auto run(string[] args)
     // when authenticating.
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
+    // Start the Querier threads before instantiating plugins, so they can
+    // inherit the reference in their state structs.
+    instance.instantiateQuerier();
+
     // Initialise plugins outside the loop once, for the error messages
     try
     {
@@ -4688,10 +4692,6 @@ auto run(string[] args)
             logger.trace();
         }
     }
-
-    // Start the Querier threads before initialising plugins, in case some wants
-    // to do web access during initialisation.
-    instance.instantiateQuerier();
 
     // Plugins were instantiated but not initialised, so do that here
     try
