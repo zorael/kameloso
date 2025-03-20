@@ -390,6 +390,7 @@ struct ThreadMessage
             content = Optional content string.
             payload = Optional boxed [Sendable] payload.
             quiet = Whether or not to pass a flag for the action to be done quietly.
+            caller = Name of calling function.
 
         Returns:
             A [ThreadMessage] whose members have the passed values.
