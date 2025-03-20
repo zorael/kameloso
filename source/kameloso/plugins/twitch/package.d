@@ -1436,6 +1436,7 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
     .fiber(true)
     .addCommand(
