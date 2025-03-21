@@ -401,12 +401,20 @@ struct ThreadMessage
         const bool quiet = false,
         const string caller = __FUNCTION__)
     {
-        mixin("return ThreadMessage(
-            type: MessageType." ~ memberstring ~ ",
+        static if (!__traits(hasMember, ThreadMessage.MessageType, memberstring))
+        {
+            import std.format : format;
+            enum pattern = "Invalid `ThreadMessage` type: `%s`";
+            enum message = pattern.format(memberstring);
+            static assert(0, message);
+        }
+
+        return ThreadMessage(
+            type: __traits(getMember, ThreadMessage.MessageType, memberstring),
             content: content,
             payload: payload,
             quiet: quiet,
-            caller: caller);");
+            caller: caller);
     }
 }
 
