@@ -2564,10 +2564,19 @@ void onCommandSetTitle(TwitchPlugin plugin, const IRCEvent event)
 
     try
     {
-        setChannelTitle(plugin, event.channel.name, title);
-        enum pattern = "Channel title set to: %s";
-        immutable message = pattern.format(title);
-        chan(plugin.state, event.channel.name, message);
+        immutable results = setChannelTitle(plugin, event.channel.name, title);
+
+        if (results.success)
+        {
+            enum pattern = "Channel title set to: %s";
+            immutable message = pattern.format(title);
+            chan(plugin.state, event.channel.name, message);
+        }
+        else
+        {
+            enum message = "Failed to set title.";
+            chan(plugin.state, event.channel.name, message);
+        }
     }
     catch (MissingBroadcasterTokenException e)
     {
