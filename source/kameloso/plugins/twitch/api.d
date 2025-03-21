@@ -3493,11 +3493,29 @@ in (channelName.length, "Tried to delete a message without providing a channel n
 {
     import std.algorithm.searching : startsWith;
     import std.format : format;
+    import std.json : parseJSON;
     import core.time : msecs;
 
     static struct DeleteResults
     {
         uint code;
+        string error;
+        bool isFromBroadcaster;
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const string error)
+        {
+            this.code = code;
+            this.error = error;
+        }
+
+        this(const uint code, const bool isFromBroadcaster)
+        {
+            this.code = code;
+            this.isFromBroadcaster = isFromBroadcaster;
+        }
+
         auto success() const { return (code == 204) || (code == 404); }
     }
 
@@ -3524,6 +3542,8 @@ in (channelName.length, "Tried to delete a message without providing a channel n
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.delete_);
 
+        immutable responseJSON = parseJSON(response.body);
+
         switch (response.code)
         {
         case 204:
@@ -3539,6 +3559,21 @@ in (channelName.length, "Tried to delete a message without providing a channel n
                 You may not delete another moderator's messages.
                 You may not delete the broadcaster's messages.
              +/
+            /*
+            {
+                "error": "Bad Request",
+                "message": "You cannot delete the broadcaster's messages.",
+                "status": 400
+            }
+             */
+
+            if (immutable messageJSON = "message" in responseJSON)
+            {
+                if (messageJSON.str == "You cannot delete the broadcaster's messages.")
+                {
+                    return DeleteResults(response.code, isFromBroadcaster: true);
+                }
+            }
             goto default;
 
         case 401:
@@ -3571,8 +3606,15 @@ in (channelName.length, "Tried to delete a message without providing a channel n
             version(PrintStacktraces)
             {
                 writeln(response.code);
+                writeln(responseJSON.toPrettyString);
                 printStacktrace();
             }
+
+            if (immutable messageJSON = "message" in responseJSON)
+            {
+                return DeleteResults(response.code, messageJSON.str);
+            }
+
             // Drop down
             break;
         }
