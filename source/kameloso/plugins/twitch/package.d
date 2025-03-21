@@ -2780,19 +2780,19 @@ void onCommandCommercial(TwitchPlugin plugin, const IRCEvent event)
 
     try
     {
-        startCommercial(plugin, event.channel.name, lengthString);
-    }
-    catch (ErrorJSONException e)
-    {
-        import std.algorithm.searching : endsWith;
+        const results = startCommercial(plugin, event.channel.name, lengthString);
 
-        if (e.msg.endsWith("To start a commercial, the broadcaster must be streaming live."))
+        if (!results.success)
         {
-            return sendNoOngoingStream();
-        }
-        else
-        {
-            throw e;
+            if (results.error == "To start a commercial, the broadcaster must be streaming live.")
+            {
+                return sendNoOngoingStream();
+            }
+            else
+            {
+                enum message = "Failed to start commercial.";
+                chan(plugin.state, event.channel.name, message);
+            }
         }
     }
     catch (MissingBroadcasterTokenException e)
