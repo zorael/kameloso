@@ -1311,11 +1311,10 @@ private auto modifyChannelImpl(
     TwitchPlugin plugin,
     const string channelName,
     const string title = string.init,
-    const ulong gameID = 0,
+    const long gameID = -1,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `modifyChannel` from outside a fiber")
 in (channelName.length, "Tried to modify a channel with an empty channel name string")
-in ((title.length || gameID), "Tried to modify a channel with no title nor game ID supplied")
 {
     import std.array : Appender;
     import std.conv : to;
@@ -1345,7 +1344,7 @@ in ((title.length || gameID), "Tried to modify a channel with no title nor game 
         if (gameID) sink.put(',');
     }
 
-    if (gameID)
+    if (gameID != -1)
     {
         sink.put(`"game_id":"`);
         sink.put(gameID.to!string);
