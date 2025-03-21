@@ -2422,9 +2422,10 @@ void onCommandWatchtime(TwitchPlugin plugin, const IRCEvent event)
     string displayName;
     immutable nameSpecified = (slice.length > 0);
 
-    if (!nameSpecified)
+    if (!nameSpecified || (event.sender.class_ < IRCUser.Class.elevated))
     {
         // Assume the user is asking about itself
+        // or doesn't have the privileges to ask about others
         nickname = event.sender.nickname;
         displayName = event.sender.displayName;
     }
