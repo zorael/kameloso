@@ -1797,7 +1797,15 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
                 commercial response specifies the amount of time the broadcaster
                 must wait between running commercials.
              +/
-            goto default;
+
+            if (immutable messageJSON = "message" in responseJSON)
+            {
+                return StartCommercialResults(response.code, messageJSON.str);
+            }
+            else
+            {
+                goto default;
+            }
 
         case 401:
             // 401 Unauthorized
@@ -1857,9 +1865,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
 
         if (!dataJSON.array.length)
         {
-            enum message = "`startCommercial` response has unexpected JSON " ~
-                `(zero-length "data")`;
-            throw new EmptyDataJSONException(message, responseJSON);
+            return StartCommercialResults(response.code);
         }
 
         immutable commercialInfoJSON = (*dataJSON).array[0];
