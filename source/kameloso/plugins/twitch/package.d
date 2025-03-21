@@ -1973,28 +1973,27 @@ void onCommandStartPoll(TwitchPlugin plugin, const IRCEvent event)
             immutable message = pattern.format(results.poll.title);
             chan(plugin.state, event.channel.name, message);
         }
-    }
-    catch (ErrorJSONException e)
-    {
-        import std.algorithm.searching : endsWith;
-
-        if (e.msg.endsWith("is not a partner or affiliate"))
+        else
         {
-            version(WithPollPlugin)
+            if (results.permissionDenied)
             {
-                enum message = "You must be an affiliate to create Twitch polls. " ~
-                    "(Consider using the generic Poll plugin.)";
+                version(WithPollPlugin)
+                {
+                    enum message = "You must be an affiliate to create Twitch polls. " ~
+                        "(Consider using the generic Poll plugin.)";
+                }
+                else
+                {
+                    enum message = "You must be an affiliate to create Twitch polls.";
+                }
+
+                chan(plugin.state, event.channel.name, message);
             }
             else
             {
-                enum message = "You must be an affiliate to create Twitch polls.";
+                enum message = "Failed to create poll.";
+                chan(plugin.state, event.channel.name, message);
             }
-
-            chan(plugin.state, event.channel.name, message);
-        }
-        else
-        {
-            throw e;
         }
     }
     catch (MissingBroadcasterTokenException e)
