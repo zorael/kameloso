@@ -2632,14 +2632,22 @@ void onCommandSetGame(TwitchPlugin plugin, const IRCEvent event)
 
     if (!unescapedGameName.length)
     {
-        const channelInfo = getChannel(plugin, event.channel.name);
+        const results = getChannel(plugin, event.channel.name);
 
-        enum pattern = "Currently playing game: %s";
-        immutable gameName = channelInfo.gameName.length ?
-            channelInfo.gameName :
-            "(nothing)";
-        immutable message = pattern.format(gameName);
-        return chan(plugin.state, event.channel.name, message);
+        if (results.success)
+        {
+            enum pattern = "Currently playing game: %s";
+            immutable gameName = results.gameName.length ?
+                results.gameName :
+                "(nothing)";
+            immutable message = pattern.format(gameName);
+            return chan(plugin.state, event.channel.name, message);
+        }
+        else
+        {
+            enum message = "Failed to get current game.";
+            return chan(plugin.state, event.channel.name, message);
+        }
     }
 
     immutable specified = unescapedGameName.unquoted.replace(`"`, `\"`);
@@ -2649,39 +2657,56 @@ void onCommandSetGame(TwitchPlugin plugin, const IRCEvent event)
     try
     {
         string name;  // mutable
+        bool success;
 
         if (!numberSupplied)
         {
-            immutable gameInfo = getGame(plugin, specified.encodeComponent);
-            gameID = gameInfo.id;
-            name = gameInfo.name;
+            immutable results = getGame(plugin, specified.encodeComponent);
+
+            if (results.success)
+            {
+                gameID = results.id;
+                name = results.name;
+                success = true;
+            }
         }
         else if (gameID == 0)
         {
             name = "(unset)";
+            success = true;
         }
         else /*if (id.length)*/
         {
-            immutable gameInfo = getGame(
+            immutable results = getGame(
                 plugin: plugin,
                 id: gameID);
-            name = gameInfo.name;
+
+            if (results.success)
+            {
+                name = results.name;
+                success = true;
+            }
         }
 
-        setChannelGame(plugin, event.channel.name, gameID);
-        enum pattern = "Game set to: %s";
-        immutable message = pattern.format(name);
-        chan(plugin.state, event.channel.name, message);
-    }
-    catch (EmptyResponseException _)
-    {
-        enum message = "Empty response from server!";
-        chan(plugin.state, event.channel.name, message);
-    }
-    catch (EmptyDataJSONException _)
-    {
-        enum message = "Could not find a game by that name; check spelling.";
-        chan(plugin.state, event.channel.name, message);
+        if (!success)
+        {
+            enum message = "Could not find a game by that name; check spelling.";
+            return chan(plugin.state, event.channel.name, message);
+        }
+
+        immutable results = setChannelGame(plugin, event.channel.name, gameID);
+
+        if (results.success)
+        {
+            enum pattern = "Game set to: %s";
+            immutable message = pattern.format(name);
+            chan(plugin.state, event.channel.name, message);
+        }
+        else
+        {
+            enum message = "Failed to set game.";
+            chan(plugin.state, event.channel.name, message);
+        }
     }
     catch (MissingBroadcasterTokenException e)
     {
