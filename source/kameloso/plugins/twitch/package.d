@@ -2610,6 +2610,12 @@ void onCommandSetTitle(TwitchPlugin plugin, const IRCEvent event)
             .addSyntax("$command [game name]")
             .addSyntax("$command")
     )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("game")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
 )
 void onCommandSetGame(TwitchPlugin plugin, const IRCEvent event)
 {
