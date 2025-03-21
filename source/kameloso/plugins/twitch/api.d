@@ -2776,9 +2776,8 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
 
         if (!dataJSON.array.length)
         {
-            enum message = "`endPoll` response has unexpected JSON " ~
-                `(zero-length "data")`;
-            throw new EmptyDataJSONException(message, responseJSON);
+            // No polls to end
+            return EndPollResults(response.code);
         }
 
         return EndPollResults(response.code, TwitchPoll(dataJSON.array[0]));
