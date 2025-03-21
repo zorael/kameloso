@@ -12,12 +12,6 @@
  +/
 module kameloso.platform;
 
-private:
-
-import std.process : Pid;
-
-public:
-
 @safe:
 
 
@@ -330,14 +324,18 @@ auto openInBrowser(const string url)
         On Posix, [lu.misc.ReturnValueException|ReturnValueException] on failure.
         On Windows, [std.process.ProcessException|ProcessException] on failure.
  +/
-Pid exec(
+auto exec(
     /*const*/ string[] args,
     const uint numReexecs,
     const string[] channels) @system
 {
     import kameloso.common : logger;
     import std.algorithm.comparison : among;
+    import std.process : Pid;
     import std.conv : text;
+
+    // Work around forward-declaration of auto return type
+    if (false) return Pid.init;
 
     if (args.length > 1)
     {

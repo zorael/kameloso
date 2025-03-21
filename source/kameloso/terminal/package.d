@@ -165,7 +165,7 @@ else
         `true` if the environment is either a real TTY or one of a few whitelisted
         pseudo-TTYs; `false` if not.
  +/
-bool isTerminal() @system
+auto isTerminal() @system
 {
     import kameloso.platform : currentEnvironment;
 

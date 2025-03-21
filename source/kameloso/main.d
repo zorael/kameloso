@@ -236,6 +236,9 @@ auto processMessages(
     import kameloso.thread : ThreadMessage;
     import core.time : MonoTime, msecs;
 
+    // Work around forward-declaration of auto return type
+    if (false) return Next.init;
+
     auto next = Next.continue_;
 
     /++
@@ -1472,7 +1475,7 @@ void logPluginActionException(
     Returns:
         A [lu.misc.Next] informing the calling function what to do next.
  +/
-Next processLineFromServer(
+auto processLineFromServer(
     Kameloso instance,
     const string raw,
     const SysTime now)
@@ -1482,6 +1485,9 @@ Next processLineFromServer(
     import lu.string : AdvanceException;
     import std.utf : UTFException;
     import core.exception : UnicodeException;
+
+    // Work around forward-declaration of auto return type
+    if (false) return Next.init;
 
     // Delay initialising the event so we don't do it twice;
     // once here, once in toIRCEvent

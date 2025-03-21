@@ -1036,7 +1036,7 @@ auto getQuoteByIndexString(
     Returns:
         A [Quote] whose line matches the passed search terms.
  +/
-Quote getQuoteBySearchTerms(
+auto getQuoteBySearchTerms(
     QuotePlugin plugin,
     const Quote[] quotes,
     const string searchTermsCased,
