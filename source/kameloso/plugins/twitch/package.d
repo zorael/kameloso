@@ -1800,10 +1800,6 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
             {
                 return sendInvalidCredentials();
             }
-            catch (ErrorJSONException _)
-            {
-                return sendNonspecificError();
-            }
             // Let other exceptions fall through
         }
 
@@ -1877,10 +1873,6 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
             catch (InvalidCredentialsException _)
             {
                 return sendInvalidCredentials();
-            }
-            catch (ErrorJSONException _)
-            {
-                return sendNonspecificError();
             }
             // Let other exceptions fall through
         }
@@ -2771,22 +2763,6 @@ void onCommandCommercial(TwitchPlugin plugin, const IRCEvent event)
     catch (InvalidCredentialsException e)
     {
         complainAboutMissingTokens(e);
-    }
-    catch (EmptyResponseException _)
-    {
-        enum message = "Empty response from server!";
-        chan(plugin.state, event.channel.name, message);
-    }
-    catch (HTTPQueryException e)
-    {
-        if (e.code == 400) // Bad Request
-        {
-            chan(plugin.state, event.channel.name, e.msg);
-        }
-        else
-        {
-            throw e;
-        }
     }
 }
 
