@@ -1484,7 +1484,7 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
         string[] tags;
         string title;
 
-        auto success() const { return (gameID && (code == 200));  }
+        auto success() const { return (code == 200);  }
 
         this(const uint code) { this.code = code; }
 
@@ -1519,12 +1519,15 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
 
             this.code = code;
             this.id = json["broadcaster_id"].str.to!ulong;
-            this.gameID = json["game_id"].str.to!ulong;
+            //this.gameID = json["game_id"].str.to!ulong;
             this.gameName = json["game_name"].str;
             this.tags = json["tags"].array
                 .map!(tagJSON => tagJSON.str)
                 .array;
             this.title = json["title"].str;
+
+            const gameID = "game_id" in json;
+            if (gameID.str.length) this.gameID = gameID.str.to!ulong;
         }
     }
 
