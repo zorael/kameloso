@@ -1267,7 +1267,7 @@ in (channelName.length, "Tried to change a the channel title with an empty chann
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to modify.
-        gameID = Optional game ID to set the channel as playing.
+        gameID = Game ID to set the channel as playing.
         caller = Name of the calling function.
 
     Returns:
@@ -1279,7 +1279,6 @@ auto setChannelGame(
     const ulong gameID,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `setChannelGame` from outside a fiber")
-in (gameID, "Tried to set the channel game with an empty channel name string")
 {
     return modifyChannelImpl(
         plugin: plugin,
