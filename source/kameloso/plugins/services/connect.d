@@ -1787,7 +1787,8 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
             break;
 
         default:
-            assert(0, "Impossible case hit in pingMonitorDg");
+            import lu.conv : toString;
+            assert(0, "Impossible case hit in pingMonitorDg: " ~ thisEvent.type.toString);
         }
 
         delay(service, pingMonitorPeriodicity, yield: true);
