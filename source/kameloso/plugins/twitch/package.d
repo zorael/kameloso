@@ -2167,25 +2167,24 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
             }
             else
             {
-                import kameloso.plugins.common : nameOf;
+                if (results.isFromBroadcaster)
+                {
+                    // Should never happen as we filter by class_ before calling this...
+                    return true;
+                }
+                else
+                {
+                    import kameloso.plugins.common : nameOf;
 
-                enum pattern = "Failed to delete a message from <h>%s</> in <l>%s";
-                logger.warningf(pattern, nameOf(storedEvent.sender), event.channel.name);
-                return false;
+                    enum pattern = "Failed to delete a message from <h>%s</> in <l>%s</>: %s";
+                    logger.warningf(
+                        pattern,
+                        nameOf(storedEvent.sender),
+                        event.channel.name,
+                        results.error);
+                    return false;
+                }
             }
-        }
-        catch (ErrorJSONException e)
-        {
-            logger.error(e.msg);
-
-            if (e.json["message"].str == "You cannot delete the broadcaster's messages.")
-            {
-                // Should never happen as we filter by class_ before calling this...
-                return false;
-            }
-
-            version(PrintStacktraces) printStacktrace(e);
-            return false;
         }
         catch (Exception e)
         {
@@ -2199,7 +2198,7 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
 
     uint numDeleted;
 
-    foreach (ref IRCEvent storedEvent; room.lastNMessages)  // explicit IRCEvent required on lu <2.0.1
+    foreach (ref storedEvent; room.lastNMessages)  // explicit IRCEvent required on lu <2.0.1
     {
         import std.algorithm.searching : canFind;
         import std.uni : asLowerCase;
@@ -2219,23 +2218,20 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
         }
     }
 
-    if (numDeleted > 0)
+    // Delete the command event itself
+    // Do it from within a foreach so we can clear the event by ref
+    foreach (ref storedEvent; room.lastNMessages)  // as above
     {
-        // Delete the command event itself
-        // Do it from within a foreach so we can clear the event by ref
-        foreach (ref IRCEvent storedEvent; room.lastNMessages)  // as above
+        if (storedEvent.id != event.id) continue;
+
+        immutable success = deleteEvent(storedEvent);
+
+        if (success)
         {
-            if (storedEvent.id != event.id) continue;
-
-            immutable success = deleteEvent(storedEvent);
-
-            if (success)
-            {
-                storedEvent = IRCEvent.init;
-                //++numDeleted;  // Don't include in final count
-            }
-            break;
+            storedEvent = IRCEvent.init;
+            //++numDeleted;  // Don't include in final count
         }
+        break;
     }
 
     enum pattern = "Deleted <l>%d</> %s containing \"<l>%s</>\"";
