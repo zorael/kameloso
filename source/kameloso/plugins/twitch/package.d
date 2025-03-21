@@ -2060,27 +2060,30 @@ void onCommandEndPoll(TwitchPlugin plugin, const IRCEvent event)
             pollID: getResults.polls[0].pollID,
             terminate: true);
 
-        alias Status = typeof(endResults.poll.status);
-
-        if (endResults.poll.status != Status.active)
+        if (endResults.success)
         {
-            import lu.conv : toString;
-            import std.format : format;
+            alias Status = typeof(endResults.poll.status);
 
-            enum pattern = "Poll ended; status %s";
-            immutable message = pattern.format(endResults.poll.status.toString);
-            chan(plugin.state, event.channel.name, message);
+            if (endResults.poll.status != Status.active)
+            {
+                import lu.conv : toString;
+                import std.format : format;
+
+                enum pattern = "Poll ended; status %s";
+                immutable message = pattern.format(endResults.poll.status.toString);
+                chan(plugin.state, event.channel.name, message);
+            }
+            else
+            {
+                enum message = "Failed to end poll; status remains active";
+                chan(plugin.state, event.channel.name, message);
+            }
         }
         else
         {
-            enum message = "Failed to end poll; status remains active";
+            enum message = "Failed to end poll.";
             chan(plugin.state, event.channel.name, message);
         }
-    }
-    catch (EmptyDataJSONException e)
-    {
-        enum message = "There are no active polls to end.";
-        chan(plugin.state, event.channel.name, message);
     }
     catch (MissingBroadcasterTokenException e)
     {
