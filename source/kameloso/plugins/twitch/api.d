@@ -2402,6 +2402,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
     {
         uint code;
         string error;
+        bool permissionDenied;
         TwitchPoll poll;
 
         auto success() const { return (code == 200); }
@@ -2412,6 +2413,16 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
         {
             this.code = code;
             this.error = error;
+        }
+
+        this(
+            const uint code,
+            const string error,
+            const bool permissionDenied)
+        {
+            this.code = code;
+            this.error = error;
+            this.permissionDenied = permissionDenied;
         }
 
         this(const uint code, /*const*/ TwitchPoll poll)
@@ -2508,6 +2519,34 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
              +/
             goto default;
 
+        case 403:
+            // 403 Forbidden
+            /+
+                UNDOCUMENTED.
+                The user is not a partner or affiliate and does not have permission to create a poll.
+             +/
+            /*
+            {
+                "error": "Forbidden",
+                "message": "Error.PermissionDenied: ownedBy 22216721 is not a partner or affiliate",
+                "status": 403
+            }
+             */
+
+            if (immutable messageJSON = "message" in responseJSON)
+            {
+                import std.algorithm.searching : endsWith;
+
+                if (messageJSON.str.endsWith("is not a partner or affiliate"))
+                {
+                    return CreatePollResults(
+                        code: response.code,
+                        error: messageJSON.str,
+                        permissionDenied: true);
+                }
+            }
+            goto default;
+
         default:
             version(PrintStacktraces)
             {
@@ -2539,9 +2578,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
         if (!dataJSON.array.length)
         {
             // data exists but is empty
-            enum message = "`createPoll` response has unexpected JSON " ~
-                `(zero-length "data")`;
-            throw new EmptyDataJSONException(message, responseJSON);
+            return CreatePollResults(response.code);
         }
 
         return CreatePollResults(response.code, TwitchPoll(dataJSON.array[0]));
