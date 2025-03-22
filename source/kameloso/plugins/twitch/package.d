@@ -3256,19 +3256,37 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
 
             try
             {
+                if (plugin.state.coreSettings.trace)
+                {
+                    enum pattern = "Fetching followers of channel <l>%s</> ...";
+                    logger.infof(pattern, channelName);
+                }
+
                 auto results = getFollowers(plugin, room.id);  // must be mutable
 
                 if (results.success)
                 {
                     room.followers = results.followers;
                     room.followersLastCached = now.toUnixTime();
+
+                    if (plugin.state.coreSettings.trace)
+                    {
+                        enum pattern = "Cached <l>%d</> followers of channel <l>%s</>.";
+                        logger.infof(pattern, results.followers.length, channelName);
+                    }
                 }
-                /*else
+                else
                 {
                     // Failed to get followers, retry next time
-                    delay(plugin, monitorUpdatePeriodicity, yield: true);
-                    continue;
-                }*/
+                    if (plugin.state.coreSettings.trace)
+                    {
+                        enum pattern = "Failed to fetch followers of channel <l>%s</>.";
+                        logger.warningf(pattern, channelName);
+                    }
+
+                    /*delay(plugin, monitorUpdatePeriodicity, yield: true);
+                    continue;*/
+                }
 
                 // Drop down
             }
