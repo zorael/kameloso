@@ -1622,10 +1622,19 @@ void onCommandSubs(TwitchPlugin plugin, const IRCEvent event)
 
     try
     {
-        enum pattern = "%s has %d subscribers.";
         const results = getSubscribers(plugin, event.channel.name, totalOnly: true);
-        immutable message = pattern.format(room.broadcasterDisplayName, results.totalNumSubscribers);
-        chan(plugin.state, event.channel.name, message);
+
+        if (results.success)
+        {
+            enum pattern = "%s has %d subscribers.";
+            immutable message = pattern.format(room.broadcasterDisplayName, results.totalNumSubscribers);
+            chan(plugin.state, event.channel.name, message);
+        }
+        else
+        {
+            enum message = "Failed to get subscriber count.";
+            chan(plugin.state, event.channel.name, message);
+        }
     }
     catch (MissingBroadcasterTokenException e)
     {
