@@ -2232,7 +2232,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
             this.polls = polls;
         }
 
-        auto success() const { return (polls.length && (code == 200)); }
+        auto success() const { return (code == 200); }
     }
 
     const room = channelName in plugin.rooms;
