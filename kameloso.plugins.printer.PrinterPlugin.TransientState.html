@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>PrinterPlugin.TransientState (kameloso.plugins.printer.PrinterPlugin.TransientState)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>PrinterPlugin.TransientState</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.printer.html">printer</a> <a class="breadcrumb" href="kameloso.plugins.printer.PrinterPlugin.html">PrinterPlugin</a> </div><div><div class="documentation-comment synopsis"><div><p>Transient state variables, aggregated in a struct.</p></div></div></div><div class="annotated-prototype"><div class="aggregate-prototype"><div class="parent-prototype"><span class="builtin-type">class</span> <span class="name">PrinterPlugin</span></div><div><div class="attributes">package static </div><span class="builtin-type">struct</span> TransientState  {<div class="aggregate-member"><a href="kameloso.plugins.printer.PrinterPlugin.TransientState.naggedAboutDir.html"><div class="attributes"></div><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">naggedAboutDir</span>;</a></div><div class="aggregate-member"><a href="kameloso.plugins.printer.PrinterPlugin.TransientState.printedISUPPORT.html"><div class="attributes"></div><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">printedISUPPORT</span>;</a></div><div class="aggregate-member"><a href="kameloso.plugins.printer.PrinterPlugin.TransientState.hasSquelches.html"><div class="attributes"></div><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">hasSquelches</span>;</a></div><div class="aggregate-member"><a href="kameloso.plugins.printer.PrinterPlugin.TransientState.bell.html"><div class="attributes"></div><tt class="highlighted"><span class="type">string</span></tt> <span class="name">bell</span>;</a></div>}</div></div></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="variable"><a class="header-anchor" href="#variable">Variables</a></h3><dl class="member-list native"><dt><a href="kameloso.plugins.printer.PrinterPlugin.TransientState.bell.html">bell</a><div class="simplified-prototype" style="max-width: 13ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">bell</span>;</div></dt><dd><div><p>Effective bell after <a class="xref" href="kameloso.terminal.isTerminal.html">kameloso.terminal.isTerminal</a> checks.</p></div></dd><dt><a href="kameloso.plugins.printer.PrinterPlugin.TransientState.hasSquelches.html">hasSquelches</a><div class="simplified-prototype" style="max-width: 19ch;"><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">hasSquelches</span>;</div></dt><dd><div><p>Whether or not at least one squelch is active; whether <a class="xref" href="kameloso.plugins.printer.PrinterPlugin.squelches.html">squelches</a> is non-empty.</p></div></dd><dt><a href="kameloso.plugins.printer.PrinterPlugin.TransientState.naggedAboutDir.html">naggedAboutDir</a><div class="simplified-prototype" style="max-width: 22ch;"><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">naggedAboutDir</span>;</div></dt><dd><div><p>Whether or not we have nagged about the log directory not existing.</p></div></dd><dt><a href="kameloso.plugins.printer.PrinterPlugin.TransientState.printedISUPPORT.html">printedISUPPORT</a><div class="simplified-prototype" style="max-width: 23ch;"><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">printedISUPPORT</span>;</div></dt><dd><div><p>Whether or ont we have printed the
+            <a class="xref" href="dialect.defs.IRCEvent.Type.html#ISUPPORT">ISUPPORT</a> information.</p></div></dd></dl><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.printer.html">printer</a> <a class="parent" href="kameloso.plugins.printer.PrinterPlugin.html">PrinterPlugin</a> 
+		<span class="type-separator">manifest constants</span><ul><li><a class="manifest-constant" href="kameloso.plugins.printer.PrinterPlugin.linebufferInitialSize.html">linebufferInitialSize</a></li><li><a class="manifest-constant" href="kameloso.plugins.printer.PrinterPlugin.squelchTimeout.html">squelchTimeout</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct current" href="kameloso.plugins.printer.PrinterPlugin.TransientState.html">TransientState</a></li></ul><span class="type-separator">variables</span><ul><li><a class="variable" href="kameloso.plugins.printer.PrinterPlugin.buffers.html">buffers</a></li><li><a class="variable" href="kameloso.plugins.printer.PrinterPlugin.exclude.html">exclude</a></li><li><a class="variable" href="kameloso.plugins.printer.PrinterPlugin.include.html">include</a></li><li><a class="variable" href="kameloso.plugins.printer.PrinterPlugin.linebuffer.html">linebuffer</a></li><li><a class="variable" href="kameloso.plugins.printer.PrinterPlugin.logDirectory.html">logDirectory</a></li><li><a class="variable" href="kameloso.plugins.printer.PrinterPlugin.settings.html">settings</a></li><li><a class="variable" href="kameloso.plugins.printer.PrinterPlugin.squelches.html">squelches</a></li><li><a class="variable" href="kameloso.plugins.printer.PrinterPlugin.transient.html">transient</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

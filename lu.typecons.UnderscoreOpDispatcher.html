@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>UnderscoreOpDispatcher (lu.typecons.UnderscoreOpDispatcher)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>UnderscoreOpDispatcher</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.typecons.html">typecons</a> </div><div><div class="documentation-comment synopsis"><div><p>Mixin template generating an <tt class="inline-code">opDispatch</tt> redirecting calls to members whose
+    names match the passed variable string but with an underscore prepended to
+    the name.</p><p>This is a convenience mixin for <tt class="inline-code">OpDispatcher!(&quot;_&quot;, Yes.inFront)</tt>.</p></div></div></div><div class="annotated-prototype"><div class="aggregate-prototype"><div class="attributes"></div><span class="builtin-type">mixin template</span> UnderscoreOpDispatcher () {<div class="aggregate-member"><a href="lu.typecons.OpDispatcher.html"><span class="builtin-type">mixintemplate</span> <span class="name">OpDispatcher</span><span class="template-params">(string token, Flag!&quot;inFront&quot; inFront = Yes.inFront)</span> via <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">lu</span>.<span class="hid">typecons</span> : <span class="hid">OpDispatcher</span>;</tt>;</a></div>}</div></div><h2 id="mixed-in-members"><a class="header-anchor" href="#mixed-in-members">Mixed In Members</a></h2><h3 id="from-mixin-opdispatcher!(&quot;_&quot;,-yes.infront)-">From <tt class="highlighted"><span class="kwrd">mixin</span> <span class="hid">OpDispatcher</span>!(<span class="str">&quot;_&quot;</span>, <span class="hid">Yes</span>.<span class="hid">inFront</span>) </tt></h3><dl class="member-list native"><dt><a href="lu.typecons.OpDispatcher.opDispatch.1.html">opDispatch</a><div class="simplified-prototype" style="max-width: 31ch;"><span class="lang-feature">auto ref</span>  <span class="name">opDispatch</span>(T value)</div></dt><dd><div><p>Mutator.</p></div></dd><dt><a href="lu.typecons.OpDispatcher.opDispatch.2.html">opDispatch</a><div class="simplified-prototype" style="max-width: 24ch;"><span class="lang-feature">auto ref</span>  <span class="name">opDispatch</span>()</div></dt><dd><div><p>Accessor.</p></div></dd></dl><div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">struct</span> <span class="hid">Bar</span>
+{
+    <span class="type">string</span> <span class="hid">_s</span>;
+    <span class="type">int</span> <span class="hid">_i</span>;
+    <span class="type">bool</span> <span class="hid">_b</span>;
+    <span class="type">string</span>[<span class="type">string</span>] <span class="hid">_aa</span>;
+
+    <span class="kwrd">mixin</span> <span class="hid">UnderscoreOpDispatcher</span>;
+}</pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">static</span> <span class="kwrd">struct</span> <span class="hid">Bar</span>
+{
+    <span class="type">string</span> <span class="hid">_s</span>;
+    <span class="type">int</span> <span class="hid">_i</span>;
+    <span class="type">bool</span> <span class="hid">_b</span> = <span class="kwrd">true</span>;
+    <span class="type">string</span>[<span class="type">string</span>] <span class="hid">_aa</span>;
+    <span class="kwrd">mixin</span> <span class="hid">UnderscoreOpDispatcher</span>;
+}
+
+<span class="hid">Bar</span> <span class="hid">bar</span>;
+<span class="hid">bar</span>.<span class="hid">s</span> = <span class="str">&quot;hi there&quot;</span>;
+<span class="hid">bar</span>.<span class="hid">i</span> = -<span class="num">123</span>;
+<span class="hid">bar</span>.<span class="hid">b</span> = <span class="kwrd">false</span>;
+<span class="hid">bar</span>.<span class="hid">aa</span> = [ <span class="str">&quot;hello&quot;</span> : <span class="str">&quot;world&quot;</span> ];
+<span class="hid">bar</span>.<span class="hid">aa</span> = [ <span class="str">&quot;foo&quot;</span> : <span class="str">&quot;bar&quot;</span> ];
+<span class="kwrd">assert</span>(<span class="hid">bar</span>.<span class="hid">aa</span> == [ <span class="str">&quot;hello&quot;</span> : <span class="str">&quot;world&quot;</span>, <span class="str">&quot;foo&quot;</span> : <span class="str">&quot;bar&quot;</span>]);</pre></div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="lu.typecons.OpDispatcher.html">OpDispatcher</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.typecons.html">typecons</a> 
+		<span class="type-separator">mixin templates</span><ul><li><a class="mixin-template" href="lu.typecons.OpDispatcher.html">OpDispatcher</a></li><li><a class="mixin-template current" href="lu.typecons.UnderscoreOpDispatcher.html">UnderscoreOpDispatcher</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
