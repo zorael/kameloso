@@ -17,7 +17,6 @@ private:
 
 import kameloso.pods : CoreSettings;
 import kameloso.logger : KamelosoLogger;
-import std.json : JSONValue;
 
 public:
 

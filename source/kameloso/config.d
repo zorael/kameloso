@@ -248,7 +248,8 @@ void manageConfigFile(
                 static assert(0, "Unsupported platform, please file a bug.");
             }
 
-            return logger.error(message);
+            logger.error(message);
+            return;
         }
 
         enum pattern = "Attempting to open <i>%s</> with <i>%s</>...";
@@ -288,7 +289,8 @@ void manageConfigFile(
             if (!isGraphicalEnvironment)
             {
                 enum message = "No graphical environment appears to be running; cannot open editor.";
-                return logger.error(message);
+                logger.error(message);
+                return;
             }
         }
         else version(Windows)
@@ -313,8 +315,13 @@ void manageConfigFile(
             giveConfigurationMinimalInstructions();
         }
 
-        immutable command = [ editor, instance.coreSettings.configFile ];
-        execute(command);
+        immutable string[2] command =
+        [
+            editor,
+            instance.coreSettings.configFile,
+        ];
+
+        execute(command[]);
     }
 
     /+
@@ -376,7 +383,7 @@ void manageConfigFile(
     Params:
         filename = Filename of file to write to.
         configurationText = Content to write to file.
-        banner = Whether or not to add the "kameloso bot" banner at the head of the file.
+        addBanner = Whether or not to add the "kameloso bot" banner at the head of the file.
  +/
 void writeToDisk(
     const string filename,
@@ -406,7 +413,7 @@ void writeToDisk(
             pattern,
             cast(string)KamelosoInfo.version_,
             timestamp.year,
-            timestamp.month,
+            cast(uint)timestamp.month,
             timestamp.day,
             timestamp.hour,
             timestamp.minute,
@@ -1213,7 +1220,7 @@ void writeConfigurationFile(
 
         if (!instance.bot.quitReason.length)
         {
-            // Set a the quit reason here and nowhere else.
+            // Set the quit reason here and nowhere else.
             instance.bot.quitReason = KamelosoDefaults.quitReason;
         }
 
@@ -1405,7 +1412,7 @@ void giveBrightTerminalHint(const bool alsoAboutConfigSetting = false)
 
 // applyDefaults
 /++
-    Completes a client's, server's and bot's member fields. Empty members are
+    Completes a client's, a server's and a bot's member fields. Empty members are
     given values from compile-time defaults.
 
     Nickname, user, GECOS/"real name", server address and server port are
@@ -1439,7 +1446,7 @@ out (; (instance.bot.partReason.length), "Empty bot part reason")
         instance.bot.hasGuestNickname = true;
     }
 
-    // If no client.user set, inherit from [kameloso.constants.KamelosoDefaults|KamelosoDefaults].
+    // If no client.user set, inherit from KamelosoDefaults.
     if (!instance.parser.client.user.length)
     {
         instance.parser.client.user = KamelosoDefaults.user;
@@ -1457,7 +1464,7 @@ out (; (instance.bot.partReason.length), "Empty bot part reason")
         instance.parser.server.address = KamelosoDefaults.serverAddress;
     }
 
-    // Ditto but [kameloso.constants.KamelosoDefaultIntegers|KamelosoDefaultIntegers].
+    // As above but KamelosoDefaultIntegers.
     if (instance.parser.server.port == 0)
     {
         instance.parser.server.port = KamelosoDefaultIntegers.port;
