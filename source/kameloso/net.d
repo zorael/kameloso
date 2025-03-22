@@ -175,7 +175,7 @@ public:
     bool ssl;
 
     /++
-        IPs already resolved using [kameloso.net.resolveFiber|resolveFiber].
+        IPs already resolved.
      +/
     Address[] ips;
 
@@ -1012,7 +1012,7 @@ public:
 
     Example:
     ---
-    //Connection conn;  // Address previously resolved with `resolveFiber`
+    //Connection conn;  // Address previously resolved
 
     auto connector = new Generator!ConnectionAttempt(() =>
         connectFiber(

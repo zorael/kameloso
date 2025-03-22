@@ -3111,9 +3111,8 @@ auto tryConnect(Kameloso instance)
 /++
     Tries to resolve the address in
     [kameloso.kameloso.Kameloso.parser.server|Kameloso.parser.server] to IPs, by
-    leveraging [kameloso.net.resolveFiber|resolveFiber], reacting on the
-    [kameloso.net.ResolveAttempt|ResolveAttempt]s it yields to provide feedback
-    to the user.
+    leveraging [kameloso.net.delegateResolve|delegateResolve], passing it
+    delegates to call to provide feedback to the user.
 
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
