@@ -1041,32 +1041,35 @@ auto handleGetopt(Kameloso instance) @system
 
     if (channelOverride.length) instance.bot.channelOverride = flatten(channelOverride);
 
-    /++
-        Strip channel whitespace and make lowercase.
-     +/
-    static void stripAndLower(ref string[] channels)
+    if (!instance.coreSettings.force)
     {
-        import lu.string : stripped;
-        import std.algorithm.iteration : map, uniq;
-        import std.algorithm.sorting : sort;
-        import std.array : array;
-        import std.uni : toLower;
+        /++
+            Strip channel whitespace and make lowercase.
+         +/
+        static void stripAndLower(ref string[] channels)
+        {
+            import lu.string : stripped;
+            import std.algorithm.iteration : map, uniq;
+            import std.algorithm.sorting : sort;
+            import std.array : array;
+            import std.uni : toLower;
 
-        if (!channels.length) return;
+            if (!channels.length) return;
 
-        channels = channels
-            .map!(channelName => channelName.stripped.toLower)
-            .array
-            .sort
-            .uniq
-            .array;
+            channels = channels
+                .map!(channelName => channelName.stripped.toLower)
+                .array
+                .sort
+                .uniq
+                .array;
+        }
+
+        stripAndLower(instance.bot.homeChannels);
+        stripAndLower(instance.bot.guestChannels);
+        stripAndLower(instance.bot.channelOverride);
     }
 
-    stripAndLower(instance.bot.homeChannels);
-    stripAndLower(instance.bot.guestChannels);
-    stripAndLower(instance.bot.channelOverride);
-
-    // Remove duplicate channels (where a home is also featured as a normal channel)
+    // Remove duplicate channels (where a home is also featured as a guest channel)
     size_t[] duplicates;
 
     foreach (immutable channelName; instance.bot.homeChannels)
