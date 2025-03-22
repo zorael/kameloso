@@ -1362,6 +1362,14 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
         chan(plugin.state, event.channel.name, message);
     }
 
+    void sendNTimes(const string message, const uint numTimes)
+    {
+        foreach (immutable i; 0..numTimes)
+        {
+            chan(plugin.state, event.channel.name, message);
+        }
+    }
+
     string slice = event.content.stripped;  // mutable
     string target;  // ditto
     string numTimesString;  // ditto
@@ -1416,29 +1424,57 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
         }
     }
 
-    const getStreamResults = getStream(plugin, login);
-    string lastSeenPlayingPattern = "%s";  // mutable
-
-    if (getChannelResults.gameName.length)
-    {
-        lastSeenPlayingPattern = getStreamResults.stream.live ?
-            " (currently playing %s)" :
-            " (last seen playing %s)";
-    }
-
-    const getUserResults = getUser(
+    immutable getUserResults = getUser(
         plugin: plugin,
         name: login);
 
-    immutable pattern = "Shoutout to %s! Visit them at https://twitch.tv/%s !" ~ lastSeenPlayingPattern;
-    immutable message = pattern.format(
-        getUserResults.displayName,
-        login,
-        getChannelResults.gameName);
-
-    foreach (immutable i; 0..numTimes)
+    if (!getUserResults.success)
     {
-        chan(plugin.state, event.channel.name, message);
+        // getChannel succeeded but getUser of the same login failed
+        // Something must have happened traffic-wise; abort
+        return sendOtherError();
+    }
+
+    const getStreamResults = getStream(plugin, login);
+
+    if (getStreamResults.success)
+    {
+        // User has streamed before
+        if (getChannelResults.gameID)
+        {
+            // Channel has set a game set (id != 0)
+            immutable playingPattern = getStreamResults.stream.live ?
+                " (currently playing %s)" :
+                " (last seen playing %s)";
+
+            immutable pattern = "Shoutout to %s! Visit them at https://twitch.tv/%s !" ~ playingPattern;
+            immutable message = pattern.format(
+                getUserResults.displayName,
+                login,
+                getChannelResults.gameName);
+
+            sendNTimes(message, numTimes);
+        }
+        else
+        {
+            // Channel has not set a game (id == 0)
+            enum pattern = "Shoutout to %s! Visit them at https://twitch.tv/%s !";
+            immutable message = pattern.format(
+                getUserResults.displayName,
+                login);
+
+            sendNTimes(message, numTimes);
+        }
+    }
+    else
+    {
+        // User exists but simply has never streamed before
+        enum pattern = "Shoutout to %s! Visit them at https://twitch.tv/%s !";
+        immutable message = pattern.format(
+            getUserResults.displayName,
+            login);
+
+        sendNTimes(message, numTimes);
     }
 }
 
