@@ -984,11 +984,16 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
                 name: name,
                 searchByDisplayName: true);
 
-            if (!results.login.length) return sendNoSuchUser(name);
-
-            enum pattern = "%s is currently not a follower.";
-            immutable message = pattern.format(results.displayName);
-            chan(plugin.state, event.channel.name, message);
+            if (results.success)
+            {
+                enum pattern = "%s is currently not a follower.";
+                immutable message = pattern.format(results.displayName);
+                chan(plugin.state, event.channel.name, message);
+            }
+            else
+            {
+                sendNoSuchUser(name);
+            }
         }
         else
         {
@@ -1029,8 +1034,12 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
         }
 
         auto results = getFollowers(plugin, room.id);  // must be mutable
-        room.followers = results.followers;
-        room.followersLastCached = event.time;
+
+        if (results.success)
+        {
+            room.followers = results.followers;
+            room.followersLastCached = event.time;
+        }
     }
 
     if (!room.followers.length)
