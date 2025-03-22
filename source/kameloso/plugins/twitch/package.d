@@ -1025,33 +1025,6 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
         return false;
     }
 
-    void recacheFollowers()
-    {
-        if (plugin.state.coreSettings.trace)
-        {
-            enum pattern = "Re-caching followers for channel <l>%s</> ...";
-            logger.infof(pattern, event.channel.name);
-        }
-
-        auto results = getFollowers(plugin, room.id);  // must be mutable
-
-        if (results.success)
-        {
-            room.followers = results.followers;
-            room.followersLastCached = event.time;
-        }
-    }
-
-    if (!room.followers.length)
-    {
-        // Followers have not yet been cached!
-        // This can technically happen, though practically the caching is
-        // done immediately after joining so there should be no time for
-        // !followage queries to sneak in.
-        // Luckily we're inside a fiber so we can cache it ourselves.
-        recacheFollowers();
-    }
-
     immutable name = slice.length ?
         slice :
         event.sender.nickname;
@@ -1061,21 +1034,23 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
         return sendCannotFollowSelf();
     }
 
-    bool found = reportFromCache(name);  // mutable for reuse
-    if (found) return;
-
-    enum minimumSecondsBetweenRecaches = 60*60*24;  // 24 hours
-
-    if (event.time > (room.followersLastCached + minimumSecondsBetweenRecaches))
+    if (!room.followers.length)
     {
-        // No match, but minimumSecondsBetweenRecaches passed since last recache
-        recacheFollowers();
-        found = reportFromCache(name);
-        if (found) return;
+        /+
+            Followers have not yet been cached!
+            This can technically happen, though practically the caching is
+            done immediately after joining so there should be no time for
+            !followage queries to sneak in.
+            Just abort.
+         +/
+        return;
     }
 
+    immutable found = reportFromCache(name);  // mutable for reuse
+    if (found) return;
+
     // No matches and/or not enough time has passed since last recache
-    return reportNotAFollower(name);
+    reportNotAFollower(name);
 }
 
 
