@@ -1115,8 +1115,13 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
             Additionally send the user to other plugins by way of a message to be
             picked up by the main event loop.
          +/
-        const results = getUser(plugin, string.init, room.id);
-        if (!results.login.length) return;  // No such user? Something is deeply wrong
+        immutable results = getUser(plugin, string.init, room.id);
+
+        if (!results.success)
+        {
+            // No such user? Something is deeply wrong
+            return;
+        }
 
         room.broadcasterDisplayName = results.displayName;
         auto storedUser = results.login in plugin.state.users;
