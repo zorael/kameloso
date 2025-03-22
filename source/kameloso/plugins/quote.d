@@ -970,10 +970,8 @@ auto getRandomQuote(
     if (!quotes.length)
     {
         throw new NoQuotesFoundException(
-            "No quotes found",
-            nickname,
-            __FILE__,
-            __LINE__);
+            message: "No quotes found",
+            nickname: nickname);
     }
 
     index = uniform(0, cast(uint)quotes.length);
@@ -1011,11 +1009,9 @@ auto getQuoteByIndexString(
     if (index >= quotes.length)
     {
         throw new QuoteIndexOutOfRangeException(
-            "Quote index out of range",
-            index,
-            quotes.length,
-            __FILE__,
-            __LINE__);
+            message: "Quote index out of range",
+            indexGiven: index,
+            upperBound: quotes.length);
     }
 
     return quotes[index];
@@ -1529,12 +1525,11 @@ void initResources(QuotePlugin plugin)
         import kameloso.plugins.common : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
+
         throw new IRCPluginInitialisationException(
-            "Quotes file is malformed",
-            plugin.name,
-            plugin.quotesFile,
-            __FILE__,
-            __LINE__);
+            message: "Quotes file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: plugin.quotesFile);
     }
 
     // Let other Exceptions pass.

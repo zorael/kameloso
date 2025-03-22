@@ -371,10 +371,8 @@ public:
             {
                 enum message = "No such certificate file";
                 throw new SSLFileException(
-                    message,
-                    certFile,
-                    __FILE__,
-                    __LINE__);
+                    message: message,
+                    filename: certFile);
             }
 
             immutable filetype = (certFile.extension == ".pem") ? 1 : 0;
@@ -392,10 +390,8 @@ public:
             {
                 enum message = "No such private key file";
                 throw new SSLFileException(
-                    message,
-                    privateKeyFile,
-                    __FILE__,
-                    __LINE__);
+                    message: message,
+                    filename: privateKeyFile);
             }
 
             immutable filetype = (privateKeyFile.extension == ".pem") ? 1 : 0;
@@ -1643,26 +1639,26 @@ final class SSLFileException : Exception
         Constructor attaching an error code.
      +/
     this(
-        const string msg,
+        const string message,
         const string filename,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
         this.filename = filename;
-        super(msg, file, line, nextInChain);
+        super(message, file, line, nextInChain);
     }
 
     /++
         Passthrough constructor.
      +/
     this(
-        const string msg,
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
-        super(msg, file, line, nextInChain);
+        super(message, file, line, nextInChain);
     }
 }
 

@@ -1189,12 +1189,11 @@ void initResources(SeenPlugin plugin)
         import kameloso.plugins.common : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
+
         throw new IRCPluginInitialisationException(
-            "Seen file is malformed",
-            plugin.name,
-            plugin.seenFile,
-            __FILE__,
-            __LINE__);
+            message: "Seen file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: plugin.seenFile);
     }
 
     // Let other Exceptions pass.

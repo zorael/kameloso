@@ -1666,9 +1666,8 @@ out (token; token.length, "`getBroadcasterAuthorisation` returned an empty strin
     {
         enum message = "Missing broadcaster token";
         throw new MissingBroadcasterTokenException(
-            message,
-            channelName,
-            __FILE__);
+            message: message,
+            channelName: channelName);
     }
 
     return creds.broadcasterBearerToken;

@@ -4326,22 +4326,23 @@ void initResources(TwitchPlugin plugin)
     void loadFile(
         const string fileDescription,
         ref JSONStorage json,
-        const string file,
+        const string filename,
         const size_t line = __LINE__)
     {
         try
         {
-            json.load(file);
+            json.load(filename);
         }
         catch (JSONException e)
         {
             version(PrintStacktraces) logger.error("JSONException: ", e.msg);
+
             throw new IRCPluginInitialisationException(
-                fileDescription ~ " file is malformed",
-                plugin.name,
-                file,
-                __FILE__,
-                line);
+                message: fileDescription ~ " file is malformed",
+                pluginName: plugin.name,
+                malformedFilename: filename,
+                file: __FILE__,
+                line: line);
         }
 
         // Let other Exceptions pass.

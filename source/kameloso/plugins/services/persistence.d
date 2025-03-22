@@ -1342,12 +1342,11 @@ void initAccountResources(PersistenceService service)
         import kameloso.plugins.common : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
+
         throw new IRCPluginInitialisationException(
-            "Users file is malformed",
-            service.name,
-            service.userFile,
-            __FILE__,
-            __LINE__);
+            message: "Users file is malformed",
+            pluginName: service.name,
+            malformedFilename: service.userFile);
     }
 
     // Let other Exceptions pass.
@@ -1427,12 +1426,11 @@ void initAccountResources(PersistenceService service)
                 import kameloso.common : logger;
 
                 version(PrintStacktraces) logger.trace(e);
+
                 throw new IRCPluginInitialisationException(
-                    "Users file is malformed",
-                    service.name,
-                    service.userFile,
-                    __FILE__,
-                    __LINE__);
+                    message: "Users file is malformed",
+                    pluginName: service.name,
+                    malformedFilename: service.userFile);
             }
         }
     }
@@ -1467,12 +1465,11 @@ void initHostmaskResources(PersistenceService service)
         import kameloso.common : logger;
 
         version(PrintStacktraces) logger.trace(e);
+
         throw new IRCPluginInitialisationException(
-            "Hostmasks file is malformed",
-            service.name,
-            service.hostmasksFile,
-            __FILE__,
-            __LINE__);
+            message: "Hostmasks file is malformed",
+            pluginName: service.name,
+            malformedFilename: service.hostmasksFile);
     }
 
     alias examplePlaceholderKey1 = PersistenceService.Placeholder.hostmask1;

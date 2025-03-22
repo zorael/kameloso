@@ -122,10 +122,9 @@ auto configurationText(const string configFile) @safe
     {
         import lu.misc : FileTypeMismatchException;
         throw new FileTypeMismatchException(
-            "Configuration file is not a file",
-            configFile,
-            cast(ushort)getAttributes(configFile),
-            __FILE__);
+            message: "Configuration file is not a file",
+            filename: configFile,
+            attrs: cast(ushort)getAttributes(configFile));
     }
 
     try
@@ -142,10 +141,8 @@ auto configurationText(const string configFile) @safe
         // catch Exception instead of UTFException, just in case there are more
         // kinds of error than the normal "Invalid UTF-8 sequence".
         throw new ConfigurationFileReadFailureException(
-            e.msg,
-            configFile,
-            __FILE__,
-            __LINE__);
+            message: e.msg,
+            filename: configFile);
     }
 }
 

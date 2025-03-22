@@ -600,12 +600,11 @@ void initResources(NotePlugin plugin)
         import kameloso.plugins.common : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
+
         throw new IRCPluginInitialisationException(
-            "Notes file is malformed",
-            plugin.name,
-            plugin.notesFile,
-            __FILE__,
-            __LINE__);
+            message: "Notes file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: plugin.notesFile);
     }
 
     // Let other Exceptions pass.

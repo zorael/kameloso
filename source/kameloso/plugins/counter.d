@@ -862,12 +862,11 @@ void initResources(CounterPlugin plugin)
         import kameloso.common : logger;
 
         version(PrintStacktraces) logger.trace(e);
+
         throw new IRCPluginInitialisationException(
-            "Counters file is malformed",
-            plugin.name,
-            plugin.countersFile,
-            __FILE__,
-            __LINE__);
+            message: "Counters file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: plugin.countersFile);
     }
 
     // Let other Exceptions pass.

@@ -554,12 +554,11 @@ void initResources(TimePlugin plugin)
         import kameloso.plugins.common : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
+
         throw new IRCPluginInitialisationException(
-            "Timezones file is malformed",
-            plugin.name,
-            plugin.timezonesFile,
-            __FILE__,
-            __LINE__);
+            message: "Timezones file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: plugin.timezonesFile);
     }
 
     // Let other Exceptions pass.

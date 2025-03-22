@@ -83,12 +83,11 @@ void initResources(AutomodePlugin plugin)
         import kameloso.plugins.common : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
+
         throw new IRCPluginInitialisationException(
-            "Automodes file is malformed",
-            plugin.name,
-            plugin.automodeFile,
-            __FILE__,
-            __LINE__);
+            message: "Automodes file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: plugin.automodeFile);
     }
 
     // Let other Exceptions pass.

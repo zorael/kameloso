@@ -254,20 +254,16 @@ auto resolvePath(PipelinePlugin plugin)
                 if (filename.isFIFO)
                 {
                     throw new FileExistsException(
-                        message,
-                        filename,
-                        __FILE__,
-                        __LINE__);
+                        message: message,
+                        filename: filename);
                 }
                 else
                 {
                     import std.file : getAttributes;
                     throw new FileTypeMismatchException(
-                        message,
-                        filename,
-                        cast(ushort)getAttributes(filename),
-                        __FILE__,
-                        __LINE__);
+                        message: message,
+                        filename: filename,
+                        attrs: cast(ushort)getAttributes(filename));
                 }
             }
         }
