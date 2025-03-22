@@ -3107,7 +3107,7 @@ auto tryConnect(Kameloso instance)
 }
 
 
-// tryResolve
+// resolve
 /++
     Tries to resolve the address in
     [kameloso.kameloso.Kameloso.parser.server|Kameloso.parser.server] to IPs, by
@@ -3124,25 +3124,10 @@ auto tryConnect(Kameloso instance)
         [lu.misc.Next.returnFailure|Next.returnFailure] if it failed and the
         program should exit.
  +/
-auto tryResolve(Kameloso instance, const bool firstConnect)
+auto resolve(Kameloso instance, const bool firstConnect)
 {
     import kameloso.constants : Timeout;
-    import kameloso.net : ResolveAttempt, resolveFiber;
-    import std.concurrency : Generator;
-
-    auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(
-            conn: instance.conn,
-            address: instance.parser.server.address,
-            port: instance.parser.server.port,
-            useIPv6: instance.connSettings.ipv6,
-            abort: instance.abort));
-
-    scope(exit)
-    {
-        destroy(resolver);
-        resolver = null;
-    }
+    import kameloso.net : ResolveAttempt, delegateResolve;
 
     uint incrementedRetryDelay = Timeout.Integers.connectionRetrySeconds;
     enum incrementMultiplier = 1.2;
@@ -3163,74 +3148,58 @@ auto tryResolve(Kameloso instance, const bool firstConnect)
         incrementedRetryDelay = min(incrementedRetryDelay, delayCap);
     }
 
-    while (true)
+    void onSuccessDg(ResolveAttempt _)
     {
-        import std.algorithm.searching : startsWith;
+        import lu.string : plurality;
+        enum pattern = "<i>%s</> resolved into <i>%d</> %s.";
+        logger.logf(
+            pattern,
+            instance.parser.server.address,
+            instance.conn.ips.length,
+            instance.conn.ips.length.plurality("IP", "IPs"));
+    }
 
-        resolver.call();
-        immutable attempt = resolver.front;
-        if (*instance.abort) return Next.returnFailure;
+    void onRetryDg(ResolveAttempt attempt)
+    {
+        enum pattern = "Could not resolve server address: <l>%s</> <t>(%d)";
+        logger.warningf(pattern, attempt.error, attempt.errno);
+        delayOnNetworkDown();
+    }
 
-        enum getaddrinfoErrorString = "getaddrinfo error: ";
-        immutable errorString = attempt.error.length ?
-            (attempt.error.startsWith(getaddrinfoErrorString) ?
-                attempt.error[getaddrinfoErrorString.length..$] :
-                attempt.error) :
-            string.init;
+    bool onFailureDg(ResolveAttempt attempt)
+    {
+        enum pattern = "Could not resolve server address: <l>%s</> <t>(%d)";
+        logger.errorf(pattern, attempt.error, attempt.errno);
 
-        with (ResolveAttempt.ResolveState)
-        final switch (attempt.state)
+        if (firstConnect)
         {
-        case unset:
-            // Should never happen
-            assert(0, "resolver yielded `unset` state");
-
-        case noop:
-            // Do nothing and retry
-            continue;
-
-        case success:
-            import lu.string : plurality;
-            enum pattern = "<i>%s</> resolved into <i>%d</> %s.";
-            logger.logf(
-                pattern,
-                instance.parser.server.address,
-                instance.conn.ips.length,
-                instance.conn.ips.length.plurality("IP", "IPs"));
-            return Next.continue_;
-
-        case exception:
-            enum pattern = "Could not resolve server address: <l>%s</> <t>(%d)";
-            logger.warningf(pattern, errorString, attempt.errno);
+            // First attempt and a failure; something's wrong, abort
+            enum firstConnectPattern = "Failed to resolve host. Verify that you are " ~
+                "connected to the Internet and that the server address (<i>%s</>) is correct.";
+            logger.logf(firstConnectPattern, instance.parser.server.address);
+            return false;
+        }
+        else
+        {
+            // Not the first attempt yet failure; transient error? retry
             delayOnNetworkDown();
-            if (*instance.abort) return Next.returnFailure;
-            continue;
-
-        case error:
-            enum pattern = "Could not resolve server address: <l>%s</> <t>(%d)";
-            logger.errorf(pattern, errorString, attempt.errno);
-
-            if (firstConnect)
-            {
-                // First attempt and a failure; something's wrong, abort
-                enum firstConnectPattern = "Failed to resolve host. Verify that you are " ~
-                    "connected to the Internet and that the server address (<i>%s</>) is correct.";
-                logger.logf(firstConnectPattern, instance.parser.server.address);
-                return Next.returnFailure;
-            }
-            else
-            {
-                // Not the first attempt yet failure; transient error? retry
-                delayOnNetworkDown();
-                if (*instance.abort) return Next.returnFailure;
-                continue;
-            }
-
-        case failure:
-            logger.error("Failed to resolve host.");
-            return Next.returnFailure;
+            return true;
         }
     }
+
+    scope scopeOnSuccessDg = &onSuccessDg;
+    scope scopeOnRetryDg = &onRetryDg;
+    scope scopeOnFailureDg = &onFailureDg;
+
+    return delegateResolve(
+        conn: instance.conn,
+        address: instance.parser.server.address,
+        port: instance.parser.server.port,
+        useIPv6: instance.connSettings.ipv6,
+        onSuccessDg: scopeOnSuccessDg,
+        onRetryDg: scopeOnRetryDg,
+        onFailureDg: scopeOnFailureDg,
+        abort: instance.abort);
 }
 
 
@@ -3776,7 +3745,7 @@ auto startBot(Kameloso instance)
         /+
             Resolve.
          +/
-        immutable actionAfterResolve = tryResolve(
+        immutable actionAfterResolve = resolve(
             instance,
             firstConnect: attempt.firstConnect);
         if (*instance.abort) return attempt;  // tryResolve interruptibleSleep can abort
@@ -3793,17 +3762,13 @@ auto startBot(Kameloso instance)
             return attempt;
 
         case returnSuccess:
-            // Ditto
-            attempt.retval = ShellReturnValue.success;
-            return attempt;
-
         case unset:  // should never happen
         case noop:   // ditto
         case retry:  // ...
         case crash:  // ...
             import lu.conv : toString;
             import std.format : format;
-            enum pattern = "`tryResolve` returned `Next.%s`";
+            enum pattern = "`resolve` returned `Next.%s`";
             immutable message = pattern.format(actionAfterResolve.toString);
             assert(0, message);
         }

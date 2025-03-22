@@ -1,11 +1,11 @@
 /++
     Functionality related to connecting to a server over the Internet.
 
-    Includes [core.thread.fiber.Fiber|Fiber]s that help with resolving the
-    address of, connecting to, and reading full string lines from a server.
+    Includes [core.thread.fiber.Fiber|Fiber]s that help with connecting to and
+    reading full string lines from a server.
 
     Having them as [core.thread.fiber.Fiber|Fiber]s means a program can do
-    address resolution, connecting and reading while retaining the ability to do
+    connecting and reading while retaining the ability to do
     other stuff concurrently. This means you can conveniently run code in between
     each connection attempt, for instance, without breaking the program's flow.
 
@@ -18,23 +18,33 @@
 
     conn.reset();
 
-    auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(
-            conn,
-            "irc.libera.chat",
-            6667,
-            useIPv6: false,
-            abort));
-
-    resolveloop:
-    foreach (const attempt; resolver)
+    void onSuccessDg(ResolveAttempt attempt)
     {
-        // attempt is a yielded `ResolveAttempt`
-        // switch on `attempt.state`, deal with it accordingly
-        // it may be `typeof(attempt.state).noop` on the first iteration
+        writeln("Resolved IPs: ", conn.ips);
     }
 
-    // Resolution done
+    void onRetryDg(ResolveAttempt attempt)
+    {
+        writeln("Retrying...");
+    }
+
+    bool onFailureDg(ResolveAttempt attempt)
+    {
+        writeln("Failed to resolve!");
+        return false;
+    }
+
+    immutable actionAfterResolve = delegateResolve(
+        conn: conn,
+        address: "example.com",
+        port: 80,
+        useIPv6: true,
+        onSuccessDg: &onSuccessDg,
+        onRetryDg: &onRetryDg,
+        onFailureDg: &onFailureDg,
+        abort: abort);
+
+    if (actionAfterResolve != Next.continue_) return;
 
     enum connectionRetries = 10;
 
@@ -1344,89 +1354,72 @@ struct ResolveAttempt
 }
 
 
-// resolveFiber
+// delegateResolve
 /++
     Given an address and a port, resolves these and populates the array of unique
     [std.socket.Address|Address] IPs inside the passed [Connection].
 
     Example:
     ---
-    import std.concurrency : Generator;
-
     Connection conn;
-    conn.reset();
 
-    auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(
-            conn,
-            "irc.libera.chat",
-            6667,
-            false,
-            abort));
-
-    resolveloop:
-    foreach (const attempt; resolver)
+    void onSuccessDg(ResolveAttempt attempt)
     {
-        // attempt is a yielded `ResolveAttempt`
-
-        with (ResolveAttempt.State)
-        final switch (attempt.state)
-        {
-        case preresolve:
-            assert(0, "shouldn't happen");
-
-        case success:
-            // Address was resolved, the passed `conn` was modified
-            break resolveloop;
-
-        case exception:
-            // Recoverable
-            dealWithException(attempt.error);
-            break;
-
-        case failure:
-            // Resolution failed without errors
-            failGracefully(attempt.error);
-            break;
-
-        case error:
-            // Unrecoverable
-            dealWithError(attempt.error);
-            return;
-        }
+        writeln("Resolved IPs: ", conn.ips);
     }
 
-    // Address resolved
+    void onRetryDg(ResolveAttempt attempt)
+    {
+        writeln("Retrying...");
+    }
+
+    bool onFailureDg(ResolveAttempt attempt)
+    {
+        writeln("Failed to resolve!");
+        return false;
+    }
+
+    immutable actionAfterResolve = delegateResolve(
+        conn: conn,
+        address: "example.com",
+        port: 80,
+        useIPv6: true,
+        onSuccessDg: &onSuccessDg,
+        onRetryDg: &onRetryDg,
+        onFailureDg: &onFailureDg,
+        abort: abort);
     ---
 
     Params:
-        conn = The current [Connection].
+        conn = A [Connection].
         address = String address to look up.
         port = Remote port build into the [std.socket.Address|Address].
         useIPv6 = Whether to include resolved IPv6 addresses or not.
-        abort = Pointer to the "abort" flag, which -- if set -- should make the
-            function return and the [core.thread.fiber.Fiber|Fiber] terminate.
+        onSuccessDg = Delegate to call on successful resolution.
+        onRetryDg = Delegate to call on recoverable resolution failure.
+        onFailureDg = Delegate to call on potentially unrecoverable resolution failure.
+            (The return value dictates whether to retry or not.)
+        abort = Pointer to the global abort flag, which -- if set -- should make
+            the function return.
  +/
-void resolveFiber(
+auto delegateResolve(
     Connection conn,
     const string address,
     const ushort port,
     const bool useIPv6,
+    scope void delegate(ResolveAttempt) onSuccessDg,
+    scope void delegate(ResolveAttempt) onRetryDg,
+    scope bool delegate(ResolveAttempt) onFailureDg,
     const bool* abort) @system
-in (!conn.connected, "Tried to set up a resolving fiber on an already live connection")
-in (address.length, "Tried to set up a resolving fiber on an empty address")
 {
-    import std.concurrency : yield;
+    import lu.misc : Next;
     import std.socket : AddressFamily, SocketOSException, getAddress;
 
-    if (*abort) return;
-
     alias State = ResolveAttempt.ResolveState;
-    yield(ResolveAttempt(State.noop));
 
-    for (uint i; (i >= 0); ++i)
+    foreach (immutable i; 0..uint.max)
     {
-        if (*abort) return;
+        if (*abort) return Next.returnFailure;
 
         ResolveAttempt attempt;
         attempt.retryNum = i;
@@ -1434,18 +1427,22 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
         try
         {
             import std.algorithm.iteration : filter, uniq;
+            import std.algorithm.sorting : sort;
             import std.array : array;
+            import std.functional : lessThan;
 
             conn.ips = getAddress(address, port)
-                .filter!(ip => (ip.addressFamily == AddressFamily.INET) ||
-                    ((ip.addressFamily == AddressFamily.INET6) && useIPv6))
+                .filter!
+                    (ip => (ip.addressFamily == AddressFamily.INET) ||
+                        ((ip.addressFamily == AddressFamily.INET6) && useIPv6))
+                .array
+                .sort!((a,b) => a.toAddrString.lessThan(b.toAddrString))
                 .uniq!((a,b) => a.toAddrString == b.toAddrString)
                 .array;
 
             attempt.state = State.success;
-            yield(attempt);
-            // Should never get here
-            assert(0, "Dead `resolveFiber` resumed after yield");
+            onSuccessDg(attempt);
+            return Next.continue_;
         }
         catch (SocketOSException e)
         {
@@ -1522,7 +1519,7 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
                 // Assume net down, wait and try again
                 attempt.state = State.exception;
                 attempt.error = e.msg;
-                yield(attempt);
+                onRetryDg(attempt);
                 continue;
 
             version(Posix)
@@ -1540,9 +1537,9 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
             default:
                 attempt.state = State.error;
                 attempt.error = e.msg;
-                yield(attempt);
-                // Should never get here
-                assert(0, "Dead `resolveFiber` resumed after yield");
+                immutable shouldContinue = onFailureDg(attempt);
+                if (shouldContinue) continue;
+                return Next.returnFailure;
             }
         }
     }
@@ -1550,8 +1547,10 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
     // This doesn't really happen at present. Subject to change, so keep it here.
     /*ResolveAttempt endAttempt;
     endAttempt.state = State.failure;
-    yield(endAttempt);*/
-    assert(0, "Broke out of unending `for` loop in `resolveFiber`");
+    onFailureDg(endAttempt);
+    return Next.returnFailure;*/
+
+    assert(0, "unreachable");
 }
 
 
