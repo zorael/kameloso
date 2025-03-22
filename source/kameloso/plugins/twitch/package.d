@@ -2195,17 +2195,6 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
 
     auto deleteEvent(const IRCEvent storedEvent)
     {
-        version(PrintStacktraces)
-        void printStacktrace(Exception e)
-        {
-            if (!plugin.state.coreSettings.headless)
-            {
-                import std.stdio : stdout, writeln;
-                writeln(e);
-                stdout.flush();
-            }
-        }
-
         try
         {
             immutable results = deleteMessage(plugin, event.channel.name, storedEvent.id);
@@ -2237,7 +2226,7 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
         }
         catch (Exception e)
         {
-            version(PrintStacktraces) printStacktrace(e);
+            version(PrintStacktraces) logger.trace(e);
             return false;
         }
     }
@@ -3283,15 +3272,13 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                         enum pattern = "Failed to fetch followers of channel <l>%s</>.";
                         logger.warningf(pattern, channelName);
                     }
-
-                    /*delay(plugin, monitorUpdatePeriodicity, yield: true);
-                    continue;*/
                 }
 
                 // Drop down
             }
-            catch (Exception _)
+            catch (Exception e)
             {
+                version(PrintStacktraces) logger.trace(e);
                 // Just swallow the exception and retry next time
             }
 
@@ -3376,12 +3363,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
         }
         catch (HTTPQueryException e)
         {
-            if (plugin.state.coreSettings.headless)
-            {
-                //version(PrintStacktraces) logger.trace(e);
-                delay(plugin, retryDelay, yield: true);
-            }
-            else
+            if (!plugin.state.coreSettings.headless)
             {
                 import kameloso.constants : MagicErrorStrings;
 
@@ -3410,25 +3392,22 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
                 }
 
                 version(PrintStacktraces) logger.trace(e);
-                delay(plugin, retryDelay, yield: true);
             }
+
+            delay(plugin, retryDelay, yield: true);
             continue;
         }
         catch (EmptyResponseException e)
         {
-            if (plugin.state.coreSettings.headless)
-            {
-                //version(PrintStacktraces) logger.trace(e);
-                delay(plugin, retryDelay, yield: true);
-            }
-            else
+            if (!plugin.state.coreSettings.headless)
             {
                 // HTTP query failed; just retry
                 enum pattern = "Failed to validate Twitch API keys: <t>%s</>";
                 logger.errorf(pattern, e.msg);
                 version(PrintStacktraces) logger.trace(e);
-                delay(plugin, retryDelay, yield: true);
             }
+
+            delay(plugin, retryDelay, yield: true);
             continue;
         }
     }
