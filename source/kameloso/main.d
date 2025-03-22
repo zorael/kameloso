@@ -2728,7 +2728,7 @@ void resetSignals() nothrow @nogc
 auto tryGetopt(Kameloso instance)
 {
     import kameloso.plugins.common : IRCPluginSettingsException;
-    import kameloso.config : handleGetopt;
+    import kameloso.config : FlagStringException, handleGetopt;
     import kameloso.configreader : ConfigurationFileReadFailureException;
     import kameloso.string : doublyBackslashed;
     import lu.misc : FileTypeMismatchException, Next;
@@ -2746,6 +2746,13 @@ auto tryGetopt(Kameloso instance)
     {
         enum pattern = "Error parsing command-line arguments: <t>%s";
         logger.errorf(pattern, e.msg);
+        //version(PrintStacktraces) logger.trace(e.info);
+    }
+    catch (FlagStringException e)
+    {
+        enum pattern = "Error parsing command-line arguments: " ~
+            `"<t>%s</>" is not one of <l>auto</>, <l>always</> and <l>never</>`;
+        logger.errorf(pattern, e.value);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ConvException e)

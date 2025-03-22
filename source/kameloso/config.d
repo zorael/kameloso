@@ -528,13 +528,7 @@ void resolveFlagString(const string input, ref bool output) @system
             break;
 
         default:
-            import std.format : format;
-            import std.getopt : GetOptException;
-
-            enum pattern = `Invalid getopt flag value; "<l>%s<t>" is not one ` ~
-                "of <e>auto<t>, <e>always<t> or <e>never";
-            immutable message = pattern.format(input);
-            throw new GetOptException(message);
+            throw new FlagStringException("Bad flag string", value: input);
     }
 }
 
@@ -663,7 +657,7 @@ auto handleGetopt(Kameloso instance) @system
     if (colourString.length)
     {
         immutable valueBefore = instance.coreSettings.colours;
-        resolveFlagString(colourString, instance.coreSettings.colours);
+        resolveFlagString(colourString, instance.coreSettings.colours);  // throws on failure
         immutable valueAfter = instance.coreSettings.colours;
 
         if (valueBefore != valueAfter)
@@ -1517,5 +1511,47 @@ unittest
         applyDefaults(instance);
 
         assert(client.nickname.length, client.nickname);
+    }
+}
+
+
+// FlagStringException
+/++
+    Exception thrown when a flag argument is not one of the expected values.
+
+    It is a normal [object.Exception|Exception] but with an attached value string.
+ +/
+final class FlagStringException : Exception
+{
+@safe:
+    /++
+        The value that was given as a flag argument.
+     +/
+    string value;
+
+    /++
+        Create a new [FlagStringException], without attaching a value.
+     +/
+    this(
+        const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Create a new [FlagStringException], attaching a value.
+     +/
+    this(
+        const string message,
+        const string value,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.value = value;
+        super(message, file, line, nextInChain);
     }
 }
