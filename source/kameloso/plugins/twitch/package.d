@@ -3061,8 +3061,18 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                 if (sinceLastBotUpdate >= botUpdatePeriodicity)
                 {
                     auto results = getBotList(plugin);  // must be mutable
-                    botBlacklist = results.bots;
-                    lastBotUpdateTime = now;
+
+                    if (results.success)
+                    {
+                        botBlacklist = results.bots;
+                        lastBotUpdateTime = now;
+                    }
+                    else
+                    {
+                        // Failed for some reason, retry next time
+                        delay(plugin, monitorUpdatePeriodicity, yield: true);
+                        continue;
+                    }
                 }
 
                 const chatters = getChatters(plugin, room.broadcasterName);
@@ -3179,9 +3189,16 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
 
             try
             {
-                auto getStreamResults = getStream(plugin, room.broadcasterName);  // must not be const nor immutable
+                auto results = getStream(plugin, room.broadcasterName);  // must not be const nor immutable
 
-                if (!getStreamResults.stream.id)  // == TwitchPlugin.Room.Stream.init)
+                if (!results.success)
+                {
+                    // Failed to get stream info, retry next time
+                    delay(plugin, monitorUpdatePeriodicity, yield: true);
+                    continue;
+                }
+
+                if (!results.stream.id)  // == TwitchPlugin.Room.Stream.init)
                 {
                     // Stream down
                     if (room.stream.live)
@@ -3204,9 +3221,9 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                     if (!room.stream.id)
                     {
                         // New stream!
-                        room.stream = getStreamResults.stream;
+                        room.stream = results.stream;
                         logger.info("Stream started.");
-                        reportCurrentGame(getStreamResults.stream);
+                        reportCurrentGame(results.stream);
 
                         /*if (plugin.settings.watchtime && plugin.transient.viewerTimesDirty)
                         {
@@ -3214,19 +3231,19 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                             plugin.transient.viewerTimesDirty = false;
                         }*/
                     }
-                    else if (room.stream.id == getStreamResults.stream.id)
+                    else if (room.stream.id == results.stream.id)
                     {
                         // Same stream running, just update it
-                        room.stream.update(getStreamResults.stream);
+                        room.stream.update(results.stream);
                     }
-                    else /*if (room.stream.id != streamFromServer.id)*/
+                    else
                     {
                         // New stream, but stale one exists. Rotate and insert
                         closeStream(room);
                         rotateStream(room);
-                        room.stream = getStreamResults.stream;
+                        room.stream = results.stream;
                         logger.info("Stream change detected.");
-                        reportCurrentGame(getStreamResults.stream);
+                        reportCurrentGame(results.stream);
 
                         if (plugin.settings.watchtime && plugin.transient.viewerTimesDirty)
                         {
@@ -3264,9 +3281,21 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
 
             try
             {
-                auto results = getFollowers(plugin, room.id);
-                room.followers = results.followers;
-                room.followersLastCached = now.toUnixTime();
+                auto results = getFollowers(plugin, room.id);  // must be mutable
+
+                if (results.success)
+                {
+                    room.followers = results.followers;
+                    room.followersLastCached = now.toUnixTime();
+                }
+                /*else
+                {
+                    // Failed to get followers, retry next time
+                    delay(plugin, monitorUpdatePeriodicity, yield: true);
+                    continue;
+                }*/
+
+                // Drop down
             }
             catch (Exception _)
             {
