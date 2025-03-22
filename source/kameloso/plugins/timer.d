@@ -1684,8 +1684,6 @@ void initResources(TimerPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common : IRCPluginInitialisationException;
-
         version(PrintStacktraces) logger.trace(e);
 
         throw new IRCPluginInitialisationException(

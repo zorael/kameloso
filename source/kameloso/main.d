@@ -2727,7 +2727,7 @@ void resetSignals() nothrow @nogc
  +/
 auto tryGetopt(Kameloso instance)
 {
-    import kameloso.plugins.common : IRCPluginSettingsException;
+    import kameloso.plugins : IRCPluginSettingsException;
     import kameloso.config : FlagStringException, handleGetopt;
     import kameloso.configreader : ConfigurationFileReadFailureException;
     import kameloso.string : doublyBackslashed;
@@ -3477,10 +3477,8 @@ void resolvePaths(Kameloso instance) @safe
  +/
 auto startBot(Kameloso instance)
 {
-    import kameloso.plugins.common  :
-        IRCPluginInitialisationException,
-        pluginNameOfFilename,
-        pluginFileBaseName;
+    import kameloso.plugins : IRCPluginInitialisationException;
+    import kameloso.plugins.common  : pluginNameOfFilename, pluginFileBaseName;
     import kameloso.constants : ShellReturnValue;
     import kameloso.string : doublyBackslashed;
     import kameloso.terminal : TerminalToken, isTerminal;
@@ -4382,7 +4380,7 @@ public:
  +/
 auto run(string[] args)
 {
-    import kameloso.plugins.common : IRCPluginInitialisationException, IRCPluginSettingsException;
+    import kameloso.plugins : IRCPluginInitialisationException, IRCPluginSettingsException;
     import kameloso.constants : ShellReturnValue;
     import kameloso.logger : KamelosoLogger;
     import kameloso.string : doublyBackslashed, replaceTokens;

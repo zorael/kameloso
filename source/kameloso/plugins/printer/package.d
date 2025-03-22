@@ -792,8 +792,6 @@ void initResources(PrinterPlugin plugin)
 
     if (!establishLogLocation(plugin.logDirectory, plugin.transient.naggedAboutDir))
     {
-        import kameloso.plugins.common : IRCPluginInitialisationException;
-
         throw new IRCPluginInitialisationException(
             message: "Could not create log directory",
             pluginName: plugin.name,

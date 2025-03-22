@@ -1339,8 +1339,6 @@ void initAccountResources(PersistenceService service)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common : IRCPluginInitialisationException;
-
         version(PrintStacktraces) logger.trace(e);
 
         throw new IRCPluginInitialisationException(
@@ -1422,7 +1420,6 @@ void initAccountResources(PersistenceService service)
             }
             catch (JSONException e)
             {
-                import kameloso.plugins.common : IRCPluginInitialisationException;
                 import kameloso.common : logger;
 
                 version(PrintStacktraces) logger.trace(e);
@@ -1461,7 +1458,6 @@ void initHostmaskResources(PersistenceService service)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common : IRCPluginInitialisationException;
         import kameloso.common : logger;
 
         version(PrintStacktraces) logger.trace(e);

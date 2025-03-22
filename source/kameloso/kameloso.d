@@ -570,7 +570,7 @@ public:
 
         if (!allCustomSuccess)
         {
-            import kameloso.plugins.common : IRCPluginSettingsException;
+            import kameloso.plugins : IRCPluginSettingsException;
             enum message = "Some custom plugin settings could not be applied.";
             throw new IRCPluginSettingsException(message);
         }

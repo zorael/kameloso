@@ -2850,7 +2850,6 @@ void onCommandCommercial(TwitchPlugin plugin, const IRCEvent event)
  +/
 void initialise(TwitchPlugin plugin)
 {
-    import kameloso.plugins.common : IRCPluginInitialisationException;
     import kameloso.terminal : isTerminal;
     import std.algorithm.searching : endsWith;
 
@@ -4317,7 +4316,6 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
  +/
 void initResources(TwitchPlugin plugin)
 {
-    import kameloso.plugins.common : IRCPluginInitialisationException;
     import lu.json : JSONStorage;
     import std.file : exists, mkdir;
     import std.json : JSONException, JSONType;

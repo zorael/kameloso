@@ -858,7 +858,6 @@ void initResources(CounterPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common : IRCPluginInitialisationException;
         import kameloso.common : logger;
 
         version(PrintStacktraces) logger.trace(e);
