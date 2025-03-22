@@ -189,27 +189,27 @@ void printGCStats()
 
     if (profileStats.numCollections == 1)
     {
-        enum pausePattern = "World stopped for <l>%.1,f</> ms in <l>1</> collection";
+        enum pausePattern = "World stopped for <l>%.1,f ms</> in <l>1</> collection";
         logger.infof(
             pausePattern,
             (profileStats.totalPauseTime.total!"hnsecs" / 10_000.0));
 
-        /*enum collectionPattern = "Collection time: <l>%.1,f</> ms";
+        /*enum collectionPattern = "Collection time: <l>%.1,f ms";
         logger.infof(
             collectionPattern,
             (profileStats.totalCollectionTime.total!"hnsecs" / 10_000.0));*/
     }
     else if (profileStats.numCollections > 1)
     {
-        enum pausePattern = "World stopped for <l>%.1,f</> ms across <l>%d</> collections " ~
-            "(longest was <l>%.1,f</> ms)";
+        enum pausePattern = "World stopped for <l>%.1,f ms</> across <l>%d</> collections " ~
+            "(longest was <l>%.1,f ms</>)";
         logger.infof(
             pausePattern,
             (profileStats.totalPauseTime.total!"hnsecs" / 10_000.0),
             profileStats.numCollections,
             (profileStats.maxPauseTime.total!"hnsecs" / 10_000.0));
 
-        /*enum collectionPattern = "Sum of collection cycles: <l>%.1,f</> ms (max: <l>%.1,f</> ms)";
+        /*enum collectionPattern = "Sum of collection cycles: <l>%.1,f ms</> (max: <l>%.1,f ms</>)";
         logger.infof(
             collectionPattern,
             (profileStats.totalCollectionTime.total!"hnsecs" / 10_000.0),
