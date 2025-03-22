@@ -1506,11 +1506,11 @@ void onCommandVanish(TwitchPlugin plugin, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
 
-    const result = timeoutUser(plugin, event.channel.name, event.sender.id, 1);
+    const results = timeoutUser(plugin, event.channel.name, event.sender.id, 1);
 
-    if (!result.success)
+    if (!results.success)
     {
-        if (result.alreadyBanned || result.targetIsBroadcaster)
+        if (results.alreadyBanned || results.targetIsBroadcaster)
         {
             // It failed but with good reason
         }
@@ -1518,7 +1518,7 @@ void onCommandVanish(TwitchPlugin plugin, const IRCEvent event)
         {
             import kameloso.plugins.common : nameOf;
             enum pattern = "Failed to vanish <l>%s</> in <l>%s</>: <l>%s</> (<t>%d</>)";
-            logger.warningf(pattern, nameOf(event.sender), event.channel.name, result.error, result.code);
+            logger.warningf(pattern, nameOf(event.sender), event.channel.name, results.error, results.code);
         }
     }
 }
@@ -2854,7 +2854,7 @@ void onCommandCommercial(TwitchPlugin plugin, const IRCEvent event)
 
     try
     {
-        const results = startCommercial(plugin, event.channel.name, lengthString);
+        immutable results = startCommercial(plugin, event.channel.name, lengthString);
 
         if (!results.success)
         {
