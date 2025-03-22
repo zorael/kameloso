@@ -1845,7 +1845,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
             {
                 import kameloso.plugins.twitch.providers.google : addVideoToYouTubePlaylist;
 
-                const results = addVideoToYouTubePlaylist(plugin, *creds, videoID);
+                immutable results = addVideoToYouTubePlaylist(plugin, *creds, videoID);
 
                 if (!results.success)
                 {
@@ -1914,24 +1914,33 @@ void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
             {
                 import kameloso.plugins.twitch.providers.spotify : addTrackToSpotifyPlaylist, getSpotifyTrackByID;
 
-                const addResults = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
+                immutable addResults = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
 
                 if (!addResults.success)
                 {
                     return sendNonspecificError();
                 }
 
-                const getTrackResults = getSpotifyTrackByID(
+                immutable getTrackResults = getSpotifyTrackByID(
                     plugin,
                     *creds,
                     trackID);
 
-                room.songrequestHistory[event.sender.nickname] = event.time;
-                return sendAddedToSpotifyPlaylist(getTrackResults.artist, getTrackResults.name);
+                if (getTrackResults.success)
+                {
+                    room.songrequestHistory[event.sender.nickname] = event.time;
+                    sendAddedToSpotifyPlaylist(getTrackResults.artist, getTrackResults.name);
+                }
+                else
+                {
+                    // Failed for some reason
+                    sendNonspecificError();
+                }
+
             }
             catch (InvalidCredentialsException _)
             {
-                return sendInvalidCredentials();
+                sendInvalidCredentials();
             }
             // Let other exceptions fall through
         }
