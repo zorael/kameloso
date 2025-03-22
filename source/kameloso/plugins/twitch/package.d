@@ -2116,6 +2116,12 @@ void onCommandEndPoll(TwitchPlugin plugin, const IRCEvent event)
     {
         const getResults = getPolls(plugin, event.channel.name);
 
+        if (!getResults.success)
+        {
+            enum message = "Failed to get polls.";
+            return chan(plugin.state, event.channel.name, message);
+        }
+
         if (!getResults.polls.length)
         {
             enum message = "There are no active polls to end.";
