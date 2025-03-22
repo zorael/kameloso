@@ -132,6 +132,8 @@ configuration "twitch-lowmem" {
 
 configuration "dev" {
     subConfiguration "dialect" "dev"
+    dflags "-fsanitize=address" "-fsanitize-address-use-after-return=always" platform="ldc"
+    dflags "-frame-pointer=all" platform="ldc"
 
     versions \
         "Debug" \
@@ -153,6 +155,8 @@ configuration "dev" {
 
 configuration "dev-lowmem" {
     subConfiguration "dialect" "dev"
+    dflags "-fsanitize=address" "-fsanitize-address-use-after-return=always" platform="ldc"
+    dflags "-frame-pointer=all" platform="ldc"
     dflags "-lowmem"
 
     versions \
@@ -176,12 +180,15 @@ configuration "dev-lowmem" {
 
 configuration "selftest" {
     subConfiguration "dialect" "dev"
+    dflags "-fsanitize=address" "-fsanitize-address-use-after-return=always" platform="ldc"
+    dflags "-frame-pointer=all" platform="ldc"
 
     versions \
         "Selftests" \
         "Debug" \
         "TwitchSupport" \
         "WithTwitchPlugin" \
+        "TwitchWarnings" \
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
@@ -191,6 +198,8 @@ configuration "selftest" {
 
 configuration "selftest-lowmem" {
     subConfiguration "dialect" "dev"
+    dflags "-fsanitize=address" "-fsanitize-address-use-after-return=always" platform="ldc"
+    dflags "-frame-pointer=all" platform="ldc"
     dflags "-lowmem"
 
     versions \
@@ -198,6 +207,7 @@ configuration "selftest-lowmem" {
         "Debug" \
         "TwitchSupport" \
         "WithTwitchPlugin" \
+        "TwitchWarnings" \
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
@@ -208,6 +218,8 @@ configuration "selftest-lowmem" {
 configuration "unittest" {
     targetName "kameloso-test"
     subConfiguration "dialect" "dev"
+    dflags "-fsanitize=address" "-fsanitize-address-use-after-return=always" platform="ldc"
+    dflags "-frame-pointer=all" platform="ldc"
 
     versions \
         "Debug" \
@@ -230,6 +242,8 @@ configuration "unittest" {
 configuration "unittest-lowmem" {
     targetName "kameloso-test"
     subConfiguration "dialect" "dev"
+    dflags "-fsanitize=address" "-fsanitize-address-use-after-return=always" platform="ldc"
+    dflags "-frame-pointer=all" platform="ldc"
     dflags "-lowmem"
 
     versions \
