@@ -3131,6 +3131,16 @@ auto resolve(Kameloso instance, const bool firstConnect)
     uint incrementedRetryDelay = Timeout.Integers.connectionRetrySeconds;
     enum incrementMultiplier = 1.2;
 
+    static auto withoutGetaddrinfo(const string line)
+    {
+        import std.algorithm.searching : startsWith;
+
+        enum prefix = "getaddrinfo error: ";
+        return line.startsWith(prefix) ?
+            line[prefix.length..$] :
+            line;
+    }
+
     void delayOnNetworkDown()
     {
         import kameloso.thread : interruptibleSleep;
@@ -3161,14 +3171,14 @@ auto resolve(Kameloso instance, const bool firstConnect)
     void onRetryDg(ResolveAttempt attempt)
     {
         enum pattern = "Could not resolve server address: <l>%s</> <t>(%d)";
-        logger.warningf(pattern, attempt.error, attempt.errno);
+        logger.warningf(pattern, withoutGetaddrinfo(attempt.error), attempt.errno);
         delayOnNetworkDown();
     }
 
     bool onFailureDg(ResolveAttempt attempt)
     {
         enum pattern = "Could not resolve server address: <l>%s</> <t>(%d)";
-        logger.errorf(pattern, attempt.error, attempt.errno);
+        logger.errorf(pattern, withoutGetaddrinfo(attempt.error), attempt.errno);
 
         if (firstConnect)
         {
