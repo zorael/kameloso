@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>tabs (lu.string.tabs)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>tabs</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.string.html">string</a> </div><div><div class="documentation-comment synopsis"><div><p>Returns a range of *spaces* equal to that of <tt class="inline-code">num</tt> tabs (<tt class="inline-code">'\t'</tt>).</p><p>Use <a class="xref" href="std.conv.to.html">std.conv.to</a> or <a class="xref" href="std.conv.text.html">std.conv.text</a> or similar to flatten to a string.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> pure nothrow @<span class="name" data-ident="nogc">nogc</span> </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">tabs</div><div class="template-parameters" data-count="1">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="builtin-type">uint</span> <span class="name" data-ident="spaces">spaces</span> = 4</span></div></div>)</div><div class="runtime-parameters" data-count="1"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">int</span></span></span> <span class="parameter-name name" data-ident="num"><a href="#param-num">num</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-spaces"><a class="parameter-name" data-ident="spaces" href="#param-spaces">spaces</a></dt><dd><div class="documentation-comment"><div><p>How many spaces make up a tab.</p></div></div></dd><dt id="param-num"><a class="parameter-name" data-ident="num" href="#param-num">num</a> <span class="parameter-type"><span class="builtin-type">int</span></span></dt><dd><div class="documentation-comment"><div><p>How many tabs we want.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>A range of whitespace equalling (<tt class="inline-code">num</tt> * <tt class="inline-code">spaces</tt>) spaces.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="type">string</span> <span class="hid">indentation</span> = <span class="num">2</span>.<span class="hid">tabs</span>.<span class="hid">text</span>;
+<span class="kwrd">assert</span>((<span class="hid">indentation</span> == <span class="str">&quot;        &quot;</span>), <span class="str">`&quot;`</span> ~  <span class="hid">indentation</span> ~ <span class="str">`&quot;`</span>);
+<span class="type">string</span> <span class="hid">smallIndent</span> = <span class="num">1</span>.<span class="hid">tabs</span>!<span class="num">2</span>.<span class="hid">text</span>;
+<span class="kwrd">assert</span>((<span class="hid">smallIndent</span> == <span class="str">&quot;  &quot;</span>), <span class="str">`&quot;`</span> ~  <span class="hid">smallIndent</span> ~ <span class="str">`&quot;`</span>);</pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">array</span> : <span class="hid">Appender</span>;
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">conv</span> : <span class="hid">to</span>;
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">exception</span> : <span class="hid">assertThrown</span>;
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">format</span> : <span class="hid">formattedWrite</span>;
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">algorithm</span>.<span class="hid">comparison</span> : <span class="hid">equal</span>;
+<span class="kwrd">import</span> <span class="hid">core</span>.<span class="hid">exception</span> : <span class="hid">AssertError</span>;
+
+<span class="kwrd">auto</span> <span class="hid">one</span> = <span class="num">1</span>.<span class="hid">tabs</span>!<span class="num">4</span>;
+<span class="kwrd">auto</span> <span class="hid">two</span> = <span class="num">2</span>.<span class="hid">tabs</span>!<span class="num">3</span>;
+<span class="kwrd">auto</span> <span class="hid">three</span> = <span class="num">3</span>.<span class="hid">tabs</span>!<span class="num">2</span>;
+<span class="kwrd">auto</span> <span class="hid">zero</span> = <span class="num">0</span>.<span class="hid">tabs</span>;
+
+<span class="kwrd">assert</span>(<span class="hid">one</span>.<span class="hid">equal</span>(<span class="str">&quot;    &quot;</span>), <span class="hid">one</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="kwrd">assert</span>(<span class="hid">two</span>.<span class="hid">equal</span>(<span class="str">&quot;      &quot;</span>), <span class="hid">two</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="kwrd">assert</span>(<span class="hid">three</span>.<span class="hid">equal</span>(<span class="str">&quot;      &quot;</span>), <span class="hid">three</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="kwrd">assert</span>(<span class="hid">zero</span>.<span class="hid">equal</span>(<span class="type">string</span>.<span class="hid">init</span>), <span class="hid">zero</span>.<span class="hid">to</span>!<span class="type">string</span>);
+
+<span class="hid">assertThrown</span>!<span class="hid">AssertError</span>((-<span class="num">1</span>).<span class="hid">tabs</span>);
+
+<span class="hid">Appender</span>!(<span class="type">char</span>[]) <span class="hid">sink</span>;
+<span class="hid">sink</span>.<span class="hid">formattedWrite</span>(<span class="str">&quot;%sHello world&quot;</span>, <span class="num">2</span>.<span class="hid">tabs</span>!<span class="num">2</span>);
+<span class="kwrd">assert</span>((<span class="hid">sink</span>[] == <span class="str">&quot;    Hello world&quot;</span>), <span class="hid">sink</span>[]);</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.string.html">string</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="lu.string.AdvanceException.html">AdvanceException</a></li><li><a class="class" href="lu.string.AdvanceExceptionImpl.html">AdvanceExceptionImpl</a></li></ul><span class="type-separator">enums</span><ul><li><a class="enum" href="lu.string.SplitResults.html">SplitResults</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="lu.string.advancePast.html">advancePast</a></li><li><a class="function" href="lu.string.decode64.html">decode64</a></li><li><a class="function" href="lu.string.encode64.html">encode64</a></li><li><a class="function" href="lu.string.escapeControlCharacters.html">escapeControlCharacters</a></li><li><a class="function" href="lu.string.indent.html">indent</a></li><li><a class="function" href="lu.string.indentInto.html">indentInto</a></li><li><a class="function" href="lu.string.plurality.html">plurality</a></li><li><a class="function" href="lu.string.removeControlCharacters.html">removeControlCharacters</a></li><li><a class="function" href="lu.string.replaceFromAA.html">replaceFromAA</a></li><li><a class="function" href="lu.string.splitInto.1.html">splitInto</a></li><li><a class="function" href="lu.string.splitLineAtPosition.html">splitLineAtPosition</a></li><li><a class="function" href="lu.string.splitWithQuotes.html">splitWithQuotes</a></li><li><a class="function" href="lu.string.stripSuffix.html">stripSuffix</a></li><li><a class="function" href="lu.string.stripped.1.html">stripped</a></li><li><a class="function" href="lu.string.strippedLeft.1.html">strippedLeft</a></li><li><a class="function" href="lu.string.strippedRight.1.html">strippedRight</a></li><li><a class="function current" href="lu.string.tabs.html">tabs</a></li><li><a class="function" href="lu.string.unenclosed.html">unenclosed</a></li><li><a class="function" href="lu.string.unquoted.html">unquoted</a></li><li><a class="function" href="lu.string.unsinglequoted.html">unsinglequoted</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

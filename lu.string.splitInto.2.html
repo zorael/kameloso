@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>splitInto (lu.string.splitInto)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>splitInto</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.string.html">string</a> </div><div><div class="documentation-comment synopsis"><div><p>Splits a string by a passed separator and assign the delimited words to the
+    passed ref strings. Overload that stores overflow strings into a passed array.</p><p>Note: *Does* take quoted substrings into consideration.</p></div></div></div><div class="annotated-prototype"><ol class="overloads"><li class="overload-option"><a href="lu.string.splitInto.1.html"><span class="overload-signature"><span class="lang-feature">auto</span>  <span class="name">splitInto</span>(string slice, Strings strings)</span></a></li><li class="active-overload-option"><span class="overload-signature"><span class="lang-feature">auto</span>  <span class="name">splitInto</span>(string slice, Strings strings, string[] overflow)</span><div class="function-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">splitInto</div><div class="template-parameters" data-count="2">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="builtin-type">string</span> <span class="name" data-ident="separator">separator</span> = &quot; &quot;</span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Strings">Strings</span>...</span></div></div>)</div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="slice"><a href="#param-slice">slice</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">ref</span> <span class="name" data-ident="Strings">Strings</span></span></span> <span class="parameter-name name" data-ident="strings"><a href="#param-strings">strings</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">out</span> <span class="builtin-type">string</span>[]</span></span> <span class="parameter-name name" data-ident="overflow"><a href="#param-overflow">overflow</a></span></div><span class="paren">)</span></div></div><div class="template-constraint"> <a class="lang-feature" href="http://dpldocs.info/template-constraints">if</a> (<div class="template-constraint-expression"><div class="oror-left">!<span class="name" data-ident="Strings">Strings.length</span> || </div><div class="oror-right"><span class="parenthetical-expression">(<span class="parenthetical-expression-contents"><div class="andand-left"><a class="lang-feature" href="http://dpldocs.info/is-expression">is</a>(<span class="name" data-ident="Strings">Strings</span>[0] == <span class="builtin-type">string</span>) &amp;&amp; </div><div class="andand-right"><span class="name" data-ident="allSameType">allSameType</span>!<span class="name" data-ident="Strings">Strings</span></div></span>)</span></div></div>)</div><div class="function-contracts"></div></div></li></ol></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-separator"><a class="parameter-name" data-ident="separator" href="#param-separator">separator</a></dt><dd><div class="documentation-comment"><div><p>Separator with which to delimit the input string into words.</p></div></div></dd><dt id="param-slice"><a class="parameter-name" data-ident="slice" href="#param-slice">slice</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>Input string of words separated by <tt class="inline-code">separator</tt>.</p></div></div></dd><dt id="param-strings"><a class="parameter-name" data-ident="strings" href="#param-strings">strings</a> <span class="parameter-type"><span class="name" data-ident="Strings">Strings</span></span></dt><dd><div class="documentation-comment"><div><p>Variadic list of ref strings to assign the split words in <tt class="inline-code">slice</tt>.</p></div></div></dd><dt id="param-overflow"><a class="parameter-name" data-ident="overflow" href="#param-overflow">overflow</a> <span class="parameter-type"><span class="builtin-type">string</span>[]</span></dt><dd><div class="documentation-comment"><div><p>Overflow array.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>A <a class="xref" href="lu.string.SplitResults.html">SplitResults</a> with the results of the split attempt.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted with-line-wrappers"><span class="br">1 </span><span class="kwrd">import</span> <span class="hid">lu</span>.<span class="hid">conv</span> : <span class="hid">Enum</span>;
+<span class="br">2 </span><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">conv</span> : <span class="hid">text</span>;
+<span class="br">3 </span>
+<span class="br">4 </span>{
+<span class="br">5 </span>    <span class="type">string</span> <span class="hid">line</span> = <span class="str">&quot;abc def ghi&quot;</span>;
+<span class="br">6 </span>    <span class="type">string</span> <span class="hid">abc</span>, <span class="hid">def</span>, <span class="hid">ghi</span>;
+<span class="br">7 </span>    <span class="type">string</span>[] <span class="hid">overflow</span>;
+<span class="br">8 </span>    <span class="kwrd">immutable</span> <span class="hid">results</span> = <span class="hid">line</span>.<span class="hid">splitInto</span>(<span class="hid">abc</span>, <span class="hid">def</span>, <span class="hid">ghi</span>, <span class="hid">overflow</span>);
+<span class="br">9 </span>
+<span class="br">10 </span>    <span class="kwrd">assert</span>((<span class="hid">abc</span> == <span class="str">&quot;abc&quot;</span>), <span class="hid">abc</span>);
+<span class="br">11 </span>    <span class="kwrd">assert</span>((<span class="hid">def</span> == <span class="str">&quot;def&quot;</span>), <span class="hid">def</span>);
+<span class="br">12 </span>    <span class="kwrd">assert</span>((<span class="hid">ghi</span> == <span class="str">&quot;ghi&quot;</span>), <span class="hid">ghi</span>);
+<span class="br">13 </span>    <span class="kwrd">assert</span>(!<span class="hid">overflow</span>.<span class="hid">length</span>, <span class="hid">overflow</span>.<span class="hid">text</span>);
+<span class="br">14 </span>    <span class="kwrd">assert</span>((<span class="hid">results</span> == <span class="hid">SplitResults</span>.<span class="hid">match</span>), <span class="hid">Enum</span>!<span class="hid">SplitResults</span>.<span class="hid">toString</span>(<span class="hid">results</span>));
+<span class="br">15 </span>}
+<span class="br">16 </span>{
+<span class="br">17 </span>    <span class="type">string</span> <span class="hid">line</span> = <span class="str">&quot;abc##def##ghi&quot;</span>;
+<span class="br">18 </span>    <span class="type">string</span> <span class="hid">abc</span>, <span class="hid">def</span>, <span class="hid">ghi</span>;
+<span class="br">19 </span>    <span class="type">string</span>[] <span class="hid">overflow</span>;
+<span class="br">20 </span>    <span class="kwrd">immutable</span> <span class="hid">results</span> = <span class="hid">line</span>.<span class="hid">splitInto</span>!<span class="str">&quot;##&quot;</span>(<span class="hid">abc</span>, <span class="hid">def</span>, <span class="hid">ghi</span>, <span class="hid">overflow</span>);
+<span class="br">21 </span>
+<span class="br">22 </span>    <span class="kwrd">assert</span>((<span class="hid">abc</span> == <span class="str">&quot;abc&quot;</span>), <span class="hid">abc</span>);
+<span class="br">23 </span>    <span class="kwrd">assert</span>((<span class="hid">def</span> == <span class="str">&quot;def&quot;</span>), <span class="hid">def</span>);
+<span class="br">24 </span>    <span class="kwrd">assert</span>((<span class="hid">ghi</span> == <span class="str">&quot;ghi&quot;</span>), <span class="hid">ghi</span>);
+<span class="br">25 </span>    <span class="kwrd">assert</span>(!<span class="hid">overflow</span>.<span class="hid">length</span>, <span class="hid">overflow</span>.<span class="hid">text</span>);
+<span class="br">26 </span>    <span class="kwrd">assert</span>((<span class="hid">results</span> == <span class="hid">SplitResults</span>.<span class="hid">match</span>), <span class="hid">Enum</span>!<span class="hid">SplitResults</span>.<span class="hid">toString</span>(<span class="hid">results</span>));
+<span class="br">27 </span>}
+<span class="br">28 </span>{
+<span class="br">29 </span>    <span class="type">string</span> <span class="hid">line</span> = <span class="str">&quot;abc  def  ghi&quot;</span>;
+<span class="br">30 </span>    <span class="type">string</span> <span class="hid">abc</span>, <span class="hid">def</span>, <span class="hid">ghi</span>;
+<span class="br">31 </span>    <span class="type">string</span>[] <span class="hid">overflow</span>;
+<span class="br">32 </span>    <span class="kwrd">immutable</span> <span class="hid">results</span> = <span class="hid">line</span>.<span class="hid">splitInto</span>(<span class="hid">abc</span>, <span class="hid">def</span>, <span class="hid">ghi</span>, <span class="hid">overflow</span>);
+<span class="br">33 </span>
+<span class="br">34 </span>    <span class="kwrd">assert</span>((<span class="hid">abc</span> == <span class="str">&quot;abc&quot;</span>), <span class="hid">abc</span>);
+<span class="br">35 </span>    <span class="kwrd">assert</span>((<span class="hid">def</span> == <span class="str">&quot;def&quot;</span>), <span class="hid">def</span>);
+<span class="br">36 </span>    <span class="kwrd">assert</span>((<span class="hid">ghi</span> == <span class="str">&quot;ghi&quot;</span>), <span class="hid">ghi</span>);
+<span class="br">37 </span>    <span class="kwrd">assert</span>(!<span class="hid">overflow</span>.<span class="hid">length</span>, <span class="hid">overflow</span>.<span class="hid">text</span>);
+<span class="br">38 </span>    <span class="kwrd">assert</span>((<span class="hid">results</span> == <span class="hid">SplitResults</span>.<span class="hid">match</span>), <span class="hid">Enum</span>!<span class="hid">SplitResults</span>.<span class="hid">toString</span>(<span class="hid">results</span>));
+<span class="br">39 </span>}
+<span class="br">40 </span>{
+<span class="br">41 </span>    <span class="type">string</span> <span class="hid">line</span> = <span class="str">&quot;abc_def ghi&quot;</span>;
+<span class="br">42 </span>    <span class="type">string</span> <span class="hid">abc</span>, <span class="hid">def</span>, <span class="hid">ghi</span>;
+<span class="br">43 </span>    <span class="type">string</span>[] <span class="hid">overflow</span>;
+<span class="br">44 </span>    <span class="kwrd">immutable</span> <span class="hid">results</span> = <span class="hid">line</span>.<span class="hid">splitInto</span>!<span class="str">&quot;_&quot;</span>(<span class="hid">abc</span>, <span class="hid">def</span>, <span class="hid">ghi</span>, <span class="hid">overflow</span>);
+<span class="br">45 </span>
+<span class="br">46 </span>    <span class="kwrd">assert</span>((<span class="hid">abc</span> == <span class="str">&quot;abc&quot;</span>), <span class="hid">abc</span>);
+<span class="br">47 </span>    <span class="kwrd">assert</span>((<span class="hid">def</span> == <span class="str">&quot;def ghi&quot;</span>), <span class="hid">def</span>);
+<span class="br">48 </span>    <span class="kwrd">assert</span>(!<span class="hid">ghi</span>.<span class="hid">length</span>, <span class="hid">ghi</span>);
+<span class="br">49 </span>    <span class="kwrd">assert</span>(!<span class="hid">overflow</span>.<span class="hid">length</span>, <span class="hid">overflow</span>.<span class="hid">text</span>);
+<span class="br">50 </span>    <span class="kwrd">assert</span>((<span class="hid">results</span> == <span class="hid">SplitResults</span>.<span class="hid">underrun</span>), <span class="hid">Enum</span>!<span class="hid">SplitResults</span>.<span class="hid">toString</span>(<span class="hid">results</span>));
+<span class="br">51 </span>}
+<span class="br">52 </span>{
+<span class="br">53 </span>    <span class="type">string</span> <span class="hid">line</span> = <span class="str">&quot;abc def ghi&quot;</span>;
+<span class="br">54 </span>    <span class="type">string</span> <span class="hid">abc</span>, <span class="hid">def</span>;
+<span class="br">55 </span>    <span class="type">string</span>[] <span class="hid">overflow</span>;
+<span class="br">56 </span>    <span class="kwrd">immutable</span> <span class="hid">results</span> = <span class="hid">line</span>.<span class="hid">splitInto</span>(<span class="hid">abc</span>, <span class="hid">def</span>, <span class="hid">overflow</span>);
+<span class="br">57 </span>
+<span class="br">58 </span>    <span class="kwrd">assert</span>((<span class="hid">abc</span> == <span class="str">&quot;abc&quot;</span>), <span class="hid">abc</span>);
+<span class="br">59 </span>    <span class="kwrd">assert</span>((<span class="hid">def</span> == <span class="str">&quot;def&quot;</span>), <span class="hid">def</span>);
+<span class="br">60 </span>    <span class="kwrd">assert</span>((<span class="hid">overflow</span> == [ <span class="str">&quot;ghi&quot;</span> ]), <span class="hid">overflow</span>.<span class="hid">text</span>);
+<span class="br">61 </span>    <span class="kwrd">assert</span>((<span class="hid">results</span> == <span class="hid">SplitResults</span>.<span class="hid">overrun</span>), <span class="hid">Enum</span>!<span class="hid">SplitResults</span>.<span class="hid">toString</span>(<span class="hid">results</span>));
+<span class="br">62 </span>}
+<span class="br">63 </span>{
+<span class="br">64 </span>    <span class="type">string</span> <span class="hid">line</span> = <span class="str">&quot;abc///def&quot;</span>;
+<span class="br">65 </span>    <span class="type">string</span> <span class="hid">abc</span>, <span class="hid">def</span>;
+<span class="br">66 </span>    <span class="type">string</span>[] <span class="hid">overflow</span>;
+<span class="br">67 </span>    <span class="kwrd">immutable</span> <span class="hid">results</span> = <span class="hid">line</span>.<span class="hid">splitInto</span>!<span class="str">&quot;//&quot;</span>(<span class="hid">abc</span>, <span class="hid">def</span>, <span class="hid">overflow</span>);
+<span class="br">68 </span>
+<span class="br">69 </span>    <span class="kwrd">assert</span>((<span class="hid">abc</span> == <span class="str">&quot;abc&quot;</span>), <span class="hid">abc</span>);
+<span class="br">70 </span>    <span class="kwrd">assert</span>((<span class="hid">def</span> == <span class="str">&quot;/def&quot;</span>), <span class="hid">def</span>);
+<span class="br">71 </span>    <span class="kwrd">assert</span>(!<span class="hid">overflow</span>.<span class="hid">length</span>, <span class="hid">overflow</span>.<span class="hid">text</span>);
+<span class="br">72 </span>    <span class="kwrd">assert</span>((<span class="hid">results</span> == <span class="hid">SplitResults</span>.<span class="hid">match</span>), <span class="hid">Enum</span>!<span class="hid">SplitResults</span>.<span class="hid">toString</span>(<span class="hid">results</span>));
+<span class="br">73 </span>}
+<span class="br">74 </span>{
+<span class="br">75 </span>    <span class="type">string</span> <span class="hid">line</span> = <span class="str">&quot;abc 123 def I am a fish&quot;</span>;
+<span class="br">76 </span>    <span class="type">string</span> <span class="hid">abc</span>, <span class="hid">a123</span>, <span class="hid">def</span>;
+<span class="br">77 </span>    <span class="type">string</span>[] <span class="hid">overflow</span>;
+<span class="br">78 </span>    <span class="kwrd">immutable</span> <span class="hid">results</span> = <span class="hid">line</span>.<span class="hid">splitInto</span>(<span class="hid">abc</span>, <span class="hid">a123</span>, <span class="hid">def</span>, <span class="hid">overflow</span>);
+<span class="br">79 </span>
+<span class="br">80 </span>    <span class="kwrd">assert</span>((<span class="hid">abc</span> == <span class="str">&quot;abc&quot;</span>), <span class="hid">abc</span>);
+<span class="br">81 </span>    <span class="kwrd">assert</span>((<span class="hid">a123</span> == <span class="str">&quot;123&quot;</span>), <span class="hid">a123</span>);
+<span class="br">82 </span>    <span class="kwrd">assert</span>((<span class="hid">def</span> == <span class="str">&quot;def&quot;</span>), <span class="hid">def</span>);
+<span class="br">83 </span>    <span class="kwrd">assert</span>((<span class="hid">overflow</span> == [ <span class="str">&quot;I&quot;</span>, <span class="str">&quot;am&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;fish&quot;</span> ]), <span class="hid">overflow</span>.<span class="hid">text</span>);
+<span class="br">84 </span>    <span class="kwrd">assert</span>((<span class="hid">results</span> == <span class="hid">SplitResults</span>.<span class="hid">overrun</span>), <span class="hid">Enum</span>!<span class="hid">SplitResults</span>.<span class="hid">toString</span>(<span class="hid">results</span>));
+<span class="br">85 </span>}
+<span class="br">86 </span>{
+<span class="br">87 </span>    <span class="type">string</span> <span class="hid">line</span> = <span class="str">`abc 123 def &quot;I am a fish&quot;`</span>;
+<span class="br">88 </span>    <span class="type">string</span> <span class="hid">abc</span>, <span class="hid">a123</span>, <span class="hid">def</span>;
+<span class="br">89 </span>    <span class="type">string</span>[] <span class="hid">overflow</span>;
+<span class="br">90 </span>    <span class="kwrd">immutable</span> <span class="hid">results</span> = <span class="hid">line</span>.<span class="hid">splitInto</span>(<span class="hid">abc</span>, <span class="hid">a123</span>, <span class="hid">def</span>, <span class="hid">overflow</span>);
+<span class="br">91 </span>
+<span class="br">92 </span>    <span class="kwrd">assert</span>((<span class="hid">abc</span> == <span class="str">&quot;abc&quot;</span>), <span class="hid">abc</span>);
+<span class="br">93 </span>    <span class="kwrd">assert</span>((<span class="hid">a123</span> == <span class="str">&quot;123&quot;</span>), <span class="hid">a123</span>);
+<span class="br">94 </span>    <span class="kwrd">assert</span>((<span class="hid">def</span> == <span class="str">&quot;def&quot;</span>), <span class="hid">def</span>);
+<span class="br">95 </span>    <span class="kwrd">assert</span>((<span class="hid">overflow</span> == [ <span class="str">&quot;I am a fish&quot;</span> ]), <span class="hid">overflow</span>.<span class="hid">text</span>);
+<span class="br">96 </span>    <span class="kwrd">assert</span>((<span class="hid">results</span> == <span class="hid">SplitResults</span>.<span class="hid">overrun</span>), <span class="hid">Enum</span>!<span class="hid">SplitResults</span>.<span class="hid">toString</span>(<span class="hid">results</span>));
+<span class="br">97 </span>}
+<span class="br">98 </span>{
+<span class="br">99 </span>    <span class="type">string</span> <span class="hid">line</span>;
+<span class="br">100 </span>    <span class="type">string</span> <span class="hid">abc</span>, <span class="hid">def</span>;
+<span class="br">101 </span>    <span class="type">string</span>[] <span class="hid">overflow</span>;
+<span class="br">102 </span>    <span class="kwrd">immutable</span> <span class="hid">results</span> = <span class="hid">line</span>.<span class="hid">splitInto</span>(<span class="hid">abc</span>, <span class="hid">def</span>, <span class="hid">overflow</span>);
+<span class="br">103 </span>    <span class="kwrd">assert</span>((<span class="hid">results</span> == <span class="hid">SplitResults</span>.<span class="hid">underrun</span>), <span class="hid">Enum</span>!<span class="hid">SplitResults</span>.<span class="hid">toString</span>(<span class="hid">results</span>));
+<span class="br">104 </span>}
+<span class="br">105 </span>{
+<span class="br">106 </span>    <span class="type">string</span> <span class="hid">line</span> = <span class="str">&quot;abchonkelonkhonkelodef&quot;</span>;
+<span class="br">107 </span>    <span class="type">string</span> <span class="hid">abc</span>, <span class="hid">def</span>;
+<span class="br">108 </span>    <span class="type">string</span>[] <span class="hid">overflow</span>;
+<span class="br">109 </span>    <span class="kwrd">immutable</span> <span class="hid">results</span> = <span class="hid">line</span>.<span class="hid">splitInto</span>!<span class="str">&quot;honkelonk&quot;</span>(<span class="hid">abc</span>, <span class="hid">def</span>, <span class="hid">overflow</span>);
+<span class="br">110 </span>
+<span class="br">111 </span>    <span class="kwrd">assert</span>((<span class="hid">abc</span> == <span class="str">&quot;abc&quot;</span>), <span class="hid">abc</span>);
+<span class="br">112 </span>    <span class="kwrd">assert</span>((<span class="hid">def</span> == <span class="str">&quot;honkelodef&quot;</span>), <span class="hid">def</span>);
+<span class="br">113 </span>    <span class="kwrd">assert</span>(!<span class="hid">overflow</span>.<span class="hid">length</span>, <span class="hid">overflow</span>.<span class="hid">text</span>);
+<span class="br">114 </span>    <span class="kwrd">assert</span>((<span class="hid">results</span> == <span class="hid">SplitResults</span>.<span class="hid">match</span>), <span class="hid">Enum</span>!<span class="hid">SplitResults</span>.<span class="hid">toString</span>(<span class="hid">results</span>));
+<span class="br">115 </span>}
+<span class="br">116 </span>{
+<span class="br">117 </span>    <span class="type">string</span> <span class="hid">line</span> = <span class="str">&quot;honkelonkhonkelodef&quot;</span>;
+<span class="br">118 </span>    <span class="type">string</span> <span class="hid">abc</span>, <span class="hid">def</span>;
+<span class="br">119 </span>    <span class="type">string</span>[] <span class="hid">overflow</span>;
+<span class="br">120 </span>    <span class="kwrd">immutable</span> <span class="hid">results</span> = <span class="hid">line</span>.<span class="hid">splitInto</span>!<span class="str">&quot;honkelonk&quot;</span>(<span class="hid">abc</span>, <span class="hid">def</span>, <span class="hid">overflow</span>);
+<span class="br">121 </span>
+<span class="br">122 </span>    <span class="kwrd">assert</span>((<span class="hid">abc</span> == <span class="str">&quot;honkelodef&quot;</span>), <span class="hid">abc</span>);
+<span class="br">123 </span>    <span class="kwrd">assert</span>((<span class="hid">def</span> == <span class="type">string</span>.<span class="hid">init</span>), <span class="hid">def</span>);
+<span class="br">124 </span>    <span class="kwrd">assert</span>(!<span class="hid">overflow</span>.<span class="hid">length</span>, <span class="hid">overflow</span>.<span class="hid">text</span>);
+<span class="br">125 </span>    <span class="kwrd">assert</span>((<span class="hid">results</span> == <span class="hid">SplitResults</span>.<span class="hid">underrun</span>), <span class="hid">Enum</span>!<span class="hid">SplitResults</span>.<span class="hid">toString</span>(<span class="hid">results</span>));
+<span class="br">126 </span>}
+<span class="br">127 </span>{
+<span class="br">128 </span>    <span class="type">string</span> <span class="hid">line</span> = <span class="str">&quot;###########hirrsteff#snabel&quot;</span>;
+<span class="br">129 </span>    <span class="type">string</span> <span class="hid">abc</span>, <span class="hid">def</span>;
+<span class="br">130 </span>    <span class="type">string</span>[] <span class="hid">overflow</span>;
+<span class="br">131 </span>    <span class="kwrd">immutable</span> <span class="hid">results</span> = <span class="hid">line</span>.<span class="hid">splitInto</span>!<span class="str">&quot;#&quot;</span>(<span class="hid">abc</span>, <span class="hid">def</span>, <span class="hid">overflow</span>);
+<span class="br">132 </span>
+<span class="br">133 </span>    <span class="kwrd">assert</span>((<span class="hid">abc</span> == <span class="str">&quot;hirrsteff&quot;</span>), <span class="hid">abc</span>);
+<span class="br">134 </span>    <span class="kwrd">assert</span>((<span class="hid">def</span> == <span class="str">&quot;snabel&quot;</span>), <span class="hid">def</span>);
+<span class="br">135 </span>    <span class="kwrd">assert</span>(!<span class="hid">overflow</span>.<span class="hid">length</span>, <span class="hid">overflow</span>.<span class="hid">text</span>);
+<span class="br">136 </span>    <span class="kwrd">assert</span>((<span class="hid">results</span> == <span class="hid">SplitResults</span>.<span class="hid">match</span>), <span class="hid">Enum</span>!<span class="hid">SplitResults</span>.<span class="hid">toString</span>(<span class="hid">results</span>));
+<span class="br">137 </span>}
+<span class="br">138 </span>{
+<span class="br">139 </span>    <span class="type">string</span> <span class="hid">line</span> = <span class="str">&quot;abc def ghi&quot;</span>;
+<span class="br">140 </span>    <span class="type">string</span>[] <span class="hid">overflow</span>;
+<span class="br">141 </span>    <span class="kwrd">immutable</span> <span class="hid">results</span> = <span class="hid">line</span>.<span class="hid">splitInto</span>(<span class="hid">overflow</span>);
+<span class="br">142 </span>    <span class="kwrd">immutable</span> <span class="hid">expectedOverflow</span> = [ <span class="str">&quot;abc&quot;</span>, <span class="str">&quot;def&quot;</span>, <span class="str">&quot;ghi&quot;</span> ];
+<span class="br">143 </span>
+<span class="br">144 </span>    <span class="kwrd">assert</span>((<span class="hid">overflow</span> == <span class="hid">expectedOverflow</span>), <span class="hid">overflow</span>.<span class="hid">text</span>);
+<span class="br">145 </span>    <span class="kwrd">assert</span>((<span class="hid">results</span> == <span class="hid">SplitResults</span>.<span class="hid">overrun</span>), <span class="hid">Enum</span>!<span class="hid">SplitResults</span>.<span class="hid">toString</span>(<span class="hid">results</span>));
+<span class="br">146 </span>}</pre></div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="lu.string.SplitResults.html">SplitResults</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.string.html">string</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="lu.string.AdvanceException.html">AdvanceException</a></li><li><a class="class" href="lu.string.AdvanceExceptionImpl.html">AdvanceExceptionImpl</a></li></ul><span class="type-separator">enums</span><ul><li><a class="enum" href="lu.string.SplitResults.html">SplitResults</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="lu.string.advancePast.html">advancePast</a></li><li><a class="function" href="lu.string.decode64.html">decode64</a></li><li><a class="function" href="lu.string.encode64.html">encode64</a></li><li><a class="function" href="lu.string.escapeControlCharacters.html">escapeControlCharacters</a></li><li><a class="function" href="lu.string.indent.html">indent</a></li><li><a class="function" href="lu.string.indentInto.html">indentInto</a></li><li><a class="function" href="lu.string.plurality.html">plurality</a></li><li><a class="function" href="lu.string.removeControlCharacters.html">removeControlCharacters</a></li><li><a class="function" href="lu.string.replaceFromAA.html">replaceFromAA</a></li><li><a class="function current" href="lu.string.splitInto.1.html">splitInto</a></li><li><a class="function" href="lu.string.splitLineAtPosition.html">splitLineAtPosition</a></li><li><a class="function" href="lu.string.splitWithQuotes.html">splitWithQuotes</a></li><li><a class="function" href="lu.string.stripSuffix.html">stripSuffix</a></li><li><a class="function" href="lu.string.stripped.1.html">stripped</a></li><li><a class="function" href="lu.string.strippedLeft.1.html">strippedLeft</a></li><li><a class="function" href="lu.string.strippedRight.1.html">strippedRight</a></li><li><a class="function" href="lu.string.tabs.html">tabs</a></li><li><a class="function" href="lu.string.unenclosed.html">unenclosed</a></li><li><a class="function" href="lu.string.unquoted.html">unquoted</a></li><li><a class="function" href="lu.string.unsinglequoted.html">unsinglequoted</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

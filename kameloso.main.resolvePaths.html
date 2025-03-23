@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>resolvePaths (kameloso.main.resolvePaths)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>resolvePaths</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.main.html">main</a> </div><div><div class="documentation-comment synopsis"><div><p>Resolves resource directory private key/certificate file paths semi-verbosely.</p><p>This is called after settings have been verified, before plugins are initialised.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">private @<span class="name" data-ident="safe">safe</span> </div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">resolvePaths</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="1"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><a class="name" data-ident="Kameloso" href="kameloso.kameloso.Kameloso.html" title="kameloso.kameloso.Kameloso">Kameloso</a></span></span> <span class="parameter-name name" data-ident="instance"><a href="#param-instance">instance</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-instance"><a class="parameter-name" data-ident="instance" href="#param-instance">instance</a> <span class="parameter-type"><a class="xref" href="kameloso.kameloso.Kameloso.html" title="kameloso.kameloso.Kameloso"><span class="name" data-ident="Kameloso">Kameloso</span></a></span></dt><dd><div class="documentation-comment"><div><p>The current <a class="xref" href="kameloso.kameloso.Kameloso.html">Kameloso</a> instance.</p></div></div></dd></dl></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.main.html">main</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.main.checkInitialisationMessages.html">checkInitialisationMessages</a></li><li><a class="function" href="kameloso.main.echoQuitMessage.html">echoQuitMessage</a></li><li><a class="function" href="kameloso.main.listenAttemptToNext.html">listenAttemptToNext</a></li><li><a class="function" href="kameloso.main.logPluginActionException.html">logPluginActionException</a></li><li><a class="function" href="kameloso.main.mainLoop.html">mainLoop</a></li><li><a class="function" href="kameloso.main.postInstanceSetup.html">postInstanceSetup</a></li><li><a class="function" href="kameloso.main.prettyprintStartScreen.html">prettyprintStartScreen</a></li><li><a class="function" href="kameloso.main.printEventDebugDetails.html">printEventDebugDetails</a></li><li><a class="function" href="kameloso.main.printSummary.html">printSummary</a></li><li><a class="function" href="kameloso.main.processAwaitingDelegates.html">processAwaitingDelegates</a></li><li><a class="function" href="kameloso.main.processAwaitingFibers.html">processAwaitingFibers</a></li><li><a class="function" href="kameloso.main.processDeferredActions.html">processDeferredActions</a></li><li><a class="function" href="kameloso.main.processLineFromServer.html">processLineFromServer</a></li><li><a class="function" href="kameloso.main.processMessages.html">processMessages</a></li><li><a class="function" href="kameloso.main.processPendingReplays.html">processPendingReplays</a></li><li><a class="function" href="kameloso.main.processReadyReplays.html">processReadyReplays</a></li><li><a class="function" href="kameloso.main.processScheduledDelegates.html">processScheduledDelegates</a></li><li><a class="function" href="kameloso.main.processScheduledFibers.html">processScheduledFibers</a></li><li><a class="function" href="kameloso.main.resetSignals.html">resetSignals</a></li><li><a class="function" href="kameloso.main.resolve.html">resolve</a></li><li><a class="function current" href="kameloso.main.resolvePaths.html">resolvePaths</a></li><li><a class="function" href="kameloso.main.run.html">run</a></li><li><a class="function" href="kameloso.main.sendLines.html">sendLines</a></li><li><a class="function" href="kameloso.main.setDefaultDirectories.html">setDefaultDirectories</a></li><li><a class="function" href="kameloso.main.setupSignals.html">setupSignals</a></li><li><a class="function" href="kameloso.main.signalHandler.html">signalHandler</a></li><li><a class="function" href="kameloso.main.startBot.html">startBot</a></li><li><a class="function" href="kameloso.main.tryConnect.html">tryConnect</a></li><li><a class="function" href="kameloso.main.tryGetopt.html">tryGetopt</a></li><li><a class="function" href="kameloso.main.verifySettings.html">verifySettings</a></li></ul><span class="type-separator">manifest constants</span><ul><li><a class="manifest-constant" href="kameloso.main.gcOptions.html">gcOptions</a></li></ul><span class="type-separator">static variables</span><ul><li><a class="static-variable" href="kameloso.main.rt_options.html">rt_options</a></li></ul><span class="type-separator">variables</span><ul><li><a class="variable" href="kameloso.main.signalRaised.html">signalRaised</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
