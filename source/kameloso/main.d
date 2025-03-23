@@ -3295,12 +3295,6 @@ auto verifySettings(Kameloso instance)
             logger.error("Invalid nickname!");
             return Next.returnFailure;
         }
-
-        /*if (!instance.coreSettings.prefix.length)
-        {
-            logger.error("No prefix configured!");
-            return Next.returnFailure;
-        }*/
     }
 
     // No point having these checks be bypassable with --force
@@ -3309,38 +3303,10 @@ auto verifySettings(Kameloso instance)
         logger.error("Message rate must be a number greater than zero!");
         return Next.returnFailure;
     }
-    else if (instance.connSettings.messageBurst <= 0)
+
+    if (instance.connSettings.messageBurst <= 0)
     {
         logger.error("Message burst must be a number greater than zero!");
-        return Next.returnFailure;
-    }
-
-    version(Posix)
-    {
-        import std.algorithm.searching : canFind;
-
-        // Workaround for Issue 19247:
-        // Segmentation fault when resolving address with std.socket.getAddress inside a Fiber
-        // the workaround being never resolve addresses that don't contain at least one dot
-        immutable addressIsResolvable =
-            instance.coreSettings.force ||
-            instance.parser.server.address == "localhost" ||
-            instance.parser.server.address.canFind('.', ':');
-    }
-    else version(Windows)
-    {
-        // On Windows this doesn't happen, so allow all addresses.
-        enum addressIsResolvable = true;
-    }
-    else
-    {
-        static assert(0, "Unsupported platform, please file a bug.");
-    }
-
-    if (!addressIsResolvable)
-    {
-        enum pattern = "Invalid address! [<l>%s</>]";
-        logger.errorf(pattern, instance.parser.server.address);
         return Next.returnFailure;
     }
 
