@@ -1786,6 +1786,11 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
             undelay(service);
             break;
 
+        case RPL_WELCOME:
+            // This can actually happen when you resume from suspend
+            // "Impossible case hit in pingMonitorDg: RPL_WELCOME"
+            return;
+
         default:
             import lu.conv : toString;
             assert(0, "Impossible case hit in pingMonitorDg: " ~ thisEvent.type.toString);
