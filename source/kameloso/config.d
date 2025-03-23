@@ -1028,9 +1028,46 @@ auto handleGetopt(Kameloso instance) @system
     // Manually override or append channels, depending on `shouldAppendChannels`
     if (shouldAppendToArrays)
     {
-        if (inputHomeChannels.length) instance.bot.homeChannels ~= inputHomeChannels;
-        if (inputGuestChannels.length) instance.bot.guestChannels ~= inputGuestChannels;
-        if (inputAdmins.length) instance.bot.admins ~= inputAdmins;
+        static auto hasClearingDash(const string[] arr)
+        {
+            return (arr.length == 1) && (arr[0] == "-");
+        }
+
+        if (inputHomeChannels.length)
+        {
+            if (hasClearingDash(inputHomeChannels))
+            {
+                instance.bot.homeChannels = null;
+            }
+            else
+            {
+                instance.bot.homeChannels ~= inputHomeChannels;
+            }
+        }
+
+        if (inputGuestChannels.length)
+        {
+            if (hasClearingDash(inputGuestChannels))
+            {
+                instance.bot.guestChannels = null;
+            }
+            else
+            {
+                instance.bot.guestChannels ~= inputGuestChannels;
+            }
+        }
+
+        if (inputAdmins.length)
+        {
+            if (hasClearingDash(inputAdmins))
+            {
+                instance.bot.admins = null;
+            }
+            else
+            {
+                instance.bot.admins ~= inputAdmins;
+            }
+        }
     }
     else
     {
