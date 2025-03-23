@@ -139,6 +139,8 @@ private auto handleRetryDelegateException(
     const bool endlessly,
     const bool headless)
 {
+    import asdf : SerdeException;
+
     if (auto e = cast(MissingBroadcasterTokenException)base)
     {
         // This is never a transient error
@@ -147,6 +149,11 @@ private auto handleRetryDelegateException(
     else if (auto e = cast(InvalidCredentialsException)base)
     {
         // Neither is this
+        throw e;
+    }
+    else if (auto e = cast(SerdeException)base)
+    {
+        // Nor this
         throw e;
     }
     else if (auto e = cast(EmptyDataJSONException)base)
@@ -293,9 +300,59 @@ in (Fiber.getThis(), "Tried to call `getChatters` from outside a fiber")
 in (broadcaster.length, "Tried to get chatters with an empty broadcaster string")
 {
     import std.conv : text;
-    import std.json : parseJSON;
 
-    static struct Chatters
+    static struct Response
+    {
+        private import asdf : serdeIgnore;
+
+        static struct ChattersArray
+        {
+            string[] broadcaster;
+            string[] vips;
+            string[] moderators;
+            string[] staff;
+            string[] admins;
+            string[] global_mods;
+            string[] viewers;
+        }
+
+        /*
+        {
+            "_links": {},
+            "chatter_count": 93,
+            "chatters": {
+                "broadcaster": [
+                    "streamernick"
+                ],
+                "vips": [],
+                "moderators": [
+                    "somemod"
+                ],
+                "staff": [],
+                "admins": [],
+                "global_mods": [],
+                "viewers": [
+                    "abc",
+                    "def",
+                    "ghi"
+                ]
+            }
+        }
+         */
+
+        @serdeIgnore enum _links = false;
+        uint chatter_count;
+        ChattersArray chatters;
+    }
+
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
+
+    static struct GetChattersResults
     {
         private import std.json : JSONValue;
 
@@ -312,35 +369,24 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
         auto success() const { return (code == 200); }
 
-        this(const uint code) { this.code = code; }
-
-        this(const uint code, const string error)
+        this(const uint code, /*const*/ Response response)
         {
             this.code = code;
-            this.error = error;
+            this.broadcaster = response.chatters.broadcaster[0];
+            this.moderators = response.chatters.moderators;
+            this.vips = response.chatters.vips;
+            this.staff = response.chatters.staff;
+            this.admins = response.chatters.admins;
+            this.globalMods = response.chatters.global_mods;
+            this.viewers = response.chatters.viewers;
+            this.chatterCount = response.chatter_count;
         }
 
-        this(const uint code, const JSONValue json)
+        this(const uint code, const ErrorResponse errorResponse)
         {
-            static auto mapJSONArrayToStringArray(const JSONValue json)
-            {
-                import std.algorithm.iteration : map;
-                import std.array : array;
-
-                return json.array
-                    .map!(a => a.str)
-                    .array;
-            }
-
             this.code = code;
-            this.broadcaster = json["broadcster"].array[0].str;
-            this.moderators = mapJSONArrayToStringArray(json["moderators"]);
-            this.vips = mapJSONArrayToStringArray(json["vips"]);
-            this.staff = mapJSONArrayToStringArray(json["staff"]);
-            this.admins = mapJSONArrayToStringArray(json["admins"]);
-            this.globalMods = mapJSONArrayToStringArray(json["global_mods"]);
-            this.viewers = mapJSONArrayToStringArray(json["viewers"]);
-            this.chatterCount = cast(uint)json["chatter_count"].integer;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
         }
     }
 
@@ -348,16 +394,27 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
     auto getChattersDg()
     {
-        immutable response = sendHTTPRequest(
+        import asdf : deserialize;
+
+        immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
             url: chattersURL,
             caller: caller,
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID);
 
-        immutable responseJSON = parseJSON(response.body);
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
+        }
 
-        switch (response.code)
+        switch (httpResponse.code)
         {
         case 200:
             // 200 OK
@@ -398,58 +455,12 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
             goto default;
 
         default:
-            version(PrintStacktraces)
-            {
-                writeln(response.code);
-                writeln(responseJSON.toPrettyString);
-                printStacktrace();
-            }
-
-            if (immutable errorJSON = "error" in responseJSON)
-            {
-                return Chatters(response.code, errorJSON.str);
-            }
-            else
-            {
-                return Chatters(response.code);
-            }
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return GetChattersResults(httpResponse.code, errorResponse);
         }
 
-        /*
-        {
-            "_links": {},
-            "chatter_count": 93,
-            "chatters": {
-                "broadcaster": [
-                    "streamernick"
-                ],
-                "vips": [],
-                "moderators": [
-                    "somemod"
-                ],
-                "staff": [],
-                "admins": [],
-                "global_mods": [],
-                "viewers": [
-                    "abc",
-                    "def",
-                    "ghi"
-                ]
-            }
-        }
-         */
-
-        immutable chattersJSON = "chatters" in responseJSON;
-
-        if (!chattersJSON)
-        {
-            // For some reason we received an object that didn't contain chatters
-            enum message = "`getChatters` response has unexpected JSON " ~
-                `(no "chatters" key)`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        return Chatters(response.code, *chattersJSON);
+        auto response = httpResponse.body.deserialize!Response;
+        return GetChattersResults(httpResponse.code, response);
     }
 
     return retryDelegate(plugin, &getChattersDg);
@@ -488,79 +499,56 @@ auto getValidation(
 in (Fiber.getThis(), "Tried to call `getValidation` from outside a fiber")
 in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
-    import std.algorithm.searching : startsWith;
-    import std.json : JSONValue, parseJSON;
+    import asdf : deserialize;
+    import std.algorithm.searching : canFind, startsWith;
 
-    static struct ValidationResults
+    static struct Response
     {
-        private import core.time : Duration, seconds;
+        private import asdf : serdeIgnore;
 
-        uint code;
-        //string error;
-        string clientID;
-        string login;
-        ulong userID;
-        Duration expiresIn;
-
-        auto success() const { return (code == 200); }
-
-        this(const uint code) { this.code = code; }
-
-        /*this(const uint code, const string error)
+        /*
         {
-            this.code = code;
-            this.error = error;
-        }*/
-
-        this(const uint code, const JSONValue json)
-        {
-            import std.conv : to;
-
-            /*
-            {
-                "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
-                "expires_in": 5114683,
-                "login": "mechawob",
-                "scopes": [
-                    "channel:moderate",
-                    "chat:edit",
-                    "chat:read",
-                    "moderation:read",
-                    "moderator:manage:announcements",
-                    "moderator:manage:automod",
-                    "moderator:manage:automod_settings",
-                    "moderator:manage:banned_users",
-                    "moderator:manage:blocked_terms",
-                    "moderator:manage:chat_messages",
-                    "moderator:manage:chat_settings",
-                    "moderator:manage:shield_mode",
-                    "moderator:manage:shoutouts",
-                    "moderator:manage:unban_requests",
-                    "moderator:manage:warnings",
-                    "moderator:read:chatters",
-                    "moderator:read:followers",
-                    "user:manage:whispers",
-                    "user:read:follows",
-                    "user:read:subscriptions",
-                    "user:write:chat",
-                    "whispers:edit",
-                    "whispers:read"
-                ],
-                "user_id": "790938342"
-            }
-             */
-
-            this.code = code;
-            this.clientID = json["client_id"].str;
-            this.login = json["login"].str;
-            this.userID = json["user_id"].str.to!ulong;
-            this.expiresIn = json["expires_in"].integer.seconds;
+            "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+            "expires_in": 5114683,
+            "login": "mechawob",
+            "scopes": [
+                "channel:moderate",
+                "chat:edit",
+                "chat:read",
+                "moderation:read",
+                "moderator:manage:announcements",
+                "moderator:manage:automod",
+                "moderator:manage:automod_settings",
+                "moderator:manage:banned_users",
+                "moderator:manage:blocked_terms",
+                "moderator:manage:chat_messages",
+                "moderator:manage:chat_settings",
+                "moderator:manage:shield_mode",
+                "moderator:manage:shoutouts",
+                "moderator:manage:unban_requests",
+                "moderator:manage:warnings",
+                "moderator:read:chatters",
+                "moderator:read:followers",
+                "user:manage:whispers",
+                "user:read:follows",
+                "user:read:subscriptions",
+                "user:write:chat",
+                "whispers:edit",
+                "whispers:read"
+            ],
+            "user_id": "790938342"
         }
+         */
+
+        string client_id;
+        ulong expires_in;
+        string login;
+        @serdeIgnore string[] scopes;
+        string user_id;
     }
 
-    auto throwIfHasErrorKey(const JSONValue json)
+    static struct ErrorResponse
     {
-        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
         /*
         {
             "error": "Unauthorized",
@@ -569,28 +557,40 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         }
          */
 
-        const errorJSON = "error" in json;
-        if (!errorJSON) return;
+        string error;
+        string message;
+        uint status;
+    }
 
-        const statusJSON = "status" in *errorJSON;
-        if (!statusJSON) return;
+    static struct ValidationResults
+    {
+        private import core.time : Duration, seconds;
 
-        if (statusJSON.integer == 401)
+        uint code;
+        string error;
+        string clientID;
+        string login;
+        ulong userID;
+        Duration expiresIn;
+
+        auto success() const { return (code == 200); }
+
+        this(const uint code, const Response response)
         {
-            switch ((*errorJSON)["message"].str)
-            {
-            case "invalid access token":
-                enum message = "API token has expired";
-                throw new InvalidCredentialsException(message, *errorJSON);
+            import std.conv : to;
 
-            case "missing authorization token":
-                enum message = "Missing API token";
-                throw new InvalidCredentialsException(message, *errorJSON);
+            this.code = code;
+            this.clientID = response.client_id;
+            this.login = response.login;
+            this.userID = response.user_id.to!ulong;
+            this.expiresIn = response.expires_in.seconds;
+        }
 
-            default:
-                //drop down
-                break;
-            }
+        this(const uint code, const ErrorResponse errorResponse)
+        {
+            this.code = code;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
         }
     }
 
@@ -605,11 +605,11 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
     auto getValidationDg()
     {
-        HTTPQueryResponse response;
+        HTTPQueryResponse httpResponse;
 
         if (async)
         {
-            response = sendHTTPRequest(
+            httpResponse = sendHTTPRequest(
                 plugin: plugin,
                 url: url,
                 caller: caller,
@@ -632,35 +632,60 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
                 authorisationHeader: authorisationHeader        ,
                 caBundleFile: plugin.state.connSettings.caBundleFile);
 
-            response = issueSyncHTTPRequest(request);
+            httpResponse = issueSyncHTTPRequest(request);
 
-            if (response.exceptionText.length || (response.code < 10))
+            if (httpResponse.exceptionText.length || (httpResponse.code < 10))
             {
                 throw new HTTPQueryException(
-                    response.exceptionText,
-                    response.body,
-                    response.error,
-                    response.code);
+                    httpResponse.exceptionText,
+                    httpResponse.body,
+                    httpResponse.error,
+                    httpResponse.code);
             }
-            else if (response == HTTPQueryResponse.init)
+            else if (httpResponse == HTTPQueryResponse.init)
             {
                 import kameloso.net : EmptyResponseException;
                 throw new EmptyResponseException;
             }
         }
 
-        immutable responseJSON = parseJSON(response.body);
-
-        throwIfHasErrorKey(responseJSON);
-
-        if ("client_id" !in responseJSON)
+        version(PrintStacktraces)
         {
-            enum message = "`getValidation` response has unexpected JSON " ~
-                `(no "client_id" key)`;
-            throw new UnexpectedJSONException(message, responseJSON);
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
         }
 
-        return ValidationResults(response.code, responseJSON);
+        if (httpResponse.body.canFind(`"error"`))
+        {
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+
+            switch (errorResponse.message)
+            {
+            case "invalid access token":
+                enum message = "API token has expired";
+                throw new InvalidCredentialsException(message);
+
+            case "missing authorization token":
+                enum message = "Missing API token";
+                throw new InvalidCredentialsException(message);
+
+            default:
+                //drop down
+                break;
+            }
+
+            return ValidationResults(httpResponse.code, errorResponse);
+        }
+        else
+        {
+            const response = httpResponse.body.deserialize!Response;
+            return ValidationResults(httpResponse.code, response);
+        }
     }
 
     return retryDelegate(plugin, &getValidationDg, async: true, endlessly: true);
@@ -695,8 +720,55 @@ auto getFollowers(
 in (Fiber.getThis(), "Tried to call `getFollowers` from outside a fiber")
 in (id, "Tried to get followers with an unset ID")
 {
+    import asdf : deserialize;
     import std.conv : text, to;
-    import std.json : parseJSON;
+    import core.memory : GC;
+
+    static struct Response
+    {
+        static struct Follower
+        {
+            string user_id;
+            string user_name;
+            string user_login;
+            string followed_at;
+        }
+
+        static struct Pagination
+        {
+            private import asdf : serdeOptional;
+            @serdeOptional string cursor;
+        }
+
+        /*
+        {
+            "total": 8
+            "data": [
+                {
+                "user_id": "11111",
+                "user_name": "UserDisplayName",
+                "user_login": "userloginname",
+                "followed_at": "2022-05-24T22:22:08Z",
+                },
+                ...
+            ],
+            "pagination": {
+                "cursor": "eyJiIjpudWxsLCJhIjp7Ik9mZnNldCI6NX19"
+            }
+        }
+         */
+
+        uint total;
+        Follower[] data;
+        Pagination pagination;
+    }
+
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
 
     static struct GetFollowersResults
     {
@@ -706,18 +778,17 @@ in (id, "Tried to get followers with an unset ID")
 
         auto success() const { return (code == 200); }
 
-        this(const uint code) { this.code = code; }
-
-        this(const uint code, const string error)
-        {
-            this.code = code;
-            this.error = error;
-        }
-
         this(const uint code, /*const*/ Follower[string] followers)
         {
             this.code = code;
             this.followers = followers;
+        }
+
+        this(const uint code, const ErrorResponse errorResponse)
+        {
+            this.code = code;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
         }
     }
 
@@ -730,22 +801,34 @@ in (id, "Tried to get followers with an unset ID")
 
     auto getFollowersDg()
     {
+        GC.disable();
+        scope(exit) GC.enable();
+
         do
         {
             immutable paginatedURL = after.length ?
                 text(url, "&after=", after) :
                 url;
 
-            immutable response = sendHTTPRequest(
+            immutable httpResponse = sendHTTPRequest(
                 plugin: plugin,
                 url: paginatedURL,
                 caller: caller,
                 authorisationHeader: plugin.transient.authorizationBearer, //authorizationBearer,
                 clientID: TwitchPlugin.clientID);
 
-            immutable responseJSON = parseJSON(response.body);
+            version(PrintStacktraces)
+            {
+                scope(failure)
+                {
+                    import std.json : parseJSON;
+                    writeln(httpResponse.code);
+                    writeln(httpResponse.body.parseJSON.toPrettyString);
+                    printStacktrace();
+                }
+            }
 
-            switch (response.code)
+            switch (httpResponse.code)
             {
             case 200:
                 // 200 OK
@@ -782,21 +865,8 @@ in (id, "Tried to get followers with an unset ID")
                 goto default;
 
             default:
-                version(PrintStacktraces)
-                {
-                    writeln(response.code);
-                    writeln(responseJSON.toPrettyString);
-                    printStacktrace();
-                }
-
-                if (immutable errorJSON = "error" in responseJSON)
-                {
-                    return GetFollowersResults(response.code, errorJSON.str);
-                }
-                else
-                {
-                    return GetFollowersResults(response.code);
-                }
+                const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+                return GetFollowersResults(httpResponse.code, errorResponse);
             }
 
             /*
@@ -817,45 +887,23 @@ in (id, "Tried to get followers with an unset ID")
             }
              */
 
-            responseCode = response.code;
+            const response = httpResponse.body.deserialize!Response;
+            responseCode = httpResponse.code;
 
-            immutable dataJSON = "data" in responseJSON;
-
-            if (!dataJSON)
+            foreach (entry; response.data)
             {
-                enum message = "`getFollowers` response has unexpected JSON " ~
-                    `(no "data" key)`;
-                throw new UnexpectedJSONException(message, responseJSON);
+                import std.conv : to;
+                import std.datetime.systime : SysTime;
+
+                Follower follower;
+                follower.id = entry.user_id.to!ulong;
+                follower.displayName = entry.user_name;
+                follower.login = entry.user_login;
+                follower.when = SysTime.fromISOExtString(entry.followed_at);
+                followers[entry.user_name] = follower;
             }
 
-            if (!dataJSON.array.length)
-            {
-                // No followers
-                return GetFollowersResults(response.code, followers);
-            }
-
-            foreach (followerJSON; dataJSON.array)
-            {
-                /*
-                "data": [
-                    {
-                    "user_id": "11111",
-                    "user_name": "UserDisplayName",
-                    "user_login": "userloginname",
-                    "followed_at": "2022-05-24T22:22:08Z",
-                    },
-                    ...
-                ]
-                 */
-                immutable key = followerJSON["user_name"].str;
-                followers[key] = Follower(followerJSON);
-            }
-
-            immutable cursor = "cursor" in responseJSON["pagination"];
-
-            after = cursor ?
-                cursor.str :
-                string.init;
+            after = response.pagination.cursor;
         }
         while (after.length);
 
@@ -901,8 +949,59 @@ in (Fiber.getThis(), "Tried to call `getUser` from outside a fiber")
 in ((name.length || id),
     "Tried to get Twitch user without supplying a name nor an ID")
 {
+    import asdf : deserialize;
     import std.conv : to;
-    import std.json : parseJSON;
+
+    static struct Response
+    {
+        static struct User
+        {
+            string id;
+            string login;
+            string display_name;
+
+            @serdeIgnore
+            {
+                string type;
+                string broadcaster_type;
+                string description;
+                enum profile_image_url = false;
+                enum offline_image_url = false;
+                ulong view_count;
+                string email;
+                string created_at;
+            }
+        }
+
+        /*
+        {
+            "data": [
+                {
+                    "id": "141981764",
+                    "login": "twitchdev",
+                    "display_name": "TwitchDev",
+                    "type": "",
+                    "broadcaster_type": "partner",
+                    "description": "Supporting third-party developers building Twitch integrations from chatbots to game integrations.",
+                    "profile_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/8a6381c7-d0c0-4576-b179-38bd5ce1d6af-profile_image-300x300.png",
+                    "offline_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/3f13ab61-ec78-4fe6-8481-8682cb3b0ac2-channel_offline_image-1920x1080.png",
+                    "view_count": 5980557,
+                    "email": "not-real@email.com",
+                    "created_at": "2016-12-14T20:32:28Z"
+                }
+            ]
+        }
+         */
+
+        User[] data;
+    }
+
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
 
     static struct GetUserResults
     {
@@ -916,40 +1015,23 @@ in ((name.length || id),
 
         auto success() const { return (id && (code == 200)); }
 
-        this(const uint code) { this.code = code; }
-
-        this(const uint code, const string error)
+        this(const uint code, const Response response)
         {
             this.code = code;
-            this.error = error;
+
+            if (response.data.length)
+            {
+                this.id = response.data[0].id.to!ulong;
+                this.login = response.data[0].login;
+                this.displayName = response.data[0].display_name;
+            }
         }
 
-        this(const uint code, const JSONValue json)
+        this(const uint code, const ErrorResponse errorResponse)
         {
-            /*
-            {
-                "data": [
-                    {
-                        "id": "141981764",
-                        "login": "twitchdev",
-                        "display_name": "TwitchDev",
-                        "type": "",
-                        "broadcaster_type": "partner",
-                        "description": "Supporting third-party developers building Twitch integrations from chatbots to game integrations.",
-                        "profile_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/8a6381c7-d0c0-4576-b179-38bd5ce1d6af-profile_image-300x300.png",
-                        "offline_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/3f13ab61-ec78-4fe6-8481-8682cb3b0ac2-channel_offline_image-1920x1080.png",
-                        "view_count": 5980557,
-                        "email": "not-real@email.com",
-                        "created_at": "2016-12-14T20:32:28Z"
-                    }
-                ]
-            }
-             */
-
             this.code = code;
-            this.id = json["id"].str.to!ulong;
-            this.login = json["login"].str;
-            this.displayName = json["display_name"].str;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
         }
 
         this(const IRCUser user)
@@ -987,16 +1069,25 @@ in ((name.length || id),
 
     auto getUserDg()
     {
-        immutable response = sendHTTPRequest(
+        immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID);
 
-        immutable responseJSON = parseJSON(response.body);
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
+        }
 
-        switch (response.code)
+        switch (httpResponse.code)
         {
         case 200:
             // 200 OK
@@ -1027,41 +1118,12 @@ in ((name.length || id),
             goto default;
 
         default:
-            version(PrintStacktraces)
-            {
-                writeln(response.code);
-                writeln(responseJSON.toPrettyString);
-                printStacktrace();
-            }
-
-            if (immutable errorJSON = "error" in responseJSON)
-            {
-                return GetUserResults(response.code, errorJSON.str);
-            }
-            else
-            {
-                return GetUserResults(response.code);
-            }
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return GetUserResults(httpResponse.code, errorResponse);
         }
 
-        immutable dataJSON = "data" in responseJSON;
-
-        if (!dataJSON)
-        {
-            enum message = "`getUser` response has unexpected JSON " ~
-                `(no "data" key)`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        if (!dataJSON.array.length)
-        {
-            // No such user
-            return GetUserResults(response.code);
-        }
-
-        immutable firstUserJSON = dataJSON.array[0];
-
-        return GetUserResults(response.code, firstUserJSON);
+        const response = httpResponse.body.deserialize!Response;
+        return GetUserResults(httpResponse.code, response);
     }
 
     return retryDelegate(plugin, &getUserDg);
@@ -1099,8 +1161,47 @@ auto getGame(
 in (Fiber.getThis(), "Tried to call `getGame` from outside a fiber")
 in ((name.length || id), "Tried to call `getGame` with no game name nor game ID")
 {
+    import asdf : deserialize;
     import std.conv : to;
-    import std.json : parseJSON;
+
+    static struct Response
+    {
+        static struct Game
+        {
+            private import asdf : serdeIgnore;
+
+            string id;
+            string name;
+
+            @serdeIgnore
+            {
+                string box_art_url;
+                string igdb_id;
+            }
+        }
+
+        /*
+        {
+            "data": [
+                {
+                    "id": "33214",
+                    "name": "Fortnite",
+                    "box_art_url": "https://static-cdn.jtvnw.net/ttv-boxart/33214-{width}x{height}.jpg",
+                    "igdb_id": "1905"
+                }
+            ]
+        }
+         */
+
+        Game[] data;
+    }
+
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
 
     static struct GetGameResults
     {
@@ -1113,32 +1214,22 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
 
         auto success() const { return (id && (code == 200)); }
 
-        this(const uint code) { this.code = code; }
-
-        this(const uint code, const string error)
+        this(const uint code, const Response response)
         {
             this.code = code;
-            this.error = error;
+
+            if (response.data.length)
+            {
+                this.id = response.data[0].id.to!ulong;
+                this.name = response.data[0].name;
+            }
         }
 
-        this(const uint code, const JSONValue json)
+        this(const uint code, const ErrorResponse errorResponse)
         {
-            /*
-            {
-                "data": [
-                    {
-                        "id": "33214",
-                        "name": "Fortnite",
-                        "box_art_url": "https://static-cdn.jtvnw.net/ttv-boxart/33214-{width}x{height}.jpg",
-                        "igdb_id": "1905"
-                    }
-                ]
-            }
-             */
-
             this.code = code;
-            this.id = json["id"].str.to!ulong;
-            this.name = json["name"].str;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
         }
     }
 
@@ -1148,16 +1239,25 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
 
     auto getGameDg()
     {
-        immutable response = sendHTTPRequest(
+        immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID);
 
-        immutable responseJSON = parseJSON(response.body);
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
+        }
 
-        switch (response.code)
+        switch (httpResponse.code)
         {
         case 200:
             // 200 OK
@@ -1186,41 +1286,12 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
             goto default;
 
         default:
-            version(PrintStacktraces)
-            {
-                writeln(response.code);
-                writeln(responseJSON.toPrettyString);
-                printStacktrace();
-            }
-
-            if (immutable errorJSON = "error" in responseJSON)
-            {
-                return GetGameResults(response.code, errorJSON.str);
-            }
-            else
-            {
-                return GetGameResults(response.code);
-            }
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return GetGameResults(httpResponse.code, errorResponse);
         }
 
-        immutable dataJSON = "data" in responseJSON;
-
-        if (!dataJSON)
-        {
-            enum message = "`getGame` response has unexpected JSON " ~
-                `(no "data" key)`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        if (!dataJSON.array.length)
-        {
-            // No such game
-            return GetGameResults(response.code);
-        }
-
-        immutable firstGameJSON = dataJSON.array[0];
-
-        return GetGameResults(response.code, firstGameJSON);
+        const response = httpResponse.body.deserialize!Response;
+        return GetGameResults(httpResponse.code, response);
     }
 
     return retryDelegate(plugin, &getGameDg);
@@ -1355,7 +1426,7 @@ in (channelName.length, "Tried to modify a channel with an empty channel name st
 
     auto modifyChannelDg()
     {
-        immutable response = sendHTTPRequest(
+        immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
@@ -1365,7 +1436,7 @@ in (channelName.length, "Tried to modify a channel with an empty channel name st
             body: cast(ubyte[])sink[],
             contentType: "application/json");
 
-        switch (response.code)
+        switch (httpResponse.code)
         {
         case 204:
             // 204 No Content
@@ -1425,14 +1496,14 @@ in (channelName.length, "Tried to modify a channel with an empty channel name st
         default:
             version(PrintStacktraces)
             {
-                writeln(response.code);
+                writeln(httpResponse.code);
                 printStacktrace();
             }
             // Drop down
             break;
         }
 
-        return ModifyChannelResults(response.code);
+        return ModifyChannelResults(httpResponse.code);
     }
 
     return retryDelegate(plugin, &modifyChannelDg);
@@ -1469,8 +1540,57 @@ auto getChannel(
 in (Fiber.getThis(), "Tried to call `getChannel` from outside a fiber")
 in ((channelName.length || channelID), "Tried to fetch a channel with no information to query with")
 {
+    import asdf : deserialize;
     import std.conv : to;
-    import std.json : parseJSON;
+
+    static struct Response
+    {
+        static struct Channel
+        {
+            private import asdf : serdeIgnore;
+
+            string broadcaster_id;
+            string broadcaster_login;
+            string broadcaster_name;
+            string game_id;
+            string game_name;
+            string[] tags;
+            string title;
+
+            @serdeIgnore
+            {
+                string broadcaster_language;
+                ulong delay;
+            }
+        }
+
+        /*
+        {
+            "data": [
+                {
+                    "broadcaster_id": "22216721",
+                    "broadcaster_language": "en",
+                    "broadcaster_login": "zorael",
+                    "broadcaster_name": "zorael",
+                    "delay": 0,
+                    "game_id": "",
+                    "game_name": "",
+                    "tags": [],
+                    "title": "bleph"
+                }
+            ]
+        }
+         */
+
+        Channel[] data;
+    }
+
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
 
     static struct GetChannelResults
     {
@@ -1479,55 +1599,40 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
         uint code;
         string error;
         ulong id;
+        string login;
+        string displayName;
         ulong gameID;
         string gameName;
         string[] tags;
         string title;
 
-        auto success() const { return (code == 200);  }
+        auto success() const { return (code == 200); }
 
-        this(const uint code) { this.code = code; }
-
-        this(const uint code, const string error)
+        this(const uint code, /*const*/ Response response)
         {
             this.code = code;
-            this.error = error;
+
+            if (response.data.length)
+            {
+                this.id = response.data[0].broadcaster_id.to!ulong;
+                this.login = response.data[0].broadcaster_login;
+                this.displayName = response.data[0].broadcaster_name;
+                this.gameName = response.data[0].game_name;
+                this.tags = response.data[0].tags;
+                this.title = response.data[0].title;
+
+                if (response.data[0].game_id.length)
+                {
+                    this.gameID = response.data[0].game_id.to!ulong;
+                }
+            }
         }
 
-        this(const uint code, const JSONValue json)
+        this(const uint code, const ErrorResponse errorResponse)
         {
-            import std.algorithm.iteration : map;
-            import std.array : array;
-
-            /*
-            {
-                "data": [
-                    {
-                        "broadcaster_id": "22216721",
-                        "broadcaster_language": "en",
-                        "broadcaster_login": "zorael",
-                        "broadcaster_name": "zorael",
-                        "delay": 0,
-                        "game_id": "",
-                        "game_name": "",
-                        "tags": [],
-                        "title": "bleph"
-                    }
-                ]
-            }
-             */
-
             this.code = code;
-            this.id = json["broadcaster_id"].str.to!ulong;
-            //this.gameID = json["game_id"].str.to!ulong;
-            this.gameName = json["game_name"].str;
-            this.tags = json["tags"].array
-                .map!(tagJSON => tagJSON.str)
-                .array;
-            this.title = json["title"].str;
-
-            const gameID = "game_id" in json;
-            if (gameID.str.length) this.gameID = gameID.str.to!ulong;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
         }
     }
 
@@ -1545,14 +1650,22 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
         }
         else
         {
-            const results = getUser(
+            const userResults = getUser(
                 plugin: plugin,
                 name: channelName,
                 caller: caller);
 
-            if (!results.success) return GetChannelResults(results.code);
-
-            id = results.id;
+            if (userResults.success)
+            {
+                id = userResults.id;
+            }
+            else
+            {
+                GetChannelResults results;
+                results.code = userResults.code;
+                results.error = userResults.error;
+                return results;
+            }
         }
     }
 
@@ -1560,16 +1673,25 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
 
     auto getChannelDg()
     {
-        immutable response = sendHTTPRequest(
+        immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID);
 
-        immutable responseJSON = parseJSON(response.body);
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
+        }
 
-        switch (response.code)
+        switch (httpResponse.code)
         {
         case 200:
             // 200 OK
@@ -1598,41 +1720,12 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
             goto default;
 
         default:
-            version(PrintStacktraces)
-            {
-                writeln(response.code);
-                writeln(responseJSON.toPrettyString);
-                printStacktrace();
-            }
-
-            if (immutable errorJSON = "error" in responseJSON)
-            {
-                return GetChannelResults(response.code, errorJSON.str);
-            }
-            else
-            {
-                return GetChannelResults(response.code);
-            }
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return GetChannelResults(httpResponse.code, errorResponse);
         }
 
-        immutable dataJSON = "data" in responseJSON;
-
-        if (!dataJSON)
-        {
-            enum message = "`getChannel` response has unexpected JSON " ~
-                `(no "data" key)`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        if (!dataJSON.array.length)
-        {
-            // No such channel
-            return GetChannelResults(response.code);
-        }
-
-        immutable firstChannelJSON = dataJSON.array[0];
-
-        return GetChannelResults(response.code, firstChannelJSON);
+        auto response = httpResponse.body.deserialize!Response;
+        return GetChannelResults(httpResponse.code, response);
     }
 
     return retryDelegate(plugin, &getChannelDg);
@@ -1706,12 +1799,48 @@ in (Fiber.getThis(), "Tried to call `startCommercial` from outside a fiber")
 in (channelName.length, "Tried to start a commercial with an empty channel name string")
 {
     import std.format : format;
-    import std.json : parseJSON;
+
+    static struct Response
+    {
+        static struct Commercial
+        {
+            uint length;
+            string message;
+            uint retry_after;
+        }
+
+        /*
+        {
+            "data": [
+                {
+                    "length" : 60,
+                    "message" : "",
+                    "retry_after" : 480
+                }
+            ]
+        }
+         */
+
+        Commercial[] data;
+    }
+
+    static struct ErrorResponse
+    {
+        /*
+        {
+            "error": "Bad Request",
+            "message": "To start a commercial, the broadcaster must be streaming live.",
+            "status": 400
+        }
+         */
+
+        string error;
+        string message;
+        uint status;
+    }
 
     static struct StartCommercialResults
     {
-        private import std.json : JSONValue;
-
         uint code;
         string error;
         string message;
@@ -1720,31 +1849,23 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
 
         auto success() const { return (code == 200); }
 
-        this(const uint code) { this.code = code; }
-
-        this(const uint code, const string error)
+        this(const uint code, const Response response)
         {
             this.code = code;
-            this.error = error;
+
+            if (response.data.length)
+            {
+                this.message = response.data[0].message;
+                this.durationSeconds = response.data[0].length;
+                this.retryAfter = response.data[0].retry_after;
+            }
         }
 
-        this(const uint code, const JSONValue json)
+        this(const uint code, const ErrorResponse errorResponse)
         {
-            /*
-            {
-                "data": [
-                    {
-                        "length" : 60,
-                        "message" : "",
-                        "retry_after" : 480
-                    }
-                ]
-            }
-             */
             this.code = code;
-            this.message = json["message"].str;
-            this.durationSeconds = cast(uint)json["length"].integer;
-            this.retryAfter = cast(uint)json["retry_after"].integer;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
         }
     }
 
@@ -1763,7 +1884,9 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
 
     auto startCommercialDg()
     {
-        immutable response = sendHTTPRequest(
+        import asdf : deserialize;
+
+        immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
@@ -1773,9 +1896,18 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             body: cast(ubyte[])body,
             contentType: "application/json");
 
-        immutable responseJSON = parseJSON(response.body);
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
+        }
 
-        switch (response.code)
+        switch (httpResponse.code)
         {
         case 200:
             // 200 OK
@@ -1796,15 +1928,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
                 commercial response specifies the amount of time the broadcaster
                 must wait between running commercials.
              +/
-
-            if (immutable messageJSON = "message" in responseJSON)
-            {
-                return StartCommercialResults(response.code, messageJSON.str);
-            }
-            else
-            {
-                goto default;
-            }
+            goto default;
 
         case 401:
             // 401 Unauthorized
@@ -1836,39 +1960,12 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             goto default;
 
         default:
-            version(PrintStacktraces)
-            {
-                writeln(response.code);
-                writeln(responseJSON.toPrettyString);
-                printStacktrace();
-            }
-
-            if (immutable errorJSON = "error" in responseJSON)
-            {
-                return StartCommercialResults(response.code, errorJSON.str);
-            }
-            else
-            {
-                return StartCommercialResults(response.code);
-            }
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return StartCommercialResults(httpResponse.code, errorResponse);
         }
 
-        immutable dataJSON = "data" in responseJSON;
-
-        if (!dataJSON)
-        {
-            enum message = "`startCommercial` response has unexpected JSON " ~
-                `(no "data" key)`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        if (!dataJSON.array.length)
-        {
-            return StartCommercialResults(response.code);
-        }
-
-        immutable commercialInfoJSON = (*dataJSON).array[0];
-        return StartCommercialResults(response.code, commercialInfoJSON);
+        const response = httpResponse.body.deserialize!Response;
+        return StartCommercialResults(httpResponse.code, response);
     }
 
     return retryDelegate(plugin, &startCommercialDg);

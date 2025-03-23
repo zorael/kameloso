@@ -27,6 +27,7 @@ dependency "lu" version="~>3.2.2"
 dependency "dialect" version="~>3.3.0"
 dependency "arsd-official:dom" version="~>10.9.0"
 dependency "requests" version="~>2.1.3"
+dependency "asdf" version="~>0.7.0"
 
 sourcePaths "source"
 importPaths "source"
