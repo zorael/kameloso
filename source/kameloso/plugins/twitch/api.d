@@ -271,6 +271,49 @@ void printRetryDelegateException(/*const*/ Exception base)
 }
 
 
+// ErrorResponse
+/++
+    Generic JSON Schema of an error response from the Twitch API.
+ +/
+struct ErrorResponse
+{
+    private import asdf : serdeOptional;
+
+    /*
+    {
+        "error": "Unauthorized",
+        "message": "Client ID and OAuth token do not match",
+        "status": 401
+    }
+     */
+    /*
+    {
+        "error": "Bad Request",
+        "message": "To start a commercial, the broadcaster must be streaming live.",
+        "status": 400
+    }
+     */
+
+    @serdeOptional
+    {
+        /++
+            Brief error message, generally the name of the HTTP status code.
+         +/
+        string error;
+
+        /++
+            Longer, descriptive error message.
+         +/
+        string message;
+
+        /++
+            HTTP status code.
+         +/
+        uint status;
+    }
+}
+
+
 // getChatters
 /++
     Get the JSON representation of everyone currently in a broadcaster's channel.
@@ -305,7 +348,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
     {
         private import asdf : serdeIgnore;
 
-        static struct ChattersArray
+        static struct ChattersArrays
         {
             string[] broadcaster;
             string[] vips;
@@ -340,16 +383,10 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
         }
          */
 
-        @serdeIgnore enum _links = false;
         uint chatter_count;
-        ChattersArray chatters;
-    }
+        ChattersArrays chatters;
 
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
+        @serdeIgnore enum _links = false;
     }
 
     static struct GetChattersResults
@@ -370,7 +407,6 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
         this(const uint code, /*const*/ Response response)
         {
             this.code = code;
-            this.broadcaster = response.chatters.broadcaster[0];
             this.moderators = response.chatters.moderators;
             this.vips = response.chatters.vips;
             this.staff = response.chatters.staff;
@@ -378,6 +414,11 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
             this.globalMods = response.chatters.global_mods;
             this.viewers = response.chatters.viewers;
             this.chatterCount = response.chatter_count;
+
+            if (response.chatters.broadcaster.length)
+            {
+                this.broadcaster = response.chatters.broadcaster[0];
+            }
         }
 
         this(const uint code, const ErrorResponse errorResponse)
@@ -544,21 +585,6 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         string login;
         @serdeIgnore string[] scopes;
         string user_id;
-    }
-
-    static struct ErrorResponse
-    {
-        /*
-        {
-            "error": "Unauthorized",
-            "message": "Client ID and OAuth token do not match",
-            "status": 401
-        }
-         */
-
-        string error;
-        string message;
-        uint status;
     }
 
     static struct ValidationResults
@@ -763,13 +789,6 @@ in (id, "Tried to get followers with an unset ID")
         Pagination pagination;
     }
 
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
-    }
-
     static struct GetFollowersResults
     {
         uint code;
@@ -797,12 +816,13 @@ in (id, "Tried to get followers with an unset ID")
     immutable url = "https://api.twitch.tv/helix/channels/followers?first=100&broadcaster_id=" ~ id.to!string;
     Follower[string] followers;
     string after;
-    uint responseCode;
 
     auto getFollowersDg()
     {
         GC.disable();
         scope(exit) GC.enable();
+
+        uint responseCode;
 
         do
         {
@@ -968,8 +988,8 @@ in ((name.length || id),
                 string type;
                 string broadcaster_type;
                 string description;
-                enum profile_image_url = false;
-                enum offline_image_url = false;
+                string profile_image_url;
+                string offline_image_url;
                 ulong view_count;
                 string email;
                 string created_at;
@@ -997,13 +1017,6 @@ in ((name.length || id),
          */
 
         User[] data;
-    }
-
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
     }
 
     static struct GetUserResults
@@ -1198,13 +1211,6 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
         Game[] data;
     }
 
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
-    }
-
     static struct GetGameResults
     {
         uint code;
@@ -1388,13 +1394,25 @@ private auto modifyChannelImpl(
 in (Fiber.getThis(), "Tried to call `modifyChannel` from outside a fiber")
 in (channelName.length, "Tried to modify a channel with an empty channel name string")
 {
+    import asdf : deserialize;
     import std.array : Appender;
     import std.conv : to;
 
     static struct ModifyChannelResults
     {
         uint code;
+        string error;
+
         auto success() const { return (code == 204); }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const ErrorResponse errorResponse)
+        {
+            this.code = code;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
+        }
     }
 
     const room = channelName in plugin.rooms;
@@ -1495,13 +1513,8 @@ in (channelName.length, "Tried to modify a channel with an empty channel name st
             goto default;
 
         default:
-            version(PrintStacktraces)
-            {
-                writeln(httpResponse.code);
-                printStacktrace();
-            }
-            // Drop down
-            break;
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return ModifyChannelResults(httpResponse.code, errorResponse);
         }
 
         return ModifyChannelResults(httpResponse.code);
@@ -1584,13 +1597,6 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
          */
 
         Channel[] data;
-    }
-
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
     }
 
     static struct GetChannelResults
@@ -1798,6 +1804,7 @@ auto startCommercial(
 in (Fiber.getThis(), "Tried to call `startCommercial` from outside a fiber")
 in (channelName.length, "Tried to start a commercial with an empty channel name string")
 {
+    import asdf : deserialize;
     import std.format : format;
 
     static struct Response
@@ -1824,27 +1831,14 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
         Commercial[] data;
     }
 
-    static struct ErrorResponse
-    {
-        /*
-        {
-            "error": "Bad Request",
-            "message": "To start a commercial, the broadcaster must be streaming live.",
-            "status": 400
-        }
-         */
-
-        string error;
-        string message;
-        uint status;
-    }
-
     static struct StartCommercialResults
     {
+        import core.time : Duration, seconds;
+
         uint code;
         string error;
         string message;
-        uint durationSeconds;
+        Duration duration;
         uint retryAfter;
 
         auto success() const { return (code == 200); }
@@ -1856,7 +1850,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             if (response.data.length)
             {
                 this.message = response.data[0].message;
-                this.durationSeconds = response.data[0].length;
+                this.duration = response.data[0].length.seconds;
                 this.retryAfter = response.data[0].retry_after;
             }
         }
@@ -1884,8 +1878,6 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
 
     auto startCommercialDg()
     {
-        import asdf : deserialize;
-
         immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
             url: url,
@@ -1979,11 +1971,9 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
  +/
 private struct TwitchPoll
 {
-private:
-    import std.datetime.systime : SysTime;
+    private import std.datetime.systime : SysTime;
 
-public:
-    static struct JSONSchema
+    static struct ResponseSchema
     {
         import asdf : serdeIgnore, serdeOptional;
         import core.time : Duration;
@@ -2040,18 +2030,18 @@ public:
                     "title": "Heads or Tails?",
                     "choices": [
                         {
-                        "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                        "title": "Heads",
-                        "votes": 0,
-                        "channel_points_votes": 0,
-                        "bits_votes": 0
+                            "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                            "title": "Heads",
+                            "votes": 0,
+                            "channel_points_votes": 0,
+                            "bits_votes": 0
                         },
                         {
-                        "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                        "title": "Tails",
-                        "votes": 0,
-                        "channel_points_votes": 0,
-                        "bits_votes": 0
+                            "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                            "title": "Tails",
+                            "votes": 0,
+                            "channel_points_votes": 0,
+                            "bits_votes": 0
                         }
                     ],
                     "bits_voting_enabled": false,
@@ -2099,7 +2089,7 @@ public:
         /++
             FIXME
          +/
-        this(const TwitchPoll.JSONSchema.PollSchema.ChoiceSchema choiceSchema)
+        this(const TwitchPoll.ResponseSchema.PollSchema.ChoiceSchema choiceSchema)
         {
             this.id = choiceSchema.id;
             this.title = choiceSchema.title;
@@ -2209,7 +2199,7 @@ public:
      +/
     SysTime endedAt;
 
-    this(/*const*/ JSONSchema.PollSchema pollData)
+    this(/*const*/ TwitchPoll.ResponseSchema.PollSchema pollData)
     {
         import std.conv : to;
         import core.time : seconds;
@@ -2255,35 +2245,35 @@ public:
         {
             "data": [
                 {
-                "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-                "broadcaster_id": "141981764",
-                "broadcaster_name": "TwitchDev",
-                "broadcaster_login": "twitchdev",
-                "title": "Heads or Tails?",
-                "choices": [
-                    {
-                        "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                        "title": "Heads",
-                        "votes": 0,
-                        "channel_points_votes": 0,
-                        "bits_votes": 0
-                    },
-                    {
-                        "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                        "title": "Tails",
-                        "votes": 0,
-                        "channel_points_votes": 0,
-                        "bits_votes": 0
-                    }
-                ],
-                "bits_voting_enabled": false,
-                "bits_per_vote": 0,
-                "channel_points_voting_enabled": true,
-                "channel_points_per_vote": 100,
-                "status": "TERMINATED",
-                "duration": 1800,
-                "started_at": "2021-03-19T06:08:33.871278372Z",
-                "ended_at": "2021-03-19T06:11:26.746889614Z"
+                    "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                    "broadcaster_id": "141981764",
+                    "broadcaster_name": "TwitchDev",
+                    "broadcaster_login": "twitchdev",
+                    "title": "Heads or Tails?",
+                    "choices": [
+                        {
+                            "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                            "title": "Heads",
+                            "votes": 0,
+                            "channel_points_votes": 0,
+                            "bits_votes": 0
+                        },
+                        {
+                            "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                            "title": "Tails",
+                            "votes": 0,
+                            "channel_points_votes": 0,
+                            "bits_votes": 0
+                        }
+                    ],
+                    "bits_voting_enabled": false,
+                    "bits_per_vote": 0,
+                    "channel_points_voting_enabled": true,
+                    "channel_points_per_vote": 100,
+                    "status": "TERMINATED",
+                    "duration": 1800,
+                    "started_at": "2021-03-19T06:08:33.871278372Z",
+                    "ended_at": "2021-03-19T06:11:26.746889614Z"
                 }
             ]
         }
@@ -2334,142 +2324,9 @@ public:
             break;
         }
 
-        foreach (const choiseSchema; pollData.choices)
+        foreach (const choiceSchema; pollData.choices)
         {
-            this.choices ~= TwitchPoll.Choice(choiseSchema);
-        }
-    }
-
-    this(/*const*/ JSONSchema response)
-    {
-        import std.conv : to;
-        import core.time : seconds;
-
-        /*
-        {
-            "data": [
-                {
-                "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-                "broadcaster_id": "55696719",
-                "broadcaster_name": "TwitchDev",
-                "broadcaster_login": "twitchdev",
-                "title": "Heads or Tails?",
-                "choices": [
-                    {
-                    "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                    "title": "Heads",
-                    "votes": 0,
-                    "channel_points_votes": 0,
-                    "bits_votes": 0
-                    },
-                    {
-                    "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                    "title": "Tails",
-                    "votes": 0,
-                    "channel_points_votes": 0,
-                    "bits_votes": 0
-                    }
-                ],
-                "bits_voting_enabled": false,
-                "bits_per_vote": 0,
-                "channel_points_voting_enabled": false,
-                "channel_points_per_vote": 0,
-                "status": "ACTIVE",
-                "duration": 1800,
-                "started_at": "2021-03-19T06:08:33.871278372Z"
-                }
-            ],
-            "pagination": {}
-        }
-         */
-        /*
-        {
-            "data": [
-                {
-                "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-                "broadcaster_id": "141981764",
-                "broadcaster_name": "TwitchDev",
-                "broadcaster_login": "twitchdev",
-                "title": "Heads or Tails?",
-                "choices": [
-                    {
-                    "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                    "title": "Heads",
-                    "votes": 0,
-                    "channel_points_votes": 0,
-                    "bits_votes": 0
-                    },
-                    {
-                    "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                    "title": "Tails",
-                    "votes": 0,
-                    "channel_points_votes": 0,
-                    "bits_votes": 0
-                    }
-                ],
-                "bits_voting_enabled": false,
-                "bits_per_vote": 0,
-                "channel_points_voting_enabled": true,
-                "channel_points_per_vote": 100,
-                "status": "TERMINATED",
-                "duration": 1800,
-                "started_at": "2021-03-19T06:08:33.871278372Z",
-                "ended_at": "2021-03-19T06:11:26.746889614Z"
-                }
-            ]
-        }
-         */
-
-        if (!response.data.length) return;
-
-        this.pollID = response.data[0].id;
-        this.title = response.data[0].title;
-        this.broadcasterID = response.data[0].broadcaster_id.to!ulong;
-        this.broadcasterLogin = response.data[0].broadcaster_login;
-        this.broadcasterDisplayName = response.data[0].broadcaster_name;
-        this.channelPointsVotingEnabled = response.data[0].channel_points_voting_enabled;
-        this.channelPointsPerVote = response.data[0].channel_points_per_vote;
-        this.duration = response.data[0].duration.seconds;
-        this.startedAt = SysTime.fromISOExtString(response.data[0].started_at);
-
-        if (response.data[0].ended_at.length)
-        {
-            // "If status is ACTIVE, this field is set to null."
-            this.endedAt = SysTime.fromISOExtString(response.data[0].ended_at);
-        }
-
-        with (TwitchPoll.PollStatus)
-        switch (response.data[0].status)
-        {
-        case "ACTIVE":
-            this.status = active;
-            break;
-
-        case "COMPLETED":
-            this.status = completed;
-            break;
-
-        case "TERMINATED":
-            this.status = terminated;
-            break;
-
-        case "ARCHIVED":
-            this.status = archived;
-            break;
-
-        case "MODERATED":
-            this.status = moderated;
-            break;
-
-        //case "INVALID":
-        default:
-            this.status = invalid;
-            break;
-        }
-
-        foreach (const choiseSchema; response.data[0].choices)
-        {
-            this.choices ~= TwitchPoll.Choice(choiseSchema);
+            this.choices ~= TwitchPoll.Choice(choiceSchema);
         }
     }
 }
@@ -2509,14 +2366,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
     import asdf : deserialize;
     import std.conv : text;
 
-    alias Response = TwitchPoll.JSONSchema;
-
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
-    }
+    alias Response = TwitchPoll.ResponseSchema;
 
     static struct GetPollResults
     {
@@ -2686,14 +2536,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
     import std.array : Appender, replace;
     import std.format : format;
 
-    alias Response = TwitchPoll.JSONSchema;
-
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
-    }
+    alias Response = TwitchPoll.ResponseSchema;
 
     static struct CreatePollResults
     {
@@ -2888,93 +2731,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
     import std.datetime.systime : SysTime;
     import std.format : format;
 
-    static struct Response
-    {
-        static struct Poll
-        {
-            import asdf : serdeIgnore, serdeOptional;
-
-            static struct Choice
-            {
-                string title;
-                uint votes;
-                uint channel_pointsVotes;
-                uint bitsVotes;
-
-                @serdeIgnore string id;
-            }
-
-            string id;
-            string broadcaster_id;
-            string broadcaster_name;
-            string broadcaster_login;
-            string title;
-            Choice[] choices;
-            string status;
-            SysTime started_at;
-
-            @serdeOptional
-            {
-                SysTime ended_at;
-                uint duration;
-            }
-
-            @serdeIgnore
-            {
-                bool bits_voting_enabled;
-                uint bits_per_vote;
-                bool channel_points_voting_enabled;
-                uint channel_points_per_vote;
-            }
-        }
-
-        /*
-        {
-            "data": [
-                {
-                    "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-                    "broadcaster_id": "141981764",
-                    "broadcaster_name": "TwitchDev",
-                    "broadcaster_login": "twitchdev",
-                    "title": "Heads or Tails?",
-                    "choices": [
-                        {
-                        "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                        "title": "Heads",
-                        "votes": 0,
-                        "channel_points_votes": 0,
-                        "bits_votes": 0
-                        },
-                        {
-                        "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                        "title": "Tails",
-                        "votes": 0,
-                        "channel_points_votes": 0,
-                        "bits_votes": 0
-                        }
-                    ],
-                    "bits_voting_enabled": false,
-                    "bits_per_vote": 0,
-                    "channel_points_voting_enabled": true,
-                    "channel_points_per_vote": 100,
-                    "status": "TERMINATED",
-                    "duration": 1800,
-                    "started_at": "2021-03-19T06:08:33.871278372Z",
-                    "ended_at": "2021-03-19T06:11:26.746889614Z"
-                }
-            ]
-        }
-         */
-
-        Poll[] data;
-    }
-
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
-    }
+    alias Response = TwitchPoll.ResponseSchema;
 
     static struct EndPollResults
     {
@@ -2990,7 +2747,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
 
             if (response.data.length)
             {
-
+                this.poll = TwitchPoll(response.data[0]);
             }
         }
 
@@ -3307,15 +3064,8 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
         }
          */
 
-        TwitchPlugin.Room.Stream.JSONSchema[] data;
+        TwitchPlugin.Room.Stream.ResponseSchema[] data;
         Pagination pagination;
-    }
-
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
     }
 
     static struct GetStreamResults
@@ -3515,13 +3265,6 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
         uint points;
     }
 
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
-    }
-
     static struct GetSubscribersResults
     {
         static struct Subscription
@@ -3710,13 +3453,6 @@ in (targetChannelID, "Tried to call `sendShoutout` with an unset target channel 
     import asdf : deserialize;
     import std.format : format;
 
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
-    }
-
     static struct ShoutoutResults
     {
         uint code;
@@ -3853,13 +3589,6 @@ in (channelName.length, "Tried to delete a message without providing a channel n
     import std.algorithm.searching : startsWith;
     import std.format : format;
     import core.time : msecs;
-
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
-    }
 
     static struct DeleteResults
     {
@@ -4061,13 +3790,6 @@ in (userID, "Tried to timeout a user with an unset user ID")
          */
 
         @serdeIgnore Timeout[] data;
-    }
-
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
     }
 
     static struct TimeoutResults
@@ -4321,13 +4043,6 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
     import std.array : replace;
     import std.format : format;
 
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
-    }
-
     static struct WhisperResult
     {
         uint code;
@@ -4496,13 +4211,6 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
     import std.algorithm.comparison : among;
     import std.array : replace;
     import std.format : format;
-
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
-    }
 
     static struct AnnouncementResults
     {
@@ -4686,13 +4394,6 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
          */
 
         @serdeIgnore Warning[] data;
-    }
-
-    static struct ErrorResponse
-    {
-        string error;
-        string message;
-        uint status;
     }
 
     static struct WarnResults

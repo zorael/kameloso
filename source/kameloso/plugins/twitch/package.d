@@ -4676,7 +4676,7 @@ package:
             /*immutable*/ ulong _id;
 
         package:
-            static struct JSONSchema
+            static struct ResponseSchema
             {
                 import asdf : serdeIgnore;
 
