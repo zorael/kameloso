@@ -354,8 +354,6 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
     static struct GetChattersResults
     {
-        private import std.json : JSONValue;
-
         uint code;
         string error;
         string broadcaster;
@@ -408,6 +406,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
             scope(failure)
             {
                 import std.json : parseJSON;
+                import std.stdio : writeln;
                 writeln(httpResponse.code);
                 writeln(httpResponse.body.parseJSON.toPrettyString);
                 printStacktrace();
@@ -654,6 +653,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             scope(failure)
             {
                 import std.json : parseJSON;
+                import std.stdio : writeln;
                 writeln(httpResponse.code);
                 writeln(httpResponse.body.parseJSON.toPrettyString);
                 printStacktrace();
@@ -822,6 +822,7 @@ in (id, "Tried to get followers with an unset ID")
                 scope(failure)
                 {
                     import std.json : parseJSON;
+                    import std.stdio : writeln;
                     writeln(httpResponse.code);
                     writeln(httpResponse.body.parseJSON.toPrettyString);
                     printStacktrace();
@@ -956,6 +957,8 @@ in ((name.length || id),
     {
         static struct User
         {
+            private import asdf : serdeIgnore;
+
             string id;
             string login;
             string display_name;
@@ -1005,8 +1008,6 @@ in ((name.length || id),
 
     static struct GetUserResults
     {
-        private import std.json : JSONValue;
-
         uint code;
         string error;
         ulong id;
@@ -1081,6 +1082,7 @@ in ((name.length || id),
             scope(failure)
             {
                 import std.json : parseJSON;
+                import std.stdio : writeln;
                 writeln(httpResponse.code);
                 writeln(httpResponse.body.parseJSON.toPrettyString);
                 printStacktrace();
@@ -1205,8 +1207,6 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
 
     static struct GetGameResults
     {
-        private import std.json : JSONValue;
-
         uint code;
         string error;
         ulong id;
@@ -1251,6 +1251,7 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
             scope(failure)
             {
                 import std.json : parseJSON;
+                import std.stdio : writeln;
                 writeln(httpResponse.code);
                 writeln(httpResponse.body.parseJSON.toPrettyString);
                 printStacktrace();
@@ -1594,8 +1595,6 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
 
     static struct GetChannelResults
     {
-        private import std.json : JSONValue;
-
         uint code;
         string error;
         ulong id;
@@ -1685,6 +1684,7 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
             scope(failure)
             {
                 import std.json : parseJSON;
+                import std.stdio : writeln;
                 writeln(httpResponse.code);
                 writeln(httpResponse.body.parseJSON.toPrettyString);
                 printStacktrace();
@@ -1901,6 +1901,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             scope(failure)
             {
                 import std.json : parseJSON;
+                import std.stdio : writeln;
                 writeln(httpResponse.code);
                 writeln(httpResponse.body.parseJSON.toPrettyString);
                 printStacktrace();
@@ -1980,9 +1981,96 @@ private struct TwitchPoll
 {
 private:
     import std.datetime.systime : SysTime;
-    import std.json : JSONValue;
 
 public:
+    static struct JSONSchema
+    {
+        import asdf : serdeIgnore, serdeOptional;
+        import core.time : Duration;
+
+        static struct PollSchema
+        {
+            static struct ChoiceSchema
+            {
+                string title;
+                uint votes;
+                uint channel_pointsVotes;
+                uint bitsVotes;
+
+                @serdeIgnore string id;
+            }
+
+            string id;
+            string broadcaster_id;
+            string broadcaster_name;
+            string broadcaster_login;
+            string title;
+            ChoiceSchema[] choices;
+            string status;
+            string started_at;
+
+            @serdeOptional
+            {
+                string ended_at;
+                uint duration;
+            }
+
+            @serdeIgnore
+            {
+                bool bits_voting_enabled;
+                uint bits_per_vote;
+                bool channel_points_voting_enabled;
+                uint channel_points_per_vote;
+            }
+        }
+
+        static struct Pagination
+        {
+            @serdeOptional string cursor;
+        }
+
+        /*
+        {
+            "data": [
+                {
+                    "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                    "broadcaster_id": "141981764",
+                    "broadcaster_name": "TwitchDev",
+                    "broadcaster_login": "twitchdev",
+                    "title": "Heads or Tails?",
+                    "choices": [
+                        {
+                        "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                        "title": "Heads",
+                        "votes": 0,
+                        "channel_points_votes": 0,
+                        "bits_votes": 0
+                        },
+                        {
+                        "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                        "title": "Tails",
+                        "votes": 0,
+                        "channel_points_votes": 0,
+                        "bits_votes": 0
+                        }
+                    ],
+                    "bits_voting_enabled": false,
+                    "bits_per_vote": 0,
+                    "channel_points_voting_enabled": true,
+                    "channel_points_per_vote": 100,
+                    "status": "TERMINATED",
+                    "duration": 1800,
+                    "started_at": "2021-03-19T06:08:33.871278372Z",
+                    "ended_at": "2021-03-19T06:11:26.746889614Z"
+                }
+            ]
+        }
+         */
+
+        PollSchema[] data;
+        Pagination pagination;
+    }
+
     /++
         An option to vote for in the poll.
      +/
@@ -2009,20 +2097,14 @@ public:
         uint channelPointsVotes;
 
         /++
-            Constructs a new [Choice] from a passed [std.json.JSONValue|JSONValue]
-            as received from API calls.
-
-            Params:
-                json = JSON to parse.
+            FIXME
          +/
-        this(const JSONValue json)
+        this(const TwitchPoll.JSONSchema.PollSchema.ChoiceSchema choiceSchema)
         {
-            import std.conv : to;
-
-            this.id = json["id"].str;
-            this.title = json["title"].str;
-            this.votes = json["votes"].str.to!uint;
-            this.channelPointsVotes = json["channel_points_votes"].str.to!uint;
+            this.id = choiceSchema.id;
+            this.title = choiceSchema.title;
+            this.votes = choiceSchema.votes;
+            this.channelPointsVotes = choiceSchema.channel_pointsVotes;
         }
     }
 
@@ -2115,7 +2197,7 @@ public:
     /++
         How many seconds the poll was meant to run.
      +/
-    uint duration;
+    Duration duration;
 
     /++
         Timestamp of when the poll started.
@@ -2127,16 +2209,141 @@ public:
      +/
     SysTime endedAt;
 
-    /++
-        Constructs a new [TwitchPoll] from a passed [std.json.JSONValue|JSONValue]
-        as received from API calls.
-
-        Params:
-            json = JSON to parse.
-     +/
-    this(const JSONValue json)
+    this(/*const*/ JSONSchema.PollSchema pollData)
     {
         import std.conv : to;
+        import core.time : seconds;
+
+        /*
+        {
+            "data": [
+                {
+                "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                "broadcaster_id": "55696719",
+                "broadcaster_name": "TwitchDev",
+                "broadcaster_login": "twitchdev",
+                "title": "Heads or Tails?",
+                "choices": [
+                    {
+                        "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                        "title": "Heads",
+                        "votes": 0,
+                        "channel_points_votes": 0,
+                        "bits_votes": 0
+                    },
+                    {
+                        "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                        "title": "Tails",
+                        "votes": 0,
+                        "channel_points_votes": 0,
+                        "bits_votes": 0
+                    }
+                ],
+                "bits_voting_enabled": false,
+                "bits_per_vote": 0,
+                "channel_points_voting_enabled": false,
+                "channel_points_per_vote": 0,
+                "status": "ACTIVE",
+                "duration": 1800,
+                "started_at": "2021-03-19T06:08:33.871278372Z"
+                }
+            ],
+            "pagination": {}
+        }
+         */
+        /*
+        {
+            "data": [
+                {
+                "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                "broadcaster_id": "141981764",
+                "broadcaster_name": "TwitchDev",
+                "broadcaster_login": "twitchdev",
+                "title": "Heads or Tails?",
+                "choices": [
+                    {
+                        "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                        "title": "Heads",
+                        "votes": 0,
+                        "channel_points_votes": 0,
+                        "bits_votes": 0
+                    },
+                    {
+                        "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                        "title": "Tails",
+                        "votes": 0,
+                        "channel_points_votes": 0,
+                        "bits_votes": 0
+                    }
+                ],
+                "bits_voting_enabled": false,
+                "bits_per_vote": 0,
+                "channel_points_voting_enabled": true,
+                "channel_points_per_vote": 100,
+                "status": "TERMINATED",
+                "duration": 1800,
+                "started_at": "2021-03-19T06:08:33.871278372Z",
+                "ended_at": "2021-03-19T06:11:26.746889614Z"
+                }
+            ]
+        }
+         */
+
+        this.pollID = pollData.id;
+        this.title = pollData.title;
+        this.broadcasterID = pollData.broadcaster_id.to!ulong;
+        this.broadcasterLogin = pollData.broadcaster_login;
+        this.broadcasterDisplayName = pollData.broadcaster_name;
+        this.channelPointsVotingEnabled = pollData.channel_points_voting_enabled;
+        this.channelPointsPerVote = pollData.channel_points_per_vote;
+        this.duration = pollData.duration.seconds;
+        this.startedAt = SysTime.fromISOExtString(pollData.started_at);
+
+        if (pollData.ended_at.length)
+        {
+            // "If status is ACTIVE, this field is set to null."
+            this.endedAt = SysTime.fromISOExtString(pollData.ended_at);
+        }
+
+        with (TwitchPoll.PollStatus)
+        switch (pollData.status)
+        {
+        case "ACTIVE":
+            this.status = active;
+            break;
+
+        case "COMPLETED":
+            this.status = completed;
+            break;
+
+        case "TERMINATED":
+            this.status = terminated;
+            break;
+
+        case "ARCHIVED":
+            this.status = archived;
+            break;
+
+        case "MODERATED":
+            this.status = moderated;
+            break;
+
+        //case "INVALID":
+        default:
+            this.status = invalid;
+            break;
+        }
+
+        foreach (const choiseSchema; pollData.choices)
+        {
+            this.choices ~= TwitchPoll.Choice(choiseSchema);
+        }
+    }
+
+    this(/*const*/ JSONSchema response)
+    {
+        import std.conv : to;
+        import core.time : seconds;
 
         /*
         {
@@ -2213,32 +2420,26 @@ public:
         }
          */
 
-        this.pollID = json["id"].str;
-        this.title = json["title"].str;
-        this.broadcasterID = json["broadcaster_id"].str.to!ulong;
-        this.broadcasterLogin = json["broadcaster_login"].str;
-        this.broadcasterDisplayName = json["broadcaster_name"].str;
-        this.channelPointsVotingEnabled = json["channel_points_voting_enabled"].boolean;
-        this.channelPointsPerVote = json["channel_points_per_vote"].str.to!uint;
-        this.duration = cast(uint)json["duration"].integer;
-        this.startedAt = SysTime.fromISOExtString(json["started_at"].str);
+        if (!response.data.length) return;
 
-        if (const endedAtJSON = "ended_at" in json)
+        this.pollID = response.data[0].id;
+        this.title = response.data[0].title;
+        this.broadcasterID = response.data[0].broadcaster_id.to!ulong;
+        this.broadcasterLogin = response.data[0].broadcaster_login;
+        this.broadcasterDisplayName = response.data[0].broadcaster_name;
+        this.channelPointsVotingEnabled = response.data[0].channel_points_voting_enabled;
+        this.channelPointsPerVote = response.data[0].channel_points_per_vote;
+        this.duration = response.data[0].duration.seconds;
+        this.startedAt = SysTime.fromISOExtString(response.data[0].started_at);
+
+        if (response.data[0].ended_at.length)
         {
-            import std.json : JSONType;
-
-            if (endedAtJSON.type == JSONType.string)
-            {
-                this.endedAt = SysTime.fromISOExtString(endedAtJSON.str);
-            }
-            else
-            {
-                // "If status is ACTIVE, this field is set to null."
-            }
+            // "If status is ACTIVE, this field is set to null."
+            this.endedAt = SysTime.fromISOExtString(response.data[0].ended_at);
         }
 
         with (TwitchPoll.PollStatus)
-        switch (json["status"].str)
+        switch (response.data[0].status)
         {
         case "ACTIVE":
             this.status = active;
@@ -2266,9 +2467,9 @@ public:
             break;
         }
 
-        foreach (const choiceJSON; json["choices"].array)
+        foreach (const choiseSchema; response.data[0].choices)
         {
-            this.choices ~= TwitchPoll.Choice(choiceJSON);
+            this.choices ~= TwitchPoll.Choice(choiseSchema);
         }
     }
 }
@@ -2305,8 +2506,17 @@ auto getPolls(
 in (Fiber.getThis(), "Tried to call `getPolls` from outside a fiber")
 in (channelName.length, "Tried to get polls with an empty channel name string")
 {
+    import asdf : deserialize;
     import std.conv : text;
-    import std.json : parseJSON;
+
+    alias Response = TwitchPoll.JSONSchema;
+
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
 
     static struct GetPollResults
     {
@@ -2314,13 +2524,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
         string error;
         TwitchPoll[] polls;
 
-        this(const uint code) { this.code = code; }
-
-        this(const uint code, const string error)
-        {
-            this.code = code;
-            this.error = error;
-        }
+        auto success() const { return (code == 200); }
 
         this(const uint code, /*const*/ TwitchPoll[] polls)
         {
@@ -2328,7 +2532,12 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
             this.polls = polls;
         }
 
-        auto success() const { return (code == 200); }
+        this(const uint code, const ErrorResponse response)
+        {
+            this.code = code;
+            //this.error = response.error;
+            this.error = response.message;
+        }
     }
 
     const room = channelName in plugin.rooms;
@@ -2356,7 +2565,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 text(url, "&after=", after) :
                 url;
 
-            immutable response = sendHTTPRequest(
+            immutable httpResponse = sendHTTPRequest(
                 plugin: plugin,
                 url: paginatedURL,
                 caller: caller,
@@ -2366,9 +2575,19 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 body: cast(ubyte[])null,
                 contentType: "application/json");
 
-            immutable responseJSON = parseJSON(response.body);
+            version(PrintStacktraces)
+            {
+                scope(failure)
+                {
+                    import std.json : parseJSON;
+                    import std.stdio : writeln;
+                    writeln(httpResponse.code);
+                    writeln(httpResponse.body.parseJSON.toPrettyString);
+                    printStacktrace();
+                }
+            }
 
-            switch (response.code)
+            switch (httpResponse.code)
             {
             case 200:
                 // 200 OK
@@ -2404,47 +2623,20 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 goto default;
 
             default:
-                version(PrintStacktraces)
-                {
-                    writeln(response.code);
-                    writeln(responseJSON.toPrettyString);
-                    printStacktrace();
-                }
-
-                if (immutable errorJSON = "error" in responseJSON)
-                {
-                    return GetPollResults(response.code, errorJSON.str);
-                }
-                else
-                {
-                    return GetPollResults(response.code);
-                }
+                const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+                return GetPollResults(httpResponse.code, errorResponse);
             }
 
-            responseCode = response.code;
+            responseCode = httpResponse.code;
 
-            immutable dataJSON = "data" in responseJSON;
+            auto response = httpResponse.body.deserialize!Response;
 
-            if (!dataJSON)
+            foreach (/*const*/ pollData; response.data)
             {
-                // For some reason we received an object that didn't contain data
-                enum message = "`getPolls` response has unexpected JSON " ~
-                    `(no "data" key)`;
-                throw new UnexpectedJSONException(message, responseJSON);
+                polls ~= TwitchPoll(pollData);
             }
 
-            if (!dataJSON.array.length)
-            {
-                // no polls to get?
-                return GetPollResults(response.code);
-            }
-
-            foreach (const pollJSON; dataJSON.array)
-            {
-                polls ~= TwitchPoll(pollJSON);
-            }
-
-            after = responseJSON["after"].str;
+            after = response.pagination.cursor;
         }
         while (after.length);
 
@@ -2490,9 +2682,18 @@ auto createPoll(
 in (Fiber.getThis(), "Tried to call `createPoll` from outside a fiber")
 in (channelName.length, "Tried to create a poll with an empty channel name string")
 {
+    import asdf : deserialize;
     import std.array : Appender, replace;
     import std.format : format;
-    import std.json : parseJSON;
+
+    alias Response = TwitchPoll.JSONSchema;
+
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
 
     static struct CreatePollResults
     {
@@ -2503,28 +2704,24 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
 
         auto success() const { return (code == 200); }
 
-        this(const uint code) { this.code = code; }
-
-        this(const uint code, const string error)
+        this(const uint code, /*const*/ Response response)
         {
             this.code = code;
-            this.error = error;
+
+            if (response.data.length)
+            {
+                this.poll = TwitchPoll(response.data[0]);
+            }
         }
 
-        this(
-            const uint code,
-            const string error,
-            const bool permissionDenied)
+        this(const uint code, const ErrorResponse response)
         {
-            this.code = code;
-            this.error = error;
-            this.permissionDenied = permissionDenied;
-        }
+            import std.algorithm.searching : endsWith;
 
-        this(const uint code, /*const*/ TwitchPoll poll)
-        {
             this.code = code;
-            this.poll = poll;
+            //this.error = response.error;
+            this.error = response.message;
+            this.permissionDenied = response.message.endsWith("is not a partner or affiliate");
         }
     }
 
@@ -2563,7 +2760,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
 
     auto createPollDg()
     {
-        immutable response = sendHTTPRequest(
+        immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
@@ -2573,9 +2770,19 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             body: cast(ubyte[])body,
             contentType: "application/json");
 
-        immutable responseJSON = parseJSON(response.body);
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                import std.stdio : writeln;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
+        }
 
-        switch (response.code)
+        switch (httpResponse.code)
         {
         case 200:
             // 200 OK
@@ -2628,56 +2835,15 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
                 "status": 403
             }
              */
-
-            if (immutable messageJSON = "message" in responseJSON)
-            {
-                import std.algorithm.searching : endsWith;
-
-                if (messageJSON.str.endsWith("is not a partner or affiliate"))
-                {
-                    return CreatePollResults(
-                        code: response.code,
-                        error: messageJSON.str,
-                        permissionDenied: true);
-                }
-            }
             goto default;
 
         default:
-            version(PrintStacktraces)
-            {
-                writeln(response.code);
-                writeln(responseJSON.toPrettyString);
-                printStacktrace();
-            }
-
-            if (immutable errorJSON = "error" in responseJSON)
-            {
-                return CreatePollResults(response.code, errorJSON.str);
-            }
-            else
-            {
-                return CreatePollResults(response.code);
-            }
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return CreatePollResults(httpResponse.code, errorResponse);
         }
 
-        immutable dataJSON = "data" in responseJSON;
-
-        if (!dataJSON)
-        {
-            // For some reason we received an object that didn't contain data
-            enum message = "`createPoll` response has unexpected JSON " ~
-                `(no "data" key)`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        if (!dataJSON.array.length)
-        {
-            // data exists but is empty
-            return CreatePollResults(response.code);
-        }
-
-        return CreatePollResults(response.code, TwitchPoll(dataJSON.array[0]));
+        auto response = httpResponse.body.deserialize!Response;
+        return CreatePollResults(httpResponse.code, response);
     }
 
     return retryDelegate(plugin, &createPollDg);
@@ -2718,108 +2884,47 @@ auto endPoll(
 in (Fiber.getThis(), "Tried to call `endPoll` from outside a fiber")
 in (channelName.length, "Tried to end a poll with an empty channel name string")
 {
+    import asdf : deserialize;
+    import std.datetime.systime : SysTime;
     import std.format : format;
-    import std.json : parseJSON;
 
-    static struct EndPollResults
+    static struct Response
     {
-        uint code;
-        string error;
-        TwitchPoll poll;
-
-        auto success() const { return (code == 200); }
-
-        this(const uint code) { this.code = code; }
-
-        this(const uint code, const string error)
+        static struct Poll
         {
-            this.code = code;
-            this.error = error;
-        }
+            import asdf : serdeIgnore, serdeOptional;
 
-        this(const uint code, /*const*/ TwitchPoll poll)
-        {
-            this.code = code;
-            this.poll = poll;
-        }
-    }
-
-    const room = channelName in plugin.rooms;
-    assert(room, "Tried to end a poll in a channel for which there existed no room");
-
-    enum url = "https://api.twitch.tv/helix/polls";
-    enum bodyPattern = `
-{
-    "broadcaster_id": "%d",
-    "id": "%s",
-    "status": "%s"
-}`;
-
-    immutable status = terminate ? "TERMINATED" : "ARCHIVED";
-    immutable body = bodyPattern.format(room.id, pollID, status);
-    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-
-    auto endPollDg()
-    {
-        immutable response = sendHTTPRequest(
-            plugin: plugin,
-            url: url,
-            caller: caller,
-            authorisationHeader: authorizationBearer,
-            clientID: TwitchPlugin.clientID,
-            verb: HTTPVerb.patch,
-            body: cast(ubyte[])body,
-            contentType: "application/json");
-
-        immutable responseJSON = parseJSON(response.body);
-
-        switch (response.code)
-        {
-        case 200:
-            // 200 OK
-            /+
-                Successfully ended the poll.
-             +/
-            break;
-
-        case 400:
-            // 400 Bad Request
-            /+
-                The broadcaster_id field is required.
-                The id field is required.
-                The status field is required.
-                The value in the status field is not valid.
-                The poll must be active to terminate or archive it.
-             +/
-            goto default;
-
-        case 401:
-            // 401 Unauthorized
-            /+
-                The ID in broadcaster_id must match the user ID in the user access token.
-                The Authorization header is required and must contain a user access token.
-                The user access token must include the channel:manage:polls scope.
-                The access token is not valid.
-                The client ID specified in the Client-Id header must match the
-                client ID specified in the access token.
-             +/
-            goto default;
-
-        default:
-            version(PrintStacktraces)
+            static struct Choice
             {
-                writeln(response.code);
-                writeln(responseJSON.toPrettyString);
-                printStacktrace();
+                string title;
+                uint votes;
+                uint channel_pointsVotes;
+                uint bitsVotes;
+
+                @serdeIgnore string id;
             }
 
-            if (immutable errorJSON = "error" in responseJSON)
+            string id;
+            string broadcaster_id;
+            string broadcaster_name;
+            string broadcaster_login;
+            string title;
+            Choice[] choices;
+            string status;
+            SysTime started_at;
+
+            @serdeOptional
             {
-                return EndPollResults(response.code, errorJSON.str);
+                SysTime ended_at;
+                uint duration;
             }
-            else
+
+            @serdeIgnore
             {
-                return EndPollResults(response.code);
+                bool bits_voting_enabled;
+                uint bits_per_vote;
+                bool channel_points_voting_enabled;
+                uint channel_points_per_vote;
             }
         }
 
@@ -2861,22 +2966,120 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
         }
          */
 
-        immutable dataJSON = "data" in responseJSON;
+        Poll[] data;
+    }
 
-        if (!dataJSON)
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
+
+    static struct EndPollResults
+    {
+        uint code;
+        string error;
+        TwitchPoll poll;
+
+        auto success() const { return (code == 200); }
+
+        this(const uint code, /*const*/ Response response)
         {
-            enum message = "`endPoll` response has unexpected JSON " ~
-                `(no "data" key)`;
-            throw new UnexpectedJSONException(message, responseJSON);
+            this.code = code;
+
+            if (response.data.length)
+            {
+
+            }
         }
 
-        if (!dataJSON.array.length)
+        this(const uint code, const ErrorResponse errorResponse)
         {
-            // No polls to end
-            return EndPollResults(response.code);
+            this.code = code;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
+        }
+    }
+
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to end a poll in a channel for which there existed no room");
+
+    enum url = "https://api.twitch.tv/helix/polls";
+    enum bodyPattern = `
+{
+    "broadcaster_id": "%d",
+    "id": "%s",
+    "status": "%s"
+}`;
+
+    immutable status = terminate ? "TERMINATED" : "ARCHIVED";
+    immutable body = bodyPattern.format(room.id, pollID, status);
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+
+    auto endPollDg()
+    {
+        immutable httpResponse = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: authorizationBearer,
+            clientID: TwitchPlugin.clientID,
+            verb: HTTPVerb.patch,
+            body: cast(ubyte[])body,
+            contentType: "application/json");
+
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                import std.stdio : writeln;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
         }
 
-        return EndPollResults(response.code, TwitchPoll(dataJSON.array[0]));
+        switch (httpResponse.code)
+        {
+        case 200:
+            // 200 OK
+            /+
+                Successfully ended the poll.
+             +/
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                The broadcaster_id field is required.
+                The id field is required.
+                The status field is required.
+                The value in the status field is not valid.
+                The poll must be active to terminate or archive it.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The ID in broadcaster_id must match the user ID in the user access token.
+                The Authorization header is required and must contain a user access token.
+                The user access token must include the channel:manage:polls scope.
+                The access token is not valid.
+                The client ID specified in the Client-Id header must match the
+                client ID specified in the access token.
+             +/
+            goto default;
+
+        default:
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return EndPollResults(httpResponse.code, errorResponse);
+        }
+
+        auto response = httpResponse.body.deserialize!Response;
+        return EndPollResults(httpResponse.code, response);
     }
 
     return retryDelegate(plugin, &endPollDg);
@@ -3049,86 +3252,14 @@ auto getStream(
 in (Fiber.getThis(), "Tried to call `getStream` from outside a fiber")
 in (loginName.length, "Tried to get a stream with an empty login name string")
 {
-    import std.json : parseJSON;
+    import asdf : deserialize;
 
-    static struct GetStreamResults
+    static struct Response
     {
-        uint code;
-        string error;
-        TwitchPlugin.Room.Stream stream;
-
-        auto success() const { return (code == 200); }
-
-        this(const uint code) { this.code = code; }
-
-        this(const uint code, const string error)
+        static struct Pagination
         {
-            this.code = code;
-            this.error = error;
-        }
-
-        this(const uint code, /*const*/ TwitchPlugin.Room.Stream stream)
-        {
-            this.code = code;
-            this.stream = stream;
-        }
-    }
-
-    immutable url = "https://api.twitch.tv/helix/streams?user_login=" ~ loginName;
-
-    auto getStreamDg()
-    {
-        immutable response = sendHTTPRequest(
-            plugin: plugin,
-            url: url,
-            caller: caller,
-            authorisationHeader: plugin.transient.authorizationBearer,
-            clientID: TwitchPlugin.clientID);
-
-        immutable responseJSON = parseJSON(response.body);
-
-        switch (response.code)
-        {
-        case 200:
-            // 200 OK
-            /+
-                Successfully retrieved the list of streams.
-             +/
-            break;
-
-        case 400:
-            // 400 Bad Request
-            /+
-                The value in the type query parameter is not valid.
-             +/
-            goto default;
-
-        case 401:
-            // 401 Unauthorized
-            /+
-                The Authorization header is required and must specify an app
-                access token or user access token.
-                The access token is not valid.
-                The ID in the Client-Id header must match the Client ID in the access token.
-             +/
-            goto default;
-
-        default:
-            version(PrintStacktraces)
-            {
-                writeln(response.code);
-                writeln(responseJSON.toPrettyString);
-                printStacktrace();
-            }
-
-            if (immutable errorJSON = "error" in responseJSON)
-            {
-                return GetStreamResults(response.code, errorJSON.str);
-            }
-            else
-            {
-                return GetStreamResults(response.code);
-            }
+            private import asdf : serdeOptional;
+            @serdeOptional string cursor;
         }
 
         /*
@@ -3176,24 +3307,117 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
         }
          */
 
-        immutable dataJSON = "data" in responseJSON;
+        TwitchPlugin.Room.Stream.JSONSchema[] data;
+        Pagination pagination;
+    }
 
-        if (!dataJSON)
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
+
+    static struct GetStreamResults
+    {
+        uint code;
+        string error;
+        TwitchPlugin.Room.Stream stream;
+
+        auto success() const { return (code == 200); }
+
+        this(const uint code, /*const*/ Response response)
         {
-            enum message = "`getStream` response has unexpected JSON " ~
-                `(no "data" key)`;
-            throw new UnexpectedJSONException(message, responseJSON);
+            import std.conv : to;
+            import std.datetime.systime : SysTime;
+
+            this.code = code;
+
+            if (response.data.length)
+            {
+                auto stream = TwitchPlugin.Room.Stream(response.data[0].id.to!ulong);
+
+                stream.userID = response.data[0].user_id.to!ulong;
+                stream.userLogin = response.data[0].user_login;
+                stream.userDisplayName = response.data[0].user_name;
+                stream.gameID = response.data[0].game_id.to!ulong;
+                stream.gameName = response.data[0].game_name;
+                //stream.isMature = response.data[0].is_mature;
+                stream.title = response.data[0].title;
+                //stream.language = response.data[0].language;
+                stream.startedAt = SysTime.fromISOExtString(response.data[0].started_at);
+                stream.viewerCount = response.data[0].viewer_count;
+                stream.tags = response.data[0].tags;
+                stream.live = (response.data[0].type == "live");
+
+                this.stream = stream;
+            }
         }
 
-        if (!dataJSON.array.length)
+        this(const uint code, const ErrorResponse errorResponse)
         {
-            // Stream is down
-            return GetStreamResults(response.code);
+            this.code = code;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
+        }
+    }
+
+    immutable url = "https://api.twitch.tv/helix/streams?user_login=" ~ loginName;
+
+    auto getStreamDg()
+    {
+        immutable httpResponse = sendHTTPRequest(
+            plugin: plugin,
+            url: url,
+            caller: caller,
+            authorisationHeader: plugin.transient.authorizationBearer,
+            clientID: TwitchPlugin.clientID);
+
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                import std.stdio : writeln;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
         }
 
-        immutable firstStreamJSON = dataJSON.array[0];
-        auto stream = TwitchPlugin.Room.Stream(firstStreamJSON);
-        return GetStreamResults(response.code, stream);
+        switch (httpResponse.code)
+        {
+        case 200:
+            // 200 OK
+            /+
+                Successfully retrieved the list of streams.
+             +/
+            break;
+
+        case 400:
+            // 400 Bad Request
+            /+
+                The value in the type query parameter is not valid.
+             +/
+            goto default;
+
+        case 401:
+            // 401 Unauthorized
+            /+
+                The Authorization header is required and must specify an app
+                access token or user access token.
+                The access token is not valid.
+                The ID in the Client-Id header must match the Client ID in the access token.
+             +/
+            goto default;
+
+        default:
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return GetStreamResults(httpResponse.code, errorResponse);
+        }
+
+        auto response = httpResponse.body.deserialize!Response;
+        return GetStreamResults(httpResponse.code, response);
     }
 
     return retryDelegate(plugin, &getStreamDg);
@@ -3231,16 +3455,77 @@ auto getSubscribers(
 in (Fiber.getThis(), "Tried to call `getSubscribers` from outside a fiber")
 in (channelName.length, "Tried to get subscribers with an empty channel name string")
 {
+    import asdf : deserialize;
     import std.array : Appender;
     import std.conv : to;
-    import std.json : parseJSON;
+
+    static struct Response
+    {
+        static struct Subscriber
+        {
+            string broadcasterID;
+            string broadcasterLogin;
+            string broadcasterName;
+            string gifterID;
+            string gifterLogin;
+            string gifterName;
+            bool isGift;
+            string tier;
+            string planName;
+            string userID;
+            string userName;
+            string userLogin;
+        }
+
+        static struct Pagination
+        {
+            private import asdf : serdeOptional;
+            @serdeOptional string cursor;
+        }
+
+        /*
+        {
+            "data": [
+                {
+                    "broadcaster_id": "141981764",
+                    "broadcaster_login": "twitchdev",
+                    "broadcaster_name": "TwitchDev",
+                    "gifter_id": "12826",
+                    "gifter_login": "twitch",
+                    "gifter_name": "Twitch",
+                    "is_gift": true,
+                    "tier": "1000",
+                    "plan_name": "Channel Subscription (twitchdev)",
+                    "user_id": "527115020",
+                    "user_name": "twitchgaming",
+                    "user_login": "twitchgaming"
+                },
+            ],
+            "pagination": {
+                "cursor": "xxxx"
+            },
+            "total": 13,
+            "points": 13
+        }
+         */
+
+        Subscriber[] data;
+        Pagination pagination;
+        uint total;
+        uint points;
+    }
+
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
 
     static struct GetSubscribersResults
     {
         static struct Subscription
         {
-            private import std.json : JSONValue;
-
             static struct User
             {
                 string name;
@@ -3253,41 +3538,15 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             bool wasGift;
             uint number;
 
-            this(const JSONValue json, const uint number)
+            this(const Response.Subscriber subscription, const uint number)
             {
-                /*
-                {
-                    "data": [
-                        {
-                            "broadcaster_id": "141981764",
-                            "broadcaster_login": "twitchdev",
-                            "broadcaster_name": "TwitchDev",
-                            "gifter_id": "12826",
-                            "gifter_login": "twitch",
-                            "gifter_name": "Twitch",
-                            "is_gift": true,
-                            "tier": "1000",
-                            "plan_name": "Channel Subscription (twitchdev)",
-                            "user_id": "527115020",
-                            "user_name": "twitchgaming",
-                            "user_login": "twitchgaming"
-                        },
-                    ],
-                    "pagination": {
-                        "cursor": "xxxx"
-                    },
-                    "total": 13,
-                    "points": 13
-                }
-                 */
-
-                this.user.id = json["user_id"].str.to!ulong;
-                this.user.name = json["user_login"].str;
-                this.user.displayName = json["user_name"].str;
-                this.wasGift = json["is_gift"].boolean;
-                this.gifter.id = json["gifter_id"].str.to!ulong;
-                this.gifter.name = json["gifter_login"].str;
-                this.gifter.displayName = json["gifter_name"].str;
+                this.user.id = subscription.userID.to!ulong;
+                this.user.name = subscription.userLogin;
+                this.user.displayName = subscription.userName;
+                this.wasGift = subscription.isGift;
+                this.gifter.id = subscription.gifterID.to!ulong;
+                this.gifter.name = subscription.gifterLogin;
+                this.gifter.displayName = subscription.gifterName;
                 this.number = number;
             }
         }
@@ -3299,44 +3558,38 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
 
         auto success() const { return code == 200; }
 
-        this(const uint code) { this.code = code; }
-
-        this(const uint code, const string error)
-        {
-            this.code = code;
-            this.error = error;
-        }
-
-        this(const uint code, const uint totalNumSubscribers)
-        {
-            this.code = code;
-            this.totalNumSubscribers = totalNumSubscribers;
-        }
-
         this(
             const uint code,
             const uint totalNumSubscribers,
-            /*const*/ Subscription[] subs)
+            /*const*/ Subscription[] subs = null)
         {
             this.code = code;
             this.totalNumSubscribers = totalNumSubscribers;
             this.subs = subs;
+        }
+
+        this(const uint code, const ErrorResponse errorResponse)
+        {
+            this.code = code;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
         }
     }
 
     const room = channelName in plugin.rooms;
     assert(room, "Tried to get subscribers of a channel for which there existed no room");
 
-    Appender!(GetSubscribersResults.Subscription[]) subs;
-    string after;
-    uint numberCounter;
-    uint totalNumSubscribers;
-
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
     immutable firstURL = "https://api.twitch.tv/helix/subscriptions?broadcaster_id=" ~ room.id.to!string;
     immutable subsequentURL = totalOnly ?
         firstURL ~ "&first=1&after=" :
         firstURL ~ "&after=";
+
+    // Keep these outside
+    Appender!(GetSubscribersResults.Subscription[]) subs;
+    uint totalNumSubscribers;
+    uint numberCounter;
+    string after;
 
     auto getSubscribersDg()
     {
@@ -3348,16 +3601,26 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 subsequentURL ~ after :
                 firstURL;
 
-            immutable response = sendHTTPRequest(
+            immutable httpResponse = sendHTTPRequest(
                 plugin: plugin,
                 url: url,
                 caller: caller,
                 authorisationHeader: authorizationBearer,
                 clientID: TwitchPlugin.clientID);
 
-            immutable responseJSON = parseJSON(response.body);
+            version(PrintStacktraces)
+            {
+                scope(failure)
+                {
+                    import std.json : parseJSON;
+                    import std.stdio : writeln;
+                    writeln(httpResponse.code);
+                    writeln(httpResponse.body.parseJSON.toPrettyString);
+                    printStacktrace();
+                }
+            }
 
-            switch (response.code)
+            switch (httpResponse.code)
             {
             case 200:
                 // 200 OK
@@ -3386,56 +3649,29 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 goto default;
 
             default:
-                version(PrintStacktraces)
-                {
-                    writeln(response.code);
-                    writeln(responseJSON.toPrettyString);
-                    printStacktrace();
-                }
-
-                if (immutable errorJSON = "error" in responseJSON)
-                {
-                    return GetSubscribersResults(response.code, errorJSON.str);
-                }
-                else
-                {
-                    return GetSubscribersResults(response.code);
-                }
+                const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+                return GetSubscribersResults(httpResponse.code, errorResponse);
             }
 
-            responseCode = response.code;
+            responseCode = httpResponse.code;
 
-            immutable dataJSON = "data" in responseJSON;
-
-            if (!dataJSON)
-            {
-                enum message = "`getSubscribers` response has unexpected JSON " ~
-                    `(no "data" key)`;
-                throw new UnexpectedJSONException(message, responseJSON);
-            }
-
-            if (!totalNumSubscribers) totalNumSubscribers = cast(uint)responseJSON["total"].integer;
+            auto response = httpResponse.body.deserialize!Response;
+            totalNumSubscribers = response.total;
 
             if (totalOnly)
             {
                 // We only want the total number of subscribers
-                return GetSubscribersResults(response.code, totalNumSubscribers);
+                return GetSubscribersResults(httpResponse.code, totalNumSubscribers);
             }
 
             if (!subs[].length) subs.reserve(totalNumSubscribers);
 
-            foreach (immutable subJSON; dataJSON.array)
+            foreach (const sub; response.data)
             {
-                subs.put(GetSubscribersResults.Subscription(subJSON, numberCounter++));
+                subs.put(GetSubscribersResults.Subscription(sub, numberCounter++));
             }
 
-            immutable paginationJSON = "pagination" in responseJSON;
-            if (!paginationJSON) break;
-
-            immutable cursorJSON = "cursor" in *paginationJSON;
-            if (!cursorJSON) break;
-
-            after = cursorJSON.str;
+            after = response.pagination.cursor;
         }
         while (after.length);
 
@@ -3471,12 +3707,31 @@ in (Fiber.getThis(), "Tried to call `sendShoutout` from outside a fiber")
 in (sourceChannelID, "Tried to call `sendShoutout` with an unset source channel ID")
 in (targetChannelID, "Tried to call `sendShoutout` with an unset target channel ID")
 {
+    import asdf : deserialize;
     import std.format : format;
+
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
 
     static struct ShoutoutResults
     {
         uint code;
+        string error;
+
         auto success() const { return (code == 204); }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const ErrorResponse errorResponse)
+        {
+            this.code = code;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
+        }
     }
 
     enum urlPattern = "https://api.twitch.tv/helix/chat/shoutouts" ~
@@ -3488,7 +3743,7 @@ in (targetChannelID, "Tried to call `sendShoutout` with an unset target channel 
 
     auto sendShoutoutDg()
     {
-        immutable response = sendHTTPRequest(
+        immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
@@ -3496,7 +3751,19 @@ in (targetChannelID, "Tried to call `sendShoutout` with an unset target channel 
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.post);
 
-        switch (response.code)
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                import std.stdio : writeln;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
+        }
+
+        switch (httpResponse.code)
         {
         case 204:
             // 204 No Content
@@ -3548,16 +3815,11 @@ in (targetChannelID, "Tried to call `sendShoutout` with an unset target channel 
             goto default;
 
         default:
-            version(PrintStacktraces)
-            {
-                writeln(response.code);
-                printStacktrace();
-            }
-            // Drop down
-            break;
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return ShoutoutResults(httpResponse.code, errorResponse);
         }
 
-        return ShoutoutResults(response.code);
+        return ShoutoutResults(httpResponse.code);
     }
 
     return retryDelegate(plugin, &sendShoutoutDg);
@@ -3587,10 +3849,17 @@ auto deleteMessage(
 in (Fiber.getThis(), "Tried to call `deleteMessage` from outside a fiber")
 in (channelName.length, "Tried to delete a message without providing a channel name")
 {
+    import asdf : deserialize;
     import std.algorithm.searching : startsWith;
     import std.format : format;
-    import std.json : parseJSON;
     import core.time : msecs;
+
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
 
     static struct DeleteResults
     {
@@ -3598,21 +3867,19 @@ in (channelName.length, "Tried to delete a message without providing a channel n
         string error;
         bool isFromBroadcaster;
 
+        auto success() const { return (code == 204) || (code == 404); }
+
         this(const uint code) { this.code = code; }
 
-        this(const uint code, const string error)
+        this(const uint code, const ErrorResponse errorResponse)
         {
-            this.code = code;
-            this.error = error;
-        }
+            enum isFromBroadcasterMessage = "You cannot delete the broadcaster's messages.";
 
-        this(const uint code, const bool isFromBroadcaster)
-        {
             this.code = code;
-            this.isFromBroadcaster = isFromBroadcaster;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
+            this.isFromBroadcaster = (errorResponse.message == isFromBroadcasterMessage);
         }
-
-        auto success() const { return (code == 204) || (code == 404); }
     }
 
     const room = channelName in plugin.rooms;
@@ -3630,7 +3897,7 @@ in (channelName.length, "Tried to delete a message without providing a channel n
 
     auto deleteDg()
     {
-        immutable response = sendHTTPRequest(
+        immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
@@ -3638,9 +3905,19 @@ in (channelName.length, "Tried to delete a message without providing a channel n
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.delete_);
 
-        immutable responseJSON = parseJSON(response.body);
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                import std.stdio : writeln;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
+        }
 
-        switch (response.code)
+        switch (httpResponse.code)
         {
         case 204:
             // 204 No Content
@@ -3662,14 +3939,6 @@ in (channelName.length, "Tried to delete a message without providing a channel n
                 "status": 400
             }
              */
-
-            if (immutable messageJSON = "message" in responseJSON)
-            {
-                if (messageJSON.str == "You cannot delete the broadcaster's messages.")
-                {
-                    return DeleteResults(response.code, isFromBroadcaster: true);
-                }
-            }
             goto default;
 
         case 401:
@@ -3699,23 +3968,11 @@ in (channelName.length, "Tried to delete a message without providing a channel n
             break;
 
         default:
-            version(PrintStacktraces)
-            {
-                writeln(response.code);
-                writeln(responseJSON.toPrettyString);
-                printStacktrace();
-            }
-
-            if (immutable messageJSON = "message" in responseJSON)
-            {
-                return DeleteResults(response.code, messageJSON.str);
-            }
-
-            // Drop down
-            break;
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return DeleteResults(httpResponse.code, errorResponse);
         }
 
-        return DeleteResults(response.code);
+        return DeleteResults(httpResponse.code);
     }
 
     static immutable failedDeleteRetry = 100.msecs;
@@ -3759,13 +4016,63 @@ in (Fiber.getThis(), "Tried to call `timeoutUser` from outside a fiber")
 in (channelName.length, "Tried to timeout a user without providing a channel")
 in (userID, "Tried to timeout a user with an unset user ID")
 {
+    import asdf : deserialize;
     import std.algorithm.comparison : min;
     import std.format : format;
+
+    static struct Response
+    {
+        private import asdf : serdeIgnore;
+
+        static struct Timeout
+        {
+            string broadcaster_id;
+            string moderator_id;
+            string user_id;
+            string created_at;
+            string end_time;
+        }
+
+        /*
+        {
+            "data": [
+                {
+                    "broadcaster_id": "1234",
+                    "moderator_id": "5678",
+                    "user_id": "9876",
+                    "created_at": "2021-09-28T18:22:31Z",
+                    "end_time": null
+                }
+            ]
+        }
+         */
+        /*
+        {
+            "data": [
+                {
+                    "broadcaster_id": "1234",
+                    "moderator_id": "5678",
+                    "user_id": "9876",
+                    "created_at": "2021-09-28T19:27:31Z",
+                    "end_time": "2021-09-28T19:22:31Z"
+                }
+            ]
+        }
+         */
+
+        @serdeIgnore Timeout[] data;
+    }
+
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
 
     static struct TimeoutResults
     {
         private import std.datetime.systime : SysTime;
-        private import std.json : JSONValue;
 
         uint code;
         string error;
@@ -3778,6 +4085,38 @@ in (userID, "Tried to timeout a user with an unset user ID")
         SysTime endTime;
 
         auto success() const { return (code == 200); }
+
+        this(const uint code, const Response response)
+        {
+            import std.conv : to;
+
+            this.code = code;
+
+            if (response.data.length)
+            {
+                this.broadcasterID = response.data[0].broadcaster_id.to!ulong;
+                this.moderatorID = response.data[0].moderator_id.to!ulong;
+                this.userID = response.data[0].user_id.to!ulong;
+                this.createdAt = SysTime.fromISOExtString(response.data[0].created_at);
+
+                if (response.data[0].end_time.length)
+                {
+                    this.endTime = SysTime.fromISOExtString(response.data[0].end_time);
+                }
+            }
+        }
+
+        this(const uint code, const ErrorResponse response)
+        {
+            enum alreadyBannedMessage = "user is already banned";
+            enum targetIsBroadcasterMessage = "The user specified in the user_id field may not be banned/timed out.";
+
+            this.code = code;
+            //this.error = response.error;
+            this.error = response.message;
+            this.alreadyBanned = (response.message == alreadyBannedMessage);
+            this.targetIsBroadcaster = (response.message == targetIsBroadcasterMessage);
+        }
 
         this(const uint code) { this.code = code; }
 
@@ -3795,54 +4134,6 @@ in (userID, "Tried to timeout a user with an unset user ID")
             this.code = code;
             this.alreadyBanned = alreadyBanned;
             this.targetIsBroadcaster = targetIsBroadcaster;
-        }
-
-        this(const uint code, const JSONValue json)
-        {
-            import std.conv : to;
-            import std.json : JSONType;
-
-            /*
-            {
-                "data": [
-                    {
-                        "broadcaster_id": "1234",
-                        "moderator_id": "5678",
-                        "user_id": "9876",
-                        "created_at": "2021-09-28T18:22:31Z",
-                        "end_time": null
-                    }
-                ]
-            }
-             */
-            /*
-            {
-                "data": [
-                    {
-                        "broadcaster_id": "1234",
-                        "moderator_id": "5678",
-                        "user_id": "9876",
-                        "created_at": "2021-09-28T19:27:31Z",
-                        "end_time": "2021-09-28T19:22:31Z"
-                    }
-                ]
-            }
-             */
-
-            this.code = code;
-            this.broadcasterID = json["broadcaster_id"].str.to!ulong;
-            this.moderatorID = json["moderator_id"].str.to!ulong;
-            this.userID = json["user_id"].str.to!ulong;
-            this.createdAt = SysTime.fromISOExtString(json["created_at"].str);
-
-            const endTimeJSON = "end_time" in json;
-
-            if (endTimeJSON.type == JSONType.string)
-            {
-                // end_time can be JSONType.string or JSONType.null_
-                // If it is null_, calling endTimeJSON.str would throw
-                this.endTime = SysTime.fromISOExtString(endTimeJSON.str);
-            }
         }
     }
 
@@ -3875,9 +4166,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
 
     auto timeoutDg()
     {
-        import std.json : JSONType, parseJSON;
-
-        immutable response = sendHTTPRequest(
+        immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
@@ -3887,9 +4176,19 @@ in (userID, "Tried to timeout a user with an unset user ID")
             body: cast(ubyte[])body,
             contentType: "application/json");
 
-        immutable responseJSON = parseJSON(response.body);
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                import std.stdio : writeln;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
+        }
 
-        switch (response.code)
+        switch (httpResponse.code)
         {
         case 200:
             // 200 OK
@@ -3925,38 +4224,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
                 "status": 400
             }
              */
-
-            if (immutable messageJSON = "message" in responseJSON)
-            {
-                immutable message = messageJSON.str;
-                immutable alreadyBanned =
-                    (message == "user is already banned");
-                immutable targetIsBroadcaster =
-                    (message == "The user specified in the user_id field may not be banned/timed out.");
-
-                if (alreadyBanned || targetIsBroadcaster)
-                {
-                    return TimeoutResults(
-                        response.code,
-                        alreadyBanned: alreadyBanned,
-                        targetIsBroadcaster: targetIsBroadcaster);
-                }
-                else
-                {
-                    version(PrintStacktraces)
-                    {
-                        writeln(response.code);
-                        writeln(responseJSON.toPrettyString);
-                        printStacktrace();
-                    }
-
-                    return TimeoutResults(response.code, message);
-                }
-            }
-            else
-            {
-                goto default;
-            }
+            goto default;
 
         case 401:
             // 401 Unauthorized
@@ -4009,26 +4277,12 @@ in (userID, "Tried to timeout a user with an unset user ID")
             goto default;
 
         default:
-            version(PrintStacktraces)
-            {
-                writeln(response.code);
-                writeln(responseJSON.toPrettyString);
-                printStacktrace();
-            }
-
-            return TimeoutResults(response.code);
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return TimeoutResults(httpResponse.code, errorResponse);
         }
 
-        immutable dataJSON = "data" in responseJSON;
-
-        if (!dataJSON)
-        {
-            enum message = "`timeoutUser` response has unexpected JSON " ~
-                `(no "data" key)`;
-            throw new UnexpectedJSONException(message, responseJSON);
-        }
-
-        return TimeoutResults(response.code, *dataJSON);
+        const response = httpResponse.body.deserialize!Response;
+        return TimeoutResults(httpResponse.code, response);
     }
 
     return retryDelegate(plugin, &timeoutDg);
@@ -4063,13 +4317,32 @@ auto sendWhisper(
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
 {
+    import asdf : deserialize;
     import std.array : replace;
     import std.format : format;
+
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
 
     static struct WhisperResult
     {
         uint code;
+        string error;
+
         auto success() const { return (code == 204); }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const ErrorResponse errorResponse)
+        {
+            this.code = code;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
+        }
     }
 
     enum urlPattern = "https://api.twitch.tv/helix/whispers" ~
@@ -4087,7 +4360,7 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
 
     auto sendWhisperDg()
     {
-        immutable response = sendHTTPRequest(
+        immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
@@ -4097,7 +4370,19 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
             body: cast(ubyte[])body,
             contentType: "application/json");
 
-        switch (response.code)
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                import std.stdio : writeln;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
+        }
+
+        switch (httpResponse.code)
         {
         case 204:
             // 204 No Content
@@ -4157,16 +4442,11 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
             goto default;
 
         default:
-            version(PrintStacktraces)
-            {
-                writeln(response.code);
-                printStacktrace();
-            }
-            // Drop down
-            break;
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return WhisperResult(httpResponse.code, errorResponse);
         }
 
-        return WhisperResult(response.code);
+        return WhisperResult(httpResponse.code);
     }
 
     return retryDelegate(plugin, &sendWhisperDg);
@@ -4212,14 +4492,33 @@ auto sendAnnouncement(
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
 {
+    import asdf : deserialize;
     import std.algorithm.comparison : among;
     import std.array : replace;
     import std.format : format;
 
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
+
     static struct AnnouncementResults
     {
         uint code;
+        string error;
+
         auto success() const { return (code == 204); }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const ErrorResponse errorResponse)
+        {
+            this.code = code;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
+        }
     }
 
     enum urlPattern = "https://api.twitch.tv/helix/chat/announcements" ~
@@ -4258,7 +4557,7 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
 
     auto sendAnnouncementDg()
     {
-        immutable response = sendHTTPRequest(
+        immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
@@ -4268,7 +4567,19 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
             body: cast(ubyte[])body,
             contentType: "application/json");
 
-        switch (response.code)
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                import std.stdio : writeln;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
+        }
+
+        switch (httpResponse.code)
         {
         case 204:
             // 204 No Content
@@ -4307,16 +4618,11 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
             goto default;
 
         default:
-            version(PrintStacktraces)
-            {
-                writeln(response.code);
-                printStacktrace();
-            }
-            // Drop down
-            break;
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return AnnouncementResults(httpResponse.code, errorResponse);
         }
 
-        return AnnouncementResults(response.code);
+        return AnnouncementResults(httpResponse.code);
     }
 
     return retryDelegate(plugin, &sendAnnouncementDg);
@@ -4350,9 +4656,44 @@ auto warnUser(
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
 {
+    import asdf : deserialize;
     import std.array : replace;
     import std.format : format;
-    import std.json : parseJSON;
+
+    static struct Response
+    {
+        private import asdf : serdeIgnore;
+
+        static struct Warning
+        {
+            string broadcaster_id;
+            string user_id;
+            string moderator_id;
+            string reason;
+        }
+
+        /*
+        {
+            "data": [
+                {
+                    "broadcaster_id": "404040",
+                    "user_id": "9876",
+                    "moderator_id": "404041",
+                    "reason": "stop doing that!"
+                }
+            ]
+        }
+         */
+
+        @serdeIgnore Warning[] data;
+    }
+
+    static struct ErrorResponse
+    {
+        string error;
+        string message;
+        uint status;
+    }
 
     static struct WarnResults
     {
@@ -4360,6 +4701,15 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
         string error;
 
         auto success() const { return (code == 200); }
+
+        this(const uint code) { this.code = code; }
+
+        this(const uint code, const ErrorResponse errorResponse)
+        {
+            this.code = code;
+            //this.error = errorResponse.error;
+            this.error = errorResponse.message;
+        }
     }
 
     enum urlPattern = "https://api.twitch.tv/helix/moderation/warnings" ~
@@ -4380,7 +4730,7 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
 
     auto warnUserDg()
     {
-        immutable response = sendHTTPRequest(
+        immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
             url: url,
             caller: caller,
@@ -4390,9 +4740,19 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
             body: cast(ubyte[])body,
             contentType: "application/json");
 
-        immutable responseJSON = parseJSON(response.body);
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                import std.stdio : writeln;
+                writeln(httpResponse.code);
+                writeln(httpResponse.body.parseJSON.toPrettyString);
+                printStacktrace();
+            }
+        }
 
-        switch (response.code)
+        switch (httpResponse.code)
         {
         case 200:
             // 200 OK
@@ -4458,36 +4818,11 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
             goto default;
 
         default:
-            version(PrintStacktraces)
-            {
-                writeln(response.code);
-                writeln(responseJSON.toPrettyString);
-                printStacktrace();
-            }
-
-            if (immutable errorJSON = "error" in responseJSON)
-            {
-                return WarnResults(response.code, errorJSON.str);
-            }
-            else
-            {
-                return WarnResults(response.code);
-            }
+            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            return WarnResults(httpResponse.code, errorResponse);
         }
 
-        /*
-        {
-            "data": [
-                {
-                    "broadcaster_id": "404040",
-                    "user_id": "9876",
-                    "moderator_id": "404041",
-                    "reason": "stop doing that!"
-                }
-            ]
-        }
-         */
-        return WarnResults(response.code);
+        return WarnResults(httpResponse.code);
     }
 
     return retryDelegate(plugin, &warnUserDg);

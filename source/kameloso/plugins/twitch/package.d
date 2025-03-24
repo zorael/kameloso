@@ -4676,6 +4676,32 @@ package:
             /*immutable*/ ulong _id;
 
         package:
+            static struct JSONSchema
+            {
+                import asdf : serdeIgnore;
+
+                string game_id;
+                string game_name;
+                string id;
+                string started_at;
+                string[] tags;
+                string title;
+                string type;
+                string user_id;
+                string user_login;
+                string user_name;
+                uint viewer_count;
+                uint viewer_count_max;
+
+                @serdeIgnore
+                {
+                    string[] tag_ids;
+                    string thumbnail_url;
+                    bool is_mature;
+                    string language;
+                }
+            }
+
             /++
                 Whether or not the stream is currently ongoing.
              +/
