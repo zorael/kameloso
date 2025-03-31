@@ -52,10 +52,18 @@ import dialect.defs;
  +/
 struct Counter
 {
-private:
-    import std.json : JSONValue;
+    /++
+     +/
+    static struct JSONSchema
+    {
+        long count;
+        string word;
+        string patternQuery;
+        string patternIncrement;
+        string patternDecrement;
+        string patternAssign;
+    }
 
-public:
     /++
         Current count.
      +/
@@ -111,45 +119,30 @@ public:
         this.word = word;
     }
 
-    // toJSON
     /++
-        Serialises this [Counter] into a JSON representation.
-
-        Returns:
-            A [std.json.JSONValue|JSONValue] that represents this [Counter].
      +/
-    auto toJSON() const
+    this(const JSONSchema json)
     {
-        JSONValue json;
-        json = null;
-        json.object = null;
-
-        json["count"] = JSONValue(count);
-        json["word"] = JSONValue(word);
-        json["patternQuery"] = JSONValue(patternQuery);
-        json["patternIncrement"] = JSONValue(patternIncrement);
-        json["patternDecrement"] = JSONValue(patternDecrement);
-        json["patternAssign"] = JSONValue(patternAssign);
-        return json;
+        count = json.count;
+        word = json.word;
+        patternQuery = json.patternQuery;
+        patternIncrement = json.patternIncrement;
+        patternDecrement = json.patternDecrement;
+        patternAssign = json.patternAssign;
     }
 
-    // fromJSON
     /++
-        Deserialises a [Counter] from a JSON representation.
-
-        Params:
-            json = [std.json.JSONValue|JSONValue] to build a [Counter] from.
      +/
-    static auto fromJSON(const JSONValue json)
+    auto asSchema() const
     {
-        Counter counter;
-        counter.count = json["count"].integer;
-        counter.word = json["word"].str;
-        counter.patternQuery = json["patternQuery"].str;
-        counter.patternIncrement = json["patternIncrement"].str;
-        counter.patternDecrement = json["patternDecrement"].str;
-        counter.patternAssign = json["patternAssign"].str;
-        return counter;
+        JSONSchema json;
+        json.count = count;
+        json.word = word;
+        json.patternQuery = patternQuery;
+        json.patternIncrement = patternIncrement;
+        json.patternDecrement = patternDecrement;
+        json.patternAssign = patternAssign;
+        return json;
     }
 
     // resetEmptyPatterns
@@ -762,30 +755,23 @@ void reload(CounterPlugin plugin)
  +/
 void saveCounters(CounterPlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import std.json : JSONType;
+    import asdf : serializeToJsonPretty;
+    import std.stdio : File, writeln;
 
-    JSONStorage json;
+    Counter.JSONSchema[string][string] json;
 
     foreach (immutable channelName, ref channelCounters; plugin.counters)
     {
         json[channelName] = null;
-        json[channelName].object = null;
 
         foreach (immutable word, ref counter; channelCounters)
         {
-            if (!counter.word.length)
-            {
-                // Backwards compatibility with old counters files
-                counter.word = word;
-                counter.resetEmptyPatterns();
-            }
-            json[channelName][word] = counter.toJSON();
+            json[channelName][word] = counter.asSchema;
         }
     }
 
-    if (json.type == JSONType.null_) json.object = null;  // reset to type object if null_
-    json.save(plugin.countersFile);
+    immutable serialised = json.serializeToJsonPretty!"    ";
+    File(plugin.countersFile, "w").writeln(serialised);
 }
 
 
@@ -799,44 +785,42 @@ void saveCounters(CounterPlugin plugin)
 void loadCounters(CounterPlugin plugin)
 {
     import lu.json : JSONStorage;
-    import core.memory : GC;
+    import asdf : deserialize;
+    import std.file : readText;
 
-    GC.disable();
-    scope(exit) GC.enable();
-
-    JSONStorage json;
-    json.load(plugin.countersFile);
     plugin.counters = null;
 
-    foreach (immutable channelName, channelCountersJSON; json.object)
+    try
     {
-        // Initialise the AA
-        auto channelCounters = channelName in plugin.counters;
+        auto json = plugin.countersFile.readText.deserialize!(Counter.JSONSchema[string][string]);
 
-        if (!channelCounters)
+        foreach (immutable channelName, channelCountersJSON; json)
         {
-            plugin.counters[channelName][string.init] = Counter.init;
-            channelCounters = channelName in plugin.counters;
-            (*channelCounters).remove(string.init);
-        }
+            // Initialise the AA
+            auto channelCounters = channelName in plugin.counters;
 
-        foreach (immutable word, counterJSON; channelCountersJSON.object)
-        {
-            (*channelCounters)[word] = Counter.fromJSON(counterJSON);
-            auto counter = word in *channelCounters;
-
-            if (!counter.word.length)
+            if (!channelCounters)
             {
-                // Backwards compatibility with old counters files
-                counter.word = word;
-                counter.resetEmptyPatterns();
+                plugin.counters[channelName][string.init] = Counter.init;
+                channelCounters = channelName in plugin.counters;
+                (*channelCounters).remove(string.init);
             }
+
+            foreach (immutable word, counterSchema; channelCountersJSON)
+            {
+                (*channelCounters)[word] = Counter(counterSchema);
+            }
+
+            (*channelCounters).rehash();
         }
 
-        (*channelCounters).rehash();
+        plugin.counters.rehash();
     }
-
-    plugin.counters.rehash();
+    catch (Exception e)
+    {
+        import kameloso.common : logger;
+        version(PrintStacktraces) logger.trace(e);
+    }
 }
 
 
@@ -847,29 +831,21 @@ void loadCounters(CounterPlugin plugin)
  +/
 void initResources(CounterPlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import std.json : JSONException;
-
-    JSONStorage countersJSON;
+    import asdf : deserialize, serializeToJsonPretty;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
     try
     {
-        countersJSON.load(plugin.countersFile);
+        auto json = plugin.countersFile.readText.deserialize!(Counter.JSONSchema[string][string]);
+        immutable serialised = json.serializeToJsonPretty!"    ";
+        File(plugin.countersFile, "w").writeln(serialised);
     }
-    catch (JSONException e)
+    catch (Exception e)
     {
         import kameloso.common : logger;
-
         version(PrintStacktraces) logger.trace(e);
-
-        throw new IRCPluginInitialisationException(
-            message: "Counters file is malformed",
-            pluginName: plugin.name,
-            malformedFilename: plugin.countersFile);
     }
-
-    // Let other Exceptions pass.
-    countersJSON.save(plugin.countersFile);
 }
 
 

@@ -218,9 +218,8 @@ import kameloso.net :
 import kameloso.thread : Sendable;
 import dialect.defs;
 import dialect.postprocessors.twitch;  // To trigger the module ctor
-import lu.container : MutexedAA, RehashingAA;
+import lu.container : RehashingAA;
 import std.datetime.systime : SysTime;
-import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread.fiber : Fiber;
 
@@ -234,6 +233,25 @@ import core.thread.fiber : Fiber;
  +/
 package struct Credentials
 {
+    /++
+     +/
+    static struct JSONSchema
+    {
+        string broadcasterKey;
+        string broadcasterBearerToken;
+        long broadcasterKeyExpiry;
+        string googleClientID;
+        string googleClientSecret;
+        string googleAccessToken;
+        string googleRefreshToken;
+        string youtubePlaylistID;
+        string spotifyClientID;
+        string spotifyClientSecret;
+        string spotifyAccessToken;
+        string spotifyRefreshToken;
+        string spotifyPlaylistID;
+    }
+
     /++
         Broadcaster-level Twitch key.
      +/
@@ -300,55 +318,43 @@ package struct Credentials
     string spotifyPlaylistID;
 
     /++
-        Serialises these [Credentials] into JSON.
-
-        Returns:
-            `this` represented in JSON.
      +/
-    auto toJSON() const
+    this(const JSONSchema json)
     {
-        JSONValue json;
-        json = null;
-        json.object = null;
-
-        json["broadcasterKey"] = this.broadcasterKey;
-        json["broadcasterBearerToken"] = this.broadcasterBearerToken;
-        json["broadcasterKeyExpiry"] = this.broadcasterKeyExpiry;
-        json["googleClientID"] = this.googleClientID;
-        json["googleClientSecret"] = this.googleClientSecret;
-        json["googleAccessToken"] = this.googleAccessToken;
-        json["googleRefreshToken"] = this.googleRefreshToken;
-        json["youtubePlaylistID"] = this.youtubePlaylistID;
-        json["spotifyClientID"] = this.spotifyClientID;
-        json["spotifyClientSecret"] = this.spotifyClientSecret;
-        json["spotifyAccessToken"] = this.spotifyAccessToken;
-        json["spotifyRefreshToken"] = this.spotifyRefreshToken;
-        json["spotifyPlaylistID"] = this.spotifyPlaylistID;
-
-        return json;
+        this.broadcasterKey = json.broadcasterKey;
+        this.googleClientID = json.googleClientID;
+        this.googleClientSecret = json.googleClientSecret;
+        this.googleAccessToken = json.googleAccessToken;
+        this.googleRefreshToken = json.googleRefreshToken;
+        this.youtubePlaylistID = json.youtubePlaylistID;
+        this.spotifyClientID = json.spotifyClientID;
+        this.spotifyClientSecret = json.spotifyClientSecret;
+        this.spotifyAccessToken = json.spotifyAccessToken;
+        this.spotifyRefreshToken = json.spotifyRefreshToken;
+        this.spotifyPlaylistID = json.spotifyPlaylistID;
+        this.broadcasterBearerToken = json.broadcasterBearerToken;
+        this.broadcasterKeyExpiry = json.broadcasterKeyExpiry;
     }
 
     /++
-        Deserialises some [Credentials] from JSON.
-
-        Params:
-            json = JSON representation of some [Credentials].
      +/
-    this(const JSONValue json)
+    auto asSchema() const
     {
-        this.broadcasterKey = json["broadcasterKey"].str;
-        this.googleClientID = json["googleClientID"].str;
-        this.googleClientSecret = json["googleClientSecret"].str;
-        this.googleAccessToken = json["googleAccessToken"].str;
-        this.googleRefreshToken = json["googleRefreshToken"].str;
-        this.youtubePlaylistID = json["youtubePlaylistID"].str;
-        this.spotifyClientID = json["spotifyClientID"].str;
-        this.spotifyClientSecret = json["spotifyClientSecret"].str;
-        this.spotifyAccessToken = json["spotifyAccessToken"].str;
-        this.spotifyRefreshToken = json["spotifyRefreshToken"].str;
-        this.spotifyPlaylistID = json["spotifyPlaylistID"].str;
-        this.broadcasterBearerToken = json["broadcasterBearerToken"].str;
-        this.broadcasterKeyExpiry = json["broadcasterKeyExpiry"].integer;
+        JSONSchema json;
+        json.broadcasterKey = this.broadcasterKey;
+        json.googleClientID = this.googleClientID;
+        json.googleClientSecret = this.googleClientSecret;
+        json.googleAccessToken = this.googleAccessToken;
+        json.googleRefreshToken = this.googleRefreshToken;
+        json.youtubePlaylistID = this.youtubePlaylistID;
+        json.spotifyClientID = this.spotifyClientID;
+        json.spotifyClientSecret = this.spotifyClientSecret;
+        json.spotifyAccessToken = this.spotifyAccessToken;
+        json.spotifyRefreshToken = this.spotifyRefreshToken;
+        json.spotifyPlaylistID = this.spotifyPlaylistID;
+        json.broadcasterBearerToken = this.broadcasterBearerToken;
+        json.broadcasterKeyExpiry = this.broadcasterKeyExpiry;
+        return json;
     }
 }
 
@@ -366,6 +372,16 @@ private:
     import std.datetime.systime : SysTime;
 
 public:
+    /++
+     +/
+    static struct JSONSchema
+    {
+        string user_id;
+        string user_name;
+        string user_login;
+        string followed_at;
+    }
+
     /++
         Display name of follower.
      +/
@@ -387,28 +403,15 @@ public:
     ulong id;
 
     /++
-        Constructs a [Follower] from a JSON representation.
-
-        Params:
-            json = JSON representation of a follower.
      +/
-    this(const JSONValue json)
+    this(const JSONSchema json)
     {
         import std.conv : to;
 
-        /+
-        {
-            "user_id": "11111",
-            "user_name": "UserDisplayName",
-            "user_login": "userloginname",
-            "followed_at": "2022-05-24T22:22:08Z",
-        },
-         +/
-
-        this.id = json["user_id"].str.to!uint;
-        this.displayName = json["user_name"].str;
-        this.login = json["user_login"].str;
-        this.when = SysTime.fromISOExtString(json["followed_at"].str);
+        this.id = json.user_id.to!ulong;
+        this.displayName = json.user_name;
+        this.login = json.user_login;
+        this.when = SysTime.fromISOExtString(json.followed_at);
     }
 }
 
@@ -784,9 +787,11 @@ void reportStreamTime(
     const TwitchPlugin.Room room)
 {
     import kameloso.time : timeSince;
-    import lu.json : JSONStorage;
+    import asdf : deserialize;
     import std.datetime.systime : Clock, SysTime;
+    import std.file : readText;
     import std.format : format;
+    import std.stdio : File, writeln;
     import core.time : Duration;
 
     if (room.stream.live)
@@ -821,17 +826,18 @@ void reportStreamTime(
     }
 
     // Stream down, check if we have one on record to report instead
-    JSONStorage json;
-    json.load(plugin.streamHistoryFile);
+    auto json = plugin.streamHistoryFile
+        .readText
+        .deserialize!(TwitchPlugin.Room.Stream.JSONSchema[]);
 
-    if (!json.array.length)
+    if (!json.length)
     {
         // No streams this session and none on record
         immutable message = room.broadcasterDisplayName ~ " is currently not streaming.";
         return chan(plugin.state, room.channelName, message);
     }
 
-    const previousStream = TwitchPlugin.Room.Stream(json.array[$-1]);
+    const previousStream = TwitchPlugin.Room.Stream(json[$-1]);
     immutable delta = (previousStream.endedAt - previousStream.startedAt);
     immutable timestring = timeSince!(7, 1)(delta);
     immutable gameName = previousStream.gameName.length ?
@@ -2881,7 +2887,8 @@ void initialise(TwitchPlugin plugin)
     if (someKeygenWanted || (!plugin.state.bot.pass.length && !plugin.state.coreSettings.force))
     {
         import kameloso.thread : ThreadMessage;
-        import lu.json : JSONStorage;
+        import asdf : deserialize;
+        import std.file : readText;
 
         if (plugin.state.coreSettings.headless)
         {
@@ -2891,10 +2898,9 @@ void initialise(TwitchPlugin plugin)
 
         // Some keygen, reload to load secrets so existing ones are read
         // Not strictly needed for normal keygen but for everything else
-        JSONStorage secretsJSON;
-        secretsJSON.load(plugin.secretsFile);
+        auto json = plugin.secretsFile.readText.deserialize!(Credentials.JSONSchema[string]);
 
-        foreach (immutable channelName, credsJSON; secretsJSON.storage.object)
+        foreach (immutable channelName, credsJSON; json)
         {
             plugin.secretsByChannel[channelName] = Credentials(credsJSON);
         }
@@ -3312,7 +3318,6 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
     import kameloso.plugins.common.scheduling : delay;
     import std.conv : to;
     import std.datetime.systime : Clock, SysTime;
-    import std.json : JSONValue;
     import core.time : minutes;
 
     static immutable retryDelay = 1.minutes;
@@ -3674,12 +3679,18 @@ in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
  +/
 void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream stream)
 {
-    import lu.json : JSONStorage;
+    import asdf : deserialize, serializeToJsonPretty;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
-    JSONStorage json;
-    json.load(plugin.streamHistoryFile);
-    json.array ~= stream.toJSON();
-    json.save(plugin.streamHistoryFile);
+    auto streams = plugin.streamHistoryFile
+        .readText
+        .deserialize!(TwitchPlugin.Room.Stream.JSONSchema[]);
+
+    streams ~= stream.asSchema;
+
+    immutable serialised = streams.serializeToJsonPretty!"    ";
+    File(plugin.streamHistoryFile, "w").writeln(serialised);
 }
 
 
@@ -4316,56 +4327,40 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
  +/
 void initResources(TwitchPlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import std.file : exists, mkdir;
-    import std.json : JSONException, JSONType;
+    import asdf : deserialize, serializeToJsonPretty;
+    import std.file : exists, mkdir, readText;
     import std.path : dirName;
+    import std.stdio : File, writeln;
 
-    void loadFile(
-        const string fileDescription,
-        ref JSONStorage json,
-        const string filename,
-        const size_t line = __LINE__)
+    void readAndWriteBack(T)(const string filename, const string fileDescription)
     {
         try
         {
-            json.load(filename);
+            immutable serialised = plugin.ecountFile
+                .readText
+                .deserialize!T
+                .serializeToJsonPretty!"    ";
+            File(plugin.ecountFile, "w").writeln(serialised);
         }
-        catch (JSONException e)
+        catch (Exception e)
         {
-            version(PrintStacktraces) logger.error("JSONException: ", e.msg);
+            version(PrintStacktraces) logger.error(e);
 
             throw new IRCPluginInitialisationException(
-                message: fileDescription ~ " file is malformed",
-                pluginName: plugin.name,
-                malformedFilename: filename,
-                file: __FILE__,
-                line: line);
+            message: fileDescription ~ " file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: filename);
         }
-
-        // Let other Exceptions pass.
     }
-
-    JSONStorage ecountJSON;
-    JSONStorage viewersJSON;
-    JSONStorage secretsJSON;
-    JSONStorage historyJSON;
 
     // Ensure the subdirectory exists
     immutable subdir = plugin.ecountFile.dirName;
     if (!subdir.exists) mkdir(subdir);
 
-    loadFile("ecount", ecountJSON, plugin.ecountFile);
-    loadFile("Viewers", viewersJSON, plugin.viewersFile);
-    loadFile("Secrets", secretsJSON, plugin.secretsFile);
-    loadFile("Stream history", historyJSON, plugin.streamHistoryFile);
-
-    if (historyJSON.type != JSONType.array) historyJSON.array = null;  // coerce to array if needed
-
-    ecountJSON.save(plugin.ecountFile);
-    viewersJSON.save(plugin.viewersFile);
-    secretsJSON.save(plugin.secretsFile);
-    historyJSON.save(plugin.streamHistoryFile);
+    readAndWriteBack!(long[string][string])(plugin.ecountFile, "ecount");
+    readAndWriteBack!(long[string][string])(plugin.viewersFile, "Viewers");
+    readAndWriteBack!(Credentials.JSONSchema[string])(plugin.secretsFile, "Secrets");
+    readAndWriteBack!(TwitchPlugin.Room.Stream.JSONSchema[])(plugin.streamHistoryFile, "Stream history");
 }
 
 
@@ -4382,8 +4377,8 @@ void initResources(TwitchPlugin plugin)
  +/
 void saveResourceToDisk(/*const*/ RehashingAA!(long[string])[string] aa, const string filename)
 {
-    import std.json : JSONValue;
-    import std.stdio : File;
+    import asdf : serializeToJsonPretty;
+    import std.stdio : File, writeln;
 
     long[string][string] tempAA;
 
@@ -4392,8 +4387,8 @@ void saveResourceToDisk(/*const*/ RehashingAA!(long[string])[string] aa, const s
         tempAA[channelName] = rehashingAA.aaOf;
     }
 
-    immutable json = JSONValue(tempAA);
-    File(filename, "w").writeln(json.toPrettyString);
+    immutable serialised = tempAA.serializeToJsonPretty!"    ";
+    File(filename, "w").writeln(serialised);
 }
 
 
@@ -4407,21 +4402,18 @@ void saveResourceToDisk(/*const*/ RehashingAA!(long[string])[string] aa, const s
  +/
 package void saveSecretsToDisk(const Credentials[string] aa, const string filename)
 {
-    import std.json : JSONValue;
-    import std.stdio : File;
+    import asdf : serializeToJsonPretty;
+    import std.stdio : File, writeln;
 
-    JSONValue json;
-    json = null;
-    json.object = null;
+    Credentials.JSONSchema[string] tempAA;
 
     foreach (immutable channelName, creds; aa)
     {
-        json[channelName] = null;
-        json[channelName].object = null;
-        json[channelName] = creds.toJSON();
+        tempAA[channelName] = creds.asSchema;
     }
 
-    File(filename, "w").writeln(json.toPrettyString);
+    immutable serialised = tempAA.serializeToJsonPretty!"    ";
+    File(filename, "w").writeln(serialised);
 }
 
 
@@ -4431,44 +4423,37 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
  +/
 void loadResources(TwitchPlugin plugin)
 {
-    import lu.json : JSONStorage, populateFromJSON;
+    import asdf : deserialize;
+    import lu.container : rehashingAA;
+    import std.file : readText;
     import core.memory : GC;
 
     GC.disable();
     scope(exit) GC.enable();
 
-    JSONStorage ecountJSON;
-    long[string][string] tempEcount;
-    ecountJSON.load(plugin.ecountFile);
-    tempEcount.populateFromJSON(ecountJSON);
+    auto tempEcount = plugin.ecountFile.readText.deserialize!(long[string][string]);
     plugin.ecount = null;
 
-    foreach (immutable channelName, channelCounts; tempEcount)
+    foreach (immutable channelName, /*const*/ channelCounts; tempEcount)
     {
-        plugin.ecount[channelName] = RehashingAA!(long[string])(channelCounts);
+        plugin.ecount[channelName] = rehashingAA(channelCounts);
     }
 
-    JSONStorage viewersJSON;
-    long[string][string] tempViewers;
-    viewersJSON.load(plugin.viewersFile);
-    tempViewers.populateFromJSON(viewersJSON);
+    auto tempViewers = plugin.viewersFile.readText.deserialize!(long[string][string]);
     plugin.viewerTimesByChannel = null;
 
     foreach (immutable channelName, channelViewers; tempViewers)
     {
-        plugin.viewerTimesByChannel[channelName] = RehashingAA!(long[string])(channelViewers);
+        plugin.viewerTimesByChannel[channelName] = rehashingAA(channelViewers);
     }
 
-    JSONStorage secretsJSON;
-    secretsJSON.load(plugin.secretsFile);
+    auto creds = plugin.secretsFile.readText.deserialize!(Credentials.JSONSchema[string]);
     plugin.secretsByChannel = null;
 
-    foreach (immutable channelName, credsJSON; secretsJSON.storage.object)
+    foreach (immutable channelName, credsJSON; creds)
     {
         plugin.secretsByChannel[channelName] = Credentials(credsJSON);
     }
-
-    plugin.secretsByChannel.rehash();
 }
 
 
@@ -4643,7 +4628,7 @@ private:
     import kameloso.messaging : Message;
     import kameloso.net : HTTPQueryResponse;
     import kameloso.terminal : TerminalToken;
-    import lu.container : Buffer, CircularBuffer;
+    import lu.container : Buffer, CircularBuffer, MutexedAA;
     import std.conv : to;
     import std.datetime.systime : SysTime;
 
@@ -4665,9 +4650,6 @@ package:
          +/
         static struct Stream
         {
-        private:
-            import std.json : JSONValue;
-
             /++
                 The unique ID of a stream, as supplied by Twitch.
 
@@ -4676,9 +4658,91 @@ package:
             /*immutable*/ ulong _id;
 
         package:
-            static struct ResponseSchema
+            static struct JSONSchema
             {
-                import asdf : serdeIgnore;
+                import asdf : serdeIgnore, serdeOptional;
+
+                /*
+                {
+                    "data": [
+                        {
+                            "game_id": "506415",
+                            "game_name": "Sekiro: Shadows Die Twice",
+                            "id": "47686742845",
+                            "is_mature": false,
+                            "language": "en",
+                            "started_at": "2022-12-26T16:47:58Z",
+                            "tag_ids": [
+                                "6ea6bca4-4712-4ab9-a906-e3336a9d8039"
+                            ],
+                            "tags": [
+                                "darksouls",
+                                "voiceactor",
+                                "challengerunner",
+                                "chill",
+                                "rpg",
+                                "survival",
+                                "creativeprofanity",
+                                "simlish",
+                                "English"
+                            ],
+                            "thumbnail_url": "https:\/\/static-cdn.jtvnw.net\/previews-ttv\/live_user_lobosjr-{width}x{height}.jpg",
+                            "title": "it's been so long! | fresh run",
+                            "type": "live",
+                            "user_id": "28640725",
+                            "user_login": "lobosjr",
+                            "user_name": "LobosJr",
+                            "viewer_count": 2341
+                        }
+                    ],
+                    "pagination": {
+                        "cursor": "eyJiIjp7IkN1cnNvciI6ImV5SnpJam95TXpReExqUTBOelV3T1RZMk9URXdORFFzSW1RaU9tWmhiSE5sTENKMElqcDBjblZsZlE9PSJ9LCJhIjp7IkN1cnNvciI6IiJ9fQ"
+                    }
+                }
+                 */
+                /*
+                {
+                    "data": [
+                        {
+                        "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                        "broadcaster_id": "141981764",
+                        "broadcaster_name": "TwitchDev",
+                        "broadcaster_login": "twitchdev",
+                        "title": "Heads or Tails?",
+                        "choices": [
+                            {
+                            "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                            "title": "Heads",
+                            "votes": 0,
+                            "channel_points_votes": 0,
+                            "bits_votes": 0
+                            },
+                            {
+                            "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                            "title": "Tails",
+                            "votes": 0,
+                            "channel_points_votes": 0,
+                            "bits_votes": 0
+                            }
+                        ],
+                        "bits_voting_enabled": false,
+                        "bits_per_vote": 0,
+                        "channel_points_voting_enabled": true,
+                        "channel_points_per_vote": 100,
+                        "status": "TERMINATED",
+                        "duration": 1800,
+                        "started_at": "2021-03-19T06:08:33.871278372Z",
+                        "ended_at": "2021-03-19T06:11:26.746889614Z"
+                        }
+                    ]
+                }
+                 */
+                /*
+                {
+                    "data": [],
+                    "pagination": {}
+                }
+                 */
 
                 string game_id;
                 string game_name;
@@ -4690,8 +4754,14 @@ package:
                 string user_id;
                 string user_login;
                 string user_name;
-                uint viewer_count;
-                uint viewer_count_max;
+                long viewer_count;
+                long viewer_count_max;
+
+                @serdeOptional
+                {
+                    string ended_at;
+                    long duration;
+                }
 
                 @serdeIgnore
                 {
@@ -4796,6 +4866,64 @@ package:
             }
 
             /++
+             +/
+            this(const JSONSchema json)
+            {
+                import core.time : seconds;
+
+                this._id = json.id.to!ulong;
+                this.userID = json.user_id.to!ulong;
+                this.userLogin = json.user_login;
+                this.userDisplayName = json.user_name;
+                this.gameID = json.game_id.to!ulong;
+                this.gameName = json.game_name;
+                this.title = json.title;
+                this.startedAt = SysTime.fromISOExtString(json.started_at);
+                this.status = json.type;
+                this.viewerCount = json.viewer_count;
+                this.viewerCountMax = json.viewer_count_max;
+                this.tags = json.tags.dup;
+                this.duration = json.duration.seconds;
+
+                if (json.ended_at.length)
+                {
+                    this.endedAt = SysTime.fromISOExtString(json.ended_at);
+                }
+                else
+                {
+                    this.live = true;
+                }
+            }
+
+            /++
+             +/
+            auto asSchema() const
+            {
+                JSONSchema json;
+
+                json.id = this._id.to!string;
+                json.user_id = this.userID.to!string;
+                json.user_login = this.userLogin;
+                json.user_name = this.userDisplayName;
+                json.game_id = this.gameID.to!string;
+                json.game_name = this.gameName;
+                json.title = this.title;
+                json.started_at = this.startedAt.toISOExtString;
+                json.type = this.status;
+                json.viewer_count = this.viewerCount;
+                json.viewer_count_max = this.viewerCountMax;
+                json.tags = this.tags.dup;
+                json.duration = this.duration.total!"seconds";
+
+                if (this.endedAt != SysTime.init)
+                {
+                    json.ended_at = this.endedAt.toISOExtString;
+                }
+
+                return json;
+            }
+
+            /++
                 Takes a second [Stream] and updates this one with values from it.
 
                 Params:
@@ -4828,172 +4956,6 @@ package:
             this(const ulong id) pure @safe nothrow @nogc
             {
                 this._id = id;
-            }
-
-            /++
-                Serialises this [Stream] into a JSON representation.
-
-                Returns:
-                    A [std.json.JSONValue|JSONValue] that represents this [Stream].
-             +/
-            auto toJSON() const
-            {
-                JSONValue json;
-                json = null;
-                json.object = null;
-
-                json["id"] = JSONValue(this._id.to!string);
-                json["user_id"] = JSONValue(this.userID);
-                json["user_login"] = JSONValue(this.userLogin);
-                json["user_name"] = JSONValue(this.userDisplayName);
-                json["game_id"] = JSONValue(this.gameID);
-                json["game_name"] = JSONValue(this.gameName);
-                json["title"] = JSONValue(this.title);
-                json["started_at"] = JSONValue(this.startedAt.toUnixTime().to!string);
-                json["status"] = JSONValue(this.status);
-                json["viewer_count"] = JSONValue(this.viewerCount);
-                json["viewer_count_max"] = JSONValue(this.viewerCountMax);
-                json["tags"] = JSONValue(this.tags);
-                json["ended_at"] = JSONValue(this.endedAt.toUnixTime().to!string);
-                json["duration"] = JSONValue(this.duration.total!"seconds");
-
-                return json;
-            }
-
-            /++
-                Deserialises a [Stream] from a JSON representation.
-
-                Params:
-                    json = [std.json.JSONValue|JSONValue] to build a [Stream] from.
-
-                Returns:
-                    A new [Stream] with values from the passed `json`.
-             +/
-            this(const JSONValue json)
-            {
-                import lu.json : safelyGet;
-                import std.algorithm.iteration : map;
-                import std.array : array;
-
-                /*
-                {
-                    "data": [
-                        {
-                            "game_id": "506415",
-                            "game_name": "Sekiro: Shadows Die Twice",
-                            "id": "47686742845",
-                            "is_mature": false,
-                            "language": "en",
-                            "started_at": "2022-12-26T16:47:58Z",
-                            "tag_ids": [
-                                "6ea6bca4-4712-4ab9-a906-e3336a9d8039"
-                            ],
-                            "tags": [
-                                "darksouls",
-                                "voiceactor",
-                                "challengerunner",
-                                "chill",
-                                "rpg",
-                                "survival",
-                                "creativeprofanity",
-                                "simlish",
-                                "English"
-                            ],
-                            "thumbnail_url": "https:\/\/static-cdn.jtvnw.net\/previews-ttv\/live_user_lobosjr-{width}x{height}.jpg",
-                            "title": "it's been so long! | fresh run",
-                            "type": "live",
-                            "user_id": "28640725",
-                            "user_login": "lobosjr",
-                            "user_name": "LobosJr",
-                            "viewer_count": 2341
-                        }
-                    ],
-                    "pagination": {
-                        "cursor": "eyJiIjp7IkN1cnNvciI6ImV5SnpJam95TXpReExqUTBOelV3T1RZMk9URXdORFFzSW1RaU9tWmhiSE5sTENKMElqcDBjblZsZlE9PSJ9LCJhIjp7IkN1cnNvciI6IiJ9fQ"
-                    }
-                }
-                 */
-                /*
-                {
-                    "data": [
-                        {
-                        "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-                        "broadcaster_id": "141981764",
-                        "broadcaster_name": "TwitchDev",
-                        "broadcaster_login": "twitchdev",
-                        "title": "Heads or Tails?",
-                        "choices": [
-                            {
-                            "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                            "title": "Heads",
-                            "votes": 0,
-                            "channel_points_votes": 0,
-                            "bits_votes": 0
-                            },
-                            {
-                            "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                            "title": "Tails",
-                            "votes": 0,
-                            "channel_points_votes": 0,
-                            "bits_votes": 0
-                            }
-                        ],
-                        "bits_voting_enabled": false,
-                        "bits_per_vote": 0,
-                        "channel_points_voting_enabled": true,
-                        "channel_points_per_vote": 100,
-                        "status": "TERMINATED",
-                        "duration": 1800,
-                        "started_at": "2021-03-19T06:08:33.871278372Z",
-                        "ended_at": "2021-03-19T06:11:26.746889614Z"
-                        }
-                    ]
-                }
-                 */
-                /*
-                {
-                    "data": [],
-                    "pagination": {}
-                }
-                 */
-                if ("data" in json)
-                {
-                    enum message = "`Stream` ctor was called with JSON " ~
-                        `still containing a top-level "data" key`;
-                    throw new UnexpectedJSONException(message);
-                }
-
-                //auto stream = Stream(json["id"].str.to!ulong);
-                this._id = json["id"].str.to!ulong;
-                this.userID = json["user_id"].integer;
-                this.userLogin = json["user_login"].str;
-                this.userDisplayName = json["user_name"].str;
-                this.gameID = cast(uint)json["game_id"].integer;
-                this.gameName = json["game_name"].str;
-                this.title = json["title"].str;
-                this.startedAt = SysTime.fromISOExtString(json["started_at"].str);
-                this.status = json.safelyGet("status");
-                this.viewerCount = json.safelyGet!ulong("viewer_count");
-                this.viewerCountMax = json.safelyGet!ulong("viewer_count_max");
-                this.tags = json["tags"]
-                    .array
-                    .map!(tag => tag.str)
-                    .array;
-
-                if (const endedAtJSON = "ended_at" in json)
-                {
-                    this.endedAt = SysTime.fromISOExtString(endedAtJSON.str);
-                }
-                else
-                {
-                    this.live = true;
-                }
-
-                if (const durationJSON = "duration" in json)
-                {
-                    import core.time : seconds;
-                    this.duration = durationJSON.integer.seconds;
-                }
             }
         }
 

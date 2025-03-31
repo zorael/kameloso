@@ -385,9 +385,12 @@ private auto getSpotifyTokens(
 {
     import kameloso.net : HTTPRequest, issueSyncHTTPRequest;
     import kameloso.tables : HTTPVerb;
+    import asdf : deserialize;
     import std.format : format;
-    import std.json : JSONValue, parseJSON;
     import core.time : Duration, seconds;
+
+    alias Response = SpotifyTokenResponse;
+    alias ErrorResponse = SpotifyErrorResponse;
 
     static struct GetTokenResults
     {
@@ -401,30 +404,20 @@ private auto getSpotifyTokens(
 
         auto success() const { return (code == 200); }
 
-        this(const uint code, const string error)
+        this(const uint code, const Response response)
         {
             this.code = code;
-            this.error = error;
+            this.accessToken = response.access_token;
+            this.tokenType = response.token_type;
+            this.refreshToken = response.refresh_token;
+            this.scope_ = response.scope_;
+            this.expiresIn = response.expires_in.seconds;
         }
 
-        this(const uint code, const JSONValue json)
+        this(const uint code, const ErrorResponse errorResponse)
         {
-            /*
-            {
-                "access_token": "[redacted]",
-                "token_type": "Bearer",
-                "expires_in": 3600,
-                "refresh_token": "[redacted]",
-                "scope": "playlist-modify-private playlist-modify-public"
-            }
-             */
-
             this.code = code;
-            this.accessToken = json["access_token"].str;
-            this.tokenType = json["token_type"].str;
-            this.refreshToken = json["refresh_token"].str;
-            this.scope_ = json["scope"].str;
-            this.expiresIn = json["expires_in"].integer.seconds;
+            this.error = errorResponse.error.message;
         }
     }
 
@@ -443,36 +436,35 @@ private auto getSpotifyTokens(
         verb: HTTPVerb.post,
         contentType: "application/x-www-form-urlencoded");
 
-    immutable response = issueSyncHTTPRequest(request);
-    immutable responseJSON = parseJSON(response.body);
+    immutable httpResponse = issueSyncHTTPRequest(request);
 
     version(PrintStacktraces)
     {
         scope(failure)
         {
             import kameloso.misc : printStacktrace;
+            import std.json : parseJSON;
             import std.stdio : writeln;
 
-            writeln(response.code);
-            writeln(responseJSON.toPrettyString);
+            writeln(httpResponse.code);
+            writeln(httpResponse.body.parseJSON.toPrettyString);
             printStacktrace();
         }
     }
 
-    if (response.code == 200) // ("access_token" in responseJSON)
+    switch (httpResponse.code)
     {
-        return GetTokenResults(response.code, responseJSON);
+    case 200:
+        // 200 OK
+        break;
+
+    default:
+        const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+        return GetTokenResults(httpResponse.code, errorResponse);
     }
 
-    immutable errorJSON = "error" in responseJSON;
-
-    if (!errorJSON)
-    {
-        enum message = "Unexpected JSON when fetching Spotify tokens";
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
-
-    return GetTokenResults(response.code, (*errorJSON)["message"].str);
+    const response = httpResponse.body.deserialize!Response;
+    return GetTokenResults(httpResponse.code, response);
 }
 
 
@@ -497,9 +489,12 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
 {
     import kameloso.plugins : sendHTTPRequest;
     import kameloso.tables : HTTPVerb;
+    import asdf : deserialize;
     import std.format : format;
-    import std.json : JSONValue, parseJSON;
     import core.time : Duration, seconds;
+
+    alias Response = SpotifyTokenResponse;
+    alias ErrorResponse = SpotifyErrorResponse;
 
     static struct RefreshTokenResults
     {
@@ -512,28 +507,19 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
 
         auto success() const { return (code == 200); }
 
-        this(const uint code, const string error)
+        this(const uint code, const Response response)
         {
             this.code = code;
-            this.error = error;
+            this.accessToken = response.access_token;
+            this.tokenType = response.token_type;
+            this.scope_ = response.scope_;
+            this.expiresIn = response.expires_in.seconds;
         }
 
-        this(const uint code, const JSONValue json)
+        this(const uint code, const ErrorResponse errorResponse)
         {
-            /*
-            {
-                "access_token": "[redacted]",
-                "token_type": "Bearer",
-                "expires_in": 3600,
-                "scope": "playlist-modify-private playlist-modify-public"
-            }
-             */
-
             this.code = code;
-            this.accessToken = json["access_token"].str;
-            this.tokenType = json["token_type"].str;
-            this.scope_ = json["scope"].str;
-            this.expiresIn = json["expires_in"].integer.seconds;
+            this.error = errorResponse.error.message;
         }
     }
 
@@ -544,42 +530,40 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
 
     immutable url = urlPattern.format(creds.spotifyRefreshToken);
 
-    immutable response = sendHTTPRequest(
+    immutable httpResponse = sendHTTPRequest(
         plugin: plugin,
         url: url,
         authorisationHeader: getSpotifyBase64Authorization(creds),
         verb: HTTPVerb.post,
         contentType: "application/x-www-form-urlencoded");
 
-    immutable responseJSON = parseJSON(response.body);
-
     version(PrintStacktraces)
     {
         scope(failure)
         {
             import kameloso.misc : printStacktrace;
+            import std.json : parseJSON;
             import std.stdio : writeln;
 
-            writeln(response.code);
-            writeln(responseJSON.toPrettyString);
+            writeln(httpResponse.code);
+            writeln(httpResponse.body.parseJSON.toPrettyString);
             printStacktrace();
         }
     }
 
-    if (response.code == 200) // ("access_token" in responseJSON)
+    switch (httpResponse.code)
     {
-        return RefreshTokenResults(response.code, responseJSON);
+    case 200:
+        // 200 OK
+        break;
+
+    default:
+        const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+        return RefreshTokenResults(httpResponse.code, errorResponse);
     }
 
-    immutable errorJSON = "error" in responseJSON;
-
-    if (!errorJSON)
-    {
-        enum message = "Unexpected JSON when refreshing a Spotify token";
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
-
-    return RefreshTokenResults(response.code, (*errorJSON)["message"].str);
+    const response = httpResponse.body.deserialize!Response;
+    return RefreshTokenResults(httpResponse.code, response);
 }
 
 
@@ -632,9 +616,16 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
 {
     import kameloso.plugins : sendHTTPRequest;
     import kameloso.tables : HTTPVerb;
+    import asdf : deserialize;
     import std.algorithm.searching : endsWith;
     import std.format : format;
-    import std.json : JSONValue, parseJSON;
+
+    static struct Response
+    {
+        string snapshot_id;
+    }
+
+    alias ErrorResponse = SpotifyErrorResponse;
 
     static struct AddTrackResults
     {
@@ -644,22 +635,16 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
 
         auto success() const { return code == 201; }
 
-        this(const uint code, const string error)
+        this(const uint code, const Response response)
         {
             this.code = code;
-            this.error = error;
+            this.snapshotID = response.snapshot_id;
         }
 
-        this(const uint code, const JSONValue json)
+        this(const uint code, const ErrorResponse errorResponse)
         {
-            /*
-            {
-                "snapshot_id" : "[redacted]"
-            }
-             */
-
             this.code = code;
-            this.snapshotID = json["snapshot_id"].str;
+            this.error = errorResponse.error.message;
         }
     }
 
@@ -682,73 +667,74 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
         authorizationBearer = "Bearer " ~ creds.spotifyAccessToken;
     }
 
-    immutable response = sendHTTPRequest(
+    immutable httpResponse = sendHTTPRequest(
         plugin: plugin,
         url: url,
         caller: __FUNCTION__,
         authorisationHeader: authorizationBearer,
         verb: HTTPVerb.post);
 
-    immutable responseJSON = parseJSON(response.body);
-
     version(PrintStacktraces)
     {
         scope(failure)
         {
             import kameloso.misc : printStacktrace;
+            import std.json : parseJSON;
             import std.stdio : writeln;
 
-            writeln(response.code);
-            writeln(responseJSON.toPrettyString);
+            writeln(httpResponse.code);
+            writeln(httpResponse.body.parseJSON.toPrettyString);
             printStacktrace();
         }
     }
 
-    if (response.code == 200) // ("snapshot_id" in responseJSON)
+    switch (httpResponse.code)
     {
-        // Seems to have worked
-        return AddTrackResults(response.code, responseJSON);
-    }
+    case 200:
+        // 200 OK
+        break;
 
-    /*
-    {
-        "error": {
-            "status": 401,
-            "message": "The access token expired"
-        }
-    }
-     */
+    case 401:
+        // 401 Unauthorized
+        const errorResponse = httpResponse.body.deserialize!ErrorResponse;
 
-    immutable errorJSON = "error" in responseJSON;
-
-    if (!errorJSON)
-    {
-        enum message = "Unexpected JSON when adding a track to a Spotify playlist";
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
-
-    immutable messageJSON = "message" in *errorJSON;
-
-    if (messageJSON.str == "The access token expired")
-    {
-        if (!recursing)
+        /*
         {
-            const results = refreshSpotifyToken(plugin, creds);
+            "error": {
+                "status": 401,
+                "message": "The access token expired"
+            }
+        }
+         */
 
-            if (!results.success)
+        if (errorResponse.error.message == "The access token expired")
+        {
+            if (!recursing)
             {
-                return AddTrackResults(response.code, results.error);
+                const results = refreshSpotifyToken(plugin, creds);
+
+                if (!results.success)
+                {
+                    return AddTrackResults(httpResponse.code, errorResponse);
+                }
+
+                creds.spotifyAccessToken = results.accessToken;
+                saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+                return addTrackToSpotifyPlaylist(plugin, creds, trackID, recursing: true);
             }
 
-            creds.spotifyAccessToken = results.accessToken;
-            saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-            return addTrackToSpotifyPlaylist(plugin, creds, trackID, recursing: true);
+            throw new InvalidCredentialsException(errorResponse.error.message);
         }
 
-        throw new InvalidCredentialsException(messageJSON.str, responseJSON);
+        return AddTrackResults(httpResponse.code, errorResponse);
+
+    default:
+        const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+        return AddTrackResults(httpResponse.code, errorResponse);
     }
 
-    return AddTrackResults(response.code, messageJSON.str);
+    const response = httpResponse.body.deserialize!Response;
+    return AddTrackResults(httpResponse.code, response);
 }
 
 
@@ -776,9 +762,82 @@ auto getSpotifyTrackByID(
 in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
 {
     import kameloso.plugins : sendHTTPRequest;
+    import asdf : deserialize;
     import std.algorithm.searching : endsWith;
     import std.format : format;
-    import std.json : JSONValue, parseJSON;
+
+    static struct Response
+    {
+        private import asdf.serialization : serdeIgnore, serdeOptional;
+
+        @serdeOptional
+        static struct Album
+        {
+            string name;
+        }
+
+        @serdeOptional
+        static struct Artist
+        {
+            string name;
+        }
+
+        @serdeOptional
+        static struct ExternalURLs
+        {
+            string spotify;
+        }
+
+        /*
+        {
+            "album": { ... },
+            "artists": [ ... ],
+            "available_markets": [ ... ],
+            "disc_number": 1,
+            "duration_ms": 52466,
+            "explicit": false,
+            "external_ids": {
+                "isrc": "GBKBH0502201"
+            },
+            "external_urls": {
+                "spotify": "https:\/\/open.spotify.com\/track\/70XGut7ZJrEK9h9Is1s3gt"
+            },
+            "href": "https:\/\/api.spotify.com\/v1\/tracks\/70XGut7ZJrEK9h9Is1s3gt",
+            "id": "70XGut7ZJrEK9h9Is1s3gt",
+            "is_local": false,
+            "name": "Prelude",
+            "popularity": 30,
+            "preview_url": null,
+            "track_number": 1,
+            "type": "track",
+            "uri": "spotify:track:70XGut7ZJrEK9h9Is1s3gt"
+        }
+         */
+
+        Album album;
+        Artist[] artists;
+        ExternalURLs external_urls;
+        string name;
+
+        @serdeIgnore
+        {
+            enum available_markets = false;
+            enum disc_number = false;
+            enum duration_ms = false;
+            enum explicit = false;
+            enum external_ids = false;
+            enum href = false;
+            enum id = false;
+            enum is_local = false;
+            enum popularity = false;
+            enum preview_url = false;
+            enum track_number = false;
+            enum type = false;
+            enum uri = false;
+        }
+    }
+
+    alias ErrorResponse = SpotifyErrorResponse;
 
     static struct GetTrackResults
     {
@@ -791,45 +850,19 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
 
         auto success() const { return code == 200; }
 
-        this(const uint code, const string error)
+        this(const uint code, const Response response)
         {
             this.code = code;
-            this.error = error;
+            this.album = response.album.name;
+            this.artist = response.artists[0].name;
+            this.name = response.name;
+            this.url = response.external_urls.spotify;
         }
 
-        this(const uint code, const JSONValue json)
+        this(const uint code, const SpotifyErrorResponse errorResponse)
         {
-            /*
-            {
-                "album": { ... },
-                "artists": [ ... ],
-                "available_markets": [ ... ],
-                "disc_number": 1,
-                "duration_ms": 52466,
-                "explicit": false,
-                "external_ids": {
-                    "isrc": "GBKBH0502201"
-                },
-                "external_urls": {
-                    "spotify": "https:\/\/open.spotify.com\/track\/70XGut7ZJrEK9h9Is1s3gt"
-                },
-                "href": "https:\/\/api.spotify.com\/v1\/tracks\/70XGut7ZJrEK9h9Is1s3gt",
-                "id": "70XGut7ZJrEK9h9Is1s3gt",
-                "is_local": false,
-                "name": "Prelude",
-                "popularity": 30,
-                "preview_url": null,
-                "track_number": 1,
-                "type": "track",
-                "uri": "spotify:track:70XGut7ZJrEK9h9Is1s3gt"
-            }
-             */
-
             this.code = code;
-            this.album = json["album"]["name"].str;
-            this.artist = json["artists"].array[0]["name"].str;
-            this.name = json["name"].str;
-            this.url = json["external_urls"]["spotify"].str;
+            this.error = errorResponse.error.message;
         }
     }
 
@@ -843,72 +876,73 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
     enum urlPattern = "https://api.spotify.com/v1/tracks/%s";
     immutable url = urlPattern.format(trackID);
 
-    immutable response = sendHTTPRequest(
+    immutable httpResponse = sendHTTPRequest(
         plugin: plugin,
         url: url,
         caller: __FUNCTION__,
         authorisationHeader: authorizationBearer);
-
-    immutable responseJSON = parseJSON(response.body);
 
     version(PrintStacktraces)
     {
         scope(failure)
         {
             import kameloso.misc : printStacktrace;
+            import std.json : parseJSON;
             import std.stdio : writeln;
 
-            writeln(response.code);
-            writeln(responseJSON.toPrettyString);
+            writeln(httpResponse.code);
+            writeln(httpResponse.body.parseJSON.toPrettyString);
             printStacktrace();
         }
     }
 
-    if (response.code == 200) // ("name" in responseJSON)
+    switch (httpResponse.code)
     {
-        // Seems to have worked
-        return GetTrackResults(response.code, responseJSON);
-    }
+    case 200:
+        // 200 OK
+        break;
 
-    /*
-    {
-        "error": {
-            "status": 401,
-            "message": "The access token expired"
-        }
-    }
-     */
+    case 401:
+        // 401 Unauthorized
+        const errorResponse = httpResponse.body.deserialize!ErrorResponse;
 
-    immutable errorJSON = "error" in responseJSON;
-
-    if (!errorJSON)
-    {
-        enum message = "Unknown JSON when looking up a Spotify track";
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
-
-    immutable messageJSON = "message" in *errorJSON;
-
-    if (messageJSON.str == "The access token expired")
-    {
-        if (!recursing)
+        /*
         {
-            const results = refreshSpotifyToken(plugin, creds);
+            "error": {
+                "status": 401,
+                "message": "The access token expired"
+            }
+        }
+         */
 
-            if (!results.success)
+        if (errorResponse.error.message == "The access token expired")
+        {
+            if (!recursing)
             {
-                return GetTrackResults(response.code, results.error);
+                const results = refreshSpotifyToken(plugin, creds);
+
+                if (!results.success)
+                {
+                    return GetTrackResults(httpResponse.code, errorResponse);
+                }
+
+                creds.spotifyAccessToken = results.accessToken;
+                saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+                return getSpotifyTrackByID(plugin, creds, trackID, recursing: true);
             }
 
-            creds.spotifyAccessToken = results.accessToken;
-            saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-            return getSpotifyTrackByID(plugin, creds, trackID, recursing: true);
+            throw new InvalidCredentialsException(errorResponse.error.message);
         }
 
-        throw new InvalidCredentialsException(messageJSON.str, responseJSON);
+        return GetTrackResults(httpResponse.code, errorResponse);
+
+    default:
+        const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+        return GetTrackResults(httpResponse.code, errorResponse);
     }
 
-    return GetTrackResults(response.code, messageJSON.str);
+    const response = httpResponse.body.deserialize!Response;
+    return GetTrackResults(httpResponse.code, response);
 }
 
 
@@ -930,7 +964,51 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
 private auto validateSpotifyToken(ref Credentials creds, const string caBundleFile)
 {
     import kameloso.net : HTTPRequest, issueSyncHTTPRequest;
-    import std.json : JSONValue, parseJSON;
+    import asdf : deserialize;
+
+    static struct Response
+    {
+        private import asdf.serialization : serdeIgnore, serdeOptional;
+
+        @serdeOptional
+        static struct ExternalURLs
+        {
+            string spotify;
+        }
+
+        /*
+        {
+            "display_name": "zorael",
+            "external_urls": {
+                "spotify": "https:\/\/open.spotify.com\/user\/zorael"
+            },
+            "followers": {
+                "href": null,
+                "total": 0
+            },
+            "href": "https:\/\/api.spotify.com\/v1\/users\/zorael",
+            "id": "zorael",
+            "images": [],
+            "type": "user",
+            "uri": "spotify:user:zorael"
+        }
+         */
+
+        string display_name;
+        ExternalURLs external_urls;
+        string href;
+        string id;
+        string type;
+        string uri;
+
+        @serdeIgnore
+        {
+            enum followers = false;
+            enum images = false;
+        }
+    }
+
+    alias ErrorResponse = SpotifyErrorResponse;
 
     static struct SpotifyValidationResults
     {
@@ -942,36 +1020,18 @@ private auto validateSpotifyToken(ref Credentials creds, const string caBundleFi
 
         auto success() const { return code == 200; }
 
-        this(const uint code, const string error)
+        this(const uint code, const Response response)
         {
             this.code = code;
-            this.error = error;
+            this.id = response.id;
+            this.displayName = response.display_name;
+            this.url = response.external_urls.spotify;
         }
 
-        this(const uint code, const JSONValue json)
+        this(const uint code, const ErrorResponse errorResponse)
         {
-            /*
-            {
-                "display_name": "zorael",
-                "external_urls": {
-                    "spotify": "https:\/\/open.spotify.com\/user\/zorael"
-                },
-                "followers": {
-                    "href": null,
-                    "total": 0
-                },
-                "href": "https:\/\/api.spotify.com\/v1\/users\/zorael",
-                "id": "zorael",
-                "images": [],
-                "type": "user",
-                "uri": "spotify:user:zorael"
-            }
-             */
-
             this.code = code;
-            this.id = json["id"].str;
-            this.displayName = json["display_name"].str;
-            this.url = json["external_urls"]["spotify"].str;
+            this.error = errorResponse.error.message;
         }
     }
 
@@ -984,44 +1044,104 @@ private auto validateSpotifyToken(ref Credentials creds, const string caBundleFi
         authorisationHeader: authorizationBearer,
         caBundleFile: caBundleFile);
 
-    immutable response = issueSyncHTTPRequest(request);
-    immutable responseJSON = parseJSON(response.body);
+    immutable httpResponse = issueSyncHTTPRequest(request);
 
     version(PrintStacktraces)
     {
         scope(failure)
         {
             import kameloso.misc : printStacktrace;
+            import std.json : parseJSON;
             import std.stdio : writeln;
 
-            writeln(response.code);
-            writeln(responseJSON.toPrettyString);
+            writeln(httpResponse.code);
+            writeln(httpResponse.body.parseJSON.toPrettyString);
             printStacktrace();
         }
     }
 
-    if (response.code == 200) // ("id" in responseJSON)
+    switch (httpResponse.code)
     {
-        // Seems to have worked
-        return SpotifyValidationResults(response.code, responseJSON);
+    case 200:
+        // 200 OK
+        break;
+
+    case 401:
+        // 401 Unauthorized
+        /*
+        {
+            "error": {
+                "status": 401,
+                "message": "The access token expired"
+            }
+        }
+         */
+
+        goto default;
+
+    default:
+        const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+        return SpotifyValidationResults(httpResponse.code, errorResponse);
+    }
+
+    const response = httpResponse.body.deserialize!Response;
+    return SpotifyValidationResults(httpResponse.code, response);
+}
+
+
+// SpotifyTokenResponse
+/++
+ +/
+struct SpotifyTokenResponse
+{
+    private import asdf.serialization : serdeOptional, serdeKeys;
+
+    /*
+    {
+        "access_token": "[redacted]",
+        "token_type": "Bearer",
+        "expires_in": 3600,
+        "refresh_token": "[redacted]",
+        "scope": "playlist-modify-private playlist-modify-public"
+    }
+     */
+    /*
+    {
+        "access_token": "[redacted]",
+        "token_type": "Bearer",
+        "expires_in": 3600,
+        "scope": "playlist-modify-private playlist-modify-public"
+    }
+     */
+
+    string access_token;
+    string token_type;
+    uint expires_in;
+
+    @serdeOptional string refresh_token;
+    @serdeKeys("scope") string scope_;
+}
+
+
+// SpotifyErrorResponse
+/++
+ +/
+struct SpotifyErrorResponse
+{
+    static struct ErrorData
+    {
+        uint status;
+        string message;
     }
 
     /*
     {
         "error": {
-            "message": "The access token expired",
-            "status": 401
+            "status": 401,
+            "message": "The access token expired"
         }
     }
      */
 
-    immutable errorJSON = "error" in responseJSON;
-
-    if (!errorJSON)
-    {
-        enum message = "Unexpected JSON when validating a Spotify token";
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
-
-    return SpotifyValidationResults(response.code, (*errorJSON)["message"].str);
+    ErrorData error;
 }

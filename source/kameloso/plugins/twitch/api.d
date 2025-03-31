@@ -3064,7 +3064,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
         }
          */
 
-        TwitchPlugin.Room.Stream.ResponseSchema[] data;
+        TwitchPlugin.Room.Stream.JSONSchema[] data;
         Pagination pagination;
     }
 

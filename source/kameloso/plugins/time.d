@@ -467,7 +467,6 @@ void onCommandSetZone(TimePlugin plugin, const IRCEvent event)
 {
     import lu.string : stripped;
     import std.format : format;
-    import std.json : JSONValue;
 
     mixin(memoryCorruptionCheck);
 
@@ -508,13 +507,14 @@ void onCommandSetZone(TimePlugin plugin, const IRCEvent event)
         aa = The JSON-convertible resource to save.
         filename = Filename of the file to write to.
  +/
-void saveResourceToDisk(const string[string] aa, const string filename)
+void saveResourceToDisk(/*const*/ string[string] aa, const string filename)
 in (filename.length, "Tried to save resources to an empty filename string")
 {
-    import std.json : JSONValue;
-    import std.stdio : File;
+    import asdf : serializeToJsonPretty;
+    import std.stdio : File, writeln;
 
-    File(filename, "w").writeln(JSONValue(aa).toPrettyString);
+    immutable serialised = aa.serializeToJsonPretty!"    ";
+    File(filename, "w").writeln(serialised);
 }
 
 
@@ -524,12 +524,10 @@ in (filename.length, "Tried to save resources to an empty filename string")
  +/
 void reload(TimePlugin plugin)
 {
-    import lu.json : JSONStorage, populateFromJSON;
+    import asdf : deserialize;
+    import std.file : readText;
 
-    JSONStorage channelTimezonesJSON;
-    channelTimezonesJSON.load(plugin.timezonesFile);
-    plugin.channelTimezones = null;
-    plugin.channelTimezones.populateFromJSON(channelTimezonesJSON, lowercaseKeys: true);
+    plugin.channelTimezones = plugin.timezonesFile.readText.deserialize!(string[string]);
 }
 
 
@@ -540,27 +538,20 @@ void reload(TimePlugin plugin)
  +/
 void initResources(TimePlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import std.json : JSONException;
-
-    JSONStorage timezonesJSON;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
     try
     {
-        timezonesJSON.load(plugin.timezonesFile);
+        auto json = plugin.timezonesFile.readText.deserialize!(string[string]);
+        immutable serialised = json.serializeToJsonPretty!"    ";
+        File(plugin.timezonesFile, "w").writeln(serialised);
     }
-    catch (JSONException e)
+    catch (Exception e)
     {
         version(PrintStacktraces) logger.trace(e);
-
-        throw new IRCPluginInitialisationException(
-            message: "Timezones file is malformed",
-            pluginName: plugin.name,
-            malformedFilename: plugin.timezonesFile);
     }
-
-    // Let other Exceptions pass.
-    timezonesJSON.save(plugin.timezonesFile);
 }
 
 
@@ -617,8 +608,6 @@ public:
 final class TimePlugin : IRCPlugin
 {
 private:
-    import lu.json : JSONStorage;
-
     // settings
     /++
         All Time plugin settings gathered.

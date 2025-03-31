@@ -54,10 +54,6 @@ import core.thread.fiber : Fiber;
  +/
 struct Timer
 {
-private:
-    import std.json : JSONValue;
-
-public:
     /++
         The different kinds of [Timer]s. Either one that yields a
         [TimerType.random|random] response each time, or one that yields a
@@ -90,6 +86,26 @@ public:
             Either message count or time criteria may be fulfilled.
          +/
         either = 1,
+    }
+
+    /++
+        FIXME
+     +/
+    static struct JSONSchema
+    {
+        private import asdf.serialization : serdeOptional;
+
+        string name;
+        int type;
+        int condition;
+        long messageCountThreshold;
+        long timeThreshold;
+        long messageCountStagger;
+        long timeStagger;
+        bool suspended;
+        string[] lines;
+
+        @serdeOptional string colour;
     }
 
     /++
@@ -165,6 +181,46 @@ public:
      +/
     bool suspended;
 
+    this(const JSONSchema json)
+    {
+        import lu.conv : Enum;
+
+        this.name = json.name;
+        this.messageCountThreshold = json.messageCountThreshold;
+        this.timeThreshold = json.timeThreshold;
+        this.messageCountStagger = json.messageCountStagger;
+        this.timeStagger = json.timeStagger;
+        this.suspended = json.suspended;
+        this.colour = json.colour;
+        this.lines = json.lines.dup;
+
+        this.type = (json.type == cast(int)TimerType.random) ?
+            TimerType.random :
+            TimerType.ordered;
+
+        this.condition = (json.condition == cast(int)TimerCondition.both) ?
+            TimerCondition.both :
+            TimerCondition.either;
+    }
+
+    auto asSchema() const
+    {
+        JSONSchema json;
+
+        json.name = this.name;
+        json.type = cast(int)this.type;
+        json.condition = cast(int)this.condition;
+        json.messageCountThreshold = this.messageCountThreshold;
+        json.timeThreshold = this.timeThreshold;
+        json.messageCountStagger = this.messageCountStagger;
+        json.timeStagger = this.timeStagger;
+        json.colour = this.colour;
+        json.suspended = this.suspended;
+        json.lines = this.lines.dup;
+
+        return json;
+    }
+
     // getLine
     /++
         Yields a line from the [lines] array, depending on the [type] of this timer.
@@ -223,83 +279,6 @@ public:
         return lines.length ?
             lines[uniform(0, lines.length)] :
             string.init;
-    }
-
-    // toJSON
-    /++
-        Serialises this [Timer] into a [std.json.JSONValue|JSONValue].
-
-        Returns:
-            A [std.json.JSONValue|JSONValue] that describes this timer.
-     +/
-    auto toJSON() const
-    {
-        JSONValue json;
-        json = null;
-        json.object = null;
-
-        json["name"] = JSONValue(this.name);
-        json["type"] = JSONValue(cast(int)this.type);
-        json["condition"] = JSONValue(cast(int)this.condition);
-        json["messageCountThreshold"] = JSONValue(this.messageCountThreshold);
-        json["timeThreshold"] = JSONValue(this.timeThreshold);
-        json["messageCountStagger"] = JSONValue(this.messageCountStagger);
-        json["timeStagger"] = JSONValue(this.timeStagger);
-        json["colour"] = JSONValue(this.colour);
-        json["suspended"] = JSONValue(this.suspended);
-        json["lines"] = null;
-        json["lines"].array = null;
-
-        auto linesJSON = "lines" in json;
-
-        foreach (immutable line; this.lines)
-        {
-            linesJSON.array ~= JSONValue(line);
-        }
-
-        return json;
-    }
-
-    // fromJSON
-    /++
-        Deserialises a [Timer] from a [std.json.JSONValue|JSONValue].
-
-        Params:
-            json = [std.json.JSONValue|JSONValue] to deserialise.
-
-        Returns:
-            A new [Timer] with values loaded from the passed JSON.
-     +/
-    static auto fromJSON(const JSONValue json)
-    {
-        import lu.json : safelyGet;
-        import core.memory : GC;
-
-        GC.disable();
-        scope(exit) GC.enable();
-
-        Timer timer;
-        timer.name = json["name"].str;
-        timer.messageCountThreshold = json["messageCountThreshold"].integer;
-        timer.timeThreshold = json["timeThreshold"].integer;
-        timer.messageCountStagger = json["messageCountStagger"].integer;
-        timer.timeStagger = json["timeStagger"].integer;
-        timer.suspended = json["suspended"].boolean;
-        timer.type = (json["type"].integer == cast(int)TimerType.random) ?
-            TimerType.random :
-            TimerType.ordered;
-        timer.condition = (json["condition"].integer == cast(int)TimerCondition.both) ?
-            TimerCondition.both :
-            TimerCondition.either;
-
-        timer.colour = json.safelyGet("colour", timer.colour);
-
-        foreach (const lineJSON; json["lines"].array)
-        {
-            timer.lines ~= lineJSON.str;
-        }
-
-        return timer;
     }
 }
 
@@ -1645,24 +1624,24 @@ auto createTimerFiber(
  +/
 void saveTimers(TimerPlugin plugin)
 {
-    import lu.json : JSONStorage;
+    import asdf.serialization : serializeToJsonPretty;
+    import std.stdio : File, writeln;
 
-    JSONStorage json;
+    Timer.JSONSchema[][string] json;
 
     foreach (immutable channelName, const timers; plugin.timersByChannel)
     {
         json[channelName] = null;
-        json[channelName].array = null;
-
         auto channelTimersJSON = channelName in json;
 
         foreach (const timer; timers)
         {
-            channelTimersJSON.array ~= timer.toJSON();
+            (*channelTimersJSON) ~= timer.asSchema;
         }
     }
 
-    json.save(plugin.timerFile);
+    immutable serialised = json.serializeToJsonPretty!"    ";
+    File(plugin.timerFile, "w").writeln(serialised);
 }
 
 
@@ -1673,16 +1652,17 @@ void saveTimers(TimerPlugin plugin)
  +/
 void initResources(TimerPlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import std.json : JSONException;
-
-    JSONStorage timersJSON;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
     try
     {
-        timersJSON.load(plugin.timerFile);
+        auto json = plugin.timerFile.readText.deserialize!(Timer.JSONSchema[][string]);
+        immutable serialised = json.serializeToJsonPretty!"    ";
+        File(plugin.timerFile, "w").writeln(serialised);
     }
-    catch (JSONException e)
+    catch (Exception e)
     {
         version(PrintStacktraces) logger.trace(e);
 
@@ -1691,9 +1671,6 @@ void initResources(TimerPlugin plugin)
             pluginName: plugin.name,
             malformedFilename: plugin.timerFile);
     }
-
-    // Let other Exceptions pass.
-    timersJSON.save(plugin.timerFile);
 }
 
 
@@ -1703,24 +1680,21 @@ void initResources(TimerPlugin plugin)
  +/
 void loadTimers(TimerPlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import core.memory : GC;
+    import asdf : deserialize;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
-    GC.disable();
-    scope(exit) GC.enable();
-
-    JSONStorage allTimersJSON;
-    allTimersJSON.load(plugin.timerFile);
+    auto json = plugin.timerFile.readText.deserialize!(Timer.JSONSchema[][string]);
     plugin.timersByChannel = null;
 
-    foreach (immutable channelName, const timersJSON; allTimersJSON.object)
+    foreach (immutable channelName, const timersJSON; json)
     {
         plugin.timersByChannel[channelName] = typeof(plugin.timersByChannel[channelName]).init;
         auto channelTimers = channelName in plugin.timersByChannel;
 
-        foreach (const timerJSON; timersJSON.array)
+        foreach (const schema; timersJSON)
         {
-            auto timer = Timer.fromJSON(timerJSON);
+            auto timer = Timer(schema);
             (*channelTimers)[timer.name] = timer;
         }
 

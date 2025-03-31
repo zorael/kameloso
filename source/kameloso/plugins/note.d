@@ -77,10 +77,15 @@ mixin PluginRegistration!NotePlugin;
  +/
 struct Note
 {
-private:
-    import std.json : JSONValue;
+    /++
+     +/
+    static struct JSONSchema
+    {
+        string line;
+        string sender;
+        long timestamp;
+    }
 
-public:
     /++
         Line of text left as a note, optionally Base64-encoded.
      +/
@@ -95,6 +100,26 @@ public:
         UNIX timestamp of when the note was left.
      +/
     long timestamp;
+
+    /++
+     +/
+    this(const JSONSchema json)
+    {
+        line = json.line;
+        sender = json.sender;
+        timestamp = json.timestamp;
+    }
+
+    /++
+     +/
+    auto asSchema() const
+    {
+        JSONSchema json;
+        json.line = line;
+        json.sender = sender;
+        json.timestamp = timestamp;
+        return json;
+    }
 
     /++
         Encrypts the note, Base64-encoding [line] and [sender].
@@ -114,36 +139,6 @@ public:
         import lu.string : decode64;
         line = decode64(line);
         sender = decode64(sender);
-    }
-
-    /++
-        Converts this [Note] into a JSON representation.
-
-        Returns:
-            A [std.json.JSONValue|JSONValue] that describes this [Note].
-     +/
-    auto toJSON() const
-    {
-        JSONValue json;
-        json["line"] = JSONValue(this.line);
-        json["sender"] = JSONValue(this.sender);
-        json["timestamp"] = JSONValue(this.timestamp);
-        return json;
-    }
-
-    /++
-        Creates a [Note] from a JSON representation.
-
-        Params:
-            json = [std.json.JSONValue|JSONValue] to build a [Note] from.
-     +/
-    static auto fromJSON(const JSONValue json)
-    {
-        Note note;
-        note.line = json["line"].str;
-        note.sender = json["sender"].str;
-        note.timestamp = json["timestamp"].integer;
-        return note;
     }
 }
 
@@ -500,32 +495,24 @@ void onWelcome(NotePlugin plugin, const IRCEvent _)
  +/
 void saveNotes(NotePlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import std.json : JSONType;
+    import asdf : serializeToJsonPretty;
+    import std.stdio : File, writeln;
 
-    JSONStorage json;
+    Note.JSONSchema[][string][string] json;
 
     foreach (immutable channelName, channelNotes; plugin.notes)
     {
-        json[channelName] = null;
-        json[channelName].object = null;
-
         foreach (immutable nickname, notes; channelNotes)
         {
-            json[channelName][nickname] = null;
-            json[channelName][nickname].array = null;
-
-            auto nicknameNotesJSON = nickname in json[channelName];
-
             foreach (note; notes)
             {
-                nicknameNotesJSON.array ~= note.toJSON();
+                json[channelName][nickname] ~= note.asSchema;
             }
         }
     }
 
-    if (json.type == JSONType.null_) json.object = null;  // reset to type object if null_
-    json.save(plugin.notesFile);
+    immutable serialised = json.serializeToJsonPretty!"    ";
+    File(plugin.notesFile, "w").write(serialised);
 }
 
 
@@ -535,35 +522,24 @@ void saveNotes(NotePlugin plugin)
  +/
 void loadNotes(NotePlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import core.memory : GC;
+    import asdf : deserialize;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
-    GC.disable();
-    scope(exit) GC.enable();
-
-    JSONStorage json;
-    json.load(plugin.notesFile);
+    auto json = plugin.notesFile.readText.deserialize!(Note.JSONSchema[][string][string]);
     plugin.notes = null;
 
-    foreach (immutable channelName, channelNotesJSON; json.object)
+    foreach (immutable channelName, channelNotesJSON; json)
     {
-        auto channelNotes = channelName in plugin.notes;
-        if (!channelNotes)
+        foreach (immutable nickname, notesJSON; channelNotesJSON)
         {
-            plugin.notes[channelName][string.init] = [ Note.init ];
-            channelNotes = channelName in plugin.notes;
-            (*channelNotes).remove(string.init);
-        }
-
-        foreach (immutable nickname, notesJSON; channelNotesJSON.object)
-        {
-            foreach (noteJSON; notesJSON.array)
+            foreach (schema; notesJSON)
             {
-                (*channelNotes)[nickname] ~= Note.fromJSON(noteJSON);
+                plugin.notes[channelName][nickname] ~= Note(schema);
             }
         }
 
-        (*channelNotes).rehash();
+        plugin.notes[channelName].rehash();
     }
 
     plugin.notes.rehash();
@@ -586,16 +562,17 @@ void reload(NotePlugin plugin)
  +/
 void initResources(NotePlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import std.json : JSONException;
-
-    JSONStorage json;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
     try
     {
-        json.load(plugin.notesFile);
+        auto json = plugin.notesFile.readText.deserialize!(Note.JSONSchema[][string][string]);
+        immutable serialised = json.serializeToJsonPretty!"    ";
+        File(plugin.notesFile, "w").write(serialised);
     }
-    catch (JSONException e)
+    catch (Exception e)
     {
         version(PrintStacktraces) logger.trace(e);
 
@@ -604,9 +581,6 @@ void initResources(NotePlugin plugin)
             pluginName: plugin.name,
             malformedFilename: plugin.notesFile);
     }
-
-    // Let other Exceptions pass.
-    json.save(plugin.notesFile);
 }
 
 
@@ -697,9 +671,6 @@ public:
  +/
 final class NotePlugin : IRCPlugin
 {
-private:
-    import lu.json : JSONStorage;
-
     // settings
     /++
         All Note plugin settings gathered.

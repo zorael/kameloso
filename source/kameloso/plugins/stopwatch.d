@@ -227,13 +227,13 @@ void onCommandStopwatch(StopwatchPlugin plugin, const IRCEvent event)
  +/
 void serialiseStopwatches(StopwatchPlugin plugin)
 {
-    import std.json : JSONValue;
+    import asdf : serializeToJsonPretty;
     import std.stdio : File, writeln;
 
     if (!plugin.stopwatches.length) return;
 
-    auto file = File(plugin.stopwatchTempFile, "w");
-    file.writeln(JSONValue(plugin.stopwatches).toPrettyString);
+    immutable serialised = plugin.stopwatches.serializeToJsonPretty!"    ";
+    File(plugin.stopwatchTempFile, "w").writeln(serialised);
 }
 
 
@@ -246,19 +246,17 @@ void serialiseStopwatches(StopwatchPlugin plugin)
  +/
 void deserialiseStopwatches(StopwatchPlugin plugin)
 {
-    import lu.json : JSONStorage;
+    import asdf : deserialize;
+    import std.file : readText;
 
-    JSONStorage json;
-    json.load(plugin.stopwatchTempFile);
-
-    foreach (immutable channelName, const channelStopwatchesJSON; json.object)
+    try
     {
-        auto channelStopwatches = channelName in plugin.stopwatches;
-
-        foreach (immutable nickname, const stopwatchJSON; channelStopwatchesJSON.object)
-        {
-            (*channelStopwatches)[nickname] = stopwatchJSON.integer;
-        }
+        plugin.stopwatches = plugin.stopwatchTempFile.readText.deserialize!(long[string][string]);
+    }
+    catch (Exception e)
+    {
+        import kameloso.common : logger;
+        version(PrintStacktraces) logger.trace(e);
     }
 }
 
