@@ -410,7 +410,6 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
     import asdf : deserialize;
     import std.algorithm.searching : endsWith;
     import std.format : format;
-    import std.json : JSONValue, parseJSON;
 
     static struct Response
     {
@@ -624,7 +623,6 @@ private auto getGoogleTokens(
     import kameloso.tables : HTTPVerb;
     import asdf : deserialize;
     import std.format : format;
-    import std.json : JSONValue, parseJSON;
 
     alias Response = GoogleTokenResponse;
     alias ErrorResponse = GoogleErrorResponse;

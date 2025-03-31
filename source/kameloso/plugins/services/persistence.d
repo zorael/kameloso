@@ -36,10 +36,8 @@ import dialect.defs;
  +/
 @Settings struct PersistenceSettings
 {
-private:
-    import lu.uda : Unserialisable;
+    private import lu.uda : Unserialisable;
 
-public:
     /++
         To what level the service should monitor and record users in channels.
      +/
@@ -1156,12 +1154,13 @@ void reload(PersistenceService service)
  +/
 void reloadAccountClassifiersFromDisk(PersistenceService service)
 {
+    import asdf : deserialize;
     import lu.conv : toString;
-    import lu.json : JSONStorage;
-    import std.json : JSONException;
+    import std.file : readText;
 
-    JSONStorage json;
-    json.load(service.userFile);
+    auto json = service.userFile
+        .readText
+        .deserialize!(string[string][string][string]);
 
     service.channelUserClassDefinitions = null;
 
@@ -1187,30 +1186,24 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
 
         try
         {
-            foreach (immutable channelName, const channelAccountJSON; listFromJSON.object)
+            foreach (immutable channelName, const channelAccountJSON; *listFromJSON)
             {
                 import std.algorithm.searching : startsWith;
 
                 if (channelName.startsWith('<')) continue;  // example placeholder, skip
 
-                foreach (immutable userJSON; channelAccountJSON.array)
+                foreach (immutable userJSON; channelAccountJSON)
                 {
                     if (auto channelUsers = channelName in service.channelUserClassDefinitions.aaOf)
                     {
-                        (*channelUsers)[userJSON.str] = class_;
+                        (*channelUsers)[userJSON] = class_;
                     }
                     else
                     {
-                        service.channelUserClassDefinitions.aaOf[channelName][userJSON.str] = class_;
+                        service.channelUserClassDefinitions.aaOf[channelName][userJSON] = class_;
                     }
                 }
             }
-        }
-        catch (JSONException e)
-        {
-            enum pattern = "JSON exception caught when populating <l>%s</>: <l>%s";
-            logger.warningf(pattern, list, e.msg);
-            version(PrintStacktraces) logger.trace(e.info);
         }
         catch (Exception e)
         {
@@ -1231,13 +1224,12 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
  +/
 void reloadHostmasksFromDisk(PersistenceService service)
 {
-    import lu.json : JSONStorage, populateFromJSON;
+    import asdf : deserialize;
+    import std.file : readText;
 
-    JSONStorage hostmasksJSON;
-    hostmasksJSON.load(service.hostmasksFile);
-
-    string[string] accountByHostmask;
-    accountByHostmask.populateFromJSON(hostmasksJSON);
+    auto accountByHostmask = service.hostmasksFile
+        .readText
+        .deserialize!(string[string]);
 
     /+
         The nickname-account map is used elsewhere too, so ideally we wouldn't
@@ -1328,16 +1320,19 @@ void initResources(PersistenceService service)
  +/
 void initAccountResources(PersistenceService service)
 {
-    import lu.json : JSONStorage;
-    import std.json : JSONException, JSONValue;
+    import asdf : deserialize, serializeToJsonPretty;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
-    JSONStorage json;
+    string[][string][string] json;
 
     try
     {
-        json.load(service.userFile);
+        json = service.userFile
+            .readText
+            .deserialize!(typeof(json));
     }
-    catch (JSONException e)
+    catch (Exception e)
     {
         version(PrintStacktraces) logger.trace(e);
 
@@ -1346,34 +1341,6 @@ void initAccountResources(PersistenceService service)
             pluginName: service.name,
             malformedFilename: service.userFile);
     }
-
-    // Let other Exceptions pass.
-
-    static auto deduplicate(JSONValue before)
-    {
-        import std.algorithm.iteration : filter, uniq;
-        import std.algorithm.sorting : sort;
-        import std.array : array;
-
-        auto after = before
-            .array
-            .sort!((a, b) => a.str < b.str)
-            .uniq
-            .filter!((a) => a.str.length > 0)
-            .array;
-
-        return JSONValue(after);
-    }
-
-    /+
-    unittest
-    {
-        auto users = JSONValue([ "foo", "bar", "baz", "bar", "foo" ]);
-        assert((users.array.length == 5), users.array.length.to!string);
-
-        users = deduplicated(users);
-        assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.to!string);
-    }+/
 
     static immutable string[5] listTypesInOrder =
     [
@@ -1391,49 +1358,37 @@ void initAccountResources(PersistenceService service)
 
         if (!listJSON)
         {
-            json[liststring] = null;
-            json[liststring].object = null;
-            listJSON = liststring in json;
-
-            (*listJSON)[examplePlaceholderKey] = null;
-            (*listJSON)[examplePlaceholderKey].array = null;
-
-            auto listPlaceholder = examplePlaceholderKey in *listJSON;
-            listPlaceholder.array ~= JSONValue("<nickname1>");
-            listPlaceholder.array ~= JSONValue("<nickname2>");
+            json[liststring][examplePlaceholderKey] = [ "<nickname1>", "<nickname2>" ];
         }
         else /*if (listJSON)*/
         {
-            if ((listJSON.object.length > 1) &&
+            if ((listJSON.length > 1) &&
                 (examplePlaceholderKey in *listJSON))
             {
-                listJSON.object.remove(examplePlaceholderKey);
+                (*listJSON).remove(examplePlaceholderKey);
             }
 
-            try
+            foreach (immutable channelName, ref channelAccountsJSON; *listJSON)
             {
-                foreach (immutable channelName, ref channelAccountsJSON; listJSON.object)
-                {
-                    if (channelName == examplePlaceholderKey) continue;
-                    channelAccountsJSON = deduplicate((*listJSON)[channelName]);
-                }
-            }
-            catch (JSONException e)
-            {
-                import kameloso.common : logger;
+                import std.algorithm.iteration : filter, uniq;
+                import std.algorithm.sorting : sort;
+                import std.array : array;
+                import std.functional : lessThan;
 
-                version(PrintStacktraces) logger.trace(e);
+                if (channelName == examplePlaceholderKey) continue;
 
-                throw new IRCPluginInitialisationException(
-                    message: "Users file is malformed",
-                    pluginName: service.name,
-                    malformedFilename: service.userFile);
+                channelAccountsJSON = channelAccountsJSON
+                    .array
+                    .sort!lessThan
+                    .uniq
+                    .filter!(a => a.length > 0)
+                    .array;
             }
         }
     }
 
-    // Force staff, operator and whitelist to appear before blacklist in the .json
-    json.save!(JSONStorage.KeyOrderStrategy.inGivenOrder)(service.userFile, listTypesInOrder);
+    immutable serialised = json.serializeToJsonPretty!"    ";
+    File(service.userFile, "w").write(serialised);
 }
 
 
@@ -1447,16 +1402,19 @@ void initAccountResources(PersistenceService service)
  +/
 void initHostmaskResources(PersistenceService service)
 {
-    import lu.json : JSONStorage;
-    import std.json : JSONException;
+    import asdf : deserialize, serializeToJsonPretty;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
-    JSONStorage json;
+    string[string] json;
 
     try
     {
-        json.load(service.hostmasksFile);
+        json = service.hostmasksFile
+            .readText
+            .deserialize!(typeof(json));
     }
-    catch (JSONException e)
+    catch (Exception e)
     {
         import kameloso.common : logger;
 
@@ -1473,27 +1431,21 @@ void initHostmaskResources(PersistenceService service)
     alias examplePlaceholderValue1 = PersistenceService.Placeholder.account1;
     alias examplePlaceholderValue2 = PersistenceService.Placeholder.account2;
 
-    if (json.object.length == 0)
+    if (json.length == 0)
     {
-        json[examplePlaceholderKey1] = null;
-        json[examplePlaceholderKey1].str = null;
-        json[examplePlaceholderKey1].str = examplePlaceholderValue1;
-        json[examplePlaceholderKey2] = null;
-        json[examplePlaceholderKey2].str = null;
-        json[examplePlaceholderKey2].str = examplePlaceholderValue2;
+        json[examplePlaceholderKey1] = examplePlaceholderValue1;
+        json[examplePlaceholderKey2] = examplePlaceholderValue2;
     }
-    else if ((json.object.length > 2) &&
+    else if ((json.length > 2) &&
         ((examplePlaceholderKey1 in json) ||
          (examplePlaceholderKey2 in json)))
     {
-        json.object.remove(examplePlaceholderKey1);
-        json.object.remove(examplePlaceholderKey2);
+        json.remove(examplePlaceholderKey1);
+        json.remove(examplePlaceholderKey2);
     }
 
-    // Let other Exceptions pass.
-
-    // Adjust saved JSON layout to be more easily edited
-    json.save!(JSONStorage.KeyOrderStrategy.passthrough)(service.hostmasksFile);
+    immutable serialised = json.serializeToJsonPretty!"    ";
+    File(service.hostmasksFile, "w").write(serialised);
 }
 
 

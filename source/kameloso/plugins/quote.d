@@ -1477,44 +1477,20 @@ final class NoQuotesSearchMatchException : Exception
  +/
 void initResources(QuotePlugin plugin)
 {
-    import lu.json : JSONStorage;
+    import asdf : deserialize, serializeToJsonPretty;
     import std.algorithm.searching : startsWith;
-    import std.json : JSONException;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
     enum placeholderChannel = "#<lost+found>";
 
-    JSONStorage json;
-    bool dirty;
-
     try
     {
-        json.load(plugin.quotesFile);
-
-        // Convert legacy quotes to new ones
-        JSONStorage scratchJSON;
-
-        foreach (immutable key, firstLevel; json.object)
-        {
-            if (key.startsWith('#')) continue;
-
-            scratchJSON[placeholderChannel] = null;
-            scratchJSON[placeholderChannel].object = null;
-            scratchJSON[placeholderChannel][key] = firstLevel;
-            dirty = true;
-        }
-
-        if (dirty)
-        {
-            foreach (immutable key, firstLevel; json.object)
-            {
-                if (!key.startsWith('#')) continue;
-                scratchJSON[key] = firstLevel;
-            }
-
-            json = scratchJSON;
-        }
+        auto json = plugin.quotesFile.readText.deserialize!(Quote.JSONSchema[][string][string]);
+        immutable serialised = json.serializeToJsonPretty!"    ";
+        File(plugin.quotesFile, "w").writeln(serialised);
     }
-    catch (JSONException e)
+    catch (Exception e)
     {
         version(PrintStacktraces) logger.trace(e);
 
@@ -1523,9 +1499,6 @@ void initResources(QuotePlugin plugin)
             pluginName: plugin.name,
             malformedFilename: plugin.quotesFile);
     }
-
-    // Let other Exceptions pass.
-    json.save(plugin.quotesFile);
 }
 
 
@@ -1628,8 +1601,6 @@ public:
 final class QuotePlugin : IRCPlugin
 {
 private:
-    import lu.json : JSONStorage;
-
     /++
         All Quote plugin settings gathered.
      +/

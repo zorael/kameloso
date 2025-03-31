@@ -784,7 +784,6 @@ void saveCounters(CounterPlugin plugin)
  +/
 void loadCounters(CounterPlugin plugin)
 {
-    import lu.json : JSONStorage;
     import asdf : deserialize;
     import std.file : readText;
 
