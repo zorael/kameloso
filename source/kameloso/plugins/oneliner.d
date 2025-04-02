@@ -58,12 +58,14 @@ struct Oneliner
      +/
     static struct JSONSchema
     {
+        import asdf.serialization : serdeKeys;
+
         string trigger;
-        string alias_;
         int type;
-        size_t position;
         uint cooldown;
         string[] responses;
+
+        @serdeKeys("alias") string alias_;
     }
 
     // OnelinerType
@@ -141,7 +143,6 @@ struct Oneliner
         trigger = json.trigger;
         alias_ = json.alias_;
         type = cast(OnelinerType)json.type;
-        position = json.position;
         cooldown = json.cooldown;
         responses = json.responses.dup;
     }
@@ -155,7 +156,6 @@ struct Oneliner
         json.trigger = this.trigger;
         json.alias_ = this.alias_;
         json.type = cast(int)this.type;
-        json.position = this.position;
         json.cooldown = this.cooldown;
         json.responses = this.responses.dup;
 
