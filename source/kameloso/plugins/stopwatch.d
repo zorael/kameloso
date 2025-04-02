@@ -227,12 +227,12 @@ void onCommandStopwatch(StopwatchPlugin plugin, const IRCEvent event)
  +/
 void serialiseStopwatches(StopwatchPlugin plugin)
 {
-    import asdf : serializeToJsonPretty;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     if (!plugin.stopwatches.length) return;
 
-    immutable serialised = plugin.stopwatches.serializeToJsonPretty!"    ";
+    immutable serialised = JSONValue(plugin.stopwatches).toPrettyString;
     File(plugin.stopwatchTempFile, "w").writeln(serialised);
 }
 

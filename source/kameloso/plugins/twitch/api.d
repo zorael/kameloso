@@ -140,6 +140,7 @@ private auto handleRetryDelegateException(
     const bool headless)
 {
     import asdf : SerdeException;
+    import std.json : JSONException;
 
     if (auto e = cast(MissingBroadcasterTokenException)base)
     {
@@ -152,6 +153,11 @@ private auto handleRetryDelegateException(
         throw e;
     }
     else if (auto e = cast(SerdeException)base)
+    {
+        // Nor this
+        throw e;
+    }
+    else if (auto e = cast(JSONException)base)
     {
         // Nor this
         throw e;

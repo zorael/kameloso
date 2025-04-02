@@ -1145,6 +1145,19 @@ void reload(PersistenceService service)
 }
 
 
+// JSONSchema
+/++
+ +/
+struct JSONSchema
+{
+    string[] staff;
+    string[] operator;
+    string[] elevated;
+    string[] whitelist;
+    string[] blacklist;
+}
+
+
 // reloadAccountClassifiersFromDisk
 /++
     Reloads admin/staff/operator/elevated/whitelist/blacklist classifier definitions from disk.
@@ -1160,56 +1173,38 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
 
     auto json = service.userFile
         .readText
-        .deserialize!(string[string][string][string]);
+        .deserialize!(JSONSchema[string]);
 
     service.channelUserClassDefinitions = null;
 
-    static immutable IRCUser.Class[5] classes =
-    [
-        IRCUser.Class.staff,
-        IRCUser.Class.operator,
-        IRCUser.Class.elevated,
-        IRCUser.Class.whitelist,
-        IRCUser.Class.blacklist,
-    ];
-
-    foreach (const class_; classes[])
+    foreach (immutable channelName, const channelSchema; json)
     {
-        immutable list = class_.toString;
-        const listFromJSON = list in json;
+        service.channelUserClassDefinitions.aaOf[channelName] = null;
+        auto channelClasses = channelName in service.channelUserClassDefinitions;
 
-        if (!listFromJSON)
+        foreach (immutable account; channelSchema.staff)
         {
-            // Something's wrong, the file is missing sections and must have been manually modified
-            continue;
+            (*channelClasses)[account] = IRCUser.Class.staff;
         }
 
-        try
+        foreach (immutable account; channelSchema.operator)
         {
-            foreach (immutable channelName, const channelAccountJSON; *listFromJSON)
-            {
-                import std.algorithm.searching : startsWith;
-
-                if (channelName.startsWith('<')) continue;  // example placeholder, skip
-
-                foreach (immutable userJSON; channelAccountJSON)
-                {
-                    if (auto channelUsers = channelName in service.channelUserClassDefinitions.aaOf)
-                    {
-                        (*channelUsers)[userJSON] = class_;
-                    }
-                    else
-                    {
-                        service.channelUserClassDefinitions.aaOf[channelName][userJSON] = class_;
-                    }
-                }
-            }
+            (*channelClasses)[account] = IRCUser.Class.operator;
         }
-        catch (Exception e)
+
+        foreach (immutable account; channelSchema.elevated)
         {
-            enum pattern = "Unhandled exception caught when populating <l>%s</>: <l>%s";
-            logger.warningf(pattern, list, e.msg);
-            version(PrintStacktraces) logger.trace(e);
+            (*channelClasses)[account] = IRCUser.Class.elevated;
+        }
+
+        foreach (immutable account; channelSchema.whitelist)
+        {
+            (*channelClasses)[account] = IRCUser.Class.whitelist;
+        }
+
+        foreach (immutable account; channelSchema.blacklist)
+        {
+            (*channelClasses)[account] = IRCUser.Class.blacklist;
         }
     }
 }
@@ -1321,16 +1316,27 @@ void initResources(PersistenceService service)
 void initAccountResources(PersistenceService service)
 {
     import asdf : deserialize, serializeToJsonPretty;
-    import std.file : readText;
+    import std.file : exists, readText;
     import std.stdio : File, writeln;
-
-    string[][string][string] json;
 
     try
     {
-        json = service.userFile
+        if (!service.userFile.exists)
+        {
+            // Create the file if it doesn't exist
+            JSONSchema[string] json;
+            json["<example>"] = JSONSchema.init;
+            immutable serialised = json.serializeToJsonPretty!"    ";
+            File(service.userFile, "w").write(serialised);
+            return;
+        }
+
+        auto json = service.userFile
             .readText
-            .deserialize!(typeof(json));
+            .deserialize!(JSONSchema[string]);
+
+        immutable serialised = json.serializeToJsonPretty!"    ";
+        File(service.userFile, "w").write(serialised);
     }
     catch (Exception e)
     {
@@ -1341,54 +1347,6 @@ void initAccountResources(PersistenceService service)
             pluginName: service.name,
             malformedFilename: service.userFile);
     }
-
-    static immutable string[5] listTypesInOrder =
-    [
-        "staff",
-        "operator",
-        "elevated",
-        "whitelist",
-        "blacklist",
-    ];
-
-    foreach (liststring; listTypesInOrder[])
-    {
-        alias examplePlaceholderKey = PersistenceService.Placeholder.channel;
-        auto listJSON = liststring in json;
-
-        if (!listJSON)
-        {
-            json[liststring][examplePlaceholderKey] = [ "<nickname1>", "<nickname2>" ];
-        }
-        else /*if (listJSON)*/
-        {
-            if ((listJSON.length > 1) &&
-                (examplePlaceholderKey in *listJSON))
-            {
-                (*listJSON).remove(examplePlaceholderKey);
-            }
-
-            foreach (immutable channelName, ref channelAccountsJSON; *listJSON)
-            {
-                import std.algorithm.iteration : filter, uniq;
-                import std.algorithm.sorting : sort;
-                import std.array : array;
-                import std.functional : lessThan;
-
-                if (channelName == examplePlaceholderKey) continue;
-
-                channelAccountsJSON = channelAccountsJSON
-                    .array
-                    .sort!lessThan
-                    .uniq
-                    .filter!(a => a.length > 0)
-                    .array;
-            }
-        }
-    }
-
-    immutable serialised = json.serializeToJsonPretty!"    ";
-    File(service.userFile, "w").write(serialised);
 }
 
 
@@ -1402,8 +1360,9 @@ void initAccountResources(PersistenceService service)
  +/
 void initHostmaskResources(PersistenceService service)
 {
-    import asdf : deserialize, serializeToJsonPretty;
+    import asdf : deserialize;
     import std.file : readText;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     string[string] json;
@@ -1444,7 +1403,7 @@ void initHostmaskResources(PersistenceService service)
         json.remove(examplePlaceholderKey2);
     }
 
-    immutable serialised = json.serializeToJsonPretty!"    ";
+    immutable serialised = JSONValue(json).toPrettyString;
     File(service.hostmasksFile, "w").write(serialised);
 }
 

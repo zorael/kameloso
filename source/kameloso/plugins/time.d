@@ -510,10 +510,10 @@ void onCommandSetZone(TimePlugin plugin, const IRCEvent event)
 void saveResourceToDisk(/*const*/ string[string] aa, const string filename)
 in (filename.length, "Tried to save resources to an empty filename string")
 {
-    import asdf : serializeToJsonPretty;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
-    immutable serialised = aa.serializeToJsonPretty!"    ";
+    immutable serialised = JSONValue(aa).toPrettyString;
     File(filename, "w").writeln(serialised);
 }
 
@@ -538,14 +538,15 @@ void reload(TimePlugin plugin)
  +/
 void initResources(TimePlugin plugin)
 {
-    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize;
     import std.file : readText;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     try
     {
         auto json = plugin.timezonesFile.readText.deserialize!(string[string]);
-        immutable serialised = json.serializeToJsonPretty!"    ";
+        immutable serialised = JSONValue(json).toPrettyString;
         File(plugin.timezonesFile, "w").writeln(serialised);
     }
     catch (Exception e)

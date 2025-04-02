@@ -51,13 +51,13 @@ import dialect.defs;
  +/
 void saveAutomodes(AutomodePlugin plugin)
 {
-    import asdf : serializeToJsonPretty;
     import lu.array : pruneAA;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     pruneAA(plugin.automodes);
 
-    immutable serialised = plugin.automodes.serializeToJsonPretty!"    ";
+    immutable serialised = JSONValue(plugin.automodes).toPrettyString;
     File(plugin.automodeFile, "w").writeln(serialised);
 }
 
@@ -68,14 +68,15 @@ void saveAutomodes(AutomodePlugin plugin)
  +/
 void initResources(AutomodePlugin plugin)
 {
-    import asdf : deserialize, serializeToJsonPretty;
+    import asdf : deserialize;
     import std.file : readText;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     try
     {
         auto json = plugin.automodeFile.readText.deserialize!(string[string][string]);
-        immutable serialised = json.serializeToJsonPretty!"    ";
+        immutable serialised = JSONValue(json).toPrettyString;
         File(plugin.automodeFile, "w").writeln(serialised);
     }
     catch (Exception e)

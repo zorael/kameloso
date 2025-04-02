@@ -1464,8 +1464,9 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
  +/
 void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
 {
-    import asdf : deserialize, serializeToJsonPretty;
+    import asdf : deserialize;
     import std.file : readText;
+    import std.json : JSONValue;
     import std.stdio : File, stdout, writeln;
 
     if (plugin.state.coreSettings.headless) return;
@@ -1483,7 +1484,7 @@ void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
             if (plugin.state.coreSettings.headless) return;
 
             logger.log("Current hostmasks:");
-            immutable serialised = aa.serializeToJsonPretty!"    ";
+            immutable serialised = JSONValue(aa).toPrettyString;
             writeln(serialised);
             if (plugin.state.coreSettings.flush) stdout.flush();
         }

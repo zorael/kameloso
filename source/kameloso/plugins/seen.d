@@ -1055,12 +1055,12 @@ void loadSeen(SeenPlugin plugin)
  +/
 void saveSeen(SeenPlugin plugin)
 {
-    import asdf : serializeToJsonPretty;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     if (!plugin.seenUsers.length) return;
 
-    immutable serialised = plugin.seenUsers.aaOf.serializeToJsonPretty!"    ";
+    immutable serialised = JSONValue(plugin.seenUsers.aaOf).toPrettyString;
     File(plugin.seenFile, "w").writeln(serialised);
 }
 
@@ -1155,14 +1155,15 @@ void teardown(SeenPlugin plugin)
  +/
 void initResources(SeenPlugin plugin)
 {
-    import asdf : deserialize, serializeToJsonPretty;
+    import asdf : deserialize;
     import std.file : readText;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     try
     {
         auto json = plugin.seenFile.readText.deserialize!(long[string]);
-        immutable serialised = json.serializeToJsonPretty!"    ";
+        immutable serialised = JSONValue(json).toPrettyString;
         File(plugin.seenFile, "w").writeln(serialised);
     }
     catch (Exception e)

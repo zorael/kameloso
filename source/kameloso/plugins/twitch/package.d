@@ -218,7 +218,6 @@ import kameloso.net :
 import kameloso.thread : Sendable;
 import dialect.defs;
 import dialect.postprocessors.twitch;  // To trigger the module ctor
-import lu.container : RehashingAA;
 import std.datetime.systime : SysTime;
 import std.typecons : Flag, No, Yes;
 import core.thread.fiber : Fiber;
@@ -553,7 +552,6 @@ void onEmoteBearingMessage(TwitchPlugin plugin, const IRCEvent event)
 
         if (!channelcount)
         {
-            plugin.ecount[event.channel.name] = RehashingAA!(long[string]).init;
             plugin.ecount[event.channel.name][string.init] = 0L;
             channelcount = event.channel.name in plugin.ecount;
             (*channelcount).remove(string.init);
@@ -4332,15 +4330,22 @@ void initResources(TwitchPlugin plugin)
     import std.path : dirName;
     import std.stdio : File, writeln;
 
-    void readAndWriteBack(T)(const string filename, const string fileDescription)
+    void readAndWriteBack(T)
+        (const string filename,
+        const string fileDescription,
+        const bool useStdJSON)
     {
         try
         {
-            immutable serialised = plugin.ecountFile
+            immutable deserialised = filename
                 .readText
-                .deserialize!T
-                .serializeToJsonPretty!"    ";
-            File(plugin.ecountFile, "w").writeln(serialised);
+                .deserialize!T;
+
+            immutable serialised = useStdJSON ?
+                JSONValue(deserialised).toPrettyString :
+                deserialised.serializeToJsonPretty!"    ";
+
+            File(filename, "w").writeln(serialised);
         }
         catch (Exception e)
         {
@@ -4357,10 +4362,25 @@ void initResources(TwitchPlugin plugin)
     immutable subdir = plugin.ecountFile.dirName;
     if (!subdir.exists) mkdir(subdir);
 
-    readAndWriteBack!(long[string][string])(plugin.ecountFile, "ecount");
-    readAndWriteBack!(long[string][string])(plugin.viewersFile, "Viewers");
-    readAndWriteBack!(Credentials.JSONSchema[string])(plugin.secretsFile, "Secrets");
-    readAndWriteBack!(TwitchPlugin.Room.Stream.JSONSchema[])(plugin.streamHistoryFile, "Stream history");
+    readAndWriteBack!(long[string][string])
+        (plugin.ecountFile,
+        fileDescription: "ecount",
+        useStdJSON: true);
+
+    readAndWriteBack!(long[string][string])
+        (plugin.viewersFile,
+        fileDescription: "Viewers",
+        useStdJSON: true);
+
+    readAndWriteBack!(Credentials.JSONSchema[string])
+        (plugin.secretsFile,
+        fileDescription: "Secrets",
+        useStdJSON: false);
+
+    readAndWriteBack!(TwitchPlugin.Room.Stream.JSONSchema[])
+        (plugin.streamHistoryFile,
+        fileDescription: "Stream history",
+        useStdJSON: false);
 }
 
 
@@ -4375,20 +4395,14 @@ void initResources(TwitchPlugin plugin)
         aa = The associative array to convert into JSON and save.
         filename = Filename of the file to write to.
  +/
-void saveResourceToDisk(/*const*/ RehashingAA!(long[string])[string] aa, const string filename)
+void saveResourceToDisk(/*const*/ long[string][string] aa, const string filename)
 {
     import asdf : serializeToJsonPretty;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
-    long[string][string] tempAA;
-
-    foreach (immutable channelName, rehashingAA; aa)
-    {
-        tempAA[channelName] = rehashingAA.aaOf;
-    }
-
-    immutable serialised = tempAA.serializeToJsonPretty!"    ";
-    File(filename, "w").writeln(serialised);
+    immutable serialised = JSONValue(aa);
+    File(filename, "w").writeln(serialised.toPrettyString);
 }
 
 
@@ -4424,28 +4438,19 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
 void loadResources(TwitchPlugin plugin)
 {
     import asdf : deserialize;
-    import lu.container : rehashingAA;
     import std.file : readText;
     import core.memory : GC;
 
     GC.disable();
     scope(exit) GC.enable();
 
-    auto tempEcount = plugin.ecountFile.readText.deserialize!(long[string][string]);
-    plugin.ecount = null;
+    plugin.ecount = plugin.ecountFile
+        .readText
+        .deserialize!(long[string][string]);
 
-    foreach (immutable channelName, /*const*/ channelCounts; tempEcount)
-    {
-        plugin.ecount[channelName] = rehashingAA(channelCounts);
-    }
-
-    auto tempViewers = plugin.viewersFile.readText.deserialize!(long[string][string]);
-    plugin.viewerTimesByChannel = null;
-
-    foreach (immutable channelName, channelViewers; tempViewers)
-    {
-        plugin.viewerTimesByChannel[channelName] = rehashingAA(channelViewers);
-    }
+    plugin.viewerTimesByChannel = plugin.viewersFile
+        .readText
+        .deserialize!(long[string][string]);
 
     auto creds = plugin.secretsFile.readText.deserialize!(Credentials.JSONSchema[string]);
     plugin.secretsByChannel = null;
@@ -4847,12 +4852,12 @@ package:
             /++
                 Users seen in the channel.
              +/
-            RehashingAA!(bool[string]) chattersSeen;
+            bool[string] chattersSeen;
 
             /++
                 Hashmap of active viewers (who have shown activity).
              +/
-            RehashingAA!(bool[string]) activeViewers;
+            bool[string] activeViewers;
 
             /++
                 Accessor to [_id].
@@ -5278,7 +5283,7 @@ package:
     /++
         Associative array of viewer times; seconds keyed by nickname keyed by channel.
      +/
-    RehashingAA!(long[string])[string] viewerTimesByChannel;
+    long[string][string] viewerTimesByChannel;
 
     /++
         API keys and tokens, keyed by channel.
@@ -5321,7 +5326,7 @@ package:
     /++
         Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
      +/
-    RehashingAA!(long[string])[string] ecount;
+    long[string][string] ecount;
 
     /++
         Buffer of messages to send as whispers.

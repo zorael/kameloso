@@ -605,9 +605,10 @@ auto alterAccountClassifier(
     const string channelName)
 {
     import kameloso.thread : ThreadMessage;
-    import asdf : deserialize, serializeToJsonPretty;
+    import asdf : deserialize;
     import lu.conv : toString;
     import std.file : readText;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     auto json = plugin.userFile
@@ -663,7 +664,7 @@ auto alterAccountClassifier(
         }
     }
 
-    immutable serialised = json.serializeToJsonPretty!"    ";
+    immutable serialised = JSONValue(json).toPrettyString;
     File(plugin.userFile, "w").writeln(serialised);
 
     version(WithPersistenceService)
@@ -698,10 +699,11 @@ in (mask.length, "Tried to add an empty hostmask definition")
 {
     import kameloso.pods : CoreSettings;
     import kameloso.thread : ThreadMessage;
-    import asdf : deserialize, serializeToJsonPretty;
+    import asdf : deserialize;
     import std.conv : text;
     import std.file : readText;
     import std.format : format;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     version(Colours)
@@ -806,7 +808,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
         }
     }
 
-    immutable serialised = aa.serializeToJsonPretty!"    ";
+    immutable serialised = JSONValue(aa).toPrettyString;
     File(plugin.hostmasksFile, "w").writeln(serialised);
 
     version(WithPersistenceService)
