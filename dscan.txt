@@ -10,3 +10,4 @@ formatting\.d.+Variable displayNameMatch is never modified
 twitch/package\.d.+Variable results is never modified
 same\.d.+Parameter .+ is never used
 same\.d.+Public declaration .+ is undocumented
+\.d.+Variable deserialised is never modified
