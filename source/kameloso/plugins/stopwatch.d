@@ -251,7 +251,9 @@ void deserialiseStopwatches(StopwatchPlugin plugin)
 
     try
     {
-        plugin.stopwatches = plugin.stopwatchTempFile.readText.deserialize!(long[string][string]);
+        plugin.stopwatches = plugin.stopwatchTempFile
+            .readText
+            .deserialize!(long[string][string]);
     }
     catch (Exception e)
     {

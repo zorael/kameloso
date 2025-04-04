@@ -379,10 +379,10 @@ public:
      +/
     static struct JSONSchema
     {
-        string user_id;
-        string user_name;
-        string user_login;
-        string followed_at;
+        string user_id;  ///
+        string user_name;  ///
+        string user_login;  ///
+        string followed_at;  ///
     }
 
     /++
@@ -2901,7 +2901,9 @@ void initialise(TwitchPlugin plugin)
 
         // Some keygen, reload to load secrets so existing ones are read
         // Not strictly needed for normal keygen but for everything else
-        auto json = plugin.secretsFile.readText.deserialize!(Credentials.JSONSchema[string]);
+        auto json = plugin.secretsFile
+            .readText
+            .deserialize!(Credentials.JSONSchema[string]);
 
         foreach (immutable channelName, credsJSON; json)
         {
@@ -4454,7 +4456,10 @@ void loadResources(TwitchPlugin plugin)
         .readText
         .deserialize!(long[string][string]);
 
-    auto creds = plugin.secretsFile.readText.deserialize!(Credentials.JSONSchema[string]);
+    auto creds = plugin.secretsFile
+        .readText
+        .deserialize!(Credentials.JSONSchema[string]);
+
     plugin.secretsByChannel = null;
 
     foreach (immutable channelName, credsJSON; creds)
@@ -4657,6 +4662,9 @@ package:
          +/
         static struct Stream
         {
+        private:
+            import asdf.serialization : serdeIgnore, serdeOptional;
+
             /++
                 The unique ID of a stream, as supplied by Twitch.
 
@@ -4665,9 +4673,10 @@ package:
             /*immutable*/ ulong _id;
 
         package:
+            @serdeOptional
             static struct JSONSchema
             {
-                import asdf.serialization : serdeIgnore, serdeOptional;
+
 
                 /*
                 {

@@ -527,7 +527,9 @@ void reload(TimePlugin plugin)
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    plugin.channelTimezones = plugin.timezonesFile.readText.deserialize!(string[string]);
+    plugin.channelTimezones = plugin.timezonesFile
+        .readText
+        .deserialize!(string[string]);
 }
 
 

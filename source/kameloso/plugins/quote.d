@@ -81,10 +81,13 @@ struct Quote
      +/
     static struct JSONSchema
     {
-        string nickname;  ///
+        private import asdf.serialization : serdeOptional;
+
         string line;  ///
         long timestamp;  ///
         string creator;  ///
+
+        @serdeOptional string nickname;  ///
     }
 
     /++
@@ -1295,10 +1298,13 @@ void loadQuotes(QuotePlugin plugin)
 
     try
     {
-        auto json = plugin.quotesFile.readText.deserialize!(Quote.JSONSchema[][string][string]);
+        auto quotes = plugin.quotesFile
+            .readText
+            .deserialize!(Quote.JSONSchema[][string][string]);
+
         plugin.quotes = null;
 
-        foreach (immutable channelName, channelQuotesJSON; json)
+        foreach (immutable channelName, channelQuotesJSON; quotes)
         {
             auto channelQuotes = channelName in plugin.quotes;
             if (!channelQuotes)

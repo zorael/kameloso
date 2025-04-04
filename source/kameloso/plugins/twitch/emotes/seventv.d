@@ -53,6 +53,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
     import std.conv : to;
     import std.typecons : Nullable;
 
+    @serdeOptional
     static struct Response
     {
         @serdeOptional
@@ -218,7 +219,6 @@ in (id, "Tried to get 7tv emotes with an unset ID")
         plugin: plugin,
         url: url,
         caller: caller);
-
 
     if (httpResponse.body.startsWith("error"))
     {

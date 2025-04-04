@@ -1033,7 +1033,9 @@ void loadSeen(SeenPlugin plugin)
 
     try
     {
-        plugin.seenUsers = plugin.seenFile.readText.deserialize!(long[string]);
+        plugin.seenUsers = plugin.seenFile
+            .readText
+            .deserialize!(long[string]);
     }
     catch (Exception e)
     {

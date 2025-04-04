@@ -1978,51 +1978,58 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
 private struct TwitchPoll
 {
     private import std.datetime.systime : SysTime;
+    private import asdf.serialization : serdeIgnore, serdeOptional;
 
+    /++
+        JSON schema for the Twitch poll API response.
+     +/
+    @serdeOptional
     static struct ResponseSchema
     {
-        import asdf.serialization : serdeIgnore, serdeOptional;
-        import core.time : Duration;
+        private import core.time : Duration;
 
+        ///
         static struct PollSchema
         {
+            ///
             static struct ChoiceSchema
             {
-                string title;
-                uint votes;
-                uint channel_pointsVotes;
-                uint bitsVotes;
+                string title;  ///
+                uint votes;  ///
+                uint channel_pointsVotes;  ///
+                uint bitsVotes;  ///
 
-                @serdeIgnore string id;
+                @serdeIgnore string id;  ///
             }
 
-            string id;
-            string broadcaster_id;
-            string broadcaster_name;
-            string broadcaster_login;
-            string title;
-            ChoiceSchema[] choices;
-            string status;
-            string started_at;
+            string id;  ///
+            string broadcaster_id;  ///
+            string broadcaster_name;  ///
+            string broadcaster_login;  ///
+            string title;  ///
+            ChoiceSchema[] choices;  ///
+            string status;  ///
+            string started_at;  ///
 
             @serdeOptional
             {
-                string ended_at;
-                uint duration;
+                string ended_at;  ///
+                uint duration;  ///
             }
 
             @serdeIgnore
             {
-                bool bits_voting_enabled;
-                uint bits_per_vote;
-                bool channel_points_voting_enabled;
-                uint channel_points_per_vote;
+                bool bits_voting_enabled;  ///
+                uint bits_per_vote;  ///
+                bool channel_points_voting_enabled;  ///
+                uint channel_points_per_vote;  ///
             }
         }
 
+        ///
         static struct Pagination
         {
-            @serdeOptional string cursor;
+            @serdeOptional string cursor;  ///
         }
 
         /*
@@ -2063,8 +2070,8 @@ private struct TwitchPoll
         }
          */
 
-        PollSchema[] data;
-        Pagination pagination;
+        PollSchema[] data;  ///
+        Pagination pagination;  ///
     }
 
     /++

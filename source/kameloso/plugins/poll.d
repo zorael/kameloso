@@ -903,9 +903,11 @@ void deserialisePolls(PollPlugin plugin)
     import std.file : readText;
     import std.stdio : File, writeln;
 
-    auto json = plugin.pollTempFile.readText.deserialize!(Poll.JSONSchema[string]);
+    auto polls = plugin.pollTempFile
+        .readText
+        .deserialize!(Poll.JSONSchema[string]);
 
-    foreach (immutable channelName, /*const*/ schema; json)
+    foreach (immutable channelName, /*const*/ schema; polls)
     {
         auto poll = Poll(schema);
         plugin.channelPolls[channelName] = poll;

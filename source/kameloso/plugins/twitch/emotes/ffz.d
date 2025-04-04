@@ -24,14 +24,20 @@ import asdf.serialization : serdeOptional;
 import core.thread.fiber : Fiber;
 
 
+// Response
+/++
+    JSON schema of the response from the FrankerFaceZ API.
+ +/
 @serdeOptional
-static struct Response
+struct Response
 {
+    ///
     static struct Set
     {
+        ///
         static struct Emote
         {
-            string name;
+            string name;  ///
             /*string id;
             string url;
             string css;
@@ -42,7 +48,7 @@ static struct Response
             @serdeKeys("public") bool public_;*/
         }
 
-        Emote[] emoticons;
+        Emote[] emoticons;  ///
     }
 
     /*
@@ -136,10 +142,15 @@ static struct Response
     }
     */
 
-    Set[string] sets;
+    Set[string] sets;  ///
 }
 
-static struct ErrorResponse
+
+// ErrorResponse
+/++
+    JSON schema of the error response from the FrankerFaceZ API.
+ +/
+struct ErrorResponse
 {
     /*
     {
@@ -148,9 +159,10 @@ static struct ErrorResponse
         "status": 404
     }
     */
-    string error;
-    string message;
-    uint status;
+
+    string error;  ///
+    string message;  ///
+    uint status;  ///
 }
 
 
@@ -180,139 +192,8 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
 in (id, "Tried to get FFZ emotes with an unset ID")
 {
     import kameloso.plugins : sendHTTPRequest;
-    import asdf.serialization : deserialize, serdeOptional;
+    import asdf.serialization : deserialize;
     import std.conv : to;
-
-    version(none)
-    @serdeOptional
-    static struct Response
-    {
-        static struct Set
-        {
-            static struct Emote
-            {
-                string name;
-                /*string id;
-                string url;
-                string css;
-                bool hidden;
-                bool modifier;
-                uint usage_count;
-
-                @serdeKeys("public") bool public_;*/
-            }
-
-            Emote[] emoticons;
-        }
-
-        /*
-        {
-            "room": {
-                "_id": 366358,
-                "css": null,
-                "display_name": "GinoMachino",
-                "id": "ginomachino",
-                "is_group": false,
-                "mod_urls": null,
-                "moderator_badge": null,
-                "set": 366370,
-                "twitch_id": 148651829,
-                "user_badge_ids": {
-                    "2": [
-                        188355608
-                    ]
-                },
-                "user_badges": {
-                    "2": [
-                        "machinobot"
-                    ]
-                },
-                "vip_badge": null,
-                "youtube_id": null
-            },
-            "sets": {
-                "366370": {
-                    "_type": 1,
-                    "css": null,
-                    "emoticons": [
-                        {
-                            "created_at": "2016-11-02T14:52:50.395Z",
-                            "css": null,
-                            "height": 32,
-                            "hidden": false,
-                            "id": 139407,
-                            "last_updated": "2016-11-08T21:26:39.377Z",
-                            "margins": null,
-                            "modifier": false,
-                            "name": "LULW",
-                            "offset": null,
-                            "owner": {
-                                "_id": 53544,
-                                "display_name": "Ian678",
-                                "name": "ian678"
-                            },
-                            "public": true,
-                            "status": 1,
-                            "urls": {
-                                "1": "\/\/cdn.frankerfacez.com\/emote\/139407\/1",
-                                "2": "\/\/cdn.frankerfacez.com\/emote\/139407\/2",
-                                "4": "\/\/cdn.frankerfacez.com\/emote\/139407\/4"
-                            },
-                            "usage_count": 148783,
-                            "width": 28
-                        },
-                        {
-                            "created_at": "2018-11-12T16:03:21.331Z",
-                            "css": null,
-                            "height": 23,
-                            "hidden": false,
-                            "id": 295554,
-                            "last_updated": "2018-11-15T08:31:33.401Z",
-                            "margins": null,
-                            "modifier": false,
-                            "name": "WhiteKnight",
-                            "offset": null,
-                            "owner": {
-                                "_id": 333730,
-                                "display_name": "cccclone",
-                                "name": "cccclone"
-                            },
-                            "public": true,
-                            "status": 1,
-                            "urls": {
-                                "1": "\/\/cdn.frankerfacez.com\/emote\/295554\/1",
-                                "2": "\/\/cdn.frankerfacez.com\/emote\/295554\/2",
-                                "4": "\/\/cdn.frankerfacez.com\/emote\/295554\/4"
-                            },
-                            "usage_count": 35,
-                            "width": 20
-                        }
-                    ],
-                    "icon": null,
-                    "id": 366370,
-                    "title": "Channel: GinoMachino"
-                }
-            }
-        }
-         */
-
-        Set[string] sets;
-    }
-
-    version(none)
-    static struct ErrorResponse
-    {
-        /*
-        {
-            "error": "Not Found",
-            "message": "No such room",
-            "status": 404
-        }
-        */
-        string error;
-        string message;
-        uint status;
-    }
 
     immutable url = "https://api.frankerfacez.com/v1/room/id/" ~ id.to!string;
 

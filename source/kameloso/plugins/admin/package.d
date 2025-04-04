@@ -1471,11 +1471,9 @@ void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
 
     if (plugin.state.coreSettings.headless) return;
 
-    auto aa = plugin.hostmasksFile.readText.deserialize!(string[string]);
-
-    // Remove any placeholder examples
-    enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
-    aa.remove(examplePlaceholderKey);
+    auto aa = plugin.hostmasksFile
+        .readText
+        .deserialize!(string[string]);
 
     if (aa.length)
     {

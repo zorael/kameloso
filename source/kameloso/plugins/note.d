@@ -529,7 +529,10 @@ void loadNotes(NotePlugin plugin)
     import std.file : readText;
     import std.stdio : File, writeln;
 
-    auto json = plugin.notesFile.readText.deserialize!(Note.JSONSchema[][string][string]);
+    auto json = plugin.notesFile
+        .readText
+        .deserialize!(Note.JSONSchema[][string][string]);
+
     plugin.notes = null;
 
     foreach (immutable channelName, channelNotesJSON; json)

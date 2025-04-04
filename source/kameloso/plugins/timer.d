@@ -89,23 +89,23 @@ struct Timer
     }
 
     /++
-        FIXME
+        JSON schema of a [Timer].
      +/
     static struct JSONSchema
     {
         private import asdf.serialization : serdeOptional;
 
-        string name;
-        int type;
-        int condition;
-        long messageCountThreshold;
-        long timeThreshold;
-        long messageCountStagger;
-        long timeStagger;
-        bool suspended;
-        string[] lines;
+        string name;  ///
+        int type;  ///
+        int condition;  ///
+        long messageCountThreshold;  ///
+        long timeThreshold;  ///
+        long messageCountStagger;  ///
+        long timeStagger;  ///
+        bool suspended;  ///
+        string[] lines;  ///
 
-        @serdeOptional string colour;
+        @serdeOptional string colour;  ///
     }
 
     /++
@@ -1688,7 +1688,10 @@ void loadTimers(TimerPlugin plugin)
     import std.file : readText;
     import std.stdio : File, writeln;
 
-    auto json = plugin.timerFile.readText.deserialize!(Timer.JSONSchema[][string]);
+    auto json = plugin.timerFile
+        .readText
+        .deserialize!(Timer.JSONSchema[][string]);
+
     plugin.timersByChannel = null;
 
     foreach (immutable channelName, const timersJSON; json)

@@ -794,7 +794,9 @@ void loadCounters(CounterPlugin plugin)
 
     try
     {
-        auto json = plugin.countersFile.readText.deserialize!(Counter.JSONSchema[string][string]);
+        auto json = plugin.countersFile
+            .readText
+            .deserialize!(Counter.JSONSchema[string][string]);
 
         foreach (immutable channelName, channelCountersJSON; json)
         {

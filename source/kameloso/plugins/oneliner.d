@@ -59,13 +59,13 @@ struct Oneliner
      +/
     static struct JSONSchema
     {
-        private import asdf.serialization : serdeKeys;
+        private import asdf.serialization : serdeKeys, serdeOptional;
 
         string trigger;  ///
         int type;  ///
-        uint cooldown;  ///
         string[] responses;  ///
 
+        @serdeOptional uint cooldown;  ///
         @serdeKeys("alias") string alias_;  ///
     }
 
@@ -1348,7 +1348,10 @@ void loadOneliners(OnelinerPlugin plugin)
 
     try
     {
-        auto json = plugin.onelinerFile.readText.deserialize!(Oneliner.JSONSchema[string][string]);
+        auto json = plugin.onelinerFile
+            .readText
+            .deserialize!(Oneliner.JSONSchema[string][string]);
+
         plugin.onelinersByChannel = null;
 
         foreach (immutable channelName, const channelOnelinersJSON; json)

@@ -541,7 +541,10 @@ void loadAutomodes(AutomodePlugin plugin)
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    plugin.automodes = plugin.automodeFile.readText.deserialize!(string[string][string]);
+    plugin.automodes = plugin.automodeFile
+        .readText
+        .deserialize!(string[string][string]);
+
     plugin.automodes.rehash();
 }
 

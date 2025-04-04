@@ -475,6 +475,8 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
         Snippet snippet;
     }
 
+    alias ErrorResponse = GoogleErrorResponse;
+
     static struct AddVideoResults
     {
         uint code;
@@ -574,7 +576,7 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
             access token, login cookie or other valid authentication credential.
             See https://developers.google.com/identity/sign-in/web/devconsole-project.
          +/
-        const errorResponse = httpResponse.body.deserialize!GoogleErrorResponse;
+        const errorResponse = httpResponse.body.deserialize!ErrorResponse;
 
         if (errorResponse.error.status == "UNAUTHENTICATED")
         {
@@ -590,7 +592,7 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
         return AddVideoResults(httpResponse.code, errorResponse);
 
     default:
-        const errorResponse = httpResponse.body.deserialize!GoogleErrorResponse;
+        const errorResponse = httpResponse.body.deserialize!ErrorResponse;
         return AddVideoResults(httpResponse.code, errorResponse);
     }
 
