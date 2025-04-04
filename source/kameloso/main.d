@@ -3426,6 +3426,7 @@ auto startBot(Kameloso instance)
     import kameloso.constants : ShellReturnValue;
     import kameloso.string : doublyBackslashed;
     import kameloso.terminal : TerminalToken, isTerminal;
+    import mir.serde : SerdeException;
     import dialect.parsing : IRCParser;
     import std.algorithm.comparison : among;
     import core.time : Duration;
@@ -3758,6 +3759,21 @@ auto startBot(Kameloso instance)
         {
             instance.initPluginResources();
             if (*instance.abort) return attempt;
+        }
+        catch (SerdeException e)
+        {
+            enum pattern = "An unexpected error occurred while deserialising " ~
+                "plugin resources: <t>%s</> (at <t>%s</>:<l>%d</>)%s";
+            logger.errorf(
+                pattern,
+                e.msg,
+                e.file.pluginFileBaseName.doublyBackslashed,
+                e.line,
+                bell);
+
+            version(PrintStacktraces) logger.trace(e);
+            attempt.retval = ShellReturnValue.pluginResourceLoadException;
+            return attempt;
         }
         catch (IRCPluginInitialisationException e)
         {
