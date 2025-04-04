@@ -1285,7 +1285,7 @@ unittest
  +/
 void loadQuotes(QuotePlugin plugin)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.file : readText;
     import std.stdio : File, writeln;
 
@@ -1330,7 +1330,7 @@ void loadQuotes(QuotePlugin plugin)
  +/
 void saveQuotes(QuotePlugin plugin)
 {
-    import asdf : serializeToJsonPretty;
+    import asdf.serialization : serializeToJsonPretty;
     import std.stdio : File, writeln;
 
     try
@@ -1477,7 +1477,7 @@ final class NoQuotesSearchMatchException : Exception
  +/
 void initResources(QuotePlugin plugin)
 {
-    import asdf : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
     import mir.serde : SerdeException;
     import std.algorithm.searching : startsWith;
     import std.file : readText;

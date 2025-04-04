@@ -246,7 +246,7 @@ void serialiseStopwatches(StopwatchPlugin plugin)
  +/
 void deserialiseStopwatches(StopwatchPlugin plugin)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.file : readText;
 
     try

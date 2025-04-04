@@ -755,7 +755,7 @@ void reload(CounterPlugin plugin)
  +/
 void saveCounters(CounterPlugin plugin)
 {
-    import asdf : serializeToJsonPretty;
+    import asdf.serialization : serializeToJsonPretty;
     import std.stdio : File, writeln;
 
     Counter.JSONSchema[string][string] json;
@@ -784,7 +784,7 @@ void saveCounters(CounterPlugin plugin)
  +/
 void loadCounters(CounterPlugin plugin)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.file : readText;
 
     plugin.counters = null;
@@ -830,7 +830,7 @@ void loadCounters(CounterPlugin plugin)
  +/
 void initResources(CounterPlugin plugin)
 {
-    import asdf : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.stdio : File, writeln;

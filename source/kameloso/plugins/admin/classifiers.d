@@ -100,7 +100,7 @@ void listList(
     const IRCUser.Class class_,
     const IRCEvent event = IRCEvent.init)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import lu.conv : toString;
     import std.file : readText;
     import std.format : format;
@@ -605,7 +605,7 @@ auto alterAccountClassifier(
     const string channelName)
 {
     import kameloso.thread : ThreadMessage;
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import lu.conv : toString;
     import std.file : readText;
     import std.json : JSONValue;
@@ -699,7 +699,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
 {
     import kameloso.pods : CoreSettings;
     import kameloso.thread : ThreadMessage;
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.conv : text;
     import std.file : readText;
     import std.format : format;

@@ -524,7 +524,7 @@ in (filename.length, "Tried to save resources to an empty filename string")
  +/
 void reload(TimePlugin plugin)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.file : readText;
 
     plugin.channelTimezones = plugin.timezonesFile.readText.deserialize!(string[string]);

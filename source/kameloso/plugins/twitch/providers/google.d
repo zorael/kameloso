@@ -407,7 +407,7 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
 {
     import kameloso.plugins : sendHTTPRequest;
     import kameloso.tables : HTTPVerb;
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.algorithm.searching : endsWith;
     import std.format : format;
 
@@ -621,7 +621,7 @@ private auto getGoogleTokens(
 {
     import kameloso.net : HTTPRequest, issueSyncHTTPRequest;
     import kameloso.tables : HTTPVerb;
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.format : format;
 
     alias Response = GoogleTokenResponse;
@@ -718,7 +718,7 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
 {
     import kameloso.plugins : sendHTTPRequest;
     import kameloso.tables : HTTPVerb;
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.format : format;
 
     alias Response = GoogleTokenResponse;
@@ -827,7 +827,7 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
 private auto validateGoogleToken(const Credentials creds, const string caBundleFile)
 {
     import kameloso.net: HTTPRequest, issueSyncHTTPRequest;
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import core.time : Duration, seconds;
 
     static struct Response

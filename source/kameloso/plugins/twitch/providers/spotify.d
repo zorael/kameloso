@@ -385,7 +385,7 @@ private auto getSpotifyTokens(
 {
     import kameloso.net : HTTPRequest, issueSyncHTTPRequest;
     import kameloso.tables : HTTPVerb;
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.format : format;
     import core.time : Duration, seconds;
 
@@ -489,7 +489,7 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
 {
     import kameloso.plugins : sendHTTPRequest;
     import kameloso.tables : HTTPVerb;
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.format : format;
     import core.time : Duration, seconds;
 
@@ -616,7 +616,7 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
 {
     import kameloso.plugins : sendHTTPRequest;
     import kameloso.tables : HTTPVerb;
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.algorithm.searching : endsWith;
     import std.format : format;
 
@@ -762,7 +762,7 @@ auto getSpotifyTrackByID(
 in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
 {
     import kameloso.plugins : sendHTTPRequest;
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.algorithm.searching : endsWith;
     import std.format : format;
 
@@ -964,7 +964,7 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
 private auto validateSpotifyToken(ref Credentials creds, const string caBundleFile)
 {
     import kameloso.net : HTTPRequest, issueSyncHTTPRequest;
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
 
     static struct Response
     {

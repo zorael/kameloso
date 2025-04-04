@@ -1684,7 +1684,7 @@ void initResources(TimerPlugin plugin)
  +/
 void loadTimers(TimerPlugin plugin)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.file : readText;
     import std.stdio : File, writeln;
 

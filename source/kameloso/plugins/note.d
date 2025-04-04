@@ -495,7 +495,7 @@ void onWelcome(NotePlugin plugin, const IRCEvent _)
  +/
 void saveNotes(NotePlugin plugin)
 {
-    import asdf : serializeToJsonPretty;
+    import asdf.serialization : serializeToJsonPretty;
     import std.stdio : File, writeln;
 
     Note.JSONSchema[][string][string] json;
@@ -522,7 +522,7 @@ void saveNotes(NotePlugin plugin)
  +/
 void loadNotes(NotePlugin plugin)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.file : readText;
     import std.stdio : File, writeln;
 

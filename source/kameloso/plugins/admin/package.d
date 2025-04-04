@@ -1464,7 +1464,7 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
  +/
 void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File, stdout, writeln;

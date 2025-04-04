@@ -785,7 +785,7 @@ void reportStreamTime(
     const TwitchPlugin.Room room)
 {
     import kameloso.time : timeSince;
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.datetime.systime : Clock, SysTime;
     import std.file : readText;
     import std.format : format;
@@ -2885,7 +2885,7 @@ void initialise(TwitchPlugin plugin)
     if (someKeygenWanted || (!plugin.state.bot.pass.length && !plugin.state.coreSettings.force))
     {
         import kameloso.thread : ThreadMessage;
-        import asdf : deserialize;
+        import asdf.serialization : deserialize;
         import std.file : readText;
 
         if (plugin.state.coreSettings.headless)
@@ -3677,7 +3677,7 @@ in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
  +/
 void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream stream)
 {
-    import asdf : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
     import std.file : readText;
     import std.stdio : File, writeln;
 
@@ -4394,7 +4394,7 @@ void initResources(TwitchPlugin plugin)
  +/
 void saveResourceToDisk(/*const*/ long[string][string] aa, const string filename)
 {
-    import asdf : serializeToJsonPretty;
+    import asdf.serialization : serializeToJsonPretty;
     import std.json : JSONValue;
     import std.stdio : File, writeln;
 
@@ -4413,7 +4413,7 @@ void saveResourceToDisk(/*const*/ long[string][string] aa, const string filename
  +/
 package void saveSecretsToDisk(const Credentials[string] aa, const string filename)
 {
-    import asdf : serializeToJsonPretty;
+    import asdf.serialization : serializeToJsonPretty;
     import std.stdio : File, writeln;
 
     Credentials.JSONSchema[string] tempAA;
@@ -4434,7 +4434,7 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
  +/
 void loadResources(TwitchPlugin plugin)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.file : readText;
     import core.memory : GC;
 
@@ -4662,7 +4662,7 @@ package:
         package:
             static struct JSONSchema
             {
-                import asdf : serdeIgnore, serdeOptional;
+                import asdf.serialization : serdeIgnore, serdeOptional;
 
                 /*
                 {

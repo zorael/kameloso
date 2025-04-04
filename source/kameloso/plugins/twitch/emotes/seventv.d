@@ -48,7 +48,7 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotes` from outside a fiber")
 in (id, "Tried to get 7tv emotes with an unset ID")
 {
     import kameloso.plugins : sendHTTPRequest;
-    import asdf : deserialize, serdeOptional;
+    import asdf.serialization : deserialize, serdeOptional;
     import std.algorithm.searching : startsWith;
     import std.conv : to;
     import std.typecons : Nullable;
@@ -297,7 +297,7 @@ auto get7tvEmotesGlobal(
 in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 {
     import kameloso.plugins : sendHTTPRequest;
-    import asdf : deserialize, serdeOptional;
+    import asdf.serialization : deserialize, serdeOptional;
     import std.algorithm.searching : startsWith;
     import std.json : JSONType, parseJSON;
 

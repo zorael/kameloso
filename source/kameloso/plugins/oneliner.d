@@ -1339,7 +1339,7 @@ void reload(OnelinerPlugin plugin)
  +/
 void loadOneliners(OnelinerPlugin plugin)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.file : readText;
     import std.stdio : File, writeln;
 
@@ -1430,7 +1430,7 @@ void sendOneliner(
 void saveResourceToDisk(const Oneliner[string][string] aa, const string filename)
 in (filename.length, "Tried to save resources to an empty filename string")
 {
-    import asdf : serializeToJsonPretty;
+    import asdf.serialization : serializeToJsonPretty;
     import std.stdio : File, writeln;
 
     try
@@ -1463,7 +1463,7 @@ in (filename.length, "Tried to save resources to an empty filename string")
  +/
 void initResources(OnelinerPlugin plugin)
 {
-    import asdf : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.stdio : File, writeln;

@@ -1027,7 +1027,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
  +/
 void loadSeen(SeenPlugin plugin)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.file : readText;
     import std.stdio : File, writeln;
 
@@ -1155,7 +1155,7 @@ void teardown(SeenPlugin plugin)
  +/
 void initResources(SeenPlugin plugin)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;

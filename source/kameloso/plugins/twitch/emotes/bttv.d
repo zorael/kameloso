@@ -48,7 +48,7 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotes` from outside a fiber")
 in (id, "Tried to get BTTV emotes with an unset ID")
 {
     import kameloso.plugins : sendHTTPRequest;
-    import asdf : deserialize, serdeOptional;
+    import asdf.serialization : deserialize, serdeOptional;
     import std.conv : to;
 
     @serdeOptional
@@ -222,7 +222,7 @@ auto getBTTVEmotesGlobal(
 in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
 {
     import kameloso.plugins : sendHTTPRequest;
-    import asdf : deserialize, serdeOptional;
+    import asdf.serialization : deserialize, serdeOptional;
     import std.json : JSONType, parseJSON;
 
     @serdeOptional

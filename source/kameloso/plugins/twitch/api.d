@@ -139,7 +139,7 @@ private auto handleRetryDelegateException(
     const bool endlessly,
     const bool headless)
 {
-    import asdf : SerdeException;
+    import asdf.serialization : SerdeException;
     import std.json : JSONException;
 
     if (auto e = cast(MissingBroadcasterTokenException)base)
@@ -283,7 +283,7 @@ void printRetryDelegateException(/*const*/ Exception base)
  +/
 struct ErrorResponse
 {
-    private import asdf : serdeOptional;
+    private import asdf.serialization : serdeOptional;
 
     /*
     {
@@ -352,7 +352,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
     static struct Response
     {
-        private import asdf : serdeIgnore;
+        private import asdf.serialization : serdeIgnore;
 
         static struct ChattersArrays
         {
@@ -439,7 +439,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
     auto getChattersDg()
     {
-        import asdf : deserialize;
+        import asdf.serialization : deserialize;
 
         immutable httpResponse = sendHTTPRequest(
             plugin: plugin,
@@ -545,12 +545,12 @@ auto getValidation(
 in (Fiber.getThis(), "Tried to call `getValidation` from outside a fiber")
 in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.algorithm.searching : canFind, startsWith;
 
     static struct Response
     {
-        private import asdf : serdeIgnore;
+        private import asdf.serialization : serdeIgnore;
 
         /*
         {
@@ -752,7 +752,7 @@ auto getFollowers(
 in (Fiber.getThis(), "Tried to call `getFollowers` from outside a fiber")
 in (id, "Tried to get followers with an unset ID")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.conv : text, to;
     import core.memory : GC;
 
@@ -768,7 +768,7 @@ in (id, "Tried to get followers with an unset ID")
 
         static struct Pagination
         {
-            private import asdf : serdeOptional;
+            private import asdf.serialization : serdeOptional;
             @serdeOptional string cursor;
         }
 
@@ -976,14 +976,14 @@ in (Fiber.getThis(), "Tried to call `getUser` from outside a fiber")
 in ((name.length || id),
     "Tried to get Twitch user without supplying a name nor an ID")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.conv : to;
 
     static struct Response
     {
         static struct User
         {
-            private import asdf : serdeIgnore;
+            private import asdf.serialization : serdeIgnore;
 
             string id;
             string login;
@@ -1182,14 +1182,14 @@ auto getGame(
 in (Fiber.getThis(), "Tried to call `getGame` from outside a fiber")
 in ((name.length || id), "Tried to call `getGame` with no game name nor game ID")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.conv : to;
 
     static struct Response
     {
         static struct Game
         {
-            private import asdf : serdeIgnore;
+            private import asdf.serialization : serdeIgnore;
 
             string id;
             string name;
@@ -1400,7 +1400,7 @@ private auto modifyChannelImpl(
 in (Fiber.getThis(), "Tried to call `modifyChannel` from outside a fiber")
 in (channelName.length, "Tried to modify a channel with an empty channel name string")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.array : Appender;
     import std.conv : to;
 
@@ -1560,14 +1560,14 @@ auto getChannel(
 in (Fiber.getThis(), "Tried to call `getChannel` from outside a fiber")
 in ((channelName.length || channelID), "Tried to fetch a channel with no information to query with")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.conv : to;
 
     static struct Response
     {
         static struct Channel
         {
-            private import asdf : serdeIgnore;
+            private import asdf.serialization : serdeIgnore;
 
             string broadcaster_id;
             string broadcaster_login;
@@ -1810,7 +1810,7 @@ auto startCommercial(
 in (Fiber.getThis(), "Tried to call `startCommercial` from outside a fiber")
 in (channelName.length, "Tried to start a commercial with an empty channel name string")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.format : format;
 
     static struct Response
@@ -1981,7 +1981,7 @@ private struct TwitchPoll
 
     static struct ResponseSchema
     {
-        import asdf : serdeIgnore, serdeOptional;
+        import asdf.serialization : serdeIgnore, serdeOptional;
         import core.time : Duration;
 
         static struct PollSchema
@@ -2369,7 +2369,7 @@ auto getPolls(
 in (Fiber.getThis(), "Tried to call `getPolls` from outside a fiber")
 in (channelName.length, "Tried to get polls with an empty channel name string")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.conv : text;
 
     alias Response = TwitchPoll.ResponseSchema;
@@ -2538,7 +2538,7 @@ auto createPoll(
 in (Fiber.getThis(), "Tried to call `createPoll` from outside a fiber")
 in (channelName.length, "Tried to create a poll with an empty channel name string")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.array : Appender, replace;
     import std.format : format;
 
@@ -2733,7 +2733,7 @@ auto endPoll(
 in (Fiber.getThis(), "Tried to call `endPoll` from outside a fiber")
 in (channelName.length, "Tried to end a poll with an empty channel name string")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.datetime.systime : SysTime;
     import std.format : format;
 
@@ -3015,13 +3015,13 @@ auto getStream(
 in (Fiber.getThis(), "Tried to call `getStream` from outside a fiber")
 in (loginName.length, "Tried to get a stream with an empty login name string")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
 
     static struct Response
     {
         static struct Pagination
         {
-            private import asdf : serdeOptional;
+            private import asdf.serialization : serdeOptional;
             @serdeOptional string cursor;
         }
 
@@ -3211,7 +3211,7 @@ auto getSubscribers(
 in (Fiber.getThis(), "Tried to call `getSubscribers` from outside a fiber")
 in (channelName.length, "Tried to get subscribers with an empty channel name string")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.array : Appender;
     import std.conv : to;
 
@@ -3235,7 +3235,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
 
         static struct Pagination
         {
-            private import asdf : serdeOptional;
+            private import asdf.serialization : serdeOptional;
             @serdeOptional string cursor;
         }
 
@@ -3456,7 +3456,7 @@ in (Fiber.getThis(), "Tried to call `sendShoutout` from outside a fiber")
 in (sourceChannelID, "Tried to call `sendShoutout` with an unset source channel ID")
 in (targetChannelID, "Tried to call `sendShoutout` with an unset target channel ID")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.format : format;
 
     static struct ShoutoutResults
@@ -3591,7 +3591,7 @@ auto deleteMessage(
 in (Fiber.getThis(), "Tried to call `deleteMessage` from outside a fiber")
 in (channelName.length, "Tried to delete a message without providing a channel name")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.algorithm.searching : startsWith;
     import std.format : format;
     import core.time : msecs;
@@ -3751,13 +3751,13 @@ in (Fiber.getThis(), "Tried to call `timeoutUser` from outside a fiber")
 in (channelName.length, "Tried to timeout a user without providing a channel")
 in (userID, "Tried to timeout a user with an unset user ID")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.algorithm.comparison : min;
     import std.format : format;
 
     static struct Response
     {
-        private import asdf : serdeIgnore;
+        private import asdf.serialization : serdeIgnore;
 
         static struct Timeout
         {
@@ -4045,7 +4045,7 @@ auto sendWhisper(
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.array : replace;
     import std.format : format;
 
@@ -4213,7 +4213,7 @@ auto sendAnnouncement(
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.algorithm.comparison : among;
     import std.array : replace;
     import std.format : format;
@@ -4370,13 +4370,13 @@ auto warnUser(
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.array : replace;
     import std.format : format;
 
     static struct Response
     {
-        private import asdf : serdeIgnore;
+        private import asdf.serialization : serdeIgnore;
 
         static struct Warning
         {

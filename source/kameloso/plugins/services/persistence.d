@@ -1167,7 +1167,7 @@ struct JSONSchema
  +/
 void reloadAccountClassifiersFromDisk(PersistenceService service)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import lu.conv : toString;
     import std.file : readText;
 
@@ -1219,7 +1219,7 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
  +/
 void reloadHostmasksFromDisk(PersistenceService service)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.file : readText;
 
     auto accountByHostmask = service.hostmasksFile
@@ -1315,7 +1315,7 @@ void initResources(PersistenceService service)
  +/
 void initAccountResources(PersistenceService service)
 {
-    import asdf : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
     import mir.serde : SerdeException;
     import std.file : exists, readText;
     import std.stdio : File, writeln;
@@ -1351,7 +1351,7 @@ void initAccountResources(PersistenceService service)
  +/
 void initHostmaskResources(PersistenceService service)
 {
-    import asdf : deserialize;
+    import asdf.serialization : deserialize;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File, writeln;

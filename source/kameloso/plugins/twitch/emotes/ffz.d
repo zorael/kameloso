@@ -20,7 +20,7 @@ version(WithTwitchPlugin):
 private:
 
 import kameloso.plugins.twitch : TwitchPlugin;
-import asdf : serdeOptional;
+import asdf.serialization : serdeOptional;
 import core.thread.fiber : Fiber;
 
 
@@ -180,7 +180,7 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
 in (id, "Tried to get FFZ emotes with an unset ID")
 {
     import kameloso.plugins : sendHTTPRequest;
-    import asdf : deserialize, serdeOptional;
+    import asdf.serialization : deserialize, serdeOptional;
     import std.conv : to;
 
     version(none)
@@ -383,7 +383,7 @@ auto getFFZEmotesGlobal(
 in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
 {
     import kameloso.plugins : sendHTTPRequest;
-    import asdf : deserialize, serdeOptional;
+    import asdf.serialization : deserialize, serdeOptional;
 
     version(none)
     @serdeOptional
