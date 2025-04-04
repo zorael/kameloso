@@ -2041,7 +2041,7 @@ void onBusMessage(
 
         if (slice.length)
         {
-            enum pattern = `Reloading plugin "<i>%s</>".`;
+            enum pattern = `Reloading plugin "<l>%s</>".`;
             logger.infof(pattern, slice);
         }
         else
