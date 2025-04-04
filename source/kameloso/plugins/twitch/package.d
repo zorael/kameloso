@@ -4327,23 +4327,28 @@ void initResources(TwitchPlugin plugin)
 {
     import asdf : deserialize, serializeToJsonPretty;
     import std.file : exists, mkdir, readText;
+    import std.json : JSONValue;
     import std.path : dirName;
     import std.stdio : File, writeln;
 
-    void readAndWriteBack(T)
+    void readAndWriteBack(bool useStdJSON, T)
         (const string filename,
-        const string fileDescription,
-        const bool useStdJSON)
+        const string fileDescription)
     {
         try
         {
-            immutable deserialised = filename
+            auto deserialised = filename
                 .readText
                 .deserialize!T;
 
-            immutable serialised = useStdJSON ?
-                JSONValue(deserialised).toPrettyString :
-                deserialised.serializeToJsonPretty!"    ";
+            static if (useStdJSON)
+            {
+                immutable serialised = JSONValue(deserialised).toPrettyString;
+            }
+            else
+            {
+                immutable serialised = deserialised.serializeToJsonPretty!"    ";
+            }
 
             File(filename, "w").writeln(serialised);
         }
@@ -4362,25 +4367,21 @@ void initResources(TwitchPlugin plugin)
     immutable subdir = plugin.ecountFile.dirName;
     if (!subdir.exists) mkdir(subdir);
 
-    readAndWriteBack!(long[string][string])
+    readAndWriteBack!(true, long[string][string])
         (plugin.ecountFile,
-        fileDescription: "ecount",
-        useStdJSON: true);
+        fileDescription: "ecount");
 
-    readAndWriteBack!(long[string][string])
+    readAndWriteBack!(true, long[string][string])
         (plugin.viewersFile,
-        fileDescription: "Viewers",
-        useStdJSON: true);
+        fileDescription: "Viewers");
 
-    readAndWriteBack!(Credentials.JSONSchema[string])
+    readAndWriteBack!(false, Credentials.JSONSchema[string])
         (plugin.secretsFile,
-        fileDescription: "Secrets",
-        useStdJSON: false);
+        fileDescription: "Secrets");
 
-    readAndWriteBack!(TwitchPlugin.Room.Stream.JSONSchema[])
+    readAndWriteBack!(false, TwitchPlugin.Room.Stream.JSONSchema[])
         (plugin.streamHistoryFile,
-        fileDescription: "Stream history",
-        useStdJSON: false);
+        fileDescription: "Stream history");
 }
 
 

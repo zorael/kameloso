@@ -53,7 +53,7 @@ in (((channelName.length && id) ||
     import kameloso.common : logger;
     import kameloso.plugins.common.scheduling : delay;
 
-    alias GetEmoteFun = uint function(
+    alias GetEmoteFun = size_t function(
         TwitchPlugin,
         bool[string]*,
         const ulong,
@@ -116,7 +116,7 @@ in (((channelName.length && id) ||
     // Delay importing just a bit to cosmetically stagger the terminal output
     delay(plugin, Delays.initialDelayBeforeImports, yield: true);
 
-    void reportSuccess(const string emoteImportName, const uint numAdded)
+    void reportSuccess(const string emoteImportName, const size_t numAdded)
     {
         if (numAdded)
         {
