@@ -3263,7 +3263,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
 
                     if (plugin.state.coreSettings.trace)
                     {
-                        enum pattern = "Cached <l>%d</> followers of channel <l>%s</>.";
+                        enum pattern = "Cached <l>%,d</> followers of channel <l>%s</>.";
                         logger.infof(pattern, results.followers.length, channelName);
                     }
                 }
