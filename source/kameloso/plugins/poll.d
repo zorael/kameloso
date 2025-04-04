@@ -71,16 +71,17 @@ private:
 
 public:
     /++
+        JSON schema for serialising and deserialising a poll.
      +/
     static struct JSONSchema
     {
-        long start;
-        long end;
-        uint[string] voteCounts;
-        string[string] origChoiceNames;
-        string[] sortedChoices;
-        string[string] votes;
-        uint uniqueID;
+        long start;  ///
+        long end;  ///
+        uint[string] voteCounts;  ///
+        string[string] origChoiceNames;  ///
+        string[] sortedChoices;  ///
+        string[string] votes;  ///
+        uint uniqueID;  ///
     }
 
     /++
@@ -120,6 +121,7 @@ public:
     uint uniqueID;
 
     /++
+        Constructor.
      +/
     this(/*const*/ JSONSchema schema)
     {
@@ -134,6 +136,7 @@ public:
     }
 
     /++
+        Returns a [JSONSchema] of this poll.
      +/
     auto asSchema() /*const*/
     {

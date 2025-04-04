@@ -1091,6 +1091,7 @@ private auto validateSpotifyToken(ref Credentials creds, const string caBundleFi
 
 // SpotifyTokenResponse
 /++
+    JSON schema for the Spotify token response.
  +/
 struct SpotifyTokenResponse
 {
@@ -1114,24 +1115,26 @@ struct SpotifyTokenResponse
     }
      */
 
-    string access_token;
-    string token_type;
-    uint expires_in;
+    string access_token;  ///
+    string token_type;  ///
+    uint expires_in;  ///
 
-    @serdeOptional string refresh_token;
-    @serdeKeys("scope") string scope_;
+    @serdeOptional string refresh_token;  ///
+    @serdeKeys("scope") string scope_;  ///
 }
 
 
 // SpotifyErrorResponse
 /++
+    JSON schema for the Spotify error response.
  +/
 struct SpotifyErrorResponse
 {
+    ///
     static struct ErrorData
     {
-        uint status;
-        string message;
+        uint status;  ///
+        string message;  ///
     }
 
     /*
@@ -1143,5 +1146,5 @@ struct SpotifyErrorResponse
     }
      */
 
-    ErrorData error;
+    ErrorData error;  ///
 }

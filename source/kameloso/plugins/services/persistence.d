@@ -1147,14 +1147,15 @@ void reload(PersistenceService service)
 
 // JSONSchema
 /++
+    JSON schema for the user classification file.
  +/
 struct JSONSchema
 {
-    string[] staff;
-    string[] operator;
-    string[] elevated;
-    string[] whitelist;
-    string[] blacklist;
+    string[] staff;  ///
+    string[] operator;  ///
+    string[] elevated;  ///
+    string[] whitelist;  ///
+    string[] blacklist;  ///
 }
 
 

@@ -927,6 +927,7 @@ private auto validateGoogleToken(const Credentials creds, const string caBundleF
 
 // GoogleTokenResponse
 /++
+    JSON schema for the Google token response.
  +/
 struct GoogleTokenResponse
 {
@@ -942,35 +943,38 @@ struct GoogleTokenResponse
     }
      */
 
-    string access_token;
-    uint expires_in;
-    string refresh_token;
-    string token_type;
+    string access_token;  ///
+    uint expires_in;  ///
+    string refresh_token;  ///
+    string token_type;  ///
 
-    @serdeKeys("scope") string scope_;
+    @serdeKeys("scope") string scope_;  ///
 }
 
 
 // GoogleErrorResponse
 /++
+    JSON schema for the Google error response.
  +/
 struct GoogleErrorResponse
 {
+    ///
     static struct ErrorData
     {
+        ///
         static struct SubError
         {
-            string domain;
-            string reason;
-            string message;
-            string location;
-            string locationType;
+            string domain;  ///
+            string reason;  ///
+            string message;  ///
+            string location;  ///
+            string locationType;  ///
         }
 
-        uint code;
-        string message;
-        string status;
-        SubError[] errors;
+        uint code;  ///
+        string message;  ///
+        string status;  ///
+        SubError[] errors;  ///
     }
 
     /*
@@ -992,12 +996,13 @@ struct GoogleErrorResponse
     }
      */
 
-    ErrorData error;
+    ErrorData error;  ///
 }
 
 
 // GooglePlainErrorResponse
 /++
+    JSON schema for the Google plain error response.
  +/
 struct GooglePlainErrorResponse
 {
@@ -1008,6 +1013,6 @@ struct GooglePlainErrorResponse
     }
      */
 
-    string error;
-    string error_description;
+    string error;  ///
+    string error_description;  ///
 }

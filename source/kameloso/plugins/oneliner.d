@@ -55,17 +55,18 @@ import dialect.defs;
 struct Oneliner
 {
     /++
+        JSON schema.
      +/
     static struct JSONSchema
     {
-        import asdf.serialization : serdeKeys;
+        private import asdf.serialization : serdeKeys;
 
-        string trigger;
-        int type;
-        uint cooldown;
-        string[] responses;
+        string trigger;  ///
+        int type;  ///
+        uint cooldown;  ///
+        string[] responses;  ///
 
-        @serdeKeys("alias") string alias_;
+        @serdeKeys("alias") string alias_;  ///
     }
 
     // OnelinerType
@@ -137,6 +138,7 @@ struct Oneliner
     string[] responses;
 
     /++
+        Constructor.
      +/
     this(const JSONSchema json)
     {
@@ -148,6 +150,7 @@ struct Oneliner
     }
 
     /++
+        Returns a [JSONSchema] representation of this oneliner.
      +/
     auto asSchema() const
     {

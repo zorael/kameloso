@@ -53,15 +53,16 @@ import dialect.defs;
 struct Counter
 {
     /++
+        JSON schema for (de-)serialisation.
      +/
     static struct JSONSchema
     {
-        long count;
-        string word;
-        string patternQuery;
-        string patternIncrement;
-        string patternDecrement;
-        string patternAssign;
+        long count;  ///
+        string word;  ///
+        string patternQuery;  ///
+        string patternIncrement;  ///
+        string patternDecrement;  ///
+        string patternAssign;  ///
     }
 
     /++
@@ -120,6 +121,7 @@ struct Counter
     }
 
     /++
+        Constructor.
      +/
     this(const JSONSchema json)
     {
@@ -132,6 +134,7 @@ struct Counter
     }
 
     /++
+        Returns a [JSONSchema] representing this [Counter].
      +/
     auto asSchema() const
     {

@@ -78,12 +78,13 @@ mixin PluginRegistration!NotePlugin;
 struct Note
 {
     /++
+        JSON schema.
      +/
     static struct JSONSchema
     {
-        string line;
-        string sender;
-        long timestamp;
+        string line;  ///
+        string sender;  ///
+        long timestamp;  ///
     }
 
     /++
@@ -102,6 +103,7 @@ struct Note
     long timestamp;
 
     /++
+        Constructor.
      +/
     this(const JSONSchema json)
     {
@@ -111,6 +113,7 @@ struct Note
     }
 
     /++
+        Returns a [JSONSchema] of the note, for serialisation.
      +/
     auto asSchema() const
     {

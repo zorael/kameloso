@@ -77,16 +77,18 @@ mixin PluginRegistration!QuotePlugin;
 struct Quote
 {
     /++
+        JSON schema.
      +/
     static struct JSONSchema
     {
-        string nickname;
-        string line;
-        long timestamp;
-        string creator;
+        string nickname;  ///
+        string line;  ///
+        long timestamp;  ///
+        string creator;  ///
     }
 
     /++
+        Nickname of quoted user.
      +/
     string nickname;
 
@@ -106,6 +108,7 @@ struct Quote
     string creator;
 
     /++
+        Constructor.
      +/
     this(const JSONSchema json)
     {
@@ -116,6 +119,7 @@ struct Quote
     }
 
     /++
+        Returns a [JSONSchema] of this [Quote].
      +/
     auto asSchema() const
     {

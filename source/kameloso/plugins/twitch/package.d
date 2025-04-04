@@ -233,22 +233,23 @@ import core.thread.fiber : Fiber;
 package struct Credentials
 {
     /++
+        JSON schema for the credentials file.
      +/
     static struct JSONSchema
     {
-        string broadcasterKey;
-        string broadcasterBearerToken;
-        long broadcasterKeyExpiry;
-        string googleClientID;
-        string googleClientSecret;
-        string googleAccessToken;
-        string googleRefreshToken;
-        string youtubePlaylistID;
-        string spotifyClientID;
-        string spotifyClientSecret;
-        string spotifyAccessToken;
-        string spotifyRefreshToken;
-        string spotifyPlaylistID;
+        string broadcasterKey;  ///
+        string broadcasterBearerToken;  ///
+        long broadcasterKeyExpiry;  ///
+        string googleClientID;  ///
+        string googleClientSecret;  ///
+        string googleAccessToken;  ///
+        string googleRefreshToken;  ///
+        string youtubePlaylistID;  ///
+        string spotifyClientID;  ///
+        string spotifyClientSecret;  ///
+        string spotifyAccessToken;  ///
+        string spotifyRefreshToken;  ///
+        string spotifyPlaylistID;  ///
     }
 
     /++
@@ -317,6 +318,7 @@ package struct Credentials
     string spotifyPlaylistID;
 
     /++
+        Constructor.
      +/
     this(const JSONSchema json)
     {
@@ -336,6 +338,7 @@ package struct Credentials
     }
 
     /++
+        Returns a [JSONSchema] object with the same data as this one.
      +/
     auto asSchema() const
     {
@@ -372,6 +375,7 @@ private:
 
 public:
     /++
+        JSON schema for the follower object.
      +/
     static struct JSONSchema
     {
@@ -402,6 +406,7 @@ public:
     ulong id;
 
     /++
+        Constructor.
      +/
     this(const JSONSchema json)
     {
@@ -4868,6 +4873,7 @@ package:
             }
 
             /++
+                Constructor.
              +/
             this(const JSONSchema json)
             {
@@ -4898,6 +4904,7 @@ package:
             }
 
             /++
+                Returns a [JSONSchema] representation of this stream.
              +/
             auto asSchema() const
             {
