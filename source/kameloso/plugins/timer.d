@@ -1653,16 +1653,20 @@ void saveTimers(TimerPlugin plugin)
 void initResources(TimerPlugin plugin)
 {
     import asdf.serialization : deserialize, serializeToJsonPretty;
-    import std.file : readText;
+    import mir.serde : SerdeException;
+    import std.file : exists, readText;
     import std.stdio : File, writeln;
 
     try
     {
-        auto json = plugin.timerFile.readText.deserialize!(Timer.JSONSchema[][string]);
-        immutable serialised = json.serializeToJsonPretty!"    ";
+        auto deserialised = plugin.timerFile
+            .readText
+            .deserialize!(Timer.JSONSchema[][string]);
+
+        immutable serialised = deserialised.serializeToJsonPretty!"    ";
         File(plugin.timerFile, "w").writeln(serialised);
     }
-    catch (Exception e)
+    catch (SerdeException e)
     {
         version(PrintStacktraces) logger.trace(e);
 

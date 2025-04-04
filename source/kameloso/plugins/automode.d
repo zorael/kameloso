@@ -69,17 +69,21 @@ void saveAutomodes(AutomodePlugin plugin)
 void initResources(AutomodePlugin plugin)
 {
     import asdf : deserialize;
+    import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     try
     {
-        auto json = plugin.automodeFile.readText.deserialize!(string[string][string]);
-        immutable serialised = JSONValue(json).toPrettyString;
+        auto deserialised = plugin.automodeFile
+            .readText
+            .deserialize!(string[string][string]);
+
+        immutable serialised = JSONValue(deserialised).toPrettyString;
         File(plugin.automodeFile, "w").writeln(serialised);
     }
-    catch (Exception e)
+    catch (SerdeException e)
     {
         version(PrintStacktraces) logger.trace(e);
 

@@ -4325,10 +4325,9 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
  +/
 void initResources(TwitchPlugin plugin)
 {
-    import asdf : deserialize, serializeToJsonPretty;
-    import std.file : exists, mkdir, readText;
-    import std.json : JSONValue;
-    import std.path : dirName;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import mir.serde : SerdeException;
+    import std.file : readText;
     import std.stdio : File, writeln;
 
     void readAndWriteBack(bool useStdJSON, T)
@@ -4343,6 +4342,7 @@ void initResources(TwitchPlugin plugin)
 
             static if (useStdJSON)
             {
+                import std.json : JSONValue;
                 immutable serialised = JSONValue(deserialised).toPrettyString;
             }
             else
@@ -4352,9 +4352,9 @@ void initResources(TwitchPlugin plugin)
 
             File(filename, "w").writeln(serialised);
         }
-        catch (Exception e)
+        catch (SerdeException e)
         {
-            version(PrintStacktraces) logger.error(e);
+            version(PrintStacktraces) logger.trace(e);
 
             throw new IRCPluginInitialisationException(
             message: fileDescription ~ " file is malformed",
@@ -4362,10 +4362,6 @@ void initResources(TwitchPlugin plugin)
             malformedFilename: filename);
         }
     }
-
-    // Ensure the subdirectory exists
-    immutable subdir = plugin.ecountFile.dirName;
-    if (!subdir.exists) mkdir(subdir);
 
     readAndWriteBack!(true, long[string][string])
         (plugin.ecountFile,

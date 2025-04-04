@@ -1316,29 +1316,20 @@ void initResources(PersistenceService service)
 void initAccountResources(PersistenceService service)
 {
     import asdf : deserialize, serializeToJsonPretty;
+    import mir.serde : SerdeException;
     import std.file : exists, readText;
     import std.stdio : File, writeln;
 
     try
     {
-        if (!service.userFile.exists)
-        {
-            // Create the file if it doesn't exist
-            JSONSchema[string] json;
-            json["<example>"] = JSONSchema.init;
-            immutable serialised = json.serializeToJsonPretty!"    ";
-            File(service.userFile, "w").write(serialised);
-            return;
-        }
-
-        auto json = service.userFile
+        auto deserialised = service.userFile
             .readText
             .deserialize!(JSONSchema[string]);
 
-        immutable serialised = json.serializeToJsonPretty!"    ";
+        immutable serialised = deserialised.serializeToJsonPretty!"    ";
         File(service.userFile, "w").write(serialised);
     }
-    catch (Exception e)
+    catch (SerdeException e)
     {
         version(PrintStacktraces) logger.trace(e);
 

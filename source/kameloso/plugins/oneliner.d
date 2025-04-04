@@ -1464,18 +1464,27 @@ in (filename.length, "Tried to save resources to an empty filename string")
 void initResources(OnelinerPlugin plugin)
 {
     import asdf : deserialize, serializeToJsonPretty;
+    import mir.serde : SerdeException;
     import std.file : readText;
     import std.stdio : File, writeln;
 
     try
     {
-        auto json = plugin.onelinerFile.readText.deserialize!(Oneliner.JSONSchema[string][string]);
-        immutable serialised = json.serializeToJsonPretty!"    ";
+        auto deserialised = plugin.onelinerFile
+            .readText
+            .deserialize!(Oneliner.JSONSchema[string][string]);
+
+        immutable serialised = deserialised.serializeToJsonPretty!"    ";
         File(plugin.onelinerFile, "w").writeln(serialised);
     }
-    catch (Exception e)
+    catch (SerdeException e)
     {
         version(PrintStacktraces) logger.trace(e);
+
+        throw new IRCPluginInitialisationException(
+            message: "Oneliner file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: plugin.onelinerFile);
     }
 }
 

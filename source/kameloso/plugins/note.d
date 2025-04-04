@@ -563,16 +563,20 @@ void reload(NotePlugin plugin)
 void initResources(NotePlugin plugin)
 {
     import asdf.serialization : deserialize, serializeToJsonPretty;
+    import mir.serde : SerdeException;
     import std.file : readText;
     import std.stdio : File, writeln;
 
     try
     {
-        auto json = plugin.notesFile.readText.deserialize!(Note.JSONSchema[][string][string]);
-        immutable serialised = json.serializeToJsonPretty!"    ";
+        auto deserialised = plugin.notesFile
+            .readText
+            .deserialize!(Note.JSONSchema[][string][string]);
+
+        immutable serialised = deserialised.serializeToJsonPretty!"    ";
         File(plugin.notesFile, "w").write(serialised);
     }
-    catch (Exception e)
+    catch (SerdeException e)
     {
         version(PrintStacktraces) logger.trace(e);
 

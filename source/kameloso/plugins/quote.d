@@ -1478,24 +1478,26 @@ final class NoQuotesSearchMatchException : Exception
 void initResources(QuotePlugin plugin)
 {
     import asdf : deserialize, serializeToJsonPretty;
+    import mir.serde : SerdeException;
     import std.algorithm.searching : startsWith;
     import std.file : readText;
     import std.stdio : File, writeln;
 
-    enum placeholderChannel = "#<lost+found>";
-
     try
     {
-        auto json = plugin.quotesFile.readText.deserialize!(Quote.JSONSchema[][string][string]);
-        immutable serialised = json.serializeToJsonPretty!"    ";
+        auto deserialised = plugin.quotesFile
+            .readText
+            .deserialize!(Quote.JSONSchema[][string][string]);
+
+        immutable serialised = deserialised.serializeToJsonPretty!"    ";
         File(plugin.quotesFile, "w").writeln(serialised);
     }
-    catch (Exception e)
+    catch (SerdeException e)
     {
         version(PrintStacktraces) logger.trace(e);
 
         throw new IRCPluginInitialisationException(
-            message: "Quotes file is malformed",
+            message: "Quote file is malformed",
             pluginName: plugin.name,
             malformedFilename: plugin.quotesFile);
     }

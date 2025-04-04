@@ -539,19 +539,28 @@ void reload(TimePlugin plugin)
 void initResources(TimePlugin plugin)
 {
     import asdf.serialization : deserialize;
+    import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     try
     {
-        auto json = plugin.timezonesFile.readText.deserialize!(string[string]);
-        immutable serialised = JSONValue(json).toPrettyString;
+        auto deserialised = plugin.timezonesFile
+            .readText
+            .deserialize!(string[string]);
+
+        immutable serialised = JSONValue(deserialised).toPrettyString;
         File(plugin.timezonesFile, "w").writeln(serialised);
     }
-    catch (Exception e)
+    catch (SerdeException e)
     {
         version(PrintStacktraces) logger.trace(e);
+
+        throw new IRCPluginInitialisationException(
+            message: "Timezones file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: plugin.timezonesFile);
     }
 }
 

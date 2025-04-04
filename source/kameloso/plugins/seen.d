@@ -1156,19 +1156,28 @@ void teardown(SeenPlugin plugin)
 void initResources(SeenPlugin plugin)
 {
     import asdf : deserialize;
+    import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     try
     {
-        auto json = plugin.seenFile.readText.deserialize!(long[string]);
-        immutable serialised = JSONValue(json).toPrettyString;
+        auto deserialised = plugin.seenFile
+            .readText
+            .deserialize!(long[string]);
+
+        immutable serialised = JSONValue(deserialised).toPrettyString;
         File(plugin.seenFile, "w").writeln(serialised);
     }
-    catch (Exception e)
+    catch (SerdeException e)
     {
         version(PrintStacktraces) logger.trace(e);
+
+        throw new IRCPluginInitialisationException(
+            message: "Seen file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: plugin.seenFile);
     }
 }
 

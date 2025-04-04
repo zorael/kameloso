@@ -831,19 +831,29 @@ void loadCounters(CounterPlugin plugin)
 void initResources(CounterPlugin plugin)
 {
     import asdf : deserialize, serializeToJsonPretty;
+    import mir.serde : SerdeException;
     import std.file : readText;
     import std.stdio : File, writeln;
 
     try
     {
-        auto json = plugin.countersFile.readText.deserialize!(Counter.JSONSchema[string][string]);
-        immutable serialised = json.serializeToJsonPretty!"    ";
+        auto deserialised = plugin.countersFile
+            .readText
+            .deserialize!(Counter.JSONSchema[string][string]);
+
+        immutable serialised = deserialised.serializeToJsonPretty!"    ";
         File(plugin.countersFile, "w").writeln(serialised);
     }
-    catch (Exception e)
+    catch (SerdeException e)
     {
         import kameloso.common : logger;
+
         version(PrintStacktraces) logger.trace(e);
+
+        throw new IRCPluginInitialisationException(
+            message: "Counter file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: plugin.countersFile);
     }
 }
 
