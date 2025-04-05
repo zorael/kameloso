@@ -43,7 +43,7 @@ install_and_activate_compiler() {
     [[ $# -gt 1 ]] && compiler_version_ext="-$2" || compiler_version_ext=""
     compiler_build="${compiler}${compiler_version_ext}"
 
-    source "$(./install.sh "$compiler_build" --activate)"
+    source "$(bash install.sh "$compiler_build" --activate)"
 }
 
 clone_and_add() {
