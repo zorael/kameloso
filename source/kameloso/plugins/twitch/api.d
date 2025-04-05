@@ -2100,7 +2100,7 @@ private struct TwitchPoll
         uint channelPointsVotes;
 
         /++
-            FIXME
+            Constructor.
          +/
         this(const TwitchPoll.ResponseSchema.PollSchema.ChoiceSchema choiceSchema)
         {
@@ -2212,6 +2212,9 @@ private struct TwitchPoll
      +/
     SysTime endedAt;
 
+    /++
+        Constructor.
+     +/
     this(/*const*/ TwitchPoll.ResponseSchema.PollSchema pollData)
     {
         import std.conv : to;

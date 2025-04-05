@@ -181,6 +181,9 @@ struct Timer
      +/
     bool suspended;
 
+    /++
+        Constructor.
+     +/
     this(const JSONSchema json)
     {
         import lu.conv : Enum;
