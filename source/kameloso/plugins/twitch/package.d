@@ -1299,7 +1299,6 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
     import lu.string : SplitResults, splitInto, stripped;
     import std.algorithm.searching : startsWith;
     import std.format : format;
-    import std.json : JSONType, parseJSON;
 
     mixin(memoryCorruptionCheck);
 
@@ -1975,7 +1974,6 @@ void onCommandStartPoll(TwitchPlugin plugin, const IRCEvent event)
     import lu.string : splitWithQuotes;
     import std.conv : ConvException, to;
     import std.format : format;
-    import std.json : JSONType;
 
     mixin(memoryCorruptionCheck);
 
@@ -2092,8 +2090,6 @@ void onCommandStartPoll(TwitchPlugin plugin, const IRCEvent event)
 )
 void onCommandEndPoll(TwitchPlugin plugin, const IRCEvent event)
 {
-    import std.json : JSONType;
-
     mixin(memoryCorruptionCheck);
 
     try

@@ -299,7 +299,6 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 {
     import kameloso.plugins : sendHTTPRequest;
     import asdf.serialization : deserialize, serdeOptional;
-    import std.json : JSONType, parseJSON;
 
     @serdeOptional
     static struct Response

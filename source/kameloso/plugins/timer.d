@@ -186,8 +186,6 @@ struct Timer
      +/
     this(const JSONSchema json)
     {
-        import lu.conv : Enum;
-
         this.name = json.name;
         this.messageCountThreshold = json.messageCountThreshold;
         this.timeThreshold = json.timeThreshold;

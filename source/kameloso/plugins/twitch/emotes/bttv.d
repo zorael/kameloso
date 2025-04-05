@@ -179,7 +179,7 @@ in (id, "Tried to get BTTV emotes with an unset ID")
         if (errorResponse.message == "user not found")
         {
             // Benign
-            return 0;
+            return size_t(0);
         }
 
         throw new Exception(errorResponse.message);
@@ -224,7 +224,6 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
 {
     import kameloso.plugins : sendHTTPRequest;
     import asdf.serialization : deserialize, serdeOptional;
-    import std.json : JSONType, parseJSON;
 
     @serdeOptional
     static struct Response
