@@ -220,12 +220,6 @@ in (id, "Tried to get 7tv emotes with an unset ID")
         url: url,
         caller: caller);
 
-    if (httpResponse.body.startsWith("error"))
-    {
-        enum message = `Error in response body`;
-        throw new Exception(message);
-    }
-
     version(PrintStacktraces)
     {
         scope(failure)
@@ -240,6 +234,12 @@ in (id, "Tried to get 7tv emotes with an unset ID")
             catch (Exception _) {}
             printStacktrace();
         }
+    }
+
+    if (httpResponse.body.startsWith("error"))
+    {
+        enum message = `Error in response body`;
+        throw new Exception(message);
     }
 
     switch (httpResponse.code)
@@ -367,12 +367,6 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
         url: url,
         caller: caller);
 
-    if (httpResponse.body.startsWith("error"))
-    {
-        enum message = `Error in response body`;
-        throw new Exception(message);
-    }
-
     version(PrintStacktraces)
     {
         scope(failure)
@@ -387,6 +381,12 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
             catch (Exception _) {}
             printStacktrace();
         }
+    }
+
+    if (httpResponse.body.startsWith("error"))
+    {
+        enum message = `Error in response body`;
+        throw new Exception(message);
     }
 
     const response = httpResponse.body.deserialize!Response;
