@@ -165,7 +165,7 @@ in (((channelName.length && id) ||
     while (emoteImports.length)
     {
         import kameloso.plugins.common.scheduling : delay;
-        import kameloso.net : UnexpectedJSONException;
+        import mir.serde : SerdeException;
         import core.memory : GC;
 
         size_t[] toRemove;
@@ -199,7 +199,7 @@ in (((channelName.length && id) ||
                 toRemove ~= i;
                 continue;
             }
-            catch (UnexpectedJSONException _)
+            catch (SerdeException _)
             {
                 if (plugin.state.coreSettings.trace)
                 {
