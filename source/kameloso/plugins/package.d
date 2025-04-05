@@ -4731,18 +4731,21 @@ void memoryCorruptionCheckImpl(
         annotated to accept such.
      +/
     if (!uda._acceptExternal &&
-        (event.subchannel.name.length || subchannelID))
+        subchannelID &&
+        (channelID != subchannelID))
     {
         enum pattern = "[memoryCorruptionCheck] Event handler `%s` was called " ~
             "with an event in channel %s:%d subchannel %s:%d, and the function " ~
             "was not annotated to accept events from external channels";
 
-        writefln(pattern,
+        writefln(
+            pattern,
             functionName,
             event.channel.name,
             channelID,
             event.subchannel.name,
             subchannelID);
+
         assertionFailed = true;
     }
 
