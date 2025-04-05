@@ -202,6 +202,21 @@ in (id, "Tried to get FFZ emotes with an unset ID")
         url: url,
         caller: caller);
 
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import kameloso.misc : printStacktrace;
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(httpResponse.code);
+            writeln(httpResponse.body);
+            writeln(httpResponse.body.parseJSON.toPrettyString);
+            printStacktrace();
+        }
+    }
+
     switch (httpResponse.code)
     {
     case 200:
@@ -235,6 +250,7 @@ in (id, "Tried to get FFZ emotes with an unset ID")
         foreach (const emote; emoteSet.emoticons)
         {
             (*emoteMap)[emote.name] = true;
+            ++numAdded;
         }
     }
 
@@ -358,6 +374,33 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
         url: url,
         caller: caller);
 
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import kameloso.misc : printStacktrace;
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(httpResponse.code);
+            writeln(httpResponse.body);
+            writeln(httpResponse.body.parseJSON.toPrettyString);
+            printStacktrace();
+        }
+    }
+
+    switch (httpResponse.code)
+    {
+    case 200:
+        // 200 OK
+        break;
+
+    default:
+        // Some other error
+        const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+        throw new Exception(errorResponse.message);
+    }
+
     const response = httpResponse.body.deserialize!Response;
 
     size_t numAdded;
@@ -367,6 +410,7 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
         foreach (const emote; emoteSet.emoticons)
         {
             (*emoteMap)[emote.name] = true;
+            ++numAdded;
         }
     }
 

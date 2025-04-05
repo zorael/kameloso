@@ -254,7 +254,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
         {
         case "user not found":  // User has no user-specific 7tv emotes; benign failure
         case "Unknown User":  // This should never happen but stop attempt if it does
-            return 0;
+            return size_t(0);
 
         default:
             throw new Exception(errorResponse.error);
@@ -263,7 +263,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
 
     const response = httpResponse.body.deserialize!Response;
 
-    if (response.emote_set.isNull) return 0;
+    if (response.emote_set.isNull) return size_t(0);
 
     foreach (immutable emote; response.emote_set.get.emotes)
     {
@@ -389,13 +389,10 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 
     const response = httpResponse.body.deserialize!Response;
 
-    size_t numAdded;
-
     foreach (const emote; response.emotes)
     {
         (*emoteMap)[emote.name] = true;
-        ++numAdded;
     }
 
-    return numAdded;
+    return response.emotes.length;
 }

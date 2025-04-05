@@ -261,6 +261,32 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
         url: url,
         caller: caller);
 
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import kameloso.misc : printStacktrace;
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(httpResponse.code);
+            writeln(httpResponse.body);
+            writeln(httpResponse.body.parseJSON.toPrettyString);
+            printStacktrace();
+        }
+    }
+
+    switch (httpResponse.code)
+    {
+    case 200:
+        // 200 OK
+        break;
+
+    default:
+        enum message = "Non-200 response when fetching global BetterTTV emotes";
+        throw new Exception(message);
+    }
+
     const response = httpResponse.body.deserialize!(Response[]);
 
     foreach (const emote; response)
