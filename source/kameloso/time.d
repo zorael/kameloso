@@ -806,12 +806,13 @@ unittest
     Params:
         now = A [std.datetime.systime.SysTime|SysTime] of the base date from
             which to proceed to the next midnight.
+        days = Number of days to add to the date. Defaults to 1.
 
     Returns:
         A [std.datetime.systime.SysTime|SysTime] of the midnight following the date
         passed as argument.
  +/
-auto nextMidnight(const SysTime now)
+auto nextMidnight(const SysTime now, const uint days = 1)
 {
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
@@ -824,7 +825,7 @@ auto nextMidnight(const SysTime now)
 
     const dateTime = DateTime(now.year, cast(uint)now.month, now.day, 0, 0, 0);
     auto next = SysTime(dateTime, now.timezone)
-        .roll!"days"(1);
+        .roll!"days"(days);
 
     if (next.day == 1)
     {
