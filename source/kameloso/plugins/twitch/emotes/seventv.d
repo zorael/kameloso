@@ -238,7 +238,7 @@ in (id, "Tried to get 7tv emotes with an unset ID")
 
     if (httpResponse.body.startsWith("error"))
     {
-        enum message = `Error in response body`;
+        enum message = "Error in response body";
         throw new Exception(message);
     }
 
@@ -299,7 +299,6 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 {
     import kameloso.plugins : sendHTTPRequest;
     import asdf.serialization : deserialize, serdeOptional;
-    import std.algorithm.searching : startsWith;
     import std.json : JSONType, parseJSON;
 
     @serdeOptional
@@ -381,12 +380,6 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
             catch (Exception _) {}
             printStacktrace();
         }
-    }
-
-    if (httpResponse.body.startsWith("error"))
-    {
-        enum message = "Error in response body";
-        throw new Exception(message);
     }
 
     switch (httpResponse.code)
