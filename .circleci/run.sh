@@ -4,7 +4,7 @@ set -uexo pipefail
 
 #DMD_VERSION="2.108.0"
 #LDC_VERSION="1.38.0"
-CURL_USER_AGENT="CirleCI $(curl --version | head -n 1)"
+export CURL_USER_AGENT="CirleCI $(curl --version | head -n 1)"
 
 update_repos() {
     sudo apt-get update
@@ -43,7 +43,7 @@ install_and_activate_compiler() {
     [[ $# -gt 1 ]] && compiler_version_ext="-$2" || compiler_version_ext=""
     compiler_build="${compiler}${compiler_version_ext}"
 
-    source "$(CURL_USER_AGENT=\"$CURL_USER_AGENT\" bash install.sh "$compiler_build" --activate)"
+    source "$(./install.sh "$compiler_build" --activate)"
 }
 
 clone_and_add() {
