@@ -3292,16 +3292,53 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                 // Just swallow the exception and retry next time
             }
 
-            delay(plugin, (now.nextMidnight - now), yield: true);
+            immutable untilNextMidnight = (now.nextMidnight - now);
+            delay(plugin, untilNextMidnight, yield: true);
+        }
+    }
+
+    // Re-import custom emotes once every three days
+    void reimportEmotesDg()
+    {
+        import kameloso.plugins.twitch.emotes : importCustomEmotesImpl;
+        import kameloso.time : nextMidnight;
+
+        auto room = channelName in plugin.rooms;
+        assert(room, "Tried to start emote reimport delegate on non-existing room");
+
+        immutable idSnapshot = room.uniqueID;
+
+        while (true)
+        {
+            /+
+                Reverse the order and delay immediately before importing.
+                They are initially imported elsewhere, we just want this to fire
+                once every three days.
+             +/
+            enum nDays = 3;
+            immutable now = Clock.currTime;
+            immutable untilMidnightInNDays = (now.nextMidnight(nDays) - now);
+            delay(plugin, untilMidnightInNDays, yield: true);
+
+            room = channelName in plugin.rooms;
+            if (!room || (room.uniqueID != idSnapshot)) return;
+
+            importCustomEmotesImpl(
+                plugin: plugin,
+                channelName: channelName,
+                id: plugin.customChannelEmotes[channelName].id);
         }
     }
 
     auto uptimeMonitorFiber = new Fiber(&uptimeMonitorDg, BufferSize.fiberStack);
     auto chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
     auto cacheFollowersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
+    auto reimportEmotesFiber = new Fiber(&reimportEmotesDg, BufferSize.fiberStack);
+
     uptimeMonitorFiber.call();
     chatterMonitorFiber.call();
     cacheFollowersFiber.call();
+    reimportEmotesFiber.call();
 }
 
 
