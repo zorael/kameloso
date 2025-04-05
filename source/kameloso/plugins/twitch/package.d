@@ -4316,11 +4316,6 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             event.target.updated = 1L;
         }
 
-        if (event.subchannel.id && (event.subchannel.id == event.channel.id))
-        {
-            event.subchannel.id = 0;
-        }
-
         bool shouldCheckMessages;
         shouldCheckMessages |= postprocessImpl(plugin, event, event.sender, isTarget: false);
         shouldCheckMessages |= postprocessImpl(plugin, event, event.target, isTarget: true);
