@@ -28,7 +28,7 @@ import core.time : seconds;
 public:
 
 
-// importCustomEmotes
+// importCustomEmotesImpl
 /++
     Fetches custom BetterTTV, FrankerFaceZ and 7tv emotes via API calls.
 
@@ -41,7 +41,7 @@ public:
         channelName = (Optional) Name of channel to import emotes for.
         id = (Optional, mandatory if `channelName` supplied) Twitch numeric ID of channel.
  +/
-void importCustomEmotes(
+void importCustomEmotesImpl(
     TwitchPlugin plugin,
     const string channelName = string.init,
     const ulong id = 0)

@@ -699,11 +699,11 @@ void onGlobalUserstate(TwitchPlugin plugin, const IRCEvent _)
 
     if (plugin.settings.customEmotes)
     {
-        import kameloso.plugins.twitch.emotes : importCustomEmotes;
+        import kameloso.plugins.twitch.emotes : importCustomEmotesImpl;
 
         // dialect sets the display name during parsing
         //assert(plugin.state.client.displayName == event.target.displayName);
-        importCustomEmotes(plugin);
+        importCustomEmotesImpl(plugin);
     }
 }
 
@@ -1143,8 +1143,8 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
 
             void importEmotesDg()
             {
-                import kameloso.plugins.twitch.emotes : importCustomEmotes;
-                importCustomEmotes(
+                import kameloso.plugins.twitch.emotes : importCustomEmotesImpl;
+                importCustomEmotesImpl(
                     plugin: plugin,
                     channelName: event.channel.name,
                     id: room.id);
@@ -1208,7 +1208,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
 )
 void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.twitch.emotes : Delays, importCustomEmotes;
+    import kameloso.plugins.twitch.emotes : Delays, importCustomEmotesImpl;
     import kameloso.plugins.common.scheduling : delay;
     import kameloso.constants : BufferSize;
     import std.algorithm.searching : countUntil;
@@ -1255,7 +1255,7 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
 
     void importDg()
     {
-        importCustomEmotes(
+        importCustomEmotesImpl(
             plugin: plugin,
             channelName: event.channel.name.idup,
             id: event.channel.id);
@@ -4469,6 +4469,79 @@ void loadResources(TwitchPlugin plugin)
 }
 
 
+// reimportCustomEmotes
+/++
+    Re-imports custom emotes for all channels for which we have previously
+    imported them.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+ +/
+void reimportCustomEmotes(TwitchPlugin plugin)
+{
+    import kameloso.plugins.twitch.emotes : importCustomEmotesImpl;
+
+    plugin.customGlobalEmotes = null;
+    importCustomEmotesImpl(plugin);
+
+    foreach (immutable channelName, ref customEmotes; plugin.customChannelEmotes)
+    {
+        import kameloso.plugins.twitch.emotes : Delays;
+        import kameloso.plugins.common.scheduling : delay;
+        import kameloso.constants : BufferSize;
+        import std.algorithm.searching : countUntil;
+        import core.thread.fiber : Fiber;
+        import core.time : Duration, seconds;
+
+        //plugin.customChannelEmotes[channelName].emotes = null;
+        customEmotes.emotes = null;
+
+        void importDg()
+        {
+            // Can't reuse the customEmotes pointer as it changes while looping
+            importCustomEmotesImpl(
+                plugin: plugin,
+                channelName: channelName,
+                id: plugin.customChannelEmotes[channelName].id);
+        }
+
+        /+
+            Stagger imports a bit.
+         +/
+        Duration delayUntilImport;
+
+        immutable homeIndex = plugin.state.bot.homeChannels.countUntil(channelName);
+
+        if (homeIndex != -1)
+        {
+            // It's a home channel
+            delayUntilImport = homeIndex * Delays.delayBetweenImports;
+        }
+        else
+        {
+            immutable guestIndex = plugin.state.bot.guestChannels.countUntil(channelName);
+
+            if (guestIndex != -1)
+            {
+                // Channel joined via piped command or admin join command
+                immutable start = plugin.state.bot.homeChannels.length;
+                delayUntilImport = start.seconds + (guestIndex * Delays.delayBetweenImports);
+            }
+            else
+            {
+                // Invent a delay based on the hash of the channel name
+                // padded by the number of home and guest channels
+                immutable start = (plugin.state.bot.homeChannels.length + plugin.state.bot.guestChannels.length);
+                delayUntilImport = start.seconds + ((channelName.hashOf % 5) * Delays.delayBetweenImports);
+            }
+        }
+
+        auto importFiber = new Fiber(&importDg, BufferSize.fiberStack);
+        delay(plugin, importFiber, delayUntilImport);
+    }
+}
+
+
 // reload
 /++
     Reloads the plugin, loading resources from disk and re-importing custom emotes.
@@ -4479,65 +4552,7 @@ void reload(TwitchPlugin plugin)
 
     if (plugin.settings.customEmotes)
     {
-        import kameloso.plugins.twitch.emotes : importCustomEmotes;
-
-        plugin.customGlobalEmotes = null;
-        importCustomEmotes(plugin);
-
-        foreach (immutable channelName, ref customEmotes; plugin.customChannelEmotes)
-        {
-            import kameloso.plugins.twitch.emotes : Delays;
-            import kameloso.plugins.common.scheduling : delay;
-            import kameloso.constants : BufferSize;
-            import std.algorithm.searching : countUntil;
-            import core.thread.fiber : Fiber;
-            import core.time : Duration, seconds;
-
-            //plugin.customChannelEmotes[channelName].emotes = null;
-            customEmotes.emotes = null;
-
-            void importDg()
-            {
-                // Can't reuse the customEmotes pointer as it changes while looping
-                importCustomEmotes(
-                    plugin: plugin,
-                    channelName: channelName,
-                    id: plugin.customChannelEmotes[channelName].id);
-            }
-
-            /+
-                Stagger imports a bit.
-             +/
-            Duration delayUntilImport;
-            immutable homeIndex = plugin.state.bot.homeChannels.countUntil(channelName);
-
-            if (homeIndex != -1)
-            {
-                // It's a home channel
-                delayUntilImport = homeIndex * Delays.delayBetweenImports;
-            }
-            else
-            {
-                immutable guestIndex = plugin.state.bot.guestChannels.countUntil(channelName);
-
-                if (guestIndex != -1)
-                {
-                    // Channel joined via piped command or admin join command
-                    immutable start = plugin.state.bot.homeChannels.length;
-                    delayUntilImport = start.seconds + (guestIndex * Delays.delayBetweenImports);
-                }
-                else
-                {
-                    // Invent a delay based on the hash of the channel name
-                    // padded by the number of home and guest channels
-                    immutable start = (plugin.state.bot.homeChannels.length + plugin.state.bot.guestChannels.length);
-                    delayUntilImport = start.seconds + ((channelName.hashOf % 5) * Delays.delayBetweenImports);
-                }
-            }
-
-            auto importFiber = new Fiber(&importDg, BufferSize.fiberStack);
-            delay(plugin, importFiber, delayUntilImport);
-        }
+        reimportCustomEmotes(plugin);
     }
 }
 
