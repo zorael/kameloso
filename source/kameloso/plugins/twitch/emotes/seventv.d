@@ -385,7 +385,18 @@ in (Fiber.getThis(), "Tried to call `get7tvEmotesGlobal` from outside a fiber")
 
     if (httpResponse.body.startsWith("error"))
     {
-        enum message = `Error in response body`;
+        enum message = "Error in response body";
+        throw new Exception(message);
+    }
+
+    switch (httpResponse.code)
+    {
+    case 200:
+        // 200 OK
+        break;
+
+    default:
+        enum message = "Non-200 response when fetching global 7tv emotes";
         throw new Exception(message);
     }
 
