@@ -454,8 +454,11 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }
@@ -686,8 +689,11 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }
@@ -849,8 +855,11 @@ in (id, "Tried to get followers with an unset ID")
                 {
                     import std.json : parseJSON;
                     import std.stdio : writeln;
+
                     writeln(httpResponse.code);
-                    writeln(httpResponse.body.parseJSON.toPrettyString);
+                    writeln(httpResponse.body);
+                    try writeln(httpResponse.body.parseJSON.toPrettyString);
+                    catch (Exception _) {}
                     printStacktrace();
                 }
             }
@@ -1102,8 +1111,11 @@ in ((name.length || id),
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }
@@ -1264,8 +1276,11 @@ in ((name.length || id), "Tried to call `getGame` with no game name nor game ID"
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }
@@ -1697,8 +1712,11 @@ in ((channelName.length || channelID), "Tried to fetch a channel with no informa
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }
@@ -1900,8 +1918,11 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }
@@ -2447,8 +2468,11 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 {
                     import std.json : parseJSON;
                     import std.stdio : writeln;
+
                     writeln(httpResponse.code);
-                    writeln(httpResponse.body.parseJSON.toPrettyString);
+                    writeln(httpResponse.body);
+                    try writeln(httpResponse.body.parseJSON.toPrettyString);
+                    catch (Exception _) {}
                     printStacktrace();
                 }
             }
@@ -2635,8 +2659,11 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }
@@ -2808,8 +2835,11 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }
@@ -3145,8 +3175,11 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }
@@ -3373,8 +3406,11 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
                 {
                     import std.json : parseJSON;
                     import std.stdio : writeln;
+
                     writeln(httpResponse.code);
-                    writeln(httpResponse.body.parseJSON.toPrettyString);
+                    writeln(httpResponse.body);
+                    try writeln(httpResponse.body.parseJSON.toPrettyString);
+                    catch (Exception _) {}
                     printStacktrace();
                 }
             }
@@ -3509,8 +3545,11 @@ in (targetChannelID, "Tried to call `sendShoutout` with an unset target channel 
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }
@@ -3656,8 +3695,11 @@ in (channelName.length, "Tried to delete a message without providing a channel n
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }
@@ -3920,8 +3962,11 @@ in (userID, "Tried to timeout a user with an unset user ID")
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }
@@ -4107,8 +4152,11 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }
@@ -4297,8 +4345,11 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }
@@ -4463,8 +4514,11 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
             {
                 import std.json : parseJSON;
                 import std.stdio : writeln;
+
                 writeln(httpResponse.code);
-                writeln(httpResponse.body.parseJSON.toPrettyString);
+                writeln(httpResponse.body);
+                try writeln(httpResponse.body.parseJSON.toPrettyString);
+                catch (Exception _) {}
                 printStacktrace();
             }
         }

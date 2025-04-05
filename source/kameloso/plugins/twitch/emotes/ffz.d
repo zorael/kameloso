@@ -212,7 +212,8 @@ in (id, "Tried to get FFZ emotes with an unset ID")
 
             writeln(httpResponse.code);
             writeln(httpResponse.body);
-            writeln(httpResponse.body.parseJSON.toPrettyString);
+            try writeln(httpResponse.body.parseJSON.toPrettyString);
+            catch (Exception _) {}
             printStacktrace();
         }
     }
@@ -384,7 +385,8 @@ in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
 
             writeln(httpResponse.code);
             writeln(httpResponse.body);
-            writeln(httpResponse.body.parseJSON.toPrettyString);
+            try writeln(httpResponse.body.parseJSON.toPrettyString);
+            catch (Exception _) {}
             printStacktrace();
         }
     }

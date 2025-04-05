@@ -447,7 +447,9 @@ private auto getSpotifyTokens(
             import std.stdio : writeln;
 
             writeln(httpResponse.code);
-            writeln(httpResponse.body.parseJSON.toPrettyString);
+            writeln(httpResponse.body);
+            try writeln(httpResponse.body.parseJSON.toPrettyString);
+            catch (Exception _) {}
             printStacktrace();
         }
     }
@@ -546,7 +548,9 @@ in (Fiber.getThis(), "Tried to call `refreshSpotifyToken` from outside a fiber")
             import std.stdio : writeln;
 
             writeln(httpResponse.code);
-            writeln(httpResponse.body.parseJSON.toPrettyString);
+            writeln(httpResponse.body);
+            try writeln(httpResponse.body.parseJSON.toPrettyString);
+            catch (Exception _) {}
             printStacktrace();
         }
     }
@@ -683,7 +687,9 @@ in (Fiber.getThis(), "Tried to call `addTrackToSpotifyPlaylist` from outside a f
             import std.stdio : writeln;
 
             writeln(httpResponse.code);
-            writeln(httpResponse.body.parseJSON.toPrettyString);
+            writeln(httpResponse.body);
+            try writeln(httpResponse.body.parseJSON.toPrettyString);
+            catch (Exception _) {}
             printStacktrace();
         }
     }
@@ -891,7 +897,9 @@ in (Fiber.getThis(), "Tried to call `getSpotifyTrackByID` from outside a fiber")
             import std.stdio : writeln;
 
             writeln(httpResponse.code);
-            writeln(httpResponse.body.parseJSON.toPrettyString);
+            writeln(httpResponse.body);
+            try writeln(httpResponse.body.parseJSON.toPrettyString);
+            catch (Exception _) {}
             printStacktrace();
         }
     }
@@ -1055,7 +1063,9 @@ private auto validateSpotifyToken(ref Credentials creds, const string caBundleFi
             import std.stdio : writeln;
 
             writeln(httpResponse.code);
-            writeln(httpResponse.body.parseJSON.toPrettyString);
+            writeln(httpResponse.body);
+            try writeln(httpResponse.body.parseJSON.toPrettyString);
+            catch (Exception _) {}
             printStacktrace();
         }
     }

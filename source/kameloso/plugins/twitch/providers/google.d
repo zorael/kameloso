@@ -557,7 +557,9 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
             import std.stdio : writeln;
 
             writeln(httpResponse.code);
-            writeln(httpResponse.body.parseJSON.toPrettyString);
+            writeln(httpResponse.body);
+            try writeln(httpResponse.body.parseJSON.toPrettyString);
+            catch (Exception _) {}
             printStacktrace();
         }
     }
@@ -678,7 +680,9 @@ private auto getGoogleTokens(
             import std.stdio : writeln;
 
             writeln(httpResponse.code);
-            writeln(httpResponse.body.parseJSON.toPrettyString);
+            writeln(httpResponse.body);
+            try writeln(httpResponse.body.parseJSON.toPrettyString);
+            catch (Exception _) {}
             printStacktrace();
         }
     }
@@ -772,7 +776,9 @@ in (Fiber.getThis(), "Tried to call `refreshGoogleToken` from outside a fiber")
             import std.stdio : writeln;
 
             writeln(httpResponse.code);
-            writeln(httpResponse.body.parseJSON.toPrettyString);
+            writeln(httpResponse.body);
+            try writeln(httpResponse.body.parseJSON.toPrettyString);
+            catch (Exception _) {}
             printStacktrace();
         }
     }
@@ -900,7 +906,9 @@ private auto validateGoogleToken(const Credentials creds, const string caBundleF
             import std.stdio : writeln;
 
             writeln(httpResponse.code);
-            writeln(httpResponse.body.parseJSON.toPrettyString);
+            writeln(httpResponse.body);
+            try writeln(httpResponse.body.parseJSON.toPrettyString);
+            catch (Exception _) {}
             printStacktrace();
         }
     }
