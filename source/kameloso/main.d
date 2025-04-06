@@ -1158,7 +1158,7 @@ auto mainLoop(Kameloso instance)
 
             case retry:
                 // Break and try again
-                historyEntry.stopTime = nowInUnix;
+                //historyEntry.stopTime = nowInUnix;
                 break listenerloop;
 
             case returnFailure:
