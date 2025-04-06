@@ -55,6 +55,7 @@ If there's anyone talking it should show on your screen.
 
 * [Getting started](#getting-started)
   * [Prerequisites](#prerequisites)
+    * [**gdc**](#gdc)
     * [Compiler versions](#compiler-versions)
     * [SSL libraries on Windows](#ssl-libraries-on-windows)
   * [Downloading source](#downloading-source)
@@ -100,6 +101,15 @@ Grab a prebuilt Windows or Linux binary from under [**Releases**](https://github
 The program can be built using the [**D**](https://dlang.org) reference compiler [**dmd**](https://dlang.org/download.html), with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases) and with the GCC-based [**gdc**](https://gdcproject.org/downloads). **dmd** offers *very* fast compilation, while **ldc** and **gdc** are both slower at compiling but produce faster code. The latter two additionally support more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it is included in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
+
+#### gdc
+
+To build with **gdc** you need to clone the [`github.com:zorael/asdf`](https://github.com/zorael/asdf) fork of [`asdf`](https://github.com/libmir/asdf) and add it to your local **dub** registry. Upstream `asdf` throws a deprecation warning during compilation, which **gdc** treats as an error. The fork merely silences the deprecation warning.
+
+```shell
+git clone https://github.com/zorael/asdf.git
+dub add-local asdf
+```
 
 #### Compiler versions
 
