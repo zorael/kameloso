@@ -140,7 +140,7 @@ struct Response
             }
         }
     }
-    */
+     */
 
     Set[string] sets;  ///
 }
@@ -158,7 +158,7 @@ struct ErrorResponse
         "message": "No such room",
         "status": 404
     }
-    */
+     */
 
     string error;  ///
     string message;  ///

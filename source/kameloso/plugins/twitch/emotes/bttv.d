@@ -245,7 +245,7 @@ in (Fiber.getThis(), "Tried to call `getBTTVEmotesGlobal` from outside a fiber")
                 "userId": "5561169bd6b9d206222a8c19"
             }
         ]
-        */
+         */
 
         //bool animated;
         string code;
