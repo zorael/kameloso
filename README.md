@@ -97,9 +97,7 @@ Grab a prebuilt Windows or Linux binary from under [**Releases**](https://github
 
 ### Prerequisites
 
-The program can be built using the [**D**](https://dlang.org) reference compiler [**dmd**](https://dlang.org/download.html) and with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). **dmd** offers *very* fast compilation, while **ldc** is slower at compiling but produces faster code. The latter additionally supports more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
-
-The GCC-based [**gdc**](https://gdcproject.org/downloads) cannot currently be used to build the program as compilation halts due to deprecation warnings being thrown when building the [`asdf`](https://github.com/libmir/asdf) dependency.
+The program can be built using the [**D**](https://dlang.org) reference compiler [**dmd**](https://dlang.org/download.html), with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases) and with the GCC-based [**gdc**](https://gdcproject.org/downloads). **dmd** offers *very* fast compilation, while **ldc** and **gdc** are both slower at compiling but produce faster code. The latter two additionally support more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it is included in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
 
@@ -107,9 +105,9 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 Starting with `v4.0.0`, a more recent compiler version is required. This is to allow for use of named arguments and to enable some compiler preview switches.
 
-You need a compiler based on D version **2.108** or later (April 2024). For **ldc** this translates to a minimum of version **1.38**.
+You need a compiler based on D version **2.108** or later (April 2024). For **ldc** this translates to a minimum of version **1.38**. It's not easy to find information on **gdc** versions, but **14.2** is known to be recent enough.
 
-If your repositories (or other software sources) don't have compilers recent enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice.
+If your repositories (or other software sources) don't have compilers recent enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice. (**gdc** is not available via this script.)
 
 Releases of the bot prior to `v4.0.0` remain available for older compilers.
 
@@ -139,7 +137,10 @@ Refer to the output of `dub --annotate --print-builds` for more build types.
 
 #### Compiler choice
 
-It is recommended that you use **ldc** for release builds, as its optimisations are *objectively* better than those of **dmd**.
+It is recommended that you use **ldc** for release builds.
+
+* **gdc** is very slow to compile (but is not otherwise a poor choice).
+* **ldc** optimisations are *objectively* better than those of **dmd**.
 
 Specify which compiler you want to use with the `--compiler` switch. You may have to refer to **ldc** as **ldc2** on some systems.
 
