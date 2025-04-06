@@ -39,13 +39,8 @@ jobs:
       with:
         compiler: ${{ matrix.dc }}
 
-    - name: 'Run tests unless Windows'
-      if: matrix.os != 'windows-latest'
+    - name: 'Run tests'
       run: dub test
-
-    - name: 'Build tests if Windows'
-      if: matrix.os == 'windows-latest'
-      run: dub build -c unittest
 
     - name: 'Build: dev (debug)'
       run: dub build --nodeps -b debug   -c dev
