@@ -3251,11 +3251,11 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
 
             try
             {
-                if (plugin.state.coreSettings.trace)
+                /*if (plugin.state.coreSettings.trace)
                 {
                     enum pattern = "Fetching followers of channel <l>%s</> ...";
                     logger.infof(pattern, channelName);
-                }
+                }*/
 
                 auto results = getFollowers(plugin, room.id);  // must be mutable
 
