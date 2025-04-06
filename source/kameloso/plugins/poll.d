@@ -68,9 +68,22 @@ struct Poll
 private:
     import lu.container : RehashingAA;
     import std.datetime.systime : SysTime;
-    import std.json : JSONValue;
 
 public:
+    /++
+        JSON schema for serialising and deserialising a poll.
+     +/
+    static struct JSONSchema
+    {
+        long start;  ///
+        long end;  ///
+        uint[string] voteCounts;  ///
+        string[string] origChoiceNames;  ///
+        string[] sortedChoices;  ///
+        string[string] votes;  ///
+        uint uniqueID;  ///
+    }
+
     /++
         Timestamp of when the poll was created.
      +/
@@ -107,71 +120,35 @@ public:
      +/
     uint uniqueID;
 
-    // toJSON
     /++
-        Serialises this [Poll] into a [std.json.JSONValue|JSONValue].
-
-        Returns:
-            A [std.json.JSONValue|JSONValue] that describes this poll.
+        Constructor.
      +/
-    auto toJSON() const
+    this(/*const*/ JSONSchema schema)
     {
-        JSONValue json;
-        json.object = null;
-        json["start"] = JSONValue(this.start.toUnixTime());
-        json["end"] = JSONValue(this.end.toUnixTime());
-        json["voteCounts"] = JSONValue(this.voteCounts);
-        json["origChoiceNames"] = JSONValue(this.origChoiceNames);
-        json["sortedChoices"] = JSONValue(this.sortedChoices);
-        json["votes"] = JSONValue(this.votes.aaOf);
-        json["uniqueID"] = JSONValue(this.uniqueID);
-        return json;
+        this.start = SysTime.fromUnixTime(schema.start);
+        this.end = SysTime.fromUnixTime(schema.end);
+        this.voteCounts = schema.voteCounts;
+        this.origChoiceNames = schema.origChoiceNames;
+        this.sortedChoices = schema.sortedChoices;
+        this.votes = schema.votes;
+        this.uniqueID = schema.uniqueID;
+        this.votes.rehash();
     }
 
-    // fromJSON
     /++
-        Deserialises a [Poll] from a [std.json.JSONValue|JSONValue].
-
-        Params:
-            json = [std.json.JSONValue|JSONValue] to deserialise.
-
-        Returns:
-            A new [Poll] with values loaded from the passed JSON.
+        Returns a [JSONSchema] of this poll.
      +/
-    static auto fromJSON(const JSONValue json)
+    auto asSchema() /*const*/
     {
-        import core.memory : GC;
-
-        GC.disable();
-        scope(exit) GC.enable();
-
-        Poll poll;
-
-        foreach (immutable voteName, const voteCountJSON; json["voteCounts"].object)
-        {
-            poll.voteCounts[voteName] = cast(uint)voteCountJSON.integer;
-        }
-
-        foreach (immutable newName, const origNameJSON; json["origChoiceNames"].object)
-        {
-            poll.origChoiceNames[newName] = origNameJSON.str;
-        }
-
-        foreach (const choiceJSON; json["sortedChoices"].array)
-        {
-            poll.sortedChoices ~= choiceJSON.str;
-        }
-
-        foreach (immutable nickname, const voteJSON; json["votes"].object)
-        {
-            poll.votes[nickname] = voteJSON.str;
-        }
-
-        poll.start = SysTime.fromUnixTime(json["start"].integer);
-        poll.end = SysTime.fromUnixTime(json["end"].integer);
-        poll.uniqueID = cast(uint)json["uniqueID"].integer;
-        poll.votes.rehash();
-        return poll;
+        JSONSchema schema;
+        schema.start = this.start.toUnixTime();
+        schema.end = this.end.toUnixTime();
+        schema.voteCounts = this.voteCounts;
+        schema.origChoiceNames = this.origChoiceNames;
+        schema.sortedChoices = this.sortedChoices;
+        schema.votes = this.votes.aaOf;
+        schema.uniqueID = this.uniqueID;
+        return schema;
     }
 }
 
@@ -899,19 +876,20 @@ void generateEndFiber(
  +/
 void serialisePolls(PollPlugin plugin)
 {
-    import lu.json : JSONStorage;
+    import asdf.serialization : serializeToJsonPretty;
+    import std.stdio : File, writeln;
 
     if (!plugin.channelPolls.length) return;
 
-    JSONStorage json;
-    json.reset();
+    Poll.JSONSchema[string] json;
 
-    foreach (immutable channelName, const poll; plugin.channelPolls)
+    foreach (immutable channelName, /*const*/ poll; plugin.channelPolls)
     {
-        json[channelName] = poll.toJSON();
+        json[channelName] = poll.asSchema;
     }
 
-    json.save(plugin.pollTempFile);
+    immutable serialised = json.serializeToJsonPretty!"    ";
+    File(plugin.pollTempFile, "w").write(serialised);
 }
 
 
@@ -921,14 +899,17 @@ void serialisePolls(PollPlugin plugin)
  +/
 void deserialisePolls(PollPlugin plugin)
 {
-    import lu.json : JSONStorage;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
-    JSONStorage json;
-    json.load(plugin.pollTempFile);
+    auto polls = plugin.pollTempFile
+        .readText
+        .deserialize!(Poll.JSONSchema[string]);
 
-    foreach (immutable channelName, const pollJSON; json.object)
+    foreach (immutable channelName, /*const*/ schema; polls)
     {
-        auto poll = Poll.fromJSON(pollJSON);
+        auto poll = Poll(schema);
         plugin.channelPolls[channelName] = poll;
         generatePollFiber(plugin, channelName, poll);
         generateVoteReminders(plugin, channelName, poll);

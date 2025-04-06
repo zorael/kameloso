@@ -1027,37 +1027,19 @@ void updateAllObservedUsers(SeenPlugin plugin)
  +/
 void loadSeen(SeenPlugin plugin)
 {
-    import kameloso.string : doublyBackslashed;
-    import std.file : exists, isFile, readText;
-    import std.json : JSONException, parseJSON;
-    import core.memory : GC;
-
-    GC.disable();
-    scope(exit) GC.enable();
-
-    if (!plugin.seenFile.exists || !plugin.seenFile.isFile)
-    {
-        enum pattern = "<l>%s</> does not exist or is not a file";
-        logger.warningf(pattern, plugin.seenFile.doublyBackslashed);
-    }
-
-    plugin.seenUsers = null;
+    import asdf.serialization : deserialize;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
     try
     {
-        const asJSON = parseJSON(plugin.seenFile.readText);
-
-        // Manually insert each entry from the JSON file into the long[string] AA.
-        foreach (immutable user, const timeJSON; asJSON.object)
-        {
-            plugin.seenUsers[user] = timeJSON.integer;
-        }
+        plugin.seenUsers = plugin.seenFile
+            .readText
+            .deserialize!(long[string]);
     }
-    catch (JSONException e)
+    catch (Exception e)
     {
-        enum pattern = "Could not load seen JSON from file: <l>%s";
-        logger.errorf(pattern, e.msg);
-        version(PrintStacktraces) logger.trace(e.info);
+        version(PrintStacktraces) logger.trace(e);
     }
 
     // No need to rehash the AA; RehashingAA will do it on assignment
@@ -1076,12 +1058,12 @@ void loadSeen(SeenPlugin plugin)
 void saveSeen(SeenPlugin plugin)
 {
     import std.json : JSONValue;
-    import std.stdio : File;
+    import std.stdio : File, writeln;
 
     if (!plugin.seenUsers.length) return;
 
-    auto file = File(plugin.seenFile, "w");
-    file.writeln(JSONValue(plugin.seenUsers.aaOf).toPrettyString);
+    immutable serialised = JSONValue(plugin.seenUsers.aaOf).toPrettyString;
+    File(plugin.seenFile, "w").writeln(serialised);
 }
 
 
@@ -1175,16 +1157,22 @@ void teardown(SeenPlugin plugin)
  +/
 void initResources(SeenPlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import std.json : JSONException;
-
-    JSONStorage json;
+    import asdf.serialization : deserialize;
+    import mir.serde : SerdeException;
+    import std.file : readText;
+    import std.json : JSONValue;
+    import std.stdio : File, writeln;
 
     try
     {
-        json.load(plugin.seenFile);
+        auto deserialised = plugin.seenFile
+            .readText
+            .deserialize!(long[string]);
+
+        immutable serialised = JSONValue(deserialised).toPrettyString;
+        File(plugin.seenFile, "w").writeln(serialised);
     }
-    catch (JSONException e)
+    catch (SerdeException e)
     {
         version(PrintStacktraces) logger.trace(e);
 
@@ -1193,9 +1181,6 @@ void initResources(SeenPlugin plugin)
             pluginName: plugin.name,
             malformedFilename: plugin.seenFile);
     }
-
-    // Let other Exceptions pass.
-    json.save(plugin.seenFile);
 }
 
 

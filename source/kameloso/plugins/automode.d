@@ -52,14 +52,13 @@ import dialect.defs;
 void saveAutomodes(AutomodePlugin plugin)
 {
     import lu.array : pruneAA;
-    import lu.json : JSONStorage;
     import std.json : JSONValue;
+    import std.stdio : File, writeln;
 
-    // Create a JSONStorage only to save it
-    JSONStorage automodes;
     pruneAA(plugin.automodes);
-    automodes.storage = JSONValue(plugin.automodes);
-    automodes.save(plugin.automodeFile);
+
+    immutable serialised = JSONValue(plugin.automodes).toPrettyString;
+    File(plugin.automodeFile, "w").writeln(serialised);
 }
 
 
@@ -69,16 +68,22 @@ void saveAutomodes(AutomodePlugin plugin)
  +/
 void initResources(AutomodePlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import std.json : JSONException;
-
-    JSONStorage json;
+    import asdf.serialization : deserialize;
+    import mir.serde : SerdeException;
+    import std.file : readText;
+    import std.json : JSONValue;
+    import std.stdio : File, writeln;
 
     try
     {
-        json.load(plugin.automodeFile);
+        auto deserialised = plugin.automodeFile
+            .readText
+            .deserialize!(string[string][string]);
+
+        immutable serialised = JSONValue(deserialised).toPrettyString;
+        File(plugin.automodeFile, "w").writeln(serialised);
     }
-    catch (JSONException e)
+    catch (SerdeException e)
     {
         version(PrintStacktraces) logger.trace(e);
 
@@ -87,10 +92,6 @@ void initResources(AutomodePlugin plugin)
             pluginName: plugin.name,
             malformedFilename: plugin.automodeFile);
     }
-
-    // Let other Exceptions pass.
-    // Adjust saved JSON layout to be more easily edited
-    json.save(plugin.automodeFile);
 }
 
 
@@ -537,16 +538,13 @@ void reload(AutomodePlugin plugin)
  +/
 void loadAutomodes(AutomodePlugin plugin)
 {
-    import lu.json : JSONStorage, populateFromJSON;
-    import core.memory : GC;
+    import asdf.serialization : deserialize;
+    import std.file : readText;
 
-    GC.disable();
-    scope(exit) GC.enable();
+    plugin.automodes = plugin.automodeFile
+        .readText
+        .deserialize!(string[string][string]);
 
-    JSONStorage automodesJSON;
-    automodesJSON.load(plugin.automodeFile);
-    plugin.automodes = null;
-    plugin.automodes.populateFromJSON(automodesJSON, lowercaseKeys: true);
     plugin.automodes.rehash();
 }
 

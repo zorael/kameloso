@@ -4,7 +4,7 @@ set -uexo pipefail
 
 #DMD_VERSION="2.108.0"
 #LDC_VERSION="1.38.0"
-CURL_USER_AGENT="CirleCI $(curl --version | head -n 1)"
+export CURL_USER_AGENT="CirleCI $(curl --version | head -n 1)"
 
 update_repos() {
     sudo apt-get update

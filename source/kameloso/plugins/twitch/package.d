@@ -218,9 +218,7 @@ import kameloso.net :
 import kameloso.thread : Sendable;
 import dialect.defs;
 import dialect.postprocessors.twitch;  // To trigger the module ctor
-import lu.container : MutexedAA, RehashingAA;
 import std.datetime.systime : SysTime;
-import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread.fiber : Fiber;
 
@@ -234,6 +232,26 @@ import core.thread.fiber : Fiber;
  +/
 package struct Credentials
 {
+    /++
+        JSON schema for the credentials file.
+     +/
+    static struct JSONSchema
+    {
+        string broadcasterKey;  ///
+        string broadcasterBearerToken;  ///
+        long broadcasterKeyExpiry;  ///
+        string googleClientID;  ///
+        string googleClientSecret;  ///
+        string googleAccessToken;  ///
+        string googleRefreshToken;  ///
+        string youtubePlaylistID;  ///
+        string spotifyClientID;  ///
+        string spotifyClientSecret;  ///
+        string spotifyAccessToken;  ///
+        string spotifyRefreshToken;  ///
+        string spotifyPlaylistID;  ///
+    }
+
     /++
         Broadcaster-level Twitch key.
      +/
@@ -300,55 +318,45 @@ package struct Credentials
     string spotifyPlaylistID;
 
     /++
-        Serialises these [Credentials] into JSON.
-
-        Returns:
-            `this` represented in JSON.
+        Constructor.
      +/
-    auto toJSON() const
+    this(const JSONSchema json)
     {
-        JSONValue json;
-        json = null;
-        json.object = null;
-
-        json["broadcasterKey"] = this.broadcasterKey;
-        json["broadcasterBearerToken"] = this.broadcasterBearerToken;
-        json["broadcasterKeyExpiry"] = this.broadcasterKeyExpiry;
-        json["googleClientID"] = this.googleClientID;
-        json["googleClientSecret"] = this.googleClientSecret;
-        json["googleAccessToken"] = this.googleAccessToken;
-        json["googleRefreshToken"] = this.googleRefreshToken;
-        json["youtubePlaylistID"] = this.youtubePlaylistID;
-        json["spotifyClientID"] = this.spotifyClientID;
-        json["spotifyClientSecret"] = this.spotifyClientSecret;
-        json["spotifyAccessToken"] = this.spotifyAccessToken;
-        json["spotifyRefreshToken"] = this.spotifyRefreshToken;
-        json["spotifyPlaylistID"] = this.spotifyPlaylistID;
-
-        return json;
+        this.broadcasterKey = json.broadcasterKey;
+        this.googleClientID = json.googleClientID;
+        this.googleClientSecret = json.googleClientSecret;
+        this.googleAccessToken = json.googleAccessToken;
+        this.googleRefreshToken = json.googleRefreshToken;
+        this.youtubePlaylistID = json.youtubePlaylistID;
+        this.spotifyClientID = json.spotifyClientID;
+        this.spotifyClientSecret = json.spotifyClientSecret;
+        this.spotifyAccessToken = json.spotifyAccessToken;
+        this.spotifyRefreshToken = json.spotifyRefreshToken;
+        this.spotifyPlaylistID = json.spotifyPlaylistID;
+        this.broadcasterBearerToken = json.broadcasterBearerToken;
+        this.broadcasterKeyExpiry = json.broadcasterKeyExpiry;
     }
 
     /++
-        Deserialises some [Credentials] from JSON.
-
-        Params:
-            json = JSON representation of some [Credentials].
+        Returns a [JSONSchema] object with the same data as this one.
      +/
-    this(const JSONValue json)
+    auto asSchema() const
     {
-        this.broadcasterKey = json["broadcasterKey"].str;
-        this.googleClientID = json["googleClientID"].str;
-        this.googleClientSecret = json["googleClientSecret"].str;
-        this.googleAccessToken = json["googleAccessToken"].str;
-        this.googleRefreshToken = json["googleRefreshToken"].str;
-        this.youtubePlaylistID = json["youtubePlaylistID"].str;
-        this.spotifyClientID = json["spotifyClientID"].str;
-        this.spotifyClientSecret = json["spotifyClientSecret"].str;
-        this.spotifyAccessToken = json["spotifyAccessToken"].str;
-        this.spotifyRefreshToken = json["spotifyRefreshToken"].str;
-        this.spotifyPlaylistID = json["spotifyPlaylistID"].str;
-        this.broadcasterBearerToken = json["broadcasterBearerToken"].str;
-        this.broadcasterKeyExpiry = json["broadcasterKeyExpiry"].integer;
+        JSONSchema json;
+        json.broadcasterKey = this.broadcasterKey;
+        json.googleClientID = this.googleClientID;
+        json.googleClientSecret = this.googleClientSecret;
+        json.googleAccessToken = this.googleAccessToken;
+        json.googleRefreshToken = this.googleRefreshToken;
+        json.youtubePlaylistID = this.youtubePlaylistID;
+        json.spotifyClientID = this.spotifyClientID;
+        json.spotifyClientSecret = this.spotifyClientSecret;
+        json.spotifyAccessToken = this.spotifyAccessToken;
+        json.spotifyRefreshToken = this.spotifyRefreshToken;
+        json.spotifyPlaylistID = this.spotifyPlaylistID;
+        json.broadcasterBearerToken = this.broadcasterBearerToken;
+        json.broadcasterKeyExpiry = this.broadcasterKeyExpiry;
+        return json;
     }
 }
 
@@ -366,6 +374,17 @@ private:
     import std.datetime.systime : SysTime;
 
 public:
+    /++
+        JSON schema for the follower object.
+     +/
+    static struct JSONSchema
+    {
+        string user_id;  ///
+        string user_name;  ///
+        string user_login;  ///
+        string followed_at;  ///
+    }
+
     /++
         Display name of follower.
      +/
@@ -387,28 +406,16 @@ public:
     ulong id;
 
     /++
-        Constructs a [Follower] from a JSON representation.
-
-        Params:
-            json = JSON representation of a follower.
+        Constructor.
      +/
-    this(const JSONValue json)
+    this(const JSONSchema json)
     {
         import std.conv : to;
 
-        /+
-        {
-            "user_id": "11111",
-            "user_name": "UserDisplayName",
-            "user_login": "userloginname",
-            "followed_at": "2022-05-24T22:22:08Z",
-        },
-         +/
-
-        this.id = json["user_id"].str.to!uint;
-        this.displayName = json["user_name"].str;
-        this.login = json["user_login"].str;
-        this.when = SysTime.fromISOExtString(json["followed_at"].str);
+        this.id = json.user_id.to!ulong;
+        this.displayName = json.user_name;
+        this.login = json.user_login;
+        this.when = SysTime.fromISOExtString(json.followed_at);
     }
 }
 
@@ -550,7 +557,6 @@ void onEmoteBearingMessage(TwitchPlugin plugin, const IRCEvent event)
 
         if (!channelcount)
         {
-            plugin.ecount[event.channel.name] = RehashingAA!(long[string]).init;
             plugin.ecount[event.channel.name][string.init] = 0L;
             channelcount = event.channel.name in plugin.ecount;
             (*channelcount).remove(string.init);
@@ -693,11 +699,11 @@ void onGlobalUserstate(TwitchPlugin plugin, const IRCEvent _)
 
     if (plugin.settings.customEmotes)
     {
-        import kameloso.plugins.twitch.emotes : importCustomEmotes;
+        import kameloso.plugins.twitch.emotes : importCustomEmotesImpl;
 
         // dialect sets the display name during parsing
         //assert(plugin.state.client.displayName == event.target.displayName);
-        importCustomEmotes(plugin);
+        importCustomEmotesImpl(plugin);
     }
 }
 
@@ -784,9 +790,11 @@ void reportStreamTime(
     const TwitchPlugin.Room room)
 {
     import kameloso.time : timeSince;
-    import lu.json : JSONStorage;
+    import asdf.serialization : deserialize;
     import std.datetime.systime : Clock, SysTime;
+    import std.file : readText;
     import std.format : format;
+    import std.stdio : File, writeln;
     import core.time : Duration;
 
     if (room.stream.live)
@@ -821,17 +829,18 @@ void reportStreamTime(
     }
 
     // Stream down, check if we have one on record to report instead
-    JSONStorage json;
-    json.load(plugin.streamHistoryFile);
+    auto json = plugin.streamHistoryFile
+        .readText
+        .deserialize!(TwitchPlugin.Room.Stream.JSONSchema[]);
 
-    if (!json.array.length)
+    if (!json.length)
     {
         // No streams this session and none on record
         immutable message = room.broadcasterDisplayName ~ " is currently not streaming.";
         return chan(plugin.state, room.channelName, message);
     }
 
-    const previousStream = TwitchPlugin.Room.Stream(json.array[$-1]);
+    const previousStream = TwitchPlugin.Room.Stream(json[$-1]);
     immutable delta = (previousStream.endedAt - previousStream.startedAt);
     immutable timestring = timeSince!(7, 1)(delta);
     immutable gameName = previousStream.gameName.length ?
@@ -1134,8 +1143,8 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
 
             void importEmotesDg()
             {
-                import kameloso.plugins.twitch.emotes : importCustomEmotes;
-                importCustomEmotes(
+                import kameloso.plugins.twitch.emotes : importCustomEmotesImpl;
+                importCustomEmotesImpl(
                     plugin: plugin,
                     channelName: event.channel.name,
                     id: room.id);
@@ -1199,7 +1208,7 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
 )
 void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
 {
-    import kameloso.plugins.twitch.emotes : Delays, importCustomEmotes;
+    import kameloso.plugins.twitch.emotes : Delays, importCustomEmotesImpl;
     import kameloso.plugins.common.scheduling : delay;
     import kameloso.constants : BufferSize;
     import std.algorithm.searching : countUntil;
@@ -1246,7 +1255,7 @@ void onNonHomeRoomState(TwitchPlugin plugin, const IRCEvent event)
 
     void importDg()
     {
-        importCustomEmotes(
+        importCustomEmotesImpl(
             plugin: plugin,
             channelName: event.channel.name.idup,
             id: event.channel.id);
@@ -1290,7 +1299,6 @@ void onCommandShoutout(TwitchPlugin plugin, const IRCEvent event)
     import lu.string : SplitResults, splitInto, stripped;
     import std.algorithm.searching : startsWith;
     import std.format : format;
-    import std.json : JSONType, parseJSON;
 
     mixin(memoryCorruptionCheck);
 
@@ -1966,7 +1974,6 @@ void onCommandStartPoll(TwitchPlugin plugin, const IRCEvent event)
     import lu.string : splitWithQuotes;
     import std.conv : ConvException, to;
     import std.format : format;
-    import std.json : JSONType;
 
     mixin(memoryCorruptionCheck);
 
@@ -2083,8 +2090,6 @@ void onCommandStartPoll(TwitchPlugin plugin, const IRCEvent event)
 )
 void onCommandEndPoll(TwitchPlugin plugin, const IRCEvent event)
 {
-    import std.json : JSONType;
-
     mixin(memoryCorruptionCheck);
 
     try
@@ -2881,7 +2886,8 @@ void initialise(TwitchPlugin plugin)
     if (someKeygenWanted || (!plugin.state.bot.pass.length && !plugin.state.coreSettings.force))
     {
         import kameloso.thread : ThreadMessage;
-        import lu.json : JSONStorage;
+        import asdf.serialization : deserialize;
+        import std.file : readText;
 
         if (plugin.state.coreSettings.headless)
         {
@@ -2891,10 +2897,11 @@ void initialise(TwitchPlugin plugin)
 
         // Some keygen, reload to load secrets so existing ones are read
         // Not strictly needed for normal keygen but for everything else
-        JSONStorage secretsJSON;
-        secretsJSON.load(plugin.secretsFile);
+        auto json = plugin.secretsFile
+            .readText
+            .deserialize!(Credentials.JSONSchema[string]);
 
-        foreach (immutable channelName, credsJSON; secretsJSON.storage.object)
+        foreach (immutable channelName, credsJSON; json)
         {
             plugin.secretsByChannel[channelName] = Credentials(credsJSON);
         }
@@ -3259,7 +3266,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
 
                     if (plugin.state.coreSettings.trace)
                     {
-                        enum pattern = "Cached <l>%d</> followers of channel <l>%s</>.";
+                        enum pattern = "Cached <l>%,d</> followers of channel <l>%s</>.";
                         logger.infof(pattern, results.followers.length, channelName);
                     }
                 }
@@ -3281,16 +3288,53 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                 // Just swallow the exception and retry next time
             }
 
-            delay(plugin, (now.nextMidnight - now), yield: true);
+            immutable untilNextMidnight = (now.nextMidnight - now);
+            delay(plugin, untilNextMidnight, yield: true);
+        }
+    }
+
+    // Re-import custom emotes once every three days
+    void reimportEmotesDg()
+    {
+        import kameloso.plugins.twitch.emotes : importCustomEmotesImpl;
+        import kameloso.time : nextMidnight;
+
+        auto room = channelName in plugin.rooms;
+        assert(room, "Tried to start emote reimport delegate on non-existing room");
+
+        immutable idSnapshot = room.uniqueID;
+
+        while (true)
+        {
+            /+
+                Reverse the order and delay immediately before importing.
+                They are initially imported elsewhere, we just want this to fire
+                once every three days.
+             +/
+            enum nDays = 3;
+            immutable now = Clock.currTime;
+            immutable untilMidnightInNDays = (now.nextMidnight(nDays) - now);
+            delay(plugin, untilMidnightInNDays, yield: true);
+
+            room = channelName in plugin.rooms;
+            if (!room || (room.uniqueID != idSnapshot)) return;
+
+            importCustomEmotesImpl(
+                plugin: plugin,
+                channelName: channelName,
+                id: plugin.customChannelEmotes[channelName].id);
         }
     }
 
     auto uptimeMonitorFiber = new Fiber(&uptimeMonitorDg, BufferSize.fiberStack);
     auto chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
     auto cacheFollowersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
+    auto reimportEmotesFiber = new Fiber(&reimportEmotesDg, BufferSize.fiberStack);
+
     uptimeMonitorFiber.call();
     chatterMonitorFiber.call();
     cacheFollowersFiber.call();
+    reimportEmotesFiber.call();
 }
 
 
@@ -3312,7 +3356,6 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
     import kameloso.plugins.common.scheduling : delay;
     import std.conv : to;
     import std.datetime.systime : Clock, SysTime;
-    import std.json : JSONValue;
     import core.time : minutes;
 
     static immutable retryDelay = 1.minutes;
@@ -3674,12 +3717,18 @@ in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
  +/
 void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream stream)
 {
-    import lu.json : JSONStorage;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
-    JSONStorage json;
-    json.load(plugin.streamHistoryFile);
-    json.array ~= stream.toJSON();
-    json.save(plugin.streamHistoryFile);
+    auto streams = plugin.streamHistoryFile
+        .readText
+        .deserialize!(TwitchPlugin.Room.Stream.JSONSchema[]);
+
+    streams ~= stream.asSchema;
+
+    immutable serialised = streams.serializeToJsonPretty!"    ";
+    File(plugin.streamHistoryFile, "w").writeln(serialised);
 }
 
 
@@ -4316,56 +4365,59 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
  +/
 void initResources(TwitchPlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import std.file : exists, mkdir;
-    import std.json : JSONException, JSONType;
-    import std.path : dirName;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import mir.serde : SerdeException;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
-    void loadFile(
-        const string fileDescription,
-        ref JSONStorage json,
-        const string filename,
-        const size_t line = __LINE__)
+    void readAndWriteBack(bool useStdJSON, T)
+        (const string filename,
+        const string fileDescription)
     {
         try
         {
-            json.load(filename);
+            auto deserialised = filename
+                .readText
+                .deserialize!T;
+
+            static if (useStdJSON)
+            {
+                import std.json : JSONValue;
+                immutable serialised = JSONValue(deserialised).toPrettyString;
+            }
+            else
+            {
+                immutable serialised = deserialised.serializeToJsonPretty!"    ";
+            }
+
+            File(filename, "w").writeln(serialised);
         }
-        catch (JSONException e)
+        catch (SerdeException e)
         {
-            version(PrintStacktraces) logger.error("JSONException: ", e.msg);
+            version(PrintStacktraces) logger.trace(e);
 
             throw new IRCPluginInitialisationException(
-                message: fileDescription ~ " file is malformed",
-                pluginName: plugin.name,
-                malformedFilename: filename,
-                file: __FILE__,
-                line: line);
+            message: fileDescription ~ " file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: filename);
         }
-
-        // Let other Exceptions pass.
     }
 
-    JSONStorage ecountJSON;
-    JSONStorage viewersJSON;
-    JSONStorage secretsJSON;
-    JSONStorage historyJSON;
+    readAndWriteBack!(true, long[string][string])
+        (plugin.ecountFile,
+        fileDescription: "ecount");
 
-    // Ensure the subdirectory exists
-    immutable subdir = plugin.ecountFile.dirName;
-    if (!subdir.exists) mkdir(subdir);
+    readAndWriteBack!(true, long[string][string])
+        (plugin.viewersFile,
+        fileDescription: "Viewers");
 
-    loadFile("ecount", ecountJSON, plugin.ecountFile);
-    loadFile("Viewers", viewersJSON, plugin.viewersFile);
-    loadFile("Secrets", secretsJSON, plugin.secretsFile);
-    loadFile("Stream history", historyJSON, plugin.streamHistoryFile);
+    readAndWriteBack!(false, Credentials.JSONSchema[string])
+        (plugin.secretsFile,
+        fileDescription: "Secrets");
 
-    if (historyJSON.type != JSONType.array) historyJSON.array = null;  // coerce to array if needed
-
-    ecountJSON.save(plugin.ecountFile);
-    viewersJSON.save(plugin.viewersFile);
-    secretsJSON.save(plugin.secretsFile);
-    historyJSON.save(plugin.streamHistoryFile);
+    readAndWriteBack!(false, TwitchPlugin.Room.Stream.JSONSchema[])
+        (plugin.streamHistoryFile,
+        fileDescription: "Stream history");
 }
 
 
@@ -4380,20 +4432,14 @@ void initResources(TwitchPlugin plugin)
         aa = The associative array to convert into JSON and save.
         filename = Filename of the file to write to.
  +/
-void saveResourceToDisk(/*const*/ RehashingAA!(long[string])[string] aa, const string filename)
+void saveResourceToDisk(/*const*/ long[string][string] aa, const string filename)
 {
+    import asdf.serialization : serializeToJsonPretty;
     import std.json : JSONValue;
-    import std.stdio : File;
+    import std.stdio : File, writeln;
 
-    long[string][string] tempAA;
-
-    foreach (immutable channelName, rehashingAA; aa)
-    {
-        tempAA[channelName] = rehashingAA.aaOf;
-    }
-
-    immutable json = JSONValue(tempAA);
-    File(filename, "w").writeln(json.toPrettyString);
+    immutable serialised = JSONValue(aa);
+    File(filename, "w").writeln(serialised.toPrettyString);
 }
 
 
@@ -4407,21 +4453,18 @@ void saveResourceToDisk(/*const*/ RehashingAA!(long[string])[string] aa, const s
  +/
 package void saveSecretsToDisk(const Credentials[string] aa, const string filename)
 {
-    import std.json : JSONValue;
-    import std.stdio : File;
+    import asdf.serialization : serializeToJsonPretty;
+    import std.stdio : File, writeln;
 
-    JSONValue json;
-    json = null;
-    json.object = null;
+    Credentials.JSONSchema[string] tempAA;
 
     foreach (immutable channelName, creds; aa)
     {
-        json[channelName] = null;
-        json[channelName].object = null;
-        json[channelName] = creds.toJSON();
+        tempAA[channelName] = creds.asSchema;
     }
 
-    File(filename, "w").writeln(json.toPrettyString);
+    immutable serialised = tempAA.serializeToJsonPretty!"    ";
+    File(filename, "w").writeln(serialised);
 }
 
 
@@ -4431,44 +4474,104 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
  +/
 void loadResources(TwitchPlugin plugin)
 {
-    import lu.json : JSONStorage, populateFromJSON;
+    import asdf.serialization : deserialize;
+    import std.file : readText;
     import core.memory : GC;
 
     GC.disable();
     scope(exit) GC.enable();
 
-    JSONStorage ecountJSON;
-    long[string][string] tempEcount;
-    ecountJSON.load(plugin.ecountFile);
-    tempEcount.populateFromJSON(ecountJSON);
-    plugin.ecount = null;
+    plugin.ecount = plugin.ecountFile
+        .readText
+        .deserialize!(long[string][string]);
 
-    foreach (immutable channelName, channelCounts; tempEcount)
-    {
-        plugin.ecount[channelName] = RehashingAA!(long[string])(channelCounts);
-    }
+    plugin.viewerTimesByChannel = plugin.viewersFile
+        .readText
+        .deserialize!(long[string][string]);
 
-    JSONStorage viewersJSON;
-    long[string][string] tempViewers;
-    viewersJSON.load(plugin.viewersFile);
-    tempViewers.populateFromJSON(viewersJSON);
-    plugin.viewerTimesByChannel = null;
+    auto creds = plugin.secretsFile
+        .readText
+        .deserialize!(Credentials.JSONSchema[string]);
 
-    foreach (immutable channelName, channelViewers; tempViewers)
-    {
-        plugin.viewerTimesByChannel[channelName] = RehashingAA!(long[string])(channelViewers);
-    }
-
-    JSONStorage secretsJSON;
-    secretsJSON.load(plugin.secretsFile);
     plugin.secretsByChannel = null;
 
-    foreach (immutable channelName, credsJSON; secretsJSON.storage.object)
+    foreach (immutable channelName, credsJSON; creds)
     {
         plugin.secretsByChannel[channelName] = Credentials(credsJSON);
     }
+}
 
-    plugin.secretsByChannel.rehash();
+
+// reimportCustomEmotes
+/++
+    Re-imports custom emotes for all channels for which we have previously
+    imported them.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+ +/
+void reimportCustomEmotes(TwitchPlugin plugin)
+{
+    import kameloso.plugins.twitch.emotes : importCustomEmotesImpl;
+
+    plugin.customGlobalEmotes = null;
+    importCustomEmotesImpl(plugin);
+
+    foreach (immutable channelName, ref customEmotes; plugin.customChannelEmotes)
+    {
+        import kameloso.plugins.twitch.emotes : Delays;
+        import kameloso.plugins.common.scheduling : delay;
+        import kameloso.constants : BufferSize;
+        import std.algorithm.searching : countUntil;
+        import core.thread.fiber : Fiber;
+        import core.time : Duration, seconds;
+
+        //plugin.customChannelEmotes[channelName].emotes = null;
+        customEmotes.emotes = null;
+
+        void importDg()
+        {
+            // Can't reuse the customEmotes pointer as it changes while looping
+            importCustomEmotesImpl(
+                plugin: plugin,
+                channelName: channelName,
+                id: plugin.customChannelEmotes[channelName].id);
+        }
+
+        /+
+            Stagger imports a bit.
+         +/
+        Duration delayUntilImport;
+
+        immutable homeIndex = plugin.state.bot.homeChannels.countUntil(channelName);
+
+        if (homeIndex != -1)
+        {
+            // It's a home channel
+            delayUntilImport = homeIndex * Delays.delayBetweenImports;
+        }
+        else
+        {
+            immutable guestIndex = plugin.state.bot.guestChannels.countUntil(channelName);
+
+            if (guestIndex != -1)
+            {
+                // Channel joined via piped command or admin join command
+                immutable start = plugin.state.bot.homeChannels.length;
+                delayUntilImport = start.seconds + (guestIndex * Delays.delayBetweenImports);
+            }
+            else
+            {
+                // Invent a delay based on the hash of the channel name
+                // padded by the number of home and guest channels
+                immutable start = (plugin.state.bot.homeChannels.length + plugin.state.bot.guestChannels.length);
+                delayUntilImport = start.seconds + ((channelName.hashOf % 5) * Delays.delayBetweenImports);
+            }
+        }
+
+        auto importFiber = new Fiber(&importDg, BufferSize.fiberStack);
+        delay(plugin, importFiber, delayUntilImport);
+    }
 }
 
 
@@ -4482,65 +4585,7 @@ void reload(TwitchPlugin plugin)
 
     if (plugin.settings.customEmotes)
     {
-        import kameloso.plugins.twitch.emotes : importCustomEmotes;
-
-        plugin.customGlobalEmotes = null;
-        importCustomEmotes(plugin);
-
-        foreach (immutable channelName, ref customEmotes; plugin.customChannelEmotes)
-        {
-            import kameloso.plugins.twitch.emotes : Delays;
-            import kameloso.plugins.common.scheduling : delay;
-            import kameloso.constants : BufferSize;
-            import std.algorithm.searching : countUntil;
-            import core.thread.fiber : Fiber;
-            import core.time : Duration, seconds;
-
-            //plugin.customChannelEmotes[channelName].emotes = null;
-            customEmotes.emotes = null;
-
-            void importDg()
-            {
-                // Can't reuse the customEmotes pointer as it changes while looping
-                importCustomEmotes(
-                    plugin: plugin,
-                    channelName: channelName,
-                    id: plugin.customChannelEmotes[channelName].id);
-            }
-
-            /+
-                Stagger imports a bit.
-             +/
-            Duration delayUntilImport;
-            immutable homeIndex = plugin.state.bot.homeChannels.countUntil(channelName);
-
-            if (homeIndex != -1)
-            {
-                // It's a home channel
-                delayUntilImport = homeIndex * Delays.delayBetweenImports;
-            }
-            else
-            {
-                immutable guestIndex = plugin.state.bot.guestChannels.countUntil(channelName);
-
-                if (guestIndex != -1)
-                {
-                    // Channel joined via piped command or admin join command
-                    immutable start = plugin.state.bot.homeChannels.length;
-                    delayUntilImport = start.seconds + (guestIndex * Delays.delayBetweenImports);
-                }
-                else
-                {
-                    // Invent a delay based on the hash of the channel name
-                    // padded by the number of home and guest channels
-                    immutable start = (plugin.state.bot.homeChannels.length + plugin.state.bot.guestChannels.length);
-                    delayUntilImport = start.seconds + ((channelName.hashOf % 5) * Delays.delayBetweenImports);
-                }
-            }
-
-            auto importFiber = new Fiber(&importDg, BufferSize.fiberStack);
-            delay(plugin, importFiber, delayUntilImport);
-        }
+        reimportCustomEmotes(plugin);
     }
 }
 
@@ -4643,7 +4688,7 @@ private:
     import kameloso.messaging : Message;
     import kameloso.net : HTTPQueryResponse;
     import kameloso.terminal : TerminalToken;
-    import lu.container : Buffer, CircularBuffer;
+    import lu.container : Buffer, CircularBuffer, MutexedAA;
     import std.conv : to;
     import std.datetime.systime : SysTime;
 
@@ -4666,7 +4711,7 @@ package:
         static struct Stream
         {
         private:
-            import std.json : JSONValue;
+            import asdf.serialization : serdeIgnore, serdeOptional;
 
             /++
                 The unique ID of a stream, as supplied by Twitch.
@@ -4676,178 +4721,10 @@ package:
             /*immutable*/ ulong _id;
 
         package:
-            /++
-                Whether or not the stream is currently ongoing.
-             +/
-            bool live; // = false;
-
-            /++
-                The numerical ID of the user/account of the channel owner.
-             +/
-            ulong userID;
-
-            /++
-                The user/account name of the channel owner.
-             +/
-            string userLogin;
-
-            /++
-                The display name of the channel owner.
-             +/
-            string userDisplayName;
-
-            /++
-                The numerical ID of a game, as supplied by Twitch.
-             +/
-            ulong gameID;
-
-            /++
-                The name of the game that's being streamed.
-             +/
-            string gameName;
-
-            /++
-                The title of the stream.
-             +/
-            string title;
-
-            /++
-                Stream tags.
-             +/
-            string[] tags;
-
-            /++
-                When the stream started.
-             +/
-            SysTime startedAt;
-
-            /++
-                When the stream ended.
-             +/
-            SysTime endedAt;
-
-            /++
-                How long the stream had been running after terminating it.
-             +/
-            Duration duration;
-
-            /++
-                How many people were viewing the stream the last time the monitor
-                [core.thread.fiber.Fiber|Fiber] checked.
-             +/
-            long viewerCount;
-
-            /++
-                The maximum number of people seen watching this stream.
-             +/
-            long viewerCountMax;
-
-            /++
-                Status of the stream, when it has ended. Can be one of
-                "`TERMINATED`" and "`ARCHIVED`".
-             +/
-            string status;
-
-            /++
-                Users seen in the channel.
-             +/
-            RehashingAA!(bool[string]) chattersSeen;
-
-            /++
-                Hashmap of active viewers (who have shown activity).
-             +/
-            RehashingAA!(bool[string]) activeViewers;
-
-            /++
-                Accessor to [_id].
-
-                Returns:
-                    This stream's numerical ID, as reported by Twitch.
-             +/
-            auto id() const
+            @serdeOptional
+            static struct JSONSchema
             {
-                return _id;
-            }
 
-            /++
-                Takes a second [Stream] and updates this one with values from it.
-
-                Params:
-                    updated =  A second [Stream] from which to inherit values.
-             +/
-            void update(const Stream updated)
-            {
-                assert(_id, "Stream not properly initialised");
-
-                this.gameID = updated.gameID;
-                this.gameName = updated.gameName;
-                this.title = updated.title;
-                this.viewerCount = updated.viewerCount;
-                this.tags = updated.tags.dup;
-                this.endedAt = updated.endedAt;
-                this.status = updated.status;
-
-                if (this.viewerCount > this.viewerCountMax)
-                {
-                    this.viewerCountMax = this.viewerCount;
-                }
-            }
-
-            /++
-                Constructor.
-
-                Params:
-                    id = This stream's numerical ID, as reported by Twitch.
-             +/
-            this(const ulong id) pure @safe nothrow @nogc
-            {
-                this._id = id;
-            }
-
-            /++
-                Serialises this [Stream] into a JSON representation.
-
-                Returns:
-                    A [std.json.JSONValue|JSONValue] that represents this [Stream].
-             +/
-            auto toJSON() const
-            {
-                JSONValue json;
-                json = null;
-                json.object = null;
-
-                json["id"] = JSONValue(this._id.to!string);
-                json["user_id"] = JSONValue(this.userID);
-                json["user_login"] = JSONValue(this.userLogin);
-                json["user_name"] = JSONValue(this.userDisplayName);
-                json["game_id"] = JSONValue(this.gameID);
-                json["game_name"] = JSONValue(this.gameName);
-                json["title"] = JSONValue(this.title);
-                json["started_at"] = JSONValue(this.startedAt.toUnixTime().to!string);
-                json["status"] = JSONValue(this.status);
-                json["viewer_count"] = JSONValue(this.viewerCount);
-                json["viewer_count_max"] = JSONValue(this.viewerCountMax);
-                json["tags"] = JSONValue(this.tags);
-                json["ended_at"] = JSONValue(this.endedAt.toUnixTime().to!string);
-                json["duration"] = JSONValue(this.duration.total!"seconds");
-
-                return json;
-            }
-
-            /++
-                Deserialises a [Stream] from a JSON representation.
-
-                Params:
-                    json = [std.json.JSONValue|JSONValue] to build a [Stream] from.
-
-                Returns:
-                    A new [Stream] with values from the passed `json`.
-             +/
-            this(const JSONValue json)
-            {
-                import lu.json : safelyGet;
-                import std.algorithm.iteration : map;
-                import std.array : array;
 
                 /*
                 {
@@ -4930,44 +4807,221 @@ package:
                     "pagination": {}
                 }
                  */
-                if ("data" in json)
+
+                string game_id;
+                string game_name;
+                string id;
+                string started_at;
+                string[] tags;
+                string title;
+                string type;
+                string user_id;
+                string user_login;
+                string user_name;
+                long viewer_count;
+                long viewer_count_max;
+
+                @serdeOptional
                 {
-                    enum message = "`Stream` ctor was called with JSON " ~
-                        `still containing a top-level "data" key`;
-                    throw new UnexpectedJSONException(message);
+                    string ended_at;
+                    long duration;
                 }
 
-                //auto stream = Stream(json["id"].str.to!ulong);
-                this._id = json["id"].str.to!ulong;
-                this.userID = json["user_id"].integer;
-                this.userLogin = json["user_login"].str;
-                this.userDisplayName = json["user_name"].str;
-                this.gameID = cast(uint)json["game_id"].integer;
-                this.gameName = json["game_name"].str;
-                this.title = json["title"].str;
-                this.startedAt = SysTime.fromISOExtString(json["started_at"].str);
-                this.status = json.safelyGet("status");
-                this.viewerCount = json.safelyGet!ulong("viewer_count");
-                this.viewerCountMax = json.safelyGet!ulong("viewer_count_max");
-                this.tags = json["tags"]
-                    .array
-                    .map!(tag => tag.str)
-                    .array;
-
-                if (const endedAtJSON = "ended_at" in json)
+                @serdeIgnore
                 {
-                    this.endedAt = SysTime.fromISOExtString(endedAtJSON.str);
+                    string[] tag_ids;
+                    string thumbnail_url;
+                    bool is_mature;
+                    string language;
+                }
+            }
+
+            /++
+                Whether or not the stream is currently ongoing.
+             +/
+            bool live; // = false;
+
+            /++
+                The numerical ID of the user/account of the channel owner.
+             +/
+            ulong userID;
+
+            /++
+                The user/account name of the channel owner.
+             +/
+            string userLogin;
+
+            /++
+                The display name of the channel owner.
+             +/
+            string userDisplayName;
+
+            /++
+                The numerical ID of a game, as supplied by Twitch.
+             +/
+            ulong gameID;
+
+            /++
+                The name of the game that's being streamed.
+             +/
+            string gameName;
+
+            /++
+                The title of the stream.
+             +/
+            string title;
+
+            /++
+                Stream tags.
+             +/
+            string[] tags;
+
+            /++
+                When the stream started.
+             +/
+            SysTime startedAt;
+
+            /++
+                When the stream ended.
+             +/
+            SysTime endedAt;
+
+            /++
+                How long the stream had been running after terminating it.
+             +/
+            Duration duration;
+
+            /++
+                How many people were viewing the stream the last time the monitor
+                [core.thread.fiber.Fiber|Fiber] checked.
+             +/
+            long viewerCount;
+
+            /++
+                The maximum number of people seen watching this stream.
+             +/
+            long viewerCountMax;
+
+            /++
+                Status of the stream, when it has ended. Can be one of
+                "`TERMINATED`" and "`ARCHIVED`".
+             +/
+            string status;
+
+            /++
+                Users seen in the channel.
+             +/
+            bool[string] chattersSeen;
+
+            /++
+                Hashmap of active viewers (who have shown activity).
+             +/
+            bool[string] activeViewers;
+
+            /++
+                Accessor to [_id].
+
+                Returns:
+                    This stream's numerical ID, as reported by Twitch.
+             +/
+            auto id() const
+            {
+                return _id;
+            }
+
+            /++
+                Constructor.
+             +/
+            this(const JSONSchema json)
+            {
+                import core.time : seconds;
+
+                this._id = json.id.to!ulong;
+                this.userID = json.user_id.to!ulong;
+                this.userLogin = json.user_login;
+                this.userDisplayName = json.user_name;
+                this.gameID = json.game_id.to!ulong;
+                this.gameName = json.game_name;
+                this.title = json.title;
+                this.startedAt = SysTime.fromISOExtString(json.started_at);
+                this.status = json.type;
+                this.viewerCount = json.viewer_count;
+                this.viewerCountMax = json.viewer_count_max;
+                this.tags = json.tags.dup;
+                this.duration = json.duration.seconds;
+
+                if (json.ended_at.length)
+                {
+                    this.endedAt = SysTime.fromISOExtString(json.ended_at);
                 }
                 else
                 {
                     this.live = true;
                 }
+            }
 
-                if (const durationJSON = "duration" in json)
+            /++
+                Returns a [JSONSchema] representation of this stream.
+             +/
+            auto asSchema() const
+            {
+                JSONSchema json;
+
+                json.id = this._id.to!string;
+                json.user_id = this.userID.to!string;
+                json.user_login = this.userLogin;
+                json.user_name = this.userDisplayName;
+                json.game_id = this.gameID.to!string;
+                json.game_name = this.gameName;
+                json.title = this.title;
+                json.started_at = this.startedAt.toISOExtString;
+                json.type = this.status;
+                json.viewer_count = this.viewerCount;
+                json.viewer_count_max = this.viewerCountMax;
+                json.tags = this.tags.dup;
+                json.duration = this.duration.total!"seconds";
+
+                if (this.endedAt != SysTime.init)
                 {
-                    import core.time : seconds;
-                    this.duration = durationJSON.integer.seconds;
+                    json.ended_at = this.endedAt.toISOExtString;
                 }
+
+                return json;
+            }
+
+            /++
+                Takes a second [Stream] and updates this one with values from it.
+
+                Params:
+                    updated =  A second [Stream] from which to inherit values.
+             +/
+            void update(const Stream updated)
+            {
+                assert(_id, "Stream not properly initialised");
+
+                this.gameID = updated.gameID;
+                this.gameName = updated.gameName;
+                this.title = updated.title;
+                this.viewerCount = updated.viewerCount;
+                this.tags = updated.tags.dup;
+                this.endedAt = updated.endedAt;
+                this.status = updated.status;
+
+                if (this.viewerCount > this.viewerCountMax)
+                {
+                    this.viewerCountMax = this.viewerCount;
+                }
+            }
+
+            /++
+                Constructor.
+
+                Params:
+                    id = This stream's numerical ID, as reported by Twitch.
+             +/
+            this(const ulong id) pure @safe nothrow @nogc
+            {
+                this._id = id;
             }
         }
 
@@ -5290,7 +5344,7 @@ package:
     /++
         Associative array of viewer times; seconds keyed by nickname keyed by channel.
      +/
-    RehashingAA!(long[string])[string] viewerTimesByChannel;
+    long[string][string] viewerTimesByChannel;
 
     /++
         API keys and tokens, keyed by channel.
@@ -5333,7 +5387,7 @@ package:
     /++
         Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
      +/
-    RehashingAA!(long[string])[string] ecount;
+    long[string][string] ecount;
 
     /++
         Buffer of messages to send as whispers.

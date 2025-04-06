@@ -20,46 +20,36 @@ version(WithTwitchPlugin):
 private:
 
 import kameloso.plugins.twitch : TwitchPlugin;
+import asdf.serialization : serdeOptional;
 import core.thread.fiber : Fiber;
 
-package:
 
-
-// getFFZEmotes
+// Response
 /++
-    Fetches FrankerFaceZ emotes for a given channel.
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        emoteMap = Pointer to the `bool[string]` associative array to store
-            the fetched emotes in.
-        id = Numeric Twitch user/channel ID.
-        caller = Name of the calling function.
-
-    See_Also:
-        https://www.frankerfacez.com
+    JSON schema of the response from the FrankerFaceZ API.
  +/
-uint getFFZEmotes(
-    TwitchPlugin plugin,
-    bool[string]* emoteMap,
-    const ulong id,
-    const string caller = __FUNCTION__)
-in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
-in (id, "Tried to get FFZ emotes with an unset ID")
+@serdeOptional
+struct Response
 {
-    import kameloso.plugins : sendHTTPRequest;
-    import kameloso.net : ErrorJSONException, UnexpectedJSONException;
-    import std.conv : to;
-    import std.json : JSONType, parseJSON;
+    ///
+    static struct Set
+    {
+        ///
+        static struct Emote
+        {
+            string name;  ///
+            /*string id;
+            string url;
+            string css;
+            bool hidden;
+            bool modifier;
+            uint usage_count;
 
-    immutable url = "https://api.frankerfacez.com/v1/room/id/" ~ id.to!string;
+            @serdeKeys("public") bool public_;*/
+        }
 
-    immutable response = sendHTTPRequest(
-        plugin: plugin,
-        url: url,
-        caller: caller);
-
-    immutable responseJSON = parseJSON(response.body);
+        Emote[] emoticons;  ///
+    }
 
     /*
     {
@@ -151,6 +141,17 @@ in (id, "Tried to get FFZ emotes with an unset ID")
         }
     }
      */
+
+    Set[string] sets;  ///
+}
+
+
+// ErrorResponse
+/++
+    JSON schema of the error response from the FrankerFaceZ API.
+ +/
+struct ErrorResponse
+{
     /*
     {
         "error": "Not Found",
@@ -159,43 +160,101 @@ in (id, "Tried to get FFZ emotes with an unset ID")
     }
      */
 
-    immutable setsJSON = "sets" in responseJSON;
+    string error;  ///
+    string message;  ///
+    uint status;  ///
+}
 
-    if (!setsJSON)
+
+package:
+
+
+// getFFZEmotes
+/++
+    Fetches FrankerFaceZ emotes for a given channel.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
+        emoteMap = Pointer to the `bool[string]` associative array to store
+            the fetched emotes in.
+        id = Numeric Twitch user/channel ID.
+        caller = Name of the calling function.
+
+    See_Also:
+        https://www.frankerfacez.com
+ +/
+auto getFFZEmotes(
+    TwitchPlugin plugin,
+    bool[string]* emoteMap,
+    const ulong id,
+    const string caller = __FUNCTION__)
+in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
+in (id, "Tried to get FFZ emotes with an unset ID")
+{
+    import kameloso.plugins : sendHTTPRequest;
+    import asdf.serialization : deserialize;
+    import std.conv : to;
+
+    immutable url = "https://api.frankerfacez.com/v1/room/id/" ~ id.to!string;
+
+    immutable httpResponse = sendHTTPRequest(
+        plugin: plugin,
+        url: url,
+        caller: caller);
+
+    version(PrintStacktraces)
     {
-        if (immutable messageJSON = "message" in responseJSON)
+        scope(failure)
         {
-            if (messageJSON.str == "No such room")
-            {
-                // Benign
-                return 0;
-            }
-        }
+            import kameloso.misc : printStacktrace;
+            import std.json : parseJSON;
+            import std.stdio : writeln;
 
-        enum message = `No "sets" key`;
-        throw new UnexpectedJSONException(message, responseJSON);
+            writeln(httpResponse.code);
+            writeln(httpResponse.body);
+            try writeln(httpResponse.body.parseJSON.toPrettyString);
+            catch (Exception _) {}
+            printStacktrace();
+        }
     }
 
-    uint numAdded;
-
-    foreach (immutable setJSON; (*setsJSON).object)
+    switch (httpResponse.code)
     {
-        if (immutable emoticonsArrayJSON = "emoticons" in setJSON)
-        {
-            foreach (immutable emoteJSON; emoticonsArrayJSON.array)
-            {
-                immutable emoteName = emoteJSON["name"].str;
-                (*emoteMap)[emoteName] = true;
-                ++numAdded;
-            }
+    case 200:
+        // 200 OK
+        break;
 
-            // Probably all done as there only seems to be one set,
-            // but keep iterating in case we're wrong
-            //return;
+    case 404:
+        // 404 Not Found
+        const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+
+        if (errorResponse.message == "No such room")
+        {
+            // Benign
+            return size_t(0);
+        }
+
+        throw new Exception(errorResponse.message);
+
+    default:
+        // Some other error
+        const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+        throw new Exception(errorResponse.message);
+    }
+
+    const response = httpResponse.body.deserialize!Response;
+
+    size_t numAdded;
+
+    foreach (const emoteSet; response.sets)
+    {
+        foreach (const emote; emoteSet.emoticons)
+        {
+            (*emoteMap)[emote.name] = true;
+            ++numAdded;
         }
     }
 
-    // All done
     return numAdded;
 }
 
@@ -214,7 +273,7 @@ in (id, "Tried to get FFZ emotes with an unset ID")
     See_Also:
         https://www.frankerfacez.com
  +/
-uint getFFZEmotesGlobal(
+auto getFFZEmotesGlobal(
     TwitchPlugin plugin,
     bool[string]* emoteMap,
     const ulong _ = 0,
@@ -222,118 +281,138 @@ uint getFFZEmotesGlobal(
 in (Fiber.getThis(), "Tried to call `getFFZEmotes` from outside a fiber")
 {
     import kameloso.plugins : sendHTTPRequest;
-    import kameloso.net : UnexpectedJSONException;
-    import std.json : JSONType, parseJSON;
+    import asdf.serialization : deserialize, serdeOptional;
+
+    version(none)
+    @serdeOptional
+    static struct Response
+    {
+        static struct Set
+        {
+
+        }
+        /*
+        {
+            "default_sets": [
+                3,
+                1539687
+            ],
+            "sets": {
+                "1532818": {
+                    "_type": 1,
+                    "css": null,
+                    "emoticons": [
+                        {
+                            "artist": null,
+                            "created_at": "2023-03-04T20:17:47.814Z",
+                            "css": null,
+                            "height": 32,
+                            "hidden": false,
+                            "id": 720507,
+                            "last_updated": null,
+                            "margins": null,
+                            "modifier": true,
+                            "modifier_flags": 12289,
+                            "name": "ffzHyper",
+                            "offset": null,
+                            "owner": {
+                                "_id": 1,
+                                "display_name": "SirStendec",
+                                "name": "sirstendec"
+                            },
+                            "public": false,
+                            "status": 1,
+                            "urls": {
+                                [...]
+                            },
+                            "usage_count": 1,
+                            "width": 32
+                        },
+                        {
+                            "artist": null,
+                            "created_at": "2023-03-04T20:17:47.861Z",
+                            "css": null,
+                            "height": 32,
+                            "hidden": false,
+                            "id": 720510,
+                            "last_updated": null,
+                            "margins": null,
+                            "modifier": true,
+                            "modifier_flags": 2049,
+                            "name": "ffzRainbow",
+                            "offset": null,
+                            "owner": {
+                                "_id": 1,
+                                "display_name": "SirStendec",
+                                "name": "sirstendec"
+                            },
+                            "public": false,
+                            "status": 1,
+                            "urls": {
+                                [...]
+                            },
+                            "usage_count": 1,
+                            "width": 32
+                        },
+                        [...],
+                    ],
+                    "icon": null,
+                    "id": 3,
+                    "title": "Global Emotes"
+                }
+            }
+            "users": {
+                "1532818": [...]
+            }
+        }
+         */
+    }
 
     immutable url = "https://api.frankerfacez.com/v1/set/global";
 
-    immutable response = sendHTTPRequest(
+    immutable httpResponse = sendHTTPRequest(
         plugin: plugin,
         url: url,
         caller: caller);
 
-    immutable responseJSON = parseJSON(response.body);
-
-    /*
+    version(PrintStacktraces)
     {
-        "default_sets": [
-            3,
-            1539687
-        ],
-        "sets": {
-            "1532818": {
-                "_type": 1,
-                "css": null,
-                "emoticons": [
-                    {
-                        "artist": null,
-                        "created_at": "2023-03-04T20:17:47.814Z",
-                        "css": null,
-                        "height": 32,
-                        "hidden": false,
-                        "id": 720507,
-                        "last_updated": null,
-                        "margins": null,
-                        "modifier": true,
-                        "modifier_flags": 12289,
-                        "name": "ffzHyper",
-                        "offset": null,
-                        "owner": {
-                            "_id": 1,
-                            "display_name": "SirStendec",
-                            "name": "sirstendec"
-                        },
-                        "public": false,
-                        "status": 1,
-                        "urls": {
-                            [...]
-                        },
-                        "usage_count": 1,
-                        "width": 32
-                    },
-                    {
-                        "artist": null,
-                        "created_at": "2023-03-04T20:17:47.861Z",
-                        "css": null,
-                        "height": 32,
-                        "hidden": false,
-                        "id": 720510,
-                        "last_updated": null,
-                        "margins": null,
-                        "modifier": true,
-                        "modifier_flags": 2049,
-                        "name": "ffzRainbow",
-                        "offset": null,
-                        "owner": {
-                            "_id": 1,
-                            "display_name": "SirStendec",
-                            "name": "sirstendec"
-                        },
-                        "public": false,
-                        "status": 1,
-                        "urls": {
-                            [...]
-                        },
-                        "usage_count": 1,
-                        "width": 32
-                    },
-                    [...],
-                ],
-                "icon": null,
-                "id": 3,
-                "title": "Global Emotes"
-            }
-        }
-        "users": {
-            "1532818": [...]
-        }
-    }
-     */
-
-    immutable setsJSON = "sets" in responseJSON;
-
-    if (!setsJSON)
-    {
-        enum message = `No "sets" key`;
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
-
-    uint numAdded;
-
-    foreach (immutable setJSON; (*setsJSON).object)
-    {
-        if (immutable emoticonsArrayJSON = "emoticons" in setJSON)
+        scope(failure)
         {
-            foreach (immutable emoteJSON; emoticonsArrayJSON.array)
-            {
-                immutable emoteName = emoteJSON["name"].str;
-                (*emoteMap)[emoteName] = true;
-                ++numAdded;
-            }
+            import kameloso.misc : printStacktrace;
+            import std.json : parseJSON;
+            import std.stdio : writeln;
 
-            // Probably all done as there only seems to be one set,
-            // but keep iterating in case we're wrong
-            //return;
+            writeln(httpResponse.code);
+            writeln(httpResponse.body);
+            try writeln(httpResponse.body.parseJSON.toPrettyString);
+            catch (Exception _) {}
+            printStacktrace();
+        }
+    }
+
+    switch (httpResponse.code)
+    {
+    case 200:
+        // 200 OK
+        break;
+
+    default:
+        // Some other error
+        const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+        throw new Exception(errorResponse.message);
+    }
+
+    const response = httpResponse.body.deserialize!Response;
+
+    size_t numAdded;
+
+    foreach (const emoteSet; response.sets)
+    {
+        foreach (const emote; emoteSet.emoticons)
+        {
+            (*emoteMap)[emote.name] = true;
+            ++numAdded;
         }
     }
 

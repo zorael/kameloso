@@ -54,10 +54,21 @@ import dialect.defs;
  +/
 struct Oneliner
 {
-private:
-    import std.json : JSONValue;
+    /++
+        JSON schema.
+     +/
+    static struct JSONSchema
+    {
+        private import asdf.serialization : serdeKeys, serdeOptional;
 
-public:
+        string trigger;  ///
+        int type;  ///
+        string[] responses;  ///
+
+        @serdeOptional uint cooldown;  ///
+        @serdeKeys("alias") string alias_;  ///
+    }
+
     // OnelinerType
     /++
         The different kinds of [Oneliner]s. Either one that yields a
@@ -126,6 +137,34 @@ public:
      +/
     string[] responses;
 
+    /++
+        Constructor.
+     +/
+    this(const JSONSchema json)
+    {
+        trigger = json.trigger;
+        alias_ = json.alias_;
+        type = cast(OnelinerType)json.type;
+        cooldown = json.cooldown;
+        responses = json.responses.dup;
+    }
+
+    /++
+        Returns a [JSONSchema] representation of this oneliner.
+     +/
+    auto asSchema() const
+    {
+        JSONSchema json;
+
+        json.trigger = this.trigger;
+        json.alias_ = this.alias_;
+        json.type = cast(int)this.type;
+        json.cooldown = this.cooldown;
+        json.responses = this.responses.dup;
+
+        return json;
+    }
+
     // getResponse
     /++
         Yields a response from the [responses] array, depending on the [type]
@@ -183,77 +222,6 @@ public:
         return responses.length ?
             responses[uniform(0, responses.length)] :
             string.init;
-    }
-
-    // toJSON
-    /++
-        Serialises this [Oneliner] into a [std.json.JSONValue|JSONValue].
-
-        Returns:
-            A [std.json.JSONValue|JSONValue] that describes this oneliner.
-     +/
-    auto toJSON() const
-    {
-        JSONValue json;
-        json = null;
-        json.object = null;
-
-        json["trigger"] = JSONValue(this.trigger);
-        json["type"] = JSONValue(cast(uint)this.type);
-        json["responses"] = JSONValue(this.responses);
-        json["cooldown"] = JSONValue(this.cooldown);
-        json["alias"] = JSONValue(this.alias_);
-
-        return json;
-    }
-
-    // fromJSON
-    /++
-        Deserialises a [Oneliner] from a [std.json.JSONValue|JSONValue].
-
-        Params:
-            json = [std.json.JSONValue|JSONValue] to deserialise.
-
-        Returns:
-            A new [Oneliner] with values loaded from the passed JSON.
-     +/
-    static auto fromJSON(const JSONValue json)
-    {
-        import core.memory : GC;
-
-        GC.disable();
-        scope(exit) GC.enable();
-
-        Oneliner oneliner;
-        oneliner.trigger = json["trigger"].str;
-        oneliner.cooldown = cast(uint)json["cooldown"].integer;
-        oneliner.alias_ = json["alias"].str;
-
-        switch (json["type"].integer)
-        {
-        case cast(int)OnelinerType.random:
-            oneliner.type = OnelinerType.random;
-            break;
-
-        case cast(int)OnelinerType.ordered:
-            oneliner.type = OnelinerType.ordered;
-            break;
-
-        case cast(int)OnelinerType.alias_:
-            oneliner.type = OnelinerType.alias_;
-            break;
-
-        default:
-            enum message = "Bad oneliner type number in oneliner JSON file";
-            throw new Exception(message);
-        }
-
-        foreach (const responseJSON; json["responses"].array)
-        {
-            oneliner.responses ~= responseJSON.str;
-        }
-
-        return oneliner;
     }
 
     // resolveOnelinerTypestring
@@ -1374,36 +1342,45 @@ void reload(OnelinerPlugin plugin)
  +/
 void loadOneliners(OnelinerPlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import core.memory : GC;
+    import asdf.serialization : deserialize;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
-    GC.disable();
-    scope(exit) GC.enable();
-
-    JSONStorage allOnelinersJSON;
-    allOnelinersJSON.load(plugin.onelinerFile);
-    plugin.onelinersByChannel = null;
-
-    foreach (immutable channelName, const channelOnelinersJSON; allOnelinersJSON.object)
+    try
     {
-        // Initialise the AA
-        auto channelOneliners = channelName in plugin.onelinersByChannel;
-        if (!channelOneliners)
+        auto json = plugin.onelinerFile
+            .readText
+            .deserialize!(Oneliner.JSONSchema[string][string]);
+
+        plugin.onelinersByChannel = null;
+
+        foreach (immutable channelName, const channelOnelinersJSON; json)
         {
-            plugin.onelinersByChannel[channelName][string.init] = Oneliner.init;
-            channelOneliners = channelName in plugin.onelinersByChannel;
-            (*channelOneliners).remove(string.init);
+            // Initialise the AA
+            auto channelOneliners = channelName in plugin.onelinersByChannel;
+
+            if (!channelOneliners)
+            {
+                plugin.onelinersByChannel[channelName][string.init] = Oneliner.init;
+                channelOneliners = channelName in plugin.onelinersByChannel;
+                (*channelOneliners).remove(string.init);
+            }
+
+            foreach (immutable trigger, const schema; channelOnelinersJSON)
+            {
+                (*channelOneliners)[trigger] = Oneliner(schema);
+            }
+
+            (*channelOneliners).rehash();
         }
 
-        foreach (immutable trigger, const onelinerJSON; channelOnelinersJSON.object)
-        {
-            (*channelOneliners)[trigger] = Oneliner.fromJSON(onelinerJSON);
-        }
-
-        (*channelOneliners).rehash();
+        plugin.onelinersByChannel.rehash();
     }
-
-    plugin.onelinersByChannel.rehash();
+    catch (Exception e)
+    {
+        import kameloso.common : logger;
+        version(PrintStacktraces) logger.trace(e);
+    }
 }
 
 
@@ -1459,27 +1436,29 @@ void sendOneliner(
 void saveResourceToDisk(const Oneliner[string][string] aa, const string filename)
 in (filename.length, "Tried to save resources to an empty filename string")
 {
-    import std.json : JSONValue;
-    import std.stdio : File;
+    import asdf.serialization : serializeToJsonPretty;
+    import std.stdio : File, writeln;
 
-    JSONValue json;
-    json = null;
-    json.object = null;
-
-    foreach (immutable channelName, const channelOneliners; aa)
+    try
     {
-        json[channelName] = null;
-        json[channelName].object = null;
+        Oneliner.JSONSchema[string][string] json;
 
-        foreach (immutable trigger, const oneliner; channelOneliners)
+        foreach (immutable channelName, const channelOneliners; aa)
         {
-            json[channelName][trigger] = null;
-            json[channelName][trigger].object = null;
-            json[channelName][trigger] = oneliner.toJSON();
+            foreach (immutable trigger, const oneliner; channelOneliners)
+            {
+                json[channelName][trigger] = oneliner.asSchema;
+            }
         }
-    }
 
-    File(filename, "w").writeln(json.toPrettyString);
+        immutable serialised = json.serializeToJsonPretty!"    ";
+        File(filename, "w").writeln(serialised);
+    }
+    catch (Exception e)
+    {
+        import kameloso.common : logger;
+        version(PrintStacktraces) logger.trace(e);
+    }
 }
 
 
@@ -1490,16 +1469,21 @@ in (filename.length, "Tried to save resources to an empty filename string")
  +/
 void initResources(OnelinerPlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import std.json : JSONException;
-
-    JSONStorage onelinerJSON;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import mir.serde : SerdeException;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
     try
     {
-        onelinerJSON.load(plugin.onelinerFile);
+        auto deserialised = plugin.onelinerFile
+            .readText
+            .deserialize!(Oneliner.JSONSchema[string][string]);
+
+        immutable serialised = deserialised.serializeToJsonPretty!"    ";
+        File(plugin.onelinerFile, "w").writeln(serialised);
     }
-    catch (JSONException e)
+    catch (SerdeException e)
     {
         version(PrintStacktraces) logger.trace(e);
 
@@ -1508,9 +1492,6 @@ void initResources(OnelinerPlugin plugin)
             pluginName: plugin.name,
             malformedFilename: plugin.onelinerFile);
     }
-
-    // Let other Exceptions pass.
-    onelinerJSON.save(plugin.onelinerFile);
 }
 
 

@@ -1456,6 +1456,24 @@ mixin template IRCPluginImpl(
     {
         import lu.traits : isSerialisable;
 
+        static void ensureFileExists(const string filename)
+        {
+            import std.file : exists, mkdirRecurse;
+            import std.path : dirName, extension;
+            import std.stdio : File, writeln;
+
+            if (!filename.exists)
+            {
+                mkdirRecurse(filename.dirName);
+
+                immutable emptyContents = (filename.extension == ".json") ?
+                    "{}" :
+                    string.init;
+
+                File(filename, "w").write(emptyContents);
+            }
+        }
+
         enum numEventTypes = __traits(allMembers, IRCEvent.Type).length;
 
         // Inherit select members of state by zeroing out what we don't want
@@ -1513,6 +1531,8 @@ mixin template IRCPluginImpl(
                             state.coreSettings.resourceDirectory,
                             this.tupleof[i]);
                     }
+
+                    ensureFileExists(this.tupleof[i]);
                 }
                 else
                 {
@@ -1537,6 +1557,8 @@ mixin template IRCPluginImpl(
                                 state.coreSettings.configDirectory,
                                 this.tupleof[i]);
                         }
+
+                        ensureFileExists(this.tupleof[i]);
                     }
                 }
             }
@@ -4709,18 +4731,21 @@ void memoryCorruptionCheckImpl(
         annotated to accept such.
      +/
     if (!uda._acceptExternal &&
-        (event.subchannel.name.length || subchannelID))
+        subchannelID &&
+        (channelID != subchannelID))
     {
         enum pattern = "[memoryCorruptionCheck] Event handler `%s` was called " ~
             "with an event in channel %s:%d subchannel %s:%d, and the function " ~
             "was not annotated to accept events from external channels";
 
-        writefln(pattern,
+        writefln(
+            pattern,
             functionName,
             event.channel.name,
             channelID,
             event.subchannel.name,
             subchannelID);
+
         assertionFailed = true;
     }
 

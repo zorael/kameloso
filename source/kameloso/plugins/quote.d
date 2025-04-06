@@ -76,10 +76,25 @@ mixin PluginRegistration!QuotePlugin;
  +/
 struct Quote
 {
-private:
-    import std.json : JSONValue;
+    /++
+        JSON schema.
+     +/
+    static struct JSONSchema
+    {
+        private import asdf.serialization : serdeOptional;
 
-public:
+        string line;  ///
+        long timestamp;  ///
+        string creator;  ///
+
+        @serdeOptional string nickname;  ///
+    }
+
+    /++
+        Nickname of quoted user.
+     +/
+    string nickname;
+
     /++
         Quote string line.
      +/
@@ -95,41 +110,28 @@ public:
      +/
     string creator;
 
-    // toJSON
     /++
-        Serialises this [Quote] into a [std.json.JSONValue|JSONValue].
-
-        Returns:
-            A [std.json.JSONValue|JSONValue] that describes this quote.
+        Constructor.
      +/
-    auto toJSON() const
+    this(const JSONSchema json)
     {
-        JSONValue json;
-        json["line"] = JSONValue(this.line);
-        json["timestamp"] = JSONValue(this.timestamp);
-        json["creator"] = JSONValue(this.creator);
-        return json;
+        this.nickname = json.nickname;
+        this.line = json.line;
+        this.timestamp = json.timestamp;
+        this.creator = json.creator;
     }
 
-    // fromJSON
     /++
-        Deserialises a [Quote] from a [std.json.JSONValue|JSONValue].
-
-        Params:
-            json = [std.json.JSONValue|JSONValue] to deserialise.
-
-        Returns:
-            A new [Quote] with values loaded from the passed JSON.
+        Returns a [JSONSchema] of this [Quote].
      +/
-    static auto fromJSON(const JSONValue json)
+    auto asSchema() const
     {
-        import lu.json : safelyGet;
-
-        Quote quote;
-        quote.line = json["line"].str;
-        quote.timestamp = json["timestamp"].integer;
-        quote.creator = json.safelyGet("creator");
-        return quote;
+        JSONSchema json;
+        json.nickname = this.nickname;
+        json.line = this.line;
+        json.timestamp = this.timestamp;
+        json.creator = this.creator;
+        return json;
     }
 }
 
@@ -361,6 +363,7 @@ void onCommandAddQuote(QuotePlugin plugin, const IRCEvent event)
     immutable line = altered.length ? altered : slice;
 
     Quote quote;
+    quote.nickname = nickname;
     quote.line = line.strippedRight;
     quote.timestamp = event.time;
     quote.creator = event.sender.nickname;
@@ -1289,41 +1292,45 @@ unittest
  +/
 void loadQuotes(QuotePlugin plugin)
 {
-    import lu.json : JSONStorage;
-    import std.json : JSONException;
-    import core.memory : GC;
+    import asdf.serialization : deserialize;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
-    GC.disable();
-    scope(exit) GC.enable();
-
-    JSONStorage json;
-
-    // No need to try-catch loading the JSON; trust in initResources
-    json.load(plugin.quotesFile);
-    plugin.quotes = null;
-
-    foreach (immutable channelName, channelQuotesJSON; json.object)
+    try
     {
-        auto channelQuotes = channelName in plugin.quotes;
-        if (!channelQuotes)
-        {
-            plugin.quotes[channelName][string.init] = [ Quote.init ];
-            channelQuotes = channelName in plugin.quotes;
-            (*channelQuotes).remove(string.init);
-        }
+        auto quotes = plugin.quotesFile
+            .readText
+            .deserialize!(Quote.JSONSchema[][string][string]);
 
-        foreach (immutable nickname, nicknameQuotesJSON; channelQuotesJSON.object)
+        plugin.quotes = null;
+
+        foreach (immutable channelName, channelQuotesJSON; quotes)
         {
-            foreach (quoteJSON; nicknameQuotesJSON.array)
+            auto channelQuotes = channelName in plugin.quotes;
+            if (!channelQuotes)
             {
-                plugin.quotes[channelName][nickname] ~= Quote.fromJSON(quoteJSON);
+                plugin.quotes[channelName][string.init] = [ Quote.init ];
+                channelQuotes = channelName in plugin.quotes;
+                (*channelQuotes).remove(string.init);
             }
+
+            foreach (immutable nickname, schemaArray; channelQuotesJSON)
+            {
+                foreach (schema; schemaArray)
+                {
+                    plugin.quotes[channelName][nickname] ~= Quote(schema);
+                }
+            }
+
+            (*channelQuotes).rehash();
         }
 
-        (*channelQuotes).rehash();
+        plugin.quotes.rehash();
     }
-
-    plugin.quotes.rehash();
+    catch (Exception e)
+    {
+        version(PrintStacktraces) logger.trace(e);
+    }
 }
 
 
@@ -1333,34 +1340,31 @@ void loadQuotes(QuotePlugin plugin)
  +/
 void saveQuotes(QuotePlugin plugin)
 {
-    import lu.json : JSONStorage;
+    import asdf.serialization : serializeToJsonPretty;
+    import std.stdio : File, writeln;
 
-    JSONStorage json;
-    json.reset();
-    json.object = null;
-
-    foreach (immutable channelName, channelQuotes; plugin.quotes)
+    try
     {
-        json[channelName] = null;
-        json[channelName].object = null;
+        Quote.JSONSchema[][string][string] json;
 
-        auto channelQuotesJSON = channelName in json;
-
-        foreach (immutable nickname, quotes; channelQuotes)
+        foreach (immutable channelName, channelQuotes; plugin.quotes)
         {
-            (*channelQuotesJSON)[nickname] = null;
-            (*channelQuotesJSON)[nickname].array = null;
-
-            auto nicknameQuotesJSON = nickname in *channelQuotesJSON;
-
-            foreach (quote; quotes)
+            foreach (immutable nickname, quotes; channelQuotes)
             {
-                nicknameQuotesJSON.array ~= quote.toJSON();
+                foreach (quote; quotes)
+                {
+                    json[channelName][nickname] ~= quote.asSchema;
+                }
             }
         }
-    }
 
-    json.save(plugin.quotesFile);
+        immutable serialised = json.serializeToJsonPretty!"    ";
+        File(plugin.quotesFile, "w").writeln(serialised);
+    }
+    catch (Exception e)
+    {
+        version(PrintStacktraces) logger.trace(e);
+    }
 }
 
 
@@ -1483,55 +1487,30 @@ final class NoQuotesSearchMatchException : Exception
  +/
 void initResources(QuotePlugin plugin)
 {
-    import lu.json : JSONStorage;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import mir.serde : SerdeException;
     import std.algorithm.searching : startsWith;
-    import std.json : JSONException;
-
-    enum placeholderChannel = "#<lost+found>";
-
-    JSONStorage json;
-    bool dirty;
+    import std.file : readText;
+    import std.stdio : File, writeln;
 
     try
     {
-        json.load(plugin.quotesFile);
+        auto deserialised = plugin.quotesFile
+            .readText
+            .deserialize!(Quote.JSONSchema[][string][string]);
 
-        // Convert legacy quotes to new ones
-        JSONStorage scratchJSON;
-
-        foreach (immutable key, firstLevel; json.object)
-        {
-            if (key.startsWith('#')) continue;
-
-            scratchJSON[placeholderChannel] = null;
-            scratchJSON[placeholderChannel].object = null;
-            scratchJSON[placeholderChannel][key] = firstLevel;
-            dirty = true;
-        }
-
-        if (dirty)
-        {
-            foreach (immutable key, firstLevel; json.object)
-            {
-                if (!key.startsWith('#')) continue;
-                scratchJSON[key] = firstLevel;
-            }
-
-            json = scratchJSON;
-        }
+        immutable serialised = deserialised.serializeToJsonPretty!"    ";
+        File(plugin.quotesFile, "w").writeln(serialised);
     }
-    catch (JSONException e)
+    catch (SerdeException e)
     {
         version(PrintStacktraces) logger.trace(e);
 
         throw new IRCPluginInitialisationException(
-            message: "Quotes file is malformed",
+            message: "Quote file is malformed",
             pluginName: plugin.name,
             malformedFilename: plugin.quotesFile);
     }
-
-    // Let other Exceptions pass.
-    json.save(plugin.quotesFile);
 }
 
 
@@ -1634,8 +1613,6 @@ public:
 final class QuotePlugin : IRCPlugin
 {
 private:
-    import lu.json : JSONStorage;
-
     /++
         All Quote plugin settings gathered.
      +/

@@ -1464,32 +1464,26 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
  +/
 void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
 {
-    import lu.json : JSONStorage, populateFromJSON;
+    import asdf.serialization : deserialize;
+    import std.file : readText;
+    import std.json : JSONValue;
+    import std.stdio : File, stdout, writeln;
 
     if (plugin.state.coreSettings.headless) return;
 
-    JSONStorage json;
-    json.load(plugin.hostmasksFile);
-
-    string[string] aa;
-    aa.populateFromJSON(json);
-
-    // Remove any placeholder examples
-    enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
-    aa.remove(examplePlaceholderKey);
+    auto aa = plugin.hostmasksFile
+        .readText
+        .deserialize!(string[string]);
 
     if (aa.length)
     {
         if (event.type == IRCEvent.Type.UNSET)
         {
-            import std.json : JSONValue;
-            import std.stdio : stdout, writeln;
-
             if (plugin.state.coreSettings.headless) return;
 
             logger.log("Current hostmasks:");
-            // json can contain the example placeholder, so make a new one out of aa
-            writeln(JSONValue(aa).toPrettyString);
+            immutable serialised = JSONValue(aa).toPrettyString;
+            writeln(serialised);
             if (plugin.state.coreSettings.flush) stdout.flush();
         }
         else
@@ -2045,7 +2039,7 @@ void onBusMessage(
 
         if (slice.length)
         {
-            enum pattern = `Reloading plugin "<i>%s</>".`;
+            enum pattern = `Reloading plugin "<l>%s</>".`;
             logger.infof(pattern, slice);
         }
         else

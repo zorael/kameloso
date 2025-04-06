@@ -28,7 +28,7 @@ import core.time : seconds;
 public:
 
 
-// importCustomEmotes
+// importCustomEmotesImpl
 /++
     Fetches custom BetterTTV, FrankerFaceZ and 7tv emotes via API calls.
 
@@ -41,7 +41,7 @@ public:
         channelName = (Optional) Name of channel to import emotes for.
         id = (Optional, mandatory if `channelName` supplied) Twitch numeric ID of channel.
  +/
-void importCustomEmotes(
+void importCustomEmotesImpl(
     TwitchPlugin plugin,
     const string channelName = string.init,
     const ulong id = 0)
@@ -53,7 +53,7 @@ in (((channelName.length && id) ||
     import kameloso.common : logger;
     import kameloso.plugins.common.scheduling : delay;
 
-    alias GetEmoteFun = uint function(
+    alias GetEmoteFun = size_t function(
         TwitchPlugin,
         bool[string]*,
         const ulong,
@@ -116,7 +116,7 @@ in (((channelName.length && id) ||
     // Delay importing just a bit to cosmetically stagger the terminal output
     delay(plugin, Delays.initialDelayBeforeImports, yield: true);
 
-    void reportSuccess(const string emoteImportName, const uint numAdded)
+    void reportSuccess(const string emoteImportName, const size_t numAdded)
     {
         if (numAdded)
         {
@@ -165,7 +165,7 @@ in (((channelName.length && id) ||
     while (emoteImports.length)
     {
         import kameloso.plugins.common.scheduling : delay;
-        import kameloso.net : UnexpectedJSONException;
+        import mir.serde : SerdeException;
         import core.memory : GC;
 
         size_t[] toRemove;
@@ -199,7 +199,7 @@ in (((channelName.length && id) ||
                 toRemove ~= i;
                 continue;
             }
-            catch (UnexpectedJSONException _)
+            catch (SerdeException _)
             {
                 if (plugin.state.coreSettings.trace)
                 {

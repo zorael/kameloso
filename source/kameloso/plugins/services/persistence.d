@@ -36,10 +36,8 @@ import dialect.defs;
  +/
 @Settings struct PersistenceSettings
 {
-private:
-    import lu.uda : Unserialisable;
+    private import lu.uda : Unserialisable;
 
-public:
     /++
         To what level the service should monitor and record users in channels.
      +/
@@ -1147,6 +1145,20 @@ void reload(PersistenceService service)
 }
 
 
+// JSONSchema
+/++
+    JSON schema for the user classification file.
+ +/
+struct JSONSchema
+{
+    string[] staff;  ///
+    string[] operator;  ///
+    string[] elevated;  ///
+    string[] whitelist;  ///
+    string[] blacklist;  ///
+}
+
+
 // reloadAccountClassifiersFromDisk
 /++
     Reloads admin/staff/operator/elevated/whitelist/blacklist classifier definitions from disk.
@@ -1156,67 +1168,44 @@ void reload(PersistenceService service)
  +/
 void reloadAccountClassifiersFromDisk(PersistenceService service)
 {
+    import asdf.serialization : deserialize;
     import lu.conv : toString;
-    import lu.json : JSONStorage;
-    import std.json : JSONException;
+    import std.file : readText;
 
-    JSONStorage json;
-    json.load(service.userFile);
+    auto json = service.userFile
+        .readText
+        .deserialize!(JSONSchema[string]);
 
     service.channelUserClassDefinitions = null;
 
-    static immutable IRCUser.Class[5] classes =
-    [
-        IRCUser.Class.staff,
-        IRCUser.Class.operator,
-        IRCUser.Class.elevated,
-        IRCUser.Class.whitelist,
-        IRCUser.Class.blacklist,
-    ];
-
-    foreach (const class_; classes[])
+    foreach (immutable channelName, const channelSchema; json)
     {
-        immutable list = class_.toString;
-        const listFromJSON = list in json;
+        service.channelUserClassDefinitions.aaOf[channelName] = null;
+        auto channelClasses = channelName in service.channelUserClassDefinitions;
 
-        if (!listFromJSON)
+        foreach (immutable account; channelSchema.staff)
         {
-            // Something's wrong, the file is missing sections and must have been manually modified
-            continue;
+            (*channelClasses)[account] = IRCUser.Class.staff;
         }
 
-        try
+        foreach (immutable account; channelSchema.operator)
         {
-            foreach (immutable channelName, const channelAccountJSON; listFromJSON.object)
-            {
-                import std.algorithm.searching : startsWith;
-
-                if (channelName.startsWith('<')) continue;  // example placeholder, skip
-
-                foreach (immutable userJSON; channelAccountJSON.array)
-                {
-                    if (auto channelUsers = channelName in service.channelUserClassDefinitions.aaOf)
-                    {
-                        (*channelUsers)[userJSON.str] = class_;
-                    }
-                    else
-                    {
-                        service.channelUserClassDefinitions.aaOf[channelName][userJSON.str] = class_;
-                    }
-                }
-            }
+            (*channelClasses)[account] = IRCUser.Class.operator;
         }
-        catch (JSONException e)
+
+        foreach (immutable account; channelSchema.elevated)
         {
-            enum pattern = "JSON exception caught when populating <l>%s</>: <l>%s";
-            logger.warningf(pattern, list, e.msg);
-            version(PrintStacktraces) logger.trace(e.info);
+            (*channelClasses)[account] = IRCUser.Class.elevated;
         }
-        catch (Exception e)
+
+        foreach (immutable account; channelSchema.whitelist)
         {
-            enum pattern = "Unhandled exception caught when populating <l>%s</>: <l>%s";
-            logger.warningf(pattern, list, e.msg);
-            version(PrintStacktraces) logger.trace(e);
+            (*channelClasses)[account] = IRCUser.Class.whitelist;
+        }
+
+        foreach (immutable account; channelSchema.blacklist)
+        {
+            (*channelClasses)[account] = IRCUser.Class.blacklist;
         }
     }
 }
@@ -1231,13 +1220,12 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
  +/
 void reloadHostmasksFromDisk(PersistenceService service)
 {
-    import lu.json : JSONStorage, populateFromJSON;
+    import asdf.serialization : deserialize;
+    import std.file : readText;
 
-    JSONStorage hostmasksJSON;
-    hostmasksJSON.load(service.hostmasksFile);
-
-    string[string] accountByHostmask;
-    accountByHostmask.populateFromJSON(hostmasksJSON);
+    auto accountByHostmask = service.hostmasksFile
+        .readText
+        .deserialize!(string[string]);
 
     /+
         The nickname-account map is used elsewhere too, so ideally we wouldn't
@@ -1328,16 +1316,21 @@ void initResources(PersistenceService service)
  +/
 void initAccountResources(PersistenceService service)
 {
-    import lu.json : JSONStorage;
-    import std.json : JSONException, JSONValue;
-
-    JSONStorage json;
+    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import mir.serde : SerdeException;
+    import std.file : exists, readText;
+    import std.stdio : File, writeln;
 
     try
     {
-        json.load(service.userFile);
+        auto deserialised = service.userFile
+            .readText
+            .deserialize!(JSONSchema[string]);
+
+        immutable serialised = deserialised.serializeToJsonPretty!"    ";
+        File(service.userFile, "w").write(serialised);
     }
-    catch (JSONException e)
+    catch (SerdeException e)
     {
         version(PrintStacktraces) logger.trace(e);
 
@@ -1346,94 +1339,6 @@ void initAccountResources(PersistenceService service)
             pluginName: service.name,
             malformedFilename: service.userFile);
     }
-
-    // Let other Exceptions pass.
-
-    static auto deduplicate(JSONValue before)
-    {
-        import std.algorithm.iteration : filter, uniq;
-        import std.algorithm.sorting : sort;
-        import std.array : array;
-
-        auto after = before
-            .array
-            .sort!((a, b) => a.str < b.str)
-            .uniq
-            .filter!((a) => a.str.length > 0)
-            .array;
-
-        return JSONValue(after);
-    }
-
-    /+
-    unittest
-    {
-        auto users = JSONValue([ "foo", "bar", "baz", "bar", "foo" ]);
-        assert((users.array.length == 5), users.array.length.to!string);
-
-        users = deduplicated(users);
-        assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.to!string);
-    }+/
-
-    static immutable string[5] listTypesInOrder =
-    [
-        "staff",
-        "operator",
-        "elevated",
-        "whitelist",
-        "blacklist",
-    ];
-
-    foreach (liststring; listTypesInOrder[])
-    {
-        alias examplePlaceholderKey = PersistenceService.Placeholder.channel;
-        auto listJSON = liststring in json;
-
-        if (!listJSON)
-        {
-            json[liststring] = null;
-            json[liststring].object = null;
-            listJSON = liststring in json;
-
-            (*listJSON)[examplePlaceholderKey] = null;
-            (*listJSON)[examplePlaceholderKey].array = null;
-
-            auto listPlaceholder = examplePlaceholderKey in *listJSON;
-            listPlaceholder.array ~= JSONValue("<nickname1>");
-            listPlaceholder.array ~= JSONValue("<nickname2>");
-        }
-        else /*if (listJSON)*/
-        {
-            if ((listJSON.object.length > 1) &&
-                (examplePlaceholderKey in *listJSON))
-            {
-                listJSON.object.remove(examplePlaceholderKey);
-            }
-
-            try
-            {
-                foreach (immutable channelName, ref channelAccountsJSON; listJSON.object)
-                {
-                    if (channelName == examplePlaceholderKey) continue;
-                    channelAccountsJSON = deduplicate((*listJSON)[channelName]);
-                }
-            }
-            catch (JSONException e)
-            {
-                import kameloso.common : logger;
-
-                version(PrintStacktraces) logger.trace(e);
-
-                throw new IRCPluginInitialisationException(
-                    message: "Users file is malformed",
-                    pluginName: service.name,
-                    malformedFilename: service.userFile);
-            }
-        }
-    }
-
-    // Force staff, operator and whitelist to appear before blacklist in the .json
-    json.save!(JSONStorage.KeyOrderStrategy.inGivenOrder)(service.userFile, listTypesInOrder);
 }
 
 
@@ -1447,16 +1352,20 @@ void initAccountResources(PersistenceService service)
  +/
 void initHostmaskResources(PersistenceService service)
 {
-    import lu.json : JSONStorage;
-    import std.json : JSONException;
+    import asdf.serialization : deserialize;
+    import std.file : readText;
+    import std.json : JSONValue;
+    import std.stdio : File, writeln;
 
-    JSONStorage json;
+    string[string] json;
 
     try
     {
-        json.load(service.hostmasksFile);
+        json = service.hostmasksFile
+            .readText
+            .deserialize!(typeof(json));
     }
-    catch (JSONException e)
+    catch (Exception e)
     {
         import kameloso.common : logger;
 
@@ -1473,27 +1382,21 @@ void initHostmaskResources(PersistenceService service)
     alias examplePlaceholderValue1 = PersistenceService.Placeholder.account1;
     alias examplePlaceholderValue2 = PersistenceService.Placeholder.account2;
 
-    if (json.object.length == 0)
+    if (json.length == 0)
     {
-        json[examplePlaceholderKey1] = null;
-        json[examplePlaceholderKey1].str = null;
-        json[examplePlaceholderKey1].str = examplePlaceholderValue1;
-        json[examplePlaceholderKey2] = null;
-        json[examplePlaceholderKey2].str = null;
-        json[examplePlaceholderKey2].str = examplePlaceholderValue2;
+        json[examplePlaceholderKey1] = examplePlaceholderValue1;
+        json[examplePlaceholderKey2] = examplePlaceholderValue2;
     }
-    else if ((json.object.length > 2) &&
+    else if ((json.length > 2) &&
         ((examplePlaceholderKey1 in json) ||
          (examplePlaceholderKey2 in json)))
     {
-        json.object.remove(examplePlaceholderKey1);
-        json.object.remove(examplePlaceholderKey2);
+        json.remove(examplePlaceholderKey1);
+        json.remove(examplePlaceholderKey2);
     }
 
-    // Let other Exceptions pass.
-
-    // Adjust saved JSON layout to be more easily edited
-    json.save!(JSONStorage.KeyOrderStrategy.passthrough)(service.hostmasksFile);
+    immutable serialised = JSONValue(json).toPrettyString;
+    File(service.hostmasksFile, "w").write(serialised);
 }
 
 

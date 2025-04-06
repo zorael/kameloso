@@ -100,35 +100,32 @@ void listList(
     const IRCUser.Class class_,
     const IRCEvent event = IRCEvent.init)
 {
+    import asdf.serialization : deserialize;
     import lu.conv : toString;
-    import lu.json : JSONStorage;
+    import std.file : readText;
     import std.format : format;
 
     immutable role = getNoun(NounForm.plural, class_);
     immutable list = class_.toString;
 
-    JSONStorage json;
-    json.load(plugin.userFile);
+    auto json = plugin.userFile
+        .readText
+        .deserialize!(string[string][string]);
 
     const channelUsersJSON = channelName in json[list];
 
-    if (channelUsersJSON && channelUsersJSON.array.length)
+    if (channelUsersJSON && channelUsersJSON.length)
     {
-        import std.algorithm.iteration : map;
-
-        auto userlist = channelUsersJSON.array
-            .map!(jsonEntry => jsonEntry.str);
-
         if (event.sender.nickname.length)
         {
             enum pattern = "Current %s in <b>%s<b>: %-(<h>%s<h>, %)<h>";
-            immutable message = pattern.format(role, channelName, userlist);
+            immutable message = pattern.format(role, channelName, channelUsersJSON);
             privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
         else
         {
             enum pattern = "Current %s in <l>%s</>: %-(<h>%s</>, %)</>";
-            logger.infof(pattern, role, channelName, userlist);
+            logger.infof(pattern, role, channelName, channelUsersJSON);
         }
     }
     else
@@ -608,12 +605,15 @@ auto alterAccountClassifier(
     const string channelName)
 {
     import kameloso.thread : ThreadMessage;
+    import asdf.serialization : deserialize;
     import lu.conv : toString;
-    import lu.json : JSONStorage;
+    import std.file : readText;
     import std.json : JSONValue;
+    import std.stdio : File, writeln;
 
-    JSONStorage json;
-    json.load(plugin.userFile);
+    auto json = plugin.userFile
+        .readText
+        .deserialize!(string[][string][string]);
 
     immutable list = class_.toString;
 
@@ -621,29 +621,25 @@ auto alterAccountClassifier(
     {
         import std.algorithm.searching : canFind;
 
-        immutable accountAsJSON = JSONValue(account);
-
         if (auto channelAccountsJSON = channelName in json[list])
         {
-            if (channelAccountsJSON.array.canFind(accountAsJSON))
+            if ((*channelAccountsJSON).canFind(account))
             {
                 return AlterationResult.alreadyInList;
             }
             else
             {
-                channelAccountsJSON.array ~= accountAsJSON;
+                *channelAccountsJSON ~= account;
             }
         }
         else
         {
-            json[list][channelName] = null;
-            json[list][channelName].array = null;
-            json[list][channelName].array ~= accountAsJSON;
+            json[list][channelName] ~= account;
         }
 
         // Remove placeholder example since there should now be at least one true entry
         enum examplePlaceholderKey = "<#channel>";
-        json[list].object.remove(examplePlaceholderKey);
+        json[list].remove(examplePlaceholderKey);
     }
     else
     {
@@ -652,14 +648,14 @@ auto alterAccountClassifier(
 
         if (auto channelAccountsJSON = channelName in json[list])
         {
-            immutable index = channelAccountsJSON.array.countUntil(JSONValue(account));
+            immutable index = (*channelAccountsJSON).countUntil(account);
 
             if (index == -1)
             {
                 return AlterationResult.noSuchAccount;
             }
 
-            *channelAccountsJSON = channelAccountsJSON.array
+            *channelAccountsJSON = (*channelAccountsJSON)
                 .remove!(SwapStrategy.unstable)(index);
         }
         else
@@ -668,7 +664,8 @@ auto alterAccountClassifier(
         }
     }
 
-    json.save(plugin.userFile);
+    immutable serialised = JSONValue(json).toPrettyString;
+    File(plugin.userFile, "w").writeln(serialised);
 
     version(WithPersistenceService)
     {
@@ -702,10 +699,12 @@ in (mask.length, "Tried to add an empty hostmask definition")
 {
     import kameloso.pods : CoreSettings;
     import kameloso.thread : ThreadMessage;
-    import lu.json : JSONStorage, populateFromJSON;
+    import asdf.serialization : deserialize;
     import std.conv : text;
+    import std.file : readText;
     import std.format : format;
     import std.json : JSONValue;
+    import std.stdio : File, writeln;
 
     version(Colours)
     {
@@ -724,11 +723,9 @@ in (mask.length, "Tried to add an empty hostmask definition")
     enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
     enum examplePlaceholderValue = "<account>";
 
-    JSONStorage json;
-    json.load(plugin.hostmasksFile);
-
-    string[string] aa;
-    aa.populateFromJSON(json);
+    auto aa = plugin.hostmasksFile
+        .readText
+        .deserialize!(string[string]);
 
     if (add)
     {
@@ -778,6 +775,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
         if (const mappedAccount = mask in aa)
         {
             aa.remove(mask);
+
             if (!aa.length) aa[examplePlaceholderKey] = examplePlaceholderValue;
 
             if (event.type == IRCEvent.Type.UNSET)
@@ -810,9 +808,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
         }
     }
 
-    json.reset();
-    json = JSONValue(aa);
-    json.save!(JSONStorage.KeyOrderStrategy.passthrough)(plugin.hostmasksFile);
+    immutable serialised = JSONValue(aa).toPrettyString;
+    File(plugin.hostmasksFile, "w").writeln(serialised);
 
     version(WithPersistenceService)
     {

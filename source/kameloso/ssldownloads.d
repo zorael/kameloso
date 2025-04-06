@@ -236,6 +236,7 @@ auto downloadWindowsSSL(
             uint topVersionPatch;
             size_t topSize;
 
+            // FIXME: asdf
             const manifestJSON = parseJSON(readText(jsonFile));
             const fileEntriesJSON = "files" in manifestJSON;
 
