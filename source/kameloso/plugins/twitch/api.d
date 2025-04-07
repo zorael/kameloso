@@ -299,6 +299,12 @@ struct ErrorResponse
         "status": 400
     }
      */
+    /*
+    {
+        "message": "invalid access token",
+        "status": 401
+    }
+     */
 
     @serdeOptional
     {
@@ -657,30 +663,16 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             {
                 import kameloso.common : logger;
                 enum tracePattern = "get: <i>%s<t> (%s)";
-                logger.tracef(tracePattern, url, __FUNCTION__);
+                logger.tracef(tracePattern, url, caller);
             }
 
             const request = HTTPRequest(
                 id: 0,
                 url: url,
-                authorisationHeader: authorisationHeader        ,
+                authorisationHeader: authorisationHeader,
                 caBundleFile: plugin.state.connSettings.caBundleFile);
 
             httpResponse = issueSyncHTTPRequest(request);
-
-            if (httpResponse.exceptionText.length || (httpResponse.code < 10))
-            {
-                throw new HTTPQueryException(
-                    httpResponse.exceptionText,
-                    httpResponse.body,
-                    httpResponse.error,
-                    httpResponse.code);
-            }
-            else if (httpResponse == HTTPQueryResponse.init)
-            {
-                import kameloso.net : EmptyResponseException;
-                throw new EmptyResponseException;
-            }
         }
 
         version(PrintStacktraces)
@@ -698,32 +690,68 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             }
         }
 
-        if (httpResponse.body.canFind(`"error"`))
+        switch (httpResponse.code)
         {
-            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+        case 200:
+            // 200 OK
+            break;
 
-            switch (errorResponse.message)
+        case 0:
+        ..
+        case 9:
+            // Some form of internal HTTPS/SSL failure
+            throw new HTTPQueryException(
+                httpResponse.exceptionText,
+                httpResponse.body,
+                httpResponse.error,
+                httpResponse.code);
+
+        case 401:
+            // 401 Unauthorized
+            if (httpResponse.body.canFind(`"message"`))
             {
-            case "invalid access token":
-                enum message = "API token has expired";
-                throw new InvalidCredentialsException(message);
+                const errorResponse = httpResponse.body.deserialize!ErrorResponse;
 
-            case "missing authorization token":
-                enum message = "Missing API token";
-                throw new InvalidCredentialsException(message);
+                errorSwitch:
+                switch (errorResponse.message)
+                {
+                case "invalid access token":
+                    enum message = "API token has expired";
+                    throw new InvalidCredentialsException(message);
 
-            default:
-                //drop down
-                break;
+                case "missing authorization token":
+                    enum message = "Missing API token";
+                    throw new InvalidCredentialsException(message);
+
+                default:
+                    //drop down
+                    break errorSwitch;
+                }
+
+                return ValidationResults(httpResponse.code, errorResponse);
+            }
+            goto default;
+
+        default:
+            if (httpResponse.exceptionText.length)
+            {
+                throw new HTTPQueryException(
+                    httpResponse.exceptionText,
+                    httpResponse.body,
+                    httpResponse.error,
+                    httpResponse.code);
+            }
+            else if (httpResponse == HTTPQueryResponse.init)
+            {
+                import kameloso.net : EmptyResponseException;
+                throw new EmptyResponseException;
             }
 
-            return ValidationResults(httpResponse.code, errorResponse);
+            throw new UnexpectedJSONException;
         }
-        else
-        {
-            const response = httpResponse.body.deserialize!Response;
-            return ValidationResults(httpResponse.code, response);
-        }
+
+        const response = httpResponse.body.deserialize!Response;
+        return ValidationResults(httpResponse.code, response);
     }
 
     return retryDelegate(plugin, &getValidationDg, async: true, endlessly: true);

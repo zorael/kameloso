@@ -3429,7 +3429,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
                 }
                 else
                 {
-                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) <t>(%d)";
+                    enum pattern = "Failed to validate Twitch API key: <l>%s</> (<l>%s</>) <t>(%d)";
                     logger.warningf(pattern, e.msg, e.error, e.code);
                 }
 
@@ -3444,11 +3444,51 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
             if (!plugin.state.coreSettings.headless)
             {
                 // HTTP query failed; just retry
-                enum pattern = "Failed to validate Twitch API keys: <t>%s</>";
+                enum pattern = "Empty response from server when validating Twitch API key: <t>%s</>";
                 logger.errorf(pattern, e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
 
+            delay(plugin, retryDelay, yield: true);
+            continue;
+        }
+        catch (InvalidCredentialsException e)
+        {
+            if (!plugin.state.coreSettings.headless)
+            {
+                enum pattern = "Invalid Twitch API credentials: <t>%s</>";
+                logger.errorf(pattern, e.msg);
+                version(PrintStacktraces) logger.trace(e);
+            }
+
+            // Unrecoverable
+            enum message = "Invalid Twitch authorisation key";
+            quit(plugin.state, message);
+            return;
+        }
+        catch (UnexpectedJSONException e)
+        {
+            if (!plugin.state.coreSettings.headless)
+            {
+                enum pattern = "Unexpected response when validating Twitch API key: <t>%s</>";
+                logger.errorf(pattern, e.msg);
+                version(PrintStacktraces) logger.trace(e);
+            }
+
+            // Retry
+            delay(plugin, retryDelay, yield: true);
+            continue;
+        }
+        catch (Exception e)
+        {
+            if (!plugin.state.coreSettings.headless)
+            {
+                enum pattern = "Caught Exception validating Twitch API key: <t>%s</>";
+                logger.errorf(pattern, e.msg);
+                version(PrintStacktraces) logger.trace(e);
+            }
+
+            // Retry
             delay(plugin, retryDelay, yield: true);
             continue;
         }
