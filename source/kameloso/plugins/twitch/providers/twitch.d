@@ -217,6 +217,8 @@ void requestTwitchKey(TwitchPlugin plugin)
 Follow the instructions and log in to authorise the use of this program with
 your <w>BOT</> account.
 
+Press <i>Continue</> when warned that you're leaving Twitch.
+
 <l>Then paste the address of the page you are redirected to afterwards here.</>
 
 <i>*</> The redirected address should start with <i>http://localhost</>.
@@ -225,8 +227,6 @@ your <w>BOT</> account.
   If you are logged into your main Twitch account and you want the bot to use a
   separate account, you will have to <l>log out and log in as that</> first, before
   attempting this. Alternatively, <l>use an incognito/private browser window</>.
-<i>*</> If you are running local web server on port <i>80</>, you may have to temporarily
-  disable it for this to work.
 `;
     writeln(attemptToOpenMessage.expandTags(LogLevel.off));
     if (plugin.state.coreSettings.flush) stdout.flush();
@@ -352,8 +352,6 @@ your main <w>STREAMER</> account.
 <i>*</> It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
 <i>*</> <l>The key generated will be one for the account you are currently logged in as in your browser.</>
   You should be logged into your main Twitch account for this key.
-<i>*</> If you are running local web server on port <i>80</>, you may have to temporarily
-  disable it for this to work.
 `;
     writeln(message.expandTags(LogLevel.off));
     if (plugin.state.coreSettings.flush) stdout.flush();
@@ -539,11 +537,13 @@ private auto buildAuthNodeURL(const string authNode, const string[] scopes)
     import std.array : join;
     import std.conv : text;
 
+    enum redirectURI = "http://localhost:11639";
+
     return text(
         authNode,
         "?response_type=token",
         "&client_id=", TwitchPlugin.clientID,
-        "&redirect_uri=http://localhost",
+        "&redirect_uri=", redirectURI,
         "&scope=", scopes.join('+'),
         "&force_verify=true",
         "&state=kameloso");
