@@ -1817,7 +1817,15 @@ void processAwaitingDelegates(IRCPlugin plugin, const IRCEvent event)
  +/
 void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 {
+    import std.array : Appender;
     import core.thread.fiber : Fiber;
+
+    static Appender!(size_t[]) toRemove;
+
+    scope(exit)
+    {
+        if (toRemove[].length) toRemove.clear();
+    }
 
     Fiber[] expiredFibers;
 
@@ -1925,15 +1933,19 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 
         foreach (ref fibersByType; plugin.state.awaitingFibers)
         {
-            foreach_reverse (immutable i, /*ref*/ fiber; fibersByType)
+            foreach (immutable i, /*ref*/ fiber; fibersByType)
+            {
+                if (fiber !is expiredFiber) continue;
+                toRemove ~= i;
+            }
+
+            foreach_reverse (immutable i; toRemove[])
             {
                 import std.algorithm.mutation : SwapStrategy, remove;
 
-                if (fiber !is expiredFiber) continue;
-
                 version(TraceFibersAndDelegates)
                 {
-                    if (auto carryingFiber = cast(CarryingFiber!IRCEvent)fiber)
+                    if (auto carryingFiber = cast(CarryingFiber!IRCEvent)(fibersByType[i]))
                     {
                         import lu.conv : toString;
 
