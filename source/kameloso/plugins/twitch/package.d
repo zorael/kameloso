@@ -3356,9 +3356,22 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
     import kameloso.plugins.common.scheduling : delay;
     import std.conv : to;
     import std.datetime.systime : Clock, SysTime;
-    import core.time : minutes;
+    import core.time : hours, minutes;
 
+    /*
+        From https://dev.twitch.tv/docs/authentication/validate-tokens/
+
+        "Any third-party app that calls the Twitch APIs and maintains an OAuth
+        session must call the /validate endpoint to verify that the access token
+        is still valid. This includes web apps, mobile apps, desktop apps,
+        extensions, and chatbots. Your app must validate the OAuth token when
+        it starts and on an hourly basis thereafter."
+     */
+
+    static immutable periodicity = 1.hours;
     static immutable retryDelay = 1.minutes;
+
+    bool delayedOnExpiryQuitFiber;
 
     while (true)
     {
@@ -3370,38 +3383,44 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
                 async: true);
             plugin.transient.botID = results.userID;
 
-            enum expiryMessage = "Twitch authorisation key expired";
-            immutable now = Clock.currTime;
-            immutable expiresWhen = (now + results.expiresIn);
-
-            if (plugin.state.coreSettings.headless)
+            if (!delayedOnExpiryQuitFiber)
             {
-                void onExpiryHeadlessDg()
+                enum expiryMessage = "Twitch authorisation key expired";
+                immutable now = Clock.currTime;
+                immutable expiresWhen = (now + results.expiresIn);
+
+                if (plugin.state.coreSettings.headless)
                 {
-                    quit(plugin.state, expiryMessage);
+                    void onExpiryHeadlessDg()
+                    {
+                        quit(plugin.state, expiryMessage);
+                    }
+
+                    delay(plugin, &onExpiryHeadlessDg, results.expiresIn);
+                }
+                else
+                {
+                    void onExpiryDg()
+                    {
+                        enum message = "Your Twitch authorisation key has expired. " ~
+                            "Run the program with <l>--set twitch.keygen</> to generate a new one.";
+                        logger.error(message);
+                        quit(plugin.state, expiryMessage);
+                    }
+
+                    generateExpiryReminders(
+                        plugin,
+                        expiresWhen,
+                        "Your Twitch authorisation key",
+                        &onExpiryDg);
                 }
 
-                delay(plugin, &onExpiryHeadlessDg, results.expiresIn);
-            }
-            else
-            {
-                void onExpiryDg()
-                {
-                    enum message = "Your Twitch authorisation key has expired. " ~
-                        "Run the program with <l>--set twitch.keygen</> to generate a new one.";
-                    logger.error(message);
-                    quit(plugin.state, expiryMessage);
-                }
-
-                generateExpiryReminders(
-                    plugin,
-                    expiresWhen,
-                    "Your Twitch authorisation key",
-                    &onExpiryDg);
+                delayedOnExpiryQuitFiber = true;
             }
 
-            // Validated
-            return;
+            // Validated, repeat next period as per requirements
+            delay(plugin, periodicity, yield: true);
+            continue;
         }
         catch (HTTPQueryException e)
         {
