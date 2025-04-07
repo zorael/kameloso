@@ -3411,7 +3411,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
 
                 if (e.msg == MagicErrorStrings.sslLibraryNotFoundRewritten)
                 {
-                    enum sslMessage = "Failed to validate Twitch API keys: <l>" ~
+                    enum sslMessage = "Failed to validate Twitch authorisation key: <l>" ~
                         cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten ~
                         " <t>(is OpenSSL installed?)";
                     logger.warning(sslMessage);
@@ -3429,7 +3429,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
                 }
                 else
                 {
-                    enum pattern = "Failed to validate Twitch API key: <l>%s</> (<l>%s</>) <t>(%d)";
+                    enum pattern = "Failed to validate Twitch authorisation key: <l>%s</> (<l>%s</>) <t>(%d)";
                     logger.warningf(pattern, e.msg, e.error, e.code);
                 }
 
@@ -3444,7 +3444,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
             if (!plugin.state.coreSettings.headless)
             {
                 // HTTP query failed; just retry
-                enum pattern = "Empty response from server when validating Twitch API key: <t>%s</>";
+                enum pattern = "Empty response from server when validating Twitch authorisation key: <t>%s</>";
                 logger.errorf(pattern, e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
@@ -3456,13 +3456,13 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
         {
             if (!plugin.state.coreSettings.headless)
             {
-                enum pattern = "Invalid Twitch API credentials: <t>%s</>";
+                enum pattern = "Invalid or revoked Twitch authorisation key: <t>%s</>";
                 logger.errorf(pattern, e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
 
             // Unrecoverable
-            enum message = "Invalid Twitch authorisation key";
+            enum message = "Invalid or revoked Twitch authorisation key";
             quit(plugin.state, message);
             return;
         }
@@ -3470,7 +3470,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
         {
             if (!plugin.state.coreSettings.headless)
             {
-                enum pattern = "Unexpected response when validating Twitch API key: <t>%s</>";
+                enum pattern = "Unexpected response when validating Twitch authorisation key: <t>%s</>";
                 logger.errorf(pattern, e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
@@ -3483,7 +3483,7 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
         {
             if (!plugin.state.coreSettings.headless)
             {
-                enum pattern = "Caught Exception validating Twitch API key: <t>%s</>";
+                enum pattern = "Caught Exception validating Twitch authorisation key: <t>%s</>";
                 logger.errorf(pattern, e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
