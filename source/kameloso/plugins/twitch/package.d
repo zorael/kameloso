@@ -3354,6 +3354,7 @@ void startValidator(TwitchPlugin plugin)
 in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
 {
     import kameloso.plugins.common.scheduling : delay;
+    import std.algorithm.searching : startsWith;
     import std.conv : to;
     import std.datetime.systime : Clock, SysTime;
     import core.time : hours, minutes;
@@ -3371,6 +3372,13 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
     static immutable periodicity = 1.hours;
     static immutable retryDelay = 1.minutes;
 
+    // Validation needs an "Authorization: OAuth xxx" header, as opposed to the
+    // "Authorization: Bearer xxx" used everywhere else.
+    immutable key = plugin.state.bot.pass.startsWith("oauth:") ?
+        plugin.state.bot.pass["oauth:".length..$] :
+        plugin.state.bot.pass;
+    immutable authorisationHeader = "OAuth " ~ key;
+
     bool delayedOnExpiryQuitFiber;
 
     while (true)
@@ -3379,8 +3387,9 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
         {
             immutable results = getValidation(
                 plugin: plugin,
-                authToken: plugin.state.bot.pass,
+                authorisationHeader: authorisationHeader,
                 async: true);
+
             plugin.transient.botID = results.userID;
 
             if (!delayedOnExpiryQuitFiber)

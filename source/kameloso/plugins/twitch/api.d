@@ -530,7 +530,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
     Params:
         plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        authToken = Authorisation token to validate.
+        authorisationHeader = "OAuth xxx" authorisation header.
         async = Whether or not the validation should be done asynchronously, using fibers.
         caller = Name of the calling function.
 
@@ -548,11 +548,11 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
  +/
 auto getValidation(
     TwitchPlugin plugin,
-    /*const*/ string authToken,
+    const string authorisationHeader,
     const bool async,
     const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `getValidation` from outside a fiber")
-in (authToken.length, "Tried to validate an empty Twitch authorisation token")
+in (authorisationHeader.length, "Tried to validate an empty Twitch authorisation token")
 {
     import asdf.serialization : deserialize;
     import std.algorithm.searching : canFind, startsWith;
@@ -635,13 +635,6 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
     }
 
     enum url = "https://id.twitch.tv/oauth2/validate";
-
-    // Validation needs an "Authorization: OAuth xxx" header, as opposed to the
-    // "Authorization: Bearer xxx" used everywhere else.
-    authToken = authToken.startsWith("oauth:") ?
-        authToken[6..$] :
-        authToken;
-    immutable authorisationHeader = "OAuth " ~ authToken;
 
     auto getValidationDg()
     {

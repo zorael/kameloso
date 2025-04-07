@@ -566,8 +566,19 @@ auto getTokenExpiry(TwitchPlugin plugin, const string authToken)
 in (Fiber.getThis(), "Tried to call `getTokenExpiry` from outside a fiber")
 {
     import kameloso.plugins.twitch.api : getValidation;
+    import std.algorithm.searching : startsWith;
 
-    immutable results = getValidation(plugin, authToken, async: false);
+    // Validation needs an "Authorization: OAuth xxx" header, as opposed to the
+    // "Authorization: Bearer xxx" used everywhere else.
+    immutable key = plugin.state.bot.pass.startsWith("oauth:") ?
+        plugin.state.bot.pass["oauth:".length..$] :
+        plugin.state.bot.pass;
+    immutable authorisationHeader = "OAuth " ~ key;
+
+    immutable results = getValidation(
+        plugin,
+        authorisationHeader: authorisationHeader,
+        async: false);
 
     plugin.state.client.nickname = results.login;
     plugin.state.updates |= typeof(plugin.state.updates).client;
