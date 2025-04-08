@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>SameSettings (kameloso.plugins.same.SameSettings)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>SameSettings</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.same.html">same</a> </div><div><div class="documentation-comment synopsis"><div><p>Settings for the Same plugin. These are automatically read from and written
+    to disk by other parts of the program as long as it is annotated <tt class="inline-code">@Settings</tt>.</p><p>Use it to store smaller persistent settings for the plugin. For larger things,
+    consider using something like JSON files.</p></div></div></div><div class="annotated-prototype"><div class="aggregate-prototype"><div class="attributes"><div class="versions-container">version(WithSamePlugin)</div>private <div class="uda">@<span class="name" data-ident="Settings">Settings</span> </div></div><span class="builtin-type">struct</span> SameSettings  {<div class="aggregate-member"><a href="kameloso.plugins.same.SameSettings.enabled.html"><div class="attributes"><div class="uda">@<span class="name" data-ident="Enabler">Enabler</span> </div></div><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">enabled</span>;</a></div><div class="aggregate-member"><a href="kameloso.plugins.same.SameSettings.someSetting.html"><div class="attributes"></div><tt class="highlighted"><span class="type">string</span></tt> <span class="name">someSetting</span>;</a></div><div class="aggregate-member"><a href="kameloso.plugins.same.SameSettings.someOtherSetting.html"><div class="attributes"></div><tt class="highlighted"><span class="type">int</span></tt> <span class="name">someOtherSetting</span>;</a></div>}</div></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="variable"><a class="header-anchor" href="#variable">Variables</a></h3><dl class="member-list native"><dt><a href="kameloso.plugins.same.SameSettings.enabled.html">enabled</a><div class="simplified-prototype" style="max-width: 14ch;"><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">enabled</span>;</div></dt><dd><div><p>Whether or not the Same plugin should react to events at all.</p></div></dd><dt><a href="kameloso.plugins.same.SameSettings.someOtherSetting.html">someOtherSetting</a><div class="simplified-prototype" style="max-width: 23ch;"><tt class="highlighted"><span class="type">int</span></tt> <span class="name">someOtherSetting</span>;</div></dt><dd><div><p>Another example setting.</p></div></dd><dt><a href="kameloso.plugins.same.SameSettings.someSetting.html">someSetting</a><div class="simplified-prototype" style="max-width: 20ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">someSetting</span>;</div></dt><dd><div><p>Example setting.</p></div></dd></dl><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.same.html">same</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.same.SamePlugin.html">SamePlugin</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.same.initResources.html">initResources</a></li><li><a class="function" href="kameloso.plugins.same.initialise.html">initialise</a></li><li><a class="function" href="kameloso.plugins.same.onAnyMessage.html">onAnyMessage</a></li><li><a class="function" href="kameloso.plugins.same.onBusMessage.html">onBusMessage</a></li><li><a class="function" href="kameloso.plugins.same.onRegexMessageSame.html">onRegexMessageSame</a></li><li><a class="function" href="kameloso.plugins.same.postprocess.html">postprocess</a></li><li><a class="function" href="kameloso.plugins.same.reload.html">reload</a></li><li><a class="function" href="kameloso.plugins.same.setup.html">setup</a></li><li><a class="function" href="kameloso.plugins.same.teardown.html">teardown</a></li><li><a class="function" href="kameloso.plugins.same.tick.html">tick</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct current" href="kameloso.plugins.same.SameSettings.html">SameSettings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

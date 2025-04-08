@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>prettyformat (kameloso.prettyprint.prettyformat)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>prettyformat</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.prettyprint.html">prettyprint</a> </div><div><div class="documentation-comment synopsis"><div><p>Formats an aggregate object, with all its printable members with all their
+    printable values. Overload that writes to a passed output range sink.</p></div></div></div><div class="annotated-prototype"><ol class="overloads"><li class="active-overload-option"><span class="overload-signature"><span class="lang-feature">auto</span>  <span class="name">prettyformat</span>(Sink sink, bool brightTerminal, Things things)</span><div class="function-prototype"><div class="attributes"></div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">prettyformat</div><div class="template-parameters" data-count="4">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Flag">Flag</span>!&quot;all&quot; <span class="name" data-ident="all">all</span> = <span class="name" data-ident="No">No.all</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Flag">Flag</span>!&quot;coloured&quot; <span class="name" data-ident="coloured">coloured</span> = <span class="name" data-ident="Yes">Yes.coloured</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Sink">Sink</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Things">Things</span>...</span></div></div>)</div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">auto</span> <span class="storage-class">ref</span> <span class="name" data-ident="Sink">Sink</span></span></span> <span class="parameter-name name" data-ident="sink"><a href="#param-sink">sink</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="brightTerminal"><a href="#param-brightTerminal">brightTerminal</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="storage-class">auto</span> <span class="storage-class">ref</span> <span class="name" data-ident="Things">Things</span></span></span> <span class="parameter-name name" data-ident="things"><a href="#param-things">things</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></li><li class="overload-option"><a href="kameloso.prettyprint.prettyformat.2.html"><span class="overload-signature"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">prettyformat</span>(bool brightTerminal, Things things)</span></a></li></ol></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-all"><a class="parameter-name" data-ident="all" href="#param-all">all</a></dt><dd><div class="documentation-comment"><div><p>Whether or not to also display members marked as
+            <a class="xref" href="lu.uda.Unserialisable.html">Unserialisable</a>; usually transitive
+            information that doesn't carry between program runs.
+            Also those annotated <a class="xref" href="lu.uda.Hidden.html">Hidden</a>.</p></div></div></dd><dt id="param-coloured"><a class="parameter-name" data-ident="coloured" href="#param-coloured">coloured</a></dt><dd><div class="documentation-comment"><div><p>Whether to display in colours or not.</p></div></div></dd><dt id="param-sink"><a class="parameter-name" data-ident="sink" href="#param-sink">sink</a> <span class="parameter-type"><span class="name" data-ident="Sink">Sink</span></span></dt><dd><div class="documentation-comment"><div><p>Output range to write to.</p></div></div></dd><dt id="param-brightTerminal"><a class="parameter-name" data-ident="brightTerminal" href="#param-brightTerminal">brightTerminal</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether or not to format for a bright terminal background.</p></div></div></dd><dt id="param-things"><a class="parameter-name" data-ident="things" href="#param-things">things</a> <span class="parameter-type"><span class="name" data-ident="Things">Things</span></span></dt><dd><div class="documentation-comment"><div><p>Variadic list of aggregate objects to enumerate and format.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>The number of total members that were formatted, across all passed objects.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">struct</span> <span class="hid">Foo</span>
+{
+    <span class="type">int</span> <span class="hid">foo</span> = <span class="num">42</span>;
+    <span class="type">string</span> <span class="hid">bar</span> = <span class="str">&quot;arr matey&quot;</span>;
+    <span class="type">float</span> <span class="hid">f</span> = <span class="num">3.14f</span>;
+    <span class="type">double</span> <span class="hid">d</span> = <span class="num">9.99</span>;
+}
+
+<span class="hid">Foo</span> <span class="hid">foo</span>, <span class="hid">bar</span>;
+<span class="hid">Appender</span>!(<span class="type">char</span>[]) <span class="hid">sink</span>;
+
+<span class="hid">sink</span>.<span class="hid">prettyformat</span>!(<span class="hid">Yes</span>.<span class="hid">all</span>, <span class="hid">Yes</span>.<span class="hid">coloured</span>)(<span class="hid">foo</span>);
+<span class="hid">sink</span>.<span class="hid">prettyformat</span>!(<span class="hid">No</span>.<span class="hid">all</span>, <span class="hid">No</span>.<span class="hid">coloured</span>)(<span class="hid">bar</span>);
+<span class="hid">writeln</span>(<span class="hid">sink</span>[]);</pre></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.prettyprint.html">prettyprint</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function current" href="kameloso.prettyprint.prettyformat.1.html">prettyformat</a></li><li><a class="function" href="kameloso.prettyprint.prettyformatAggregateMemberImpl.html">prettyformatAggregateMemberImpl</a></li><li><a class="function" href="kameloso.prettyprint.prettyformatArrayMemberImpl.html">prettyformatArrayMemberImpl</a></li><li><a class="function" href="kameloso.prettyprint.prettyformatAssociativeArrayMemberImpl.html">prettyformatAssociativeArrayMemberImpl</a></li><li><a class="function" href="kameloso.prettyprint.prettyformatImpl.html">prettyformatImpl</a></li><li><a class="function" href="kameloso.prettyprint.prettyformatOtherMemberImpl.html">prettyformatOtherMemberImpl</a></li><li><a class="function" href="kameloso.prettyprint.prettyformatStringMemberImpl.html">prettyformatStringMemberImpl</a></li><li><a class="function" href="kameloso.prettyprint.prettyprint.html">prettyprint</a></li></ul><span class="type-separator">manifest constants</span><ul><li><a class="manifest-constant" href="kameloso.prettyprint.minimumNameWidth.html">minimumNameWidth</a></li><li><a class="manifest-constant" href="kameloso.prettyprint.minimumTypeWidth.html">minimumTypeWidth</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.prettyprint.FormatAggregateMemberArguments.html">FormatAggregateMemberArguments</a></li><li><a class="struct" href="kameloso.prettyprint.FormatArrayMemberArguments.html">FormatArrayMemberArguments</a></li><li><a class="struct" href="kameloso.prettyprint.FormatOtherMemberArguments.html">FormatOtherMemberArguments</a></li><li><a class="struct" href="kameloso.prettyprint.FormatStringMemberArguments.html">FormatStringMemberArguments</a></li></ul><span class="type-separator">templates</span><ul><li><a class="template" href="kameloso.prettyprint.Widths.html">Widths</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

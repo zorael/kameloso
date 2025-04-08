@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>kameloso.terminal.colours (kameloso.terminal.colours)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>kameloso.terminal.colours</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.terminal.html">terminal</a> </div><div><div class="documentation-comment synopsis"><div><p>A collection of functions that relate to applying ANSI effects to text.</p><p>This submodule has to do with terminal text colouring and is therefore
+    gated behind version <tt class="inline-code">Colours</tt>.</p></div></div></div><div class="annotated-prototype"></div><h2 id="modules"><a class="header-anchor" href="#modules">Modules</a></h2><dl class="member-list native"><dt><a href="kameloso.terminal.colours.defs.html">defs</a><div class="simplified-prototype" style="max-width: 40ch;"><span class="builtin-type">module</span> <span class="name">kameloso.terminal.colours.defs</span></div></dt><dd><div><p>Enum definitions of ANSI codes.</p></div></dd><dt><a href="kameloso.terminal.colours.tags.html">tags</a><div class="simplified-prototype" style="max-width: 40ch;"><span class="builtin-type">module</span> <span class="name">kameloso.terminal.colours.tags</span></div></dt><dd><div><p>A collection of functions used to translate tags in messages into terminal colours.</p></div></dd></dl><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="kameloso.terminal.colours.applyANSI.html">applyANSI</a><div class="simplified-prototype" style="max-width: 69ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">applyANSI</span>(Sink sink, uint code, ANSICodeType overrideType)</div></dt><dd><div><p>Applies an ANSI code to a passed output range.</p></div></dd><dt><a href="kameloso.terminal.colours.applyTruecolour.html">applyTruecolour</a><div class="simplified-prototype" style="max-width: 101ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">applyTruecolour</span>(Sink sink, uint r, uint g, uint b, bool brightTerminal, bool normalise)</div></dt><dd><div><p>Produces a terminal colour token for the colour passed, expressed in terms
+    of red, green and blue, then writes it to the passed output range.</p></div></dd><dt><a href="kameloso.terminal.colours.asANSI.html">asANSI</a><div class="simplified-prototype" style="max-width: 26ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">asANSI</span>(uint code)</div></dt><dd><div><p>Returns an ANSI format sequence containing the passed code.</p></div></dd><dt><a href="kameloso.terminal.colours.asTruecolour.html">asTruecolour</a><div class="simplified-prototype" style="max-width: 102ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">asTruecolour</span>(string word, uint r, uint g, uint b, bool brightTerminal, bool normalise)</div></dt><dd><div><p>Produces a terminal colour token for the colour passed, expressed in terms
+    of red, green and blue. Convenience function to colour a piece of text
+    without being passed an output sink to fill into.</p></div></dd><dt><a href="kameloso.terminal.colours.colourByHash.2.html">colourByHash</a><div class="simplified-prototype" style="max-width: 63ch;"><span class="lang-feature">auto</span>  <span class="name">colourByHash</span>(string word, CoreSettings coreSettings)</div></dt><dd><div><p>Shorthand function to colour a passed word by the hash of it.</p></div></dd><dt><a href="kameloso.terminal.colours.colourByHash.1.html">colourByHash</a><div class="simplified-prototype" style="max-width: 81ch;"><span class="lang-feature">auto</span>  <span class="name">colourByHash</span>(string word, bool brightTerminal, bool extendedColours)</div></dt><dd><div><p>Shorthand function to colour a passed word by the hash of it.</p></div></dd><dt><a href="kameloso.terminal.colours.getColourByHash.1.html">getColourByHash</a><div class="simplified-prototype" style="max-width: 84ch;"><span class="lang-feature">auto</span>  <span class="name">getColourByHash</span>(string word, bool brightTerminal, bool extendedColours)</div></dt><dd><div><p>Hashes the passed string and picks an ANSI colour for it by modulo.</p></div></dd><dt><a href="kameloso.terminal.colours.getColourByHash.2.html">getColourByHash</a><div class="simplified-prototype" style="max-width: 67ch;"><span class="lang-feature">auto</span>  <span class="name">getColourByHash</span>(string word, CoreSettings coreSettings)</div></dt><dd><div><p>Hashes the passed string and picks an ANSI colour for it by modulo.</p></div></dd><dt><a href="kameloso.terminal.colours.getColourByHashImpl.html">getColourByHashImpl</a><div class="simplified-prototype" style="max-width: 89ch;"><span class="lang-feature">auto</span>  <span class="name">getColourByHashImpl</span>(string word, bool brightTerminal, bool extendedColours)</div></dt><dd><div><p>Hashes the passed string and picks an ANSI colour for it by modulo.
+    Implementation function.</p></div></dd><dt><a href="kameloso.terminal.colours.invert.html">invert</a><div class="simplified-prototype" style="max-width: 82ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">invert</span>(string line, string toInvert, bool match, bool caseSensitive)</div></dt><dd><div><p>Terminal-inverts the colours of a piece of text in a string.</p></div></dd><dt><a href="kameloso.terminal.colours.normaliseColours.html">normaliseColours</a><div class="simplified-prototype" style="max-width: 49ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">normaliseColours</span>(uint r, uint g, uint b)</div></dt><dd><div><p>Takes a colour and, if it deems it is too dark to see on a black terminal
+    background, makes it brighter.</p></div></dd><dt><a href="kameloso.terminal.colours.normaliseColoursBright.html">normaliseColoursBright</a><div class="simplified-prototype" style="max-width: 56ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">normaliseColoursBright</span>(uint r, uint g, uint b)</div></dt><dd><div><p>Takes a colour and, if it deems it is too bright to see on a light terminal
+    background, makes it darker.</p></div></dd><dt><a href="kameloso.terminal.colours.withANSI.html">withANSI</a><div class="simplified-prototype" style="max-width: 72ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">withANSI</span>(string text, uint code, ANSICodeType overrideType)</div></dt><dd><div><p>Applies an ANSI code to a passed string and returns it as a new one.
+    Convenience function to colour a piece of text without being passed an
+    output sink to fill into.</p></div></dd></dl><div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="hid">Appender</span>!(<span class="type">char</span>[]) <span class="hid">sink</span>;
+
+<span class="com">// Output range version</span>
+<span class="hid">sink</span>.<span class="hid">put</span>(<span class="str">&quot;Hello &quot;</span>);
+<span class="hid">sink</span>.<span class="hid">applyANSI</span>(<span class="hid">TerminalForeground</span>.<span class="hid">red</span>, <span class="hid">ANSICodeType</span>.<span class="hid">foreground</span>);
+<span class="hid">sink</span>.<span class="hid">put</span>(<span class="str">&quot;world!&quot;</span>);
+<span class="hid">sink</span>.<span class="hid">applyANSI</span>(<span class="hid">TerminalForeground</span>.<span class="hid">default_</span>, <span class="hid">ANSICodeType</span>.<span class="hid">foreground</span>);
+
+<span class="kwrd">with</span> (<span class="hid">TerminalForeground</span>)
+{
+    <span class="com">// Normal string-returning versions</span>
+    <span class="hid">writeln</span>(<span class="str">&quot;Hello &quot;</span>, <span class="hid">red</span>.<span class="hid">asANSI</span>, <span class="str">&quot;world!&quot;</span>, <span class="hid">default_</span>.<span class="hid">asANSI</span>);
+    <span class="hid">writeln</span>(<span class="str">&quot;H3LL0&quot;</span>.<span class="hid">withANSI</span>(<span class="hid">red</span>), <span class="str">' '</span>, <span class="str">&quot;W0RLD!&quot;</span>.<span class="hid">withANSI</span>(<span class="hid">default_</span>));
+}
+
+<span class="com">// Also accepts RGB form</span>
+<span class="hid">sink</span>.<span class="hid">put</span>(<span class="str">&quot; Also&quot;</span>);
+<span class="hid">sink</span>.<span class="hid">applyTruecolour</span>(<span class="num">128</span>, <span class="num">128</span>, <span class="num">255</span>);
+<span class="hid">sink</span>.<span class="hid">put</span>(<span class="str">&quot;magic&quot;</span>);
+<span class="hid">sink</span>.<span class="hid">applyANSI</span>(<span class="hid">TerminalForeground</span>.<span class="hid">default_</span>);
+
+<span class="kwrd">with</span> (<span class="hid">TerminalForeground</span>)
+{
+    <span class="hid">writeln</span>(<span class="str">&quot;Also &quot;</span>, <span class="hid">asTruecolour</span>(<span class="num">128</span>, <span class="num">128</span>, <span class="num">255</span>), <span class="str">&quot;magic&quot;</span>, <span class="hid">default_</span>.<span class="hid">asANSI</span>);
+}
+
+<span class="kwrd">immutable</span> <span class="hid">line</span> = <span class="str">&quot;Surrounding text kameloso surrounding text&quot;</span>;
+<span class="kwrd">immutable</span> <span class="hid">kamelosoInverted</span> = <span class="hid">line</span>.<span class="hid">invert</span>(<span class="str">&quot;kameloso&quot;</span>);
+<span class="kwrd">assert</span>(<span class="hid">line</span> != <span class="hid">kamelosoInverted</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">nicknameTint</span> = <span class="str">&quot;nickname&quot;</span>.<span class="hid">getColourByHash</span>(*<span class="hid">kameloso</span>.<span class="hid">common</span>.<span class="hid">coreSettings</span>);
+<span class="kwrd">immutable</span> <span class="hid">substringTint</span> = <span class="str">&quot;substring&quot;</span>.<span class="hid">getColourByHash</span>(*<span class="hid">kameloso</span>.<span class="hid">common</span>.<span class="hid">coreSettings</span>);</pre><p>It is used heavily in the Printer plugin, to format sections of its output
+    in different colours, but it's generic enough to use anywhere.</p><p>The output range versions are cumbersome but necessary to minimise the number
+    of strings generated.</p></div></div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="kameloso.terminal.colours.defs.html">kameloso.terminal.colours.defs</a>,
+        <a class="xref" href="kameloso.terminal.colours.tags.html">kameloso.terminal.colours.tags</a>,
+        <a class="xref" href="kameloso.terminal.html">kameloso.terminal</a></p></div></div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.terminal.html">terminal</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module current" href="kameloso.terminal.colours.html">colours</a></li></ul><span class="type-separator">enums</span><ul><li><a class="enum" href="kameloso.terminal.TerminalToken.html">TerminalToken</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.terminal.applyTerminalOverrides.html">applyTerminalOverrides</a></li><li><a class="function" href="kameloso.terminal.ensureAppropriateBuffering.html">ensureAppropriateBuffering</a></li><li><a class="function" href="kameloso.terminal.isTTY.1.html">isTTY</a></li><li><a class="function" href="kameloso.terminal.isTerminal.html">isTerminal</a></li><li><a class="function" href="kameloso.terminal.resetConsoleModeAndCodepage.html">resetConsoleModeAndCodepage</a></li><li><a class="function" href="kameloso.terminal.resetTerminalTitle.html">resetTerminalTitle</a></li><li><a class="function" href="kameloso.terminal.setConsoleModeAndCodepage.html">setConsoleModeAndCodepage</a></li><li><a class="function" href="kameloso.terminal.setTerminalTitle.html">setTerminalTitle</a></li></ul><span class="type-separator">static variables</span><ul><li><a class="static-variable" href="kameloso.terminal.originalCP.html">originalCP</a></li><li><a class="static-variable" href="kameloso.terminal.originalConsoleMode.html">originalConsoleMode</a></li><li><a class="static-variable" href="kameloso.terminal.originalOutputCP.html">originalOutputCP</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
