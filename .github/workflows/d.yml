@@ -59,6 +59,7 @@ jobs:
       run: |
         git clone https://github.com/zorael/mir-algorithm.git
         dub add-local mir-algorithm
+        dub upgrade
         dmd -run dscan.d
 
     - name: 'Generate documentation'
