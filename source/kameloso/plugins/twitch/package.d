@@ -221,6 +221,7 @@ import dialect.postprocessors.twitch;  // To trigger the module ctor
 import std.datetime.systime : SysTime;
 import std.typecons : Flag, No, Yes;
 import core.thread.fiber : Fiber;
+import core.time : Duration;
 
 
 // Credentials
@@ -1082,6 +1083,8 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
 {
     import kameloso.constants : BufferSize;
     import kameloso.thread : ThreadMessage, boxed;
+    import std.format : format;
+    import std.datetime.systime : Clock;
     import core.thread.fiber : Fiber;
 
     mixin(memoryCorruptionCheck);
@@ -1163,6 +1166,9 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
 
         if (creds && creds.broadcasterKey.length)
         {
+            enum pattern = "Elevated authorisation key for channel <l>%s</>";
+            immutable what = pattern.format(event.channel.name);
+
             void onExpiryDg()
             {
                 enum pattern = "The elevated authorisation key for channel <l>%s</> has expired. " ~
@@ -1176,19 +1182,26 @@ void onRoomState(TwitchPlugin plugin, const IRCEvent event)
                 saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);*/
             }
 
-            try
+            void onFirstValidationDg(Duration expiresIn) @system
             {
-                import std.datetime.systime : SysTime;
-                generateExpiryReminders(
-                    plugin,
-                    SysTime.fromUnixTime(creds.broadcasterKeyExpiry),
-                    "The elevated authorisation key for channel <l>" ~ event.channel.name ~ "</>",
-                    &onExpiryDg);
+                if (!plugin.state.coreSettings.headless)
+                {
+                    immutable now = Clock.currTime;
+                    immutable expiresWhen = (now + expiresIn);
+
+                    generateExpiryReminders(
+                        plugin,
+                        expiresWhen,
+                        what);
+                }
             }
-            catch (InvalidCredentialsException _)
-            {
-                onExpiryDg();
-            }
+
+            startValidator(
+                plugin: plugin,
+                authToken: creds.broadcasterKey,
+                what: what,
+                onFirstValidationDg: &onFirstValidationDg,
+                onExpiryDg: &onExpiryDg);
         }
     }
 
@@ -2303,17 +2316,57 @@ void onCommandNuke(TwitchPlugin plugin, const IRCEvent event)
 void onEndOfMOTD(TwitchPlugin plugin, const IRCEvent _)
 {
     import std.algorithm.searching : startsWith;
+    import std.datetime.systime : Clock;
 
     mixin(memoryCorruptionCheck);
 
+    void onFirstValidationDg(Duration expiresIn) @system
+    {
+        if (!plugin.state.coreSettings.headless)
+        {
+            immutable now = Clock.currTime;
+            immutable expiresWhen = (now + expiresIn);
+
+            generateExpiryReminders(
+                plugin,
+                expiresWhen,
+                "Your Twitch authorisation key");
+        }
+    }
+
+    void onIDKnownDg(ulong id) @system
+    {
+        plugin.transient.botID = id;
+    }
+
+    void onExpiryDg() @system
+    {
+        if (!plugin.state.coreSettings.headless)
+        {
+            enum message = "Your Twitch authorisation key has expired. " ~
+                "Run the program with <l>--set twitch.keygen</> to generate a new one.";
+            logger.error(message);
+        }
+
+        enum expiryMessage = "Twitch authorisation key expired";
+        quit(plugin.state, expiryMessage);
+    }
+
     // Concatenate the Bearer and OAuth headers once.
     // This has to be done *after* connect's register
-    immutable pass = plugin.state.bot.pass.startsWith("oauth:") ?
+    immutable key = plugin.state.bot.pass.startsWith("oauth:") ?
         plugin.state.bot.pass[6..$] :
         plugin.state.bot.pass;
-    plugin.transient.authorizationBearer = "Bearer " ~ pass;
+    plugin.transient.authorizationBearer = "Bearer " ~ key;
 
-    startValidator(plugin);
+    startValidator(
+        plugin: plugin,
+        authToken: key,  // Not plugin.transient.authorizationBearer
+        what: "Twitch authorisation key",
+        onFirstValidationDg: &onFirstValidationDg,
+        onIDKnownDg: &onIDKnownDg,
+        onExpiryDg: &onExpiryDg);
+
     startSaver(plugin);
 }
 
@@ -3343,21 +3396,32 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
     Starts a validator routine.
 
     This will validate the API access token and output to the terminal for how
-    much longer it is valid. If it has expired, it will exit the program.
+    much longer it is valid. It will call delegates based upon what it finds.
 
     Note: Must be called from within a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [TwitchPlugin].
+        authToken = Twitch authorisation key to validate.
+        what = A string description (noun) describing the key being validated.
+        onFirstValidationDg = Delegate to call when the first validation is done.
+        onIDKnownDg = Delegate to call when the user ID is known.
+        onExpiryDg = Delegate to call when the token is expired.
  +/
-void startValidator(TwitchPlugin plugin)
+void startValidator(
+    TwitchPlugin plugin,
+    const string authToken,
+    const string what,
+    void delegate(Duration) onFirstValidationDg = null,
+    void delegate(ulong) onIDKnownDg = null,
+    void delegate() onExpiryDg = null)
 in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
 {
     import kameloso.plugins.common.scheduling : delay;
     import std.algorithm.searching : startsWith;
     import std.conv : to;
-    import std.datetime.systime : Clock, SysTime;
-    import core.time : hours, minutes;
+    import std.datetime.systime : Clock;
+    import core.time : minutes;
 
     /*
         From https://dev.twitch.tv/docs/authentication/validate-tokens/
@@ -3369,17 +3433,17 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
         it starts and on an hourly basis thereafter."
      */
 
-    static immutable periodicity = 1.hours;
+    static immutable periodicity = 59.minutes;
     static immutable retryDelay = 1.minutes;
 
     // Validation needs an "Authorization: OAuth xxx" header, as opposed to the
     // "Authorization: Bearer xxx" used everywhere else.
-    immutable key = plugin.state.bot.pass.startsWith("oauth:") ?
-        plugin.state.bot.pass["oauth:".length..$] :
-        plugin.state.bot.pass;
+    immutable key = authToken.startsWith("oauth:") ?
+        authToken["oauth:".length..$] :
+        authToken;
     immutable authorisationHeader = "OAuth " ~ key;
 
-    bool delayedOnExpiryQuitFiber;
+    bool firstLoop = true;
 
     while (true)
     {
@@ -3390,41 +3454,13 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
                 authorisationHeader: authorisationHeader,
                 async: true);
 
-            plugin.transient.botID = results.userID;
-
-            if (!delayedOnExpiryQuitFiber)
+            if (firstLoop)
             {
-                enum expiryMessage = "Twitch authorisation key expired";
-                immutable now = Clock.currTime;
-                immutable expiresWhen = (now + results.expiresIn);
+                if (onIDKnownDg) onIDKnownDg(results.userID);
+                if (onFirstValidationDg) onFirstValidationDg(results.expiresIn);
+                if (onExpiryDg) delay(plugin, onExpiryDg, results.expiresIn);
 
-                if (plugin.state.coreSettings.headless)
-                {
-                    void onExpiryHeadlessDg()
-                    {
-                        quit(plugin.state, expiryMessage);
-                    }
-
-                    delay(plugin, &onExpiryHeadlessDg, results.expiresIn);
-                }
-                else
-                {
-                    void onExpiryDg()
-                    {
-                        enum message = "Your Twitch authorisation key has expired. " ~
-                            "Run the program with <l>--set twitch.keygen</> to generate a new one.";
-                        logger.error(message);
-                        quit(plugin.state, expiryMessage);
-                    }
-
-                    generateExpiryReminders(
-                        plugin,
-                        expiresWhen,
-                        "Your Twitch authorisation key",
-                        &onExpiryDg);
-                }
-
-                delayedOnExpiryQuitFiber = true;
+                firstLoop = false;
             }
 
             // Validated, repeat next period as per requirements
@@ -3439,10 +3475,10 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
 
                 if (e.msg == MagicErrorStrings.sslLibraryNotFoundRewritten)
                 {
-                    enum sslMessage = "Failed to validate Twitch authorisation key: <l>" ~
+                    enum sslPattern = "%s failed to validate: <l>" ~
                         cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten ~
                         " <t>(is OpenSSL installed?)";
-                    logger.warning(sslMessage);
+                    logger.warningf(sslPattern, what);
                     logger.warning(cast(string)MagicErrorStrings.visitWikiOneliner);
                     logger.warning("Expect the Twitch plugin to largely break.");
 
@@ -3457,69 +3493,64 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
                 }
                 else
                 {
-                    enum pattern = "Failed to validate Twitch authorisation key: <l>%s</> (<l>%s</>) <t>(%d)";
-                    logger.warningf(pattern, e.msg, e.error, e.code);
+                    enum pattern = "%s failed to validate: <l>%s</> (<l>%s</>) <t>(%d)";
+                    logger.warningf(pattern, what, e.msg, e.error, e.code);
                 }
 
                 version(PrintStacktraces) logger.trace(e);
             }
 
-            delay(plugin, retryDelay, yield: true);
-            continue;
+            // Drop down to retry
         }
         catch (EmptyResponseException e)
         {
             if (!plugin.state.coreSettings.headless)
             {
                 // HTTP query failed; just retry
-                enum pattern = "Empty response from server when validating Twitch authorisation key: <t>%s</>";
-                logger.errorf(pattern, e.msg);
+                enum pattern = "%s failed to validate with an empty response from server: <t>%s</>";
+                logger.errorf(pattern, what, e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
 
-            delay(plugin, retryDelay, yield: true);
-            continue;
+            // Drop down to retry
         }
         catch (InvalidCredentialsException e)
         {
             if (!plugin.state.coreSettings.headless)
             {
-                enum pattern = "Invalid or revoked Twitch authorisation key: <t>%s</>";
-                logger.errorf(pattern, e.msg);
+                enum pattern = "%s invalid or revoked: <t>%s</>";
+                logger.errorf(pattern, what, e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
 
             // Unrecoverable
-            enum message = "Invalid or revoked Twitch authorisation key";
-            quit(plugin.state, message);
+            if (onExpiryDg) onExpiryDg();
             return;
         }
         catch (UnexpectedJSONException e)
         {
             if (!plugin.state.coreSettings.headless)
             {
-                enum pattern = "Unexpected response when validating Twitch authorisation key: <t>%s</>";
-                logger.errorf(pattern, e.msg);
+                enum pattern = "%s failed to validate with an unexpected response: <t>%s</>";
+                logger.errorf(pattern, what, e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
 
-            // Retry
-            delay(plugin, retryDelay, yield: true);
-            continue;
+            // Drop down to retry
         }
         catch (Exception e)
         {
             if (!plugin.state.coreSettings.headless)
             {
-                enum pattern = "Caught Exception validating Twitch authorisation key: <t>%s</>";
-                logger.errorf(pattern, e.msg);
+                enum pattern = "%s failed to validate with an exception thrown: <t>%s</>";
+                logger.errorf(pattern, what, e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
-
-            // Retry
-            delay(plugin, retryDelay, yield: true);
-            continue;
         }
+
+        // Retry
+        delay(plugin, retryDelay, yield: true);
+        continue;
     }
 }
 
