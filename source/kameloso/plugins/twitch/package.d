@@ -3538,7 +3538,7 @@ void generateExpiryReminders(
     TwitchPlugin plugin,
     const SysTime expiresWhen,
     const string what,
-    void delegate() onExpiryDg)
+    void delegate() onExpiryDg = null)
 {
     import kameloso.plugins.common.scheduling : delay;
     import lu.string : plurality;
@@ -3649,7 +3649,7 @@ void generateExpiryReminders(
     void onTrueExpiry()
     {
         // Key expired
-        onExpiryDg();
+        if (onExpiryDg) onExpiryDg();
     }
 
     alias reminderPoints = AliasSeq!
