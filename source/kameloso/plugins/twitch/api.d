@@ -4456,7 +4456,7 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
     import std.array : replace;
     import std.format : format;
 
-    static struct Response
+    /+static struct Response
     {
         private import asdf.serialization : serdeIgnore;
 
@@ -4481,8 +4481,8 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
         }
          */
 
-        @serdeIgnore Warning[] data;
-    }
+        @serdeIgnore enum data = false;
+    }+/
 
     static struct WarnResults
     {
