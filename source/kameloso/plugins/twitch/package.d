@@ -4430,9 +4430,8 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
     if (plugin.settings.promoteEverywhere || (isHomeChannel == Ternary.yes))
     {
         /+
-            Badges may change on some events, and the promotion hysteresis in
-            `postprocessImpl` may prevent it from becoming picked up.
-            Reset the user's updated timestamp to force a re-promotion.
+            Reset the user's updated timestamp to force anything update-aware
+            to pick up the change.
          +/
         if (event.type.among!
             (IRCEvent.Type.TWITCH_SUB,
