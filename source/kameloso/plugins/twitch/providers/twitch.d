@@ -202,6 +202,7 @@ get channel iCalendar
  +/
 void requestTwitchKey(TwitchPlugin plugin)
 {
+    import kameloso.plugins.twitch.api : getValidation;
     import kameloso.logger : LogLevel;
     import kameloso.thread : ThreadMessage;
     import std.datetime.systime : Clock;
@@ -301,9 +302,14 @@ Press <i>Continue</> when warned that you're leaving Twitch.
     if (*plugin.state.abort) return;
 
     writeln();
-    logger.info("Validating...");
+    logger.info("Validating ...");
 
-    immutable results = getTokenExpiry(plugin, plugin.state.bot.pass);
+    immutable authorisationHeader = "OAuth " ~ plugin.state.bot.pass;
+    immutable results = getValidation(
+        plugin,
+        authorisationHeader: authorisationHeader,
+        async: false);
+
     if (*plugin.state.abort) return;
 
     immutable numDays = results.expiresIn.total!"days";
@@ -312,7 +318,10 @@ Press <i>Continue</> when warned that you're leaving Twitch.
     logger.infof(isValidPattern, numDays);
     logger.trace();
 
-    plugin.state.updates |= typeof(plugin.state.updates).bot;
+    alias Update = typeof(plugin.state.updates);
+
+    plugin.state.client.nickname = results.login;
+    plugin.state.updates |= (Update.client | Update.bot);
     plugin.state.messages ~= ThreadMessage.save;
 }
 
@@ -326,6 +335,7 @@ Press <i>Continue</> when warned that you're leaving Twitch.
  +/
 void requestTwitchSuperKey(TwitchPlugin plugin)
 {
+    import kameloso.plugins.twitch.api : getValidation;
     import kameloso.logger : LogLevel;
     import lu.meld : MeldingStrategy, meldInto;
     import std.process : Pid, ProcessException, wait;
@@ -405,9 +415,14 @@ your main <w>STREAMER</> account.
     if (*plugin.state.abort) return;
 
     writeln();
-    logger.info("Validating...");
+    logger.info("Validating ...");
 
-    immutable results = getTokenExpiry(plugin, inputCreds.broadcasterKey);
+    immutable authorisationHeader = "OAuth " ~ inputCreds.broadcasterKey;
+    immutable results = getValidation(
+        plugin,
+        authorisationHeader: authorisationHeader,
+        async: false);
+
     if (*plugin.state.abort) return;
 
     immutable numDays = results.expiresIn.total!"days";
@@ -547,40 +562,4 @@ private auto buildAuthNodeURL(const string authNode, const string[] scopes)
         "&scope=", scopes.join('+'),
         "&force_verify=true",
         "&state=kameloso");
-}
-
-
-// getTokenExpiry
-/++
-    Validates an authorisation token and returns a [std.datetime.systime.SysTime|SysTime]
-    of when it expires.
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        authToken = Authorisation token to validate and check expiry of.
-
-    Returns:
-        A [std.datetime.systime.SysTime|SysTime] of when the passed token expires.
- +/
-auto getTokenExpiry(TwitchPlugin plugin, const string authToken)
-in (Fiber.getThis(), "Tried to call `getTokenExpiry` from outside a fiber")
-{
-    import kameloso.plugins.twitch.api : getValidation;
-    import std.algorithm.searching : startsWith;
-
-    // Validation needs an "Authorization: OAuth xxx" header, as opposed to the
-    // "Authorization: Bearer xxx" used everywhere else.
-    immutable key = authToken.startsWith("oauth:") ?
-        authToken["oauth:".length..$] :
-        authToken;
-    immutable authorisationHeader = "OAuth " ~ key;
-
-    immutable results = getValidation(
-        plugin,
-        authorisationHeader: authorisationHeader,
-        async: false);
-
-    plugin.state.client.nickname = results.login;
-    plugin.state.updates |= typeof(plugin.state.updates).client;
-    return results;
 }
