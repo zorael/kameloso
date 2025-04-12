@@ -523,7 +523,7 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
         slice.advancePast("access_token=");
         key = slice.advancePast('&');
 
-        if (key.length != 30L)
+        if ((key.length != 30L) && !plugin.state.coreSettings.force)
         {
             writeln();
             logger.error("Invalid key length!");
