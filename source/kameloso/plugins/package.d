@@ -1203,8 +1203,15 @@ mixin template IRCPluginImpl(
 
             /+
                 Return if the event handler does not accept this type of event.
+                In addition, type UNSET events are ignored.
              +/
-            if ((uda.acceptedEventTypeMap.length >= IRCEvent.Type.ANY) &&
+            if (event.type == IRCEvent.Type.UNSET)
+            {
+                // Silently drop UNSET events
+                return NextStep.continue_;
+            }
+            else if (
+                (uda.acceptedEventTypeMap.length >= IRCEvent.Type.ANY) &&
                 uda.acceptedEventTypeMap[IRCEvent.Type.ANY])
             {
                 // ANY; drop down
