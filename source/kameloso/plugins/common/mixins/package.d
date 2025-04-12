@@ -148,7 +148,7 @@ mixin template WHOISFiberDelegate(
         import std.traits : arity;
         import core.thread.fiber : Fiber;
 
-        auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+        auto thisFiber = cast(CarryingFiber!IRCEvent) Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         while (true)

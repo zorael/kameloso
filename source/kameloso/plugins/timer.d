@@ -195,11 +195,11 @@ struct Timer
         this.colour = json.colour;
         this.lines = json.lines.dup;
 
-        this.type = (json.type == cast(int)TimerType.random) ?
+        this.type = (json.type == cast(int) TimerType.random) ?
             TimerType.random :
             TimerType.ordered;
 
-        this.condition = (json.condition == cast(int)TimerCondition.both) ?
+        this.condition = (json.condition == cast(int) TimerCondition.both) ?
             TimerCondition.both :
             TimerCondition.either;
     }
@@ -209,8 +209,8 @@ struct Timer
         JSONSchema json;
 
         json.name = this.name;
-        json.type = cast(int)this.type;
-        json.condition = cast(int)this.condition;
+        json.type = cast(int) this.type;
+        json.condition = cast(int) this.condition;
         json.messageCountThreshold = this.messageCountThreshold;
         json.timeThreshold = this.timeThreshold;
         json.messageCountStagger = this.messageCountStagger;
@@ -654,7 +654,7 @@ void handleModifyTimer(
     string timeThresholdString;
     string messageCountStaggerString;
     string timeStaggerString;
-    cast(void)slice.splitInto(
+    cast(void) slice.splitInto(
         name,
         typestring,
         conditionString,

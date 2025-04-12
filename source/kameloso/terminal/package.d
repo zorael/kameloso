@@ -16,7 +16,7 @@ private:
 
 import kameloso.constants : KamelosoInfo;
 
-enum defaultTerminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
+enum defaultTerminalTitle = "kameloso v" ~ cast(string) KamelosoInfo.version_;
 
 public:
 
@@ -82,8 +82,8 @@ version(Windows)
         originalCP = GetConsoleCP();
         originalOutputCP = GetConsoleOutputCP();
 
-        cast(void)SetConsoleCP(CP_UTF8);
-        cast(void)SetConsoleOutputCP(CP_UTF8);
+        cast(void) SetConsoleCP(CP_UTF8);
+        cast(void) SetConsoleOutputCP(CP_UTF8);
 
         auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
         assert((stdoutHandle != INVALID_HANDLE_VALUE), "Failed to get standard output handle");
@@ -93,7 +93,7 @@ version(Windows)
         if (getModeRetval != 0)
         {
             // The console is a real terminal, not a pager (or Cygwin mintty)
-            cast(void)SetConsoleMode(stdoutHandle, originalConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+            cast(void) SetConsoleMode(stdoutHandle, originalConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
         }
 
         // atexit handlers are also called when exiting via exit() etc.;
@@ -113,9 +113,9 @@ version(Windows)
         auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
         assert((stdoutHandle != INVALID_HANDLE_VALUE), "Failed to get standard output handle");
 
-        cast(void)SetConsoleCP(originalCP);
-        cast(void)SetConsoleOutputCP(originalOutputCP);
-        cast(void)SetConsoleMode(stdoutHandle, originalConsoleMode);
+        cast(void) SetConsoleCP(originalCP);
+        cast(void) SetConsoleOutputCP(originalOutputCP);
+        cast(void) SetConsoleMode(stdoutHandle, originalConsoleMode);
     }
 }
 

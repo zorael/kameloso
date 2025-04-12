@@ -618,7 +618,7 @@ mixin template IRCPluginImpl(
     private FilterResult allow(const IRCEvent event, const Permissions permissionsRequired) @system
     {
         import kameloso.plugins : allowImpl;
-        return allowImpl!(cast(bool)debug_)(this, event, permissionsRequired);
+        return allowImpl!(cast(bool) debug_)(this, event, permissionsRequired);
     }
 
     // onEvent
@@ -788,10 +788,10 @@ mixin template IRCPluginImpl(
                 import std.stdio : stdout, writeln, writefln;
 
                 writeln("-- ", uda.fqn, " @ ", event.type.toString);
-                writeln("    ...channelPolicy (", cast(uint)uda._channelPolicy, ')',
-                    " home:",  cast(bool)(uda._channelPolicy & ChannelPolicy.home),
-                    " guest:", cast(bool)(uda._channelPolicy & ChannelPolicy.guest),
-                    " any:",   cast(bool)(uda._channelPolicy & ChannelPolicy.any));
+                writeln("    ...channelPolicy (", cast(uint) uda._channelPolicy, ')',
+                    " home:",  cast(bool) (uda._channelPolicy & ChannelPolicy.home),
+                    " guest:", cast(bool) (uda._channelPolicy & ChannelPolicy.guest),
+                    " any:",   cast(bool) (uda._channelPolicy & ChannelPolicy.any));
                 if (state.coreSettings.flush) stdout.flush();
             }
 
@@ -1238,8 +1238,8 @@ mixin template IRCPluginImpl(
             {
                 immutable next = process!
                     (verbose,
-                    cast(bool)uda._fiber,
-                    cast(bool)uda.regexes.length)
+                    cast(bool) uda._fiber,
+                    cast(bool) uda.regexes.length)
                     (&fun,
                     uda,
                     event);
@@ -1253,8 +1253,8 @@ mixin template IRCPluginImpl(
                     // only repeat once so we don't endlessly loop
                     return process!
                         (verbose,
-                        cast(bool)uda._fiber,
-                        cast(bool)uda.regexes.length)
+                        cast(bool) uda._fiber,
+                        cast(bool) uda.regexes.length)
                         (&fun,
                         uda,
                         event);
@@ -1283,8 +1283,8 @@ mixin template IRCPluginImpl(
                 logger.warningf(pattern, uda.fqn, e);*/
 
                 immutable isRecoverableException =
-                    (cast(UnicodeException)e !is null) ||
-                    (cast(UTFException)e !is null);
+                    (cast(UnicodeException) e !is null) ||
+                    (cast(UTFException) e !is null);
 
                 if (!isRecoverableException) throw e;
 
@@ -4714,10 +4714,10 @@ void memoryCorruptionCheckImpl(
                 event.channel.name,
                 getTernaryStateString(isHomeChannel),
                 getTernaryStateString(isGuestChannel),
-                cast(bool)(uda.channelPolicy & ChannelPolicy.home),
-                cast(bool)(uda.channelPolicy & ChannelPolicy.guest),
-                cast(bool)(uda.channelPolicy & ChannelPolicy.any),
-                cast(uint)(uda.channelPolicy));
+                cast(bool) (uda.channelPolicy & ChannelPolicy.home),
+                cast(bool) (uda.channelPolicy & ChannelPolicy.guest),
+                cast(bool) (uda.channelPolicy & ChannelPolicy.any),
+                cast(uint) (uda.channelPolicy));
             assertionFailed = true;
         }
     }

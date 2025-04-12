@@ -413,7 +413,7 @@ public:
         }
 
         sslInstance = openssl.SSL_new(sslContext);
-        immutable code = openssl.SSL_set_fd(sslInstance, cast(int)socket.handle);
+        immutable code = openssl.SSL_set_fd(sslInstance, cast(int) socket.handle);
         if (code != 1) throw new SSLException("Failed to attach socket handle", code);
     }
 
@@ -430,15 +430,15 @@ public:
         {
             static void freeSSL(shared SSL* sslInstance, shared SSL_CTX* sslContext)
             {
-                if (sslInstance) openssl.SSL_free(cast(SSL*)sslInstance);
-                if (sslContext) openssl.SSL_CTX_free(cast(SSL_CTX*)sslContext);
+                if (sslInstance) openssl.SSL_free(cast(SSL*) sslInstance);
+                if (sslContext) openssl.SSL_CTX_free(cast(SSL_CTX*) sslContext);
             }
 
             // Casting to and from shared is not @safe. Hopefully history will forgive me for this.
             () @trusted
             {
                 import std.concurrency : spawn;
-                cast(void)spawn(&freeSSL, cast(shared)this.sslInstance, cast(shared)this.sslContext);
+                cast(void) spawn(&freeSSL, cast(shared) this.sslInstance, cast(shared) this.sslContext);
             }();
         }
         else
@@ -540,7 +540,7 @@ public:
             in (substring.length, "Tried to send empty substring to server")
             {
                 immutable bytesSent = ssl ?
-                    openssl.SSL_write(sslInstance, substring.ptr, cast(int)substring.length) :
+                    openssl.SSL_write(sslInstance, substring.ptr, cast(int) substring.length) :
                     socket.send(substring);
 
                 if (bytesSent == Socket.ERROR)
@@ -789,8 +789,8 @@ in ((connectionLost > Duration.zero), "Tried to set up a listening fiber with co
             import requests.ssl_adapter : openssl;
             attempt.bytesReceived = openssl.SSL_read(
                 conn.sslInstance,
-                cast(void*)buffer.ptr+start,
-                cast(int)(buffer.length-start));
+                cast(void*) buffer.ptr+start,
+                cast(int) (buffer.length-start));
         }
         else
         {
@@ -915,17 +915,17 @@ in ((connectionLost > Duration.zero), "Tried to set up a listening fiber with co
         timeLastReceived = timeReceiveAttempt;
         consecutiveWarnings = 0;
 
-        immutable ptrdiff_t end = cast(ptrdiff_t)(start + attempt.bytesReceived);
-        ptrdiff_t newline = (cast(char[])buffer[0..end]).indexOf('\n');
+        immutable ptrdiff_t end = cast(ptrdiff_t) (start + attempt.bytesReceived);
+        ptrdiff_t newline = (cast(char[]) buffer[0..end]).indexOf('\n');
         size_t pos;
 
         while (newline > 0)  // != -1 but we'd get a RangeError if it starts with a '\n'
         {
             attempt.state = State.hasString;
-            attempt.line = (cast(char[])buffer[pos..pos+newline-1]).idup;  // eat \r before \n
+            attempt.line = (cast(char[]) buffer[pos..pos+newline-1]).idup;  // eat \r before \n
             yield(attempt);
             pos += (newline + 1); // eat remaining newline
-            newline = (cast(char[])buffer[pos..end]).indexOf('\n');
+            newline = (cast(char[]) buffer[pos..end]).indexOf('\n');
         }
 
         attempt.state = State.isEmpty;
@@ -940,7 +940,7 @@ in ((connectionLost > Duration.zero), "Tried to set up a listening fiber with co
 
         start = (end - pos);
 
-        // writefln("REMNANT:|%s|", cast(string)buffer[pos..end]);
+        // writefln("REMNANT:|%s|", cast(string) buffer[pos..end]);
         import core.stdc.string : memmove;
         memmove(buffer.ptr, (buffer.ptr + pos), (ubyte.sizeof * start));
     }
@@ -1570,7 +1570,7 @@ auto openSSLIsInstalled() @system
     try
     {
         // This throws if OpenSSL is not installed
-        cast(void)openssl.TLS_method();
+        cast(void) openssl.TLS_method();
         return true;
     }
     catch (Exception _)
@@ -2020,7 +2020,7 @@ auto issueSyncHTTPRequest(const HTTPRequest request) @system
         headers =
         [
             "Client-ID" : request.clientID,
-            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
+            "User-Agent" : "kameloso/" ~ cast(string) KamelosoInfo.version_,
             "Authorization" : request.authorisationHeader,
         ];
     }
@@ -2075,7 +2075,7 @@ auto issueSyncHTTPRequest(const HTTPRequest request) @system
         response.code = res.code;
         response.uri = res.uri;
         response.finalURI = res.finalURI;
-        response.body = cast(string)res.responseBody;  // requires mutable
+        response.body = cast(string) res.responseBody;  // requires mutable
 
         immutable stats = res.getStats();
         response.elapsed = stats.connectTime + stats.recvTime + stats.sendTime;

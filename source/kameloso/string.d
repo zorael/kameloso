@@ -135,8 +135,8 @@ unittest
     {
         immutable line = "asdf $nickname is kameloso version $version from $source";
         immutable expected = "asdf %s is kameloso version %s from %s"
-            .format(client.nickname, cast(string)KamelosoInfo.version_,
-                cast(string)KamelosoInfo.source);
+            .format(client.nickname, cast(string) KamelosoInfo.version_,
+                cast(string) KamelosoInfo.source);
         immutable actual = line.replaceTokens(client);
         assert((actual == expected), actual);
     }
@@ -173,8 +173,8 @@ auto replaceTokens(const string line) @safe pure nothrow
     import std.array : replace;
 
     return line
-        .replace("$version", cast(string)KamelosoInfo.version_)
-        .replace("$source", cast(string)KamelosoInfo.source);
+        .replace("$version", cast(string) KamelosoInfo.version_)
+        .replace("$source", cast(string) KamelosoInfo.source);
 }
 
 

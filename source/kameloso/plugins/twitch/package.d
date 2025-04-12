@@ -598,7 +598,7 @@ void onEmoteBearingMessage(TwitchPlugin plugin, const IRCEvent event)
 void onSelfjoin(TwitchPlugin plugin, const IRCEvent event)
 {
     mixin(memoryCorruptionCheck);
-    cast(void)getRoom(plugin, event.channel);
+    cast(void) getRoom(plugin, event.channel);
 }
 
 
@@ -857,7 +857,7 @@ void reportStreamTime(
             room.broadcasterDisplayName,
             gameName,
             previousStream.endedAt.year,
-            cast(uint)previousStream.endedAt.month,
+            cast(uint) previousStream.endedAt.month,
             previousStream.endedAt.day,
             timestring,
             previousStream.viewerCountMax);
@@ -871,7 +871,7 @@ void reportStreamTime(
             room.broadcasterDisplayName,
             gameName,
             previousStream.endedAt.year,
-            cast(uint)previousStream.endedAt.month,
+            cast(uint) previousStream.endedAt.month,
             previousStream.endedAt.day,
             timestring);
         return chan(plugin.state, room.channelName, message);
@@ -966,7 +966,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const IRCEvent event)
         immutable delta = (Clock.currTime - follower.when);
         immutable timeline = delta.timeSince!(7, 3);
         immutable datestamp = datestampPattern.format(
-            months[cast(uint)follower.when.month-1],
+            months[cast(uint) follower.when.month-1],
             follower.when.year);
 
         if (otherNameSpecified)
@@ -3476,15 +3476,15 @@ in (Fiber.getThis(), "Tried to call `startValidator` from outside a fiber")
                 if (e.msg == MagicErrorStrings.sslLibraryNotFoundRewritten)
                 {
                     enum sslPattern = "%s failed to validate: <l>" ~
-                        cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten ~
+                        cast(string) MagicErrorStrings.sslLibraryNotFoundRewritten ~
                         " <t>(is OpenSSL installed?)";
                     logger.warningf(sslPattern, what);
-                    logger.warning(cast(string)MagicErrorStrings.visitWikiOneliner);
+                    logger.warning(cast(string) MagicErrorStrings.visitWikiOneliner);
                     logger.warning("Expect the Twitch plugin to largely break.");
 
                     version(Windows)
                     {
-                        logger.warning(cast(string)MagicErrorStrings.getOpenSSLSuggestion);
+                        logger.warning(cast(string) MagicErrorStrings.getOpenSSLSuggestion);
                     }
 
                     logger.trace();
@@ -3595,7 +3595,7 @@ void generateExpiryReminders(
             what,
             numDays,
             expiresWhen.year,
-            cast(uint)expiresWhen.month,
+            cast(uint) expiresWhen.month,
             expiresWhen.day);
     }
 
@@ -3616,7 +3616,7 @@ void generateExpiryReminders(
                 what,
                 numDays, numDays.plurality("day", "days"),
                 numHours, numHours.plurality("hour", "hours"),
-                expiresWhen.year, cast(uint)expiresWhen.month, expiresWhen.day,
+                expiresWhen.year, cast(uint) expiresWhen.month, expiresWhen.day,
                 expiresWhen.hour, expiresWhen.minute);
         }
         else
@@ -3627,7 +3627,7 @@ void generateExpiryReminders(
                 pattern,
                 what,
                 numDays, numDays.plurality("day", "days"),
-                expiresWhen.year, cast(uint)expiresWhen.month, expiresWhen.day,
+                expiresWhen.year, cast(uint) expiresWhen.month, expiresWhen.day,
                 expiresWhen.hour, expiresWhen.minute);
         }
     }
@@ -3734,13 +3734,13 @@ void complainAboutMissingTokens(const Exception base)
 
     bool match;  // mutable
 
-    if (const e = cast(MissingBroadcasterTokenException)base)
+    if (const e = cast(MissingBroadcasterTokenException) base)
     {
         enum pattern = "Missing elevated API key for channel <l>%s</>.";
         logger.errorf(pattern, e.channelName);
         match = true;
     }
-    else if (const e = cast(InvalidCredentialsException)base)
+    else if (const e = cast(InvalidCredentialsException) base)
     {
         enum pattern = "The elevated API key for channel <l>%s</> has expired.";
         logger.errorf(pattern, e.channelName);
@@ -4710,7 +4710,7 @@ void onBusMessage(
 
     if (header != "twitch") return;
 
-    const message = cast(Boxed!Message)content;
+    const message = cast(Boxed!Message) content;
 
     if (!message)
     {
@@ -4739,7 +4739,7 @@ void onBusMessage(
                     immutable untilNextSeconds = plugin.throttleline(plugin.whisperBuffer);
                     if (untilNextSeconds == 0.0) return;
 
-                    immutable untilNextMsecs = cast(uint)(untilNextSeconds * 1000);
+                    immutable untilNextMsecs = cast(uint) (untilNextSeconds * 1000);
                     delay(plugin, untilNextMsecs.msecs, yield: true);
                 }
             }
@@ -5227,7 +5227,7 @@ package:
         /++
             Effective bell after [kameloso.terminal.isTerminal] checks.
          +/
-        string bell = "" ~ cast(char)(TerminalToken.bell);
+        string bell = "" ~ cast(char) (TerminalToken.bell);
 
         /++
             Whether or not [ecount] has been modified and there's a point in saving it to disk.

@@ -211,7 +211,7 @@ void formatMessageMonochrome(Sink)
 
         sink.put('[');
 
-        (cast(DateTime)SysTime
+        (cast(DateTime) SysTime
             .fromUnixTime(event.time))
             .timeOfDay
             .toString(sink);
@@ -910,9 +910,9 @@ void formatMessageColoured(Sink)
         import kameloso.terminal : TerminalToken;
         import kameloso.terminal.colours.defs : TerminalFormat, TerminalReset;
 
-        enum tF = cast(char)TerminalToken.format;
-        enum fR = cast(int)TerminalFormat.reverse;
-        enum rI = cast(int)TerminalReset.invert;
+        enum tF = cast(char) TerminalToken.format;
+        enum fR = cast(int) TerminalFormat.reverse;
+        enum rI = cast(int) TerminalReset.invert;
         .put(sink, tF, '[', fR, 'm', toInvert, tF, '[', rI, 'm');
     }
 
@@ -933,7 +933,7 @@ void formatMessageColoured(Sink)
         sink.applyANSI(timestampCode, ANSICodeType.foreground);
         sink.put('[');
 
-        (cast(DateTime)SysTime
+        (cast(DateTime) SysTime
             .fromUnixTime(event.time))
             .timeOfDay
             .toString(sink);

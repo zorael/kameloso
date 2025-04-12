@@ -59,7 +59,7 @@ unittest
 
     assert(plugin.isEnabled);
 
-    cast(void)applyCustomSettings(
+    cast(void) applyCustomSettings(
         [ plugin ],
         coreSettings: coreSettings,
         customSettings: [ "twitch.enabled=false" ],
@@ -67,7 +67,7 @@ unittest
 
     assert(!plugin.isEnabled);
 
-    cast(void)applyCustomSettings(
+    cast(void) applyCustomSettings(
         [ plugin ],
         coreSettings: coreSettings,
         customSettings: [ "twitch.enabled" ],

@@ -231,7 +231,7 @@ in (account.length, "Tried to apply automodes to an empty account")
 
     foreach (const mode; (*wantedModes).representation)
     {
-        if (const usersWithThisMode = cast(char)mode in channel.mods)
+        if (const usersWithThisMode = cast(char) mode in channel.mods)
         {
             if (!usersWithThisMode.length || (nickname !in *usersWithThisMode))
             {

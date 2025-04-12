@@ -1258,11 +1258,11 @@ private auto prettyformatImpl(
                 }
                 else static if (is(T : long))
                 {
-                    args.value = (cast(long)content).to!string;
+                    args.value = (cast(long) content).to!string;
                 }
                 else static if (is(T : double))
                 {
-                    args.value = (cast(double)content).to!string;
+                    args.value = (cast(double) content).to!string;
                 }
                 else
                 {

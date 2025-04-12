@@ -272,17 +272,17 @@ void printVersionInfo(const bool colours = true) @safe
 
     writefln(
         finalVersionPattern,
-        cast(string)KamelosoInfo.version_,
+        cast(string) KamelosoInfo.version_,
         twitchSupport,
-        cast(string)KamelosoInfo.compiler,
-        cast(string)KamelosoInfo.compilerVersion,
-        cast(string)KamelosoInfo.built);
+        cast(string) KamelosoInfo.compiler,
+        cast(string) KamelosoInfo.compilerVersion,
+        cast(string) KamelosoInfo.built);
 
     immutable gitClonePattern = colours ?
         "$ git clone <i>%s.git</>".expandTags(LogLevel.off) :
         "$ git clone %s.git";
 
-    writefln(gitClonePattern, cast(string)KamelosoInfo.source);
+    writefln(gitClonePattern, cast(string) KamelosoInfo.source);
 }
 
 

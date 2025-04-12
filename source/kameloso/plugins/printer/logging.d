@@ -91,7 +91,7 @@ public:
         static string yyyyMMOf(const SysTime date)
         {
             // Cut the day from the date string, keep YYYY-MM
-            return (cast(Date)date).toISOExtString[0..7];
+            return (cast(Date) date).toISOExtString[0..7];
         }
 
         this.dir = dir;

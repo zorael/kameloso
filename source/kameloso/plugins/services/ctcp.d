@@ -76,12 +76,12 @@ void onCTCPs(CTCPService service, const IRCEvent event)
          */
 
         /*enum pattern = "VERSION kameloso %s, built %s, running on %s";
-        line = pattern.format(cast(string)KamelosoInfo.version_, cast(string)KamelosoInfo.built, os);*/
+        line = pattern.format(cast(string) KamelosoInfo.version_, cast(string) KamelosoInfo.built, os);*/
         line = text(
             "VERSION kameloso",
-            cast(string)KamelosoInfo.version_,
+            cast(string) KamelosoInfo.version_,
             ", built ",
-            cast(string)KamelosoInfo.built,
+            cast(string) KamelosoInfo.built,
             ", running on ",
             os.toString);
         break;
@@ -98,7 +98,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
             Query:     FINGER
             Response:  FINGER WeeChat 1.5
          */
-        line = "FINGER kameloso " ~ cast(string)KamelosoInfo.version_;
+        line = "FINGER kameloso " ~ cast(string) KamelosoInfo.version_;
         break;
 
     case CTCP_SOURCE:
@@ -111,7 +111,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
             Query:     SOURCE
             Response:  SOURCE https://weechat.org/download
          */
-        line = "SOURCE " ~ cast(string)KamelosoInfo.source;
+        line = "SOURCE " ~ cast(string) KamelosoInfo.source;
         break;
 
     case CTCP_PING:
@@ -234,7 +234,7 @@ void onCTCPs(CTCPService service, const IRCEvent event)
         //enum pattern = "NOTICE %s :%c%s%2$c";
         immutable target = event.sender.isServer ?
             event.sender.address: event.sender.nickname;
-        immutable message = text("NOTICE ", target, " :", cast(char)I.ctcp, line, cast(char)I.ctcp);
+        immutable message = text("NOTICE ", target, " :", cast(char) I.ctcp, line, cast(char) I.ctcp);
         raw(service.state, message, properties);
     }
 }
@@ -322,7 +322,7 @@ void onCTCPClientinfo(CTCPService service, const IRCEvent event)
         "Concatenated CTCP type list is empty");
 
     enum pattern = "NOTICE %s :%c%s%2$c";
-    immutable message = pattern.format(event.sender.nickname, cast(char)I.ctcp, allCTCPTypes);
+    immutable message = pattern.format(event.sender.nickname, cast(char) I.ctcp, allCTCPTypes);
     raw(service.state, message);
 }
 

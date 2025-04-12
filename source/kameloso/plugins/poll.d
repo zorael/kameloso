@@ -486,7 +486,7 @@ void generatePollFiber(
             auto currentPoll = channelName in plugin.channelPolls;
             if (!currentPoll || (currentPoll.uniqueID != poll.uniqueID)) return;
 
-            auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+            auto thisFiber = cast(CarryingFiber!IRCEvent) Fiber.getThis();
             assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
             immutable thisEvent = thisFiber.payload;
 
@@ -636,7 +636,7 @@ void reportEndResults(
     import std.array : array;
     import std.format : format;
 
-    immutable total = cast(double)poll.voteCounts
+    immutable total = cast(double) poll.voteCounts
         .byValue
         .sum;
 
@@ -667,7 +667,7 @@ void reportEndResults(
             import lu.string : plurality;
 
             immutable noun = result.value.plurality("vote", "votes");
-            immutable double voteRatio = cast(double)result.value / total;
+            immutable double voteRatio = cast(double) result.value / total;
             immutable double votePercentage = 100 * voteRatio;
 
             enum pattern = "<b>%s<b> : %d %s (%.1f%%)";
@@ -743,7 +743,7 @@ void generateVoteReminders(
         if ((numSeconds % (24*3600)) == 0)
         {
             // An even day
-            immutable numDays = cast(int)(numSeconds / (24*3600));
+            immutable numDays = cast(int) (numSeconds / (24*3600));
             immutable message = pattern.format(
                 numDays,
                 numDays.plurality("day", "days"),
@@ -753,7 +753,7 @@ void generateVoteReminders(
         else if ((numSeconds % 3600) == 0)
         {
             // An even hour
-            immutable numHours = cast(int)(numSeconds / 3600);
+            immutable numHours = cast(int) (numSeconds / 3600);
             immutable message = pattern.format(
                 numHours,
                 numHours.plurality("hour", "hours"),
@@ -763,7 +763,7 @@ void generateVoteReminders(
         else if ((numSeconds % 60) == 0)
         {
             // An even minute
-            immutable numMinutes = cast(int)(numSeconds / 60);
+            immutable numMinutes = cast(int) (numSeconds / 60);
             immutable message = pattern.format(
                 numMinutes,
                 numMinutes.plurality("minute", "minutes"),
@@ -852,7 +852,7 @@ void generateEndFiber(
 
         while (true)
         {
-            auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+            auto thisFiber = cast(CarryingFiber!IRCEvent) Fiber.getThis();
             assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
             if (thisFiber.payload.channel.name == channelName)

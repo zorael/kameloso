@@ -411,9 +411,9 @@ void writeToDisk(
         enum pattern = "# kameloso v%s configuration file (%d-%02d-%02d %02d:%02d:%02d)\n";
         file.writefln(
             pattern,
-            cast(string)KamelosoInfo.version_,
+            cast(string) KamelosoInfo.version_,
             timestamp.year,
-            cast(uint)timestamp.month,
+            cast(uint) timestamp.month,
             timestamp.day,
             timestamp.hour,
             timestamp.minute,
@@ -650,7 +650,7 @@ auto handleGetopt(Kameloso instance) @system
 
         Also catch --get-openssl-1_1 here, as it should be hidden.
      +/
-    cast(void)std.getopt.getopt(args,
+    cast(void) std.getopt.getopt(args,
         std.getopt.config.caseSensitive,
         std.getopt.config.bundling,
         std.getopt.config.passThrough,
@@ -1001,9 +1001,9 @@ auto handleGetopt(Kameloso instance) @system
     }
 
     // No need to catch the return value, only used for --help
-    cast(void)callGetopt(args, quiet: true);
+    cast(void) callGetopt(args, quiet: true);
 
-    cast(void)applyCustomSettings(
+    cast(void) applyCustomSettings(
         null,
         *instance.coreSettings,
         instance.customSettings,
@@ -1156,7 +1156,7 @@ auto handleGetopt(Kameloso instance) @system
             {
                 logger.log("== <w>Twitch setup</> ==");
                 logger.trace("This will download <l>OpenSSL</> and a <l>cacert.pem</> certificate bundle file.");
-                logger.trace(cast(string)MagicErrorStrings.visitWikiOneliner);
+                logger.trace(cast(string) MagicErrorStrings.visitWikiOneliner);
                 logger.trace();
                 logger.trace("Setup will resume after installation finishes.");
                 logger.trace();

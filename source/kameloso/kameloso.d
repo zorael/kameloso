@@ -876,7 +876,7 @@ public:
 
         return keys.length ?
             keys :
-            [ cast(string)MagicStrings.emptyArrayMarker ];
+            [ cast(string) MagicStrings.emptyArrayMarker ];
     }
 
     // ConnectionHistoryEntry

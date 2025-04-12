@@ -173,8 +173,8 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
 
         {
             immutable totalDays = (weeks * 7) + days;
-            months = cast(uint)(totalDays / daysInAMonth);
-            days = cast(uint)(totalDays % daysInAMonth);
+            months = cast(uint) (totalDays / daysInAMonth);
+            days = cast(uint) (totalDays % daysInAMonth);
             weeks = (days / 7);
             days %= 7;
         }
@@ -186,7 +186,7 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
 
         if (months >= 12) // && (truncateUnits < 7))
         {
-            years = cast(uint)(months / 12);
+            years = cast(uint) (months / 12);
             months %= 12;
         }
     }
@@ -823,7 +823,7 @@ auto nextMidnight(const SysTime now, const uint days = 1)
         gets the exact same SysTime.
      +/
 
-    const dateTime = DateTime(now.year, cast(uint)now.month, now.day, 0, 0, 0);
+    const dateTime = DateTime(now.year, cast(uint) now.month, now.day, 0, 0, 0);
     auto next = SysTime(dateTime, now.timezone)
         .roll!"days"(days);
 

@@ -99,7 +99,7 @@ void onCommandHelp(HelpPlugin plugin, const IRCEvent event)
         import lu.string : splitInto, stripped;
         import core.thread.fiber : Fiber;
 
-        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        auto thisFiber = cast(CarryingFiber!Payload) Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         string slice = event.content.stripped;  // mutable
@@ -345,9 +345,9 @@ void sendFullPluginListing(
     import std.format : format;
 
     enum banner = "kameloso IRC bot <b>v" ~
-        cast(string)KamelosoInfo.version_ ~
+        cast(string) KamelosoInfo.version_ ~
         "<b>, built " ~
-        cast(string)KamelosoInfo.built;
+        cast(string) KamelosoInfo.built;
     enum availableMessage = "Available bot commands per plugin:";
 
     sendMessage(plugin, event, banner);

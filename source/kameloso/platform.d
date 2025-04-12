@@ -401,8 +401,8 @@ auto exec(
             import std.array : replace;
 
             return input
-                .replace('"', cast(char)KamelosoDefaultChars.doublequotePlaceholder)
-                .replace('#', cast(char)KamelosoDefaultChars.octothorpePlaceholder);
+                .replace('"', cast(char) KamelosoDefaultChars.doublequotePlaceholder)
+                .replace('#', cast(char) KamelosoDefaultChars.octothorpePlaceholder);
         }
     }
 

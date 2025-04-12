@@ -144,7 +144,7 @@ struct Oneliner
     {
         trigger = json.trigger;
         alias_ = json.alias_;
-        type = cast(OnelinerType)json.type;
+        type = cast(OnelinerType) json.type;
         cooldown = json.cooldown;
         responses = json.responses.dup;
     }
@@ -158,7 +158,7 @@ struct Oneliner
 
         json.trigger = this.trigger;
         json.alias_ = this.alias_;
-        json.type = cast(int)this.type;
+        json.type = cast(int) this.type;
         json.cooldown = this.cooldown;
         json.responses = this.responses.dup;
 
@@ -552,7 +552,7 @@ void handleNewOneliner(
     string trigger;  // mutable
     string typestring;  // ditto
     string cooldownString;  // ditto
-    cast(void)slice.splitInto(trigger, typestring, cooldownString);
+    cast(void) slice.splitInto(trigger, typestring, cooldownString);
 
     if (!typestring.length) return sendNewUsage();
 
@@ -576,7 +576,7 @@ void handleNewOneliner(
 
         try
         {
-            cooldownSeconds = cast(int)cooldownString.asAbbreviatedDuration.total!"seconds";
+            cooldownSeconds = cast(int) cooldownString.asAbbreviatedDuration.total!"seconds";
             if (cooldownSeconds < 0) return sendCooldownMustBeValidPositiveDurationString();
         }
         catch (DurationStringException _)
@@ -651,7 +651,7 @@ void newOnelinerImpl(
         import kameloso.thread : CarryingFiber;
         import core.thread.fiber : Fiber;
 
-        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        auto thisFiber = cast(CarryingFiber!Payload) Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         if (triggerConflicts(thisFiber.payload[0])) return;
@@ -746,7 +746,7 @@ void handleModifyOneliner(
     string trigger;  // mutable
     string typestring;  // ditto
     string cooldownString;  // ditto
-    cast(void)slice.splitInto(trigger, typestring, cooldownString);
+    cast(void) slice.splitInto(trigger, typestring, cooldownString);
 
     if (!typestring.length) return sendNewUsage();
 
@@ -768,7 +768,7 @@ void handleModifyOneliner(
 
         try
         {
-            immutable cooldown = cast(int)cooldownString.asAbbreviatedDuration.total!"seconds";
+            immutable cooldown = cast(int) cooldownString.asAbbreviatedDuration.total!"seconds";
             if (cooldown < 0) return sendCooldownMustBeValidPositiveDurationString();
             oneliner.cooldown = cooldown;
         }
@@ -1161,7 +1161,7 @@ void handleAliasOneliner(
 
     string trigger;  // mutable
     string alias_;  // as above
-    cast(void)slice.splitInto(trigger, alias_);
+    cast(void) slice.splitInto(trigger, alias_);
 
     if (!trigger.length) return sendAliasUsage();
     if (!alias_.length) return sendYouMustSupplyAlias();

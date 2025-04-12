@@ -263,7 +263,7 @@ auto resolvePath(PipelinePlugin plugin)
                     throw new FileTypeMismatchException(
                         message: message,
                         filename: filename,
-                        attrs: cast(ushort)getAttributes(filename));
+                        attrs: cast(ushort) getAttributes(filename));
                 }
             }
         }
@@ -386,7 +386,7 @@ auto isFIFO(const string filename)
     import std.file : getAttributes;
     import core.sys.posix.sys.stat : S_ISFIFO;
 
-    immutable attrs = cast(ushort)getAttributes(filename);
+    immutable attrs = cast(ushort) getAttributes(filename);
     return S_ISFIFO(attrs);
 }
 
@@ -416,7 +416,7 @@ auto readFIFO(PipelinePlugin plugin)
     immutable ptrdiff_t bytesRead = read(plugin.transient.fd, buf.ptr, buf.length);
     if (bytesRead <= 0) return false;   // 0 or -1
 
-    string slice = cast(string)buf[0..bytesRead].idup;  // mutable immutable
+    string slice = cast(string) buf[0..bytesRead].idup;  // mutable immutable
     bool shouldCheckMessages;
 
     foreach (immutable originalLine; slice.splitter("\n"))

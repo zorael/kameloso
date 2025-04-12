@@ -124,7 +124,7 @@ auto configurationText(const string configFile) @safe
         throw new FileTypeMismatchException(
             message: "Configuration file is not a file",
             filename: configFile,
-            attrs: cast(ushort)getAttributes(configFile));
+            attrs: cast(ushort) getAttributes(configFile));
     }
 
     try

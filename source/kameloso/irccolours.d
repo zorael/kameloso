@@ -207,17 +207,17 @@ in (line.length, "Tried to apply IRC colours to a string but no string was given
         static assert(0, message);
     }
 
-    sink.put(cast(char)IRCControlCharacter.colour);
-    (cast(int)fg).toAlphaInto!(2, 2)(sink);  // So far the highest colour seems to be 99; two digits
+    sink.put(cast(char) IRCControlCharacter.colour);
+    (cast(int) fg).toAlphaInto!(2, 2)(sink);  // So far the highest colour seems to be 99; two digits
 
     if (bg != IRCColour.unset)
     {
         sink.put(',');
-        (cast(int)bg).toAlphaInto!(2, 2)(sink);
+        (cast(int) bg).toAlphaInto!(2, 2)(sink);
     }
 
     sink.put(line);
-    sink.put(cast(char)IRCControlCharacter.colour);
+    sink.put(cast(char) IRCControlCharacter.colour);
 }
 
 ///
@@ -302,13 +302,13 @@ string ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
     Appender!(char[]) sink;
     sink.reserve(6);
 
-    sink.put(cast(char)IRCControlCharacter.colour);
-    (cast(int)fg).toAlphaInto!(2, 2)(sink);
+    sink.put(cast(char) IRCControlCharacter.colour);
+    (cast(int) fg).toAlphaInto!(2, 2)(sink);
 
     if (bg != IRCColour.unset)
     {
         sink.put(',');
-        (cast(int)bg).toAlphaInto!(2, 2)(sink);
+        (cast(int) bg).toAlphaInto!(2, 2)(sink);
     }
 
     return sink[];
@@ -469,10 +469,10 @@ private void ircColourByHashImpl(Sink, String)
     immutable modulo = extendedOutgoingColours ? ircANSIColourMap.length : 16;
     immutable colourInteger = (hashOf(word) % modulo);
 
-    sink.put(cast(char)IRCControlCharacter.colour);
+    sink.put(cast(char) IRCControlCharacter.colour);
     colourInteger.toAlphaInto!(2, 2)(sink);
     sink.put(word);
-    sink.put(cast(char)IRCControlCharacter.colour);
+    sink.put(cast(char) IRCControlCharacter.colour);
 }
 
 
@@ -491,7 +491,7 @@ auto ircBold(T)(T something) //pure nothrow
     import std.conv : text;
 
     alias I = IRCControlCharacter;
-    return text(cast(char)I.bold, something, cast(char)I.bold);
+    return text(cast(char) I.bold, something, cast(char) I.bold);
 }
 
 ///
@@ -535,7 +535,7 @@ auto ircItalics(T)(T something) //pure nothrow
     import std.conv : text;
 
     alias I = IRCControlCharacter;
-    return text(cast(char)I.italics, something, cast(char)I.italics);
+    return text(cast(char) I.italics, something, cast(char) I.italics);
 }
 
 ///
@@ -579,7 +579,7 @@ auto ircUnderlined(T)(T something) //pure nothrow
     import std.conv : text;
 
     alias I = IRCControlCharacter;
-    return text(cast(char)I.underlined, something, cast(char)I.underlined);
+    return text(cast(char) I.underlined, something, cast(char) I.underlined);
 }
 
 ///
@@ -617,7 +617,7 @@ unittest
  +/
 auto ircReset() @nogc pure nothrow
 {
-    return cast(char)IRCControlCharacter.reset;
+    return cast(char) IRCControlCharacter.reset;
 }
 
 
@@ -654,25 +654,25 @@ auto mapEffects(
 
     string line = origLine;  // mutable
 
-    if (line.canFind(cast(char)I.colour))
+    if (line.canFind(cast(char) I.colour))
     {
         // Colour is mIRC 3
         line = mapColours(line, fgBase, bgBase);
     }
 
-    if (line.canFind(cast(char)I.bold))
+    if (line.canFind(cast(char) I.bold))
     {
         // Bold is terminal 1, mIRC 2
         line = mapEffectsImpl!(No.strip, I.bold, TF.bold)(line);
     }
 
-    if (line.canFind(cast(char)I.italics))
+    if (line.canFind(cast(char) I.italics))
     {
         // Italics is terminal 3 (not really), mIRC 29
         line = mapEffectsImpl!(No.strip, I.italics, TF.italics)(line);
     }
 
-    if (line.canFind(cast(char)I.underlined))
+    if (line.canFind(cast(char) I.underlined))
     {
         // Underlined is terminal 4, mIRC 31
         line = mapEffectsImpl!(No.strip, I.underlined, TF.underlined)(line);
@@ -827,7 +827,7 @@ private string mapColoursImpl(Flag!"strip" strip = No.strip)
 
     string slice = line;  // mutable
 
-    ptrdiff_t pos = slice.indexOf(cast(char)IRCControlCharacter.colour);
+    ptrdiff_t pos = slice.indexOf(cast(char) IRCControlCharacter.colour);
 
     if (pos == -1) return line;  // Return line as is, don't allocate a new one
 
@@ -926,7 +926,7 @@ private string mapColoursImpl(Flag!"strip" strip = No.strip)
             segment.isReset = true;
         }
 
-        pos = slice.indexOf(cast(char)IRCControlCharacter.colour);
+        pos = slice.indexOf(cast(char) IRCControlCharacter.colour);
     }
 
     immutable tail = slice;
@@ -1006,12 +1006,12 @@ private string mapColoursImpl(Flag!"strip" strip = No.strip)
                     continue;
                 }
 
-                (cast(uint)weechatForegroundMap[segment.fg]).toAlphaInto(sink);
+                (cast(uint) weechatForegroundMap[segment.fg]).toAlphaInto(sink);
 
                 if (segment.hasBackground)
                 {
                     sink.put(';');
-                    (cast(uint)weechatBackgroundMap[segment.bg]).toAlphaInto(sink);
+                    (cast(uint) weechatBackgroundMap[segment.bg]).toAlphaInto(sink);
                 }
 
                 sink.put("m");
@@ -1187,7 +1187,7 @@ private string mapEffectsImpl(Flag!"strip" strip, IRCControlCharacter mircToken,
         import kameloso.terminal.colours : applyANSI;
 
         enum terminalToken = TerminalToken.format ~ "[" ~ toAlpha(terminalFormatCode) ~ "m";
-        sink.reserve(cast(size_t)(line.length * 1.5));
+        sink.reserve(cast(size_t) (line.length * 1.5));
         bool open;
     }
     else
@@ -1672,7 +1672,7 @@ private T expandIRCTagsImpl(T)
                 continue byteloop;
             }
 
-            immutable closingBracketPos = (cast(T)asBytes[i..$]).indexOf('>');
+            immutable closingBracketPos = (cast(T) asBytes[i..$]).indexOf('>');
             if (closingBracketPos == -1) continue byteloop;
 
             if (asBytes.length < i+2)
@@ -1707,27 +1707,27 @@ private T expandIRCTagsImpl(T)
                 switch (tag[0])
                 {
                 case 'b':
-                    if (!strip) sink.put(cast(char)IRCControlCharacter.bold);
+                    if (!strip) sink.put(cast(char) IRCControlCharacter.bold);
                     break;
 
                 case 'c':
-                    if (!strip) sink.put(cast(char)IRCControlCharacter.colour);
+                    if (!strip) sink.put(cast(char) IRCControlCharacter.colour);
                     break;
 
                 case 'i':
-                    if (!strip) sink.put(cast(char)IRCControlCharacter.italics);
+                    if (!strip) sink.put(cast(char) IRCControlCharacter.italics);
                     break;
 
                 case 'u':
-                    if (!strip) sink.put(cast(char)IRCControlCharacter.underlined);
+                    if (!strip) sink.put(cast(char) IRCControlCharacter.underlined);
                     break;
 
                 case '/':
-                    if (!strip) sink.put(cast(char)IRCControlCharacter.reset);
+                    if (!strip) sink.put(cast(char) IRCControlCharacter.reset);
                     break;
 
                 case 'h':
-                    immutable closingHashMarkPos = (cast(T)asBytes[i+3..$]).indexOf("<h>");
+                    immutable closingHashMarkPos = (cast(T) asBytes[i+3..$]).indexOf("<h>");
                     if (closingHashMarkPos == -1) goto default;
 
                     i += 3;  // Advance past <h>
@@ -1807,7 +1807,7 @@ private T expandIRCTagsImpl(T)
                 uint fg;
                 uint bg;
                 bool hasBg;
-                immutable commaPos = (cast(T)tag).indexOf(',');
+                immutable commaPos = (cast(T) tag).indexOf(',');
 
                 if (commaPos > 2)
                 {
@@ -1854,7 +1854,7 @@ private T expandIRCTagsImpl(T)
 
                 commitUpTo(i);
 
-                sink.put(cast(char)IRCControlCharacter.colour);
+                sink.put(cast(char) IRCControlCharacter.colour);
                 if (fg < 10) sink.put('0');
                 fg.toAlphaInto(sink);
 

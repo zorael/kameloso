@@ -176,7 +176,7 @@ void startQueries(ChanQueryService service)
         This function may be called from within a fiber already, in which case
         we can just call the delegate directly.
      +/
-    if (auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis())
+    if (auto thisFiber = cast(CarryingFiber!IRCEvent) Fiber.getThis())
     {
         return queryDg();
     }
@@ -205,7 +205,7 @@ in (Fiber.getThis(), "Tried to call `queryChannels` from outside a fiber")
     import kameloso.messaging : Message, mode, raw;
     import std.string : representation;
 
-    auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+    auto thisFiber = cast(CarryingFiber!IRCEvent) Fiber.getThis();
     assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
     outer:
@@ -299,7 +299,7 @@ in (Fiber.getThis(), "Tried to call `queryChannels` from outside a fiber")
             }
 
             enum properties = (Message.Property.quiet | Message.Property.background);
-            immutable modeline = text('+', cast(char)modechar);
+            immutable modeline = text('+', cast(char) modechar);
 
             mode(service.state,
                 channelName,
@@ -335,7 +335,7 @@ in (Fiber.getThis(), "Tried to call `whoisUsers` from outside a fiber")
     import kameloso.messaging : Message;
     import std.datetime.systime : Clock;
 
-    auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+    auto thisFiber = cast(CarryingFiber!IRCEvent) Fiber.getThis();
     assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
     /++

@@ -142,32 +142,32 @@ private auto handleRetryDelegateException(
     import asdf.serialization : SerdeException;
     import std.json : JSONException;
 
-    if (auto e = cast(MissingBroadcasterTokenException)base)
+    if (auto e = cast(MissingBroadcasterTokenException) base)
     {
         // This is never a transient error
         throw e;
     }
-    else if (auto e = cast(InvalidCredentialsException)base)
+    else if (auto e = cast(InvalidCredentialsException) base)
     {
         // Neither is this
         throw e;
     }
-    else if (auto e = cast(SerdeException)base)
+    else if (auto e = cast(SerdeException) base)
     {
         // Nor this
         throw e;
     }
-    else if (auto e = cast(JSONException)base)
+    else if (auto e = cast(JSONException) base)
     {
         // Nor this
         throw e;
     }
-    else if (auto e = cast(EmptyDataJSONException)base)
+    else if (auto e = cast(EmptyDataJSONException) base)
     {
         // Should never be transient?
         throw e;
     }
-    else if (auto e = cast(ErrorJSONException)base)
+    else if (auto e = cast(ErrorJSONException) base)
     {
         const statusJSON = "status" in e.json;
         if ((statusJSON.integer >= 400) && (statusJSON.integer < 500))
@@ -177,7 +177,7 @@ private auto handleRetryDelegateException(
         }
         return;  //continue;
     }
-    else if (auto e = cast(HTTPQueryException)base)
+    else if (auto e = cast(HTTPQueryException) base)
     {
         import kameloso.constants : MagicErrorStrings;
 
@@ -243,7 +243,7 @@ void printRetryDelegateException(/*const*/ Exception base)
 
     logger.trace(base);
 
-    if (auto e = cast(HTTPQueryException)base)
+    if (auto e = cast(HTTPQueryException) base)
     {
         //logger.trace(e);
 
@@ -258,19 +258,19 @@ void printRetryDelegateException(/*const*/ Exception base)
 
         stdout.flush();
     }
-    else if (auto e = cast(EmptyDataJSONException)base)
+    else if (auto e = cast(EmptyDataJSONException) base)
     {
         // Must be before TwitchJSONException below
         //logger.trace(e);
     }
-    else if (auto e = cast(QueryResponseJSONException)base)
+    else if (auto e = cast(QueryResponseJSONException) base)
     {
         // UnexpectedJSONException or ErrorJSONException
         //logger.trace(e);
         writeln(e.json.toPrettyString);
         stdout.flush();
     }
-    else /*if (auto e = cast(Exception)base)*/
+    else /*if (auto e = cast(Exception) base)*/
     {
         //logger.trace(e);
     }
@@ -1494,7 +1494,7 @@ in (channelName.length, "Tried to modify a channel with an empty channel name st
             authorisationHeader: authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.patch,
-            body: cast(ubyte[])sink[],
+            body: cast(ubyte[]) sink[],
             contentType: "application/json");
 
         switch (httpResponse.code)
@@ -1930,7 +1930,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             authorisationHeader: authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.post,
-            body: cast(ubyte[])body,
+            body: cast(ubyte[]) body,
             contentType: "application/json");
 
         version(PrintStacktraces)
@@ -2480,7 +2480,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
                 authorisationHeader: authorizationBearer,
                 clientID: TwitchPlugin.clientID,
                 verb: HTTPVerb.get,
-                body: cast(ubyte[])null,
+                body: cast(ubyte[]) null,
                 contentType: "application/json");
 
             version(PrintStacktraces)
@@ -2671,7 +2671,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             authorisationHeader: authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.post,
-            body: cast(ubyte[])body,
+            body: cast(ubyte[]) body,
             contentType: "application/json");
 
         version(PrintStacktraces)
@@ -2847,7 +2847,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
             authorisationHeader: authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.patch,
-            body: cast(ubyte[])body,
+            body: cast(ubyte[]) body,
             contentType: "application/json");
 
         version(PrintStacktraces)
@@ -3974,7 +3974,7 @@ in (userID, "Tried to timeout a user with an unset user ID")
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.post,
-            body: cast(ubyte[])body,
+            body: cast(ubyte[]) body,
             contentType: "application/json");
 
         version(PrintStacktraces)
@@ -4164,7 +4164,7 @@ in (Fiber.getThis(), "Tried to call `sendWhisper` from outside a fiber")
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.post,
-            body: cast(ubyte[])body,
+            body: cast(ubyte[]) body,
             contentType: "application/json");
 
         version(PrintStacktraces)
@@ -4357,7 +4357,7 @@ in (Fiber.getThis(), "Tried to call `sendAnnouncement` from outside a fiber")
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.post,
-            body: cast(ubyte[])body,
+            body: cast(ubyte[]) body,
             contentType: "application/json");
 
         version(PrintStacktraces)
@@ -4526,7 +4526,7 @@ in (Fiber.getThis(), "Tried to call `warnUser` from outside a fiber")
             authorisationHeader: plugin.transient.authorizationBearer,
             clientID: TwitchPlugin.clientID,
             verb: HTTPVerb.post,
-            body: cast(ubyte[])body,
+            body: cast(ubyte[]) body,
             contentType: "application/json");
 
         version(PrintStacktraces)

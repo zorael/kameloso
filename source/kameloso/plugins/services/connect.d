@@ -1717,7 +1717,7 @@ in (Fiber.getThis(), "Tried to call `startPingMonitor` from outside a fiber")
 
     while (true)
     {
-        auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+        auto thisFiber = cast(CarryingFiber!IRCEvent) Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
         immutable thisEvent = thisFiber.payload;
 
@@ -2069,7 +2069,7 @@ void onBusMessage(ConnectService service, const string header, /*shared*/ Sendab
 
     if (header != "connect") return;
 
-    const message = cast(Boxed!string)content;
+    const message = cast(Boxed!string) content;
 
     if (!message)
     {

@@ -358,7 +358,7 @@ void onCommandAddQuote(QuotePlugin plugin, const IRCEvent event)
     slice = slice.unquoted;
     if (!slice.length) return sendUsage();
 
-    immutable prefixSigns = cast(string)plugin.state.server.prefixchars.keys;
+    immutable prefixSigns = cast(string) plugin.state.server.prefixchars.keys;
     immutable altered = removeWeeChatHead(slice, nickname, prefixSigns).unquoted;
     immutable line = altered.length ? altered : slice;
 
@@ -489,7 +489,7 @@ void onCommandModQuote(QuotePlugin plugin, const IRCEvent event)
     slice = slice.unquoted;
     if (!slice.length) return sendUsage();
 
-    immutable prefixSigns = cast(string)plugin.state.server.prefixchars.keys;
+    immutable prefixSigns = cast(string) plugin.state.server.prefixchars.keys;
     immutable altered = removeWeeChatHead(slice, nickname, prefixSigns).unquoted;
     immutable line = altered.length ? altered : slice;
 
@@ -764,7 +764,7 @@ auto getTimeStringFromTimestamp(
         enum pattern = "%d-%02d-%02d";
         return pattern.format(
             when.year,
-            cast(uint)when.month,
+            cast(uint) when.month,
             when.day);
 
     /*case hour:
@@ -775,7 +775,7 @@ auto getTimeStringFromTimestamp(
         enum pattern = "%d-%02d-%02d %02d:%02d";
         return pattern.format(
             when.year,
-            cast(uint)when.month,
+            cast(uint) when.month,
             when.day,
             when.hour,
             when.minute);
@@ -784,7 +784,7 @@ auto getTimeStringFromTimestamp(
         enum pattern = "%d-%02d-%02d %02d:%02d:%02d";
         return pattern.format(
             when.year,
-            cast(uint)when.month,
+            cast(uint) when.month,
             when.day,
             when.hour,
             when.minute,
@@ -977,7 +977,7 @@ auto getRandomQuote(
             nickname: nickname);
     }
 
-    index = uniform(0, cast(uint)quotes.length);
+    index = uniform(0, cast(uint) quotes.length);
     return quotes[index];
 }
 

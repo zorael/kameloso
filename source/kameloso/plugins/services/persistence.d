@@ -987,7 +987,7 @@ void onNamesReply(PersistenceService service, const IRCEvent event)
 
         // Do addresses ever contain bold, italics, underlined?
         immutable ident = slice.advancePast('@');
-        immutable address = slice.canFind(cast(char)IRCControlCharacter.colour) ?
+        immutable address = slice.canFind(cast(char) IRCControlCharacter.colour) ?
             stripColours(slice) :
             slice;
 

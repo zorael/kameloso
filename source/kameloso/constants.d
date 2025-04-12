@@ -64,8 +64,8 @@ auto buildCompilerVersionString()
     import std.array : Appender;
     import std.exception : assumeUnique;
 
-    enum major = cast(uint)(__VERSION__ / 1000);
-    enum minor = cast(uint)(__VERSION__ % 1000);
+    enum major = cast(uint) (__VERSION__ / 1000);
+    enum minor = cast(uint) (__VERSION__ % 1000);
 
     Appender!(char[]) sink;
     sink.reserve(5);  // "2.123"
@@ -118,7 +118,7 @@ auto buildVersionString()
         if (KamelosoSemVerPrerelease.length)
         {
             sink.put('-');
-            sink.put(cast(string)KamelosoSemVerPrerelease);
+            sink.put(cast(string) KamelosoSemVerPrerelease);
         }
     }
 
@@ -313,7 +313,7 @@ public:
             The receive attempt timeout when it's shortened to provide better
             responsiveness, in milliseconds.
          +/
-        receiveShortenedMsecs = cast(int)(receiveMsecs * CDF.receiveShorteningMultiplier),
+        receiveShortenedMsecs = cast(int) (receiveMsecs * CDF.receiveShorteningMultiplier),
 
         /++
             The amount of time to spend with a shortened receive timeout.

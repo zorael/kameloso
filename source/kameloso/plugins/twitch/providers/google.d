@@ -538,7 +538,7 @@ in (Fiber.getThis(), "Tried to call `addVideoToYouTubePlaylist` from outside a f
   }
 }`;
 
-    auto data = cast(ubyte[])dataPattern.format(creds.youtubePlaylistID, videoID);
+    auto data = cast(ubyte[]) dataPattern.format(creds.youtubePlaylistID, videoID);
 
     immutable httpResponse = sendHTTPRequest(
         plugin: plugin,

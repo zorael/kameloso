@@ -323,7 +323,7 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
 
         void addCounterDg()
         {
-            auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+            auto thisFiber = cast(CarryingFiber!Payload) Fiber.getThis();
             assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
             if (triggerConflicts(thisFiber.payload[0])) return;

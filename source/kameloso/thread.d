@@ -182,7 +182,7 @@ version(Posix)
         import std.string : toStringz;
         import core.thread : Thread;
 
-        cast(void)pthread_setname_np(Thread.getThis().id, name.toStringz);
+        cast(void) pthread_setname_np(Thread.getThis().id, name.toStringz);
     }
 }
 
@@ -447,7 +447,7 @@ final class Boxed(T) : Sendable
      +/
     this(T payload) shared pure /*@safe*/ nothrow @nogc
     {
-        this.payload = cast(shared)payload;
+        this.payload = cast(shared) payload;
     }
 }
 
@@ -483,20 +483,20 @@ unittest
 {
     {
         auto msg = boxed("asdf");
-        auto asCast = cast(Boxed!string)msg;
+        auto asCast = cast(Boxed!string) msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
         asCast = null;  // silence dscanner
     }
     {
         auto msg = boxed(123_456);
-        auto asCast = cast(Boxed!int)msg;
+        auto asCast = cast(Boxed!int) msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
         asCast = null;  // silence dscanner
     }
     {
         struct Foo {}
         auto msg = boxed(Foo());
-        auto asCast = cast(Boxed!Foo)msg;
+        auto asCast = cast(Boxed!Foo) msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
         asCast = null;  // silence dscanner
     }
@@ -515,7 +515,7 @@ unittest
     ---
     void dg()
     {
-        auto fiber = cast(CarryingFiber!bool)Fiber.getThis();
+        auto fiber = cast(CarryingFiber!bool) Fiber.getThis();
         assert(fiber !is null);  // Correct cast
 
         assert(fiber.payload);
@@ -731,7 +731,7 @@ unittest
 
     void dg()
     {
-        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        auto thisFiber = cast(CarryingFiber!Payload) Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         // __FUNCTION__ will be something like "kameloso.thread.__unittest_L577_C1.dg"

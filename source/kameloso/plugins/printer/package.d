@@ -306,7 +306,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         // Strip right to get rid of trailing whitespace
         // Do it in this order in case bells hide whitespace.
         event.content = event.content
-            .replace(cast(ubyte)TerminalToken.bell, string.init)
+            .replace(cast(ubyte) TerminalToken.bell, string.init)
             .strippedRight;
 
         bool put;
@@ -669,7 +669,7 @@ package auto datestamp()
 
     immutable now = Clock.currTime;
     enum pattern = "-- [%d-%02d-%02d]";
-    return pattern.format(now.year, cast(uint)now.month, now.day);
+    return pattern.format(now.year, cast(uint) now.month, now.day);
 }
 
 
@@ -836,7 +836,7 @@ void onBusMessage(PrinterPlugin plugin, const string header, /*shared*/ Sendable
 
     if (header != "printer") return;
 
-    const message = cast(Boxed!string)content;
+    const message = cast(Boxed!string) content;
 
     if (!message)
     {
@@ -1026,7 +1026,7 @@ package:
         /++
             Effective bell after [kameloso.terminal.isTerminal] checks.
          +/
-        string bell = "" ~ cast(char)(TerminalToken.bell);
+        string bell = "" ~ cast(char) (TerminalToken.bell);
     }
 
     /++

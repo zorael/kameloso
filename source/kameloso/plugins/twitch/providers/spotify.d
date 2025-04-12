@@ -587,8 +587,8 @@ private auto getSpotifyBase64Authorization(const Credentials creds)
     import std.base64 : Base64;
     import std.conv : text;
 
-    auto decoded = cast(ubyte[])text(creds.spotifyClientID, ':', creds.spotifyClientSecret);
-    return "Basic " ~ cast(string)Base64.encode(decoded);
+    auto decoded = cast(ubyte[]) text(creds.spotifyClientID, ':', creds.spotifyClientSecret);
+    return "Basic " ~ cast(string) Base64.encode(decoded);
 }
 
 

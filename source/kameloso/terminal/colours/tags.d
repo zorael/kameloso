@@ -99,14 +99,14 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const bool strip) @sa
 
         static if (is(N : ubyte))
         {
-            immutable needle = cast(char)rawNeedle;
+            immutable needle = cast(char) rawNeedle;
         }
         else
         {
             alias needle = rawNeedle;
         }
 
-        return (cast(T)haystack).indexOf(needle);
+        return (cast(T) haystack).indexOf(needle);
     }
 
     Appender!(E[]) sink;
@@ -281,7 +281,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const bool strip) @sa
 
                 // Advance past "<h>"
                 i += 3;
-                immutable word = cast(string)asBytes[i..i+closingHashMarkPos];
+                immutable word = cast(string) asBytes[i..i+closingHashMarkPos];
 
                 version(Colours)
                 {

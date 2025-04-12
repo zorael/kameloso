@@ -336,7 +336,7 @@ public:
         }
 
         linebuffer.put('[');
-        (cast(DateTime)Clock.currTime).timeOfDay.toString(linebuffer);
+        (cast(DateTime) Clock.currTime).timeOfDay.toString(linebuffer);
         linebuffer.put("] ");
 
         version(Colours)

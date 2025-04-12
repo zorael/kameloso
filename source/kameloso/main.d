@@ -306,7 +306,7 @@ auto processMessages(
         case reconnect:
             import kameloso.thread : Boxed;
 
-            if (auto boxedReexecFlag = cast(Boxed!bool)message.payload)
+            if (auto boxedReexecFlag = cast(Boxed!bool) message.payload)
             {
                 // Re-exec explicitly requested
                 instance.transient.askedToReexec = boxedReexecFlag.payload;
@@ -391,7 +391,7 @@ auto processMessages(
         case putUser:
             import kameloso.thread : Boxed;
 
-            auto boxedUser = cast(Boxed!IRCUser)message.payload;
+            auto boxedUser = cast(Boxed!IRCUser) message.payload;
             assert(boxedUser, "Incorrectly cast message payload: " ~ typeof(boxedUser).stringof);
 
             auto user = boxedUser.payload;
@@ -529,7 +529,7 @@ auto processMessages(
             if (!prelude.length)
             {
                 import dialect.common : IRCControlCharacter;
-                immutable c = cast(char)IRCControlCharacter.ctcp;
+                immutable c = cast(char) IRCControlCharacter.ctcp;
                 line = text( "PRIVMSG ", emoteTarget, " :", c, "ACTION ", m.event.content, c);
             }
             break;
@@ -981,7 +981,7 @@ auto mainLoop(Kameloso instance)
             immutable untilNextSeconds = sendLines(instance);
             if (untilNextSeconds > 0.0)
             {
-                timeoutFromMessages = cast(uint)(untilNextSeconds * 1000);
+                timeoutFromMessages = cast(uint) (untilNextSeconds * 1000);
             }
         }
     }
@@ -1115,7 +1115,7 @@ auto mainLoop(Kameloso instance)
         if (nextGlobalScheduledTimestamp)
         {
             immutable delayToNextMsecs =
-                cast(uint)((nextGlobalScheduledTimestamp - nowInHnsecs) / 10_000);
+                cast(uint) ((nextGlobalScheduledTimestamp - nowInHnsecs) / 10_000);
 
             if (delayToNextMsecs < instance.conn.receiveTimeout)
             {
@@ -1219,7 +1219,7 @@ auto mainLoop(Kameloso instance)
                 instance.connSettings.receiveTimeout;
 
             immutable untilNextGlobalScheduled = nextGlobalScheduledTimestamp ?
-                cast(uint)(nextGlobalScheduledTimestamp - nowInHnsecs)/10_000 :
+                cast(uint) (nextGlobalScheduledTimestamp - nowInHnsecs)/10_000 :
                 uint.max;
 
             immutable supposedNewTimeout = min(
@@ -1270,7 +1270,7 @@ auto sendLines(Kameloso instance)
 {
     if (!instance.immediateBuffer.empty)
     {
-        cast(void)instance.throttleline(
+        cast(void) instance.throttleline(
             instance.immediateBuffer,
             dryRun: false,
             sendFaster: false,
@@ -1433,20 +1433,20 @@ void logPluginActionException(
     import std.utf : UTFException;
     import core.exception : UnicodeException;
 
-    if (auto e = cast(AdvanceException)base)
+    if (auto e = cast(AdvanceException) base)
     {
         enum pattern = `AdvanceException %s.%s: tried to advance past "<t>%s</>" with "<l>%s</>" <t>(%s:%d)`;
         logger.warningf(pattern, plugin.name, fun, e.haystack, e.needle, e.file, e.line);
         if (event.raw.length) printEventDebugDetails(event, event.raw);
         version(PrintStacktraces) logger.trace(e.info);
     }
-    else if (auto e = cast(UTFException)base)
+    else if (auto e = cast(UTFException) base)
     {
         enum pattern = "UTFException %s.%s: <t>%s (%s:%d)";
         logger.warningf(pattern, plugin.name, fun, e.msg, e.file, e.line);
         version(PrintStacktraces) logger.trace(e.info);
     }
-    else if (auto e = cast(UnicodeException)base)
+    else if (auto e = cast(UnicodeException) base)
     {
         enum pattern = "UnicodeException %s.%s: <t>%s (%s:%d)";
         logger.warningf(pattern, plugin.name, fun, e.msg, e.file, e.line);
@@ -1517,7 +1517,7 @@ auto processLineFromServer(
                 foreach (immutable c; rawRepresentation)
                 {
                     enum pattern = "%3d: '%c'";
-                    writefln(pattern, c, cast(char)c);
+                    writefln(pattern, c, cast(char) c);
                 }
             }
 
@@ -1568,7 +1568,7 @@ auto processLineFromServer(
 
                 static immutable ubyte[4] badTail = [ 243, 160, 128, 128 ];
 
-                if ((cast(ubyte[])event.content).endsWith(badTail[]))
+                if ((cast(ubyte[]) event.content).endsWith(badTail[]))
                 {
                     event.content = event.content[0..$-badTail.length];
                 }
@@ -1845,7 +1845,7 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
                     // Specialcase CarryingFiber!IRCEvent to update it to carry
                     // the current IRCEvent.
 
-                    if (auto carryingFiber = cast(CarryingFiber!IRCEvent)fiber)
+                    if (auto carryingFiber = cast(CarryingFiber!IRCEvent) fiber)
                     {
                         version(TraceFibersAndDelegates)
                         {
@@ -1945,7 +1945,7 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
 
                 version(TraceFibersAndDelegates)
                 {
-                    if (auto carryingFiber = cast(CarryingFiber!IRCEvent)(fibersByType[i]))
+                    if (auto carryingFiber = cast(CarryingFiber!IRCEvent) (fibersByType[i]))
                     {
                         import lu.conv : toString;
 
@@ -1978,7 +1978,7 @@ void processAwaitingFibers(IRCPlugin plugin, const IRCEvent event)
             }
         }
 
-        if (auto carryingFiber = cast(CarryingFiber!IRCEvent)expiredFiber)
+        if (auto carryingFiber = cast(CarryingFiber!IRCEvent) expiredFiber)
         {
             if (carryingFiber.state == Fiber.State.TERM)
             {
@@ -2107,7 +2107,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         {
             version(TraceFibersAndDelegates)
             {
-                if (auto carryingFiber = cast(CarryingFiber!IRCEvent)scheduledFiber.fiber)
+                if (auto carryingFiber = cast(CarryingFiber!IRCEvent) scheduledFiber.fiber)
                 {
                     enum pattern = "<l>%s</>.scheduledFibers[%d] " ~
                         "type <l>%s</> " ~
@@ -2134,7 +2134,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
                 }
             }
 
-            if (auto carryingFiber = cast(CarryingFiber!IRCEvent)scheduledFiber.fiber)
+            if (auto carryingFiber = cast(CarryingFiber!IRCEvent) scheduledFiber.fiber)
             {
                 if (carryingFiber.state == Fiber.State.HOLD)
                 {
@@ -2176,7 +2176,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
      +/
     foreach (immutable i, /*ref*/ scheduledFiber; plugin.state.scheduledFibers)
     {
-        if (auto carryingFiber = cast(CarryingFiber!IRCEvent)scheduledFiber.fiber)
+        if (auto carryingFiber = cast(CarryingFiber!IRCEvent) scheduledFiber.fiber)
         {
             if (carryingFiber.state == Fiber.State.TERM)
             {
@@ -2206,7 +2206,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
 
         if (toReset[].canFind(i))
         {
-            if (auto carryingFiber = cast(CarryingFiber!IRCEvent)plugin.state.scheduledFibers[i].fiber)
+            if (auto carryingFiber = cast(CarryingFiber!IRCEvent) plugin.state.scheduledFibers[i].fiber)
             {
                 carryingFiber.reset();
             }
@@ -2457,7 +2457,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                 (IRCPlugin.CommandMetadata[string][string],
                 IRCPlugin.CommandMetadata[string][string]);
 
-            if (auto fiber = cast(CarryingFiber!(PeekCommandsPayload))(action.fiber))
+            if (auto fiber = cast(CarryingFiber!(PeekCommandsPayload) )(action.fiber))
             {
                 immutable channelName = action.context;
 
@@ -2488,7 +2488,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
         {
             alias GetSettingPayload = Tuple!(string, string, string);
 
-            if (auto fiber = cast(CarryingFiber!(GetSettingPayload))(action.fiber))
+            if (auto fiber = cast(CarryingFiber!(GetSettingPayload) )(action.fiber))
             {
                 import lu.string : advancePast;
                 import std.algorithm.iteration : splitter;
@@ -2511,7 +2511,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
 
                         foreach (const line; sink[].splitter('\n'))
                         {
-                            string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
+                            string lineslice = cast(string) line;  // need a string for advancePast and strippedLeft...
                             if (lineslice.startsWith('#')) lineslice = lineslice[1..$];
                             const thisSetting = lineslice.advancePast(' ', inherit: true);
 
@@ -2533,7 +2533,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
 
                         foreach (const line; sink[].splitter('\n'))
                         {
-                            string lineslice = cast(string)line;  // need a string for advancePast and strippedLeft...
+                            string lineslice = cast(string) line;  // need a string for advancePast and strippedLeft...
                             if (!lineslice.startsWith('[')) allSettings ~= lineslice.advancePast(' ', inherit: true);
                         }
 
@@ -2593,7 +2593,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
         {
             alias SetSettingPayload = Tuple!(bool);
 
-            if (auto fiber = cast(CarryingFiber!(SetSettingPayload))(action.fiber))
+            if (auto fiber = cast(CarryingFiber!(SetSettingPayload) )(action.fiber))
             {
                 import kameloso.plugins : applyCustomSettings;
 
@@ -2618,7 +2618,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
 
             alias SelftestPayload = Tuple!(string[], Ternary delegate()[]);
 
-            if (auto fiber = cast(CarryingFiber!(SelftestPayload))(action.fiber))
+            if (auto fiber = cast(CarryingFiber!(SelftestPayload) )(action.fiber))
             {
                 import kameloso.constants : BufferSize;
 
@@ -2647,7 +2647,7 @@ void processDeferredActions(Kameloso instance, IRCPlugin plugin)
                         {
                             import kameloso.plugins.common.scheduling : await, unawait;
 
-                            auto dgFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+                            auto dgFiber = cast(CarryingFiber!IRCEvent) Fiber.getThis();
                             assert(dgFiber, "Incorrectly cast fiber: " ~ typeof(dgFiber).stringof);
                             tester.fiber = dgFiber;
 
@@ -2893,7 +2893,7 @@ auto tryConnect(Kameloso instance)
         void verboselyDelayToNextIP()
         {
             enum pattern = "Failed to connect to IP. Trying next IP in <i>%d</> seconds.";
-            logger.logf(pattern, cast(uint)Timeout.Integers.connectionRetrySeconds);
+            logger.logf(pattern, cast(uint) Timeout.Integers.connectionRetrySeconds);
             incrementedRetryDelay = Timeout.Integers.connectionRetrySeconds;
             interruptibleSleep(Timeout.connectionRetry, instance.abort);
         }
@@ -3063,13 +3063,13 @@ auto tryConnect(Kameloso instance)
                 enum message = "Connection error: <l>" ~
                     MagicErrorStrings.sslLibraryNotFoundRewritten ~
                     " <t>(is OpenSSL installed?)";
-                enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
+                enum wikiMessage = cast(string) MagicErrorStrings.visitWikiOneliner;
                 logger.error(message);
                 logger.error(wikiMessage);
 
                 version(Windows)
                 {
-                    enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                    enum getoptMessage = cast(string) MagicErrorStrings.getOpenSSLSuggestion;
                     logger.error(getoptMessage);
                 }
             }
@@ -3165,7 +3165,7 @@ auto resolve(Kameloso instance, const bool firstConnect)
         if (*instance.abort) return;
 
         enum delayCap = 10*60;  // seconds
-        incrementedRetryDelay = cast(uint)(incrementedRetryDelay * incrementMultiplier);
+        incrementedRetryDelay = cast(uint) (incrementedRetryDelay * incrementMultiplier);
         incrementedRetryDelay = min(incrementedRetryDelay, delayCap);
     }
 
@@ -3473,7 +3473,7 @@ auto startBot(Kameloso instance)
     // Save a backup snapshot of the client, for restoring upon reconnections
     IRCClient backupClient = instance.parser.client;
 
-    enum bellString = "" ~ cast(char)(TerminalToken.bell);
+    enum bellString = "" ~ cast(char) (TerminalToken.bell);
     immutable bell = isTerminal ? bellString : string.init;
 
     while (true)
@@ -3983,7 +3983,7 @@ auto startBot(Kameloso instance)
                 std.concurrency.spawn, *or* call thisTid at some point prior.
                 So just call it and discard the value.
              +/
-            cast(void)thisTid;
+            cast(void) thisTid;
         }
 
         // Start the main loop
@@ -4116,7 +4116,7 @@ void printSummary(const Kameloso instance) @safe
 
         immutable startString = fullDatePattern.format(
             start.year,
-            cast(uint)start.month,
+            cast(uint) start.month,
             start.day,
             start.hour,
             start.minute,
@@ -4133,7 +4133,7 @@ void printSummary(const Kameloso instance) @safe
                 stop.second) :
             fullDatePattern.format(
                 stop.year,
-                cast(uint)stop.month,
+                cast(uint) stop.month,
                 stop.day,
                 stop.hour,
                 stop.minute,
@@ -4377,8 +4377,8 @@ auto run(string[] args)
                 import std.array : replace;
 
                 args[i] = args[i]
-                    .replace(cast(char)KamelosoDefaultChars.doublequotePlaceholder, '"')
-                    .replace(cast(char)KamelosoDefaultChars.octothorpePlaceholder, '#');
+                    .replace(cast(char) KamelosoDefaultChars.doublequotePlaceholder, '"')
+                    .replace(cast(char) KamelosoDefaultChars.octothorpePlaceholder, '#');
             }
         }
     }
@@ -4666,7 +4666,7 @@ auto run(string[] args)
                 configuration file) but it doesn't exist. Warn.
              +/
             enum caBundleMessage1 = "No SSL certificate authority bundle file found.";
-            enum caBundleMessage2 = cast(string)MagicErrorStrings.visitWikiOneliner;
+            enum caBundleMessage2 = cast(string) MagicErrorStrings.visitWikiOneliner;
             enum caBundleMessage3 = "Run the program with <l>--get-cacert</> to download one, " ~
                 "or specify an existing file with <l>--cacert=";  // no dot at end on purpose
             enum caBundleMessage4 = "Expect some plugins to break.";

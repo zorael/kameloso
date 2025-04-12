@@ -59,13 +59,13 @@ unittest
         "myplugin.d=99.99",
     ];
 
-    cast(void)applyCustomSettings(
+    cast(void) applyCustomSettings(
         [ plugin ],
         coreSettings: coreSettings,
         customSettings: newSettings,
         toPluginsOnly: true);
 
-    const ps = (cast(MyPlugin)plugin).myPluginSettings;
+    const ps = (cast(MyPlugin) plugin).myPluginSettings;
 
     assert((ps.s == "abc def ghi"), ps.s);
     assert((ps.i == 42), ps.i.to!string);

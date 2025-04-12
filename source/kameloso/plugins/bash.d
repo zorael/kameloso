@@ -295,7 +295,7 @@ auto parseResponseIntoBashLookupResult(/*const*/ HTTPQueryResponse response)
 
     BashLookupResult result;
     result.code = response.code;
-    result.responseBody = cast(string)response.body;  // .idup?
+    result.responseBody = cast(string) response.body;  // .idup?
 
     auto attachErrorAndReturn()
     {

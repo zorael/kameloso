@@ -562,7 +562,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         inner:
         while (true)
         {
-            thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+            thisFiber = cast(CarryingFiber!IRCEvent) Fiber.getThis();
             assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
             assert((thisFiber.payload.type != IRCEvent.Type.UNSET), "Uninitialised payload in carrying fiber");
 
@@ -982,7 +982,7 @@ void onCommandJoin(AdminPlugin plugin, const IRCEvent event)
     string slice = event.content.stripped;  // mutable
     string channel;  // ditto
     string key;  // ditto
-    cast(void)slice.splitInto(channel, key);
+    cast(void) slice.splitInto(channel, key);
 
     join(plugin.state, channel, key);
 }
@@ -1020,7 +1020,7 @@ void onCommandPart(AdminPlugin plugin, const IRCEvent event)
     string slice = event.content.stripped;  // mutable
     string channel;  // ditto
     string reason;  // ditto
-    cast(void)slice.splitInto(channel, reason);
+    cast(void) slice.splitInto(channel, reason);
 
     part(plugin.state, channel, reason);
 }
@@ -1054,7 +1054,7 @@ void onCommandSet(AdminPlugin plugin, const IRCEvent event)
 
     void setSettingDg()
     {
-        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        auto thisFiber = cast(CarryingFiber!Payload) Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         immutable message = thisFiber.payload[0] ?
@@ -1101,7 +1101,7 @@ void onCommandGet(AdminPlugin plugin, const IRCEvent event)
 
     void getSettingDg()
     {
-        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        auto thisFiber = cast(CarryingFiber!Payload) Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
         immutable pluginName = thisFiber.payload[0];
@@ -1348,7 +1348,7 @@ in (Fiber.getThis(), "Tried to call `cycle` from outside a fiber")
 
     while (true)
     {
-        auto thisFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+        auto thisFiber = cast(CarryingFiber!IRCEvent) Fiber.getThis();
         assert(thisFiber, "Incorrectly cast fiber: `" ~ typeof(thisFiber).stringof ~ '`');
         assert((thisFiber.payload.type != IRCEvent.Type.UNSET), "Uninitialised payload in carrying fiber");
 
@@ -1599,7 +1599,7 @@ void onCommandBus(AdminPlugin plugin, const IRCEvent event)
 
     string slice = event.content.stripped;  // mutable
     string header;  // ditto
-    cast(void)slice.splitInto(header);
+    cast(void) slice.splitInto(header);
 
     if (!header.length)
     {
@@ -1646,7 +1646,7 @@ void onCommandSelftest(AdminPlugin plugin, const IRCEvent event)
         import kameloso.constants : BufferSize;
         import kameloso.thread : CarryingFiber;
 
-        auto outerFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+        auto outerFiber = cast(CarryingFiber!Payload) Fiber.getThis();
         assert(outerFiber, "Incorrectly cast fiber: " ~ typeof(outerFiber).stringof);
 
         immutable pluginNames = outerFiber.payload[0].idup;
@@ -1658,7 +1658,7 @@ void onCommandSelftest(AdminPlugin plugin, const IRCEvent event)
             import kameloso.time : timeSince;
             import core.time : MonoTime;
 
-            /*auto innerFiber = cast(CarryingFiber!IRCEvent)Fiber.getThis();
+            /*auto innerFiber = cast(CarryingFiber!IRCEvent) Fiber.getThis();
             assert(innerFiber, "Incorrectly cast fiber: " ~ typeof(innerFiber).stringof);*/
 
             immutable start = MonoTime.currTime;
@@ -1802,7 +1802,7 @@ package auto parseTypesFromString(AdminPlugin plugin, const string definitions)
 
         foreach (immutable typenum; typenumRange)
         {
-            plugin.eventTypesToPrint[cast(size_t)typenum] = true;
+            plugin.eventTypesToPrint[cast(size_t) typenum] = true;
         }
 
         return true;
@@ -1859,7 +1859,7 @@ void onBusMessage(
     // Don't return if disabled, as it blocks us from re-enabling with verb set
     if (header != "admin") return;
 
-    const message = cast(Boxed!string)content;
+    const message = cast(Boxed!string) content;
 
     if (!message)
     {
@@ -2009,7 +2009,7 @@ void onBusMessage(
         {
             if (plugin.state.coreSettings.headless) return;
 
-            auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis();
+            auto thisFiber = cast(CarryingFiber!Payload) Fiber.getThis();
             assert(thisFiber, "Incorrectly cast fiber: " ~ typeof(thisFiber).stringof);
 
             immutable success = thisFiber.payload[0];
