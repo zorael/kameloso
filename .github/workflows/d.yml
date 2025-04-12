@@ -39,6 +39,14 @@ jobs:
       with:
         compiler: ${{ matrix.dc }}
 
+    - name: 'Clone forked dependencies'
+      if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest'
+      run: |
+        git clone https://github.com/zorael/mir-algorithm.git
+        dub add-local mir-algorithm 3.2.99  # Work around ddoc warnings
+        git clone https://github.com/zorael/asdf.git
+        dub add-local asdf
+
     - name: 'Run tests'
       run: dub test
 
@@ -56,11 +64,7 @@ jobs:
 
     - name: 'Run dscan'
       if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()
-      run: |
-        git clone https://github.com/zorael/mir-algorithm.git
-        dub add-local mir-algorithm 3.2.99  # Work around ddoc warnings
-        dub upgrade
-        dmd -run dscan.d
+      run: dmd -run dscan.d
 
     - name: 'Generate documentation'
       if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()
