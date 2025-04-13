@@ -4179,30 +4179,67 @@ void teardown(TwitchPlugin plugin)
     sender and target class based on their badges (and the current settings).
 
     Additionally embeds custom BTTV/FrankerFaceZ/7tv emotes into the event.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+        event = The [dialect.defs.IRCEvent|IRCEvent] to modify.
+
+    Returns:
+        `true` if the event was processed in a way that warrants the main loop
+        checking for messages; `false` if not.
  +/
 auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
     import std.algorithm.comparison : among;
     import std.typecons : Ternary;
 
-    if (plugin.settings.mapWhispersToChannel &&
-        event.type.among!(IRCEvent.Type.QUERY, IRCEvent.Type.SELFQUERY))
+    if (event.type.among!(IRCEvent.Type.QUERY, IRCEvent.Type.SELFQUERY))
     {
-        import std.algorithm.searching : countUntil;
+        /+
+            This is a whisper on a Twitch server.
 
-        alias pred = (channelName, senderNickname) => channelName.length && (senderNickname == channelName[1..$]);
-        immutable channelIndex = plugin.state.bot.homeChannels.countUntil!pred(event.sender.nickname);
+            Whispers are aggressively throttled. So as to not exceed the
+            daily allowed number of messages on whispers to unique users,
+            drop everything that doesn't come from an admin, unless we're
+            mapping whispers to that channel.
+         +/
 
-        if (channelIndex != -1)
+        bool wasMappedToChannel;
+
+        if (plugin.settings.mapWhispersToChannel)
         {
-            event.type = IRCEvent.Type.CHAN;
-            event.channel.name = plugin.state.bot.homeChannels[channelIndex];
-            event.aux[0] = string.init;  // Whisper count
-            event.target = IRCUser.init;
+            import std.algorithm.searching : countUntil;
+
+            alias pred = (channelName, senderNickname) => channelName.length && (senderNickname == channelName[1..$]);
+            immutable channelIndex = plugin.state.bot.homeChannels.countUntil!pred(event.sender.nickname);
+
+            if (channelIndex != -1)
+            {
+                event.type = IRCEvent.Type.CHAN;
+                event.channel.name = plugin.state.bot.homeChannels[channelIndex];
+                event.count[0].nullify();  // Zero out whisper count
+                event.aux[0] = string.init;  // Also zero out the old way of storing it
+                event.target = IRCUser.init;
+                wasMappedToChannel = true;
+            }
+        }
+
+        if (!wasMappedToChannel && (event.type != IRCEvent.Type.SELFQUERY))
+        {
+            if (event.sender.class_ != IRCUser.Class.admin)
+            {
+                // Drop the event.
+                event.type = IRCEvent.Type.UNSET;
+            }
+
+            // It's a whisper, so this function has nothing else to do with it.
+            return false;
         }
     }
-    else if (!event.channel.name.length)
+
+    if (!event.channel.name.length)
     {
+        // This function only deals with postprocessing channel messages.
         return false;
     }
 
