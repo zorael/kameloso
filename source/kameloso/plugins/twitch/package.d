@@ -4272,8 +4272,15 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             IRCEvent.Type.SELFCHAN,
             IRCEvent.Type.SELFEMOTE);
 
-        if (isEmotePossibleEventType &&
-            (event.content.length || (event.target.nickname.length && event.altcontent.length)))
+        immutable hasEmotes =
+            (event.content.length &&
+            event.emotes.length);
+
+        immutable mayHaveAltEmotes =
+            (event.target.nickname.length &&
+            event.altcontent.length);
+
+        if (isEmotePossibleEventType && (hasEmotes || mayHaveAltEmotes))
         {
             bool shouldEmbedCustomEmotes;
 
@@ -4298,17 +4305,20 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 const customChannelEmotes = event.channel.name in plugin.customChannelEmotes;
                 const customEmotes = customChannelEmotes ? &customChannelEmotes.emotes : null;
 
-                embedCustomEmotes(
-                    content: event.content,
-                    emotes: event.emotes,
-                    customEmotes: (customEmotes ? *customEmotes : null),
-                    customGlobalEmotes: plugin.customGlobalEmotes);
+                if (hasEmotes)
+                {
+                    embedCustomEmotes(
+                        content: event.content,
+                        emotes: event.emotes,
+                        customEmotes: (customEmotes ? *customEmotes : null),
+                        customGlobalEmotes: plugin.customGlobalEmotes);
+                }
 
-                if (event.target.nickname.length && event.altcontent.length)
+                if (mayHaveAltEmotes)
                 {
                     embedCustomEmotes(
                         content: event.altcontent,
-                        emotes: event.aux[$-2],
+                        emotes: event.aux[$-2],  // magic number, see printer formatMessageColoured
                         customEmotes: (customEmotes ? *customEmotes : null),
                         customGlobalEmotes: plugin.customGlobalEmotes);
                 }
