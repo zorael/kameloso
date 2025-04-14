@@ -103,6 +103,7 @@ in (((channelName.length && id) ||
         import kameloso.plugins.twitch.emotes.bttv : getBTTVEmotesGlobal;
         import kameloso.plugins.twitch.emotes.ffz : getFFZEmotesGlobal;
         import kameloso.plugins.twitch.emotes.seventv : get7tvEmotesGlobal;
+        import kameloso.plugins.twitch.emotes.twitch : getTwitchEmotesGlobal;
 
         // Global emotes
         emoteImports =
@@ -110,6 +111,7 @@ in (((channelName.length && id) ||
             EmoteImport(&getBTTVEmotesGlobal, "BetterTTV"),
             EmoteImport(&getFFZEmotesGlobal, "FrankerFaceZ"),
             EmoteImport(&get7tvEmotesGlobal, "7tv"),
+            EmoteImport(&getTwitchEmotesGlobal, "Twitch"),
         ];
     }
 
