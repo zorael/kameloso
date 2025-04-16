@@ -141,7 +141,7 @@ in (Fiber.getThis(), "Tried to call `getTwitchEmotesGlobal` from outside a fiber
             goto default;
 
         default:
-            const errorResponse = httpResponse.body.deserialize!ErrorResponse;
+            //const errorResponse = httpResponse.body.deserialize!ErrorResponse;
             //return GetGlobalEmotesResults(httpResponse.code, errorResponse);
             return size_t(0);
         }
