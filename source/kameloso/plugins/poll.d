@@ -82,6 +82,24 @@ public:
         string[] sortedChoices;  ///
         string[string] votes;  ///
         uint uniqueID;  ///
+
+        /++
+            Returns a [JSONSchema] of this poll.
+         +/
+        auto asJSONValue() /*const*/
+        {
+            import std.json : JSONValue;
+
+            JSONValue json;
+            json["start"] = this.start;
+            json["end"] = this.end;
+            json["voteCounts"] = this.voteCounts;
+            json["origChoiceNames"] = this.origChoiceNames;
+            json["sortedChoices"] = this.sortedChoices;
+            json["votes"] = this.votes;
+            json["uniqueID"] = this.uniqueID;
+            return json;
+        }
     }
 
     /++
@@ -876,19 +894,20 @@ void generateEndFiber(
  +/
 void serialisePolls(PollPlugin plugin)
 {
-    import asdf.serialization : serializeToJsonPretty;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     if (!plugin.channelPolls.length) return;
 
-    Poll.JSONSchema[string] json;
+    JSONValue json;
+    json.object = null;
 
     foreach (immutable channelName, /*const*/ poll; plugin.channelPolls)
     {
-        json[channelName] = poll.asSchema;
+        json[channelName] = poll.asSchema.asJSONValue;
     }
 
-    immutable serialised = json.serializeToJsonPretty!"    ";
+    immutable serialised = json.toPrettyString();
     File(plugin.pollTempFile, "w").write(serialised);
 }
 
@@ -899,7 +918,7 @@ void serialisePolls(PollPlugin plugin)
  +/
 void deserialisePolls(PollPlugin plugin)
 {
-    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize;
     import std.file : readText;
     import std.stdio : File, writeln;
 

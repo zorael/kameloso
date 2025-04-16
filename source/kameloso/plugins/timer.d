@@ -106,6 +106,28 @@ struct Timer
         string[] lines;  ///
 
         @serdeOptional string colour;  ///
+
+        /++
+            Returns a [std.json.JSONValue|JSONValue] representation of this [JSONSchema].
+         +/
+        auto asJSONValue() const
+        {
+            import std.json : JSONValue;
+
+            JSONValue json;
+            json.object = null;
+            json["name"] = this.name;
+            json["type"] = cast(int) this.type;
+            json["condition"] = cast(int) this.condition;
+            json["messageCountThreshold"] = this.messageCountThreshold;
+            json["timeThreshold"] = this.timeThreshold;
+            json["messageCountStagger"] = this.messageCountStagger;
+            json["timeStagger"] = this.timeStagger;
+            json["colour"] = this.colour;
+            json["suspended"] = this.suspended;
+            json["lines"] = this.lines.dup;
+            return json;
+        }
     }
 
     /++
@@ -1625,23 +1647,24 @@ auto createTimerFiber(
  +/
 void saveTimers(TimerPlugin plugin)
 {
-    import asdf.serialization : serializeToJsonPretty;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
-    Timer.JSONSchema[][string] json;
+    JSONValue json;
+    json.object = null;
 
     foreach (immutable channelName, const timers; plugin.timersByChannel)
     {
         json[channelName] = null;
-        auto channelTimersJSON = channelName in json;
+        json[channelName].array = null;
 
         foreach (const timer; timers)
         {
-            (*channelTimersJSON) ~= timer.asSchema;
+            json[channelName].array ~= timer.asSchema.asJSONValue;
         }
     }
 
-    immutable serialised = json.serializeToJsonPretty!"    ";
+    immutable serialised = json.toPrettyString();
     File(plugin.timerFile, "w").writeln(serialised);
 }
 
@@ -1653,9 +1676,10 @@ void saveTimers(TimerPlugin plugin)
  +/
 void initResources(TimerPlugin plugin)
 {
-    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : exists, readText;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     try
@@ -1664,7 +1688,21 @@ void initResources(TimerPlugin plugin)
             .readText
             .deserialize!(Timer.JSONSchema[][string]);
 
-        immutable serialised = deserialised.serializeToJsonPretty!"    ";
+        JSONValue json;
+        json.object = null;
+
+        foreach (immutable channelName, const schemas; deserialised)
+        {
+            json[channelName] = null;
+            json[channelName].array = null;
+
+            foreach (const schema; schemas)
+            {
+                json[channelName].array ~= schema.asJSONValue;
+            }
+        }
+
+        immutable serialised = json.toPrettyString();
         File(plugin.timerFile, "w").writeln(serialised);
     }
     catch (SerdeException e)

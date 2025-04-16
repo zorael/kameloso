@@ -251,6 +251,31 @@ package struct Credentials
         string spotifyAccessToken;  ///
         string spotifyRefreshToken;  ///
         string spotifyPlaylistID;  ///
+
+        /++
+            Returns a [std.json.JSONValue|JSONValue] object with the same data as this one.
+         +/
+        auto asJSONValue() const
+        {
+            import std.json : JSONValue;
+
+            JSONValue json;
+            json.object = null;
+            json["broadcasterKey"] = this.broadcasterKey;
+            json["broadcasterKeyExpiry"] = this.broadcasterKeyExpiry;
+            json["googleClientID"] = this.googleClientID;
+            json["googleClientSecret"] = this.googleClientSecret;
+            json["googleAccessToken"] = this.googleAccessToken;
+            json["googleRefreshToken"] = this.googleRefreshToken;
+            json["youtubePlaylistID"] = this.youtubePlaylistID;
+            json["spotifyClientID"] = this.spotifyClientID;
+            json["spotifyClientSecret"] = this.spotifyClientSecret;
+            json["spotifyAccessToken"] = this.spotifyAccessToken;
+            json["spotifyRefreshToken"] = this.spotifyRefreshToken;
+            json["spotifyPlaylistID"] = this.spotifyPlaylistID;
+            json["broadcasterBearerToken"] = this.broadcasterBearerToken;
+            return json;
+        }
     }
 
     /++
@@ -3816,17 +3841,26 @@ in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
  +/
 void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream stream)
 {
-    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize;
     import std.file : readText;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     auto streams = plugin.streamHistoryFile
         .readText
         .deserialize!(TwitchPlugin.Room.Stream.JSONSchema[]);
 
-    streams ~= stream.asSchema;
+    JSONValue json;
+    json.array = null;
 
-    immutable serialised = streams.serializeToJsonPretty!"    ";
+    foreach (const schema; streams)
+    {
+        json.array ~= schema.asJSONValue;
+    }
+
+    json.array ~= stream.asSchema.asJSONValue;
+
+    immutable serialised = json.toPrettyString();
     File(plugin.streamHistoryFile, "w").writeln(serialised);
 }
 
@@ -4510,9 +4544,10 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
  +/
 void initResources(TwitchPlugin plugin)
 {
-    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     void readAndWriteBack(bool useStdJSON, T)
@@ -4525,16 +4560,71 @@ void initResources(TwitchPlugin plugin)
                 .readText
                 .deserialize!T;
 
-            static if (useStdJSON)
+            immutable serialised = JSONValue(deserialised).toPrettyString;
+            File(filename, "w").writeln(serialised);
+        }
+        catch (SerdeException e)
+        {
+            version(PrintStacktraces) logger.trace(e);
+
+            throw new IRCPluginInitialisationException(
+            message: fileDescription ~ " file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: filename);
+        }
+    }
+
+    void readAndWriteBackObject(bool useStdJSON, T)
+        (const string filename,
+        const string fileDescription)
+    {
+        try
+        {
+            auto deserialised = filename
+                .readText
+                .deserialize!T;
+
+            JSONValue json;
+            json.object = null;
+
+            foreach (immutable channelName, const schema; deserialised)
             {
-                import std.json : JSONValue;
-                immutable serialised = JSONValue(deserialised).toPrettyString;
-            }
-            else
-            {
-                immutable serialised = deserialised.serializeToJsonPretty!"    ";
+                json[channelName] = schema.asJSONValue;
             }
 
+            immutable serialised = json.toPrettyString();
+            File(filename, "w").writeln(serialised);
+        }
+        catch (SerdeException e)
+        {
+            version(PrintStacktraces) logger.trace(e);
+
+            throw new IRCPluginInitialisationException(
+            message: fileDescription ~ " file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: filename);
+        }
+    }
+
+    void readAndWriteBackArray(bool useStdJSON, T)
+        (const string filename,
+        const string fileDescription)
+    {
+        try
+        {
+            auto deserialised = filename
+                .readText
+                .deserialize!T;
+
+            JSONValue json;
+            json.array = null;
+
+            foreach (const schema; deserialised)
+            {
+                json ~= schema.asJSONValue;
+            }
+
+            immutable serialised = json.toPrettyString();
             File(filename, "w").writeln(serialised);
         }
         catch (SerdeException e)
@@ -4556,11 +4646,11 @@ void initResources(TwitchPlugin plugin)
         (plugin.viewersFile,
         fileDescription: "Viewers");
 
-    readAndWriteBack!(false, Credentials.JSONSchema[string])
+    readAndWriteBackObject!(false, Credentials.JSONSchema[string])
         (plugin.secretsFile,
         fileDescription: "Secrets");
 
-    readAndWriteBack!(false, TwitchPlugin.Room.Stream.JSONSchema[])
+    readAndWriteBackArray!(false, TwitchPlugin.Room.Stream.JSONSchema[])
         (plugin.streamHistoryFile,
         fileDescription: "Stream history");
 }
@@ -4598,17 +4688,18 @@ void saveResourceToDisk(/*const*/ long[string][string] aa, const string filename
  +/
 package void saveSecretsToDisk(const Credentials[string] aa, const string filename)
 {
-    import asdf.serialization : serializeToJsonPretty;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
-    Credentials.JSONSchema[string] tempAA;
+    JSONValue json;
+    json.object = null;
 
     foreach (immutable channelName, creds; aa)
     {
-        tempAA[channelName] = creds.asSchema;
+        json[channelName] = creds.asSchema.asJSONValue;
     }
 
-    immutable serialised = tempAA.serializeToJsonPretty!"    ";
+    immutable serialised = json.toPrettyString();
     File(filename, "w").writeln(serialised);
 }
 
@@ -4869,8 +4960,6 @@ package:
             @serdeOptional
             static struct JSONSchema
             {
-
-
                 /*
                 {
                     "data": [
@@ -4978,6 +5067,32 @@ package:
                     string thumbnail_url;
                     bool is_mature;
                     string language;
+                }
+
+                /++
+                    Returns this [JSONSchema] as a [std.json.JSONValue|JSONValue].
+                 +/
+                auto asJSONValue() const
+                {
+                    import std.json : JSONValue;
+
+                    JSONValue json;
+                    json.object = null;
+                    json["game_id"] = this.game_id;
+                    json["game_name"] = this.game_name;
+                    json["id"] = this.id;
+                    json["started_at"] = this.started_at;
+                    json["tags"] = this.tags.dup;
+                    json["title"] = this.title;
+                    json["type"] = this.type;
+                    json["user_id"] = this.user_id;
+                    json["user_login"] = this.user_login;
+                    json["user_name"] = this.user_name;
+                    json["viewer_count"] = this.viewer_count;
+                    json["viewer_count_max"] = this.viewer_count_max;
+                    json["ended_at"] = this.ended_at;
+                    json["duration"] = this.duration;
+                    return json;
                 }
             }
 

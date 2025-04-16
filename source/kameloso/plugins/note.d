@@ -85,6 +85,20 @@ struct Note
         string line;  ///
         string sender;  ///
         long timestamp;  ///
+
+        /++
+            Returns a [std.json.JSONValue|JSONValue] of this [JSONSchema].
+         +/
+        auto asJSONValue() const
+        {
+            import std.json : JSONValue;
+
+            JSONValue json;
+            json["line"] = this.line;
+            json["sender"] = this.sender;
+            json["timestamp"] = this.timestamp;
+            return json;
+        }
     }
 
     /++
@@ -498,23 +512,30 @@ void onWelcome(NotePlugin plugin, const IRCEvent _)
  +/
 void saveNotes(NotePlugin plugin)
 {
-    import asdf.serialization : serializeToJsonPretty;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
-    Note.JSONSchema[][string][string] json;
+    JSONValue json;
+    json.object = null;
 
     foreach (immutable channelName, channelNotes; plugin.notes)
     {
+        json[channelName] = null;
+        json[channelName].object = null;
+
         foreach (immutable nickname, notes; channelNotes)
         {
+            json[channelName][nickname] = null;
+            json[channelName][nickname].array = null;
+
             foreach (note; notes)
             {
-                json[channelName][nickname] ~= note.asSchema;
+                json[channelName][nickname].array ~= note.asSchema.asJSONValue;
             }
         }
     }
 
-    immutable serialised = json.serializeToJsonPretty!"    ";
+    immutable serialised = json.toPrettyString();
     File(plugin.notesFile, "w").write(serialised);
 }
 
@@ -568,9 +589,10 @@ void reload(NotePlugin plugin)
  +/
 void initResources(NotePlugin plugin)
 {
-    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     try
@@ -579,7 +601,26 @@ void initResources(NotePlugin plugin)
             .readText
             .deserialize!(Note.JSONSchema[][string][string]);
 
-        immutable serialised = deserialised.serializeToJsonPretty!"    ";
+        JSONValue json;
+        json.object = null;
+
+        foreach (immutable channelName, const channelNotes; deserialised)
+        {
+            json[channelName].object = null;
+
+            foreach (immutable nickname, const schemas; channelNotes)
+            {
+                json[channelName][nickname] = null;
+                json[channelName][nickname].array = null;
+
+                foreach (schema; schemas)
+                {
+                    json[channelName][nickname].array ~= schema.asJSONValue;
+                }
+            }
+        }
+
+        immutable serialised = json.toPrettyString();
         File(plugin.notesFile, "w").write(serialised);
     }
     catch (SerdeException e)

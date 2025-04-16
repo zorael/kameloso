@@ -1156,6 +1156,23 @@ struct JSONSchema
     string[] elevated;  ///
     string[] whitelist;  ///
     string[] blacklist;  ///
+
+    /++
+        Returns a [std.json.JSONValue|JSONValue] of this [JSONSchema].
+     +/
+    auto asJSONValue() const
+    {
+        import std.json : JSONValue;
+
+        JSONValue json;
+        json.object = null;
+        json["staff"] = this.staff;
+        json["operator"] = this.operator;
+        json["elevated"] = this.elevated;
+        json["whitelist"] = this.whitelist;
+        json["blacklist"] = this.blacklist;
+        return json;
+    }
 }
 
 
@@ -1316,9 +1333,10 @@ void initResources(PersistenceService service)
  +/
 void initAccountResources(PersistenceService service)
 {
-    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : exists, readText;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     try
@@ -1327,7 +1345,15 @@ void initAccountResources(PersistenceService service)
             .readText
             .deserialize!(JSONSchema[string]);
 
-        immutable serialised = deserialised.serializeToJsonPretty!"    ";
+        JSONValue json;
+        json.object = null;
+
+        foreach (immutable channelName, const channelSchema; deserialised)
+        {
+            json[channelName] = channelSchema.asJSONValue;
+        }
+
+        immutable serialised = json.toPrettyString();
         File(service.userFile, "w").write(serialised);
     }
     catch (SerdeException e)

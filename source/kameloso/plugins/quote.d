@@ -88,6 +88,22 @@ struct Quote
         string creator;  ///
 
         @serdeOptional string nickname;  ///
+
+        /++
+            Returns a [std.json.JSONValue|JSONValue] of this [JSONSchema].
+         +/
+        auto asJSONValue() const
+        {
+            import std.json : JSONValue;
+
+            JSONValue json;
+            json.object = null;
+            json["nickname"] = this.nickname;
+            json["line"] = this.line;
+            json["timestamp"] = this.timestamp;
+            json["creator"] = this.creator;
+            return json;
+        }
     }
 
     /++
@@ -1340,25 +1356,32 @@ void loadQuotes(QuotePlugin plugin)
  +/
 void saveQuotes(QuotePlugin plugin)
 {
-    import asdf.serialization : serializeToJsonPretty;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     try
     {
-        Quote.JSONSchema[][string][string] json;
+        JSONValue json;
+        json.object = null;
 
         foreach (immutable channelName, channelQuotes; plugin.quotes)
         {
+            json[channelName] = null;
+            json[channelName].object = null;
+
             foreach (immutable nickname, quotes; channelQuotes)
             {
+                json[channelName][nickname] = null;
+                json[channelName][nickname].array = null;
+
                 foreach (quote; quotes)
                 {
-                    json[channelName][nickname] ~= quote.asSchema;
+                    json[channelName][nickname].array ~= quote.asSchema.asJSONValue;
                 }
             }
         }
 
-        immutable serialised = json.serializeToJsonPretty!"    ";
+        immutable serialised = json.toPrettyString();
         File(plugin.quotesFile, "w").writeln(serialised);
     }
     catch (Exception e)
@@ -1487,10 +1510,11 @@ final class NoQuotesSearchMatchException : Exception
  +/
 void initResources(QuotePlugin plugin)
 {
-    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.algorithm.searching : startsWith;
     import std.file : readText;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     try
@@ -1499,7 +1523,27 @@ void initResources(QuotePlugin plugin)
             .readText
             .deserialize!(Quote.JSONSchema[][string][string]);
 
-        immutable serialised = deserialised.serializeToJsonPretty!"    ";
+        JSONValue json;
+        json.object = null;
+
+        foreach (immutable channelName, const channelQuotes; deserialised)
+        {
+            json[channelName] = null;
+            json[channelName].object = null;
+
+            foreach (immutable nickname, const schemas; channelQuotes)
+            {
+                json[channelName][nickname] = null;
+                json[channelName][nickname].array = null;
+
+                foreach (schema; schemas)
+                {
+                    json[channelName][nickname].array ~= schema.asJSONValue;
+                }
+            }
+        }
+
+        immutable serialised = json.toPrettyString();
         File(plugin.quotesFile, "w").writeln(serialised);
     }
     catch (SerdeException e)

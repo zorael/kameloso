@@ -67,6 +67,22 @@ struct Oneliner
 
         @serdeOptional uint cooldown;  ///
         @serdeKeys("alias") string alias_;  ///
+
+        /++
+            Returns a [std.json.JSONValue|JSONValue] representation of this [JSONSchema].
+         +/
+        auto asJSONValue() const
+        {
+            import std.json : JSONValue;
+
+            JSONValue json;
+            json["trigger"] = this.trigger;
+            json["alias"] = this.alias_;
+            json["type"] = cast(int) this.type;
+            json["cooldown"] = this.cooldown;
+            json["responses"] = this.responses.dup;
+            return json;
+        }
     }
 
     // OnelinerType
@@ -1436,22 +1452,26 @@ void sendOneliner(
 void saveResourceToDisk(const Oneliner[string][string] aa, const string filename)
 in (filename.length, "Tried to save resources to an empty filename string")
 {
-    import asdf.serialization : serializeToJsonPretty;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     try
     {
-        Oneliner.JSONSchema[string][string] json;
+        JSONValue json;
+        json.object = null;
 
         foreach (immutable channelName, const channelOneliners; aa)
         {
+            json[channelName] = null;
+            json[channelName].object = null;
+
             foreach (immutable trigger, const oneliner; channelOneliners)
             {
-                json[channelName][trigger] = oneliner.asSchema;
+                json[channelName][trigger] = oneliner.asSchema.asJSONValue;
             }
         }
 
-        immutable serialised = json.serializeToJsonPretty!"    ";
+        immutable serialised = json.toPrettyString();
         File(filename, "w").writeln(serialised);
     }
     catch (Exception e)
@@ -1469,9 +1489,10 @@ in (filename.length, "Tried to save resources to an empty filename string")
  +/
 void initResources(OnelinerPlugin plugin)
 {
-    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     try
@@ -1480,7 +1501,21 @@ void initResources(OnelinerPlugin plugin)
             .readText
             .deserialize!(Oneliner.JSONSchema[string][string]);
 
-        immutable serialised = deserialised.serializeToJsonPretty!"    ";
+        JSONValue json;
+        json.object = null;
+
+        foreach (immutable channelName, const channelOneliners; deserialised)
+        {
+            json[channelName] = null;
+            json[channelName].object = null;
+
+            foreach (immutable trigger, const schema; channelOneliners)
+            {
+                json[channelName][trigger] = schema.asJSONValue;
+            }
+        }
+
+        immutable serialised = json.toPrettyString();
         File(plugin.onelinerFile, "w").writeln(serialised);
     }
     catch (SerdeException e)

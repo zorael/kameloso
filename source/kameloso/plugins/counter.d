@@ -63,6 +63,24 @@ struct Counter
         string patternIncrement;  ///
         string patternDecrement;  ///
         string patternAssign;  ///
+
+        /++
+            Returns a [std.json.JSONValue|JSONValue] representing this [Counter].
+         +/
+        auto asJSONValue() const
+        {
+            import std.json : JSONValue;
+
+            JSONValue json;
+            json.object = null;
+            json["count"] = this.count;
+            json["word"] = this.word;
+            json["patternQuery"] = this.patternQuery;
+            json["patternIncrement"] = this.patternIncrement;
+            json["patternDecrement"] = this.patternDecrement;
+            json["patternAssign"] = this.patternAssign;
+            return json;
+        }
     }
 
     /++
@@ -758,22 +776,23 @@ void reload(CounterPlugin plugin)
  +/
 void saveCounters(CounterPlugin plugin)
 {
-    import asdf.serialization : serializeToJsonPretty;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
-    Counter.JSONSchema[string][string] json;
+    JSONValue json;
+    json.object = null;
 
-    foreach (immutable channelName, ref channelCounters; plugin.counters)
+    foreach (immutable channelName, const channelCounters; plugin.counters)
     {
         json[channelName] = null;
 
-        foreach (immutable word, ref counter; channelCounters)
+        foreach (immutable word, const counter; channelCounters)
         {
-            json[channelName][word] = counter.asSchema;
+            json[channelName][word] = counter.asSchema.asJSONValue;
         }
     }
 
-    immutable serialised = json.serializeToJsonPretty!"    ";
+    immutable serialised = json.toPrettyString();
     File(plugin.countersFile, "w").writeln(serialised);
 }
 
@@ -835,9 +854,10 @@ void loadCounters(CounterPlugin plugin)
  +/
 void initResources(CounterPlugin plugin)
 {
-    import asdf.serialization : deserialize, serializeToJsonPretty;
+    import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
+    import std.json : JSONValue;
     import std.stdio : File, writeln;
 
     try
@@ -846,7 +866,20 @@ void initResources(CounterPlugin plugin)
             .readText
             .deserialize!(Counter.JSONSchema[string][string]);
 
-        immutable serialised = deserialised.serializeToJsonPretty!"    ";
+        JSONValue json;
+        json.object = null;
+
+        foreach (immutable channelName, const channelCounters; deserialised)
+        {
+            json[channelName] = null;
+
+            foreach (immutable word, const schema; channelCounters)
+            {
+                json[channelName][word] = schema.asJSONValue;
+            }
+        }
+
+        immutable serialised = json.toPrettyString();
         File(plugin.countersFile, "w").writeln(serialised);
     }
     catch (SerdeException e)
