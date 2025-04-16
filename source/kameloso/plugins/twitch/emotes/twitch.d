@@ -48,7 +48,6 @@ in (Fiber.getThis(), "Tried to call `getTwitchEmotesGlobal` from outside a fiber
 {
     import kameloso.plugins : sendHTTPRequest;
     import kameloso.plugins.twitch.api : ErrorResponse, retryDelegate;
-    import kameloso.misc : printStacktrace;
     import asdf.serialization : deserialize, serdeOptional;
 
     static struct Response
@@ -110,6 +109,7 @@ in (Fiber.getThis(), "Tried to call `getTwitchEmotesGlobal` from outside a fiber
         {
             scope(failure)
             {
+                import kameloso.misc : printStacktrace;
                 import std.json : parseJSON;
                 import std.stdio : writeln;
 
