@@ -675,38 +675,27 @@ auto getRoom(TwitchPlugin plugin, const IRCEvent.Channel channel)
 )
 void onUserstate(TwitchPlugin plugin, const IRCEvent event)
 {
-    import std.algorithm.searching : canFind;
-
     mixin(memoryCorruptionCheck);
 
-    auto channel = event.channel.name in plugin.state.channels;
-
-    if (!channel)
+    if (event.channel.name !in plugin.state.channels)
     {
         // Race?
         plugin.state.channels[event.channel.name] = IRCChannel(event.channel);
-        channel = event.channel.name in plugin.state.channels;
     }
 
-    if (const ops = 'o' in channel.mods)
+    if (event.target.class_ < IRCUser.Class.operator)
     {
-        if (plugin.state.client.nickname in *ops)
+        // If we're here, we're not an operator and yet it's a home channel
+        auto room = getRoom(plugin, event.channel);
+
+        if (!room.sawUserstate)
         {
-            // Is operator
-            return;
+            // First USERSTATE; warn about not being mod
+            room.sawUserstate = true;
+            enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
+                "Consider elevating it to such to avoid being as rate-limited.";
+            logger.warningf(pattern, event.channel.name);
         }
-    }
-
-    // If we're here, we're not an operator yet it's a home channel
-    auto room = getRoom(plugin, event.channel);
-
-    if (!room.sawUserstate)
-    {
-        // First USERSTATE; warn about not being mod
-        room.sawUserstate = true;
-        enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
-            "Consider elevating it to such to avoid being as rate-limited.";
-        logger.warningf(pattern, event.channel.name);
     }
 }
 
