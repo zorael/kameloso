@@ -2952,6 +2952,16 @@ auto tryConnect(Kameloso instance)
             logger.log("Connected!");
             return Next.continue_;
 
+
+        /+case exception:
+            // Unable to connect socket: Operation now in progress
+            enum pattern = "Connection error: <l>%s";
+            logger.errorf(pattern, attempt.error);
+            //return Next.returnFailure;
+            continue;  // safe to continue?
+            +/
+
+        case exception:
         case delayThenReconnect:
             version(Posix)
             {
@@ -3078,12 +3088,6 @@ auto tryConnect(Kameloso instance)
                 enum pattern = "Failed to connect due to SSL errors: <l>%s";
                 logger.errorf(pattern, attempt.error);
             }
-            return Next.returnFailure;
-
-        case exception:
-            enum pattern = "Connection error: <l>%s";
-            logger.errorf(pattern, attempt.error);
-            //continue;  // safe to continue?
             return Next.returnFailure;
 
         case invalidConnectionError:
