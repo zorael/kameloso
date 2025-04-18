@@ -182,9 +182,10 @@ auto downloadWindowsSSL(
 
     void downloadOpenSSL()
     {
-        import std.file : mkdirRecurse, tempDir;
-        import std.json : JSONException;
-        import std.process : ProcessException;
+        import asdf.serialization : deserialize, serdeOptional;
+        import mir.serde : SerdeException;
+        import std.file : mkdirRecurse, readText, tempDir;
+        import std.process : ProcessException, execute;
 
         version(Win64)
         {
@@ -212,6 +213,24 @@ auto downloadWindowsSSL(
             static assert(0, "Unsupported platform, please file a bug.");
         }
 
+        @serdeOptional
+        static struct Response
+        {
+            @serdeOptional
+            static struct File
+            {
+                string basever;
+                string subver;
+                string arch;
+                uint bits;
+                string url;
+                string installer;
+                size_t size;
+            }
+
+            File[string] files;
+        }
+
         immutable temporaryDir = buildNormalizedPath(tempDir, "kameloso");
         mkdirRecurse(temporaryDir);
 
@@ -227,32 +246,25 @@ auto downloadWindowsSSL(
 
         try
         {
-            import std.file : readText;
-            import std.json : parseJSON;
-            import std.process : execute;
+            const response = jsonFile.readText.deserialize!Response;
 
             string topFilename;
             uint topVersionMinor;
             uint topVersionPatch;
-            size_t topSize;
 
-            // FIXME: asdf
-            const manifestJSON = parseJSON(readText(jsonFile));
-            const fileEntriesJSON = "files" in manifestJSON;
-
-            /+
-                Figure out the latest version by finding the entry with the
-                highest values in the "basever" string in its JSON.
-             +/
-            foreach (immutable filename, const fileEntryJSON; (*fileEntriesJSON).object)
+            foreach (immutable filename, const fileEntry; response.files)
             {
                 import lu.string : advancePast;
                 import std.conv : to;
 
-                if ((fileEntryJSON["arch"].str != arch) || (fileEntryJSON["bits"].integer != bits)) continue;
+                if ((fileEntry.arch != arch) ||
+                    (fileEntry.bits != bits) ||
+                    (fileEntry.installer != "msi"))
+                {
+                    continue;
+                }
 
-                immutable versionString = fileEntryJSON["basever"].str;
-                string slice = versionString;  // mutable
+                string slice = fileEntry.basever;  // mutable
 
                 // "basever": "1.1.1"
                 // "basever": "3.3.2"
@@ -271,7 +283,6 @@ auto downloadWindowsSSL(
                     topFilename = filename;
                     topVersionMinor = versionMinor;
                     topVersionPatch = versionPatch;
-                    topSize = fileEntryJSON["size"].integer;
                 }
                 else if (
                     (versionMinor == topVersionMinor) &&
@@ -279,7 +290,6 @@ auto downloadWindowsSSL(
                 {
                     topFilename = filename;
                     topVersionPatch = versionPatch;
-                    topSize = fileEntryJSON["size"].integer;
                 }
             }
 
@@ -290,13 +300,13 @@ auto downloadWindowsSSL(
                 return;
             }
 
-            const topFileEntryJSON = (*fileEntriesJSON)[topFilename];
+            const topFileEntry = response.files[topFilename];
             immutable msiPath = buildNormalizedPath(temporaryDir, topFilename);
             immutable downloadResult = downloadFile(
-                url: topFileEntryJSON["url"].str,
+                url: topFileEntry.url,
                 what: "OpenSSL installer",
                 saveAs: msiPath,
-                sizeInBytes: topSize);
+                sizeInBytes: topFileEntry.size);
 
             if (*instance.abort) return;
             if (downloadResult != 0) return;
@@ -333,7 +343,7 @@ auto downloadWindowsSSL(
                 }
             }
         }
-        catch (JSONException e)
+        catch (SerdeException e)
         {
             enum pattern = "Error parsing file containing <l>OpenSSL</> download links: <l>%s";
             logger.errorf(pattern, e.msg);
