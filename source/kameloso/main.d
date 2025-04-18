@@ -2959,7 +2959,7 @@ auto tryConnect(Kameloso instance)
             logger.errorf(pattern, attempt.error);
             //return Next.returnFailure;
             continue;  // safe to continue?
-            +/
+         +/
 
         case exception:
         case delayThenReconnect:
