@@ -4538,8 +4538,12 @@ void initResources(TwitchPlugin plugin)
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File;
+    import std.traits : isArray, isAssociativeArray;
 
-    void readAndWriteBack(bool useStdJSON, T)
+    /+
+        This is not generic enough to use elsewhere but it does the job here well enough.
+     +/
+    void readAndWriteBack(T)
         (const string filename,
         const string fileDescription)
     {
@@ -4549,39 +4553,40 @@ void initResources(TwitchPlugin plugin)
                 .readText
                 .deserialize!T;
 
-            immutable serialised = JSONValue(deserialised).toPrettyString;
-            File(filename, "w").writeln(serialised);
-        }
-        catch (SerdeException e)
-        {
-            version(PrintStacktraces) logger.trace(e);
-
-            throw new IRCPluginInitialisationException(
-            message: fileDescription ~ " file is malformed",
-            pluginName: plugin.name,
-            malformedFilename: filename);
-        }
-    }
-
-    void readAndWriteBackObject(bool useStdJSON, T)
-        (const string filename,
-        const string fileDescription)
-    {
-        try
-        {
-            auto deserialised = filename
-                .readText
-                .deserialize!T;
-
-            JSONValue json;
-            json.object = null;
-
-            foreach (immutable channelName, const schema; deserialised)
+            static if (__traits(compiles, JSONValue(deserialised)))
             {
-                json[channelName] = schema.asJSONValue;
+                immutable serialised = JSONValue(deserialised).toPrettyString;
+            }
+            else static if (isAssociativeArray!T)
+            {
+                JSONValue json;
+                json.object = null;
+
+                foreach (immutable channelName, const schema; deserialised)
+                {
+                    json[channelName] = schema.asJSONValue;
+                }
+
+                immutable serialised = json.toPrettyString;
+            }
+            else static if (isArray!T)
+            {
+                JSONValue json;
+                json.array = null;
+
+                foreach (const schema; deserialised)
+                {
+                    json ~= schema.asJSONValue;
+                }
+
+                immutable serialised = json.toPrettyString;
+            }
+            else
+            {
+                enum message = "Unsupported type for Twitch resource serialisation";
+                static assert(0, message);
             }
 
-            immutable serialised = json.toPrettyString;
             File(filename, "w").writeln(serialised);
         }
         catch (SerdeException e)
@@ -4595,51 +4600,19 @@ void initResources(TwitchPlugin plugin)
         }
     }
 
-    void readAndWriteBackArray(bool useStdJSON, T)
-        (const string filename,
-        const string fileDescription)
-    {
-        try
-        {
-            auto deserialised = filename
-                .readText
-                .deserialize!T;
-
-            JSONValue json;
-            json.array = null;
-
-            foreach (const schema; deserialised)
-            {
-                json ~= schema.asJSONValue;
-            }
-
-            immutable serialised = json.toPrettyString;
-            File(filename, "w").writeln(serialised);
-        }
-        catch (SerdeException e)
-        {
-            version(PrintStacktraces) logger.trace(e);
-
-            throw new IRCPluginInitialisationException(
-            message: fileDescription ~ " file is malformed",
-            pluginName: plugin.name,
-            malformedFilename: filename);
-        }
-    }
-
-    readAndWriteBack!(true, long[string][string])
+    readAndWriteBack!(long[string][string])
         (plugin.ecountFile,
         fileDescription: "ecount");
 
-    readAndWriteBack!(true, long[string][string])
+    readAndWriteBack!(long[string][string])
         (plugin.viewersFile,
         fileDescription: "Viewers");
 
-    readAndWriteBackObject!(false, Credentials.JSONSchema[string])
+    readAndWriteBack!(Credentials.JSONSchema[string])
         (plugin.secretsFile,
         fileDescription: "Secrets");
 
-    readAndWriteBackArray!(false, TwitchPlugin.Room.Stream.JSONSchema[])
+    readAndWriteBack!(TwitchPlugin.Room.Stream.JSONSchema[])
         (plugin.streamHistoryFile,
         fileDescription: "Stream history");
 }
