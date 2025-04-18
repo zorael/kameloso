@@ -1359,35 +1359,28 @@ void saveQuotes(QuotePlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File;
 
-    try
+    JSONValue json;
+    json.object = null;
+
+    foreach (immutable channelName, channelQuotes; plugin.quotes)
     {
-        JSONValue json;
-        json.object = null;
+        json[channelName] = null;
+        json[channelName].object = null;
 
-        foreach (immutable channelName, channelQuotes; plugin.quotes)
+        foreach (immutable nickname, quotes; channelQuotes)
         {
-            json[channelName] = null;
-            json[channelName].object = null;
+            json[channelName][nickname] = null;
+            json[channelName][nickname].array = null;
 
-            foreach (immutable nickname, quotes; channelQuotes)
+            foreach (quote; quotes)
             {
-                json[channelName][nickname] = null;
-                json[channelName][nickname].array = null;
-
-                foreach (quote; quotes)
-                {
-                    json[channelName][nickname].array ~= quote.asSchema.asJSONValue;
-                }
+                json[channelName][nickname].array ~= quote.asSchema.asJSONValue;
             }
         }
+    }
 
-        immutable serialised = json.toPrettyString;
-        File(plugin.quotesFile, "w").writeln(serialised);
-    }
-    catch (Exception e)
-    {
-        version(PrintStacktraces) logger.trace(e);
-    }
+    immutable serialised = json.toPrettyString;
+    File(plugin.quotesFile, "w").writeln(serialised);
 }
 
 
