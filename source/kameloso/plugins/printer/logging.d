@@ -713,11 +713,17 @@ void flushAllLogsImpl(PrinterPlugin plugin)
 void flushLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
     import kameloso.string : doublyBackslashed;
+    import std.algorithm.iteration : filter;
     import std.exception : ErrnoException;
     import std.file : FileException;
     import std.utf : UTFException;
 
-    if (!buffer.lines[].length) return;
+    if (buffer.lines[].filter!(line => line.length).empty)
+    {
+        // Buffer is empty and/or has only empty lines
+        buffer.clear();
+        return;
+    }
 
     try
     {
