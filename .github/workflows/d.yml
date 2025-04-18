@@ -43,9 +43,10 @@ jobs:
       if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest'
       run: |
         git clone https://github.com/zorael/mir-algorithm.git
-        dub add-local mir-algorithm 3.2.99  # Work around ddoc warnings
+        dub add-local mir-algorithm 3.22.99  # Work around ddoc warnings
         git clone https://github.com/zorael/asdf.git
-        dub add-local asdf
+        dub add-local asdf 0.7.99
+        dub upgrade
 
     - name: 'Run tests'
       run: dub test
