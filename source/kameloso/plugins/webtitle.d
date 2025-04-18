@@ -408,12 +408,18 @@ void lookupURLs(
                     }
                     else
                     {
-                        import std.json : parseJSON;
+                        import asdf.serialization : deserialize, serdeOptional;
 
-                        // FIXME: asdf
-                        immutable youtubeJSON = parseJSON(response.body);
-                        result.title = decodeEntities(youtubeJSON["title"].str);
-                        result.youtubeAuthor = decodeEntities(youtubeJSON["author_name"].str);
+                        @serdeOptional
+                        static struct YouTubeResponse
+                        {
+                            string author_name;
+                            string title;
+                        }
+
+                        const youtubeResponse = response.body.deserialize!YouTubeResponse;
+                        result.youtubeAuthor = youtubeResponse.author_name.decodeEntities();
+                        result.title = youtubeResponse.title.decodeEntities();
                         return report(result);
                     }
                 }
