@@ -108,7 +108,8 @@ To build with **gdc** you need to clone the [`github.com:zorael/asdf`](https://g
 
 ```shell
 git clone https://github.com/zorael/asdf.git
-dub add-local asdf
+dub add-local asdf 0.7.18
+dub upgrade  # in project root
 ```
 
 #### Compiler versions
