@@ -119,11 +119,11 @@ struct Note
     /++
         Constructor.
      +/
-    this(const JSONSchema json)
+    this(const JSONSchema schema)
     {
-        line = json.line;
-        sender = json.sender;
-        timestamp = json.timestamp;
+        this.line = schema.line;
+        this.sender = schema.sender;
+        this.timestamp = schema.timestamp;
     }
 
     /++
@@ -131,11 +131,11 @@ struct Note
      +/
     auto asSchema() const
     {
-        JSONSchema json;
-        json.line = line;
-        json.sender = sender;
-        json.timestamp = timestamp;
-        return json;
+        JSONSchema schema;
+        schema.line = line;
+        schema.sender = sender;
+        schema.timestamp = timestamp;
+        return schema;
     }
 
     /++
@@ -556,11 +556,11 @@ void loadNotes(NotePlugin plugin)
 
     plugin.notes = null;
 
-    foreach (immutable channelName, channelNotesJSON; json)
+    foreach (immutable channelName, const channelSchemas; json)
     {
-        foreach (immutable nickname, notesJSON; channelNotesJSON)
+        foreach (immutable nickname, const schemas; channelSchemas)
         {
-            foreach (schema; notesJSON)
+            foreach (const schema; schemas)
             {
                 plugin.notes[channelName][nickname] ~= Note(schema);
             }

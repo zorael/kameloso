@@ -129,12 +129,12 @@ struct Quote
     /++
         Constructor.
      +/
-    this(const JSONSchema json)
+    this(const JSONSchema schema)
     {
-        this.nickname = json.nickname;
-        this.line = json.line;
-        this.timestamp = json.timestamp;
-        this.creator = json.creator;
+        this.nickname = schema.nickname;
+        this.line = schema.line;
+        this.timestamp = schema.timestamp;
+        this.creator = schema.creator;
     }
 
     /++
@@ -142,12 +142,12 @@ struct Quote
      +/
     auto asSchema() const
     {
-        JSONSchema json;
-        json.nickname = this.nickname;
-        json.line = this.line;
-        json.timestamp = this.timestamp;
-        json.creator = this.creator;
-        return json;
+        JSONSchema schema;
+        schema.nickname = this.nickname;
+        schema.line = this.line;
+        schema.timestamp = this.timestamp;
+        schema.creator = this.creator;
+        return schema;
     }
 }
 
@@ -1320,9 +1320,11 @@ void loadQuotes(QuotePlugin plugin)
 
         plugin.quotes = null;
 
-        foreach (immutable channelName, channelQuotesJSON; quotes)
+        foreach (immutable channelName, channelSchemas; quotes)
         {
+            // Initialise the AA
             auto channelQuotes = channelName in plugin.quotes;
+
             if (!channelQuotes)
             {
                 plugin.quotes[channelName][string.init] = [ Quote.init ];
@@ -1330,7 +1332,7 @@ void loadQuotes(QuotePlugin plugin)
                 (*channelQuotes).remove(string.init);
             }
 
-            foreach (immutable nickname, schemaArray; channelQuotesJSON)
+            foreach (immutable nickname, schemaArray; channelSchemas)
             {
                 foreach (schema; schemaArray)
                 {

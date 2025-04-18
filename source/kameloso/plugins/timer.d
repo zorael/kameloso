@@ -206,42 +206,42 @@ struct Timer
     /++
         Constructor.
      +/
-    this(const JSONSchema json)
+    this(const JSONSchema schema)
     {
-        this.name = json.name;
-        this.messageCountThreshold = json.messageCountThreshold;
-        this.timeThreshold = json.timeThreshold;
-        this.messageCountStagger = json.messageCountStagger;
-        this.timeStagger = json.timeStagger;
-        this.suspended = json.suspended;
-        this.colour = json.colour;
-        this.lines = json.lines.dup;
+        this.name = schema.name;
+        this.messageCountThreshold = schema.messageCountThreshold;
+        this.timeThreshold = schema.timeThreshold;
+        this.messageCountStagger = schema.messageCountStagger;
+        this.timeStagger = schema.timeStagger;
+        this.suspended = schema.suspended;
+        this.colour = schema.colour;
+        this.lines = schema.lines.dup;
 
-        this.type = (json.type == cast(int) TimerType.random) ?
+        this.type = (schema.type == cast(int) TimerType.random) ?
             TimerType.random :
             TimerType.ordered;
 
-        this.condition = (json.condition == cast(int) TimerCondition.both) ?
+        this.condition = (schema.condition == cast(int) TimerCondition.both) ?
             TimerCondition.both :
             TimerCondition.either;
     }
 
     auto asSchema() const
     {
-        JSONSchema json;
+        JSONSchema schema;
 
-        json.name = this.name;
-        json.type = cast(int) this.type;
-        json.condition = cast(int) this.condition;
-        json.messageCountThreshold = this.messageCountThreshold;
-        json.timeThreshold = this.timeThreshold;
-        json.messageCountStagger = this.messageCountStagger;
-        json.timeStagger = this.timeStagger;
-        json.colour = this.colour;
-        json.suspended = this.suspended;
-        json.lines = this.lines.dup;
+        schema.name = this.name;
+        schema.type = cast(int) this.type;
+        schema.condition = cast(int) this.condition;
+        schema.messageCountThreshold = this.messageCountThreshold;
+        schema.timeThreshold = this.timeThreshold;
+        schema.messageCountStagger = this.messageCountStagger;
+        schema.timeStagger = this.timeStagger;
+        schema.colour = this.colour;
+        schema.suspended = this.suspended;
+        schema.lines = this.lines.dup;
 
-        return json;
+        return schema;
     }
 
     // getLine
@@ -1725,7 +1725,6 @@ void loadTimers(TimerPlugin plugin)
 {
     import asdf.serialization : deserialize;
     import std.file : readText;
-    import std.stdio : File, writeln;
 
     auto json = plugin.timerFile
         .readText
@@ -1733,12 +1732,12 @@ void loadTimers(TimerPlugin plugin)
 
     plugin.timersByChannel = null;
 
-    foreach (immutable channelName, const timersJSON; json)
+    foreach (immutable channelName, const timerSchemas; json)
     {
         plugin.timersByChannel[channelName] = typeof(plugin.timersByChannel[channelName]).init;
         auto channelTimers = channelName in plugin.timersByChannel;
 
-        foreach (const schema; timersJSON)
+        foreach (const schema; timerSchemas)
         {
             auto timer = Timer(schema);
             (*channelTimers)[timer.name] = timer;

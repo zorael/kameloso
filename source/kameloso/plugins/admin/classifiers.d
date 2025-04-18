@@ -112,20 +112,20 @@ void listList(
         .readText
         .deserialize!(string[string][string]);
 
-    const channelUsersJSON = channelName in json[list];
+    const channelUsers = channelName in json[list];
 
-    if (channelUsersJSON && channelUsersJSON.length)
+    if (channelUsers && channelUsers.length)
     {
         if (event.sender.nickname.length)
         {
             enum pattern = "Current %s in <b>%s<b>: %-(<h>%s<h>, %)<h>";
-            immutable message = pattern.format(role, channelName, channelUsersJSON);
+            immutable message = pattern.format(role, channelName, channelUsers);
             privmsg(plugin.state, event.channel.name, event.sender.nickname, message);
         }
         else
         {
             enum pattern = "Current %s in <l>%s</>: %-(<h>%s</>, %)</>";
-            logger.infof(pattern, role, channelName, channelUsersJSON);
+            logger.infof(pattern, role, channelName, channelUsers);
         }
     }
     else
@@ -621,15 +621,15 @@ auto alterAccountClassifier(
     {
         import std.algorithm.searching : canFind;
 
-        if (auto channelAccountsJSON = channelName in json[list])
+        if (auto channelAccounts = channelName in json[list])
         {
-            if ((*channelAccountsJSON).canFind(account))
+            if ((*channelAccounts).canFind(account))
             {
                 return AlterationResult.alreadyInList;
             }
             else
             {
-                *channelAccountsJSON ~= account;
+                *channelAccounts ~= account;
             }
         }
         else
@@ -646,16 +646,16 @@ auto alterAccountClassifier(
         import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : countUntil;
 
-        if (auto channelAccountsJSON = channelName in json[list])
+        if (auto channelAccounts = channelName in json[list])
         {
-            immutable index = (*channelAccountsJSON).countUntil(account);
+            immutable index = (*channelAccounts).countUntil(account);
 
             if (index == -1)
             {
                 return AlterationResult.noSuchAccount;
             }
 
-            *channelAccountsJSON = (*channelAccountsJSON)
+            *channelAccounts = (*channelAccounts)
                 .remove!(SwapStrategy.unstable)(index);
         }
         else

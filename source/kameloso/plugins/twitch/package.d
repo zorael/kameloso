@@ -346,21 +346,21 @@ package struct Credentials
     /++
         Constructor.
      +/
-    this(const JSONSchema json)
+    this(const JSONSchema schema)
     {
-        this.broadcasterKey = json.broadcasterKey;
-        this.googleClientID = json.googleClientID;
-        this.googleClientSecret = json.googleClientSecret;
-        this.googleAccessToken = json.googleAccessToken;
-        this.googleRefreshToken = json.googleRefreshToken;
-        this.youtubePlaylistID = json.youtubePlaylistID;
-        this.spotifyClientID = json.spotifyClientID;
-        this.spotifyClientSecret = json.spotifyClientSecret;
-        this.spotifyAccessToken = json.spotifyAccessToken;
-        this.spotifyRefreshToken = json.spotifyRefreshToken;
-        this.spotifyPlaylistID = json.spotifyPlaylistID;
-        this.broadcasterBearerToken = json.broadcasterBearerToken;
-        this.broadcasterKeyExpiry = json.broadcasterKeyExpiry;
+        this.broadcasterKey = schema.broadcasterKey;
+        this.googleClientID = schema.googleClientID;
+        this.googleClientSecret = schema.googleClientSecret;
+        this.googleAccessToken = schema.googleAccessToken;
+        this.googleRefreshToken = schema.googleRefreshToken;
+        this.youtubePlaylistID = schema.youtubePlaylistID;
+        this.spotifyClientID = schema.spotifyClientID;
+        this.spotifyClientSecret = schema.spotifyClientSecret;
+        this.spotifyAccessToken = schema.spotifyAccessToken;
+        this.spotifyRefreshToken = schema.spotifyRefreshToken;
+        this.spotifyPlaylistID = schema.spotifyPlaylistID;
+        this.broadcasterBearerToken = schema.broadcasterBearerToken;
+        this.broadcasterKeyExpiry = schema.broadcasterKeyExpiry;
     }
 
     /++
@@ -368,21 +368,21 @@ package struct Credentials
      +/
     auto asSchema() const
     {
-        JSONSchema json;
-        json.broadcasterKey = this.broadcasterKey;
-        json.googleClientID = this.googleClientID;
-        json.googleClientSecret = this.googleClientSecret;
-        json.googleAccessToken = this.googleAccessToken;
-        json.googleRefreshToken = this.googleRefreshToken;
-        json.youtubePlaylistID = this.youtubePlaylistID;
-        json.spotifyClientID = this.spotifyClientID;
-        json.spotifyClientSecret = this.spotifyClientSecret;
-        json.spotifyAccessToken = this.spotifyAccessToken;
-        json.spotifyRefreshToken = this.spotifyRefreshToken;
-        json.spotifyPlaylistID = this.spotifyPlaylistID;
-        json.broadcasterBearerToken = this.broadcasterBearerToken;
-        json.broadcasterKeyExpiry = this.broadcasterKeyExpiry;
-        return json;
+        JSONSchema schema;
+        schema.broadcasterKey = this.broadcasterKey;
+        schema.googleClientID = this.googleClientID;
+        schema.googleClientSecret = this.googleClientSecret;
+        schema.googleAccessToken = this.googleAccessToken;
+        schema.googleRefreshToken = this.googleRefreshToken;
+        schema.youtubePlaylistID = this.youtubePlaylistID;
+        schema.spotifyClientID = this.spotifyClientID;
+        schema.spotifyClientSecret = this.spotifyClientSecret;
+        schema.spotifyAccessToken = this.spotifyAccessToken;
+        schema.spotifyRefreshToken = this.spotifyRefreshToken;
+        schema.spotifyPlaylistID = this.spotifyPlaylistID;
+        schema.broadcasterBearerToken = this.broadcasterBearerToken;
+        schema.broadcasterKeyExpiry = this.broadcasterKeyExpiry;
+        return schema;
     }
 }
 
@@ -434,14 +434,14 @@ public:
     /++
         Constructor.
      +/
-    this(const JSONSchema json)
+    this(const JSONSchema schema)
     {
         import std.conv : to;
 
-        this.id = json.user_id.to!ulong;
-        this.displayName = json.user_name;
-        this.login = json.user_login;
-        this.when = SysTime.fromISOExtString(json.followed_at);
+        this.id = schema.user_id.to!ulong;
+        this.displayName = schema.user_name;
+        this.login = schema.user_login;
+        this.when = SysTime.fromISOExtString(schema.followed_at);
     }
 }
 
@@ -2968,9 +2968,9 @@ void initialise(TwitchPlugin plugin)
             .readText
             .deserialize!(Credentials.JSONSchema[string]);
 
-        foreach (immutable channelName, credsJSON; json)
+        foreach (immutable channelName, creds; json)
         {
-            plugin.secretsByChannel[channelName] = Credentials(credsJSON);
+            plugin.secretsByChannel[channelName] = Credentials(creds);
         }
 
         bool needSeparator;
@@ -4720,9 +4720,9 @@ void loadResources(TwitchPlugin plugin)
 
     plugin.secretsByChannel = null;
 
-    foreach (immutable channelName, credsJSON; creds)
+    foreach (immutable channelName, channelCreds; creds)
     {
-        plugin.secretsByChannel[channelName] = Credentials(credsJSON);
+        plugin.secretsByChannel[channelName] = Credentials(channelCreds);
     }
 }
 
@@ -5181,27 +5181,27 @@ package:
             /++
                 Constructor.
              +/
-            this(const JSONSchema json)
+            this(const JSONSchema schema)
             {
                 import core.time : seconds;
 
-                this._id = json.id.to!ulong;
-                this.userID = json.user_id.to!ulong;
-                this.userLogin = json.user_login;
-                this.userDisplayName = json.user_name;
-                this.gameID = json.game_id.to!ulong;
-                this.gameName = json.game_name;
-                this.title = json.title;
-                this.startedAt = SysTime.fromISOExtString(json.started_at);
-                this.status = json.type;
-                this.viewerCount = json.viewer_count;
-                this.viewerCountMax = json.viewer_count_max;
-                this.tags = json.tags.dup;
-                this.duration = json.duration.seconds;
+                this._id = schema.id.to!ulong;
+                this.userID = schema.user_id.to!ulong;
+                this.userLogin = schema.user_login;
+                this.userDisplayName = schema.user_name;
+                this.gameID = schema.game_id.to!ulong;
+                this.gameName = schema.game_name;
+                this.title = schema.title;
+                this.startedAt = SysTime.fromISOExtString(schema.started_at);
+                this.status = schema.type;
+                this.viewerCount = schema.viewer_count;
+                this.viewerCountMax = schema.viewer_count_max;
+                this.tags = schema.tags.dup;
+                this.duration = schema.duration.seconds;
 
-                if (json.ended_at.length)
+                if (schema.ended_at.length)
                 {
-                    this.endedAt = SysTime.fromISOExtString(json.ended_at);
+                    this.endedAt = SysTime.fromISOExtString(schema.ended_at);
                 }
                 else
                 {
@@ -5214,28 +5214,28 @@ package:
              +/
             auto asSchema() const
             {
-                JSONSchema json;
+                JSONSchema schema;
 
-                json.id = this._id.to!string;
-                json.user_id = this.userID.to!string;
-                json.user_login = this.userLogin;
-                json.user_name = this.userDisplayName;
-                json.game_id = this.gameID.to!string;
-                json.game_name = this.gameName;
-                json.title = this.title;
-                json.started_at = this.startedAt.toISOExtString;
-                json.type = this.status;
-                json.viewer_count = this.viewerCount;
-                json.viewer_count_max = this.viewerCountMax;
-                json.tags = this.tags.dup;
-                json.duration = this.duration.total!"seconds";
+                schema.id = this._id.to!string;
+                schema.user_id = this.userID.to!string;
+                schema.user_login = this.userLogin;
+                schema.user_name = this.userDisplayName;
+                schema.game_id = this.gameID.to!string;
+                schema.game_name = this.gameName;
+                schema.title = this.title;
+                schema.started_at = this.startedAt.toISOExtString;
+                schema.type = this.status;
+                schema.viewer_count = this.viewerCount;
+                schema.viewer_count_max = this.viewerCountMax;
+                schema.tags = this.tags.dup;
+                schema.duration = this.duration.total!"seconds";
 
                 if (this.endedAt != SysTime.init)
                 {
-                    json.ended_at = this.endedAt.toISOExtString;
+                    schema.ended_at = this.endedAt.toISOExtString;
                 }
 
-                return json;
+                return schema;
             }
 
             /++

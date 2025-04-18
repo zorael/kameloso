@@ -847,15 +847,15 @@ void loadCounters(CounterPlugin plugin)
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    plugin.counters = null;
-
     try
     {
         auto json = plugin.countersFile
             .readText
             .deserialize!(Counter.JSONSchema[string][string]);
 
-        foreach (immutable channelName, channelCountersJSON; json)
+        plugin.counters = null;
+
+        foreach (immutable channelName, channelSchemas; json)
         {
             // Initialise the AA
             auto channelCounters = channelName in plugin.counters;
@@ -867,7 +867,7 @@ void loadCounters(CounterPlugin plugin)
                 (*channelCounters).remove(string.init);
             }
 
-            foreach (immutable word, counterSchema; channelCountersJSON)
+            foreach (immutable word, counterSchema; channelSchemas)
             {
                 (*channelCounters)[word] = Counter(counterSchema);
             }

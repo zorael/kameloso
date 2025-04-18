@@ -156,13 +156,13 @@ struct Oneliner
     /++
         Constructor.
      +/
-    this(const JSONSchema json)
+    this(const JSONSchema schema)
     {
-        trigger = json.trigger;
-        alias_ = json.alias_;
-        type = cast(OnelinerType) json.type;
-        cooldown = json.cooldown;
-        responses = json.responses.dup;
+        this.trigger = schema.trigger;
+        this.alias_ = schema.alias_;
+        this.type = cast(OnelinerType) schema.type;
+        this.cooldown = schema.cooldown;
+        this.responses = schema.responses.dup;
     }
 
     /++
@@ -170,15 +170,15 @@ struct Oneliner
      +/
     auto asSchema() const
     {
-        JSONSchema json;
+        JSONSchema schema;
 
-        json.trigger = this.trigger;
-        json.alias_ = this.alias_;
-        json.type = cast(int) this.type;
-        json.cooldown = this.cooldown;
-        json.responses = this.responses.dup;
+        schema.trigger = this.trigger;
+        schema.alias_ = this.alias_;
+        schema.type = cast(int) this.type;
+        schema.cooldown = this.cooldown;
+        schema.responses = this.responses.dup;
 
-        return json;
+        return schema;
     }
 
     // getResponse
@@ -1370,7 +1370,7 @@ void loadOneliners(OnelinerPlugin plugin)
 
         plugin.onelinersByChannel = null;
 
-        foreach (immutable channelName, const channelOnelinersJSON; json)
+        foreach (immutable channelName, const channelSchemas; json)
         {
             // Initialise the AA
             auto channelOneliners = channelName in plugin.onelinersByChannel;
@@ -1382,7 +1382,7 @@ void loadOneliners(OnelinerPlugin plugin)
                 (*channelOneliners).remove(string.init);
             }
 
-            foreach (immutable trigger, const schema; channelOnelinersJSON)
+            foreach (immutable trigger, const schema; channelSchemas)
             {
                 (*channelOneliners)[trigger] = Oneliner(schema);
             }
