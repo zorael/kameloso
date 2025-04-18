@@ -57,12 +57,16 @@ struct Counter
      +/
     static struct JSONSchema
     {
+        private import asdf.serialization : serdeOptional;
+
         long count;  ///
         string word;  ///
         string patternQuery;  ///
         string patternIncrement;  ///
         string patternDecrement;  ///
         string patternAssign;  ///
+
+        @serdeOptional bool asEmotes;  ///
 
         /++
             Returns a [std.json.JSONValue|JSONValue] representing this [Counter].
@@ -79,6 +83,7 @@ struct Counter
             json["patternIncrement"] = this.patternIncrement;
             json["patternDecrement"] = this.patternDecrement;
             json["patternAssign"] = this.patternAssign;
+            json["asEmotes"] = this.asEmotes;
             return json;
         }
     }
@@ -130,6 +135,12 @@ struct Counter
     string patternAssign = "<b>$word<b> count assigned to <b>$count<b>!";
 
     /++
+        Whether or not messages should be sent as `ACTION` emotes instead of as
+        normal channel messages. This may help with visibility in a very busy channel.
+     +/
+    bool asEmotes = false;
+
+    /++
         Constructor. Only kept as a compatibility measure to ensure [word] always
         has a value. Remove later.
      +/
@@ -141,14 +152,14 @@ struct Counter
     /++
         Constructor.
      +/
-    this(const JSONSchema json)
+    this(const JSONSchema schema)
     {
-        count = json.count;
-        word = json.word;
-        patternQuery = json.patternQuery;
-        patternIncrement = json.patternIncrement;
-        patternDecrement = json.patternDecrement;
-        patternAssign = json.patternAssign;
+        this.count = schema.count;
+        this.word = schema.word;
+        this.patternQuery = schema.patternQuery;
+        this.patternIncrement = schema.patternIncrement;
+        this.patternDecrement = schema.patternDecrement;
+        this.patternAssign = schema.patternAssign;
     }
 
     /++
@@ -156,14 +167,15 @@ struct Counter
      +/
     auto asSchema() const
     {
-        JSONSchema json;
-        json.count = count;
-        json.word = word;
-        json.patternQuery = patternQuery;
-        json.patternIncrement = patternIncrement;
-        json.patternDecrement = patternDecrement;
-        json.patternAssign = patternAssign;
-        return json;
+        JSONSchema schema;
+        schema.count = this.count;
+        schema.word = this.word;
+        schema.patternQuery = this.patternQuery;
+        schema.patternIncrement = this.patternIncrement;
+        schema.patternDecrement = this.patternDecrement;
+        schema.patternAssign = this.patternAssign;
+        schema.asEmotes = this.asEmotes;
+        return schema;
     }
 
     // resetEmptyPatterns
@@ -197,6 +209,7 @@ struct Counter
             .addSyntax("$command add [counter word]")
             .addSyntax("$command del [counter word]")
             .addSyntax("$command format [counter word] [?+-=] [format pattern]")
+            .addSyntax("$command emote [counter word]")
             .addSyntax("$command list")
     )
 )
@@ -287,6 +300,13 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
     {
         enum pattern = "Counter <b>%s<b> does not have a custom format pattern.";
         immutable message = pattern.format(word);
+        chan(plugin.state, event.channel.name, message);
+    }
+
+    void sendToggleEmote(const string word, const bool setting)
+    {
+        enum pattern = "Counter <b>%s<b> messages as emotes toggled %s.";
+        immutable message = pattern.format(word, setting);
         chan(plugin.state, event.channel.name, message);
     }
 
@@ -461,6 +481,18 @@ void onCommandCounter(CounterPlugin plugin, const IRCEvent event)
         if (event.channel.name !in plugin.counters) return sendNoCountersActive();
         return sendCountersList(plugin.counters[event.channel.name].keys);
 
+    case "emote":
+        auto channelCounters = event.channel.name in plugin.counters;
+        if (!channelCounters) return sendNoSuchCounter();
+
+        auto counter = slice in *channelCounters;
+        if (!counter) return sendNoSuchCounter();
+
+        counter.asEmotes = !counter.asEmotes;
+        saveCounters(plugin);
+
+        return sendToggleEmote(counter.word, counter.asEmotes);
+
     default:
         return sendUsage();
     }
@@ -503,7 +535,9 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
             counter.patternQuery,
             event,
             counter);
-        chan(plugin.state, event.channel.name, message);
+
+        if (counter.asEmotes) emote(plugin.state, event.channel.name, message);
+        else chan(plugin.state, event.channel.name, message);
     }
 
     void sendCounterModified(const Counter counter, const long step)
@@ -519,7 +553,9 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
             event,
             counter,
             abs(step));
-        chan(plugin.state, event.channel.name, message);
+
+        if (counter.asEmotes) emote(plugin.state, event.channel.name, message);
+        else chan(plugin.state, event.channel.name, message);
     }
 
     void sendCounterAssigned(const Counter counter, const long step)
@@ -532,7 +568,9 @@ void onCounterWord(CounterPlugin plugin, const IRCEvent event)
             event,
             counter,
             step);
-        chan(plugin.state, event.channel.name, message);
+
+        if (counter.asEmotes) emote(plugin.state, event.channel.name, message);
+        else chan(plugin.state, event.channel.name, message);
     }
 
     void sendInputIsNaN(const string input)
