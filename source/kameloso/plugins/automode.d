@@ -53,7 +53,7 @@ void saveAutomodes(AutomodePlugin plugin)
 {
     import lu.array : pruneAA;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     pruneAA(plugin.automodes);
 
@@ -72,7 +72,7 @@ void initResources(AutomodePlugin plugin)
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     try
     {

@@ -1058,7 +1058,7 @@ void loadSeen(SeenPlugin plugin)
 void saveSeen(SeenPlugin plugin)
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     if (!plugin.seenUsers.length) return;
 
@@ -1161,7 +1161,7 @@ void initResources(SeenPlugin plugin)
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     try
     {

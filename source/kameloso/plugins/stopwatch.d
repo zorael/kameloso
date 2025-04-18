@@ -228,7 +228,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const IRCEvent event)
 void serialiseStopwatches(StopwatchPlugin plugin)
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     if (!plugin.stopwatches.length) return;
 

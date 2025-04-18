@@ -511,7 +511,7 @@ void saveResourceToDisk(/*const*/ string[string] aa, const string filename)
 in (filename.length, "Tried to save resources to an empty filename string")
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     immutable serialised = JSONValue(aa).toPrettyString;
     File(filename, "w").writeln(serialised);
@@ -544,7 +544,7 @@ void initResources(TimePlugin plugin)
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     try
     {

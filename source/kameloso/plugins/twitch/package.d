@@ -3833,7 +3833,7 @@ void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream s
     import asdf.serialization : deserialize;
     import std.file : readText;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     auto streams = plugin.streamHistoryFile
         .readText
@@ -3849,7 +3849,7 @@ void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream s
 
     json.array ~= stream.asSchema.asJSONValue;
 
-    immutable serialised = json.toPrettyString();
+    immutable serialised = json.toPrettyString;
     File(plugin.streamHistoryFile, "w").writeln(serialised);
 }
 
@@ -4537,7 +4537,7 @@ void initResources(TwitchPlugin plugin)
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     void readAndWriteBack(bool useStdJSON, T)
         (const string filename,
@@ -4581,7 +4581,7 @@ void initResources(TwitchPlugin plugin)
                 json[channelName] = schema.asJSONValue;
             }
 
-            immutable serialised = json.toPrettyString();
+            immutable serialised = json.toPrettyString;
             File(filename, "w").writeln(serialised);
         }
         catch (SerdeException e)
@@ -4613,7 +4613,7 @@ void initResources(TwitchPlugin plugin)
                 json ~= schema.asJSONValue;
             }
 
-            immutable serialised = json.toPrettyString();
+            immutable serialised = json.toPrettyString;
             File(filename, "w").writeln(serialised);
         }
         catch (SerdeException e)
@@ -4660,10 +4660,10 @@ void saveResourceToDisk(/*const*/ long[string][string] aa, const string filename
 {
     import asdf.serialization : serializeToJsonPretty;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
-    immutable serialised = JSONValue(aa);
-    File(filename, "w").writeln(serialised.toPrettyString);
+    immutable serialised = JSONValue(aa).toPrettyString;
+    File(filename, "w").writeln(serialised);
 }
 
 
@@ -4678,7 +4678,7 @@ void saveResourceToDisk(/*const*/ long[string][string] aa, const string filename
 package void saveSecretsToDisk(const Credentials[string] aa, const string filename)
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     JSONValue json;
     json.object = null;
@@ -4688,7 +4688,7 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
         json[channelName] = creds.asSchema.asJSONValue;
     }
 
-    immutable serialised = json.toPrettyString();
+    immutable serialised = json.toPrettyString;
     File(filename, "w").writeln(serialised);
 }
 

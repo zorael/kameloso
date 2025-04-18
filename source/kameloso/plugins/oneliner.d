@@ -1453,7 +1453,7 @@ void saveResourceToDisk(const Oneliner[string][string] aa, const string filename
 in (filename.length, "Tried to save resources to an empty filename string")
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     try
     {
@@ -1471,7 +1471,7 @@ in (filename.length, "Tried to save resources to an empty filename string")
             }
         }
 
-        immutable serialised = json.toPrettyString();
+        immutable serialised = json.toPrettyString;
         File(filename, "w").writeln(serialised);
     }
     catch (Exception e)
@@ -1493,7 +1493,7 @@ void initResources(OnelinerPlugin plugin)
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     try
     {
@@ -1515,7 +1515,7 @@ void initResources(OnelinerPlugin plugin)
             }
         }
 
-        immutable serialised = json.toPrettyString();
+        immutable serialised = json.toPrettyString;
         File(plugin.onelinerFile, "w").writeln(serialised);
     }
     catch (SerdeException e)

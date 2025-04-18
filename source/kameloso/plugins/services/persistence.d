@@ -1337,7 +1337,7 @@ void initAccountResources(PersistenceService service)
     import mir.serde : SerdeException;
     import std.file : exists, readText;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     try
     {
@@ -1353,8 +1353,8 @@ void initAccountResources(PersistenceService service)
             json[channelName] = channelSchema.asJSONValue;
         }
 
-        immutable serialised = json.toPrettyString();
-        File(service.userFile, "w").write(serialised);
+        immutable serialised = json.toPrettyString;
+        File(service.userFile, "w").writeln(serialised);
     }
     catch (SerdeException e)
     {
@@ -1381,7 +1381,7 @@ void initHostmaskResources(PersistenceService service)
     import asdf.serialization : deserialize;
     import std.file : readText;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     string[string] json;
 
@@ -1422,7 +1422,7 @@ void initHostmaskResources(PersistenceService service)
     }
 
     immutable serialised = JSONValue(json).toPrettyString;
-    File(service.hostmasksFile, "w").write(serialised);
+    File(service.hostmasksFile, "w").writeln(serialised);
 }
 
 

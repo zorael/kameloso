@@ -1357,7 +1357,7 @@ void loadQuotes(QuotePlugin plugin)
 void saveQuotes(QuotePlugin plugin)
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     try
     {
@@ -1381,7 +1381,7 @@ void saveQuotes(QuotePlugin plugin)
             }
         }
 
-        immutable serialised = json.toPrettyString();
+        immutable serialised = json.toPrettyString;
         File(plugin.quotesFile, "w").writeln(serialised);
     }
     catch (Exception e)
@@ -1515,7 +1515,7 @@ void initResources(QuotePlugin plugin)
     import std.algorithm.searching : startsWith;
     import std.file : readText;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     try
     {
@@ -1543,7 +1543,7 @@ void initResources(QuotePlugin plugin)
             }
         }
 
-        immutable serialised = json.toPrettyString();
+        immutable serialised = json.toPrettyString;
         File(plugin.quotesFile, "w").writeln(serialised);
     }
     catch (SerdeException e)

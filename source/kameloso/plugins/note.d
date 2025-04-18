@@ -513,7 +513,7 @@ void onWelcome(NotePlugin plugin, const IRCEvent _)
 void saveNotes(NotePlugin plugin)
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     JSONValue json;
     json.object = null;
@@ -535,8 +535,8 @@ void saveNotes(NotePlugin plugin)
         }
     }
 
-    immutable serialised = json.toPrettyString();
-    File(plugin.notesFile, "w").write(serialised);
+    immutable serialised = json.toPrettyString;
+    File(plugin.notesFile, "w").writeln(serialised);
 }
 
 
@@ -593,7 +593,7 @@ void initResources(NotePlugin plugin)
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     try
     {
@@ -620,8 +620,8 @@ void initResources(NotePlugin plugin)
             }
         }
 
-        immutable serialised = json.toPrettyString();
-        File(plugin.notesFile, "w").write(serialised);
+        immutable serialised = json.toPrettyString;
+        File(plugin.notesFile, "w").writeln(serialised);
     }
     catch (SerdeException e)
     {

@@ -609,7 +609,7 @@ auto alterAccountClassifier(
     import lu.conv : toString;
     import std.file : readText;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     auto json = plugin.userFile
         .readText
@@ -704,7 +704,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
     import std.file : readText;
     import std.format : format;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     version(Colours)
     {

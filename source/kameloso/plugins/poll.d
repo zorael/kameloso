@@ -895,7 +895,7 @@ void generateEndFiber(
 void serialisePolls(PollPlugin plugin)
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     if (!plugin.channelPolls.length) return;
 
@@ -907,8 +907,8 @@ void serialisePolls(PollPlugin plugin)
         json[channelName] = poll.asSchema.asJSONValue;
     }
 
-    immutable serialised = json.toPrettyString();
-    File(plugin.pollTempFile, "w").write(serialised);
+    immutable serialised = json.toPrettyString;
+    File(plugin.pollTempFile, "w").writeln(serialised);
 }
 
 

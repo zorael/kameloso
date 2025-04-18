@@ -1648,7 +1648,7 @@ auto createTimerFiber(
 void saveTimers(TimerPlugin plugin)
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     JSONValue json;
     json.object = null;
@@ -1664,7 +1664,7 @@ void saveTimers(TimerPlugin plugin)
         }
     }
 
-    immutable serialised = json.toPrettyString();
+    immutable serialised = json.toPrettyString;
     File(plugin.timerFile, "w").writeln(serialised);
 }
 
@@ -1680,7 +1680,7 @@ void initResources(TimerPlugin plugin)
     import mir.serde : SerdeException;
     import std.file : exists, readText;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     try
     {
@@ -1702,7 +1702,7 @@ void initResources(TimerPlugin plugin)
             }
         }
 
-        immutable serialised = json.toPrettyString();
+        immutable serialised = json.toPrettyString;
         File(plugin.timerFile, "w").writeln(serialised);
     }
     catch (SerdeException e)

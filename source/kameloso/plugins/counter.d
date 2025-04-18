@@ -777,7 +777,7 @@ void reload(CounterPlugin plugin)
 void saveCounters(CounterPlugin plugin)
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     JSONValue json;
     json.object = null;
@@ -792,7 +792,7 @@ void saveCounters(CounterPlugin plugin)
         }
     }
 
-    immutable serialised = json.toPrettyString();
+    immutable serialised = json.toPrettyString;
     File(plugin.countersFile, "w").writeln(serialised);
 }
 
@@ -858,7 +858,7 @@ void initResources(CounterPlugin plugin)
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     try
     {
@@ -879,7 +879,7 @@ void initResources(CounterPlugin plugin)
             }
         }
 
-        immutable serialised = json.toPrettyString();
+        immutable serialised = json.toPrettyString;
         File(plugin.countersFile, "w").writeln(serialised);
     }
     catch (SerdeException e)
