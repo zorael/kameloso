@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>dialect.defs (dialect.defs)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>dialect.defs</h1><div class="breadcrumbs"><a class="breadcrumb" href="dialect.html">dialect</a> </div><div><div class="documentation-comment synopsis"><div><p>Definitions of struct aggregates used throughout the library, representing
+    <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a>s and thereto related objects like <a class="xref" href="dialect.defs.IRCServer.html">IRCServer</a> and <a class="xref" href="dialect.defs.IRCUser.html">IRCUser</a>.</p><p>Things related to actually parsing IRC do not belong here; what's here
+    should only be applicable to be used as a header.</p><p>The only lu dependency should be <a class="xref" href="lu.uda.html">lu.uda</a>.</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="struct"><a class="header-anchor" href="#struct">Structs</a></h3><dl class="member-list native"><dt><a href="dialect.defs.IRCChannel.html">IRCChannel</a><div class="simplified-prototype" style="max-width: 18ch;"><span class="builtin-type">struct</span> <span class="name">IRCChannel</span></div></dt><dd><div><p>Aggregate personifying an IRC channel and its state.</p></div></dd><dt><a href="dialect.defs.IRCClient.html">IRCClient</a><div class="simplified-prototype" style="max-width: 17ch;"><span class="builtin-type">struct</span> <span class="name">IRCClient</span></div></dt><dd><div><p>Aggregate collecting all the relevant settings, options and state needed for
+    a connection to an IRC server.</p></div></dd><dt><a href="dialect.defs.IRCEvent.html">IRCEvent</a><div class="simplified-prototype" style="max-width: 16ch;"><span class="builtin-type">struct</span> <span class="name">IRCEvent</span></div></dt><dd><div><p>A single IRC event, parsed from server input.</p></div></dd><dt><a href="dialect.defs.IRCServer.html">IRCServer</a><div class="simplified-prototype" style="max-width: 17ch;"><span class="builtin-type">struct</span> <span class="name">IRCServer</span></div></dt><dd><div><p>Aggregate of all information and state pertaining to the connected IRC
+    server. Some fields are transient on a per-connection basis and should not
+    be serialised.</p></div></dd><dt><a href="dialect.defs.IRCUser.html">IRCUser</a><div class="simplified-prototype" style="max-width: 15ch;"><span class="builtin-type">struct</span> <span class="name">IRCUser</span></div></dt><dd><div><p>An aggregate of fields representing a single user on IRC.</p></div></dd><dt><a href="dialect.defs.Typenums.html">Typenums</a><div class="simplified-prototype" style="max-width: 16ch;"><span class="builtin-type">struct</span> <span class="name">Typenums</span></div></dt><dd><div><p>Reverse mappings of *numerics* to <a class="xref" href="dialect.defs.IRCEvent.Type.html">Type</a>s.</p></div></dd></dl><div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="dialect.html">dialect</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module" href="dialect.assertgen.html">assertgen</a></li><li><a class="module" href="dialect.common.html">common</a></li><li><a class="module current" href="dialect.defs.html">defs</a></li><li><a class="module" href="dialect.parsing.html">parsing</a></li><li><a class="module" href="dialect.postprocessors.html">postprocessors</a></li><li><a class="module" href="dialect.semver.html">semver</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

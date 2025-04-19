@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>MutexedAA (lu.container.MutexedAA)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>MutexedAA</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.container.html">container</a> </div><div><div class="documentation-comment synopsis"><div><p>An associative array and a <a class="xref" href="core.sync.mutex.Mutex.html">Mutex</a>. Wraps associative
+    array operations in mutex locks.</p></div></div></div><div class="annotated-prototype"><div class="aggregate-prototype"><div class="attributes"></div><span class="builtin-type">struct</span> MutexedAA (<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="AA">AA</span> : <span class="name" data-ident="V">V</span>[<span class="name" data-ident="K">K</span>]</span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="V">V</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="K">K</span></span></div></div>) {<div class="aggregate-member"><a href="lu.container.MutexedAA.mutex.html"><div class="attributes">private shared </div><tt class="highlighted"><span class="hid">Mutex</span></tt> <span class="name">mutex</span>;</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.aa.html"><div class="attributes">private shared </div><tt class="highlighted"><span class="hid">AA</span></tt> <span class="name">aa</span>;</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.setup.html"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">setup</span>();</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.aaOf.html"><span class="lang-feature">auto ref</span>  <span class="name">aaOf</span>();</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.isReady.html"><span class="lang-feature">auto</span>  <span class="name">isReady</span>();</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.opIndexAssign.html"><span class="lang-feature">auto</span>  <span class="name">opIndexAssign</span>(V value, K key);</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.opIndex.html"><span class="lang-feature">auto</span>  <span class="name">opIndex</span>(K key);</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.has.html"><span class="lang-feature">auto</span>  <span class="name">has</span>(K key);</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.remove.html"><span class="lang-feature">auto</span>  <span class="name">remove</span>(K key);</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.uniqueKey.html"><div class="conditional-compilation-attributes"><span><span class="lang-feature">static if</span>(<span>isIntegral!K</span>)</span><br />
+</div><span class="lang-feature">auto</span>  <span class="name">uniqueKey</span>(K min, K max, V value);</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.opEquals.1.html"><span class="lang-feature">auto</span>  <span class="name">opEquals</span>(typeof(this) other);</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.opEquals.2.html"><span class="lang-feature">auto</span>  <span class="name">opEquals</span>(AA other);</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.rehash.html"><span class="lang-feature">auto</span>  <span class="name">rehash</span>();</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.clear.html"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">clear</span>();</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.length.html"><span class="lang-feature">auto</span>  <span class="name">length</span>();</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.require.html"><span class="lang-feature">auto</span>  <span class="name">require</span>(K key, V value);</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.keys.html"><span class="lang-feature">auto</span>  <span class="name">keys</span>();</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.values.html"><span class="lang-feature">auto</span>  <span class="name">values</span>();</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.get.html"><span class="lang-feature">auto</span>  <span class="name">get</span>(K key, V value);</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.update.html"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">update</span>(K key, V delegate() createDg, U delegate(K) updateDg);</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.opIndexUnary.html"><span class="lang-feature">auto</span>  <span class="name">opIndexUnary</span>(K key);</a></div><div class="aggregate-member"><a href="lu.container.MutexedAA.opIndexOpAssign.html"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">opIndexOpAssign</span>(U value, K key);</a></div>}</div></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="lu.container.MutexedAA.aaOf.html">aaOf</a><div class="simplified-prototype" style="max-width: 17ch;"><span class="lang-feature">auto ref</span>  <span class="name">aaOf</span>()</div></dt><dd><div><p>Returns the internal associative array, for when the wrapper is insufficient.</p></div></dd><dt><a href="lu.container.MutexedAA.clear.html">clear</a><div class="simplified-prototype" style="max-width: 13ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">clear</span>()</div></dt><dd><div><p>Clears the internal associative array.</p></div></dd><dt><a href="lu.container.MutexedAA.get.html">get</a><div class="simplified-prototype" style="max-width: 27ch;"><span class="lang-feature">auto</span>  <span class="name">get</span>(K key, V value)</div></dt><dd><div><p>Retrieves the value for the key <tt class="inline-code">key</tt>, or returns the default <tt class="inline-code">value</tt>
+        if there was none.</p></div></dd><dt><a href="lu.container.MutexedAA.has.html">has</a><div class="simplified-prototype" style="max-width: 17ch;"><span class="lang-feature">auto</span>  <span class="name">has</span>(K key)</div></dt><dd><div><p>Returns whether or not the passed key is in the associative array.</p></div></dd><dt><a href="lu.container.MutexedAA.isReady.html">isReady</a><div class="simplified-prototype" style="max-width: 16ch;"><span class="lang-feature">auto</span>  <span class="name">isReady</span>()</div></dt><dd><div><p>Returns whether or not this instance has been set up.</p></div></dd><dt><a href="lu.container.MutexedAA.keys.html">keys</a><div class="simplified-prototype" style="max-width: 13ch;"><span class="lang-feature">auto</span>  <span class="name">keys</span>()</div></dt><dd><div><p>Returns a new dynamic array of all the keys in the internal associative array.</p></div></dd><dt><a href="lu.container.MutexedAA.length.html">length</a><div class="simplified-prototype" style="max-width: 15ch;"><span class="lang-feature">auto</span>  <span class="name">length</span>()</div></dt><dd><div><p>Returns the length of the internal associative array.</p></div></dd><dt><a href="lu.container.MutexedAA.opEquals.1.html">opEquals</a><div class="simplified-prototype" style="max-width: 37ch;"><span class="lang-feature">auto</span>  <span class="name">opEquals</span>(typeof(this) other)</div></dt><dd><div><p>Implements <tt class="inline-code">opEquals</tt> for this type, comparing the internal associative
+        array with that of another <tt class="inline-code">MutexedAA</tt>.</p></div></dd><dt><a href="lu.container.MutexedAA.opEquals.2.html">opEquals</a><div class="simplified-prototype" style="max-width: 26ch;"><span class="lang-feature">auto</span>  <span class="name">opEquals</span>(AA other)</div></dt><dd><div><p>Implements <tt class="inline-code">opEquals</tt> for this type, comparing the internal associative
+        array with a different one.</p></div></dd><dt><a href="lu.container.MutexedAA.opIndex.html">opIndex</a><div class="simplified-prototype" style="max-width: 22ch;"><span class="lang-feature">auto</span>  <span class="name">opIndex</span>(K key)</div></dt><dd><div><p><tt class="inline-code">aa[key]</tt> array retrieve operation, wrapped in a mutex lock.</p></div></dd><dt><a href="lu.container.MutexedAA.opIndexAssign.html">opIndexAssign</a><div class="simplified-prototype" style="max-width: 38ch;"><span class="lang-feature">auto</span>  <span class="name">opIndexAssign</span>(V value, K key)</div></dt><dd><div><p><tt class="inline-code">aa[key] = value</tt> array assign operation, wrapped in a mutex lock.</p></div></dd><dt><a href="lu.container.MutexedAA.opIndexOpAssign.html">opIndexOpAssign</a><div class="simplified-prototype" style="max-width: 39ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">opIndexOpAssign</span>(U value, K key)</div></dt><dd><div><p>Implements index assign operations by mixin strings.</p></div></dd><dt><a href="lu.container.MutexedAA.opIndexUnary.html">opIndexUnary</a><div class="simplified-prototype" style="max-width: 27ch;"><span class="lang-feature">auto</span>  <span class="name">opIndexUnary</span>(K key)</div></dt><dd><div><p>Implements unary operations by mixin strings.</p></div></dd><dt><a href="lu.container.MutexedAA.rehash.html">rehash</a><div class="simplified-prototype" style="max-width: 15ch;"><span class="lang-feature">auto</span>  <span class="name">rehash</span>()</div></dt><dd><div><p>Rehashes the internal associative array.</p></div></dd><dt><a href="lu.container.MutexedAA.remove.html">remove</a><div class="simplified-prototype" style="max-width: 20ch;"><span class="lang-feature">auto</span>  <span class="name">remove</span>(K key)</div></dt><dd><div><p><tt class="inline-code">aa.remove(key)</tt> array operation, wrapped in a mutex lock.</p></div></dd><dt><a href="lu.container.MutexedAA.require.html">require</a><div class="simplified-prototype" style="max-width: 31ch;"><span class="lang-feature">auto</span>  <span class="name">require</span>(K key, V value)</div></dt><dd><div><p>Returns the value for the key <tt class="inline-code">key</tt>, inserting <tt class="inline-code">value</tt> lazily if it is not present.</p></div></dd><dt><a href="lu.container.MutexedAA.setup.html">setup</a><div class="simplified-prototype" style="max-width: 13ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">setup</span>()</div></dt><dd><div><p>Sets up this instance. Does nothing if it has already been set up.</p></div></dd><dt><a href="lu.container.MutexedAA.uniqueKey.html">uniqueKey</a><div class="simplified-prototype" style="max-width: 41ch;"><span class="lang-feature">auto</span>  <span class="name">uniqueKey</span>(K min, K max, V value)</div></dt><dd><div><p>Reserves a unique key in the associative array.</p></div></dd><dt><a href="lu.container.MutexedAA.update.html">update</a><div class="simplified-prototype" style="max-width: 71ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">update</span>(K key, V delegate() createDg, U delegate(K) updateDg)</div></dt><dd><div><p>Updates the value for the key <tt class="inline-code">key</tt> in the internal associative array,
+        invoking the first of the passed delegate to insert a new value if it
+        doesn't exist, or the second selegate to modify it in place if it does.</p></div></dd><dt><a href="lu.container.MutexedAA.values.html">values</a><div class="simplified-prototype" style="max-width: 15ch;"><span class="lang-feature">auto</span>  <span class="name">values</span>()</div></dt><dd><div><p>Returns a new dynamic array of all the values in the internal associative array.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="variable"><a class="header-anchor" href="#variable">Variables</a></h3><dl class="member-list native"><dt><a href="lu.container.MutexedAA.aa.html">aa</a><div class="simplified-prototype" style="max-width: 6ch;"><tt class="highlighted"><span class="hid">AA</span></tt> <span class="name">aa</span>;</div></dt><dd><div><p>The internal associative array.</p></div></dd><dt><a href="lu.container.MutexedAA.mutex.html">mutex</a><div class="simplified-prototype" style="max-width: 13ch;"><tt class="highlighted"><span class="hid">Mutex</span></tt> <span class="name">mutex</span>;</div></dt><dd><div><p><a class="xref" href="core.sync.mutex.Mutex.html">Mutex</a> to lock the associative array with.</p></div></dd></dl><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-AA"><a class="parameter-name" data-ident="AA" href="#param-AA">AA</a></dt><dd><div class="documentation-comment"><div><p>Associative array type.</p></div></div></dd><dt id="param-V"><a class="parameter-name" data-ident="V" href="#param-V">V</a></dt><dd><div class="documentation-comment"><div><p>Value type.</p></div></div></dd><dt id="param-K"><a class="parameter-name" data-ident="K" href="#param-K">K</a></dt><dd><div class="documentation-comment"><div><p>Key type.</p></div></div></dd></dl><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="hid">MutexedAA</span>!(<span class="type">string</span>[<span class="type">int</span>]) <span class="hid">aa</span>;
+<span class="hid">aa</span>.<span class="hid">setup</span>();  <span class="com">// important!</span>
+
+<span class="hid">aa</span>[<span class="num">1</span>] = <span class="str">&quot;one&quot;</span>;
+<span class="hid">aa</span>[<span class="num">2</span>] = <span class="str">&quot;two&quot;</span>;
+<span class="hid">aa</span>[<span class="num">3</span>] = <span class="str">&quot;three&quot;</span>;
+
+<span class="kwrd">auto</span> <span class="hid">hasOne</span> = <span class="hid">aa</span>.<span class="hid">has</span>(<span class="num">1</span>);
+<span class="kwrd">assert</span>(<span class="hid">hasOne</span>);
+<span class="kwrd">assert</span>(<span class="hid">aa</span>[<span class="num">1</span>] == <span class="str">&quot;one&quot;</span>);
+
+<span class="kwrd">assert</span>(<span class="hid">aa</span>[<span class="num">2</span>] == <span class="str">&quot;two&quot;</span>);
+
+<span class="kwrd">auto</span> <span class="hid">three</span> = <span class="hid">aa</span>.<span class="hid">get</span>(<span class="num">3</span>);
+<span class="kwrd">assert</span>(<span class="hid">three</span> == <span class="str">&quot;three&quot;</span>);
+
+<span class="kwrd">auto</span> <span class="hid">four</span> = <span class="hid">aa</span>.<span class="hid">get</span>(<span class="num">4</span>, <span class="str">&quot;four&quot;</span>);
+<span class="kwrd">assert</span>(<span class="hid">four</span> == <span class="str">&quot;four&quot;</span>);
+
+<span class="kwrd">auto</span> <span class="hid">five</span> = <span class="hid">aa</span>.<span class="hid">require</span>(<span class="num">5</span>, <span class="str">&quot;five&quot;</span>);
+<span class="kwrd">assert</span>(<span class="hid">five</span> == <span class="str">&quot;five&quot;</span>);
+<span class="kwrd">assert</span>(<span class="hid">aa</span>[<span class="num">5</span>] == <span class="str">&quot;five&quot;</span>);
+
+<span class="kwrd">auto</span> <span class="hid">keys</span> = <span class="hid">aa</span>.<span class="hid">keys</span>;
+<span class="kwrd">assert</span>( <span class="hid">keys</span>.<span class="hid">canFind</span>(<span class="num">1</span>));
+<span class="kwrd">assert</span>( <span class="hid">keys</span>.<span class="hid">canFind</span>(<span class="num">5</span>));
+<span class="kwrd">assert</span>(!<span class="hid">keys</span>.<span class="hid">canFind</span>(<span class="num">6</span>));
+
+<span class="kwrd">auto</span> <span class="hid">values</span> = <span class="hid">aa</span>.<span class="hid">values</span>;
+<span class="kwrd">assert</span>( <span class="hid">values</span>.<span class="hid">canFind</span>(<span class="str">&quot;one&quot;</span>));
+<span class="kwrd">assert</span>( <span class="hid">values</span>.<span class="hid">canFind</span>(<span class="str">&quot;four&quot;</span>));
+<span class="kwrd">assert</span>(!<span class="hid">values</span>.<span class="hid">canFind</span>(<span class="str">&quot;six&quot;</span>));
+
+<span class="hid">aa</span>.<span class="hid">rehash</span>();</pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted with-line-wrappers"><span class="br">1 </span>{
+<span class="br">2 </span>    <span class="hid">MutexedAA</span>!(<span class="type">string</span>[<span class="type">int</span>]) <span class="hid">aa1</span>;
+<span class="br">3 </span>    <span class="kwrd">assert</span>(!<span class="hid">aa1</span>.<span class="hid">isReady</span>);
+<span class="br">4 </span>    <span class="hid">aa1</span>.<span class="hid">setup</span>();
+<span class="br">5 </span>    <span class="kwrd">assert</span>(<span class="hid">aa1</span>.<span class="hid">isReady</span>);
+<span class="br">6 </span>    <span class="hid">aa1</span>.<span class="hid">setup</span>();  <span class="com">// extra setups ignored</span>
+<span class="br">7 </span>
+<span class="br">8 </span>    <span class="hid">MutexedAA</span>!(<span class="type">string</span>[<span class="type">int</span>]) <span class="hid">aa2</span>;
+<span class="br">9 </span>    <span class="hid">aa2</span>.<span class="hid">setup</span>();
+<span class="br">10 </span>
+<span class="br">11 </span>    <span class="hid">aa1</span>[<span class="num">42</span>] = <span class="str">&quot;hello&quot;</span>;
+<span class="br">12 </span>    <span class="hid">aa2</span>[<span class="num">42</span>] = <span class="str">&quot;world&quot;</span>;
+<span class="br">13 </span>    <span class="kwrd">assert</span>(<span class="hid">aa1</span> != <span class="hid">aa2</span>);
+<span class="br">14 </span>
+<span class="br">15 </span>    <span class="hid">aa1</span>[<span class="num">42</span>] = <span class="str">&quot;world&quot;</span>;
+<span class="br">16 </span>    <span class="kwrd">assert</span>(<span class="hid">aa1</span> == <span class="hid">aa2</span>);
+<span class="br">17 </span>
+<span class="br">18 </span>    <span class="hid">aa2</span>[<span class="num">99</span>] = <span class="str">&quot;goodbye&quot;</span>;
+<span class="br">19 </span>    <span class="kwrd">assert</span>(<span class="hid">aa1</span> != <span class="hid">aa2</span>);
+<span class="br">20 </span>}
+<span class="br">21 </span>{
+<span class="br">22 </span>    <span class="hid">MutexedAA</span>!(<span class="type">string</span>[<span class="type">int</span>]) <span class="hid">aa</span>;
+<span class="br">23 </span>    <span class="hid">aa</span>.<span class="hid">setup</span>();
+<span class="br">24 </span>
+<span class="br">25 </span>    <span class="kwrd">assert</span>(!<span class="hid">aa</span>.<span class="hid">has</span>(<span class="num">42</span>));
+<span class="br">26 </span>    <span class="hid">aa</span>.<span class="hid">require</span>(<span class="num">42</span>, <span class="str">&quot;hello&quot;</span>);
+<span class="br">27 </span>    <span class="kwrd">assert</span>((<span class="hid">aa</span>[<span class="num">42</span>] == <span class="str">&quot;hello&quot;</span>), <span class="hid">aa</span>[<span class="num">42</span>]);
+<span class="br">28 </span>
+<span class="br">29 </span>    <span class="type">bool</span> <span class="hid">set1</span>;
+<span class="br">30 </span>    <span class="kwrd">assert</span>(!<span class="hid">aa</span>.<span class="hid">has</span>(<span class="num">99</span>));
+<span class="br">31 </span>    <span class="type">string</span> <span class="hid">world1</span> = <span class="hid">aa</span>.<span class="hid">require</span>(<span class="num">99</span>, { <span class="hid">set1</span> = <span class="kwrd">true</span>; <span class="kwrd">return</span> <span class="str">&quot;world&quot;</span>; }());
+<span class="br">32 </span>    <span class="kwrd">assert</span>(<span class="hid">set1</span>);
+<span class="br">33 </span>    <span class="kwrd">assert</span>((<span class="hid">world1</span> == <span class="str">&quot;world&quot;</span>), <span class="hid">world1</span>);
+<span class="br">34 </span>    <span class="kwrd">assert</span>((<span class="hid">aa</span>[<span class="num">99</span>] == <span class="str">&quot;world&quot;</span>), <span class="hid">aa</span>[<span class="num">99</span>]);
+<span class="br">35 </span>
+<span class="br">36 </span>    <span class="type">bool</span> <span class="hid">set2</span>;
+<span class="br">37 </span>    <span class="type">string</span> <span class="hid">world2</span> = <span class="hid">aa</span>.<span class="hid">require</span>(<span class="num">99</span>, { <span class="hid">set2</span> = <span class="kwrd">true</span>; <span class="kwrd">return</span> <span class="str">&quot;goodbye&quot;</span>; }());
+<span class="br">38 </span>    <span class="kwrd">assert</span>(!<span class="hid">set2</span>);
+<span class="br">39 </span>    <span class="kwrd">assert</span>((<span class="hid">world2</span> != <span class="str">&quot;goodbye&quot;</span>), <span class="hid">world2</span>);
+<span class="br">40 </span>    <span class="kwrd">assert</span>((<span class="hid">aa</span>[<span class="num">99</span>] != <span class="str">&quot;goodbye&quot;</span>), <span class="hid">aa</span>[<span class="num">99</span>]);
+<span class="br">41 </span>}
+<span class="br">42 </span>{
+<span class="br">43 </span>    <span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">concurrency</span> : <span class="hid">Tid</span>, <span class="hid">send</span>, <span class="hid">spawn</span>;
+<span class="br">44 </span>    <span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">conv</span> : <span class="hid">to</span>;
+<span class="br">45 </span>    <span class="kwrd">import</span> <span class="hid">core</span>.<span class="hid">time</span> : <span class="hid">MonoTime</span>, <span class="hid">seconds</span>;
+<span class="br">46 </span>
+<span class="br">47 </span>    <span class="kwrd">static</span> <span class="kwrd">immutable</span> <span class="hid">timeout</span> = <span class="num">1</span>.<span class="hid">seconds</span>;
+<span class="br">48 </span>
+<span class="br">49 </span>    <span class="kwrd">static</span> <span class="type">void</span> <span class="hid">workerFn</span>(<span class="hid">MutexedAA</span>!(<span class="type">string</span>[<span class="type">int</span>]) <span class="hid">aa</span>)
+<span class="br">50 </span>    {
+<span class="br">51 </span>        <span class="kwrd">static</span> <span class="type">void</span> <span class="hid">_assert</span>(
+<span class="br">52 </span>            <span class="kwrd">lazy</span> <span class="type">bool</span> <span class="hid">condition</span>,
+<span class="br">53 </span>            <span class="kwrd">const</span> <span class="type">string</span> <span class="hid">message</span> = <span class="str">&quot;unittest failure&quot;</span>,
+<span class="br">54 </span>            <span class="kwrd">const</span> <span class="type">string</span> <span class="hid">file</span> = <span class="kwrd">__FILE__</span>,
+<span class="br">55 </span>            <span class="kwrd">const</span> <span class="type">uint</span> <span class="hid">line</span> = <span class="kwrd">__LINE__</span>)
+<span class="br">56 </span>        {
+<span class="br">57 </span>            <span class="kwrd">if</span> (!<span class="hid">condition</span>)
+<span class="br">58 </span>            {
+<span class="br">59 </span>                <span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">format</span> : <span class="hid">format</span>;
+<span class="br">60 </span>                <span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">stdio</span> : <span class="hid">writeln</span>;
+<span class="br">61 </span>
+<span class="br">62 </span>                <span class="kwrd">enum</span> <span class="hid">pattern</span> = <span class="str">&quot;core.exception.AssertError@%s(%d): %s&quot;</span>;
+<span class="br">63 </span>                <span class="kwrd">immutable</span> <span class="hid">assertMessage</span> = <span class="hid">pattern</span>.<span class="hid">format</span>(<span class="hid">file</span>, <span class="hid">line</span>, <span class="hid">message</span>);
+<span class="br">64 </span>                <span class="hid">writeln</span>(<span class="hid">assertMessage</span>);
+<span class="br">65 </span>                <span class="kwrd">assert</span>(<span class="num">0</span>, <span class="hid">assertMessage</span>);
+<span class="br">66 </span>            }
+<span class="br">67 </span>        }
+<span class="br">68 </span>
+<span class="br">69 </span>        <span class="hid">_assert</span>(<span class="hid">aa</span>.<span class="hid">isReady</span>, <span class="str">&quot;MutexedAA passed to worker was not set up properly&quot;</span>);
+<span class="br">70 </span>
+<span class="br">71 </span>        <span class="type">bool</span> <span class="hid">halt</span>;
+<span class="br">72 </span>
+<span class="br">73 </span>        <span class="kwrd">while</span> (!<span class="hid">halt</span>)
+<span class="br">74 </span>        {
+<span class="br">75 </span>            <span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">concurrency</span> : <span class="hid">OwnerTerminated</span>, <span class="hid">receiveTimeout</span>;
+<span class="br">76 </span>            <span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">variant</span> : <span class="hid">Variant</span>;
+<span class="br">77 </span>
+<span class="br">78 </span>            <span class="kwrd">immutable</span> <span class="hid">receivedSomething</span> = <span class="hid">receiveTimeout</span>(<span class="hid">timeout</span>,
+<span class="br">79 </span>                (<span class="type">bool</span> <span class="hid">_</span>)
+<span class="br">80 </span>                {
+<span class="br">81 </span>                    <span class="hid">halt</span> = <span class="kwrd">true</span>;
+<span class="br">82 </span>                },
+<span class="br">83 </span>                (<span class="type">int</span> <span class="hid">i</span>)
+<span class="br">84 </span>                {
+<span class="br">85 </span>                    <span class="hid">_assert</span>((<span class="hid">aa</span>.<span class="hid">length</span> == <span class="hid">i</span>-<span class="num">1</span>), <span class="str">&quot;Incorrect MutexedAA length before insert&quot;</span>);
+<span class="br">86 </span>                    <span class="hid">aa</span>[<span class="hid">i</span>] = <span class="hid">i</span>.<span class="hid">to</span>!<span class="type">string</span>;
+<span class="br">87 </span>                    <span class="hid">_assert</span>((<span class="hid">aa</span>.<span class="hid">length</span> == <span class="hid">i</span>), <span class="str">&quot;Incorrect MutexedAA length after insert&quot;</span>);
+<span class="br">88 </span>                },
+<span class="br">89 </span>                (<span class="hid">OwnerTerminated</span> <span class="hid">_</span>)
+<span class="br">90 </span>                {
+<span class="br">91 </span>                    <span class="hid">halt</span> = <span class="kwrd">true</span>;
+<span class="br">92 </span>                },
+<span class="br">93 </span>                (<span class="hid">Variant</span> <span class="hid">v</span>)
+<span class="br">94 </span>                {
+<span class="br">95 </span>                    <span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">stdio</span> : <span class="hid">writeln</span>;
+<span class="br">96 </span>                    <span class="hid">writeln</span>(<span class="str">&quot;MutexedAA unit test worker received unknown message: &quot;</span>, <span class="hid">v</span>);
+<span class="br">97 </span>                    <span class="hid">halt</span> = <span class="kwrd">true</span>;
+<span class="br">98 </span>                }
+<span class="br">99 </span>            );
+<span class="br">100 </span>
+<span class="br">101 </span>            <span class="kwrd">if</span> (!<span class="hid">receivedSomething</span>) <span class="kwrd">return</span>;
+<span class="br">102 </span>        }
+<span class="br">103 </span>    }
+<span class="br">104 </span>
+<span class="br">105 </span>    <span class="hid">MutexedAA</span>!(<span class="type">string</span>[<span class="type">int</span>]) <span class="hid">aa</span>;
+<span class="br">106 </span>    <span class="hid">aa</span>.<span class="hid">setup</span>();
+<span class="br">107 </span>
+<span class="br">108 </span>    <span class="kwrd">auto</span> <span class="hid">worker</span> = <span class="hid">spawn</span>(&amp;<span class="hid">workerFn</span>, <span class="hid">aa</span>);
+<span class="br">109 </span>    <span class="kwrd">immutable</span> <span class="hid">start</span> = <span class="hid">MonoTime</span>.<span class="hid">currTime</span>;
+<span class="br">110 </span>
+<span class="br">111 </span>    <span class="kwrd">foreach</span> (<span class="com">/*immutable*/</span> <span class="hid">i</span>; <span class="num">1</span>..<span class="num">10</span>)  <span class="com">// start at 1 to enable length checks in worker</span>
+<span class="br">112 </span>    {
+<span class="br">113 </span>        <span class="hid">worker</span>.<span class="hid">send</span>(<span class="hid">i</span>);
+<span class="br">114 </span>        <span class="hid">aa</span>.<span class="hid">setup</span>();
+<span class="br">115 </span>        <span class="kwrd">auto</span> <span class="hid">present</span> = <span class="hid">aa</span>.<span class="hid">has</span>(<span class="hid">i</span>);
+<span class="br">116 </span>
+<span class="br">117 </span>        <span class="kwrd">while</span> (!<span class="hid">present</span> &amp;&amp; (<span class="hid">MonoTime</span>.<span class="hid">currTime</span> - <span class="hid">start</span>) &lt; <span class="hid">timeout</span>)
+<span class="br">118 </span>        {
+<span class="br">119 </span>            <span class="kwrd">import</span> <span class="hid">core</span>.<span class="hid">thread</span> : <span class="hid">Thread</span>;
+<span class="br">120 </span>            <span class="kwrd">import</span> <span class="hid">core</span>.<span class="hid">time</span> : <span class="hid">msecs</span>;
+<span class="br">121 </span>
+<span class="br">122 </span>            <span class="kwrd">static</span> <span class="kwrd">immutable</span> <span class="hid">briefWait</span> = <span class="num">2</span>.<span class="hid">msecs</span>;
+<span class="br">123 </span>            <span class="hid">Thread</span>.<span class="hid">sleep</span>(<span class="hid">briefWait</span>);
+<span class="br">124 </span>            <span class="hid">present</span> = <span class="hid">aa</span>.<span class="hid">has</span>(<span class="hid">i</span>);
+<span class="br">125 </span>        }
+<span class="br">126 </span>
+<span class="br">127 </span>        <span class="kwrd">assert</span>(<span class="hid">present</span>, <span class="str">&quot;MutexedAA unit test worker timed out responding to &quot;</span> ~ <span class="hid">i</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">128 </span>        <span class="kwrd">assert</span>((<span class="hid">aa</span>[<span class="hid">i</span>] == <span class="hid">i</span>.<span class="hid">to</span>!<span class="type">string</span>), <span class="hid">aa</span>[<span class="hid">i</span>]);
+<span class="br">129 </span>    }
+<span class="br">130 </span>
+<span class="br">131 </span>    <span class="hid">worker</span>.<span class="hid">send</span>(<span class="kwrd">true</span>);  <span class="com">// halt</span>
+<span class="br">132 </span>}
+<span class="br">133 </span>{
+<span class="br">134 </span>    <span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">algorithm</span>.<span class="hid">searching</span> : <span class="hid">canFind</span>;
+<span class="br">135 </span>
+<span class="br">136 </span>    <span class="hid">MutexedAA</span>!(<span class="type">int</span>[<span class="type">int</span>]) <span class="hid">aa</span>;
+<span class="br">137 </span>    <span class="hid">aa</span>.<span class="hid">setup</span>();
+<span class="br">138 </span>
+<span class="br">139 </span>    <span class="hid">aa</span>[<span class="num">1</span>] = <span class="num">42</span>;
+<span class="br">140 </span>    <span class="hid">aa</span>[<span class="num">2</span>] = <span class="num">99</span>;
+<span class="br">141 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>.<span class="hid">length</span> == <span class="num">2</span>);
+<span class="br">142 </span>
+<span class="br">143 </span>    <span class="kwrd">auto</span> <span class="hid">keys</span> = <span class="hid">aa</span>.<span class="hid">keys</span>;
+<span class="br">144 </span>    <span class="kwrd">assert</span>( <span class="hid">keys</span>.<span class="hid">canFind</span>(<span class="num">1</span>));
+<span class="br">145 </span>    <span class="kwrd">assert</span>( <span class="hid">keys</span>.<span class="hid">canFind</span>(<span class="num">2</span>));
+<span class="br">146 </span>    <span class="kwrd">assert</span>(!<span class="hid">keys</span>.<span class="hid">canFind</span>(<span class="num">3</span>));
+<span class="br">147 </span>
+<span class="br">148 </span>    <span class="kwrd">auto</span> <span class="hid">values</span> = <span class="hid">aa</span>.<span class="hid">values</span>;
+<span class="br">149 </span>    <span class="kwrd">assert</span>( <span class="hid">values</span>.<span class="hid">canFind</span>(<span class="num">42</span>));
+<span class="br">150 </span>    <span class="kwrd">assert</span>( <span class="hid">values</span>.<span class="hid">canFind</span>(<span class="num">99</span>));
+<span class="br">151 </span>    <span class="kwrd">assert</span>(!<span class="hid">values</span>.<span class="hid">canFind</span>(<span class="num">0</span>));
+<span class="br">152 </span>
+<span class="br">153 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>.<span class="hid">get</span>(<span class="num">1</span>, <span class="num">0</span>) == <span class="num">42</span>);
+<span class="br">154 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>.<span class="hid">get</span>(<span class="num">2</span>, <span class="num">0</span>) == <span class="num">99</span>);
+<span class="br">155 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>.<span class="hid">get</span>(<span class="num">0</span>, <span class="num">0</span>) == <span class="num">0</span>);
+<span class="br">156 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>.<span class="hid">get</span>(<span class="num">3</span>, <span class="num">999</span>) == <span class="num">999</span>);
+<span class="br">157 </span>}
+<span class="br">158 </span>{
+<span class="br">159 </span>    <span class="hid">MutexedAA</span>!(<span class="type">int</span>[<span class="type">int</span>]) <span class="hid">aa1</span>;
+<span class="br">160 </span>    <span class="hid">aa1</span>.<span class="hid">setup</span>();
+<span class="br">161 </span>
+<span class="br">162 </span>    <span class="hid">aa1</span>[<span class="num">1</span>] = <span class="num">42</span>;
+<span class="br">163 </span>    <span class="hid">aa1</span>[<span class="num">2</span>] = <span class="num">99</span>;
+<span class="br">164 </span>
+<span class="br">165 </span>    <span class="type">int</span>[<span class="type">int</span>] <span class="hid">aa2</span>;
+<span class="br">166 </span>
+<span class="br">167 </span>    <span class="hid">aa2</span>[<span class="num">1</span>] = <span class="num">42</span>;
+<span class="br">168 </span>    <span class="kwrd">assert</span>(<span class="hid">aa1</span> != <span class="hid">aa2</span>);
+<span class="br">169 </span>
+<span class="br">170 </span>    <span class="hid">aa2</span>[<span class="num">2</span>] = <span class="num">99</span>;
+<span class="br">171 </span>    <span class="kwrd">assert</span>(<span class="hid">aa1</span> == <span class="hid">aa2</span>);
+<span class="br">172 </span>
+<span class="br">173 </span>    ++<span class="hid">aa2</span>[<span class="num">2</span>];
+<span class="br">174 </span>    <span class="kwrd">assert</span>(<span class="hid">aa2</span>[<span class="num">2</span>] == <span class="num">100</span>);
+<span class="br">175 </span>
+<span class="br">176 </span>    <span class="hid">aa2</span>[<span class="num">1</span>] += <span class="num">1</span>;
+<span class="br">177 </span>    <span class="kwrd">assert</span>(<span class="hid">aa2</span>[<span class="num">1</span>] == <span class="num">43</span>);
+<span class="br">178 </span>
+<span class="br">179 </span>    <span class="hid">aa2</span>[<span class="num">1</span>] -= <span class="num">1</span>;
+<span class="br">180 </span>    <span class="kwrd">assert</span>(<span class="hid">aa2</span>[<span class="num">1</span>] == <span class="num">42</span>);
+<span class="br">181 </span>
+<span class="br">182 </span>    <span class="hid">aa2</span>[<span class="num">1</span>] *= <span class="num">2</span>;
+<span class="br">183 </span>    <span class="kwrd">assert</span>(<span class="hid">aa2</span>[<span class="num">1</span>] == <span class="num">84</span>);
+<span class="br">184 </span>
+<span class="br">185 </span>    <span class="type">int</span> <span class="hid">i</span> = -<span class="hid">aa2</span>[<span class="num">1</span>];
+<span class="br">186 </span>    <span class="kwrd">assert</span>(<span class="hid">i</span> == -<span class="num">84</span>);
+<span class="br">187 </span>}
+<span class="br">188 </span>{
+<span class="br">189 </span>    <span class="hid">MutexedAA</span>!(<span class="type">char</span>[][<span class="type">int</span>]) <span class="hid">aa</span>;
+<span class="br">190 </span>    <span class="hid">aa</span>.<span class="hid">setup</span>();
+<span class="br">191 </span>
+<span class="br">192 </span>    <span class="hid">aa</span>[<span class="num">1</span>] ~= <span class="str">'a'</span>;
+<span class="br">193 </span>    <span class="hid">aa</span>[<span class="num">1</span>] ~= <span class="str">'b'</span>;
+<span class="br">194 </span>    <span class="hid">aa</span>[<span class="num">1</span>] ~= <span class="str">'c'</span>;
+<span class="br">195 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>[<span class="num">1</span>] == <span class="str">&quot;abc&quot;</span>.<span class="hid">dup</span>);
+<span class="br">196 </span>
+<span class="br">197 </span>    <span class="hid">aa</span>[<span class="num">1</span>] ~= [ <span class="str">'d'</span>, <span class="str">'e'</span>, <span class="str">'f'</span> ];
+<span class="br">198 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>[<span class="num">1</span>] == <span class="str">&quot;abcdef&quot;</span>.<span class="hid">dup</span>);
+<span class="br">199 </span>}
+<span class="br">200 </span>{
+<span class="br">201 </span>    <span class="hid">MutexedAA</span>!(<span class="type">int</span>[<span class="type">int</span>]) <span class="hid">aa</span>;
+<span class="br">202 </span>    <span class="hid">aa</span>.<span class="hid">setup</span>();
+<span class="br">203 </span>
+<span class="br">204 </span>    <span class="kwrd">immutable</span> <span class="hid">key</span> = <span class="hid">aa</span>.<span class="hid">uniqueKey</span>;
+<span class="br">205 </span>    <span class="kwrd">assert</span>(<span class="hid">key</span> &gt; <span class="num">0</span>);
+<span class="br">206 </span>
+<span class="br">207 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>.<span class="hid">has</span>(<span class="hid">key</span>));
+<span class="br">208 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>[<span class="hid">key</span>] == <span class="type">int</span>.<span class="hid">init</span>);
+<span class="br">209 </span>    <span class="hid">aa</span>.<span class="hid">remove</span>(<span class="hid">key</span>);
+<span class="br">210 </span>    <span class="kwrd">assert</span>(!<span class="hid">aa</span>.<span class="hid">has</span>(<span class="hid">key</span>));
+<span class="br">211 </span>
+<span class="br">212 </span>    <span class="kwrd">immutable</span> <span class="hid">key2</span> = <span class="hid">aa</span>.<span class="hid">uniqueKey</span>(<span class="num">1</span>, <span class="num">2</span>, -<span class="num">1</span>);
+<span class="br">213 </span>    <span class="kwrd">assert</span>(<span class="hid">key2</span> == <span class="num">1</span>);
+<span class="br">214 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>.<span class="hid">has</span>(<span class="hid">key2</span>));
+<span class="br">215 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>[<span class="hid">key2</span>] == -<span class="num">1</span>);
+<span class="br">216 </span>}
+<span class="br">217 </span>{
+<span class="br">218 </span>    <span class="hid">MutexedAA</span>!(<span class="type">int</span>[<span class="type">int</span>]) <span class="hid">aa</span>;
+<span class="br">219 </span>    <span class="hid">aa</span>.<span class="hid">setup</span>();
+<span class="br">220 </span>
+<span class="br">221 </span>    <span class="kwrd">assert</span>(!<span class="hid">aa</span>.<span class="hid">has</span>(<span class="num">1</span>));
+<span class="br">222 </span>
+<span class="br">223 </span>    <span class="hid">aa</span>.<span class="hid">update</span>(<span class="num">1</span>,
+<span class="br">224 </span>        () =&gt; <span class="num">42</span>,
+<span class="br">225 </span>        (<span class="type">int</span> <span class="hid">i</span>) =&gt; <span class="hid">i</span> + <span class="num">1</span>);
+<span class="br">226 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>.<span class="hid">has</span>(<span class="num">1</span>));
+<span class="br">227 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>[<span class="num">1</span>] == <span class="num">42</span>);
+<span class="br">228 </span>
+<span class="br">229 </span>    <span class="hid">aa</span>.<span class="hid">update</span>(<span class="num">1</span>,
+<span class="br">230 </span>        () =&gt; <span class="num">42</span>,
+<span class="br">231 </span>        (<span class="type">int</span> <span class="hid">i</span>) =&gt; <span class="hid">i</span> + <span class="num">1</span>);
+<span class="br">232 </span>    <span class="kwrd">assert</span>(<span class="hid">aa</span>[<span class="num">1</span>] == <span class="num">43</span>);
+<span class="br">233 </span>}</pre></div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="lu.container.mutexedAA.2.html">mutexedAA</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.container.html">container</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function" href="lu.container.mutexedAA.1.html">mutexedAA</a></li><li><a class="function" href="lu.container.rehashingAA.html">rehashingAA</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="lu.container.Buffer.html">Buffer</a></li><li><a class="struct" href="lu.container.CircularBuffer.html">CircularBuffer</a></li><li><a class="struct current" href="lu.container.MutexedAA.html">MutexedAA</a></li><li><a class="struct" href="lu.container.RehashingAA.html">RehashingAA</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

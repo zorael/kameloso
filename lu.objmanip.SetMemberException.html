@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>SetMemberException (lu.objmanip.SetMemberException)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>SetMemberException</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.objmanip.html">objmanip</a> </div><div><div class="documentation-comment synopsis"><div><p>Exception, to be thrown when <a class="xref" href="lu.objmanip.setMemberByName.2.html">setMemberByName</a> fails for some given reason.</p><p>It is a normal <a class="xref" href="object.Exception.html">Exception</a> but with attached strings of
+    the type name, name of member and the value that was attempted to set.</p></div></div></div><div class="annotated-prototype"><div class="aggregate-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> final </div><span class="builtin-type">class</span> SetMemberException  : Exception {<div class="aggregate-member"><a href="lu.objmanip.SetMemberException.typeName.html"><div class="attributes"></div><tt class="highlighted"><span class="type">string</span></tt> <span class="name">typeName</span>;</a></div><div class="aggregate-member"><a href="lu.objmanip.SetMemberException.memberToSet.html"><div class="attributes"></div><tt class="highlighted"><span class="type">string</span></tt> <span class="name">memberToSet</span>;</a></div><div class="aggregate-member"><a href="lu.objmanip.SetMemberException.valueToSet.html"><div class="attributes"></div><tt class="highlighted"><span class="type">string</span></tt> <span class="name">valueToSet</span>;</a></div><div class="aggregate-member"><a href="lu.objmanip.SetMemberException.this.1.html"><span class="lang-feature name">this</span>(string message, string file, size_t line, Throwable nextInChain);</a></div><div class="aggregate-member"><a href="lu.objmanip.SetMemberException.this.2.html"><span class="lang-feature name">this</span>(string message, string typeName, string memberToSet, string valueToSet, string file, size_t line, Throwable nextInChain);</a></div>}</div></div><h2 id="constructors"><a class="header-anchor" href="#constructors">Constructors</a></h2><dl class="member-list constructors"><dt><a href="lu.objmanip.SetMemberException.this.1.html">this</a><div class="simplified-prototype" style="max-width: 75ch;"><span class="lang-feature name">this</span>(string message, string file, size_t line, Throwable nextInChain)</div></dt><dd><div><p>Creates a new <a class="xref" href="lu.objmanip.SetMemberException.html">SetMemberException</a>, without attaching anything.</p></div></dd><dt><a href="lu.objmanip.SetMemberException.this.2.html">this</a><div class="simplified-prototype" style="max-width: 137ch;"><span class="lang-feature name">this</span>(string message, string typeName, string memberToSet, string valueToSet, string file, size_t line, Throwable nextInChain)</div></dt><dd><div><p>Creates a new <a class="xref" href="lu.objmanip.SetMemberException.html">SetMemberException</a>, attaching extra set-member information.</p></div></dd></dl><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="variable"><a class="header-anchor" href="#variable">Variables</a></h3><dl class="member-list native"><dt><a href="lu.objmanip.SetMemberException.memberToSet.html">memberToSet</a><div class="simplified-prototype" style="max-width: 20ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">memberToSet</span>;</div></dt><dd><div><p>Name of the member that was attempted to set.</p></div></dd><dt><a href="lu.objmanip.SetMemberException.typeName.html">typeName</a><div class="simplified-prototype" style="max-width: 17ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">typeName</span>;</div></dt><dd><div><p>Name of type that was attempted to set the member of.</p></div></dd><dt><a href="lu.objmanip.SetMemberException.valueToSet.html">valueToSet</a><div class="simplified-prototype" style="max-width: 19ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">valueToSet</span>;</div></dt><dd><div><p>String representation of the value that was attempted to assign.</p></div></dd></dl><div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.objmanip.html">objmanip</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class current" href="lu.objmanip.SetMemberException.html">SetMemberException</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="lu.objmanip.replaceMembers.html">replaceMembers</a></li><li><a class="function" href="lu.objmanip.setMemberByName.1.html">setMemberByName</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

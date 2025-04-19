@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>boxed (kameloso.thread.boxed)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>boxed</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.thread.html">thread</a> </div><div><div class="documentation-comment synopsis"><div><p>Constructor function to create a <tt class="inline-code">shared</tt> <a class="xref" href="kameloso.thread.Boxed.html">Boxed</a> with an unqualified
+    template type.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"></div><div class="return-type"><span class="type-constructor">shared</span>(<a class="name" data-ident="Sendable" href="kameloso.thread.Sendable.html" title="kameloso.thread.Sendable">Sendable</a>)</div><div class="function-name">boxed</div><div class="template-parameters" data-count="1">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="T">T</span></span></div></div>)</div><div class="runtime-parameters" data-count="1"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="name" data-ident="T">T</span></span></span> <span class="parameter-name name" data-ident="payload"><a href="#param-payload">payload</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-payload"><a class="parameter-name" data-ident="payload" href="#param-payload">payload</a> <span class="parameter-type"><span class="name" data-ident="T">T</span></span></dt><dd><div class="documentation-comment"><div><p>Payload whose type to instantiate the <a class="xref" href="kameloso.thread.Boxed.html">Boxed</a> with, and
+            then assign to its internal <tt class="inline-code">payload</tt>.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><span class="type-constructor">shared</span>(<a class="xref" href="kameloso.thread.Sendable.html" title="kameloso.thread.Sendable"><span class="name" data-ident="Sendable">Sendable</span></a>)</span></div><div class="documentation-comment returns-description"><div><p>A <tt class="inline-code">shared</tt> <a class="xref" href="kameloso.thread.Boxed.html">Boxed</a>!T<tt class="inline-code"> where </tt>T` is the unqualified type of the payload.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="hid">IRCEvent</span> <span class="hid">event</span>;  <span class="com">// ...</span>
+<span class="hid">plugin</span>.<span class="hid">state</span>.<span class="hid">messages</span> ~= <span class="hid">ThreadMessage</span>.<span class="hid">busMessage</span>(<span class="str">&quot;header&quot;</span>, <span class="hid">boxed</span>(<span class="hid">event</span>));
+<span class="hid">plugin</span>.<span class="hid">state</span>.<span class="hid">messages</span> ~= <span class="hid">ThreadMessage</span>.<span class="hid">busMessage</span>(<span class="str">&quot;other header&quot;</span>, <span class="hid">boxed</span>(<span class="str">&quot;text payload&quot;</span>));
+<span class="hid">plugin</span>.<span class="hid">state</span>.<span class="hid">messages</span> ~= <span class="hid">ThreadMessage</span>.<span class="hid">busMessage</span>(<span class="str">&quot;ladida&quot;</span>, <span class="hid">boxed</span>(<span class="num">42</span>));</pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted">{
+    <span class="kwrd">auto</span> <span class="hid">msg</span> = <span class="hid">boxed</span>(<span class="str">&quot;asdf&quot;</span>);
+    <span class="kwrd">auto</span> <span class="hid">asCast</span> = <span class="kwrd">cast</span>(<span class="hid">Boxed</span>!<span class="type">string</span>) <span class="hid">msg</span>;
+    <span class="kwrd">assert</span>((<span class="hid">msg</span> !<span class="kwrd">is</span> <span class="kwrd">null</span>), <span class="str">&quot;Incorrectly cast message: &quot;</span> ~ <span class="kwrd">typeof</span>(<span class="hid">asCast</span>).<span class="hid">stringof</span>);
+    <span class="hid">asCast</span> = <span class="kwrd">null</span>;  <span class="com">// silence dscanner</span>
+}
+{
+    <span class="kwrd">auto</span> <span class="hid">msg</span> = <span class="hid">boxed</span>(<span class="num">123_456</span>);
+    <span class="kwrd">auto</span> <span class="hid">asCast</span> = <span class="kwrd">cast</span>(<span class="hid">Boxed</span>!<span class="type">int</span>) <span class="hid">msg</span>;
+    <span class="kwrd">assert</span>((<span class="hid">msg</span> !<span class="kwrd">is</span> <span class="kwrd">null</span>), <span class="str">&quot;Incorrectly cast message: &quot;</span> ~ <span class="kwrd">typeof</span>(<span class="hid">asCast</span>).<span class="hid">stringof</span>);
+    <span class="hid">asCast</span> = <span class="kwrd">null</span>;  <span class="com">// silence dscanner</span>
+}
+{
+    <span class="kwrd">struct</span> <span class="hid">Foo</span> {}
+    <span class="kwrd">auto</span> <span class="hid">msg</span> = <span class="hid">boxed</span>(<span class="hid">Foo</span>());
+    <span class="kwrd">auto</span> <span class="hid">asCast</span> = <span class="kwrd">cast</span>(<span class="hid">Boxed</span>!<span class="hid">Foo</span>) <span class="hid">msg</span>;
+    <span class="kwrd">assert</span>((<span class="hid">msg</span> !<span class="kwrd">is</span> <span class="kwrd">null</span>), <span class="str">&quot;Incorrectly cast message: &quot;</span> ~ <span class="kwrd">typeof</span>(<span class="hid">asCast</span>).<span class="hid">stringof</span>);
+    <span class="hid">asCast</span> = <span class="kwrd">null</span>;  <span class="com">// silence dscanner</span>
+}</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.thread.html">thread</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.thread.Boxed.html">Boxed</a></li><li><a class="class" href="kameloso.thread.CarryingFiber.html">CarryingFiber</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function current" href="kameloso.thread.boxed.html">boxed</a></li><li><a class="function" href="kameloso.thread.carryingFiber.html">carryingFiber</a></li><li><a class="function" href="kameloso.thread.getQuitMessage.html">getQuitMessage</a></li><li><a class="function" href="kameloso.thread.interruptibleSleep.html">interruptibleSleep</a></li><li><a class="function" href="kameloso.thread.pthread_setname_np.html">pthread_setname_np</a></li><li><a class="function" href="kameloso.thread.setThreadName.html">setThreadName</a></li></ul><span class="type-separator">interfaces</span><ul><li><a class="interface" href="kameloso.thread.Sendable.html">Sendable</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.thread.ScheduledDelegate.html">ScheduledDelegate</a></li><li><a class="struct" href="kameloso.thread.ScheduledFiber.html">ScheduledFiber</a></li><li><a class="struct" href="kameloso.thread.ThreadMessage.html">ThreadMessage</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

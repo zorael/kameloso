@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>uniqueKey (lu.array.uniqueKey)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>uniqueKey</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.array.html">array</a> </div><div><div class="documentation-comment synopsis"><div><p>Returns a unique key for the passed associative array. Reserves the key by
+    assigning it a value.</p><p>Note: This function will end up in an endless loop if a narrow range of indexes
+    is supplied and the associative array already contains values for all of them.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"></div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">uniqueKey</div><div class="template-parameters" data-count="3">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="AA">AA</span> : <span class="name" data-ident="V">V</span>[<span class="name" data-ident="K">K</span>]</span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="V">V</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="K">K</span></span></div></div>)</div><div class="runtime-parameters" data-count="4"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">ref</span> <span class="name" data-ident="AA">AA</span></span></span> <span class="parameter-name name" data-ident="aa"><a href="#param-aa">aa</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="name" data-ident="K">K</span></span></span> <span class="parameter-name name" data-ident="min"><a href="#param-min">min</a></span><span class="parameter-default-value">&#160;=&#160;1</span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="name" data-ident="K">K</span></span></span> <span class="parameter-name name" data-ident="max"><a href="#param-max">max</a></span><span class="parameter-default-value">&#160;=&#160;<span class="name" data-ident="K">K.max</span></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="name" data-ident="V">V</span></span></span> <span class="parameter-name name" data-ident="value"><a href="#param-value">value</a></span><span class="parameter-default-value">&#160;=&#160;<span class="name" data-ident="V">V.init</span></span></div><span class="paren">)</span></div></div><div class="template-constraint"> <a class="lang-feature" href="http://dpldocs.info/template-constraints">if</a> (<div class="template-constraint-expression"><span class="name" data-ident="isIntegral">isIntegral</span>!<span class="name" data-ident="K">K</span></div>)</div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-aa"><a class="parameter-name" data-ident="aa" href="#param-aa">aa</a> <span class="parameter-type"><span class="name" data-ident="AA">AA</span></span></dt><dd><div class="documentation-comment"><div><p>Associative array to get a unique key for.</p></div></div></dd><dt id="param-min"><a class="parameter-name" data-ident="min" href="#param-min">min</a> <span class="parameter-type"><span class="name" data-ident="K">K</span></span></dt><dd><div class="documentation-comment"><div><p>Optional minimum key value; defaults to <tt class="inline-code">1</tt>.</p></div></div></dd><dt id="param-max"><a class="parameter-name" data-ident="max" href="#param-max">max</a> <span class="parameter-type"><span class="name" data-ident="K">K</span></span></dt><dd><div class="documentation-comment"><div><p>Optional maximum key value; defaults to <tt class="inline-code">K.max</tt>, where <tt class="inline-code">K</tt> is the
+            key type of the passed associative array.</p></div></div></dd><dt id="param-value"><a class="parameter-name" data-ident="value" href="#param-value">value</a> <span class="parameter-type"><span class="name" data-ident="V">V</span></span></dt><dd><div class="documentation-comment"><div><p>Optional value to assign to the key; defaults to <tt class="inline-code">V.init</tt>, where
+            <tt class="inline-code">V</tt> is the value type of the passed associative array.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>A unique key for the passed associative array. There will exist an array
+        entry for the key, with the value <tt class="inline-code">value</tt>.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="type">string</span>[<span class="type">int</span>] <span class="hid">aa</span>;
+<span class="kwrd">immutable</span> <span class="hid">key</span> = <span class="hid">aa</span>.<span class="hid">uniqueKey</span>;
+<span class="kwrd">assert</span>(<span class="hid">key</span> &gt; <span class="num">0</span>);
+<span class="kwrd">assert</span>(<span class="hid">key</span> <span class="kwrd">in</span> <span class="hid">aa</span>);
+<span class="kwrd">assert</span>(<span class="hid">aa</span>[<span class="hid">key</span>] == <span class="type">string</span>.<span class="hid">init</span>);</pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">conv</span> : <span class="hid">to</span>;
+
+{
+    <span class="type">string</span>[<span class="type">int</span>] <span class="hid">aa</span>;
+    <span class="kwrd">immutable</span> <span class="hid">key</span> = <span class="hid">aa</span>.<span class="hid">uniqueKey</span>;
+    <span class="kwrd">assert</span>(<span class="hid">key</span> <span class="kwrd">in</span> <span class="hid">aa</span>);
+}
+{
+    <span class="type">long</span>[<span class="type">long</span>] <span class="hid">aa</span>;
+    <span class="kwrd">immutable</span> <span class="hid">key</span> = <span class="hid">aa</span>.<span class="hid">uniqueKey</span>;
+    <span class="kwrd">assert</span>(<span class="hid">key</span> <span class="kwrd">in</span> <span class="hid">aa</span>);
+}
+{
+    <span class="kwrd">shared</span> <span class="type">bool</span>[<span class="type">int</span>] <span class="hid">aa</span>;
+    <span class="kwrd">immutable</span> <span class="hid">key</span> = <span class="hid">aa</span>.<span class="hid">uniqueKey</span>;
+    <span class="kwrd">assert</span>(<span class="hid">key</span> <span class="kwrd">in</span> <span class="hid">aa</span>);
+}
+{
+    <span class="type">int</span>[<span class="type">int</span>] <span class="hid">aa</span>;
+    <span class="kwrd">immutable</span> <span class="hid">key</span> = <span class="hid">aa</span>.<span class="hid">uniqueKey</span>(<span class="num">5</span>, <span class="num">6</span>, <span class="num">42</span>);
+    <span class="kwrd">assert</span>(<span class="hid">key</span> == <span class="num">5</span>);
+    <span class="kwrd">assert</span>((<span class="hid">aa</span>[<span class="num">5</span>] == <span class="num">42</span>), <span class="hid">aa</span>[<span class="num">5</span>].<span class="hid">to</span>!<span class="type">string</span>);
+}</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.array.html">array</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="lu.array.ArrayException.html">ArrayException</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="lu.array.countUntilLastMatchOf.html">countUntilLastMatchOf</a></li><li><a class="function" href="lu.array.countUntilLastOccurrenceOf.html">countUntilLastOccurrenceOf</a></li><li><a class="function" href="lu.array.pruneAA.html">pruneAA</a></li><li><a class="function" href="lu.array.truthTable.1.html">truthTable</a></li><li><a class="function current" href="lu.array.uniqueKey.html">uniqueKey</a></li><li><a class="function" href="lu.array.zero.html">zero</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

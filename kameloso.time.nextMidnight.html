@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>nextMidnight (kameloso.time.nextMidnight)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>nextMidnight</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.time.html">time</a> </div><div><div class="documentation-comment synopsis"><div><p>Returns a <a class="xref" href="std.datetime.systime.SysTime.html">SysTime</a> of the following midnight.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"></div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">nextMidnight</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="name" data-ident="SysTime">SysTime</span></span></span> <span class="parameter-name name" data-ident="now"><a href="#param-now">now</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">uint</span></span></span> <span class="parameter-name name" data-ident="days"><a href="#param-days">days</a></span><span class="parameter-default-value">&#160;=&#160;1</span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-now"><a class="parameter-name" data-ident="now" href="#param-now">now</a> <span class="parameter-type"><span class="name" data-ident="SysTime">SysTime</span></span></dt><dd><div class="documentation-comment"><div><p>A <a class="xref" href="std.datetime.systime.SysTime.html">SysTime</a> of the base date from
+            which to proceed to the next midnight.</p></div></div></dd><dt id="param-days"><a class="parameter-name" data-ident="days" href="#param-days">days</a> <span class="parameter-type"><span class="builtin-type">uint</span></span></dt><dd><div class="documentation-comment"><div><p>Number of days to add to the date. Defaults to 1.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>A <a class="xref" href="std.datetime.systime.SysTime.html">SysTime</a> of the midnight following the date
+        passed as argument.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">immutable</span> <span class="hid">now</span> = <span class="hid">Clock</span>.<span class="hid">currTime</span>;
+<span class="kwrd">immutable</span> <span class="hid">midnight</span> = <span class="hid">now</span>.<span class="hid">nextMidnight</span>;
+<span class="hid">writeln</span>(<span class="str">&quot;Time until next midnight: &quot;</span>, (<span class="hid">midnight</span> - <span class="hid">now</span>));</pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">datetime</span> : <span class="hid">DateTime</span>;
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">datetime</span>.<span class="hid">systime</span> : <span class="hid">SysTime</span>;
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">datetime</span>.<span class="hid">timezone</span> : <span class="hid">UTC</span>;
+
+<span class="kwrd">immutable</span> <span class="hid">utc</span> = <span class="hid">UTC</span>();
+
+<span class="kwrd">immutable</span> <span class="hid">christmasEve</span> = <span class="hid">SysTime</span>(<span class="hid">DateTime</span>(<span class="num">2018</span>, <span class="num">12</span>, <span class="num">24</span>, <span class="num">12</span>, <span class="num">34</span>, <span class="num">56</span>), <span class="hid">utc</span>);
+<span class="kwrd">immutable</span> <span class="hid">nextDay</span> = <span class="hid">christmasEve</span>.<span class="hid">nextMidnight</span>;
+<span class="kwrd">immutable</span> <span class="hid">christmasDay</span> = <span class="hid">SysTime</span>(<span class="hid">DateTime</span>(<span class="num">2018</span>, <span class="num">12</span>, <span class="num">25</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>), <span class="hid">utc</span>);
+<span class="kwrd">assert</span>(<span class="hid">nextDay</span>.<span class="hid">toUnixTime</span>() == <span class="hid">christmasDay</span>.<span class="hid">toUnixTime</span>());
+
+<span class="kwrd">immutable</span> <span class="hid">someDay</span> = <span class="hid">SysTime</span>(<span class="hid">DateTime</span>(<span class="num">2018</span>, <span class="num">6</span>, <span class="num">30</span>, <span class="num">12</span>, <span class="num">27</span>, <span class="num">56</span>), <span class="hid">utc</span>);
+<span class="kwrd">immutable</span> <span class="hid">afterSomeDay</span> = <span class="hid">someDay</span>.<span class="hid">nextMidnight</span>;
+<span class="kwrd">immutable</span> <span class="hid">afterSomeDayToo</span> = <span class="hid">SysTime</span>(<span class="hid">DateTime</span>(<span class="num">2018</span>, <span class="num">7</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>), <span class="hid">utc</span>);
+<span class="kwrd">assert</span>(<span class="hid">afterSomeDay</span> == <span class="hid">afterSomeDayToo</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">newyearsEve</span> = <span class="hid">SysTime</span>(<span class="hid">DateTime</span>(<span class="num">2018</span>, <span class="num">12</span>, <span class="num">31</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>), <span class="hid">utc</span>);
+<span class="kwrd">immutable</span> <span class="hid">newyearsDay</span> = <span class="hid">newyearsEve</span>.<span class="hid">nextMidnight</span>;
+<span class="kwrd">immutable</span> <span class="hid">alsoNewyearsDay</span> = <span class="hid">SysTime</span>(<span class="hid">DateTime</span>(<span class="num">2019</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>), <span class="hid">utc</span>);
+<span class="kwrd">assert</span>(<span class="hid">newyearsDay</span> == <span class="hid">alsoNewyearsDay</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">troubleDay</span> = <span class="hid">SysTime</span>(<span class="hid">DateTime</span>(<span class="num">2018</span>, <span class="num">6</span>, <span class="num">30</span>, <span class="num">19</span>, <span class="num">14</span>, <span class="num">51</span>), <span class="hid">utc</span>);
+<span class="kwrd">immutable</span> <span class="hid">afterTrouble</span> = <span class="hid">troubleDay</span>.<span class="hid">nextMidnight</span>;
+<span class="kwrd">immutable</span> <span class="hid">alsoAfterTrouble</span> = <span class="hid">SysTime</span>(<span class="hid">DateTime</span>(<span class="num">2018</span>, <span class="num">7</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>), <span class="hid">utc</span>);
+<span class="kwrd">assert</span>(<span class="hid">afterTrouble</span> == <span class="hid">alsoAfterTrouble</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">novDay</span> = <span class="hid">SysTime</span>(<span class="hid">DateTime</span>(<span class="num">2019</span>, <span class="num">11</span>, <span class="num">30</span>, <span class="num">12</span>, <span class="num">34</span>, <span class="num">56</span>), <span class="hid">utc</span>);
+<span class="kwrd">immutable</span> <span class="hid">decDay</span> = <span class="hid">novDay</span>.<span class="hid">nextMidnight</span>;
+<span class="kwrd">immutable</span> <span class="hid">alsoDecDay</span> = <span class="hid">SysTime</span>(<span class="hid">DateTime</span>(<span class="num">2019</span>, <span class="num">12</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>), <span class="hid">utc</span>);
+<span class="kwrd">assert</span>(<span class="hid">decDay</span> == <span class="hid">alsoDecDay</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">lastMarch</span> = <span class="hid">SysTime</span>(<span class="hid">DateTime</span>(<span class="num">2005</span>, <span class="num">3</span>, <span class="num">31</span>, <span class="num">23</span>, <span class="num">59</span>, <span class="num">59</span>), <span class="hid">utc</span>);
+<span class="kwrd">immutable</span> <span class="hid">firstApril</span> = <span class="hid">lastMarch</span>.<span class="hid">nextMidnight</span>;
+<span class="kwrd">immutable</span> <span class="hid">alsoFirstApril</span> = <span class="hid">SysTime</span>(<span class="hid">DateTime</span>(<span class="num">2005</span>, <span class="num">4</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>), <span class="hid">utc</span>);
+<span class="kwrd">assert</span>(<span class="hid">firstApril</span> == <span class="hid">alsoFirstApril</span>);</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.time.html">time</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.time.DurationStringException.html">DurationStringException</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.time.asAbbreviatedDuration.html">asAbbreviatedDuration</a></li><li><a class="function current" href="kameloso.time.nextMidnight.html">nextMidnight</a></li><li><a class="function" href="kameloso.time.timeSince.html">timeSince</a></li><li><a class="function" href="kameloso.time.timeSinceInto.html">timeSinceInto</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
