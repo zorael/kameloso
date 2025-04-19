@@ -57,6 +57,9 @@ jobs:
     - name: 'Build: dev (release)'
       run: dub build --nodeps -b release -c dev
 
+    - name: 'Build: twitch (debug)'
+      run: dub build --nodeps -b debug   -c twitch
+
     - name: 'Build: application (debug)'
       run: dub build --nodeps -b debug   -c application
 
