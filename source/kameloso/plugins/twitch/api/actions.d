@@ -270,6 +270,7 @@ in (authorisationHeader.length, "Tried to validate an empty Twitch authorisation
     import kameloso.net : HTTPQueryException, UnexpectedJSONException;
     import asdf.serialization : deserialize;
     import std.algorithm.searching : canFind, startsWith;
+    import core.time : seconds;
 
     static struct Response
     {
@@ -461,7 +462,12 @@ in (authorisationHeader.length, "Tried to validate an empty Twitch authorisation
         return ValidationResults(httpResponse.code, response);
     }
 
-    return retryDelegate(plugin, &getValidationDg, async: true, endlessly: true);
+    return retryDelegate(
+        plugin: plugin,
+        dg: &getValidationDg,
+        async: true,
+        endlessly: true,
+        retryDelay: 10.seconds);
 }
 
 
