@@ -3339,7 +3339,7 @@ auto verifySettings(scope Kameloso instance)
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void resolvePaths(scope Kameloso instance) @safe
+void resolvePaths(/*scope*/ Kameloso instance) @safe
 {
     import kameloso.platform : rbd = resourceBaseDirectory;
     import std.file : exists;
