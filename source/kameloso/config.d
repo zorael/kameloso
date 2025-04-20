@@ -109,7 +109,7 @@ void printHelp(GetoptResult results)
             generated file and supply admins and/or home channels.
  +/
 void verboselyWriteConfig(
-    Kameloso instance,
+    scope Kameloso instance,
     ref IRCClient client,
     ref IRCServer server,
     ref IRCBot bot,
@@ -170,7 +170,7 @@ void verboselyWriteConfig(
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void printSettings(Kameloso instance) @system
+void printSettings(scope Kameloso instance) @system
 {
     import kameloso.misc : printVersionInfo;
     import kameloso.prettyprint : prettyprint;
@@ -212,7 +212,7 @@ void printSettings(Kameloso instance) @system
             otherwise uses `notepad.exe`.
  +/
 void manageConfigFile(
-    Kameloso instance,
+    scope Kameloso instance,
     const bool shouldWriteConfig,
     const bool shouldOpenTerminalEditor,
     const bool shouldOpenGraphicalEditor,
@@ -570,7 +570,7 @@ public:
     Throws:
         [std.getopt.GetOptException|GetOptException] if an unknown flag is passed.
  +/
-auto handleGetopt(Kameloso instance) @system
+auto handleGetopt(scope Kameloso instance) @system
 {
     import kameloso.configreader : readConfigInto;
     import kameloso.logger : KamelosoLogger;
@@ -1238,7 +1238,7 @@ auto handleGetopt(Kameloso instance) @system
         filename = String filename of the file to write to.
  +/
 void writeConfigurationFile(
-    Kameloso instance,
+    scope Kameloso instance,
     const string filename) @system
 {
     import kameloso.platform : rbd = resourceBaseDirectory;
@@ -1463,7 +1463,7 @@ void giveBrightTerminalHint(const bool alsoAboutConfigSetting = false)
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void applyDefaults(Kameloso instance)
+void applyDefaults(scope Kameloso instance)
 out (; (instance.parser.client.nickname.length), "Empty client nickname")
 out (; (instance.parser.client.user.length), "Empty client username")
 out (; (instance.parser.client.realName.length), "Empty client GECOS/real name")
@@ -1532,7 +1532,7 @@ unittest
     import kameloso.constants : KamelosoDefaults, KamelosoDefaultIntegers;
     import std.conv : to;
 
-    auto instance = new Kameloso;
+    scope instance = new Kameloso;
 
     with (instance.parser)
     {

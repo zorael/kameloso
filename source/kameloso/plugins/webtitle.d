@@ -122,7 +122,7 @@ struct TitleLookupResult
                 response.finalURI.host[4..$] :
                 response.finalURI.host;
 
-            auto doc = new Document;
+            scope doc = new Document;
             doc.parseGarbage(response.body);
 
             this.title = doc.title.length ?
@@ -493,7 +493,7 @@ auto parseResponseIntoTitleLookupResult(const HTTPQueryResponse response)
             response.finalURI.host[4..$] :
             response.finalURI.host;
 
-        auto doc = new Document;
+        scope doc = new Document;
         doc.parseGarbage(response.body);
 
         result.title = doc.title.length ?

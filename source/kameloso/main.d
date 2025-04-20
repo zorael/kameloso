@@ -226,7 +226,7 @@ void signalHandler(int sig) nothrow @nogc @system
         should exit or not.
  +/
 auto processMessages(
-    Kameloso instance,
+    scope Kameloso instance,
     const SysTime now,
     IRCPlugin onlyThisPlugin = null)
 {
@@ -918,7 +918,7 @@ auto processMessages(
         [lu.misc.Next.retry|Next.retry] if the bot should reconnect to the server.
         [lu.misc.Next.continue_|Next.continue_] is never returned.
  +/
-auto mainLoop(Kameloso instance)
+auto mainLoop(scope Kameloso instance)
 {
     import kameloso.constants : Timeout;
     import kameloso.net : ListenAttempt, SocketSendException, listenFiber;
@@ -927,7 +927,7 @@ auto mainLoop(Kameloso instance)
     import core.thread.fiber : Fiber;
 
     // Instantiate a Generator to read from the socket and yield lines
-    auto listener = new Generator!ListenAttempt(() =>
+    scope listener = new Generator!ListenAttempt(() =>
         listenFiber(
             instance.conn,
             instance.abort,
@@ -936,7 +936,7 @@ auto mainLoop(Kameloso instance)
     scope(exit)
     {
         destroy(listener);
-        listener = null;
+        //listener = null;  // cannot rebind scope variables
     }
 
     /++
@@ -1266,7 +1266,7 @@ auto mainLoop(Kameloso instance)
         A `double` of how many seconds until the next message in the buffers should be sent.
         If `0.0`, the buffer was emptied.
  +/
-auto sendLines(Kameloso instance)
+auto sendLines(scope Kameloso instance)
 {
     if (!instance.immediateBuffer.empty)
     {
@@ -1324,7 +1324,7 @@ auto sendLines(Kameloso instance)
     Returns:
         A [lu.misc.Next|Next] describing what action [mainLoop] should take next.
  +/
-auto listenAttemptToNext(Kameloso instance, const ListenAttempt attempt)
+auto listenAttemptToNext(scope Kameloso instance, const ListenAttempt attempt)
 {
     // Handle the attempt; switch on its state
     with (ListenAttempt.ListenState)
@@ -1476,7 +1476,7 @@ void logPluginActionException(
         A [lu.misc.Next] informing the calling function what to do next.
  +/
 auto processLineFromServer(
-    Kameloso instance,
+    scope Kameloso instance,
     const string raw,
     const SysTime now)
 {
@@ -2228,7 +2228,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         instance = The current bot instance.
         plugin = The current [kameloso.plugins.IRCPlugin|IRCPlugin].
  +/
-void processReadyReplays(Kameloso instance, IRCPlugin plugin)
+void processReadyReplays(scope Kameloso instance, IRCPlugin plugin)
 {
     import core.thread.fiber : Fiber;
 
@@ -2294,7 +2294,7 @@ void processReadyReplays(Kameloso instance, IRCPlugin plugin)
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         plugin = The relevant [kameloso.plugins.IRCPlugin|IRCPlugin].
  +/
-void processPendingReplays(Kameloso instance, IRCPlugin plugin)
+void processPendingReplays(scope Kameloso instance, IRCPlugin plugin)
 {
     import kameloso.constants : Timeout;
     import kameloso.messaging : Message, whois;
@@ -2425,7 +2425,7 @@ version(WithOnelinerPlugin)
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         plugin = The relevant [kameloso.plugins.IRCPlugin|IRCPlugin].
  +/
-void processDeferredActions(Kameloso instance, IRCPlugin plugin)
+void processDeferredActions(scope Kameloso instance, IRCPlugin plugin)
 {
     import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
@@ -2737,7 +2737,7 @@ void resetSignals() nothrow @nogc
     Returns:
         [lu.misc.Next|Next].* depending on what action the calling site should take.
  +/
-auto tryGetopt(Kameloso instance)
+auto tryGetopt(scope Kameloso instance)
 {
     import kameloso.plugins : IRCPluginSettingsException;
     import kameloso.config : FlagStringException, handleGetopt;
@@ -2830,14 +2830,14 @@ auto tryGetopt(Kameloso instance)
         [lu.misc.Next.returnFailure|Next.returnFailure] if connection failed
         and the program should exit.
  +/
-auto tryConnect(Kameloso instance)
+auto tryConnect(scope Kameloso instance)
 {
     import kameloso.constants : ConnectionDefaultIntegers, Timeout;
     import kameloso.net : ConnectionAttempt, connectFiber;
     import kameloso.thread : interruptibleSleep;
     import std.concurrency : Generator;
 
-    auto connector = new Generator!ConnectionAttempt(() =>
+    scope connector = new Generator!ConnectionAttempt(() =>
         connectFiber(
             conn: instance.conn,
             connectionRetries: ConnectionDefaultIntegers.connectionRetries,
@@ -2846,7 +2846,7 @@ auto tryConnect(Kameloso instance)
     scope(exit)
     {
         destroy(connector);
-        connector = null;
+        //connector = null;  // cannot rebind scope variables
     }
 
     uint incrementedRetryDelay = Timeout.Integers.connectionRetrySeconds;
@@ -3139,7 +3139,7 @@ auto tryConnect(Kameloso instance)
         [lu.misc.Next.returnFailure|Next.returnFailure] if it failed and the
         program should exit.
  +/
-auto resolve(Kameloso instance, const bool firstConnect)
+auto resolve(scope Kameloso instance, const bool firstConnect)
 {
     import kameloso.constants : Timeout;
     import kameloso.net : ResolveAttempt, delegateResolve;
@@ -3296,7 +3296,7 @@ void setDefaultDirectories(ref CoreSettings coreSettings) @safe
         [lu.misc.Next.returnFailure|Next.returnFailure] if the program should exit,
         [lu.misc.Next.continue_|Next.continue_] otherwise.
  +/
-auto verifySettings(Kameloso instance)
+auto verifySettings(scope Kameloso instance)
 {
     if (!instance.coreSettings.force)
     {
@@ -3339,7 +3339,7 @@ auto verifySettings(Kameloso instance)
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void resolvePaths(Kameloso instance) @safe
+void resolvePaths(scope Kameloso instance) @safe
 {
     import kameloso.platform : rbd = resourceBaseDirectory;
     import std.file : exists;
@@ -3435,7 +3435,7 @@ void resolvePaths(Kameloso instance) @safe
     Returns:
         A Voldemort of state variables derived from a program run.
  +/
-auto startBot(Kameloso instance)
+auto startBot(scope Kameloso instance)
 {
     import kameloso.plugins : IRCPluginInitialisationException;
     import kameloso.plugins.common  : pluginNameOfFilename, pluginFileBaseName;
@@ -4084,7 +4084,7 @@ void printEventDebugDetails(
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
-void printSummary(const Kameloso instance) @safe
+void printSummary(const scope Kameloso instance) @safe
 {
     import kameloso.time : timeSince;
     import core.time : Duration;
@@ -4177,7 +4177,7 @@ void printSummary(const Kameloso instance) @safe
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         reason = Quit reason.
  +/
-void echoQuitMessage(Kameloso instance, const string reason) @safe
+void echoQuitMessage(scope Kameloso instance, const string reason) @safe
 {
     bool printed;
 
@@ -4207,7 +4207,7 @@ void echoQuitMessage(Kameloso instance, const string reason) @safe
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         arg0 = The name of the program, as passed on the command line.
  +/
-void prettyprintStartScreen(const Kameloso instance, const string arg0)
+void prettyprintStartScreen(const scope Kameloso instance, const string arg0)
 {
     import kameloso.misc : printVersionInfo;
     import kameloso.prettyprint : prettyprint;
@@ -4249,7 +4249,7 @@ void prettyprintStartScreen(const Kameloso instance, const string arg0)
         `false` otherwise.
  +/
 auto checkInitialisationMessages(
-    Kameloso instance,
+    scope Kameloso instance,
     out ShellReturnValue retval)
 {
     import kameloso.tables : trueThenFalse;
@@ -4388,7 +4388,7 @@ auto run(string[] args)
     }
 
     // Set up the Kameloso instance.
-    auto instance = new Kameloso(args);
+    scope instance = new Kameloso(args);
 
     scope(exit)
     {
@@ -4399,7 +4399,7 @@ auto run(string[] args)
          +/
         instance.teardown();
         destroy(instance);
-        instance = null;
+        //instance = null;  // cannot rebind scope variables
     }
 
     postInstanceSetup();

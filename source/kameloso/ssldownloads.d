@@ -48,7 +48,7 @@ public:
         were touched and the configuration file should be updated; `false` if not.
  +/
 auto downloadWindowsSSL(
-    Kameloso instance,
+    scope Kameloso instance,
     const bool shouldDownloadCacert,
     const bool shouldDownloadOpenSSL,
     const bool shouldDownloadOpenSSL1_1)

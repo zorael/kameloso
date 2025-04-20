@@ -721,7 +721,7 @@ in ((connectionLost > Duration.zero), "Tried to set up a listening fiber with co
 
     if (*abort) return;
 
-    auto buffer = new ubyte[bufferSize];
+    scope buffer = new ubyte[bufferSize];
     auto timeLastReceived = MonoTime.currTime;
     size_t start;
 

@@ -155,7 +155,7 @@ public:
     /++
         Constructor taking an `args` string array.
      +/
-    this(const string[] args)
+    this(const string[] args) scope
     {
         static import kameloso.common;
 
@@ -173,7 +173,7 @@ public:
         unexpected null pointer dereference.
      +/
     version(unittest)
-    this() @safe
+    this() scope @safe
     {
         static import kameloso.common;
         this.coreSettings = &kameloso.common.coreSettings;

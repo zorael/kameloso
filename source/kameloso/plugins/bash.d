@@ -316,7 +316,7 @@ auto parseResponseIntoBashLookupResult(/*const*/ HTTPQueryResponse response)
     immutable headlessBody = result.responseBody[endHeadPos+5..$];  // slice away the </head>
     if (!headlessBody.length) return attachErrorAndReturn();
 
-    auto doc = new Document;
+    scope doc = new Document;
     doc.parseGarbage(headlessBody);
 
     auto quotesElements = doc.getElementsByClassName("quotes");
