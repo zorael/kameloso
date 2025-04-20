@@ -1,7 +1,8 @@
 /++
-    Functions for accessing the Twitch API. For internal use.
+    Functions for accessing the Twitch API.
 
     See_Also:
+        [kameloso.plugins.twitch.api],
         [kameloso.plugins.twitch],
         [kameloso.plugins.twitch.common],
         [kameloso.plugins.twitch.providers.twitch],
@@ -13,28 +14,20 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-module kameloso.plugins.twitch.api;
+module kameloso.plugins.twitch.api.actions;
 
 version(TwitchSupport):
 version(WithTwitchPlugin):
 
 private:
 
+import kameloso.plugins.twitch.api;
 import kameloso.plugins;
 import kameloso.plugins.twitch;
 import kameloso.plugins.twitch.common;
-import kameloso.net :
-    EmptyDataJSONException,
-    ErrorJSONException,
-    HTTPQueryException,
-    HTTPQueryResponse,
-    QueryResponseJSONException,
-    UnexpectedJSONException;
-import kameloso.tables : HTTPVerb;
 import dialect.defs;
-import lu.container : MutexedAA;
 import core.thread.fiber : Fiber;
-import core.time : Duration, seconds;
+import kameloso.tables : HTTPVerb;
 
 /+
     Used to print debug information in API functions.
@@ -45,285 +38,7 @@ version(PrintStacktraces)
     import std.stdio : writeln;
 }
 
-package:
-
-
-// retryDelegate
-/++
-    Retries a passed delegate until it no longer throws or until the hardcoded
-    number of retries
-    ([kameloso.plugins.twitch.TwitchPlugin.delegateRetries|TwitchPlugin.delegateRetries])
-    is reached, or forever if `endlessly` is passed.
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.TwitchPlugin|TwitchPlugin].
-        dg = Delegate to call.
-        async = Whether or not the delegate should be called asynchronously,
-            scheduling attempts using [kameloso.plugins.common.scheduling.delay|delay].
-        endlessly = Whether or not to endlessly retry.
-        retryDelay = How long to wait between retries.
-
-    Returns:
-        Whatever the passed delegate returns.
- +/
-auto retryDelegate(Dg)
-    (TwitchPlugin plugin,
-    Dg dg,
-    const bool async = true,
-    const bool endlessly = false,
-    const Duration retryDelay = 4.seconds)
-in ((!async || Fiber.getThis()), "Tried to call async `retryDelegate` from outside a fiber")
-{
-    immutable retries = endlessly ?
-        size_t.max :
-        TwitchPlugin.delegateRetries;
-
-    foreach (immutable i; 0..retries)
-    {
-        try
-        {
-            if (i > 0)
-            {
-                if (async)
-                {
-                    import kameloso.plugins.common.scheduling : delay;
-                    delay(plugin, retryDelay, yield: true);
-                }
-                else
-                {
-                    import core.thread : Thread;
-                    Thread.sleep(retryDelay);
-                }
-            }
-            return dg();
-        }
-        catch (Exception e)
-        {
-            handleRetryDelegateException(
-                e,
-                i,
-                endlessly: endlessly,
-                headless: plugin.state.coreSettings.headless);
-            continue;  // If we're here the above didn't throw; continue
-        }
-    }
-
-    assert(0, "Unreachable");
-}
-
-
-// handleRetryDelegateException
-/++
-    Handles exceptions thrown by [retryDelegate].
-
-    Params:
-        base = The exception to handle.
-        i = The current retry count.
-        endlessly = Whether or not to endlessly retry.
-        headless = Whether or not we are running headlessly, in which case all
-            terminal output will be skipped.
-
-    Throws:
-        [kameloso.plugins.twitch.common.MissingBroadcasterTokenException|MissingBroadcasterTokenException]
-        if the delegate throws it.
-        [kameloso.plugins.twitch.common.InvalidCredentialsException|InvalidCredentialsException]
-        likewise.
-        [kameloso.net.EmptyDataJSONException|EmptyDataJSONException] also.
-        [kameloso.net.ErrorJSONException|ErrorJSONExceptoin] if the delegate
-        throws it and the JSON embedded contains an error code in the 400-499 range.
-        [object.Exception|Exception] if the delegate throws it and `endlessly` is not passed.
- +/
-private auto handleRetryDelegateException(
-    Exception base,
-    const size_t i,
-    const bool endlessly,
-    const bool headless)
-{
-    import asdf.serialization : SerdeException;
-    import std.json : JSONException;
-
-    if (auto e = cast(MissingBroadcasterTokenException) base)
-    {
-        // This is never a transient error
-        throw e;
-    }
-    else if (auto e = cast(InvalidCredentialsException) base)
-    {
-        // Neither is this
-        throw e;
-    }
-    else if (auto e = cast(SerdeException) base)
-    {
-        // Nor this
-        throw e;
-    }
-    else if (auto e = cast(JSONException) base)
-    {
-        // Nor this
-        throw e;
-    }
-    else if (auto e = cast(EmptyDataJSONException) base)
-    {
-        // Should never be transient?
-        throw e;
-    }
-    else if (auto e = cast(ErrorJSONException) base)
-    {
-        const statusJSON = "status" in e.json;
-        if ((statusJSON.integer >= 400) && (statusJSON.integer < 500))
-        {
-            // Also never transient
-            throw e;
-        }
-        return;  //continue;
-    }
-    else if (auto e = cast(HTTPQueryException) base)
-    {
-        import kameloso.constants : MagicErrorStrings;
-
-        if (e.msg == MagicErrorStrings.sslLibraryNotFoundRewritten)
-        {
-            // Missing OpenSSL
-            throw e;
-        }
-
-        // Drop down
-    }
-
-    if (endlessly)
-    {
-        // Unconditionally continue, but print the exception once if it's erroring
-        version(PrintStacktraces)
-        {
-            if (!headless)
-            {
-                alias printExceptionAfterNFailures = TwitchPlugin.delegateRetries;
-
-                if (i == printExceptionAfterNFailures)
-                {
-                    printRetryDelegateException(base);
-                }
-            }
-        }
-        return;  //continue;
-    }
-    else
-    {
-        // Retry until we reach the retry limit, then print if we should, before rethrowing
-        if (i < TwitchPlugin.delegateRetries-1) return;  //continue;
-
-        version(PrintStacktraces)
-        {
-            if (!headless)
-            {
-                printRetryDelegateException(base);
-            }
-        }
-        throw base;
-    }
-}
-
-
-// printRetryDelegateException
-/++
-    Prints out details about exceptions passed from [retryDelegate].
-    [retryDelegate] itself rethrows them when we return, so no need to do that here.
-
-    Gated behind version `PrintStacktraces`.
-
-    Params:
-        base = The exception to print.
- +/
-version(PrintStacktraces)
-void printRetryDelegateException(/*const*/ Exception base)
-{
-    import kameloso.common : logger;
-    import std.json : JSONException, parseJSON;
-    import std.stdio : stdout, writeln;
-
-    logger.trace(base);
-
-    if (auto e = cast(HTTPQueryException) base)
-    {
-        //logger.trace(e);
-
-        try
-        {
-            writeln(parseJSON(e.responseBody).toPrettyString);
-        }
-        catch (JSONException _)
-        {
-            writeln(e.responseBody);
-        }
-
-        stdout.flush();
-    }
-    else if (auto e = cast(EmptyDataJSONException) base)
-    {
-        // Must be before TwitchJSONException below
-        //logger.trace(e);
-    }
-    else if (auto e = cast(QueryResponseJSONException) base)
-    {
-        // UnexpectedJSONException or ErrorJSONException
-        //logger.trace(e);
-        writeln(e.json.toPrettyString);
-        stdout.flush();
-    }
-    else /*if (auto e = cast(Exception) base)*/
-    {
-        //logger.trace(e);
-    }
-}
-
-
-// ErrorResponse
-/++
-    Generic JSON Schema of an error response from the Twitch API.
- +/
-struct ErrorResponse
-{
-    private import asdf.serialization : serdeOptional;
-
-    /*
-    {
-        "error": "Unauthorized",
-        "message": "Client ID and OAuth token do not match",
-        "status": 401
-    }
-     */
-    /*
-    {
-        "error": "Bad Request",
-        "message": "To start a commercial, the broadcaster must be streaming live.",
-        "status": 400
-    }
-     */
-    /*
-    {
-        "message": "invalid access token",
-        "status": 401
-    }
-     */
-
-    @serdeOptional
-    {
-        /++
-            Brief error message, generally the name of the HTTP status code.
-         +/
-        string error;
-
-        /++
-            Longer, descriptive error message.
-         +/
-        string message;
-
-        /++
-            HTTP status code.
-         +/
-        uint status;
-    }
-}
+public:
 
 
 // getChatters
@@ -340,9 +55,6 @@ struct ErrorResponse
     Returns:
         A Voldemort struct with `broadcaster`, `moderators`, `vips`, `staff`,
         `admins`, `globalMods`, `viewers` and `chatterCount` members.
-
-    Throws:
-        [UnexpectedJSONException] on unexpected JSON.
 
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#get-chatters
@@ -541,6 +253,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
         [kameloso.plugins.twitch.common.InvalidCredentialsException|InvalidCredentialsException]
         on invalid credentials.
         [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
+        [kameloso.net.EmptyResponseException|EmptyResponseException] on empty response.
         [kameloso.net.HTTPQueryException|HTTPQueryException] on other failure.
 
     See_Also:
@@ -554,6 +267,7 @@ auto getValidation(
 in (Fiber.getThis(), "Tried to call `getValidation` from outside a fiber")
 in (authorisationHeader.length, "Tried to validate an empty Twitch authorisation token")
 {
+    import kameloso.net : HTTPQueryException, UnexpectedJSONException;
     import asdf.serialization : deserialize;
     import std.algorithm.searching : canFind, startsWith;
 
@@ -765,9 +479,6 @@ in (authorisationHeader.length, "Tried to validate an empty Twitch authorisation
 
     Returns:
         An associative array of [Follower]s keyed by nickname string.
-
-    Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
 
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#get-channel-followers
@@ -990,9 +701,6 @@ in (id, "Tried to get followers with an unset ID")
     Returns:
         Voldemort aggregate struct with `nickname`, `displayName` and `id` members.
 
-    Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
-
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#get-users
  +/
@@ -1200,9 +908,6 @@ in ((name.length || id),
 
     Returns:
         Voldemort aggregate struct with `id` and `name` members.
-
-    Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
 
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#get-games
@@ -1582,9 +1287,6 @@ in (channelName.length, "Tried to modify a channel with an empty channel name st
     Returns:
         A Voldemort with the channel information.
 
-    Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
-
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#get-channel-information
  +/
@@ -1833,11 +1535,6 @@ out (token; token.length, "`getBroadcasterAuthorisation` returned an empty strin
     Returns:
         A Voldemort with information about the commercial start.
 
-    Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
-        [kameloso.net.EmptyDataJSONException|EmptyDataJSONException] if the
-        response contained an empty `data` array.
-
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#start-commercial
  +/
@@ -2021,6 +1718,7 @@ private struct TwitchPoll
 {
     private import std.datetime.systime : SysTime;
     private import asdf.serialization : serdeIgnore, serdeOptional;
+    private import core.time : Duration;
 
     /++
         JSON schema for the Twitch poll API response.
@@ -2407,9 +2105,6 @@ private struct TwitchPoll
     Returns:
         A Voldemort containing an array of [TwitchPoll]s.
 
-    Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
-
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#get-polls
  +/
@@ -2575,11 +2270,6 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
     Returns:
         A [TwitchPoll] instance.
 
-    Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
-        [kameloso.net.EmptyDataJSONException|EmptyDataJSONException] if the
-        response contained an empty `data` array.
-
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#create-poll
  +/
@@ -2660,6 +2350,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
         escapedTitle,
         sink[],
         durationString);
+
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
     auto createPollDg()
@@ -2773,11 +2464,6 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
 
     Returns:
         A [TwitchPoll] instance.
-
-    Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
-        [kameloso.net.EmptyDataJSONException|EmptyDataJSONException] if the
-        response contained an empty `data` array.
 
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#end-poll
@@ -2967,6 +2653,7 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
             url: url,
             caller: caller);
 
+        // Can't use asdf here as the arrays contain mixed types
         immutable responseJSON = parseJSON(response.body);
 
         /*
@@ -3013,6 +2700,8 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
 
         if (!botsJSON)
         {
+            import kameloso.net : UnexpectedJSONException;
+
             // For some reason we received an object that didn't contain bots
             enum message = "`getBotList` response has unexpected JSON " ~
                 `(no "bots" key)`;
@@ -3062,9 +2751,6 @@ auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
     Returns:
         A [kameloso.plugins.twitch.TwitchPlugin.Room.Stream|Room.Stream]
         populated with all (relevant) information.
-
-    Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
 
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#get-streams
@@ -3260,9 +2946,6 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
 
     Returns:
         A Voldemort containing an array of subscribers.
-
-    Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
 
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#get-broadcaster-subscriptions
@@ -3799,15 +3482,13 @@ in (channelName.length, "Tried to delete a message without providing a channel n
         durationSeconds = Duration of timeout in seconds.
         reason = Timeout reason.
         caller = Name of the calling function.
-        recursing = Whether or not this function is recursing into itself.
 
     Returns:
         A Voldemort struct with information about the timeout action.
 
     Throws:
-        [kameloso.net.UnexpectedJSONException|UnexpectedJSONException] on unexpected JSON received.
-        [kameloso.net.ErrorJSONException|ErrorJSONException] if the
-        response contained an `error` object.
+        [kameloso.net.HTTPQueryException|HTTPQueryException] on 409 Conflict,
+            when the user is already in the process of being timed out.
 
     See_Also:
         https://dev.twitch.tv/docs/api/reference/#create-a-banned-event
@@ -3818,12 +3499,12 @@ auto timeoutUser(
     const ulong userID,
     const uint durationSeconds,
     const string reason = string.init,
-    const string caller = __FUNCTION__,
-    const bool recursing = false)
+    const string caller = __FUNCTION__)
 in (Fiber.getThis(), "Tried to call `timeoutUser` from outside a fiber")
 in (channelName.length, "Tried to timeout a user without providing a channel")
 in (userID, "Tried to timeout a user with an unset user ID")
 {
+    import kameloso.net : HTTPQueryException;
     import asdf.serialization : deserialize;
     import std.algorithm.comparison : min;
     import std.format : format;
@@ -4058,19 +3739,8 @@ in (userID, "Tried to timeout a user with an unset user ID")
                 from a timeout to a ban, or removing the user from a ban or timeout.
                 Please retry your request.
              +/
-            if (!recursing)
-            {
-                // Retry once
-                return timeoutUser(
-                    plugin: plugin,
-                    channelName: channelName,
-                    userID: userID,
-                    durationSeconds: durationSeconds,
-                    reason: reason,
-                    caller: caller,
-                    recursing: true);
-            }
-            goto default;
+            // Cause retryDelegate to retry
+            throw new HTTPQueryException("409 Conflict when trying to timeout user");
 
         case 429:
             // 429 Too Many Requests

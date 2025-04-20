@@ -20,6 +20,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#twitch,
         [kameloso.plugins.twitch.api],
+        [kameloso.plugins.twitch.api.actions],
         [kameloso.plugins.twitch.common],
         [kameloso.plugins.twitch.providers.twitch],
         [kameloso.plugins.twitch.providers.google],
@@ -203,7 +204,7 @@ version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitch.api;
+import kameloso.plugins.twitch.api.actions;
 import kameloso.plugins.twitch.common;
 import kameloso.plugins;
 import kameloso.plugins.common.mixins.awareness;
@@ -1688,6 +1689,7 @@ void onCommandSubs(TwitchPlugin plugin, const IRCEvent event)
 )
 void onCommandSongRequest(TwitchPlugin plugin, const IRCEvent event)
 {
+    import kameloso.plugins.twitch.api : retryDelegate;
     import lu.string : advancePast, stripped, unquoted;
     import std.algorithm.searching : canFind;
     import std.format : format;

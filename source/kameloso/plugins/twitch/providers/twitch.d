@@ -202,7 +202,7 @@ get channel iCalendar
  +/
 void requestTwitchKey(TwitchPlugin plugin)
 {
-    import kameloso.plugins.twitch.api : getValidation;
+    import kameloso.plugins.twitch.api.actions : getValidation;
     import kameloso.logger : LogLevel;
     import kameloso.thread : ThreadMessage;
     import std.datetime.systime : Clock;
@@ -335,7 +335,7 @@ Press <i>Continue</> when warned that you're leaving Twitch.
  +/
 void requestTwitchSuperKey(TwitchPlugin plugin)
 {
-    import kameloso.plugins.twitch.api : getValidation;
+    import kameloso.plugins.twitch.api.actions : getValidation;
     import kameloso.logger : LogLevel;
     import lu.meld : MeldingStrategy, meldInto;
     import std.process : Pid, ProcessException, wait;
