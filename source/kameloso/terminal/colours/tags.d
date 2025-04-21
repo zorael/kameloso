@@ -280,7 +280,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const bool strip) @sa
                 if (closingHashMarkPos == -1) goto default;
 
                 // Advance past "<h>"
-                i += 3;
+                i += "<h>".length;
                 immutable word = cast(string) asBytes[i..i+closingHashMarkPos];
 
                 version(Colours)

@@ -596,7 +596,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
         }
         else if (
             plugin.settings.logServer &&
-            !event.sender.nickname.length &&
+            //!event.sender.nickname.length &&  // implicitly from the above
             event.sender.address.length)
         {
             // Server message

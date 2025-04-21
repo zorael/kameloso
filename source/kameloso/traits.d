@@ -431,6 +431,8 @@ if (Things.length > 0)  // may as well be a constraint
 {
     import std.traits : isAggregateType, isType;
 
+    assert(__ctfe);
+
     static struct Results
     {
         string member;
@@ -438,7 +440,6 @@ if (Things.length > 0)  // may as well be a constraint
     }
 
     Results results;
-    if (!__ctfe) return results;
 
     foreach (immutable i, Thing; Things)
     {
@@ -472,7 +473,7 @@ if (Things.length > 0)  // may as well be a constraint
                 memberIsVisibleAndNotDeprecated!(Thing, memberstring) &&
                 memberIsValue!(Thing, memberstring) &&
                 isSerialisable!(__traits(getMember, Thing, memberstring)) &&
-                udaIndexOf!(__traits(getMember, Thing, memberstring), Hidden) == -1 &&
+                (udaIndexOf!(__traits(getMember, Thing, memberstring), Hidden) == -1) &&
                 (unserialisable ||
                     udaIndexOf!(__traits(getMember, Thing, memberstring), Unserialisable) == -1))
             {
