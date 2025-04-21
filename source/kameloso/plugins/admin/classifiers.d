@@ -710,19 +710,6 @@ in (mask.length, "Tried to add an empty hostmask definition")
     import std.json : JSONValue;
     import std.stdio : File;
 
-    version(Colours)
-    {
-        import kameloso.terminal.colours : colourByHash;
-    }
-    else
-    {
-        // No-colours passthrough noop
-        static string colourByHash(const string word, const CoreSettings _)
-        {
-            return word;
-        }
-    }
-
     // Values from persistence.d etc
     enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
     enum examplePlaceholderValue = "<account>";
@@ -767,9 +754,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
         }
         else
         {
-            immutable colouredAccount = colourByHash(account, plugin.state.coreSettings);
             enum pattern = `Added hostmask "<l>%s</>", mapped to account <h>%s</>.`;
-            logger.infof(pattern, mask, colouredAccount);
+            logger.infof(pattern, mask, account);
         }
         // Drop down to save
     }
