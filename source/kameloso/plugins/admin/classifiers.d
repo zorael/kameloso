@@ -105,6 +105,7 @@ void listList(
     import std.file : readText;
     import std.format : format;
 
+    immutable shouldSendToChannel = (event.sender.nickname.length > 0);
     immutable role = getNoun(NounForm.plural, class_);
     immutable list = class_.toString;
 
@@ -116,7 +117,7 @@ void listList(
 
     if (channelUsers && channelUsers.length)
     {
-        if (event.sender.nickname.length)
+        if (shouldSendToChannel)
         {
             enum pattern = "Current %s in <b>%s<b>: %-(<h>%s<h>, %)<h>";
             immutable message = pattern.format(role, channelName, channelUsers);
@@ -130,7 +131,7 @@ void listList(
     }
     else
     {
-        if (event.sender.nickname.length)
+        if (shouldSendToChannel)
         {
             enum pattern = "There are no %s in <b>%s<b>.";
             immutable message = pattern.format(role, channelName);
@@ -178,6 +179,7 @@ void lookupEnlist(
         IRCUser.Class.blacklist,
     ];
 
+    immutable shouldSendToChannel = (event.sender.nickname.length > 0);
     immutable role = getNoun(NounForm.singular, class_);
 
     /++
@@ -187,7 +189,7 @@ void lookupEnlist(
     {
         import std.format : format;
 
-        if (event.sender.nickname.length)
+        if (shouldSendToChannel)
         {
             // IRC report
             with (AlterationResult)
@@ -210,7 +212,7 @@ void lookupEnlist(
                 break;
             }
         }
-        else
+        else /*if (!shouldSendToChannel)*/
         {
             // Terminal report
             with (AlterationResult)
@@ -270,7 +272,7 @@ void lookupEnlist(
     }
     else if (!specified.length)
     {
-        if (event.sender.nickname.length)
+        if (shouldSendToChannel)
         {
             // IRC report
             enum message = "No nickname supplied.";
@@ -285,7 +287,7 @@ void lookupEnlist(
     }
     else if (!specified.isValidNickname(plugin.state.server))
     {
-        if (event.sender.nickname.length)
+        if (shouldSendToChannel)
         {
             import std.format : format;
 
@@ -483,9 +485,11 @@ void delist(
 {
     import std.format : format;
 
+    immutable shouldSendToChannel = (event.sender.nickname.length > 0);
+
     if (!account.length)
     {
-        if (event.sender.nickname.length)
+        if (shouldSendToChannel)
         {
             // IRC report
             enum message = "No account specified.";
@@ -507,7 +511,7 @@ void delist(
         account,
         channelName);
 
-    if (event.sender.nickname.length)
+    if (shouldSendToChannel)
     {
         // IRC report
 
@@ -531,7 +535,7 @@ void delist(
             break;
         }
     }
-    else
+    else /*if (!shouldSendToChannel)*/
     {
         // Terminal report
 
@@ -723,6 +727,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
     enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
     enum examplePlaceholderValue = "<account>";
 
+    immutable shouldSendToChannel = (event.sender.nickname.length > 0);
     auto aa = plugin.hostmasksFile
         .readText
         .deserialize!(string[string]);
@@ -733,7 +738,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
 
         if (!mask.isValidHostmask(plugin.state.server))
         {
-            if (event.sender.nickname.length)
+            if (shouldSendToChannel)
             {
                 import std.format : format;
                 enum pattern = `Invalid hostmask: "<b>%s<b>"; must be in the form "<b>nickname!ident@address.tld<b>".`;
@@ -754,7 +759,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
         // Remove any placeholder example since there should now be at least one true entry
         aa.remove(examplePlaceholderKey);
 
-        if (event.sender.nickname.length)
+        if (shouldSendToChannel)
         {
             enum pattern = `Added hostmask "<b>%s<b>", mapped to account <h>%s<h>.`;
             immutable message = pattern.format(mask, account);
@@ -793,7 +798,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
         }
         else
         {
-            if (event.sender.nickname.length)
+            if (shouldSendToChannel)
             {
                 enum pattern = `No such hostmask "<b>%s<b>" on file.`;
                 immutable message = format(pattern, mask);
