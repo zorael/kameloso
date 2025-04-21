@@ -688,8 +688,8 @@ void initialise(PrinterPlugin plugin)
         import kameloso.common : logger;
         import lu.conv : Enum;
         import lu.string : stripped;
-        import std.algorithm.iteration : map, splitter;
-        import std.array : array;
+        import std.algorithm.iteration : map;
+        import std.array : array, split;
         import std.conv : ConvException;
         import std.uni : toUpper;
 
@@ -697,9 +697,10 @@ void initialise(PrinterPlugin plugin)
 
         try
         {
+            // Using split instead of splitter reduces compilation memory required by 200 Mb...
             return definitions
-                .toUpper()
-                .splitter(",")
+                .toUpper
+                .split(',')
                 .map!(s => Enum!(IRCEvent.Type).fromString(s.stripped))
                 .array;
         }
