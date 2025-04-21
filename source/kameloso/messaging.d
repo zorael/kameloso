@@ -105,6 +105,19 @@ struct Message
         Whether this message has been sent to the server yet.
      +/
     bool exhausted;
+
+    /++
+        Dummy `toString` to stop [std.conv.to] from generating one.
+
+        Lowers compilation memory required by ~210 Mb.
+
+        Returns:
+            An empty string.
+     +/
+    auto toString() const
+    {
+        return string.init;
+    }
 }
 
 

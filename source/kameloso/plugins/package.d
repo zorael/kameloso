@@ -3295,6 +3295,17 @@ struct Replay
         this.permissionsRequired = permissionsRequired;
         this.caller = caller;
     }
+
+    /++
+        Dummy `toString` to stop [std.conv.to] from generating one.
+
+        Returns:
+            An empty string.
+     +/
+    auto toString() const
+    {
+        return string.init;
+    }
 }
 
 
@@ -4113,6 +4124,12 @@ public:
         Fiber embedded into the action.
      +/
     Fiber fiber() @system;
+
+    // toString
+    /++
+        Dummy `toString` to stop [std.conv.to] from generating one.
+     +/
+    string toString() const pure @safe nothrow @nogc;
 }
 
 
@@ -4245,6 +4262,18 @@ public:
     Fiber fiber()
     {
         return _fiber;
+    }
+
+    // toString
+    /++
+        Dummy `toString` to stop [std.conv.to] from generating one.
+
+        Returns:
+            An empty string.
+     +/
+    override string toString() const pure @safe nothrow @nogc
+    {
+        return string.init;
     }
 }
 

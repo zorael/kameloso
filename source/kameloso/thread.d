@@ -100,6 +100,17 @@ struct ScheduledFiber
         this.timestamp = timestamp;
         this.creator = creator;
     }
+
+    /++
+        Dummy `toString` to stop [std.conv.to] from generating one.
+
+        Returns:
+            An empty string.
+     +/
+    auto toString() const
+    {
+        return string.init;
+    }
 }
 
 
@@ -154,6 +165,17 @@ struct ScheduledDelegate
         this.dg = dg;
         this.timestamp = timestamp;
         this.creator = creator;
+    }
+
+    /++
+        Dummy `toString` to stop [std.conv.to] from generating one.
+
+        Returns:
+            An empty string.
+     +/
+    auto toString() const
+    {
+        return string.init;
     }
 }
 
@@ -415,6 +437,17 @@ struct ThreadMessage
             payload: payload,
             quiet: quiet,
             caller: caller);
+    }
+
+    /++
+        Dummy `toString` to stop [std.conv.to] from generating one.
+
+        Returns:
+            An empty string.
+     +/
+    auto toString() const
+    {
+        return string.init;
     }
 }
 
