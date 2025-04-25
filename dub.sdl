@@ -8,26 +8,32 @@ license "BSL-1.0"
 targetType "executable"
 mainSourceFile "source/kameloso/entrypoint.d"
 
-dflags "-preview=dip1000" "-preview=dip1008"  platform="dmd"
-dflags "-preview=dip1000" "-preview=dip1008"  platform="ldc"
-dflags "-fpreview=dip1000" "-fpreview=dip1008"  platform="gdc"
-dflags "-preview=fieldwise" "-preview=fixAliasThis" platform="dmd"
-dflags "-preview=fieldwise" "-preview=fixAliasThis" platform="ldc"
-dflags "-fpreview=fieldwise" "-fpreview=fixaliasthis" platform="gdc"
-dflags "-preview=in" "-preview=inclusiveincontracts" platform="dmd"
-dflags "-preview=in" "-preview=inclusiveincontracts" platform="ldc"
-dflags "-fpreview=in" "-fpreview=inclusiveincontracts" platform="gdc"
-dflags "-linkonce-templates" "-disable-verify" platform="ldc"
-#dflags "-fall-instantiations" platform="gdc"
-#dflags "-link-defaultlib-shared=false" platform="ldc"
-#dflags "-ftime-trace" "-ftime-trace-file=trace.json" platform="ldc"
+# DMD dflags
+dflags "-preview=dip1000"    "-preview=dip1008"               platform="dmd"
+dflags "-preview=fieldwise"  "-preview=fixAliasThis"          platform="dmd"
+dflags "-preview=in"         "-preview=inclusiveincontracts"  platform="dmd"
+
+# LDC dflags
+dflags "-preview=dip1000"    "-preview=dip1008"               platform="ldc"
+dflags "-preview=fieldwise"  "-preview=fixAliasThis"          platform="ldc"
+dflags "-preview=in"         "-preview=inclusiveincontracts"  platform="ldc"
+dflags "-linkonce-templates" "-disable-verify"                platform="ldc"
+
+# GDC dflags
+dflags "-fpreview=dip1000"   "-fpreview=dip1008"              platform="gdc"
+dflags "-fpreview=fieldwise" "-fpreview=fixaliasthis"         platform="gdc"
+dflags "-fpreview=in"        "-fpreview=inclusiveincontracts" platform="gdc"
+
+# Release and tracy specifics
+#dflags "-link-defaultlib-shared=false"                        platform="ldc"
+#dflags "-ftime-trace"        "-ftime-trace-file=trace.json"   platform="ldc"
 #postBuildCommands "tracy-import-chrome ./trace.json ./trace.tracy" platform="ldc"
 
-dependency "lu" version="~>3.2.2"
-dependency "dialect" version="~>3.3.0"
+dependency "lu"                version="~>3.2.2"
+dependency "dialect"           version="~>3.3.0"
 dependency "arsd-official:dom" version="~>10.9.0"
-dependency "requests" version="~>2.1.3"
-dependency "asdf" version="~>0.7.0"
+dependency "requests"          version="~>2.1.3"
+dependency "asdf"              version="~>0.7.0"
 
 sourcePaths "source"
 importPaths "source"
