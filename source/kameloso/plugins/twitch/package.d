@@ -4297,15 +4297,15 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
             IRCEvent.Type.SELFCHAN,
             IRCEvent.Type.SELFEMOTE);
 
-        immutable hasEmotes =
-            (event.content.length &&
-            event.emotes.length);
+        immutable mayHaveEmotes =
+            (event.sender.nickname.length &&
+            event.content.length);
 
         immutable mayHaveAltEmotes =
             (event.target.nickname.length &&
             event.altcontent.length);
 
-        if (isEmotePossibleEventType && (hasEmotes || mayHaveAltEmotes))
+        if (isEmotePossibleEventType && (mayHaveEmotes || mayHaveAltEmotes))
         {
             bool shouldEmbedCustomEmotes;
 
@@ -4330,7 +4330,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
                 const customChannelEmotes = event.channel.name in plugin.customChannelEmotes;
                 const customEmotes = customChannelEmotes ? &customChannelEmotes.emotes : null;
 
-                if (hasEmotes)
+                if (mayHaveEmotes)
                 {
                     embedCustomEmotes(
                         content: event.content,
