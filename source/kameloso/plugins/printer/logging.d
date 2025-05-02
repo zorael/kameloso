@@ -248,7 +248,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
                 if (!raw)
                 {
                     // Normal buffers
-                    scope(exit)plugin.linebuffer.clear();
+                    scope(exit) plugin.linebuffer.clear();
 
                     formatMessageMonochrome(
                         plugin,
@@ -310,7 +310,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
                             instead keep an errlinebuffer around, but this works.
                          +/
 
-                        scope(failure) plugin.linebuffer.clear();
+                        scope(exit) plugin.linebuffer.clear();
 
                         // Adds some 220 mb to compilation memory usage
                         prettyformat!(Yes.all, No.coloured)
@@ -375,7 +375,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const IRCEvent event)
                             See notes above.
                          +/
 
-                        scope(failure) plugin.linebuffer.clear();
+                        scope(exit) plugin.linebuffer.clear();
 
                         prettyformat!(Yes.all, No.coloured)
                             (plugin.linebuffer,
