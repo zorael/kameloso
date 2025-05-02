@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>isSerialisable (lu.traits.isSerialisable)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>isSerialisable</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.traits.html">traits</a> </div><div><div class="documentation-comment synopsis"><div><p>Eponymous template bool of whether a variable can be treated as a mutable
+    variable, like a fundamental integral, and thus be serialised.
+    Overload that takes a non-type symbol.</p></div></div></div><div class="annotated-prototype"><ol class="overloads"><li class="active-overload-option"><span class="overload-signature"><span class="builtin-type">template</span> <span class="name">isSerialisable</span><span class="template-params">(alias sym)</span></span><div class="aggregate-prototype"><div class="attributes"></div><span class="builtin-type">template</span> isSerialisable (<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><a class="lang-feature" href="http://dpldocs.info/template-alias-parameter">alias</a> <span class="name" data-ident="sym">sym</span></span></div></div>) <a class="lang-feature" href="http://dpldocs.info/template-constraints">if</a> (<div class="template-constraint-expression">!<span class="name" data-ident="isType">isType</span>!<span class="name" data-ident="sym">sym</span></div>) {<div class="aggregate-member"><div class="attributes"></div><span class="builtin-type">enum</span> <span class="name">isSerialisable</span>;</div>}</div></li><li class="overload-option"><a href="lu.traits.isSerialisable.2.html"><span class="overload-signature"><span class="builtin-type">template</span> <span class="name">isSerialisable</span><span class="template-params">(T)</span></span></a></li></ol></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-sym"><a class="parameter-name" data-ident="sym" href="#param-sym">sym</a></dt><dd><div class="documentation-comment"><div><p>Alias of symbol to introspect.</p></div></div></dd></dl><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">enum</span> <span class="hid">E</span> { <span class="hid">a</span>, <span class="hid">b</span>, <span class="hid">c</span> }
+
+<span class="hid">E</span> <span class="hid">e</span>;
+<span class="type">string</span> <span class="hid">s</span>;
+<span class="type">int</span> <span class="hid">i</span>;
+<span class="type">char</span>[] <span class="hid">c</span>;
+<span class="type">char</span>[<span class="num">8</span>] <span class="hid">c2</span>;
+
+<span class="kwrd">static</span> <span class="kwrd">assert</span>( <span class="hid">isSerialisable</span>!<span class="hid">e</span>);
+<span class="kwrd">static</span> <span class="kwrd">assert</span>( <span class="hid">isSerialisable</span>!<span class="hid">s</span>);
+<span class="kwrd">static</span> <span class="kwrd">assert</span>( <span class="hid">isSerialisable</span>!<span class="hid">i</span>);
+<span class="kwrd">static</span> <span class="kwrd">assert</span>( <span class="hid">isSerialisable</span>!<span class="hid">c</span>);
+<span class="kwrd">static</span> <span class="kwrd">assert</span>(!<span class="hid">isSerialisable</span>!<span class="hid">c2</span>);</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.traits.html">traits</a> 
+		<span class="type-separator">enums</span><ul><li><a class="enum" href="lu.traits.MixinScope.html">MixinScope</a></li><li><a class="enum" href="lu.traits.isMerelyArray.html">isMerelyArray</a></li><li><a class="enum" href="lu.traits.isMutableArrayOfImmutables.html">isMutableArrayOfImmutables</a></li><li><a class="enum" href="lu.traits.isStruct.html">isStruct</a></li><li><a class="enum" href="lu.traits.isTrulyString.html">isTrulyString</a></li><li><a class="enum" href="lu.traits.stringOfTypeOf.1.html">stringOfTypeOf</a></li><li><a class="enum" href="lu.traits.udaIndexOf.html">udaIndexOf</a></li></ul><span class="type-separator">mixin templates</span><ul><li><a class="mixin-template" href="lu.traits.MixinConstraints.html">MixinConstraints</a></li></ul><span class="type-separator">templates</span><ul><li><a class="template" href="lu.traits.CategoryName.html">CategoryName</a></li><li><a class="template" href="lu.traits.TakesParams.1.html">TakesParams</a></li><li><a class="template" href="lu.traits.UnqualArray.1.html">UnqualArray</a></li><li><a class="template" href="lu.traits.allOfSameType.html">allOfSameType</a></li><li><a class="template" href="lu.traits.isEnum.1.html">isEnum</a></li><li><a class="template" href="lu.traits.isImplicitlyConvertibleToSize_t.1.html">isImplicitlyConvertibleToSize_t</a></li><li><a class="template current" href="lu.traits.isSerialisable.1.html">isSerialisable</a></li><li><a class="template" href="lu.traits.stringofParams.html">stringofParams</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

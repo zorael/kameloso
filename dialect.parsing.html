@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>dialect.parsing (dialect.parsing)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>dialect.parsing</h1><div class="breadcrumbs"><a class="breadcrumb" href="dialect.html">dialect</a> </div><div><div class="documentation-comment synopsis"><div><p>Functions related to parsing IRC events.</p><p>IRC events come in very heterogeneous forms along the lines of:</p><p><tt class="inline-code">:sender.address.tld TYPE [args...] :content</tt></p><p><tt class="inline-code">:sender!~ident@address.tld 123 [args...] :content</tt></p><p>The number and syntax of arguments for types vary wildly. As such, one
+    common parsing routine can't be used; there are simply too many exceptions.
+    The beginning <tt class="inline-code">:sender.address.tld</tt> is *almost* always the same form, but only
+    almost. It's guaranteed to be followed by the type however, which come either in
+    alphanumeric name (e.g. <a class="xref" href="dialect.defs.IRCEvent.Type.html#PRIVMSG">PRIVMSG</a>,
+    <a class="xref" href="dialect.defs.IRCEvent.Type.html#INVITE">INVITE</a>, <a class="xref" href="dialect.defs.IRCEvent.Type.html#MODE">MODE</a>,
+    ...), or in numeric form of 001 to 999 inclusive.</p><p>What we can do then is to parse this type, and interpret the arguments
+    following as befits it.</p><p>This translates to large switches, which can't be helped. There are simply
+    too many variations, which switches lend themselves well to. You could make
+    it into long if...else if chains, but it would just be the same thing in a
+    different form. Likewise a nested function is not essentially different from
+    a switch case.</p><pre class="d_code highlighted"><span class="hid">IRCParser</span> <span class="hid">parser</span>;
+
+<span class="type">string</span> <span class="hid">fromServer</span> = <span class="str">&quot;:zorael!~NaN@address.tld MODE #channel +v nickname&quot;</span>;
+<span class="hid">IRCEvent</span> <span class="hid">event</span> = <span class="hid">parser</span>.<span class="hid">toIRCEvent</span>(<span class="hid">fromServer</span>);
+
+<span class="kwrd">with</span> (<span class="hid">event</span>)
+{
+    <span class="kwrd">assert</span>(<span class="hid">type</span> == <span class="hid">IRCEvent</span>.<span class="hid">Type</span>.<span class="hid">MODE</span>);
+    <span class="kwrd">assert</span>(<span class="hid">sender</span>.<span class="hid">nickname</span> == <span class="str">&quot;zorael&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">sender</span>.<span class="hid">ident</span> == <span class="str">&quot;~NaN&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">sender</span>.<span class="hid">address</span> == <span class="str">&quot;address.tld&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">target</span>.<span class="hid">nickname</span> == <span class="str">&quot;nickname&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">channel</span> == <span class="str">&quot;#channel&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">aux</span>[<span class="num">0</span>] = <span class="str">&quot;+v&quot;</span>);
+}
+
+<span class="type">string</span> <span class="hid">alsoFromServer</span> = <span class="str">&quot;:cherryh.freenode.net 435 oldnick newnick #d &quot;</span> ~
+    <span class="str">&quot;:Cannot change nickname while banned on channel&quot;</span>;
+<span class="hid">IRCEvent</span> <span class="hid">event2</span> = <span class="hid">parser</span>.<span class="hid">toIRCEvent</span>(<span class="hid">alsoFromServer</span>);
+
+<span class="kwrd">with</span> (<span class="hid">event2</span>)
+{
+    <span class="kwrd">assert</span>(<span class="hid">type</span> == <span class="hid">IRCEvent</span>.<span class="hid">Type</span>.<span class="hid">ERR_BANONCHAN</span>);
+    <span class="kwrd">assert</span>(<span class="hid">sender</span>.<span class="hid">address</span> == <span class="str">&quot;cherryh.freenode.net&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">channel</span> == <span class="str">&quot;#d&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">target</span>.<span class="hid">nickname</span> == <span class="str">&quot;oldnick&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">content</span> == <span class="str">&quot;Cannot change nickname while banned on channel&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">aux</span>[<span class="num">0</span>] == <span class="str">&quot;newnick&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">num</span> == <span class="num">435</span>);
+}
+
+<span class="type">string</span> <span class="hid">furtherFromServer</span> = <span class="str">&quot;:kameloso^!~ident@81-233-105-99-no80.tbcn.telia.com NICK :kameloso_&quot;</span>;
+<span class="hid">IRCEvent</span> <span class="hid">event3</span> = <span class="hid">parser</span>.<span class="hid">toIRCEvent</span>(<span class="hid">furtherFromServer</span>);
+
+<span class="kwrd">with</span> (<span class="hid">event3</span>)
+{
+    <span class="kwrd">assert</span>(<span class="hid">type</span> == <span class="hid">IRCEvent</span>.<span class="hid">Type</span>.<span class="hid">NICK</span>);
+    <span class="kwrd">assert</span>(<span class="hid">sender</span>.<span class="hid">nickname</span> == <span class="str">&quot;kameloso^&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">sender</span>.<span class="hid">ident</span> == <span class="str">&quot;~ident&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">sender</span>.<span class="hid">address</span> == <span class="str">&quot;81-233-105-99-no80.tbcn.telia.com&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">target</span>.<span class="hid">nickname</span> = <span class="str">&quot;kameloso_&quot;</span>);
+}</pre><p>See the <tt class="inline-code">/tests</tt> directory for more example parses.</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="dialect.parsing.applyTags.html">applyTags</a><div class="simplified-prototype" style="max-width: 33ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">applyTags</span>(IRCEvent event)</div></dt><dd><div><p>This is technically a postprocessor but it's small enough that we can just
+    keep it in here (and provide the functionality as <tt class="inline-code">pure</tt> and <tt class="inline-code">@safe</tt>).</p></div></dd><dt><a href="dialect.parsing.onISUPPORT.html">onISUPPORT</a><div class="simplified-prototype" style="max-width: 69ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">onISUPPORT</span>(IRCParser parser, IRCEvent event, string slice)</div></dt><dd><div><p>Handles <a class="xref" href="dialect.defs.IRCEvent.Type.html#RPL_ISUPPORT">RPL_ISUPPORT</a> events.</p></div></dd><dt><a href="dialect.parsing.onMode.html">onMode</a><div class="simplified-prototype" style="max-width: 64ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">onMode</span>(IRCParser parser, IRCEvent event, string slice)</div></dt><dd><div><p>Handle <a class="xref" href="dialect.defs.IRCEvent.Type.html#MODE">MODE</a> changes.</p></div></dd><dt><a href="dialect.parsing.onMyInfo.html">onMyInfo</a><div class="simplified-prototype" style="max-width: 67ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">onMyInfo</span>(IRCParser parser, IRCEvent event, string slice)</div></dt><dd><div><p>Handle <a class="xref" href="dialect.defs.IRCEvent.Type.html#RPL_MYINFO">RPL_MYINFO</a> events.</p></div></dd><dt><a href="dialect.parsing.onNotice.html">onNotice</a><div class="simplified-prototype" style="max-width: 67ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">onNotice</span>(IRCParser parser, IRCEvent event, string slice)</div></dt><dd><div><p>Handle <a class="xref" href="dialect.defs.IRCEvent.Type.html#NOTICE">NOTICE</a> events.</p></div></dd><dt><a href="dialect.parsing.onPRIVMSG.html">onPRIVMSG</a><div class="simplified-prototype" style="max-width: 68ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">onPRIVMSG</span>(IRCParser parser, IRCEvent event, string slice)</div></dt><dd><div><p>Handle <a class="xref" href="dialect.defs.IRCEvent.Type.html#QUERY">QUERY</a> and
+    <a class="xref" href="dialect.defs.IRCEvent.Type.html#CHAN">CHAN</a> messages
+    (<a class="xref" href="dialect.defs.IRCEvent.Type.html#PRIVMSG">PRIVMSG</a>).</p></div></dd><dt><a href="dialect.parsing.parseBasic.html">parseBasic</a><div class="simplified-prototype" style="max-width: 53ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">parseBasic</span>(IRCParser parser, IRCEvent event)</div></dt><dd><div><p>Parses the most basic of IRC events; <a class="xref" href="dialect.defs.IRCEvent.Type.html#PING">PING</a>,
+    <a class="xref" href="dialect.defs.IRCEvent.Type.html#ERROR">ERROR</a>,
+    <a class="xref" href="dialect.defs.IRCEvent.Type.html#PONG">PONG</a>,
+    <a class="xref" href="dialect.defs.IRCEvent.Type.html#NOTICE">NOTICE</a> (plus <tt class="inline-code">NOTICE AUTH</tt>),
+    and <tt class="inline-code">AUTHENTICATE</tt>.</p></div></dd><dt><a href="dialect.parsing.parseGeneralCases.html">parseGeneralCases</a><div class="simplified-prototype" style="max-width: 77ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">parseGeneralCases</span>(IRCParser parser, IRCEvent event, string slice)</div></dt><dd><div><p>Takes a slice of a raw IRC string and continues parsing it into an
+    <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a> struct.</p></div></dd><dt><a href="dialect.parsing.parsePrefix.html">parsePrefix</a><div class="simplified-prototype" style="max-width: 70ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">parsePrefix</span>(IRCParser parser, IRCEvent event, string slice)</div></dt><dd><div><p>Takes a slice of a raw IRC string and starts parsing it into an
+    <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a> struct.</p></div></dd><dt><a href="dialect.parsing.parseSpecialcases.html">parseSpecialcases</a><div class="simplified-prototype" style="max-width: 77ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">parseSpecialcases</span>(IRCParser parser, IRCEvent event, string slice)</div></dt><dd><div><p>Takes a slice of a raw IRC string and continues parsing it into an
+    <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a> struct.</p></div></dd><dt><a href="dialect.parsing.parseTypestring.html">parseTypestring</a><div class="simplified-prototype" style="max-width: 74ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">parseTypestring</span>(IRCParser parser, IRCEvent event, string slice)</div></dt><dd><div><p>Takes a slice of a raw IRC string and continues parsing it into an
+    <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a> struct.</p></div></dd><dt><a href="dialect.parsing.postparseSanityCheck.html">postparseSanityCheck</a><div class="simplified-prototype" style="max-width: 64ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">postparseSanityCheck</span>(IRCParser parser, IRCEvent event)</div></dt><dd><div><p>Checks for some specific erroneous edge cases in an <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a>.</p></div></dd><dt><a href="dialect.parsing.toIRCEvent.html">toIRCEvent</a><div class="simplified-prototype" style="max-width: 53ch;"><tt class="highlighted"><span class="hid">IRCEvent</span></tt> <span class="name">toIRCEvent</span>(IRCParser parser, string raw)</div></dt><dd><div><p>Parses an IRC string into an <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a>.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="struct"><a class="header-anchor" href="#struct">Structs</a></h3><dl class="member-list native"><dt><a href="dialect.parsing.IRCParser.html">IRCParser</a><div class="simplified-prototype" style="max-width: 17ch;"><span class="builtin-type">struct</span> <span class="name">IRCParser</span></div></dt><dd><div><p>Parser that takes raw IRC strings and produces <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a>s based on them.</p></div></dd></dl><div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="dialect.html">dialect</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module" href="dialect.assertgen.html">assertgen</a></li><li><a class="module" href="dialect.common.html">common</a></li><li><a class="module" href="dialect.defs.html">defs</a></li><li><a class="module current" href="dialect.parsing.html">parsing</a></li><li><a class="module" href="dialect.postprocessors.html">postprocessors</a></li><li><a class="module" href="dialect.semver.html">semver</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

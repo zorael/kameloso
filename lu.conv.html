@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>lu.conv (lu.conv)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>lu.conv</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> </div><div><div class="documentation-comment synopsis"><div><p>This module contains functions that in one way or another converts its
+    arguments into something else.</p><p>Credit for <a class="xref" href="lu.conv.Enum.html">Enum</a> goes to Stephan Koch (<a href="https://github.com/UplinkCoder">https://github.com/UplinkCoder</a>).</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="alias"><a class="header-anchor" href="#alias">Aliases</a></h3><dl class="member-list native"><dt><a href="lu.conv.enumToString.html">enumToString</a><div class="simplified-prototype" style="max-width: 44ch;"><span class="deprecated-decl">deprecated</span> <span class="builtin-type">alias</span> <span class="name">enumToString</span> = <tt class="highlighted"><span class="hid">toString</span></tt></div></dt><dd><div><p>Deprecated alias of <a class="xref" href="lu.conv.toString.html">toString</a>.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="lu.conv.numFromHex.html">numFromHex</a><div class="simplified-prototype" style="max-width: 55ch;"><span class="lang-feature">auto</span>  <span class="name">numFromHex</span>(string hex, bool acceptLowercase)</div></dt><dd><div><p>Returns the decimal value of a hex number in string form.</p></div></dd><dt><a href="lu.conv.rgbFromHex.html">rgbFromHex</a><div class="simplified-prototype" style="max-width: 61ch;"><span class="lang-feature">auto</span>  <span class="name">rgbFromHex</span>(string hexString, bool acceptLowercase)</div></dt><dd><div><p>Convenience wrapper that takes a hex string and populates a Voldemort
+    struct with its integer RR, GG and BB components.</p></div></dd><dt><a href="lu.conv.toAlpha.html">toAlpha</a><div class="simplified-prototype" style="max-width: 25ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">toAlpha</span>(Num num)</div></dt><dd><div><p>Translates an integer into an alphanumeric string.
+    Overload that returns the string.</p></div></dd><dt><a href="lu.conv.toAlphaInto.html">toAlphaInto</a><div class="simplified-prototype" style="max-width: 39ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">toAlphaInto</span>(Num num, Sink sink)</div></dt><dd><div><p>Translates an integer into an alphanumeric string.
+    Overload that takes an output range sink.</p></div></dd><dt><a href="lu.conv.toString.html">toString</a><div class="simplified-prototype" style="max-width: 25ch;"><span class="lang-feature">auto</span>  <span class="name">toString</span>(E value)</div></dt><dd><div><p>Convenience wrapper around <a class="xref" href="lu.conv.Enum.toString.html">Enum.toString</a> that infers the type
+    to instantiate it with from the passed enum member.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="template"><a class="header-anchor" href="#template">Templates</a></h3><dl class="member-list native"><dt><a href="lu.conv.Enum.html">Enum</a><div class="simplified-prototype" style="max-width: 17ch;"><span class="builtin-type">template</span> <span class="name">Enum</span><span class="template-params">(E)</span></div></dt><dd><div><p>Template housing optimised functions to get the string name of an enum
+    member, or the enum member of a name string.</p></div></dd></dl><div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">enum</span> <span class="hid">SomeEnum</span> { <span class="hid">one</span>, <span class="hid">two</span>, <span class="hid">three</span> };
+
+<span class="hid">SomeEnum</span> <span class="hid">foo</span> = <span class="hid">Enum</span>!<span class="hid">SomeEnum</span>.<span class="hid">fromString</span>(<span class="str">&quot;one&quot;</span>);
+<span class="hid">SomeEnum</span> <span class="hid">bar</span> = <span class="hid">Enum</span>!<span class="hid">SomeEnum</span>.<span class="hid">fromString</span>(<span class="str">&quot;three&quot;</span>);
+
+<span class="kwrd">assert</span>(<span class="hid">foo</span> == <span class="hid">SomeEnum</span>.<span class="hid">one</span>);
+<span class="kwrd">assert</span>(<span class="hid">bar</span> == <span class="hid">SomeEnum</span>.<span class="hid">three</span>);
+
+<span class="kwrd">assert</span>(<span class="hid">Enum</span>!<span class="hid">SomeEnum</span>.<span class="hid">toString</span>(<span class="hid">SomeEnum</span>.<span class="hid">one</span>) == <span class="str">&quot;one&quot;</span>);
+<span class="kwrd">assert</span>(<span class="hid">Enum</span>!<span class="hid">SomeEnum</span>.<span class="hid">toString</span>(<span class="hid">SomeEnum</span>.<span class="hid">two</span>) == <span class="str">&quot;two&quot;</span>);
+<span class="kwrd">assert</span>(<span class="hid">SomeEnum</span>.<span class="hid">three</span>.<span class="hid">toString</span> == <span class="str">&quot;three&quot;</span>);</pre></div></div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module" href="lu.array.html">array</a></li><li><a class="module" href="lu.assert_.html">assert_</a></li><li><a class="module" href="lu.common.html">common</a></li><li><a class="module" href="lu.container.html">container</a></li><li><a class="module current" href="lu.conv.html">conv</a></li><li><a class="module" href="lu.deltastrings.html">deltastrings</a></li><li><a class="module" href="lu.json.html">json</a></li><li><a class="module" href="lu.meld.html">meld</a></li><li><a class="module" href="lu.misc.html">misc</a></li><li><a class="module" href="lu.numeric.html">numeric</a></li><li><a class="module" href="lu.objmanip.html">objmanip</a></li><li><a class="module" href="lu.semver.html">semver</a></li><li><a class="module" href="lu.serialisation.html">serialisation</a></li><li><a class="module" href="lu.string.html">string</a></li><li><a class="module" href="lu.traits.html">traits</a></li><li><a class="module" href="lu.typecons.html">typecons</a></li><li><a class="module" href="lu.uda.html">uda</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>sharedDomains (lu.misc.sharedDomains)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>sharedDomains</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.misc.html">misc</a> </div><div><div class="documentation-comment synopsis"><div><p>Calculates how many dot-separated domains two strings share.</p><p>This is useful to see to what extent two addresses are similar.</p><p>Pass <tt class="inline-code">reverse: true</tt> to do reverse domain matching, like for flatpak
+    application IDs.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">pure @<span class="name" data-ident="safe">safe</span> @<span class="name" data-ident="nogc">nogc</span> nothrow </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">sharedDomains</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="4"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="one"><a href="#param-one">one</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="other"><a href="#param-other">other</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="reverse"><a href="#param-reverse">reverse</a></span><span class="parameter-default-value">&#160;=&#160;false</span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="caseSensitive"><a href="#param-caseSensitive">caseSensitive</a></span><span class="parameter-default-value">&#160;=&#160;true</span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-one"><a class="parameter-name" data-ident="one" href="#param-one">one</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>First domain string.</p></div></div></dd><dt id="param-other"><a class="parameter-name" data-ident="other" href="#param-other">other</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>Second domain string.</p></div></div></dd><dt id="param-reverse"><a class="parameter-name" data-ident="reverse" href="#param-reverse">reverse</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether or not to do reverse domain matching.</p></div></div></dd><dt id="param-caseSensitive"><a class="parameter-name" data-ident="caseSensitive" href="#param-caseSensitive">caseSensitive</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether or not comparison should be done on a
+            case-sensitive basis.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>The number of domains the two strings share.</p><p>TODO:
+        Support partial globs.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="type">int</span> <span class="hid">numDomains</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;irc.freenode.net&quot;</span>, <span class="str">&quot;leguin.freenode.net&quot;</span>);
+<span class="kwrd">assert</span>(<span class="hid">numDomains</span> == <span class="num">2</span>);  <span class="com">// freenode.net</span>
+
+<span class="type">int</span> <span class="hid">numDomains2</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;Portlane2.EU.GameSurge.net&quot;</span>, <span class="str">&quot;services.gamesurge.net&quot;</span>, <span class="hid">caseSensitive</span>:<span class="kwrd">false</span>);
+<span class="kwrd">assert</span>(<span class="hid">numDomains2</span> == <span class="num">2</span>);  <span class="com">// gamesurge.net</span>
+
+<span class="type">int</span> <span class="hid">numDomains3</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;org.kde.Platform&quot;</span>, <span class="str">&quot;org.kde.KStyle.Awaita&quot;</span>, <span class="hid">reverse</span>: <span class="kwrd">true</span>);
+<span class="kwrd">assert</span>(<span class="hid">numDomains3</span> == <span class="num">2</span>);  <span class="com">// org.kde</span></pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted with-line-wrappers"><span class="br">1 </span><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">conv</span> : <span class="hid">text</span>;
+<span class="br">2 </span>
+<span class="br">3 </span>{
+<span class="br">4 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;irc.freenode.net&quot;</span>, <span class="str">&quot;help.freenode.net&quot;</span>);
+<span class="br">5 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">2</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">6 </span>}
+<span class="br">7 </span>{
+<span class="br">8 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;irc.rizon.net&quot;</span>, <span class="str">&quot;services.rizon.net&quot;</span>);
+<span class="br">9 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">2</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">10 </span>}
+<span class="br">11 </span>{
+<span class="br">12 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;www.google.com&quot;</span>, <span class="str">&quot;www.yahoo.com&quot;</span>);
+<span class="br">13 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">1</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">14 </span>}
+<span class="br">15 </span>{
+<span class="br">16 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;www.google.se&quot;</span>, <span class="str">&quot;www.google.co.uk&quot;</span>);
+<span class="br">17 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">0</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">18 </span>}
+<span class="br">19 </span>{
+<span class="br">20 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;&quot;</span>, <span class="type">string</span>.<span class="hid">init</span>);
+<span class="br">21 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">0</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">22 </span>}
+<span class="br">23 </span>{
+<span class="br">24 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;irc.rizon.net&quot;</span>, <span class="str">&quot;rizon.net&quot;</span>);
+<span class="br">25 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">2</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">26 </span>}
+<span class="br">27 </span>{
+<span class="br">28 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;rizon.net&quot;</span>, <span class="str">&quot;rizon.net&quot;</span>);
+<span class="br">29 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">2</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">30 </span>}
+<span class="br">31 </span>{
+<span class="br">32 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;net&quot;</span>, <span class="str">&quot;net&quot;</span>);
+<span class="br">33 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">1</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">34 </span>}
+<span class="br">35 </span>{
+<span class="br">36 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;forum.dlang.org&quot;</span>, <span class="str">&quot;...&quot;</span>);
+<span class="br">37 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">0</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">38 </span>}
+<span class="br">39 </span>{
+<span class="br">40 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;blahrizon.net&quot;</span>, <span class="str">&quot;rizon.net&quot;</span>);
+<span class="br">41 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">1</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">42 </span>}
+<span class="br">43 </span>{
+<span class="br">44 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;rizon.net&quot;</span>, <span class="str">&quot;blahrizon.net&quot;</span>);
+<span class="br">45 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">1</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">46 </span>}
+<span class="br">47 </span>{
+<span class="br">48 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;rizon.net&quot;</span>, <span class="str">&quot;irc.rizon.net&quot;</span>);
+<span class="br">49 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">2</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">50 </span>}
+<span class="br">51 </span>{
+<span class="br">52 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;irc.gamesurge.net&quot;</span>, <span class="str">&quot;Stuff.GameSurge.net&quot;</span>, <span class="hid">caseSensitive</span>:<span class="kwrd">false</span>);
+<span class="br">53 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">2</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">54 </span>}
+<span class="br">55 </span>{
+<span class="br">56 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;irc.freenode.net&quot;</span>, <span class="str">&quot;irc.FREENODE.net&quot;</span>, <span class="hid">caseSensitive</span>:<span class="kwrd">false</span>);
+<span class="br">57 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">3</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">58 </span>}
+<span class="br">59 </span>
+<span class="br">60 </span><span class="com">/+
+<span class="br">61 </span>    Reverse domains, like those of flatpak application IDs.
+<span class="br">62 </span> +/</span>
+<span class="br">63 </span>{
+<span class="br">64 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;irc.SpotChat.org&quot;</span>, <span class="str">&quot;irc.FREENODE.net&quot;</span>, <span class="hid">caseSensitive</span>:<span class="kwrd">false</span>);
+<span class="br">65 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">0</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">66 </span>}
+<span class="br">67 </span>{
+<span class="br">68 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;org.kde.Plasma&quot;</span>, <span class="str">&quot;org.kde.Kate&quot;</span>, <span class="hid">reverse</span>: <span class="kwrd">true</span>);
+<span class="br">69 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">2</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">70 </span>}
+<span class="br">71 </span>{
+<span class="br">72 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;com.redhat.Something&quot;</span>, <span class="str">&quot;com.redhat.Other&quot;</span>, <span class="hid">reverse</span>: <span class="kwrd">true</span>);
+<span class="br">73 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">2</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">74 </span>}
+<span class="br">75 </span>{
+<span class="br">76 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(
+<span class="br">77 </span>        <span class="str">&quot;org.freedesktop.Platform.GL.default&quot;</span>,
+<span class="br">78 </span>        <span class="str">&quot;org.freedesktop.Platform.VAAPI.Intel&quot;</span>,
+<span class="br">79 </span>        <span class="hid">reverse</span>: <span class="kwrd">true</span>);
+<span class="br">80 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">3</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">81 </span>}
+<span class="br">82 </span>{
+<span class="br">83 </span>    <span class="kwrd">immutable</span> <span class="hid">n</span> = <span class="hid">sharedDomains</span>(<span class="str">&quot;org.kde.Platform&quot;</span>, <span class="str">&quot;im.riot.Riot&quot;</span>, <span class="hid">reverse</span>: <span class="kwrd">true</span>);
+<span class="br">84 </span>    <span class="kwrd">assert</span>((<span class="hid">n</span> == <span class="num">0</span>), <span class="hid">n</span>.<span class="hid">text</span>);
+<span class="br">85 </span>}</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.misc.html">misc</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="lu.misc.FileExistsException.html">FileExistsException</a></li><li><a class="class" href="lu.misc.FileTypeMismatchException.html">FileTypeMismatchException</a></li><li><a class="class" href="lu.misc.ReturnValueException.html">ReturnValueException</a></li></ul><span class="type-separator">enums</span><ul><li><a class="enum" href="lu.misc.Next.html">Next</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function current" href="lu.misc.sharedDomains.html">sharedDomains</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>meldInto (lu.meld.meldInto)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>meldInto</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.meld.html">meld</a> </div><div><div class="documentation-comment synopsis"><div><p>Takes two structs or classes of the same type and melds them together,
+    making the members of the resulting aggregate a union of the two.</p><p>In the case of classes it only overwrites members in <tt class="inline-code">intoThis</tt> that are
+    <tt class="inline-code">typeof(member).init</tt>, so only unset members get their values overwritten by
+    the melding class. It also does not work with static members.</p><p>In the case of structs it also overwrites members that still have their
+    default values, in cases where such is applicable.</p><p>Supply a template parameter <a class="xref" href="lu.meld.MeldingStrategy.html">MeldingStrategy</a> to decide to which extent
+    values are overwritten.</p></div></div></div><div class="annotated-prototype"><ol class="overloads"><li class="active-overload-option"><span class="overload-signature"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">meldInto</span>(QualThing meldThis, Thing intoThis)</span><div class="function-prototype"><div class="attributes"></div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">meldInto</div><div class="template-parameters" data-count="3">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><a class="name" data-ident="MeldingStrategy" href="lu.meld.MeldingStrategy.html" title="lu.meld.MeldingStrategy">MeldingStrategy</a> <span class="name" data-ident="strategy">strategy</span> = <a class="name" data-ident="MeldingStrategy" href="lu.meld.MeldingStrategy.html#conservative" title="lu.meld.MeldingStrategy">MeldingStrategy.conservative</a></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="QualThing">QualThing</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Thing">Thing</span></span></div></div>)</div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">auto</span> <span class="storage-class">ref</span> <span class="name" data-ident="QualThing">QualThing</span></span></span> <span class="parameter-name name" data-ident="meldThis"><a href="#param-meldThis">meldThis</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">ref</span> <span class="name" data-ident="Thing">Thing</span></span></span> <span class="parameter-name name" data-ident="intoThis"><a href="#param-intoThis">intoThis</a></span></div><span class="paren">)</span></div></div><div class="template-constraint"> <a class="lang-feature" href="http://dpldocs.info/template-constraints">if</a> (<div class="template-constraint-expression"><div class="andand-left"><div class="andand-left"><span class="name" data-ident="isAggregateType">isAggregateType</span>!<span class="name" data-ident="Thing">Thing</span> &amp;&amp; </div><div class="andand-right"><a class="lang-feature" href="http://dpldocs.info/is-expression">is</a>(<span class="name" data-ident="QualThing">QualThing</span> : <span class="name" data-ident="Thing">Thing</span>)</div> &amp;&amp; </div><div class="andand-right"><span class="name" data-ident="isMutable">isMutable</span>!<span class="name" data-ident="Thing">Thing</span></div></div>)</div><div class="function-contracts"></div></div></li><li class="overload-option"><a href="lu.meld.meldInto.2.html"><span class="overload-signature"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">meldInto</span>(Array1 meldThis, Array2 intoThis)</span></a></li><li class="overload-option"><a href="lu.meld.meldInto.3.html"><span class="overload-signature"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">meldInto</span>(QualAA meldThis, AA intoThis)</span></a></li></ol></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-strategy"><a class="parameter-name" data-ident="strategy" href="#param-strategy">strategy</a></dt><dd><div class="documentation-comment"><div><p>To what extent the source object should overwrite set
+            (non-<tt class="inline-code">init</tt>) values in the receiving object.</p></div></div></dd><dt id="param-meldThis"><a class="parameter-name" data-ident="meldThis" href="#param-meldThis">meldThis</a> <span class="parameter-type"><span class="name" data-ident="QualThing">QualThing</span></span></dt><dd><div class="documentation-comment"><div><p>Object to meld (source).</p></div></div></dd><dt id="param-intoThis"><a class="parameter-name" data-ident="intoThis" href="#param-intoThis">intoThis</a> <span class="parameter-type"><span class="name" data-ident="Thing">Thing</span></span></dt><dd><div class="documentation-comment"><div><p>Reference to object to meld (target).</p></div></div></dd></dl><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">struct</span> <span class="hid">Foo</span>
+{
+    <span class="type">string</span> <span class="hid">abc</span>;
+    <span class="type">int</span> <span class="hid">def</span>;
+    <span class="type">bool</span> <span class="hid">b</span> = <span class="kwrd">true</span>;
+}
+
+<span class="hid">Foo</span> <span class="hid">foo</span>, <span class="hid">bar</span>;
+<span class="hid">foo</span>.<span class="hid">abc</span> = <span class="str">&quot;from foo&quot;</span>
+<span class="hid">foo</span>.<span class="hid">b</span> = <span class="kwrd">false</span>;
+<span class="hid">bar</span>.<span class="hid">def</span> = <span class="num">42</span>;
+<span class="hid">foo</span>.<span class="hid">meldInto</span>(<span class="hid">bar</span>);
+
+<span class="kwrd">assert</span>( <span class="hid">bar</span>.<span class="hid">abc</span> == <span class="str">&quot;from foo&quot;</span>);
+<span class="kwrd">assert</span>( <span class="hid">bar</span>.<span class="hid">def</span> == <span class="num">42</span>);
+<span class="kwrd">assert</span>(!<span class="hid">bar</span>.<span class="hid">b</span>);  <span class="com">// false overwrote default value true</span></pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted with-line-wrappers"><span class="br">1 </span><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">conv</span> : <span class="hid">to</span>;
+<span class="br">2 </span>
+<span class="br">3 </span><span class="kwrd">static</span> <span class="kwrd">struct</span> <span class="hid">TestFoo</span>
+<span class="br">4 </span>{
+<span class="br">5 </span>    <span class="type">string</span> <span class="hid">abc</span>;
+<span class="br">6 </span>    <span class="type">string</span> <span class="hid">def</span>;
+<span class="br">7 </span>    <span class="type">int</span> <span class="hid">i</span>;
+<span class="br">8 </span>    <span class="type">float</span> <span class="hid">f</span>;
+<span class="br">9 </span>    <span class="type">double</span> <span class="hid">d</span>;
+<span class="br">10 </span>    <span class="type">int</span>[<span class="type">string</span>] <span class="hid">aa</span>;
+<span class="br">11 </span>    <span class="type">int</span>[] <span class="hid">arr</span>;
+<span class="br">12 </span>    <span class="type">int</span>* <span class="hid">ip</span>;
+<span class="br">13 </span>
+<span class="br">14 </span>    <span class="type">void</span> <span class="hid">blah</span>() {}
+<span class="br">15 </span>
+<span class="br">16 </span>    <span class="kwrd">const</span> <span class="type">string</span> <span class="hid">kek</span>;
+<span class="br">17 </span>    <span class="kwrd">immutable</span> <span class="type">bool</span> <span class="hid">bur</span>;
+<span class="br">18 </span>
+<span class="br">19 </span>    <span class="kwrd">this</span>(<span class="type">bool</span> <span class="hid">bur</span>)
+<span class="br">20 </span>    {
+<span class="br">21 </span>        <span class="hid">kek</span> = <span class="str">&quot;uden lo&quot;</span>;
+<span class="br">22 </span>        <span class="kwrd">this</span>.<span class="hid">bur</span> = <span class="hid">bur</span>;
+<span class="br">23 </span>    }
+<span class="br">24 </span>}
+<span class="br">25 </span>{
+<span class="br">26 </span>    <span class="hid">TestFoo</span> <span class="hid">f1</span>; <span class="com">// = new TestFoo;</span>
+<span class="br">27 </span>    <span class="hid">f1</span>.<span class="hid">abc</span> = <span class="str">&quot;ABC&quot;</span>;
+<span class="br">28 </span>    <span class="hid">f1</span>.<span class="hid">def</span> = <span class="str">&quot;DEF&quot;</span>;
+<span class="br">29 </span>    <span class="hid">f1</span>.<span class="hid">aa</span> = [ <span class="str">&quot;abc&quot;</span> : <span class="num">123</span>, <span class="str">&quot;ghi&quot;</span> : <span class="num">789</span> ];
+<span class="br">30 </span>    <span class="hid">f1</span>.<span class="hid">arr</span> = [ <span class="num">1</span>, <span class="num">0</span>, <span class="num">3</span>, <span class="num">0</span>, <span class="num">5</span> ];
+<span class="br">31 </span>
+<span class="br">32 </span>    <span class="hid">TestFoo</span> <span class="hid">f2</span>; <span class="com">// = new TestFoo;</span>
+<span class="br">33 </span>    <span class="hid">f2</span>.<span class="hid">abc</span> = <span class="str">&quot;this won't get copied&quot;</span>;
+<span class="br">34 </span>    <span class="hid">f2</span>.<span class="hid">def</span> = <span class="str">&quot;neither will this&quot;</span>;
+<span class="br">35 </span>    <span class="hid">f2</span>.<span class="hid">i</span> = <span class="num">42</span>;
+<span class="br">36 </span>    <span class="hid">f2</span>.<span class="hid">f</span> = <span class="num">3.14f</span>;
+<span class="br">37 </span>    <span class="hid">f2</span>.<span class="hid">aa</span> = [ <span class="str">&quot;abc&quot;</span> : <span class="num">999</span>, <span class="str">&quot;def&quot;</span> : <span class="num">456</span> ];
+<span class="br">38 </span>    <span class="hid">f2</span>.<span class="hid">arr</span> = [ <span class="num">0</span>, <span class="num">2</span>, <span class="num">0</span>, <span class="num">4</span> ];
+<span class="br">39 </span>
+<span class="br">40 </span>    <span class="hid">f2</span>.<span class="hid">meldInto</span>(<span class="hid">f1</span>);
+<span class="br">41 </span>
+<span class="br">42 </span>    <span class="kwrd">with</span> (<span class="hid">f1</span>)
+<span class="br">43 </span>    {
+<span class="br">44 </span>        <span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">math</span> : <span class="hid">isNaN</span>;
+<span class="br">45 </span>
+<span class="br">46 </span>        <span class="kwrd">assert</span>((<span class="hid">abc</span> == <span class="str">&quot;ABC&quot;</span>), <span class="hid">abc</span>);
+<span class="br">47 </span>        <span class="kwrd">assert</span>((<span class="hid">def</span> == <span class="str">&quot;DEF&quot;</span>), <span class="hid">def</span>);
+<span class="br">48 </span>        <span class="kwrd">assert</span>((<span class="hid">i</span> == <span class="num">42</span>), <span class="hid">i</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">49 </span>        <span class="kwrd">assert</span>((<span class="hid">f</span> == <span class="num">3.14f</span>), <span class="hid">f</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">50 </span>        <span class="kwrd">assert</span>(<span class="hid">d</span>.<span class="hid">isNaN</span>, <span class="hid">d</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">51 </span>        <span class="kwrd">assert</span>((<span class="hid">aa</span> == [ <span class="str">&quot;abc&quot;</span> : <span class="num">123</span>, <span class="str">&quot;def&quot;</span> : <span class="num">456</span>, <span class="str">&quot;ghi&quot;</span> : <span class="num">789</span> ]), <span class="hid">aa</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">52 </span>        <span class="kwrd">assert</span>((<span class="hid">arr</span> == [ <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span> ]), <span class="hid">arr</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">53 </span>    }
+<span class="br">54 </span>}
+<span class="br">55 </span>{
+<span class="br">56 </span>    <span class="hid">TestFoo</span> <span class="hid">f3</span>; <span class="com">// new TestFoo;</span>
+<span class="br">57 </span>    <span class="hid">f3</span>.<span class="hid">abc</span> = <span class="str">&quot;abc&quot;</span>;
+<span class="br">58 </span>    <span class="hid">f3</span>.<span class="hid">def</span> = <span class="str">&quot;def&quot;</span>;
+<span class="br">59 </span>    <span class="hid">f3</span>.<span class="hid">i</span> = <span class="num">100_135</span>;
+<span class="br">60 </span>    <span class="hid">f3</span>.<span class="hid">f</span> = <span class="num">99.9f</span>;
+<span class="br">61 </span>    <span class="hid">f3</span>.<span class="hid">aa</span> = [ <span class="str">&quot;abc&quot;</span> : <span class="num">123</span>, <span class="str">&quot;ghi&quot;</span> : <span class="num">789</span> ];
+<span class="br">62 </span>    <span class="hid">f3</span>.<span class="hid">arr</span> = [ <span class="num">1</span>, <span class="num">0</span>, <span class="num">3</span>, <span class="num">0</span>, <span class="num">5</span> ];
+<span class="br">63 </span>
+<span class="br">64 </span>    <span class="hid">TestFoo</span> <span class="hid">f4</span>; <span class="com">// new TestFoo;</span>
+<span class="br">65 </span>    <span class="hid">f4</span>.<span class="hid">abc</span> = <span class="str">&quot;OVERWRITTEN&quot;</span>;
+<span class="br">66 </span>    <span class="hid">f4</span>.<span class="hid">def</span> = <span class="str">&quot;OVERWRITTEN TOO&quot;</span>;
+<span class="br">67 </span>    <span class="hid">f4</span>.<span class="hid">i</span> = <span class="num">0</span>;
+<span class="br">68 </span>    <span class="hid">f4</span>.<span class="hid">f</span> = <span class="num">0.1f</span>;
+<span class="br">69 </span>    <span class="hid">f4</span>.<span class="hid">d</span> = <span class="num">99.999</span>;
+<span class="br">70 </span>    <span class="hid">f4</span>.<span class="hid">aa</span> = [ <span class="str">&quot;abc&quot;</span> : <span class="num">999</span>, <span class="str">&quot;def&quot;</span> : <span class="num">456</span> ];
+<span class="br">71 </span>    <span class="hid">f4</span>.<span class="hid">arr</span> = [ <span class="num">9</span>, <span class="num">2</span>, <span class="num">0</span>, <span class="num">4</span> ];
+<span class="br">72 </span>
+<span class="br">73 </span>    <span class="hid">f4</span>.<span class="hid">meldInto</span>!(<span class="hid">MeldingStrategy</span>.<span class="hid">aggressive</span>)(<span class="hid">f3</span>);
+<span class="br">74 </span>
+<span class="br">75 </span>    <span class="kwrd">with</span> (<span class="hid">f3</span>)
+<span class="br">76 </span>    {
+<span class="br">77 </span>        <span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">math</span> : <span class="hid">isClose</span>;
+<span class="br">78 </span>
+<span class="br">79 </span>        <span class="kwrd">assert</span>((<span class="hid">abc</span> == <span class="str">&quot;OVERWRITTEN&quot;</span>), <span class="hid">abc</span>);
+<span class="br">80 </span>        <span class="kwrd">assert</span>((<span class="hid">def</span> == <span class="str">&quot;OVERWRITTEN TOO&quot;</span>), <span class="hid">def</span>);
+<span class="br">81 </span>        <span class="kwrd">assert</span>((<span class="hid">i</span> == <span class="num">100_135</span>), <span class="hid">i</span>.<span class="hid">to</span>!<span class="type">string</span>); <span class="com">// 0 is int.init</span>
+<span class="br">82 </span>        <span class="kwrd">assert</span>((<span class="hid">f</span> == <span class="num">0.1f</span>), <span class="hid">f</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">83 </span>        <span class="kwrd">assert</span>(<span class="hid">d</span>.<span class="hid">isClose</span>(<span class="num">99.999</span>), <span class="hid">d</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">84 </span>        <span class="kwrd">assert</span>((<span class="hid">aa</span> == [ <span class="str">&quot;abc&quot;</span> : <span class="num">999</span>, <span class="str">&quot;def&quot;</span> : <span class="num">456</span>, <span class="str">&quot;ghi&quot;</span> : <span class="num">789</span> ]), <span class="hid">aa</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">85 </span>        <span class="kwrd">assert</span>((<span class="hid">arr</span> == [ <span class="num">9</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span> ]), <span class="hid">arr</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">86 </span>    }
+<span class="br">87 </span>}
+<span class="br">88 </span>{
+<span class="br">89 </span>    <span class="com">// Overwriting is just aggressive but always overwrites bools.</span>
+<span class="br">90 </span>    <span class="kwrd">struct</span> <span class="hid">User</span>
+<span class="br">91 </span>    {
+<span class="br">92 </span>        <span class="kwrd">enum</span> <span class="hid">Class</span> { <span class="hid">anyone</span>, <span class="hid">blacklist</span>, <span class="hid">whitelist</span>, <span class="hid">admin</span> }
+<span class="br">93 </span>        <span class="type">string</span> <span class="hid">nickname</span>;
+<span class="br">94 </span>        <span class="type">string</span> <span class="hid">alias_</span>;
+<span class="br">95 </span>        <span class="type">string</span> <span class="hid">ident</span>;
+<span class="br">96 </span>        <span class="type">string</span> <span class="hid">address</span>;
+<span class="br">97 </span>        <span class="type">string</span> <span class="hid">login</span>;
+<span class="br">98 </span>        <span class="type">bool</span> <span class="hid">special</span>;
+<span class="br">99 </span>        <span class="hid">Class</span> <span class="hid">class_</span>;
+<span class="br">100 </span>    }
+<span class="br">101 </span>
+<span class="br">102 </span>    <span class="hid">User</span> <span class="hid">one</span>;
+<span class="br">103 </span>    <span class="kwrd">with</span> (<span class="hid">one</span>)
+<span class="br">104 </span>    {
+<span class="br">105 </span>        <span class="hid">nickname</span> = <span class="str">&quot;foobar&quot;</span>;
+<span class="br">106 </span>        <span class="hid">ident</span> = <span class="str">&quot;NaN&quot;</span>;
+<span class="br">107 </span>        <span class="hid">address</span> = <span class="str">&quot;herpderp.net&quot;</span>;
+<span class="br">108 </span>        <span class="hid">special</span> = <span class="kwrd">false</span>;
+<span class="br">109 </span>        <span class="hid">class_</span> = <span class="hid">User</span>.<span class="hid">Class</span>.<span class="hid">whitelist</span>;
+<span class="br">110 </span>    }
+<span class="br">111 </span>
+<span class="br">112 </span>    <span class="hid">User</span> <span class="hid">two</span>;
+<span class="br">113 </span>    <span class="kwrd">with</span> (<span class="hid">two</span>)
+<span class="br">114 </span>    {
+<span class="br">115 </span>        <span class="hid">nickname</span> = <span class="str">&quot;foobar^&quot;</span>;
+<span class="br">116 </span>        <span class="hid">alias_</span> = <span class="str">&quot;FooBar&quot;</span>;
+<span class="br">117 </span>        <span class="hid">address</span> = <span class="str">&quot;asdf.org&quot;</span>;
+<span class="br">118 </span>        <span class="hid">login</span> = <span class="str">&quot;kamelusu&quot;</span>;
+<span class="br">119 </span>        <span class="hid">special</span> = <span class="kwrd">true</span>;
+<span class="br">120 </span>        <span class="hid">class_</span> = <span class="hid">User</span>.<span class="hid">Class</span>.<span class="hid">blacklist</span>;
+<span class="br">121 </span>    }
+<span class="br">122 </span>
+<span class="br">123 </span>    <span class="com">//import lu.conv : Enum;</span>
+<span class="br">124 </span>
+<span class="br">125 </span>    <span class="hid">User</span> <span class="hid">twoCopy</span> = <span class="hid">two</span>;
+<span class="br">126 </span>
+<span class="br">127 </span>    <span class="hid">one</span>.<span class="hid">meldInto</span>!(<span class="hid">MeldingStrategy</span>.<span class="hid">conservative</span>)(<span class="hid">two</span>);
+<span class="br">128 </span>    <span class="kwrd">with</span> (<span class="hid">two</span>)
+<span class="br">129 </span>    {
+<span class="br">130 </span>        <span class="kwrd">assert</span>((<span class="hid">nickname</span> == <span class="str">&quot;foobar^&quot;</span>), <span class="hid">nickname</span>);
+<span class="br">131 </span>        <span class="kwrd">assert</span>((<span class="hid">alias_</span> == <span class="str">&quot;FooBar&quot;</span>), <span class="hid">alias_</span>);
+<span class="br">132 </span>        <span class="kwrd">assert</span>((<span class="hid">ident</span> == <span class="str">&quot;NaN&quot;</span>), <span class="hid">ident</span>);
+<span class="br">133 </span>        <span class="kwrd">assert</span>((<span class="hid">address</span> == <span class="str">&quot;asdf.org&quot;</span>), <span class="hid">address</span>);
+<span class="br">134 </span>        <span class="kwrd">assert</span>((<span class="hid">login</span> == <span class="str">&quot;kamelusu&quot;</span>), <span class="hid">login</span>);
+<span class="br">135 </span>        <span class="kwrd">assert</span>(<span class="hid">special</span>);
+<span class="br">136 </span>        <span class="kwrd">assert</span>(<span class="hid">class_</span> == <span class="hid">User</span>.<span class="hid">Class</span>.<span class="hid">whitelist</span>);<span class="com">//, Enum!(User.Class).toString(class_));</span>
+<span class="br">137 </span>    }
+<span class="br">138 </span>
+<span class="br">139 </span>    <span class="hid">one</span>.<span class="hid">class_</span> = <span class="hid">User</span>.<span class="hid">Class</span>.<span class="hid">blacklist</span>;
+<span class="br">140 </span>
+<span class="br">141 </span>    <span class="hid">one</span>.<span class="hid">meldInto</span>!(<span class="hid">MeldingStrategy</span>.<span class="hid">overwriting</span>)(<span class="hid">twoCopy</span>);
+<span class="br">142 </span>    <span class="kwrd">with</span> (<span class="hid">twoCopy</span>)
+<span class="br">143 </span>    {
+<span class="br">144 </span>        <span class="kwrd">assert</span>((<span class="hid">nickname</span> == <span class="str">&quot;foobar&quot;</span>), <span class="hid">nickname</span>);
+<span class="br">145 </span>        <span class="kwrd">assert</span>((<span class="hid">alias_</span> == <span class="str">&quot;FooBar&quot;</span>), <span class="hid">alias_</span>);
+<span class="br">146 </span>        <span class="kwrd">assert</span>((<span class="hid">ident</span> == <span class="str">&quot;NaN&quot;</span>), <span class="hid">ident</span>);
+<span class="br">147 </span>        <span class="kwrd">assert</span>((<span class="hid">address</span> == <span class="str">&quot;herpderp.net&quot;</span>), <span class="hid">address</span>);
+<span class="br">148 </span>        <span class="kwrd">assert</span>((<span class="hid">login</span> == <span class="str">&quot;kamelusu&quot;</span>), <span class="hid">login</span>);
+<span class="br">149 </span>        <span class="kwrd">assert</span>(!<span class="hid">special</span>);
+<span class="br">150 </span>        <span class="kwrd">assert</span>(<span class="hid">class_</span> == <span class="hid">User</span>.<span class="hid">Class</span>.<span class="hid">blacklist</span>);<span class="com">//, Enum!(User.Class).toString(class_));</span>
+<span class="br">151 </span>    }
+<span class="br">152 </span>}
+<span class="br">153 </span>{
+<span class="br">154 </span>    <span class="kwrd">struct</span> <span class="hid">EnumThing</span>
+<span class="br">155 </span>    {
+<span class="br">156 </span>        <span class="kwrd">enum</span> <span class="hid">Enum</span> { <span class="hid">unset</span>, <span class="hid">one</span>, <span class="hid">two</span>, <span class="hid">three</span> }
+<span class="br">157 </span>        <span class="hid">Enum</span> <span class="hid">enum_</span>;
+<span class="br">158 </span>    }
+<span class="br">159 </span>
+<span class="br">160 </span>    <span class="hid">EnumThing</span> <span class="hid">e1</span>;
+<span class="br">161 </span>    <span class="hid">EnumThing</span> <span class="hid">e2</span>;
+<span class="br">162 </span>    <span class="hid">e2</span>.<span class="hid">enum_</span> = <span class="hid">EnumThing</span>.<span class="hid">Enum</span>.<span class="hid">three</span>;
+<span class="br">163 </span>    <span class="kwrd">assert</span>(<span class="hid">e1</span>.<span class="hid">enum_</span> == <span class="hid">EnumThing</span>.<span class="hid">Enum</span>.<span class="hid">init</span>);<span class="com">//, Enum!(EnumThing.Enum).toString(e1.enum_));</span>
+<span class="br">164 </span>    <span class="hid">e2</span>.<span class="hid">meldInto</span>(<span class="hid">e1</span>);
+<span class="br">165 </span>    <span class="kwrd">assert</span>(<span class="hid">e1</span>.<span class="hid">enum_</span> == <span class="hid">EnumThing</span>.<span class="hid">Enum</span>.<span class="hid">three</span>);<span class="com">//, Enum!(EnumThing.Enum).toString(e1.enum_));</span>
+<span class="br">166 </span>
+<span class="br">167 </span>    <span class="kwrd">struct</span> <span class="hid">WithArray</span>
+<span class="br">168 </span>    {
+<span class="br">169 </span>        <span class="type">string</span>[] <span class="hid">arr</span>;
+<span class="br">170 </span>    }
+<span class="br">171 </span>
+<span class="br">172 </span>    <span class="hid">WithArray</span> <span class="hid">w1</span>, <span class="hid">w2</span>;
+<span class="br">173 </span>    <span class="hid">w1</span>.<span class="hid">arr</span> = [ <span class="str">&quot;arr&quot;</span>, <span class="str">&quot;matey&quot;</span>, <span class="str">&quot;I'ma&quot;</span> ];
+<span class="br">174 </span>    <span class="hid">w2</span>.<span class="hid">arr</span> = [ <span class="str">&quot;pirate&quot;</span>, <span class="str">&quot;stereotype&quot;</span>, <span class="str">&quot;unittest&quot;</span> ];
+<span class="br">175 </span>    <span class="hid">w2</span>.<span class="hid">meldInto</span>(<span class="hid">w1</span>);
+<span class="br">176 </span>    <span class="kwrd">assert</span>((<span class="hid">w1</span>.<span class="hid">arr</span> == [ <span class="str">&quot;arr&quot;</span>, <span class="str">&quot;matey&quot;</span>, <span class="str">&quot;I'ma&quot;</span>, <span class="str">&quot;pirate&quot;</span>, <span class="str">&quot;stereotype&quot;</span>, <span class="str">&quot;unittest&quot;</span> ]), <span class="hid">w1</span>.<span class="hid">arr</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">177 </span>
+<span class="br">178 </span>    <span class="hid">WithArray</span> <span class="hid">w3</span>, <span class="hid">w4</span>;
+<span class="br">179 </span>    <span class="hid">w3</span>.<span class="hid">arr</span> = [ <span class="str">&quot;arr&quot;</span>, <span class="str">&quot;matey&quot;</span>, <span class="str">&quot;I'ma&quot;</span> ];
+<span class="br">180 </span>    <span class="hid">w4</span>.<span class="hid">arr</span> = [ <span class="str">&quot;arr&quot;</span>, <span class="str">&quot;matey&quot;</span>, <span class="str">&quot;I'ma&quot;</span> ];
+<span class="br">181 </span>    <span class="hid">w4</span>.<span class="hid">meldInto</span>(<span class="hid">w3</span>);
+<span class="br">182 </span>    <span class="kwrd">assert</span>((<span class="hid">w3</span>.<span class="hid">arr</span> == [ <span class="str">&quot;arr&quot;</span>, <span class="str">&quot;matey&quot;</span>, <span class="str">&quot;I'ma&quot;</span> ]), <span class="hid">w3</span>.<span class="hid">arr</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">183 </span>}
+<span class="br">184 </span>{
+<span class="br">185 </span>    <span class="kwrd">struct</span> <span class="hid">Server</span>
+<span class="br">186 </span>    {
+<span class="br">187 </span>        <span class="type">string</span> <span class="hid">address</span>;
+<span class="br">188 </span>    }
+<span class="br">189 </span>
+<span class="br">190 </span>    <span class="kwrd">struct</span> <span class="hid">Bot</span>
+<span class="br">191 </span>    {
+<span class="br">192 </span>        <span class="type">string</span> <span class="hid">nickname</span>;
+<span class="br">193 </span>        <span class="hid">Server</span> <span class="hid">server</span>;
+<span class="br">194 </span>    }
+<span class="br">195 </span>
+<span class="br">196 </span>    <span class="hid">Bot</span> <span class="hid">b1</span>, <span class="hid">b2</span>;
+<span class="br">197 </span>    <span class="hid">b1</span>.<span class="hid">nickname</span> = <span class="str">&quot;foobar&quot;</span>;
+<span class="br">198 </span>    <span class="hid">b1</span>.<span class="hid">server</span>.<span class="hid">address</span> = <span class="str">&quot;freenode.net&quot;</span>;
+<span class="br">199 </span>
+<span class="br">200 </span>    <span class="kwrd">assert</span>(!<span class="hid">b2</span>.<span class="hid">nickname</span>.<span class="hid">length</span>, <span class="hid">b2</span>.<span class="hid">nickname</span>);
+<span class="br">201 </span>    <span class="kwrd">assert</span>(!<span class="hid">b2</span>.<span class="hid">server</span>.<span class="hid">address</span>.<span class="hid">length</span>, <span class="hid">b2</span>.<span class="hid">nickname</span>);
+<span class="br">202 </span>    <span class="hid">b1</span>.<span class="hid">meldInto</span>(<span class="hid">b2</span>);
+<span class="br">203 </span>    <span class="kwrd">assert</span>((<span class="hid">b2</span>.<span class="hid">nickname</span> == <span class="str">&quot;foobar&quot;</span>), <span class="hid">b2</span>.<span class="hid">nickname</span>);
+<span class="br">204 </span>    <span class="kwrd">assert</span>((<span class="hid">b2</span>.<span class="hid">server</span>.<span class="hid">address</span> == <span class="str">&quot;freenode.net&quot;</span>), <span class="hid">b2</span>.<span class="hid">server</span>.<span class="hid">address</span>);
+<span class="br">205 </span>
+<span class="br">206 </span>    <span class="hid">b2</span>.<span class="hid">nickname</span> = <span class="str">&quot;harbl&quot;</span>;
+<span class="br">207 </span>    <span class="hid">b2</span>.<span class="hid">server</span>.<span class="hid">address</span> = <span class="str">&quot;rizon.net&quot;</span>;
+<span class="br">208 </span>
+<span class="br">209 </span>    <span class="hid">b2</span>.<span class="hid">meldInto</span>!(<span class="hid">MeldingStrategy</span>.<span class="hid">aggressive</span>)(<span class="hid">b1</span>);
+<span class="br">210 </span>    <span class="kwrd">assert</span>((<span class="hid">b1</span>.<span class="hid">nickname</span> == <span class="str">&quot;harbl&quot;</span>), <span class="hid">b1</span>.<span class="hid">nickname</span>);
+<span class="br">211 </span>    <span class="kwrd">assert</span>((<span class="hid">b1</span>.<span class="hid">server</span>.<span class="hid">address</span> == <span class="str">&quot;rizon.net&quot;</span>), <span class="hid">b1</span>.<span class="hid">server</span>.<span class="hid">address</span>);
+<span class="br">212 </span>}
+<span class="br">213 </span>{
+<span class="br">214 </span>    <span class="kwrd">class</span> <span class="hid">Class</span>
+<span class="br">215 </span>    {
+<span class="br">216 </span>        <span class="kwrd">static</span> <span class="type">int</span> <span class="hid">i</span>;
+<span class="br">217 </span>        <span class="type">string</span> <span class="hid">s</span>;
+<span class="br">218 </span>        <span class="type">bool</span> <span class="hid">b</span>;
+<span class="br">219 </span>    }
+<span class="br">220 </span>
+<span class="br">221 </span>    <span class="hid">Class</span> <span class="hid">abc</span> = <span class="kwrd">new</span> <span class="hid">Class</span>;
+<span class="br">222 </span>    <span class="hid">abc</span>.<span class="hid">i</span> = <span class="num">42</span>;
+<span class="br">223 </span>    <span class="hid">abc</span>.<span class="hid">s</span> = <span class="str">&quot;some string&quot;</span>;
+<span class="br">224 </span>    <span class="hid">abc</span>.<span class="hid">b</span> = <span class="kwrd">true</span>;
+<span class="br">225 </span>
+<span class="br">226 </span>    <span class="hid">Class</span> <span class="hid">def</span> = <span class="kwrd">new</span> <span class="hid">Class</span>;
+<span class="br">227 </span>    <span class="hid">def</span>.<span class="hid">s</span> = <span class="str">&quot;other string&quot;</span>;
+<span class="br">228 </span>    <span class="hid">abc</span>.<span class="hid">meldInto</span>(<span class="hid">def</span>);
+<span class="br">229 </span>
+<span class="br">230 </span>    <span class="kwrd">assert</span>((<span class="hid">def</span>.<span class="hid">i</span> == <span class="num">42</span>), <span class="hid">def</span>.<span class="hid">i</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">231 </span>    <span class="kwrd">assert</span>((<span class="hid">def</span>.<span class="hid">s</span> == <span class="str">&quot;other string&quot;</span>), <span class="hid">def</span>.<span class="hid">s</span>);
+<span class="br">232 </span>    <span class="kwrd">assert</span>(<span class="hid">def</span>.<span class="hid">b</span>);
+<span class="br">233 </span>
+<span class="br">234 </span>    <span class="hid">abc</span>.<span class="hid">meldInto</span>!(<span class="hid">MeldingStrategy</span>.<span class="hid">aggressive</span>)(<span class="hid">def</span>);
+<span class="br">235 </span>    <span class="kwrd">assert</span>((<span class="hid">def</span>.<span class="hid">s</span> == <span class="str">&quot;some string&quot;</span>), <span class="hid">def</span>.<span class="hid">s</span>);
+<span class="br">236 </span>}
+<span class="br">237 </span>{
+<span class="br">238 </span>    <span class="kwrd">struct</span> <span class="hid">Bools</span>
+<span class="br">239 </span>    {
+<span class="br">240 </span>        <span class="type">bool</span> <span class="hid">a</span> = <span class="kwrd">true</span>;
+<span class="br">241 </span>        <span class="type">bool</span> <span class="hid">b</span> = <span class="kwrd">false</span>;
+<span class="br">242 </span>    }
+<span class="br">243 </span>
+<span class="br">244 </span>    <span class="hid">Bools</span> <span class="hid">bools1</span>, <span class="hid">bools2</span>, <span class="hid">inverted</span>, <span class="hid">backupInverted</span>;
+<span class="br">245 </span>
+<span class="br">246 </span>    <span class="hid">bools2</span>.<span class="hid">a</span> = <span class="kwrd">false</span>;
+<span class="br">247 </span>
+<span class="br">248 </span>    <span class="hid">inverted</span>.<span class="hid">a</span> = <span class="kwrd">false</span>;
+<span class="br">249 </span>    <span class="hid">inverted</span>.<span class="hid">b</span> = <span class="kwrd">true</span>;
+<span class="br">250 </span>    <span class="hid">backupInverted</span> = <span class="hid">inverted</span>;
+<span class="br">251 </span>
+<span class="br">252 </span>    <span class="hid">bools2</span>.<span class="hid">meldInto</span>(<span class="hid">bools1</span>);
+<span class="br">253 </span>    <span class="kwrd">assert</span>(!<span class="hid">bools1</span>.<span class="hid">a</span>);
+<span class="br">254 </span>    <span class="kwrd">assert</span>(!<span class="hid">bools1</span>.<span class="hid">b</span>);
+<span class="br">255 </span>
+<span class="br">256 </span>    <span class="hid">bools2</span>.<span class="hid">meldInto</span>(<span class="hid">inverted</span>);
+<span class="br">257 </span>    <span class="kwrd">assert</span>(!<span class="hid">inverted</span>.<span class="hid">a</span>);
+<span class="br">258 </span>    <span class="kwrd">assert</span>( <span class="hid">inverted</span>.<span class="hid">b</span>);
+<span class="br">259 </span>    <span class="hid">inverted</span> = <span class="hid">backupInverted</span>;
+<span class="br">260 </span>
+<span class="br">261 </span>    <span class="hid">bools2</span>.<span class="hid">meldInto</span>!(<span class="hid">MeldingStrategy</span>.<span class="hid">overwriting</span>)(<span class="hid">inverted</span>);
+<span class="br">262 </span>    <span class="kwrd">assert</span>(!<span class="hid">inverted</span>.<span class="hid">a</span>);
+<span class="br">263 </span>    <span class="kwrd">assert</span>(!<span class="hid">inverted</span>.<span class="hid">b</span>);
+<span class="br">264 </span>    <span class="hid">inverted</span> = <span class="hid">backupInverted</span>;
+<span class="br">265 </span>}
+<span class="br">266 </span>{
+<span class="br">267 </span>    <span class="kwrd">struct</span> <span class="hid">Asdf</span>
+<span class="br">268 </span>    {
+<span class="br">269 </span>        <span class="type">string</span> <span class="hid">nickname</span> = <span class="str">&quot;sadf&quot;</span>;
+<span class="br">270 </span>        <span class="type">string</span> <span class="hid">server</span> = <span class="str">&quot;asdf.net&quot;</span>;
+<span class="br">271 </span>    }
+<span class="br">272 </span>
+<span class="br">273 </span>    <span class="hid">Asdf</span> <span class="hid">a</span>, <span class="hid">b</span>;
+<span class="br">274 </span>    <span class="hid">a</span>.<span class="hid">server</span> = <span class="str">&quot;a&quot;</span>;
+<span class="br">275 </span>    <span class="hid">b</span>.<span class="hid">server</span> = <span class="str">&quot;b&quot;</span>;
+<span class="br">276 </span>    <span class="hid">b</span>.<span class="hid">meldInto</span>!(<span class="hid">MeldingStrategy</span>.<span class="hid">aggressive</span>)(<span class="hid">a</span>);
+<span class="br">277 </span>    <span class="kwrd">assert</span>((<span class="hid">a</span>.<span class="hid">server</span> == <span class="str">&quot;b&quot;</span>), <span class="hid">a</span>.<span class="hid">server</span>);
+<span class="br">278 </span>
+<span class="br">279 </span>    <span class="hid">a</span>.<span class="hid">server</span> = <span class="str">&quot;a&quot;</span>;
+<span class="br">280 </span>    <span class="hid">b</span>.<span class="hid">server</span> = <span class="hid">Asdf</span>.<span class="hid">init</span>.<span class="hid">server</span>;
+<span class="br">281 </span>    <span class="hid">b</span>.<span class="hid">meldInto</span>!(<span class="hid">MeldingStrategy</span>.<span class="hid">aggressive</span>)(<span class="hid">a</span>);
+<span class="br">282 </span>    <span class="kwrd">assert</span>((<span class="hid">a</span>.<span class="hid">server</span> == <span class="str">&quot;a&quot;</span>), <span class="hid">a</span>.<span class="hid">server</span>);
+<span class="br">283 </span>}
+<span class="br">284 </span>{
+<span class="br">285 </span>    <span class="kwrd">struct</span> <span class="hid">Blah</span>
+<span class="br">286 </span>    {
+<span class="br">287 </span>        <span class="type">int</span> <span class="hid">yes</span> = <span class="num">42</span>;
+<span class="br">288 </span>        @<span class="hid">Unmeldable</span> <span class="type">int</span> <span class="hid">no</span> = <span class="num">24</span>;
+<span class="br">289 </span>    }
+<span class="br">290 </span>
+<span class="br">291 </span>    <span class="hid">Blah</span> <span class="hid">blah1</span>, <span class="hid">blah2</span>;
+<span class="br">292 </span>    <span class="hid">blah1</span>.<span class="hid">yes</span> = <span class="num">5</span>;
+<span class="br">293 </span>    <span class="hid">blah1</span>.<span class="hid">no</span> = <span class="num">42</span>;
+<span class="br">294 </span>    <span class="hid">blah1</span>.<span class="hid">meldInto</span>!(<span class="hid">MeldingStrategy</span>.<span class="hid">aggressive</span>)(<span class="hid">blah2</span>);
+<span class="br">295 </span>    <span class="kwrd">assert</span>((<span class="hid">blah2</span>.<span class="hid">yes</span> == <span class="num">5</span>), <span class="hid">blah2</span>.<span class="hid">yes</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">296 </span>    <span class="kwrd">assert</span>((<span class="hid">blah2</span>.<span class="hid">no</span> == <span class="num">24</span>), <span class="hid">blah2</span>.<span class="hid">no</span>.<span class="hid">to</span>!<span class="type">string</span>);
+<span class="br">297 </span>}</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.meld.html">meld</a> 
+		<span class="type-separator">enums</span><ul><li><a class="enum" href="lu.meld.MeldingStrategy.html">MeldingStrategy</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function current" href="lu.meld.meldInto.1.html">meldInto</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
