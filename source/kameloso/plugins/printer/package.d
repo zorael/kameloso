@@ -288,10 +288,13 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         import std.array : replace;
         import std.stdio : stdout, writeln;
 
-        // Exclude types explicitly declared as to be excluded
-        if (overrideExcludes)
+        if (event.errors.length)
         {
-            // Do nothing
+            // Drop down and print errors
+        }
+        else if (overrideExcludes)
+        {
+            // Likewise; exclude types are set to be overridden
         }
         else
         {
@@ -347,11 +350,13 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
     // Immediately print events of types declared to be included
     // Additionally always include if ANY was supplied
-    immutable shouldInclude =
-        plugin.include.length &&
-        plugin.include.canFind(event.type, IRCEvent.Type.ANY);
+    // or if there are errors
+    immutable shouldPrint =
+        event.errors.length ||
+        (plugin.include.length &&
+        plugin.include.canFind(event.type, IRCEvent.Type.ANY));
 
-    if (shouldInclude)
+    if (shouldPrint)
     {
         return printEvent(
             plugin,
