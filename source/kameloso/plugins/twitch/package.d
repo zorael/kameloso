@@ -3400,24 +3400,29 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
     {
         import kameloso.plugins.twitch.emotes : importCustomEmotesImpl;
         import kameloso.time : nextMidnight;
+        import core.time : days, hours;
 
         auto room = channelName in plugin.rooms;
         assert(room, "Tried to start emote reimport delegate on non-existing room");
 
+        enum nDays = 1;
+        static immutable minimumDelay = 1.hours;
+
         immutable idSnapshot = room.uniqueID;
+
+        {
+            // Initial delay
+            immutable now = Clock.currTime;
+            immutable untilMidnightInNDays = (now.nextMidnight(nDays) - now);
+            immutable recentlyConnected = (untilMidnightInNDays < minimumDelay);
+            immutable untilMidnightAdjusted = recentlyConnected ?
+                (untilMidnightInNDays + 1.days) :  // Skip first day
+                untilMidnightInNDays;
+            delay(plugin, untilMidnightAdjusted, yield: true);
+        }
 
         while (true)
         {
-            /+
-                Reverse the order and delay immediately before importing.
-                They are initially imported elsewhere, we just want this to fire
-                once every three days.
-             +/
-            enum nDays = 3;
-            immutable now = Clock.currTime;
-            immutable untilMidnightInNDays = (now.nextMidnight(nDays) - now);
-            delay(plugin, untilMidnightInNDays, yield: true);
-
             room = channelName in plugin.rooms;
             if (!room || (room.uniqueID != idSnapshot)) return;
 
@@ -3425,6 +3430,10 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                 plugin: plugin,
                 channelName: channelName,
                 id: plugin.customChannelEmotes[channelName].id);
+
+            immutable now = Clock.currTime;
+            immutable untilMidnightInNDays = (now.nextMidnight(nDays) - now);
+            delay(plugin, untilMidnightInNDays, yield: true);
         }
     }
 
