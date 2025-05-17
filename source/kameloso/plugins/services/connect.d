@@ -405,10 +405,22 @@ void joinChannels(ConnectService service)
 
             foreach (immutable channelName; allChannels)
             {
-                if (channelName !in service.currentActualChannels)
+                const entry = channelName in service.currentActualChannels;
+
+                if (!entry)
                 {
                     // We failed to join a channel for some reason. No such user?
                     missingChannels ~= channelName;
+                }
+                else if (*entry)
+                {
+                    // We joined this channel.
+                }
+                else /*if (!(*entry))*/
+                {
+                    // We are banned and thus failed to join a channel.
+                    // Remove the false entry.
+                    service.currentActualChannels.remove(channelName);
                 }
             }
 
@@ -442,6 +454,26 @@ void onSelfjoin(ConnectService service, const IRCEvent event)
     if (service.state.server.daemon == IRCServer.Daemon.twitch)
     {
         service.currentActualChannels[event.channel.name] = true;
+    }
+}
+
+
+// onBannedFromChan
+/++
+    Records us as having failed to join a channel, when we are banned from it.
+ +/
+version(TwitchSupport)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_BANNEDFROMCHAN)
+    .channelPolicy(ChannelPolicy.any)
+)
+void onBannedFromChan(ConnectService service, const IRCEvent event)
+{
+    mixin(memoryCorruptionCheck);
+
+    if (service.state.server.daemon == IRCServer.Daemon.twitch)
+    {
+        service.currentActualChannels[event.channel.name] = false;
     }
 }
 
