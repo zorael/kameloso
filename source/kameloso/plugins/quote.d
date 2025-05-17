@@ -1312,43 +1312,49 @@ void loadQuotes(QuotePlugin plugin)
     import std.file : readText;
     import std.stdio : File, writeln;
 
-    try
+    immutable content = plugin.quotesFile.readText();
+
+    version(PrintStacktraces)
     {
-        auto quotes = plugin.quotesFile
-            .readText
-            .deserialize!(Quote.JSONSchema[][string][string]);
-
-        plugin.quotes = null;
-
-        foreach (immutable channelName, channelSchemas; quotes)
+        scope(failure)
         {
-            // Initialise the AA
-            auto channelQuotes = channelName in plugin.quotes;
+            import std.json : parseJSON;
+            import std.stdio : writeln;
 
-            if (!channelQuotes)
-            {
-                plugin.quotes[channelName][string.init] = [ Quote.init ];
-                channelQuotes = channelName in plugin.quotes;
-                (*channelQuotes).remove(string.init);
-            }
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
 
-            foreach (immutable nickname, schemaArray; channelSchemas)
-            {
-                foreach (schema; schemaArray)
-                {
-                    plugin.quotes[channelName][nickname] ~= Quote(schema);
-                }
-            }
+    const quotes = content.deserialize!(Quote.JSONSchema[][string][string]);
 
-            (*channelQuotes).rehash();
+    plugin.quotes = null;
+
+    foreach (immutable channelName, channelSchemas; quotes)
+    {
+        // Initialise the AA
+        auto channelQuotes = channelName in plugin.quotes;
+
+        if (!channelQuotes)
+        {
+            plugin.quotes[channelName][string.init] = [ Quote.init ];
+            channelQuotes = channelName in plugin.quotes;
+            (*channelQuotes).remove(string.init);
         }
 
-        plugin.quotes.rehash();
+        foreach (immutable nickname, schemaArray; channelSchemas)
+        {
+            foreach (schema; schemaArray)
+            {
+                plugin.quotes[channelName][nickname] ~= Quote(schema);
+            }
+        }
+
+        (*channelQuotes).rehash();
     }
-    catch (Exception e)
-    {
-        version(PrintStacktraces) logger.trace(e);
-    }
+
+    plugin.quotes.rehash();
 }
 
 
@@ -1512,11 +1518,24 @@ void initResources(QuotePlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File;
 
+    immutable content = plugin.quotesFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
     try
     {
-        auto deserialised = plugin.quotesFile
-            .readText
-            .deserialize!(Quote.JSONSchema[][string][string]);
+        const deserialised = content.deserialize!(Quote.JSONSchema[][string][string]);
 
         JSONValue json;
         json.object = null;

@@ -527,9 +527,22 @@ void reload(TimePlugin plugin)
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    plugin.channelTimezones = plugin.timezonesFile
-        .readText
-        .deserialize!(string[string]);
+    immutable content = plugin.timezonesFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
+    plugin.channelTimezones = content.deserialize!(string[string]);
 }
 
 
@@ -546,12 +559,24 @@ void initResources(TimePlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File;
 
+    immutable content = plugin.timezonesFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
     try
     {
-        auto deserialised = plugin.timezonesFile
-            .readText
-            .deserialize!(string[string]);
-
+        const deserialised = content.deserialize!(string[string]);
         immutable serialised = JSONValue(deserialised).toPrettyString;
         File(plugin.timezonesFile, "w").writeln(serialised);
     }

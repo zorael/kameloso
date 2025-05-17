@@ -1031,17 +1031,22 @@ void loadSeen(SeenPlugin plugin)
     import std.file : readText;
     import std.stdio : File, writeln;
 
-    try
+    immutable content = plugin.seenFile.readText();
+
+    version(PrintStacktraces)
     {
-        plugin.seenUsers = plugin.seenFile
-            .readText
-            .deserialize!(long[string]);
-    }
-    catch (Exception e)
-    {
-        version(PrintStacktraces) logger.trace(e);
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
     }
 
+    plugin.seenUsers = content.deserialize!(long[string]);
     // No need to rehash the AA; RehashingAA will do it on assignment
 }
 
@@ -1163,12 +1168,24 @@ void initResources(SeenPlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File;
 
+    immutable content = plugin.seenFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
     try
     {
-        auto deserialised = plugin.seenFile
-            .readText
-            .deserialize!(long[string]);
-
+        const deserialised = content.deserialize!(long[string]);
         immutable serialised = JSONValue(deserialised).toPrettyString;
         File(plugin.seenFile, "w").writeln(serialised);
     }

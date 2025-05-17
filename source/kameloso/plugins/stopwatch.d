@@ -249,17 +249,22 @@ void deserialiseStopwatches(StopwatchPlugin plugin)
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    try
+    immutable content = plugin.stopwatchTempFile.readText();
+
+    version(PrintStacktraces)
     {
-        plugin.stopwatches = plugin.stopwatchTempFile
-            .readText
-            .deserialize!(long[string][string]);
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
     }
-    catch (Exception e)
-    {
-        import kameloso.common : logger;
-        version(PrintStacktraces) logger.trace(e);
-    }
+
+    plugin.stopwatches = content.deserialize!(long[string][string]);
 }
 
 

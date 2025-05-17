@@ -1682,11 +1682,24 @@ void initResources(TimerPlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File;
 
+    immutable content = plugin.timerFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
     try
     {
-        auto deserialised = plugin.timerFile
-            .readText
-            .deserialize!(Timer.JSONSchema[][string]);
+        const deserialised = content.deserialize!(Timer.JSONSchema[][string]);
 
         JSONValue json;
         json.object = null;
@@ -1726,9 +1739,22 @@ void loadTimers(TimerPlugin plugin)
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    auto json = plugin.timerFile
-        .readText
-        .deserialize!(Timer.JSONSchema[][string]);
+    immutable content = plugin.timerFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
+    const json = content.deserialize!(Timer.JSONSchema[][string]);
 
     plugin.timersByChannel = null;
 

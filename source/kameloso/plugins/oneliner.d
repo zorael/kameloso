@@ -1362,41 +1362,46 @@ void loadOneliners(OnelinerPlugin plugin)
     import std.file : readText;
     import std.stdio : File, writeln;
 
-    try
+    immutable content = plugin.onelinerFile.readText();
+
+    version(PrintStacktraces)
     {
-        auto json = plugin.onelinerFile
-            .readText
-            .deserialize!(Oneliner.JSONSchema[string][string]);
-
-        plugin.onelinersByChannel = null;
-
-        foreach (immutable channelName, const channelSchemas; json)
+        scope(failure)
         {
-            // Initialise the AA
-            auto channelOneliners = channelName in plugin.onelinersByChannel;
+            import std.json : parseJSON;
+            import std.stdio : writeln;
 
-            if (!channelOneliners)
-            {
-                plugin.onelinersByChannel[channelName][string.init] = Oneliner.init;
-                channelOneliners = channelName in plugin.onelinersByChannel;
-                (*channelOneliners).remove(string.init);
-            }
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
 
-            foreach (immutable trigger, const schema; channelSchemas)
-            {
-                (*channelOneliners)[trigger] = Oneliner(schema);
-            }
+    auto json = content.deserialize!(Oneliner.JSONSchema[string][string]);
 
-            (*channelOneliners).rehash();
+    plugin.onelinersByChannel = null;
+
+    foreach (immutable channelName, const channelSchemas; json)
+    {
+        // Initialise the AA
+        auto channelOneliners = channelName in plugin.onelinersByChannel;
+
+        if (!channelOneliners)
+        {
+            plugin.onelinersByChannel[channelName][string.init] = Oneliner.init;
+            channelOneliners = channelName in plugin.onelinersByChannel;
+            (*channelOneliners).remove(string.init);
         }
 
-        plugin.onelinersByChannel.rehash();
+        foreach (immutable trigger, const schema; channelSchemas)
+        {
+            (*channelOneliners)[trigger] = Oneliner(schema);
+        }
+
+        (*channelOneliners).rehash();
     }
-    catch (Exception e)
-    {
-        import kameloso.common : logger;
-        version(PrintStacktraces) logger.trace(e);
-    }
+
+    plugin.onelinersByChannel.rehash();
 }
 
 
@@ -1495,11 +1500,24 @@ void initResources(OnelinerPlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File;
 
+    immutable content = plugin.onelinerFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
     try
     {
-        auto deserialised = plugin.onelinerFile
-            .readText
-            .deserialize!(Oneliner.JSONSchema[string][string]);
+        const deserialised = content.deserialize!(Oneliner.JSONSchema[string][string]);
 
         JSONValue json;
         json.object = null;

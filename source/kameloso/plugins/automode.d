@@ -74,12 +74,24 @@ void initResources(AutomodePlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File;
 
+    immutable content = plugin.automodeFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
     try
     {
-        auto deserialised = plugin.automodeFile
-            .readText
-            .deserialize!(string[string][string]);
-
+        const deserialised = content.deserialize!(string[string][string]);
         immutable serialised = JSONValue(deserialised).toPrettyString;
         File(plugin.automodeFile, "w").writeln(serialised);
     }
@@ -541,10 +553,22 @@ void loadAutomodes(AutomodePlugin plugin)
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    plugin.automodes = plugin.automodeFile
-        .readText
-        .deserialize!(string[string][string]);
+    immutable content = plugin.automodeFile.readText();
 
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
+    plugin.automodes = content.deserialize!(string[string][string]);
     plugin.automodes.rehash();
 }
 

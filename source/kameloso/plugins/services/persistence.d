@@ -1189,9 +1189,22 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
     import lu.conv : toString;
     import std.file : readText;
 
-    auto json = service.userFile
-        .readText
-        .deserialize!(JSONSchema[string]);
+    immutable content = service.userFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
+    auto json = content.deserialize!(JSONSchema[string]);
 
     service.channelUserClassDefinitions = null;
 
@@ -1240,9 +1253,22 @@ void reloadHostmasksFromDisk(PersistenceService service)
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    auto accountByHostmask = service.hostmasksFile
-        .readText
-        .deserialize!(string[string]);
+    immutable content = service.hostmasksFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
+    auto accountByHostmask = content.deserialize!(string[string]);
 
     /+
         The nickname-account map is used elsewhere too, so ideally we wouldn't
@@ -1339,11 +1365,24 @@ void initAccountResources(PersistenceService service)
     import std.json : JSONValue;
     import std.stdio : File;
 
+    immutable content = service.userFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
     try
     {
-        auto deserialised = service.userFile
-            .readText
-            .deserialize!(JSONSchema[string]);
+        const deserialised = content.deserialize!(JSONSchema[string]);
 
         JSONValue json;
         json.object = null;
@@ -1383,13 +1422,25 @@ void initHostmaskResources(PersistenceService service)
     import std.json : JSONValue;
     import std.stdio : File;
 
+    immutable content = service.hostmasksFile.readText();
     string[string] json;
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
 
     try
     {
-        json = service.hostmasksFile
-            .readText
-            .deserialize!(typeof(json));
+        json = content.deserialize!(typeof(json));
     }
     catch (Exception e)
     {

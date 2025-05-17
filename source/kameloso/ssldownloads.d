@@ -246,7 +246,22 @@ auto downloadWindowsSSL(
 
         try
         {
-            const response = jsonFile.readText.deserialize!Response;
+            immutable content = jsonFile.readText();
+
+            version(PrintStacktraces)
+            {
+                scope(failure)
+                {
+                    import std.json : parseJSON;
+                    import std.stdio : writeln;
+
+                    writeln(content);
+                    try writeln(content.parseJSON.toPrettyString);
+                    catch (Exception _) {}
+                }
+            }
+
+            const response = content.deserialize!Response;
 
             string topFilename;
             uint topVersionMinor;

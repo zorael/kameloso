@@ -108,10 +108,22 @@ void listList(
     immutable shouldSendToChannel = (event.sender.nickname.length > 0);
     immutable role = getNoun(NounForm.plural, class_);
     immutable list = class_.toString;
+    immutable content = plugin.userFile.readText();
 
-    auto json = plugin.userFile
-        .readText
-        .deserialize!(string[string][string]);
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
+    const json = content.deserialize!(string[string][string]);
 
     const channelUsers = channelName in json[list];
 
@@ -615,9 +627,22 @@ auto alterAccountClassifier(
     import std.json : JSONValue;
     import std.stdio : File;
 
-    auto json = plugin.userFile
-        .readText
-        .deserialize!(string[][string][string]);
+    immutable content = plugin.userFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
+    auto json = content.deserialize!(string[][string][string]);
 
     immutable list = class_.toString;
 
@@ -715,9 +740,22 @@ in (mask.length, "Tried to add an empty hostmask definition")
     enum examplePlaceholderValue = "<account>";
 
     immutable shouldSendToChannel = (event.sender.nickname.length > 0);
-    auto aa = plugin.hostmasksFile
-        .readText
-        .deserialize!(string[string]);
+    immutable content = plugin.hostmasksFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
+    auto aa = content.deserialize!(string[string]);
 
     if (add)
     {

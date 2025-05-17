@@ -845,9 +845,22 @@ void reportStreamTime(
     }
 
     // Stream down, check if we have one on record to report instead
-    auto json = plugin.streamHistoryFile
-        .readText
-        .deserialize!(TwitchPlugin.Room.Stream.JSONSchema[]);
+    immutable content = plugin.streamHistoryFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
+    auto json = content.deserialize!(TwitchPlugin.Room.Stream.JSONSchema[]);
 
     if (!json.length)
     {
@@ -2966,9 +2979,22 @@ void initialise(TwitchPlugin plugin)
 
         // Some keygen, reload to load secrets so existing ones are read
         // Not strictly needed for normal keygen but for everything else
-        auto json = plugin.secretsFile
-            .readText
-            .deserialize!(Credentials.JSONSchema[string]);
+        immutable content = plugin.secretsFile.readText();
+
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                import std.stdio : writeln;
+
+                writeln(content);
+                try writeln(content.parseJSON.toPrettyString);
+                catch (Exception _) {}
+            }
+        }
+
+        auto json = content.deserialize!(Credentials.JSONSchema[string]);
 
         foreach (immutable channelName, creds; json)
         {
@@ -3837,9 +3863,22 @@ void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream s
     import std.json : JSONValue;
     import std.stdio : File;
 
-    auto streams = plugin.streamHistoryFile
-        .readText
-        .deserialize!(TwitchPlugin.Room.Stream.JSONSchema[]);
+    immutable content = plugin.streamHistoryFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
+    auto streams = content.deserialize!(TwitchPlugin.Room.Stream.JSONSchema[]);
 
     JSONValue json;
     json.array = null;
@@ -4549,11 +4588,24 @@ void initResources(TwitchPlugin plugin)
         (const string filename,
         const string fileDescription)
     {
+        immutable content = filename.readText();
+
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                import std.stdio : writeln;
+
+                writeln(content);
+                try writeln(content.parseJSON.toPrettyString);
+                catch (Exception _) {}
+            }
+        }
+
         try
         {
-            auto deserialised = filename
-                .readText
-                .deserialize!T;
+            const deserialised = content.deserialize!T;
 
             static if (__traits(compiles, JSONValue(deserialised)))
             {
@@ -4678,26 +4730,58 @@ void loadResources(TwitchPlugin plugin)
     import std.file : readText;
     import core.memory : GC;
 
+    version(PrintStacktraces)
+    {
+        static void printContent(const string content)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
     GC.disable();
     scope(exit) GC.enable();
 
-    plugin.ecount = plugin.ecountFile
-        .readText
-        .deserialize!(long[string][string]);
-
-    plugin.viewerTimesByChannel = plugin.viewersFile
-        .readText
-        .deserialize!(long[string][string]);
-
-    auto creds = plugin.secretsFile
-        .readText
-        .deserialize!(Credentials.JSONSchema[string]);
-
-    plugin.secretsByChannel = null;
-
-    foreach (immutable channelName, channelCreds; creds)
     {
-        plugin.secretsByChannel[channelName] = Credentials(channelCreds);
+        immutable content = plugin.ecountFile.readText();
+
+        version(PrintStacktraces)
+        {
+            scope(failure) printContent(content);
+        }
+
+        plugin.ecount = content.deserialize!(long[string][string]);
+    }
+    {
+        immutable content = plugin.viewersFile.readText();
+
+        version(PrintStacktraces)
+        {
+            scope(failure) printContent(content);
+        }
+
+        plugin.viewerTimesByChannel = content.deserialize!(long[string][string]);
+    }
+    {
+        immutable content = plugin.secretsFile.readText();
+
+        version(PrintStacktraces)
+        {
+            scope(failure) printContent(content);
+        }
+
+        auto creds = content.deserialize!(Credentials.JSONSchema[string]);
+
+        plugin.secretsByChannel = null;
+
+        foreach (immutable channelName, channelCreds; creds)
+        {
+            plugin.secretsByChannel[channelName] = Credentials(channelCreds);
+        }
     }
 }
 

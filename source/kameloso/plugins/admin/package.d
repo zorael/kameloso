@@ -1471,9 +1471,22 @@ void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
 
     if (plugin.state.coreSettings.headless) return;
 
-    auto aa = plugin.hostmasksFile
-        .readText
-        .deserialize!(string[string]);
+    immutable content = plugin.hostmasksFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
+    auto aa = content.deserialize!(string[string]);
 
     if (aa.length)
     {

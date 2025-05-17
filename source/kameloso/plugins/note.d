@@ -550,9 +550,22 @@ void loadNotes(NotePlugin plugin)
     import std.file : readText;
     import std.stdio : File, writeln;
 
-    auto json = plugin.notesFile
-        .readText
-        .deserialize!(Note.JSONSchema[][string][string]);
+    immutable content = plugin.notesFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
+    const json = content.deserialize!(Note.JSONSchema[][string][string]);
 
     plugin.notes = null;
 
@@ -595,11 +608,24 @@ void initResources(NotePlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File;
 
+    immutable content = plugin.notesFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
     try
     {
-        auto deserialised = plugin.notesFile
-            .readText
-            .deserialize!(Note.JSONSchema[][string][string]);
+        const deserialised = content.deserialize!(Note.JSONSchema[][string][string]);
 
         JSONValue json;
         json.object = null;

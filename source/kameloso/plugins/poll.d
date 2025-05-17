@@ -922,9 +922,22 @@ void deserialisePolls(PollPlugin plugin)
     import std.file : readText;
     import std.stdio : File, writeln;
 
-    auto polls = plugin.pollTempFile
-        .readText
-        .deserialize!(Poll.JSONSchema[string]);
+    immutable content = plugin.pollTempFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
+    auto polls = content.deserialize!(Poll.JSONSchema[string]);
 
     foreach (immutable channelName, /*const*/ schema; polls)
     {

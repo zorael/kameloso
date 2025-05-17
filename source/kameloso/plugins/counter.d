@@ -847,41 +847,46 @@ void loadCounters(CounterPlugin plugin)
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    try
+    immutable content = plugin.countersFile.readText();
+
+    version(PrintStacktraces)
     {
-        auto json = plugin.countersFile
-            .readText
-            .deserialize!(Counter.JSONSchema[string][string]);
-
-        plugin.counters = null;
-
-        foreach (immutable channelName, channelSchemas; json)
+        scope(failure)
         {
-            // Initialise the AA
-            auto channelCounters = channelName in plugin.counters;
+            import std.json : parseJSON;
+            import std.stdio : writeln;
 
-            if (!channelCounters)
-            {
-                plugin.counters[channelName][string.init] = Counter.init;
-                channelCounters = channelName in plugin.counters;
-                (*channelCounters).remove(string.init);
-            }
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
 
-            foreach (immutable word, counterSchema; channelSchemas)
-            {
-                (*channelCounters)[word] = Counter(counterSchema);
-            }
+    auto json = content.deserialize!(Counter.JSONSchema[string][string]);
 
-            (*channelCounters).rehash();
+    plugin.counters = null;
+
+    foreach (immutable channelName, channelSchemas; json)
+    {
+        // Initialise the AA
+        auto channelCounters = channelName in plugin.counters;
+
+        if (!channelCounters)
+        {
+            plugin.counters[channelName][string.init] = Counter.init;
+            channelCounters = channelName in plugin.counters;
+            (*channelCounters).remove(string.init);
         }
 
-        plugin.counters.rehash();
+        foreach (immutable word, counterSchema; channelSchemas)
+        {
+            (*channelCounters)[word] = Counter(counterSchema);
+        }
+
+        (*channelCounters).rehash();
     }
-    catch (Exception e)
-    {
-        import kameloso.common : logger;
-        version(PrintStacktraces) logger.trace(e);
-    }
+
+    plugin.counters.rehash();
 }
 
 
@@ -898,11 +903,24 @@ void initResources(CounterPlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File;
 
+    immutable content = plugin.countersFile.readText();
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
     try
     {
-        auto deserialised = plugin.countersFile
-            .readText
-            .deserialize!(Counter.JSONSchema[string][string]);
+        const deserialised = content.deserialize!(Counter.JSONSchema[string][string]);
 
         JSONValue json;
         json.object = null;
