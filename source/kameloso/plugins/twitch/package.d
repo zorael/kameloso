@@ -4391,84 +4391,88 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
     }
 
     /++
+        Resolves the subchannel ID to a channel name.
+     +/
+    static void resolveSubchannel(
+        /*const*/ TwitchPlugin plugin,
+        ref IRCEvent event)
+    in (event.subchannel.id && !event.subchannel.name.length)
+    {
+        import kameloso.constants : BufferSize;
+        import core.thread.fiber : Fiber;
+
+        if (const channelFromID = event.subchannel.id in plugin.channelNamesByID)
+        {
+            if (channelFromID.length)
+            {
+                // Found channel name in cache; insert into event.subchannel
+                event.subchannel.name = *channelFromID;
+            }
+            else
+            {
+                // Do nothing; a request is already in progress
+            }
+            return;
+        }
+
+        // We don't know the channel name, so look it up.
+        void getChannelNameDg()
+        {
+            // Snapshot the id because event is a reference
+            immutable id = event.subchannel.id;
+
+            /*if (plugin.state.coreSettings.trace)
+            {
+                enum pattern = "Querying server for channel name of user ID <l>%d</>...";
+                logger.infof(pattern, id);
+            }*/
+
+            scope(failure)
+            {
+                // Just in case
+                plugin.channelNamesByID.remove(id);
+            }
+
+            immutable results = getUser(
+                plugin: plugin,
+                id: id);
+
+            if (!results.success)
+            {
+                // Abort the request but reset the cache entry
+                plugin.channelNamesByID.remove(id);
+                return;
+            }
+
+            immutable channelName = '#' ~ results.login;
+            plugin.channelNamesByID[id] = channelName;
+
+            if (plugin.state.coreSettings.trace)
+            {
+                enum pattern = "Resolved channel <l>%s</> from user ID <l>%d</>.";
+                logger.infof(pattern, channelName, id);
+            }
+        }
+
+        // Set an empty string so we don't return early above again before the results are in
+        plugin.channelNamesByID[event.subchannel.id] = string.init;
+
+        auto getChannelNameFiber = new Fiber(&getChannelNameDg, BufferSize.fiberStack);
+        getChannelNameFiber.call();
+    }
+
+    /++
         Sort badges and infer user class based on them.
         Sort first so early returns don't skip the sorting.
      +/
     static bool postprocessImpl(
         /*const*/ TwitchPlugin plugin,
-        ref IRCEvent event,
-        ref IRCUser user,
-        const bool isTarget)
+        const IRCEvent event,
+        ref IRCUser user)
     {
         import kameloso.thread : ThreadMessage, boxed;
 
         if (!user.nickname.length) return false;
-
-        if (!isTarget && event.subchannel.id && !event.subchannel.name.length)
-        {
-            import std.conv : to;
-
-            // Shared message
-            immutable sharedChannelID = event.subchannel.id.to!ulong;
-
-            if (const channelFromID = sharedChannelID in plugin.channelNamesByID)
-            {
-                if (channelFromID.length)
-                {
-                    // Found channel name in cache; insert into event.subchannel
-                    event.subchannel.name = *channelFromID;
-                }
-            }
-            else
-            {
-                import kameloso.plugins.common.scheduling : delay;
-                import kameloso.constants : BufferSize;
-                import core.thread.fiber : Fiber;
-
-                // We don't know the channel name, so look it up.
-
-                void getChannelNameDg()
-                {
-                    /*if (plugin.state.coreSettings.trace)
-                    {
-                        enum pattern = "Querying server for channel name of user ID <l>%d</>...";
-                        logger.infof(pattern, sharedChannelID);
-                    }*/
-
-                    scope(failure)
-                    {
-                        // getUser throws if the user ID is invalid
-                        // plus we throw ourselves if the user ID does not have a channel
-                        plugin.channelNamesByID.remove(sharedChannelID);
-                    }
-
-                    immutable results = getUser(
-                        plugin: plugin,
-                        id: sharedChannelID);
-
-                    if (!results.success)
-                    {
-                        // Can this ever happen?
-                        throw new Exception("Failed to resolve channel name from user ID");
-                    }
-
-                    immutable channelName = '#' ~ results.login;
-                    plugin.channelNamesByID[sharedChannelID] = channelName;
-
-                    if (plugin.state.coreSettings.trace)
-                    {
-                        enum pattern = "Resolved channel <l>%s</> from user ID <l>%d</>.";
-                        logger.infof(pattern, channelName, sharedChannelID);
-                    }
-                }
-
-                // Set an empty string so we don't branch here again before the results are in
-                plugin.channelNamesByID[sharedChannelID] = string.init;
-
-                auto getChannelNameFiber = new Fiber(&getChannelNameDg, BufferSize.fiberStack);
-                getChannelNameFiber.call();
-            }
-        }
 
         if (user.class_ == IRCUser.Class.blacklist)
         {
@@ -4532,6 +4536,12 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
         return false;
     }
 
+    if (event.subchannel.id && !event.subchannel.name.length)
+    {
+        // Shared message
+        resolveSubchannel(plugin, event);
+    }
+
     if (!plugin.settings.promoteEverywhere && (isHomeChannel == Ternary.unknown))
     {
         import std.algorithm.searching : canFind;
@@ -4559,8 +4569,8 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
         }
 
         bool shouldCheckMessages;
-        shouldCheckMessages |= postprocessImpl(plugin, event, event.sender, isTarget: false);
-        shouldCheckMessages |= postprocessImpl(plugin, event, event.target, isTarget: true);
+        shouldCheckMessages |= postprocessImpl(plugin, event, event.sender);
+        shouldCheckMessages |= postprocessImpl(plugin, event, event.target);
         return shouldCheckMessages;
     }
 
