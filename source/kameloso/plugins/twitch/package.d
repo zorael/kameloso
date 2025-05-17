@@ -707,19 +707,26 @@ void onUserstate(TwitchPlugin plugin, const IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.GLOBALUSERSTATE)
-    .fiber(true)
 )
 void onGlobalUserstate(TwitchPlugin plugin, const IRCEvent _)
 {
+    import kameloso.plugins.twitch.emotes : Delays, importCustomEmotesImpl;
+    import kameloso.plugins.common.scheduling : delay;
+    import kameloso.constants : BufferSize;
+    import core.thread.fiber : Fiber;
+
     mixin(memoryCorruptionCheck);
 
     if (plugin.settings.customEmotes)
     {
-        import kameloso.plugins.twitch.emotes : importCustomEmotesImpl;
+        void importCustomEmotesDg()
+        {
+            importCustomEmotesImpl(plugin);
+        }
 
-        // dialect sets the display name during parsing
-        //assert(plugin.state.client.displayName == event.target.displayName);
-        importCustomEmotesImpl(plugin);
+        // Delay importing just a bit to cosmetically stagger the terminal output
+        auto importCustomEmotesFiber = new Fiber(&importCustomEmotesDg, BufferSize.fiberStack);
+        delay(plugin, importCustomEmotesFiber, Delays.initialDelayBeforeImports);
     }
 }
 

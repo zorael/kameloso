@@ -115,9 +115,6 @@ in (((channelName.length && id) ||
         ];
     }
 
-    // Delay importing just a bit to cosmetically stagger the terminal output
-    delay(plugin, Delays.initialDelayBeforeImports, yield: true);
-
     void reportSuccess(const string emoteImportName, const size_t numAdded)
     {
         if (numAdded)
