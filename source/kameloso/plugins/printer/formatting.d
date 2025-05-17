@@ -254,19 +254,47 @@ void formatMessageMonochrome(Sink)
 
             .put(sink, "] ");
 
-            if (event.subchannel.name.length && (event.subchannel.name != event.channel.name))
+            void putSubchannel(const bool mismatchByName)
             {
-                .put(sink, "< [", event.subchannel.name);
+                .put(sink, "< [");
 
-                version(TwitchSupport)
+                if (mismatchByName)
                 {
-                    if (plugin.settings.channelIDs && event.subchannel.id)
+                    .put(sink, event.subchannel.name);
+
+                    version(TwitchSupport)
                     {
-                        .put(sink, ':', event.subchannel.id);
+                        if (plugin.settings.channelIDs && event.subchannel.id)
+                        {
+                            .put(sink, ':', event.subchannel.id);
+                        }
+                    }
+                }
+                else
+                {
+                    // Mismatch by ID
+                    version(TwitchSupport)
+                    {
+                        .put(sink, event.subchannel.id);
                     }
                 }
 
-                .put(sink, "] ");
+                sink.put("] ");
+            }
+
+            if (event.subchannel.name.length && (event.subchannel.name != event.channel.name))
+            {
+                putSubchannel(mismatchByName: true);
+            }
+            else
+            {
+                version(TwitchSupport)
+                {
+                    if (event.subchannel.id && event.channel.id && (event.subchannel.id != event.channel.id))
+                    {
+                        putSubchannel(mismatchByName: false);
+                    }
+                }
             }
         }
     }
@@ -1001,7 +1029,7 @@ void formatMessageColoured(Sink)
 
             sink.put("] ");
 
-            if (event.subchannel.name.length && (event.subchannel.name != event.channel.name))
+            void putSubchannel(const bool mismatchByName)
             {
                 immutable arrowCode = plugin.state.coreSettings.brightTerminal ?
                     Bright.content :
@@ -1011,17 +1039,44 @@ void formatMessageColoured(Sink)
                 .put(sink, "< ");
 
                 sink.applyANSI(channelCode, ANSICodeType.foreground);
-                .put(sink, '[', event.subchannel.name);
 
-                version(TwitchSupport)
+                if (mismatchByName)
                 {
-                    if (plugin.settings.channelIDs && event.subchannel.id)
+                    .put(sink, '[', event.subchannel.name);
+
+                    version(TwitchSupport)
                     {
-                        .put(sink, ':', event.subchannel.id);
+                        if (plugin.settings.channelIDs && event.subchannel.id)
+                        {
+                            .put(sink, ':', event.subchannel.id);
+                        }
+                    }
+                }
+                else
+                {
+                    // Mismatch by ID
+                    version(TwitchSupport)
+                    {
+                        .put(sink, '[', event.subchannel.id);
                     }
                 }
 
                 sink.put("] ");
+            }
+
+            if (event.subchannel.name.length && (event.subchannel.name != event.channel.name))
+            {
+                putSubchannel(mismatchByName: true);
+            }
+            else
+            {
+                version(TwitchSupport)
+                {
+                    if (event.subchannel.id && event.channel.id && (event.subchannel.id != event.channel.id))
+                    {
+                        putSubchannel(mismatchByName: false);
+                    }
+                }
             }
         }
     }
