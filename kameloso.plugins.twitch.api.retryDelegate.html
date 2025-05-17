@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>retryDelegate (kameloso.plugins.twitch.api.retryDelegate)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>retryDelegate</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.twitch.html">twitch</a> <a class="breadcrumb" href="kameloso.plugins.twitch.api.html">api</a> </div><div><div class="documentation-comment synopsis"><div><p>Retries a passed delegate until it no longer throws or until the hardcoded
+    number of retries
+    (<a class="xref" href="kameloso.plugins.twitch.TwitchPlugin.delegateRetries.html">TwitchPlugin.delegateRetries</a>)
+    is reached, or forever if <tt class="inline-code">endlessly</tt> is passed.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(TwitchSupport &amp;&amp; WithTwitchPlugin)</div></div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">retryDelegate</div><div class="template-parameters" data-count="1">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Dg">Dg</span></span></div></div>)</div><div class="runtime-parameters" data-count="5"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><a class="name" data-ident="TwitchPlugin" href="kameloso.plugins.twitch.TwitchPlugin.html" title="kameloso.plugins.twitch.TwitchPlugin">TwitchPlugin</a></span></span> <span class="parameter-name name" data-ident="plugin"><a href="#param-plugin">plugin</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="name" data-ident="Dg">Dg</span></span></span> <span class="parameter-name name" data-ident="dg"><a href="#param-dg">dg</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="async"><a href="#param-async">async</a></span><span class="parameter-default-value">&#160;=&#160;true</span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="endlessly"><a href="#param-endlessly">endlessly</a></span><span class="parameter-default-value">&#160;=&#160;false</span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="name" data-ident="Duration">Duration</span></span></span> <span class="parameter-name name" data-ident="retryDelay"><a href="#param-retryDelay">retryDelay</a></span><span class="parameter-default-value">&#160;=&#160;4.<span class="name" data-ident="seconds">seconds</span></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-plugin"><a class="parameter-name" data-ident="plugin" href="#param-plugin">plugin</a> <span class="parameter-type"><a class="xref" href="kameloso.plugins.twitch.TwitchPlugin.html" title="kameloso.plugins.twitch.TwitchPlugin"><span class="name" data-ident="TwitchPlugin">TwitchPlugin</span></a></span></dt><dd><div class="documentation-comment"><div><p>The current <a class="xref" href="kameloso.plugins.twitch.TwitchPlugin.html">TwitchPlugin</a>.</p></div></div></dd><dt id="param-dg"><a class="parameter-name" data-ident="dg" href="#param-dg">dg</a> <span class="parameter-type"><span class="name" data-ident="Dg">Dg</span></span></dt><dd><div class="documentation-comment"><div><p>Delegate to call.</p></div></div></dd><dt id="param-async"><a class="parameter-name" data-ident="async" href="#param-async">async</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether or not the delegate should be called asynchronously,
+            scheduling attempts using <a class="xref" href="kameloso.plugins.common.scheduling.delay.html">delay</a>.</p></div></div></dd><dt id="param-endlessly"><a class="parameter-name" data-ident="endlessly" href="#param-endlessly">endlessly</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether or not to endlessly retry.</p></div></div></dd><dt id="param-retryDelay"><a class="parameter-name" data-ident="retryDelay" href="#param-retryDelay">retryDelay</a> <span class="parameter-type"><span class="name" data-ident="Duration">Duration</span></span></dt><dd><div class="documentation-comment"><div><p>How long to wait between retries.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>Whatever the passed delegate returns.</p></div></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.twitch.html">twitch</a> <a class="parent" href="kameloso.plugins.twitch.api.html">api</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module" href="kameloso.plugins.twitch.api.actions.html">actions</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.twitch.api.handleRetryDelegateException.html">handleRetryDelegateException</a></li><li><a class="function" href="kameloso.plugins.twitch.api.printRetryDelegateException.html">printRetryDelegateException</a></li><li><a class="function current" href="kameloso.plugins.twitch.api.retryDelegate.html">retryDelegate</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.twitch.api.ErrorResponse.html">ErrorResponse</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

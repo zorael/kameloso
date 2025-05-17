@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>downloadWindowsSSL (kameloso.ssldownloads.downloadWindowsSSL)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>downloadWindowsSSL</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.ssldownloads.html">ssldownloads</a> </div><div><div class="documentation-comment synopsis"><div><p>Downloads OpenSSL for Windows and/or a <tt class="inline-code">cacert.pem</tt> certificate bundle from
+    the cURL project, extracted from Mozilla Firefox.</p><p>If <tt class="inline-code">--force</tt> was not supplied, the configuration file is updated with &quot;<tt class="inline-code">cacert.pem</tt>&quot;
+    entered as <tt class="inline-code">caBundle</tt>. If it is supplied, the value is still changed but to the
+    absolute path to the file, and the configuration file is not implicitly updated.
+    (<tt class="inline-code">--save</tt> will have to be separately passed.)</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(WindowsPlatform)</div></div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">downloadWindowsSSL</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="4"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">scope</span> <a class="name" data-ident="Kameloso" href="kameloso.kameloso.Kameloso.html" title="kameloso.kameloso.Kameloso">Kameloso</a></span></span> <span class="parameter-name name" data-ident="instance"><a href="#param-instance">instance</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="shouldDownloadCacert"><a href="#param-shouldDownloadCacert">shouldDownloadCacert</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="shouldDownloadOpenSSL"><a href="#param-shouldDownloadOpenSSL">shouldDownloadOpenSSL</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="shouldDownloadOpenSSL1_1"><a href="#param-shouldDownloadOpenSSL1_1">shouldDownloadOpenSSL1_1</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-instance"><a class="parameter-name" data-ident="instance" href="#param-instance">instance</a> <span class="parameter-type"><a class="xref" href="kameloso.kameloso.Kameloso.html" title="kameloso.kameloso.Kameloso"><span class="name" data-ident="Kameloso">Kameloso</span></a></span></dt><dd><div class="documentation-comment"><div><p>The current <a class="xref" href="kameloso.kameloso.Kameloso.html">Kameloso</a> instance.</p></div></div></dd><dt id="param-shouldDownloadCacert"><a class="parameter-name" data-ident="shouldDownloadCacert" href="#param-shouldDownloadCacert">shouldDownloadCacert</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether or not <tt class="inline-code">cacert.pem</tt> should be downloaded.</p></div></div></dd><dt id="param-shouldDownloadOpenSSL"><a class="parameter-name" data-ident="shouldDownloadOpenSSL" href="#param-shouldDownloadOpenSSL">shouldDownloadOpenSSL</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether or not OpenSSL for Windows should be downloaded.</p></div></div></dd><dt id="param-shouldDownloadOpenSSL1_1"><a class="parameter-name" data-ident="shouldDownloadOpenSSL1_1" href="#param-shouldDownloadOpenSSL1_1">shouldDownloadOpenSSL1_1</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether or not OpenSSL v1.1 should be downloaded
+            instead of v3.2.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p><tt class="inline-code">true</tt> if <a class="xref" href="kameloso.kameloso.Kameloso.coreSettings.html">Kameloso.coreSettings</a>
+        were touched and the configuration file should be updated; <tt class="inline-code">false</tt> if not.</p></div></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.ssldownloads.html">ssldownloads</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function current" href="kameloso.ssldownloads.downloadWindowsSSL.html">downloadWindowsSSL</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

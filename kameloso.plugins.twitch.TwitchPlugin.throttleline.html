@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>TwitchPlugin.throttleline (kameloso.plugins.twitch.TwitchPlugin.throttleline)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>TwitchPlugin.throttleline</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.twitch.html">twitch</a> <a class="breadcrumb" href="kameloso.plugins.twitch.TwitchPlugin.html">TwitchPlugin</a> </div><div><div class="documentation-comment synopsis"><div><p>Takes one or more lines from the passed buffer and sends them to the
+        server as whispers.</p><p>Sends to the server in a throttled fashion, based on a simple
+        <tt class="inline-code">y = k*x + m</tt> graph.</p><p>This is so we don't get kicked by the server for spamming, if a lot of
+        lines are to be sent at once.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="parent-prototype"><span class="builtin-type">class</span> <span class="name">TwitchPlugin</span></div><div><div class="attributes">package </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">throttleline</div><div class="template-parameters" data-count="1">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Buffer">Buffer</span></span></div></div>)</div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">ref</span> <span class="name" data-ident="Buffer">Buffer</span></span></span> <span class="parameter-name name" data-ident="buffer"><a href="#param-buffer">buffer</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="immediate"><a href="#param-immediate">immediate</a></span><span class="parameter-default-value">&#160;=&#160;false</span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-buffer"><a class="parameter-name" data-ident="buffer" href="#param-buffer">buffer</a> <span class="parameter-type"><span class="name" data-ident="Buffer">Buffer</span></span></dt><dd><div class="documentation-comment"><div><p>Buffer instance.</p></div></div></dd><dt id="param-immediate"><a class="parameter-name" data-ident="immediate" href="#param-immediate">immediate</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether or not the line should just be sent straight away,
+                ignoring throttling.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>A <tt class="inline-code">double</tt> of the the time in seconds remaining until the next message
+            may be sent. If <tt class="inline-code">0.0</tt>, the buffer was emptied.</p></div></div></div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="kameloso.plugins.twitch.api.sendWhisper.html">kameloso.plugins.twitch.api.sendWhisper</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.twitch.html">twitch</a> <a class="parent" href="kameloso.plugins.twitch.TwitchPlugin.html">TwitchPlugin</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.twitch.TwitchPlugin.isEnabled.html">isEnabled</a></li><li><a class="function current" href="kameloso.plugins.twitch.TwitchPlugin.throttleline.html">throttleline</a></li></ul><span class="type-separator">manifest constants</span><ul><li><a class="manifest-constant" href="kameloso.plugins.twitch.TwitchPlugin.clientID.html">clientID</a></li><li><a class="manifest-constant" href="kameloso.plugins.twitch.TwitchPlugin.delegateRetries.html">delegateRetries</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.twitch.TwitchPlugin.CustomChannelEmotes.html">CustomChannelEmotes</a></li><li><a class="struct" href="kameloso.plugins.twitch.TwitchPlugin.Room.html">Room</a></li><li><a class="struct" href="kameloso.plugins.twitch.TwitchPlugin.Throttle.html">Throttle</a></li><li><a class="struct" href="kameloso.plugins.twitch.TwitchPlugin.TransientState.html">TransientState</a></li></ul><span class="type-separator">variables</span><ul><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.channelNamesByID.html">channelNamesByID</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.customChannelEmotes.html">customChannelEmotes</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.customGlobalEmotes.html">customGlobalEmotes</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.ecount.html">ecount</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.ecountFile.html">ecountFile</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.responseBucket.html">responseBucket</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.rooms.html">rooms</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.secretsByChannel.html">secretsByChannel</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.secretsFile.html">secretsFile</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.settings.html">settings</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.streamHistoryFile.html">streamHistoryFile</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.throttle.html">throttle</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.transient.html">transient</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.viewerTimesByChannel.html">viewerTimesByChannel</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.viewersFile.html">viewersFile</a></li><li><a class="variable" href="kameloso.plugins.twitch.TwitchPlugin.whisperBuffer.html">whisperBuffer</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

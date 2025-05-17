@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>handleNewTimer (kameloso.plugins.timer.handleNewTimer)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>handleNewTimer</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.timer.html">timer</a> </div><div><div class="documentation-comment synopsis"><div><p>Creates a new timer.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(WithTimerPlugin)</div>private </div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">handleNewTimer</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><a class="name" data-ident="TimerPlugin" href="kameloso.plugins.timer.TimerPlugin.html" title="kameloso.plugins.timer.TimerPlugin">TimerPlugin</a></span></span> <span class="parameter-name name" data-ident="plugin"><a href="#param-plugin">plugin</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.html" title="dialect.defs.IRCEvent">IRCEvent</a></span></span> <span class="parameter-name name" data-ident="event"><a href="#param-event">event</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="slice"><a href="#param-slice">slice</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-plugin"><a class="parameter-name" data-ident="plugin" href="#param-plugin">plugin</a> <span class="parameter-type"><a class="xref" href="kameloso.plugins.timer.TimerPlugin.html" title="kameloso.plugins.timer.TimerPlugin"><span class="name" data-ident="TimerPlugin">TimerPlugin</span></a></span></dt><dd><div class="documentation-comment"><div><p>The current <a class="xref" href="kameloso.plugins.timer.TimerPlugin.html">TimerPlugin</a>.</p></div></div></dd><dt id="param-event"><a class="parameter-name" data-ident="event" href="#param-event">event</a> <span class="parameter-type"><a class="xref" href="dialect.defs.IRCEvent.html" title="dialect.defs.IRCEvent"><span class="name" data-ident="IRCEvent">IRCEvent</span></a></span></dt><dd><div class="documentation-comment"><div><p>The <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a> that requested the creation.</p></div></div></dd><dt id="param-slice"><a class="parameter-name" data-ident="slice" href="#param-slice">slice</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>Relevant slice of the original request string.</p></div></div></dd></dl></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.timer.html">timer</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.timer.TimerPlugin.html">TimerPlugin</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.timer.createTimerFiber.html">createTimerFiber</a></li><li><a class="function" href="kameloso.plugins.timer.handleAddToTimer.html">handleAddToTimer</a></li><li><a class="function" href="kameloso.plugins.timer.handleColourTimer.html">handleColourTimer</a></li><li><a class="function" href="kameloso.plugins.timer.handleDelTimer.html">handleDelTimer</a></li><li><a class="function" href="kameloso.plugins.timer.handleListTimers.html">handleListTimers</a></li><li><a class="function" href="kameloso.plugins.timer.handleModifyTimer.html">handleModifyTimer</a></li><li><a class="function" href="kameloso.plugins.timer.handleModifyTimerLines.html">handleModifyTimerLines</a></li><li><a class="function current" href="kameloso.plugins.timer.handleNewTimer.html">handleNewTimer</a></li><li><a class="function" href="kameloso.plugins.timer.handleSelfjoin.html">handleSelfjoin</a></li><li><a class="function" href="kameloso.plugins.timer.handleSuspendTimer.html">handleSuspendTimer</a></li><li><a class="function" href="kameloso.plugins.timer.initResources.html">initResources</a></li><li><a class="function" href="kameloso.plugins.timer.loadTimers.html">loadTimers</a></li><li><a class="function" href="kameloso.plugins.timer.onAnyMessage.html">onAnyMessage</a></li><li><a class="function" href="kameloso.plugins.timer.onCommandTimer.html">onCommandTimer</a></li><li><a class="function" href="kameloso.plugins.timer.onSelfjoin.html">onSelfjoin</a></li><li><a class="function" href="kameloso.plugins.timer.onWelcome.html">onWelcome</a></li><li><a class="function" href="kameloso.plugins.timer.reload.html">reload</a></li><li><a class="function" href="kameloso.plugins.timer.saveTimers.html">saveTimers</a></li><li><a class="function" href="kameloso.plugins.timer.selftest.html">selftest</a></li><li><a class="function" href="kameloso.plugins.timer.startTimerMonitor.html">startTimerMonitor</a></li><li><a class="function" href="kameloso.plugins.timer.teardown.html">teardown</a></li></ul><span class="type-separator">manifest constants</span><ul><li><a class="manifest-constant" href="kameloso.plugins.timer.twitchAnnouncementColourSyntax.1.html">twitchAnnouncementColourSyntax</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.timer.Timer.html">Timer</a></li><li><a class="struct" href="kameloso.plugins.timer.TimerSettings.html">TimerSettings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

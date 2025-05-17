@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>dialect (dialect)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>dialect</h1><div class="breadcrumbs"></div><div><div class="documentation-comment synopsis"><div><p><b>dialect</b> is an IRC parser. It parses strings as read from an IRC server
+    into useful <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a> structs.</p><p>It only handles parsing; for a bot, try <b>kameloso</b> at
+    <a class="" href="https://github.com/zorael/kameloso">https://github.com/zorael/kameloso</a>.</p></div></div></div><div class="annotated-prototype"></div><h2 id="modules"><a class="header-anchor" href="#modules">Modules</a></h2><dl class="member-list native"><dt><a href="dialect.assertgen.html">assertgen</a><div class="simplified-prototype" style="max-width: 26ch;"><span class="builtin-type">module</span> <span class="name">dialect.assertgen</span></div></dt><dd><div><p>Interactive assert statement generation from raw IRC strings, for use in
+    source code <tt class="inline-code">unittest</tt> blocks.</p></div></dd><dt><a href="dialect.common.html">common</a><div class="simplified-prototype" style="max-width: 23ch;"><span class="builtin-type">module</span> <span class="name">dialect.common</span></div></dt><dd><div><p>Helper functions needed to parse raw IRC event strings into
+    <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a>s.</p></div></dd><dt><a href="dialect.defs.html">defs</a><div class="simplified-prototype" style="max-width: 20ch;"><span class="builtin-type">module</span> <span class="name">dialect.defs</span></div></dt><dd><div><p>Definitions of struct aggregates used throughout the library, representing
+    <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a>s and thereto related objects like <a class="xref" href="dialect.defs.IRCServer.html">IRCServer</a> and <a class="xref" href="dialect.defs.IRCUser.html">IRCUser</a>.</p></div></dd><dt><a href="dialect.parsing.html">parsing</a><div class="simplified-prototype" style="max-width: 24ch;"><span class="builtin-type">module</span> <span class="name">dialect.parsing</span></div></dt><dd><div><p>Functions related to parsing IRC events.</p></div></dd><dt><a href="dialect.postprocessors.html">postprocessors</a><div class="simplified-prototype" style="max-width: 31ch;"><span class="builtin-type">module</span> <span class="name">dialect.postprocessors</span></div></dt><dd><div><p>Postprocessor package module.</p></div></dd><dt><a href="dialect.semver.html">semver</a><div class="simplified-prototype" style="max-width: 23ch;"><span class="builtin-type">module</span> <span class="name">dialect.semver</span></div></dt><dd><div><p>SemVer information about the current release.</p></div></dd></dl><h2 id="public-imports"><a class="header-anchor" href="#public-imports">Public Imports</a></h2><div></div><dl class="member-list native"><dt><a href="dialect.defs.html">dialect.defs</a><div class="simplified-prototype" style="max-width: 30ch;"><span class="builtin-type">public</span> <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">dialect</span>.<span class="hid">defs</span>;</tt></div></dt><dd><div><span class="undocumented-note">Undocumented in source.</span></div></dd></dl><dl class="member-list native"><dt><a href="dialect.parsing.html">dialect.parsing</a><div class="simplified-prototype" style="max-width: 34ch;"><span class="builtin-type">public</span> <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">dialect</span>.<span class="hid">parsing</span>;</tt></div></dt><dd><div><span class="undocumented-note">Undocumented in source.</span></div></dd></dl><dl class="member-list native"><dt><a href="dialect.common.html">dialect.common</a><div class="simplified-prototype" style="max-width: 33ch;"><span class="builtin-type">public</span> <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">dialect</span>.<span class="hid">common</span>;</tt></div></dt><dd><div><span class="undocumented-note">Undocumented in source.</span></div></dd></dl><dl class="member-list native"><dt><a href="dialect.semver.html">dialect.semver</a><div class="simplified-prototype" style="max-width: 33ch;"><span class="builtin-type">public</span> <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">dialect</span>.<span class="hid">semver</span>;</tt></div></dt><dd><div><span class="undocumented-note">Undocumented in source.</span></div></dd></dl><dl class="member-list native"><dt><a href="dialect.postprocessors.html">dialect.postprocessors</a><div class="simplified-prototype" style="max-width: 41ch;"><span class="builtin-type">public</span> <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">dialect</span>.<span class="hid">postprocessors</span>;</tt></div></dt><dd><div><span class="undocumented-note">Undocumented in source.</span></div></dd></dl><div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav">
+		<span class="type-separator">modules</span><ul><li><a class="module current" href="dialect.html">dialect</a></li><li><a class="module" href="kameloso.html">kameloso</a></li><li><a class="module" href="lu.html">lu</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

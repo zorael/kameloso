@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>lu.serialisation (lu.serialisation)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>lu.serialisation</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> </div><div><div class="documentation-comment synopsis"><div><p>Various functions related to serialising and deserialising structs into/from
+    configuration file-y files.</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="class"><a class="header-anchor" href="#class">Classes</a></h3><dl class="member-list native"><dt><a href="lu.serialisation.DeserialisationException.html">DeserialisationException</a><div class="simplified-prototype" style="max-width: 33ch;"><span class="builtin-type">class</span> <span class="name">DeserialisationException</span></div></dt><dd><div><p>Exception, to be thrown when the specified serialised text could not be
+    parsed, for whatever reason.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="lu.serialisation.deserialise.html">deserialise</a><div class="simplified-prototype" style="max-width: 121ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">deserialise</span>(Range range, string[][string] missingEntries, string[][string] invalidEntries, Things things)</div></dt><dd><div><p>Takes an input range containing serialised entry-value text and applies the
+    contents therein to one or more passed struct/class objects.</p></div></dd><dt><a href="lu.serialisation.justifiedEntryValueText.html">justifiedEntryValueText</a><div class="simplified-prototype" style="max-width: 52ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">justifiedEntryValueText</span>(string origLines)</div></dt><dd><div><p>Takes an unformatted string of serialised entry-value text and justifies it
+    into two neat columns.</p></div></dd><dt><a href="lu.serialisation.serialise.1.html">serialise</a><div class="simplified-prototype" style="max-width: 44ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">serialise</span>(Sink sink, Things things)</div></dt><dd><div><p>Convenience function to call <a class="xref" href="lu.serialisation.serialise.2.html">serialise</a> on several objects.</p></div></dd><dt><a href="lu.serialisation.serialise.2.html">serialise</a><div class="simplified-prototype" style="max-width: 47ch;"><span class="lang-feature">auto</span>  <span class="name">serialise</span>(Sink sink, QualThing thing)</div></dt><dd><div><p>Serialises the fields of an object into a configuration file-y format.</p></div></dd><dt><a href="lu.serialisation.serialiseArrayImpl.html">serialiseArrayImpl</a><div class="simplified-prototype" style="max-width: 63ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">serialiseArrayImpl</span>(T array, SerialisationUDAs udas)</div></dt><dd><div><p>Serialises a non-string array into a single row. To be used when serialising
+    an aggregate with <a class="xref" href="lu.serialisation.serialise.2.html">serialise</a>.</p></div></dd><dt><a href="lu.serialisation.splitEntryValue.html">splitEntryValue</a><div class="simplified-prototype" style="max-width: 37ch;"><span class="lang-feature">auto</span>  <span class="name">splitEntryValue</span>(string line)</div></dt><dd><div><p>Splits a line into an entry and a value component.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="struct"><a class="header-anchor" href="#struct">Structs</a></h3><dl class="member-list native"><dt><a href="lu.serialisation.SerialisationUDAs.html">SerialisationUDAs</a><div class="simplified-prototype" style="max-width: 26ch;"><span class="builtin-type">struct</span> <span class="name">SerialisationUDAs</span></div></dt><dd><div><p>Summary of UDAs that an array to be serialised is annotated with.</p></div></dd></dl><div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">struct</span> <span class="hid">FooSettings</span>
+{
+    <span class="type">string</span> <span class="hid">fooasdf</span>;
+    <span class="type">string</span> <span class="hid">bar</span>;
+    <span class="type">string</span> <span class="hid">bazzzzzzz</span>;
+    @<span class="hid">Quoted</span> <span class="hid">flerrp</span>;
+    <span class="type">double</span> <span class="hid">pi</span>;
+}
+
+<span class="hid">FooSettings</span> <span class="hid">f</span>;
+
+<span class="hid">f</span>.<span class="hid">fooasdf</span> = <span class="str">&quot;foo&quot;</span>;
+<span class="hid">f</span>.<span class="hid">bar</span> = <span class="str">&quot;bar&quot;</span>;
+<span class="hid">f</span>.<span class="hid">bazzzzzzz</span> = <span class="str">&quot;baz&quot;</span>;
+<span class="hid">f</span>.<span class="hid">flerrp</span> = <span class="str">&quot;hirr steff  &quot;</span>;
+<span class="hid">f</span>.<span class="hid">pi</span> = <span class="num">3.14159</span>;
+
+<span class="kwrd">enum</span> <span class="hid">fooSerialised</span> =
+<span class="str">`[Foo]
+fooasdf foo
+bar bar
+bazzzzzzz baz
+flerrp &quot;hirr steff  &quot;
+pi 3.14159`</span>;
+
+<span class="kwrd">enum</span> <span class="hid">fooJustified</span> =
+<span class="str">`[Foo]
+fooasdf                 foo
+bar                     bar
+bazzzzzzz               baz
+flerrp                  &quot;hirr steff  &quot;
+pi                      3.14159`</span>;
+
+<span class="hid">Appender</span>!(<span class="type">char</span>[]) <span class="hid">sink</span>;
+
+<span class="hid">sink</span>.<span class="hid">serialise</span>(<span class="hid">f</span>);
+<span class="kwrd">assert</span>(<span class="hid">sink</span>[].<span class="hid">justifiedEntryValueText</span> == <span class="hid">fooJustified</span>);
+
+<span class="hid">FooSettings</span> <span class="hid">mirror</span>;
+<span class="hid">deserialise</span>(<span class="hid">fooSerialised</span>, <span class="hid">mirror</span>);
+<span class="kwrd">assert</span>(<span class="hid">mirror</span> == <span class="hid">f</span>);
+
+<span class="hid">FooSettings</span> <span class="hid">mirror2</span>;
+<span class="hid">deserialise</span>(<span class="hid">fooJustified</span>, <span class="hid">mirror2</span>);
+<span class="kwrd">assert</span>(<span class="hid">mirror2</span> == <span class="hid">mirror</span>);</pre></div></div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module" href="lu.array.html">array</a></li><li><a class="module" href="lu.assert_.html">assert_</a></li><li><a class="module" href="lu.common.html">common</a></li><li><a class="module" href="lu.container.html">container</a></li><li><a class="module" href="lu.conv.html">conv</a></li><li><a class="module" href="lu.deltastrings.html">deltastrings</a></li><li><a class="module" href="lu.json.html">json</a></li><li><a class="module" href="lu.meld.html">meld</a></li><li><a class="module" href="lu.misc.html">misc</a></li><li><a class="module" href="lu.numeric.html">numeric</a></li><li><a class="module" href="lu.objmanip.html">objmanip</a></li><li><a class="module" href="lu.semver.html">semver</a></li><li><a class="module current" href="lu.serialisation.html">serialisation</a></li><li><a class="module" href="lu.string.html">string</a></li><li><a class="module" href="lu.traits.html">traits</a></li><li><a class="module" href="lu.typecons.html">typecons</a></li><li><a class="module" href="lu.uda.html">uda</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
