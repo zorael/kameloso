@@ -1684,6 +1684,12 @@ void initResources(TimerPlugin plugin)
 
     immutable content = plugin.timerFile.readText();
 
+    if (!content.length)
+    {
+        File(plugin.timerFile, "w").writeln("{}");
+        return;
+    }
+
     version(PrintStacktraces)
     {
         scope(failure)

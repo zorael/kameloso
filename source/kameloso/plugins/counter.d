@@ -905,6 +905,12 @@ void initResources(CounterPlugin plugin)
 
     immutable content = plugin.countersFile.readText();
 
+    if (!content.length)
+    {
+        File(plugin.countersFile, "w").writeln("{}");
+        return;
+    }
+
     version(PrintStacktraces)
     {
         scope(failure)

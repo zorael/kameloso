@@ -1170,6 +1170,12 @@ void initResources(SeenPlugin plugin)
 
     immutable content = plugin.seenFile.readText();
 
+    if (!content.length)
+    {
+        File(plugin.seenFile, "w").writeln("{}");
+        return;
+    }
+
     version(PrintStacktraces)
     {
         scope(failure)

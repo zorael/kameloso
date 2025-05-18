@@ -1367,6 +1367,12 @@ void initAccountResources(PersistenceService service)
 
     immutable content = service.userFile.readText();
 
+    if (!content.length)
+    {
+        File(service.userFile, "w").writeln("{}");
+        return;
+    }
+
     version(PrintStacktraces)
     {
         scope(failure)

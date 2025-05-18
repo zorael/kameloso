@@ -610,6 +610,12 @@ void initResources(NotePlugin plugin)
 
     immutable content = plugin.notesFile.readText();
 
+    if (!content.length)
+    {
+        File(plugin.notesFile, "w").writeln("{}");
+        return;
+    }
+
     version(PrintStacktraces)
     {
         scope(failure)

@@ -561,6 +561,12 @@ void initResources(TimePlugin plugin)
 
     immutable content = plugin.timezonesFile.readText();
 
+    if (!content.length)
+    {
+        File(plugin.timezonesFile, "w").writeln("{}");
+        return;
+    }
+
     version(PrintStacktraces)
     {
         scope(failure)

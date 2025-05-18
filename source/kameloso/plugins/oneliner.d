@@ -1502,6 +1502,12 @@ void initResources(OnelinerPlugin plugin)
 
     immutable content = plugin.onelinerFile.readText();
 
+    if (!content.length)
+    {
+        File(plugin.onelinerFile, "w").writeln("{}");
+        return;
+    }
+
     version(PrintStacktraces)
     {
         scope(failure)

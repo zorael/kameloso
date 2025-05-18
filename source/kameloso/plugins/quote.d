@@ -1520,6 +1520,12 @@ void initResources(QuotePlugin plugin)
 
     immutable content = plugin.quotesFile.readText();
 
+    if (!content.length)
+    {
+        File(plugin.quotesFile, "w").writeln("{}");
+        return;
+    }
+
     version(PrintStacktraces)
     {
         scope(failure)

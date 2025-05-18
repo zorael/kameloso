@@ -76,6 +76,12 @@ void initResources(AutomodePlugin plugin)
 
     immutable content = plugin.automodeFile.readText();
 
+    if (!content.length)
+    {
+        File(plugin.automodeFile, "w").writeln("{}");
+        return;
+    }
+
     version(PrintStacktraces)
     {
         scope(failure)
