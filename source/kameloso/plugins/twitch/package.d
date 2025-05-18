@@ -4616,6 +4616,19 @@ void initResources(TwitchPlugin plugin)
     {
         immutable content = filename.readText();
 
+        if (!content.length)
+        {
+            static if (isArray!T)
+            {
+                File(filename, "w").writeln("[]");
+            }
+            else
+            {
+                File(filename, "w").writeln("{}");
+            }
+            return;
+        }
+
         version(PrintStacktraces)
         {
             scope(failure)
