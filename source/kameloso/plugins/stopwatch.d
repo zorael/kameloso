@@ -292,6 +292,59 @@ void onWelcome(StopwatchPlugin plugin, const IRCEvent _)
 }
 
 
+// initResources
+/++
+    Initialises the temporary file for the stopwatches.
+ +/
+void initResources(StopwatchPlugin plugin)
+{
+    import asdf.serialization : deserialize;
+    import mir.serde : SerdeException;
+    import std.file : readText;
+    import std.json : JSONValue;
+    import std.stdio : File;
+
+    immutable content = plugin.stopwatchTempFile.readText();
+
+    if (!content.length)
+    {
+        File(plugin.stopwatchTempFile, "w").writeln("{}");
+        return;
+    }
+
+    version(PrintStacktraces)
+    {
+        scope(failure)
+        {
+            import std.json : parseJSON;
+            import std.stdio : writeln;
+
+            writeln(content);
+            try writeln(content.parseJSON.toPrettyString);
+            catch (Exception _) {}
+        }
+    }
+
+    try
+    {
+        const deserialised = content.deserialize!(long[string][string]);
+        immutable serialised = JSONValue(deserialised).toPrettyString;
+        File(plugin.stopwatchTempFile, "w").writeln(serialised);
+    }
+    catch (SerdeException e)
+    {
+        import kameloso.common : logger;
+
+        version(PrintStacktraces) logger.trace(e);
+
+        throw new IRCPluginInitialisationException(
+            message: "StopWatch temporary file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: plugin.stopwatchTempFile);
+    }
+}
+
+
 // teardown
 /++
     Tears down the [StopwatchPlugin], serialising any ongoing stopwatches to file,
