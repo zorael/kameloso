@@ -123,7 +123,7 @@ void listList(
         }
     }
 
-    const json = content.deserialize!(string[string][string]);
+    const json = content.deserialize!(string[][string][string]);
 
     const channelUsers = channelName in json[list];
 
