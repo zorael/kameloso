@@ -1074,7 +1074,7 @@ package:
     /++
         Where to save logs.
      +/
-    @Resource string logDirectory = "logs";
+    @Resource("logs") string logDirectory;
 
     /++
         [dialect.defs.IRCEvent.Type|IRCEvent.Type]s to exclude from printing.
