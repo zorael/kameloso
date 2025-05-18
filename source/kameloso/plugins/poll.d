@@ -1021,6 +1021,53 @@ void onSelfpart(PollPlugin plugin, const IRCEvent event)
 }
 
 
+// initResources
+/++
+    Initialises the temporary file used to store ongoing polls.
+ +/
+void initResources(PollPlugin plugin)
+{
+    import asdf.serialization : deserialize;
+    import mir.serde : SerdeException;
+    import std.file : readText;
+    import std.json : JSONValue;
+    import std.stdio : File;
+
+    immutable content = plugin.pollTempFile.readText();
+
+    if (!content.length)
+    {
+        File(plugin.pollTempFile, "w").writeln("{}");
+        return;
+    }
+
+    try
+    {
+        auto deserialised = content.deserialize!(Poll.JSONSchema[string]);  // mustn't be const
+
+        JSONValue json;
+        json.object = null;
+
+        foreach (immutable channelName, /*const*/ poll; deserialised)
+        {
+            json[channelName] = poll.asJSONValue;
+        }
+
+        immutable serialised = json.toPrettyString;
+        File(plugin.pollTempFile, "w").writeln(serialised);
+    }
+    catch (SerdeException e)
+    {
+        version(PrintStacktraces) logger.trace(e);
+
+        throw new IRCPluginInitialisationException(
+            message: "Poll temporary file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: plugin.pollTempFile);
+    }
+}
+
+
 // teardown
 /++
     Tears down the [PollPlugin], serialising any ongoing [Poll]s to file, so they
