@@ -1424,12 +1424,18 @@ void initAccountResources(PersistenceService service)
 void initHostmaskResources(PersistenceService service)
 {
     import asdf.serialization : deserialize;
+    import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File;
 
     immutable content = service.hostmasksFile.readText();
-    string[string] json;
+
+    if (!content.length)
+    {
+        File(service.hostmasksFile, "w").writeln("{}");
+        return;
+    }
 
     version(PrintStacktraces)
     {
@@ -1446,12 +1452,31 @@ void initHostmaskResources(PersistenceService service)
 
     try
     {
-        json = content.deserialize!(typeof(json));
-    }
-    catch (Exception e)
-    {
-        import kameloso.common : logger;
+        auto json = content.deserialize!(string[string]);
 
+        alias examplePlaceholderKey1 = PersistenceService.Placeholder.hostmask1;
+        alias examplePlaceholderKey2 = PersistenceService.Placeholder.hostmask2;
+        alias examplePlaceholderValue1 = PersistenceService.Placeholder.account1;
+        alias examplePlaceholderValue2 = PersistenceService.Placeholder.account2;
+
+        if (json.length == 0)
+        {
+            json[examplePlaceholderKey1] = examplePlaceholderValue1;
+            json[examplePlaceholderKey2] = examplePlaceholderValue2;
+        }
+        else if ((json.length > 2) &&
+            ((examplePlaceholderKey1 in json) ||
+            (examplePlaceholderKey2 in json)))
+        {
+            json.remove(examplePlaceholderKey1);
+            json.remove(examplePlaceholderKey2);
+        }
+
+        immutable serialised = JSONValue(json).toPrettyString;
+        File(service.hostmasksFile, "w").writeln(serialised);
+    }
+    catch (SerdeException e)
+    {
         version(PrintStacktraces) logger.trace(e);
 
         throw new IRCPluginInitialisationException(
@@ -1459,27 +1484,6 @@ void initHostmaskResources(PersistenceService service)
             pluginName: service.name,
             malformedFilename: service.hostmasksFile);
     }
-
-    alias examplePlaceholderKey1 = PersistenceService.Placeholder.hostmask1;
-    alias examplePlaceholderKey2 = PersistenceService.Placeholder.hostmask2;
-    alias examplePlaceholderValue1 = PersistenceService.Placeholder.account1;
-    alias examplePlaceholderValue2 = PersistenceService.Placeholder.account2;
-
-    if (json.length == 0)
-    {
-        json[examplePlaceholderKey1] = examplePlaceholderValue1;
-        json[examplePlaceholderKey2] = examplePlaceholderValue2;
-    }
-    else if ((json.length > 2) &&
-        ((examplePlaceholderKey1 in json) ||
-         (examplePlaceholderKey2 in json)))
-    {
-        json.remove(examplePlaceholderKey1);
-        json.remove(examplePlaceholderKey2);
-    }
-
-    immutable serialised = JSONValue(json).toPrettyString;
-    File(service.hostmasksFile, "w").writeln(serialised);
 }
 
 
