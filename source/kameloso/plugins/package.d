@@ -1536,17 +1536,21 @@ mixin template IRCPluginImpl(
                             this.tupleof[i]);
                     }
 
-                    if (initValue.length)
-                    {
-                        // File
-                        ensureFileExists(this.tupleof[i]);
-                    }
+                    version(unittest) {}
                     else
                     {
-                        import std.file : mkdirRecurse;
+                        if (initValue.length)
+                        {
+                            // File
+                            ensureFileExists(this.tupleof[i]);
+                        }
+                        else
+                        {
+                            import std.file : mkdirRecurse;
 
-                        // Directory
-                        mkdirRecurse(this.tupleof[i]);
+                            // Directory
+                            mkdirRecurse(this.tupleof[i]);
+                        }
                     }
                 }
                 else
@@ -1575,17 +1579,21 @@ mixin template IRCPluginImpl(
                                 this.tupleof[i]);
                         }
 
-                        if (initValue.length)
-                        {
-                            // File
-                            ensureFileExists(this.tupleof[i]);
-                        }
+                        version(unittest) {}
                         else
                         {
-                            import std.file : mkdirRecurse;
+                            if (initValue.length)
+                            {
+                                // File
+                                ensureFileExists(this.tupleof[i]);
+                            }
+                            else
+                            {
+                                import std.file : mkdirRecurse;
 
-                            // Directory
-                            mkdirRecurse(this.tupleof[i]);
+                                // Directory
+                                mkdirRecurse(this.tupleof[i]);
+                            }
                         }
                     }
                 }
