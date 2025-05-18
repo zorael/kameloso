@@ -1466,18 +1466,13 @@ mixin template IRCPluginImpl(
         static void ensureFileExists(const string filename)
         {
             import std.file : exists, mkdirRecurse;
-            import std.path : dirName, extension;
-            import std.stdio : File, writeln;
+            import std.path : dirName;
+            import std.stdio : File;
 
             if (!filename.exists)
             {
                 mkdirRecurse(filename.dirName);
-
-                immutable emptyContents = (filename.extension == ".json") ?
-                    "{}" :
-                    string.init;
-
-                File(filename, "w").write(emptyContents);
+                File(filename, "w").writeln();
             }
         }
 
