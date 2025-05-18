@@ -1472,7 +1472,7 @@ mixin template IRCPluginImpl(
             if (!filename.exists)
             {
                 mkdirRecurse(filename.dirName);
-                File(filename, "w").writeln();
+                File(filename, "w").write(string.init);
             }
         }
 
