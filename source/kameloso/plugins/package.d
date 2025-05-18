@@ -1517,6 +1517,8 @@ mixin template IRCPluginImpl(
                 {
                     import std.path : buildNormalizedPath;
 
+                    const initValue = this.tupleof[i];
+
                     alias attrs = __traits(getAttributes, this.tupleof[i]);
                     static if (is(typeof(attrs[resourceUDAIndex])))
                     {
@@ -1534,7 +1536,18 @@ mixin template IRCPluginImpl(
                             this.tupleof[i]);
                     }
 
-                    ensureFileExists(this.tupleof[i]);
+                    if (initValue.length)
+                    {
+                        // File
+                        ensureFileExists(this.tupleof[i]);
+                    }
+                    else
+                    {
+                        import std.file : mkdirRecurse;
+
+                        // Directory
+                        mkdirRecurse(this.tupleof[i]);
+                    }
                 }
                 else
                 {
@@ -1542,6 +1555,8 @@ mixin template IRCPluginImpl(
                     static if (configurationUDAIndex != -1)
                     {
                         import std.path : buildNormalizedPath;
+
+                        const initValue = this.tupleof[i];
 
                         alias attrs = __traits(getAttributes, this.tupleof[i]);
                         static if (is(typeof(attrs[configurationUDAIndex])))
@@ -1560,7 +1575,18 @@ mixin template IRCPluginImpl(
                                 this.tupleof[i]);
                         }
 
-                        ensureFileExists(this.tupleof[i]);
+                        if (initValue.length)
+                        {
+                            // File
+                            ensureFileExists(this.tupleof[i]);
+                        }
+                        else
+                        {
+                            import std.file : mkdirRecurse;
+
+                            // Directory
+                            mkdirRecurse(this.tupleof[i]);
+                        }
                     }
                 }
             }
