@@ -2185,6 +2185,73 @@ void onBusMessage(
 }
 
 
+// initResources
+/++
+    Initialises the hostmasks and user files.
+
+    Persistence may have already initialised them, but do it anyway in case we
+    ever change the order of initialisation.
+ +/
+void initResources(AdminPlugin plugin)
+{
+    import asdf.serialization : deserialize;
+    import mir.serde : SerdeException;
+    import std.file : readText;
+    import std.json : JSONValue;
+    import std.stdio : File;
+
+    void readAndWriteBack(T)
+        (const string filename,
+        const string fileDescription)
+    {
+        immutable content = filename.readText();
+
+        if (!content.length)
+        {
+            File(filename, "w").writeln("{}");
+            return;
+        }
+
+        version(PrintStacktraces)
+        {
+            scope(failure)
+            {
+                import std.json : parseJSON;
+                import std.stdio : writeln;
+
+                writeln(content);
+                try writeln(content.parseJSON.toPrettyString);
+                catch (Exception _) {}
+            }
+        }
+
+        try
+        {
+            const deserialised = content.deserialize!T;
+            immutable serialised = JSONValue(deserialised).toPrettyString;
+            File(filename, "w").writeln(serialised);
+        }
+        catch (SerdeException e)
+        {
+            version(PrintStacktraces) logger.trace(e);
+
+            throw new IRCPluginInitialisationException(
+            message: fileDescription ~ " file is malformed",
+            pluginName: plugin.name,
+            malformedFilename: filename);
+        }
+    }
+
+    readAndWriteBack!(string[string])
+        (plugin.hostmasksFile,
+        "Hostmasks");
+
+    readAndWriteBack!(string[][string][string])
+        (plugin.userFile,
+        "User");
+}
+
+
 // selftest
 /++
     Performs self-tests against another bot.
