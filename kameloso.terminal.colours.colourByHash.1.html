@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>colourByHash (kameloso.terminal.colours.colourByHash)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>colourByHash</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.terminal.html">terminal</a> <a class="breadcrumb" href="kameloso.terminal.colours.html">colours</a> </div><div><div class="documentation-comment synopsis"><div><p>Shorthand function to colour a passed word by the hash of it.</p></div></div></div><div class="annotated-prototype"><ol class="overloads"><li class="active-overload-option"><span class="overload-signature"><span class="lang-feature">auto</span>  <span class="name">colourByHash</span>(string word, bool brightTerminal, bool extendedColours)</span><div class="function-prototype"><div class="attributes"><div class="versions-container">version(Colours)</div>pure @<span class="name" data-ident="safe">safe</span> nothrow </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">colourByHash</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="word"><a href="#param-word">word</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="brightTerminal"><a href="#param-brightTerminal">brightTerminal</a></span><span class="parameter-default-value">&#160;=&#160;<span class="name" data-ident="CoreSettings">CoreSettings.init.brightTerminal</span></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="extendedColours"><a href="#param-extendedColours">extendedColours</a></span><span class="parameter-default-value">&#160;=&#160;<span class="name" data-ident="CoreSettings">CoreSettings.init.extendedColours</span></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></li><li class="overload-option"><a href="kameloso.terminal.colours.colourByHash.2.html"><span class="overload-signature"><span class="lang-feature">auto</span>  <span class="name">colourByHash</span>(string word, CoreSettings coreSettings)</span></a></li></ol></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-word"><a class="parameter-name" data-ident="word" href="#param-word">word</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>String to colour.</p></div></div></dd><dt id="param-brightTerminal"><a class="parameter-name" data-ident="brightTerminal" href="#param-brightTerminal">brightTerminal</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether the terminal has a bright background or not.</p></div></div></dd><dt id="param-extendedColours"><a class="parameter-name" data-ident="extendedColours" href="#param-extendedColours">extendedColours</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether to use extended colours beyond the normal ANSI.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p><tt class="inline-code">word</tt>, now in colour based on the hash of its contents.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">conv</span> : <span class="hid">to</span>;
+
+{
+    <span class="kwrd">immutable</span> <span class="hid">coloured</span> = <span class="str">&quot;kameloso&quot;</span>.<span class="hid">colourByHash</span>(<span class="hid">brightTerminal</span>: <span class="kwrd">false</span>, <span class="hid">extendedColours</span>: <span class="kwrd">true</span>);
+    <span class="kwrd">assert</span>((<span class="hid">coloured</span> == <span class="str">&quot;\033[38;5;227mkameloso\033[0m&quot;</span>), <span class="hid">coloured</span>);
+}
+{
+    <span class="kwrd">immutable</span> <span class="hid">coloured</span> = <span class="str">&quot;kameloso&quot;</span>.<span class="hid">colourByHash</span>(<span class="hid">extendedColours</span>: <span class="kwrd">true</span>, <span class="hid">brightTerminal</span>: <span class="kwrd">true</span>);
+    <span class="kwrd">assert</span>((<span class="hid">coloured</span> == <span class="str">&quot;\033[38;5;222mkameloso\033[0m&quot;</span>), <span class="hid">coloured</span>);
+}
+{
+    <span class="kwrd">immutable</span> <span class="hid">coloured</span> = <span class="str">&quot;kameloso&quot;</span>.<span class="hid">colourByHash</span>(<span class="hid">brightTerminal</span>: <span class="kwrd">true</span>);
+    <span class="kwrd">assert</span>((<span class="hid">coloured</span> == <span class="str">&quot;\033[38;5;222mkameloso\033[0m&quot;</span>), <span class="hid">coloured</span>);
+}
+{
+    <span class="kwrd">immutable</span> <span class="hid">coloured</span> = <span class="str">&quot;zorael&quot;</span>.<span class="hid">colourByHash</span>(<span class="hid">extendedColours</span>: <span class="kwrd">true</span>);
+    <span class="kwrd">assert</span>((<span class="hid">coloured</span> == <span class="str">&quot;\033[35mzorael\033[0m&quot;</span>), <span class="hid">coloured</span>);
+}
+{
+    <span class="kwrd">immutable</span> <span class="hid">coloured</span> = <span class="str">&quot;zorael&quot;</span>.<span class="hid">colourByHash</span>(<span class="hid">extendedColours</span>: <span class="kwrd">true</span>);
+    <span class="kwrd">assert</span>((<span class="hid">coloured</span> == <span class="str">&quot;\033[35mzorael\033[0m&quot;</span>), <span class="hid">coloured</span>);
+}
+{
+    <span class="kwrd">immutable</span> <span class="hid">coloured</span> = <span class="str">&quot;NO&quot;</span>.<span class="hid">colourByHash</span>(<span class="hid">extendedColours</span>: <span class="kwrd">true</span>);
+    <span class="kwrd">assert</span>((<span class="hid">coloured</span> == <span class="str">&quot;\033[90mNO\033[0m&quot;</span>), <span class="hid">coloured</span>);
+}</pre></div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="kameloso.terminal.colours.getColourByHash.2.html">getColourByHash</a></p><p><a class="xref" href="kameloso.terminal.colours.getColourByHashImpl.html">getColourByHashImpl</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.terminal.html">terminal</a> <a class="parent" href="kameloso.terminal.colours.html">colours</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module" href="kameloso.terminal.colours.defs.html">defs</a></li><li><a class="module" href="kameloso.terminal.colours.tags.html">tags</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.terminal.colours.applyANSI.html">applyANSI</a></li><li><a class="function" href="kameloso.terminal.colours.applyTruecolour.html">applyTruecolour</a></li><li><a class="function" href="kameloso.terminal.colours.asANSI.html">asANSI</a></li><li><a class="function" href="kameloso.terminal.colours.asTruecolour.html">asTruecolour</a></li><li><a class="function current" href="kameloso.terminal.colours.colourByHash.1.html">colourByHash</a></li><li><a class="function" href="kameloso.terminal.colours.getColourByHash.1.html">getColourByHash</a></li><li><a class="function" href="kameloso.terminal.colours.getColourByHashImpl.html">getColourByHashImpl</a></li><li><a class="function" href="kameloso.terminal.colours.invert.html">invert</a></li><li><a class="function" href="kameloso.terminal.colours.normaliseColours.html">normaliseColours</a></li><li><a class="function" href="kameloso.terminal.colours.normaliseColoursBright.html">normaliseColoursBright</a></li><li><a class="function" href="kameloso.terminal.colours.withANSI.html">withANSI</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

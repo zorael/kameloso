@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>carryingFiber (kameloso.thread.carryingFiber)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>carryingFiber</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.thread.html">thread</a> </div><div><div class="documentation-comment synopsis"><div><p>Convenience function creating a new <a class="xref" href="kameloso.thread.CarryingFiber.html">CarryingFiber</a> while inferring the payload
+    type <tt class="inline-code">T</tt> from the passed <tt class="inline-code">payload</tt> argument.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"></div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">carryingFiber</div><div class="template-parameters" data-count="3">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="T">T</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="FnOrDg">FnOrDg</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Args">Args</span>...</span></div></div>)</div><div class="runtime-parameters" data-count="4"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="name" data-ident="FnOrDg">FnOrDg</span></span></span> <span class="parameter-name name" data-ident="fnOrDg"><a href="#param-fnOrDg">fnOrDg</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="name" data-ident="T">T</span></span></span> <span class="parameter-name name" data-ident="payload"><a href="#param-payload">payload</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="name" data-ident="Args">Args</span></span></span> <span class="parameter-name name" data-ident="args"><a href="#param-args">args</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="caller"><a href="#param-caller">caller</a></span><span class="parameter-default-value">&#160;=&#160;__FUNCTION__</span></div><span class="paren">)</span></div></div><div class="template-constraint"> <a class="lang-feature" href="http://dpldocs.info/template-constraints">if</a> (<div class="template-constraint-expression"><div class="andand-left"><span class="name" data-ident="isSomeFunction">isSomeFunction</span>!<span class="name" data-ident="FnOrDg">FnOrDg</span> &amp;&amp; </div><div class="andand-right"><span class="parenthetical-expression">(<span class="parenthetical-expression-contents"><div class="oror-left">!<span class="name" data-ident="Args">Args.length</span> || </div><div class="oror-right"><span class="name" data-ident="allSatisfy">allSatisfy</span>!(<span class="name" data-ident="isNumeric">isNumeric</span>, <span class="name" data-ident="Args">Args</span>)</div></span>)</span></div></div>)</div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-T"><a class="parameter-name" data-ident="T" href="#param-T">T</a></dt><dd><div class="documentation-comment"><div><p>Type to embed into the class as the type of <a class="xref" href="kameloso.thread.CarryingFiber.payload.html">CarryingFiber.payload</a>.</p></div></div></dd><dt id="param-fnOrDg"><a class="parameter-name" data-ident="fnOrDg" href="#param-fnOrDg">fnOrDg</a> <span class="parameter-type"><span class="name" data-ident="FnOrDg">FnOrDg</span></span></dt><dd><div class="documentation-comment"><div><p>Function/delegate pointer to call when invoking the resulting <a class="xref" href="kameloso.thread.CarryingFiber.html">CarryingFiber</a>.</p></div></div></dd><dt id="param-payload"><a class="parameter-name" data-ident="payload" href="#param-payload">payload</a> <span class="parameter-type"><span class="name" data-ident="T">T</span></span></dt><dd><div class="documentation-comment"><div><p>Payload to assign to the <a class="xref" href="kameloso.thread.CarryingFiber.payload.html">payload</a> member
+            of the resulting <a class="xref" href="kameloso.thread.CarryingFiber.html">CarryingFiber</a>.</p></div></div></dd><dt id="param-args"><a class="parameter-name" data-ident="args" href="#param-args">args</a> <span class="parameter-type"><span class="name" data-ident="Args">Args</span></span></dt><dd><div class="documentation-comment"><div><p>Arguments to pass to the <a class="xref" href="core.thread.fiber.Fiber.html">Fiber</a> <tt class="inline-code">super</tt>
+            constructor. If empty, its default arguments are used.</p></div></div></dd><dt id="param-caller"><a class="parameter-name" data-ident="caller" href="#param-caller">caller</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>String name of the calling function creating the resulting <a class="xref" href="kameloso.thread.CarryingFiber.html">CarryingFiber</a>.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>A <a class="xref" href="kameloso.thread.CarryingFiber.html">CarryingFiber</a> with an automatically-inferred template parameter <tt class="inline-code">T</tt>,
+        whose <a class="xref" href="kameloso.thread.CarryingFiber.payload.html">payload</a> is set to the passed <tt class="inline-code">payload</tt>.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">kameloso</span>.<span class="hid">constants</span> : <span class="hid">BufferSize</span>;
+
+<span class="kwrd">static</span> <span class="kwrd">struct</span> <span class="hid">Payload</span>
+{
+    <span class="type">string</span> <span class="hid">s</span>;
+    <span class="type">int</span> <span class="hid">i</span>;
+}
+
+<span class="type">void</span> <span class="hid">dg</span>() {}
+
+<span class="hid">Payload</span> <span class="hid">payload</span>;
+<span class="hid">payload</span>.<span class="hid">s</span> = <span class="str">&quot;Hello&quot;</span>;
+<span class="hid">payload</span>.<span class="hid">i</span> = <span class="num">42</span>;
+
+<span class="kwrd">auto</span> <span class="hid">fiber</span> = <span class="hid">carryingFiber</span>(&amp;<span class="hid">dg</span>, <span class="hid">payload</span>, <span class="hid">BufferSize</span>.<span class="hid">fiberStack</span>);
+<span class="kwrd">assert</span>(<span class="hid">fiber</span>.<span class="hid">payload</span> == <span class="hid">payload</span>);
+<span class="hid">fiber</span>.<span class="hid">call</span>();
+<span class="kwrd">assert</span>(<span class="hid">fiber</span>.<span class="hid">called</span> == <span class="num">1</span>);</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.thread.html">thread</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.thread.Boxed.html">Boxed</a></li><li><a class="class" href="kameloso.thread.CarryingFiber.html">CarryingFiber</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.thread.boxed.html">boxed</a></li><li><a class="function current" href="kameloso.thread.carryingFiber.html">carryingFiber</a></li><li><a class="function" href="kameloso.thread.getQuitMessage.html">getQuitMessage</a></li><li><a class="function" href="kameloso.thread.interruptibleSleep.html">interruptibleSleep</a></li><li><a class="function" href="kameloso.thread.pthread_setname_np.html">pthread_setname_np</a></li><li><a class="function" href="kameloso.thread.setThreadName.html">setThreadName</a></li></ul><span class="type-separator">interfaces</span><ul><li><a class="interface" href="kameloso.thread.Sendable.html">Sendable</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.thread.ScheduledDelegate.html">ScheduledDelegate</a></li><li><a class="struct" href="kameloso.thread.ScheduledFiber.html">ScheduledFiber</a></li><li><a class="struct" href="kameloso.thread.ThreadMessage.html">ThreadMessage</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

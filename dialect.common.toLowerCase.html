@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>toLowerCase (dialect.common.toLowerCase)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>toLowerCase</h1><div class="breadcrumbs"><a class="breadcrumb" href="dialect.html">dialect</a> <a class="breadcrumb" href="dialect.common.html">common</a> </div><div><div class="documentation-comment synopsis"><div><p>Produces the passed string in lowercase as per the supplied case mappings.</p><p>This function is <tt class="inline-code">@trusted</tt> to be able to cast the internal <tt class="inline-code">output</tt> char
+    array to string. <a class="xref" href="std.array.Appender.html">Appender</a> does this with its
+    <a class="xref" href="std.array.Appender.opSlice.html">opSlice</a> method.</p><pre class="d_code highlighted">@<span class="hid">property</span> <span class="kwrd">inout</span>(<span class="hid">ElementEncodingType</span>!<span class="hid">A</span>)[] <span class="hid">opSlice</span>() <span class="kwrd">inout</span> @<span class="hid">trusted</span> <span class="kwrd">pure</span> <span class="kwrd">nothrow</span>
+{
+     <span class="com">/* @trusted operation:
+      * casting Unqual!T[] to inout(T)[]
+      */</span>
+     <span class="kwrd">return</span> <span class="kwrd">cast</span>(<span class="kwrd">typeof</span>(<span class="kwrd">return</span>))(<span class="hid">_data</span> ? <span class="hid">_data</span>.<span class="hid">arr</span> : <span class="kwrd">null</span>);
+}</pre><p>So just do the same.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">pure nothrow @<span class="name" data-ident="trusted">trusted</span> </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">toLowerCase</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="name"><a href="#param-name">name</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <a class="name" data-ident="IRCServer" href="dialect.defs.IRCServer.CaseMapping.html" title="dialect.defs.IRCServer.CaseMapping">IRCServer.CaseMapping</a></span></span> <span class="parameter-name name" data-ident="caseMapping"><a href="#param-caseMapping">caseMapping</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-name"><a class="parameter-name" data-ident="name" href="#param-name">name</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>String to parse into lowercase.</p></div></div></dd><dt id="param-caseMapping"><a class="parameter-name" data-ident="caseMapping" href="#param-caseMapping">caseMapping</a> <span class="parameter-type"><a class="xref" href="dialect.defs.IRCServer.CaseMapping.html" title="dialect.defs.IRCServer.CaseMapping"><span class="name" data-ident="IRCServer">IRCServer</span>.<span class="name" data-ident="CaseMapping">CaseMapping</span></a></span></dt><dd><div class="documentation-comment"><div><p>Server case mapping; maps uppercase to lowercase characters.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>The passed <tt class="inline-code">name</tt> string with uppercase characters replaced as per
+        the case mappings.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="hid">IRCServer</span>.<span class="hid">CaseMapping</span> <span class="hid">m</span> = <span class="hid">IRCServer</span>.<span class="hid">CaseMapping</span>.<span class="hid">rfc1459</span>;
+
+{
+    <span class="kwrd">immutable</span> <span class="hid">before</span> = <span class="str">&quot;ABCDEF&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">lowercase</span> = <span class="hid">toLowerCase</span>(<span class="hid">before</span>, <span class="hid">m</span>);
+    <span class="kwrd">assert</span>((<span class="hid">lowercase</span> == <span class="str">&quot;abcdef&quot;</span>), <span class="hid">lowercase</span>);
+}
+{
+    <span class="kwrd">immutable</span> <span class="hid">before</span> = <span class="str">&quot;123&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">lowercase</span> = <span class="hid">toLowerCase</span>(<span class="hid">before</span>, <span class="hid">m</span>);
+    <span class="kwrd">assert</span>((<span class="hid">lowercase</span> == <span class="str">&quot;123&quot;</span>), <span class="hid">lowercase</span>);
+    <span class="kwrd">assert</span>(<span class="hid">before</span> <span class="kwrd">is</span> <span class="hid">lowercase</span>);
+    <span class="kwrd">assert</span>(<span class="hid">before</span>.<span class="hid">ptr</span> == <span class="hid">lowercase</span>.<span class="hid">ptr</span>);
+}
+{
+    <span class="kwrd">immutable</span> <span class="hid">lowercase</span> = <span class="hid">toLowerCase</span>(<span class="str">&quot;^[0v0]^&quot;</span>, <span class="hid">m</span>);
+    <span class="kwrd">assert</span>((<span class="hid">lowercase</span> == <span class="str">&quot;~{0v0}~&quot;</span>), <span class="hid">lowercase</span>);
+}
+{
+    <span class="kwrd">immutable</span> <span class="hid">lowercase</span> = <span class="hid">toLowerCase</span>(<span class="str">`A|\|`</span>, <span class="hid">m</span>);
+    <span class="kwrd">assert</span>((<span class="hid">lowercase</span> == <span class="str">&quot;a|||&quot;</span>), <span class="hid">lowercase</span>);
+}
+
+<span class="hid">m</span> = <span class="hid">IRCServer</span>.<span class="hid">caseMapping</span>.<span class="hid">ascii</span>;
+
+{
+    <span class="kwrd">immutable</span> <span class="hid">before</span> = <span class="str">&quot;^[0v0]^&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">lowercase</span> = <span class="hid">toLowerCase</span>(<span class="hid">before</span>, <span class="hid">m</span>);
+    <span class="kwrd">assert</span>((<span class="hid">lowercase</span> == <span class="str">&quot;^[0v0]^&quot;</span>), <span class="hid">lowercase</span>);
+    <span class="kwrd">assert</span>(<span class="hid">before</span> <span class="kwrd">is</span> <span class="hid">lowercase</span>);
+    <span class="kwrd">assert</span>(<span class="hid">before</span>.<span class="hid">ptr</span> == <span class="hid">lowercase</span>.<span class="hid">ptr</span>);
+}
+{
+    <span class="kwrd">immutable</span> <span class="hid">lowercase</span> = <span class="hid">toLowerCase</span>(<span class="str">`A|\|`</span>, <span class="hid">m</span>);
+    <span class="kwrd">assert</span>((<span class="hid">lowercase</span> == <span class="str">`a|\|`</span>), <span class="hid">lowercase</span>);
+}
+
+<span class="hid">m</span> = <span class="hid">IRCServer</span>.<span class="hid">CaseMapping</span>.<span class="hid">strict_rfc1459</span>;
+
+{
+    <span class="kwrd">immutable</span> <span class="hid">lowercase</span> = <span class="hid">toLowerCase</span>(<span class="str">&quot;^[0v0]^&quot;</span>, <span class="hid">m</span>);
+    <span class="kwrd">assert</span>((<span class="hid">lowercase</span> == <span class="str">&quot;^{0v0}^&quot;</span>), <span class="hid">lowercase</span>);
+}</pre></div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="dialect.common.toLower.html">toLower</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="dialect.html">dialect</a> <a class="parent" href="dialect.common.html">common</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="dialect.common.IRCParseException.html">IRCParseException</a></li></ul><span class="type-separator">enums</span><ul><li><a class="enum" href="dialect.common.IRCControlCharacter.html">IRCControlCharacter</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="dialect.common.decodeIRCv3String.html">decodeIRCv3String</a></li><li><a class="function" href="dialect.common.isAuthService.html">isAuthService</a></li><li><a class="function" href="dialect.common.isUpper.html">isUpper</a></li><li><a class="function" href="dialect.common.isValidChannel.html">isValidChannel</a></li><li><a class="function" href="dialect.common.isValidHostmask.html">isValidHostmask</a></li><li><a class="function" href="dialect.common.isValidNickname.html">isValidNickname</a></li><li><a class="function" href="dialect.common.isValidNicknameCharacter.html">isValidNicknameCharacter</a></li><li><a class="function" href="dialect.common.matchesByMask.html">matchesByMask</a></li><li><a class="function" href="dialect.common.opEqualsCaseInsensitive.html">opEqualsCaseInsensitive</a></li><li><a class="function" href="dialect.common.setMode.html">setMode</a></li><li><a class="function" href="dialect.common.stripModesign.1.html">stripModesign</a></li><li><a class="function" href="dialect.common.toLower.html">toLower</a></li><li><a class="function current" href="dialect.common.toLowerCase.html">toLowerCase</a></li><li><a class="function" href="dialect.common.typenumsOf.html">typenumsOf</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

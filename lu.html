@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>lu (lu)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>lu</h1><div class="breadcrumbs"></div><div><div class="documentation-comment synopsis"><div><p><b>lu</b> is a general-purpose library for the D programming language.</p></div></div></div><div class="annotated-prototype"></div><h2 id="modules"><a class="header-anchor" href="#modules">Modules</a></h2><dl class="member-list native"><dt><a href="lu.array.html">array</a><div class="simplified-prototype" style="max-width: 16ch;"><span class="builtin-type">module</span> <span class="name">lu.array</span></div></dt><dd><div><p>Simple array utilities.</p></div></dd><dt><a href="lu.assert_.html">assert_</a><div class="simplified-prototype" style="max-width: 18ch;"><span class="builtin-type">module</span> <span class="name">lu.assert_</span></div></dt><dd><div><p>Assertion helpers.</p></div></dd><dt><a href="lu.common.html">common</a><div class="simplified-prototype" style="max-width: 17ch;"><span class="builtin-type">module</span> <span class="name">lu.common</span></div></dt><dd><div><p>Compatibility module publicly importing symbols from <a class="xref" href="lu.misc.html">lu.misc</a>.
+    Import symbols directly from <a class="xref" href="lu.misc.html">lu.misc</a> instead.</p></div></dd><dt><a href="lu.container.html">container</a><div class="simplified-prototype" style="max-width: 20ch;"><span class="builtin-type">module</span> <span class="name">lu.container</span></div></dt><dd><div><p>Containers of varying quality.</p></div></dd><dt><a href="lu.conv.html">conv</a><div class="simplified-prototype" style="max-width: 15ch;"><span class="builtin-type">module</span> <span class="name">lu.conv</span></div></dt><dd><div><p>This module contains functions that in one way or another converts its
+    arguments into something else.</p></div></dd><dt><a href="lu.deltastrings.html">deltastrings</a><div class="simplified-prototype" style="max-width: 24ch;"><span class="builtin-type">module</span> <span class="name">lu.deltastrings</span></div></dt><dd><div><p>Functions used to generate strings of statements describing the differences
+    (or delta) between two instances of a struct or class of the same type.
+    They can be either assignment statements or assert statements.</p></div></dd><dt><a href="lu.json.html">json</a><div class="simplified-prototype" style="max-width: 15ch;"><span class="builtin-type">module</span> <span class="name">lu.json</span></div></dt><dd><div><p>Simple wrappers around Phobos <a class="xref" href="std.json.html">std.json</a>. This is *not* a replacement for it.</p></div></dd><dt><a href="lu.meld.html">meld</a><div class="simplified-prototype" style="max-width: 15ch;"><span class="builtin-type">module</span> <span class="name">lu.meld</span></div></dt><dd><div><p>This module contains the <a class="xref" href="lu.meld.meldInto.3.html">meldInto</a> functions; functions that take two
+    structs or classes of the same type and combine them, creating a resulting
+    object with the union of the members of both parents. Array and associative
+    array variants exist too.</p></div></dd><dt><a href="lu.misc.html">misc</a><div class="simplified-prototype" style="max-width: 15ch;"><span class="builtin-type">module</span> <span class="name">lu.misc</span></div></dt><dd><div><p>Things that don't have a better home yet.</p></div></dd><dt><a href="lu.numeric.html">numeric</a><div class="simplified-prototype" style="max-width: 18ch;"><span class="builtin-type">module</span> <span class="name">lu.numeric</span></div></dt><dd><div><p>Functions and templates that do calculations or other numeric manipulation,
+    in some way or another.</p></div></dd><dt><a href="lu.objmanip.html">objmanip</a><div class="simplified-prototype" style="max-width: 19ch;"><span class="builtin-type">module</span> <span class="name">lu.objmanip</span></div></dt><dd><div><p>This module contains functions that in some way or another manipulates
+    struct and class instances, as well as (associative) arrays.</p></div></dd><dt><a href="lu.semver.html">semver</a><div class="simplified-prototype" style="max-width: 17ch;"><span class="builtin-type">module</span> <span class="name">lu.semver</span></div></dt><dd><div><p>SemVer information about the current release.</p></div></dd><dt><a href="lu.serialisation.html">serialisation</a><div class="simplified-prototype" style="max-width: 25ch;"><span class="builtin-type">module</span> <span class="name">lu.serialisation</span></div></dt><dd><div><p>Various functions related to serialising and deserialising structs into/from
+    configuration file-y files.</p></div></dd><dt><a href="lu.string.html">string</a><div class="simplified-prototype" style="max-width: 17ch;"><span class="builtin-type">module</span> <span class="name">lu.string</span></div></dt><dd><div><p>String manipulation functions.</p></div></dd><dt><a href="lu.traits.html">traits</a><div class="simplified-prototype" style="max-width: 17ch;"><span class="builtin-type">module</span> <span class="name">lu.traits</span></div></dt><dd><div><p>Various compile-time traits and cleverness.</p></div></dd><dt><a href="lu.typecons.html">typecons</a><div class="simplified-prototype" style="max-width: 19ch;"><span class="builtin-type">module</span> <span class="name">lu.typecons</span></div></dt><dd><div><p>Type constructors.</p></div></dd><dt><a href="lu.uda.html">uda</a><div class="simplified-prototype" style="max-width: 14ch;"><span class="builtin-type">module</span> <span class="name">lu.uda</span></div></dt><dd><div><p>Common user-defined attributes (UDAs).</p></div></dd></dl><div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav">
+		<span class="type-separator">modules</span><ul><li><a class="module" href="dialect.html">dialect</a></li><li><a class="module" href="kameloso.html">kameloso</a></li><li><a class="module current" href="lu.html">lu</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

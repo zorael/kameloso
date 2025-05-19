@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>PipelineSettings (kameloso.plugins.pipeline.PipelineSettings)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>PipelineSettings</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.pipeline.html">pipeline</a> </div><div><div class="documentation-comment synopsis"><div><p>All settings for a <a class="xref" href="kameloso.plugins.pipeline.PipelinePlugin.html">PipelinePlugin</a>, aggregated.</p></div></div></div><div class="annotated-prototype"><div class="aggregate-prototype"><div class="attributes"><div class="versions-container">version(Posix &amp;&amp; WithPipelinePlugin)</div>private <div class="uda">@<span class="name" data-ident="Settings">Settings</span> </div></div><span class="builtin-type">struct</span> PipelineSettings  {<div class="aggregate-member"><a href="lu.uda.Unserialisable.html"><span class="builtin-type">enum</span> <span class="name">Unserialisable</span> via <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">lu</span>.<span class="hid">uda</span> : <span class="hid">Unserialisable</span>;</tt>;</a></div><div class="aggregate-member"><a href="kameloso.plugins.pipeline.PipelineSettings.enabled.html"><div class="attributes"><div class="uda">@<span class="name" data-ident="Enabler">Enabler</span> </div></div><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">enabled</span>;</a></div><div class="aggregate-member"><a href="kameloso.plugins.pipeline.PipelineSettings.fifoInWorkingDir.html"><div class="attributes"></div><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">fifoInWorkingDir</span>;</a></div><div class="aggregate-member"><a href="kameloso.plugins.pipeline.PipelineSettings.path.html"><div class="attributes"><div class="uda">@<span class="name" data-ident="Unserialisable">Unserialisable</span> </div></div><tt class="highlighted"><span class="type">string</span></tt> <span class="name">path</span>;</a></div><div class="aggregate-member"><a href="kameloso.plugins.pipeline.PipelineSettings.useTMPDIR.html"><div class="attributes"><div class="uda">@<span class="name" data-ident="Unserialisable">Unserialisable</span> </div></div><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">useTMPDIR</span>;</a></div>}</div></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="variable"><a class="header-anchor" href="#variable">Variables</a></h3><dl class="member-list native"><dt><a href="kameloso.plugins.pipeline.PipelineSettings.enabled.html">enabled</a><div class="simplified-prototype" style="max-width: 14ch;"><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">enabled</span>;</div></dt><dd><div><p>Whether or not the Pipeline plugin should do anything at all.</p></div></dd><dt><a href="kameloso.plugins.pipeline.PipelineSettings.fifoInWorkingDir.html">fifoInWorkingDir</a><div class="simplified-prototype" style="max-width: 24ch;"><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">fifoInWorkingDir</span>;</div></dt><dd><div><p>Whether or not to place the FIFO in the working directory. If false, it
+        will be saved in <tt class="inline-code">/tmp</tt> or wherever <tt class="inline-code">$TMPDIR</tt> points. If macOS, then there
+        only if <a class="xref" href="kameloso.plugins.pipeline.PipelineSettings.useTMPDIR.html">PipelineSettings.useTMPDIR</a> is true.</p></div></dd><dt><a href="kameloso.plugins.pipeline.PipelineSettings.path.html">path</a><div class="simplified-prototype" style="max-width: 13ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">path</span>;</div></dt><dd><div><p>Custom path to use as FIFO filename, specified with <tt class="inline-code">--set pipeline.path=[...]</tt>.</p></div></dd><dt><a href="kameloso.plugins.pipeline.PipelineSettings.useTMPDIR.html">useTMPDIR</a><div class="simplified-prototype" style="max-width: 16ch;"><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">useTMPDIR</span>;</div></dt><dd><div><p>Whether ot not to obey <tt class="inline-code">$TMPDIR</tt> on macOS. If false, the FIFO will be saved
+            in <tt class="inline-code">/tmp</tt> regardless of <tt class="inline-code">$TMPDIR</tt>. If true, <tt class="inline-code">$TMPDIR</tt> will be obeyed.</p></div></dd></dl><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.pipeline.html">pipeline</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.pipeline.PipelinePlugin.html">PipelinePlugin</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.pipeline.closeFD.html">closeFD</a></li><li><a class="function" href="kameloso.plugins.pipeline.createFIFOFile.html">createFIFOFile</a></li><li><a class="function" href="kameloso.plugins.pipeline.initialiseFIFO.html">initialiseFIFO</a></li><li><a class="function" href="kameloso.plugins.pipeline.isFIFO.html">isFIFO</a></li><li><a class="function" href="kameloso.plugins.pipeline.onWelcome.html">onWelcome</a></li><li><a class="function" href="kameloso.plugins.pipeline.openFIFO.html">openFIFO</a></li><li><a class="function" href="kameloso.plugins.pipeline.printUsageText.html">printUsageText</a></li><li><a class="function" href="kameloso.plugins.pipeline.readFIFO.html">readFIFO</a></li><li><a class="function" href="kameloso.plugins.pipeline.reload.html">reload</a></li><li><a class="function" href="kameloso.plugins.pipeline.resolvePath.html">resolvePath</a></li><li><a class="function" href="kameloso.plugins.pipeline.teardown.html">teardown</a></li><li><a class="function" href="kameloso.plugins.pipeline.tick.html">tick</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct current" href="kameloso.plugins.pipeline.PipelineSettings.html">PipelineSettings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

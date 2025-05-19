@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>removeWeeChatHead (kameloso.plugins.quote.removeWeeChatHead)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>removeWeeChatHead</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.quote.html">quote</a> </div><div><div class="documentation-comment synopsis"><div><p>Removes the WeeChat timestamp and nickname from the front of a string.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(WithQuotePlugin)</div>private pure @<span class="name" data-ident="safe">safe</span> </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">removeWeeChatHead</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="line"><a href="#param-line">line</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="nickname"><a href="#param-nickname">nickname</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="prefixes"><a href="#param-prefixes">prefixes</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-line"><a class="parameter-name" data-ident="line" href="#param-line">line</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>Full string line as copy/pasted from WeeChat.</p></div></div></dd><dt id="param-nickname"><a class="parameter-name" data-ident="nickname" href="#param-nickname">nickname</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>The nickname to remove (along with the timestamp).</p></div></div></dd><dt id="param-prefixes"><a class="parameter-name" data-ident="prefixes" href="#param-prefixes">prefixes</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>The available user prefixes on the current server.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>The original line with the WeeChat timestamp and nickname sliced away,
+        or as it was passed. No new string is ever allocated.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">immutable</span> <span class="hid">prefixes</span> = <span class="str">&quot;!~&amp;@%+&quot;</span>;
+
+{
+    <span class="kwrd">enum</span> <span class="hid">line</span> = <span class="str">&quot;20:08:27 @zorael | dresing&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">modified</span> = <span class="hid">removeWeeChatHead</span>(<span class="hid">line</span>, <span class="str">&quot;zorael&quot;</span>, <span class="hid">prefixes</span>);
+    <span class="kwrd">assert</span>((<span class="hid">modified</span> == <span class="str">&quot;dresing&quot;</span>), <span class="hid">modified</span>);
+}
+{
+    <span class="kwrd">enum</span> <span class="hid">line</span> = <span class="str">&quot;               20:08:27                   @zorael | dresing&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">modified</span> = <span class="hid">removeWeeChatHead</span>(<span class="hid">line</span>, <span class="str">&quot;zorael&quot;</span>, <span class="hid">prefixes</span>);
+    <span class="kwrd">assert</span>((<span class="hid">modified</span> == <span class="str">&quot;dresing&quot;</span>), <span class="hid">modified</span>);
+}
+{
+    <span class="kwrd">enum</span> <span class="hid">line</span> = <span class="str">&quot;+zorael | dresing&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">modified</span> = <span class="hid">removeWeeChatHead</span>(<span class="hid">line</span>, <span class="str">&quot;zorael&quot;</span>, <span class="hid">prefixes</span>);
+    <span class="kwrd">assert</span>((<span class="hid">modified</span> == <span class="str">&quot;dresing&quot;</span>), <span class="hid">modified</span>);
+}
+{
+    <span class="kwrd">enum</span> <span class="hid">line</span> = <span class="str">&quot;2y:08:27 @zorael | dresing&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">modified</span> = <span class="hid">removeWeeChatHead</span>(<span class="hid">line</span>, <span class="str">&quot;zorael&quot;</span>, <span class="hid">prefixes</span>);
+    <span class="kwrd">assert</span>((<span class="hid">modified</span> == <span class="hid">line</span>), <span class="hid">modified</span>);
+}
+{
+    <span class="kwrd">enum</span> <span class="hid">line</span> = <span class="str">&quot;16:08:27       &lt;-- | kameloso (~kameloso@2001:41d0:2:80b4::) &quot;</span> ~
+        <span class="str">&quot;has quit (Remote host closed the connection)&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">modified</span> = <span class="hid">removeWeeChatHead</span>(<span class="hid">line</span>, <span class="str">&quot;kameloso&quot;</span>, <span class="hid">prefixes</span>);
+    <span class="kwrd">assert</span>((<span class="hid">modified</span> == <span class="hid">line</span>), <span class="hid">modified</span>);
+}</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.quote.html">quote</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.quote.NoQuotesFoundException.html">NoQuotesFoundException</a></li><li><a class="class" href="kameloso.plugins.quote.NoQuotesSearchMatchException.html">NoQuotesSearchMatchException</a></li><li><a class="class" href="kameloso.plugins.quote.QuoteIndexOutOfRangeException.html">QuoteIndexOutOfRangeException</a></li><li><a class="class" href="kameloso.plugins.quote.QuotePlugin.html">QuotePlugin</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.quote.getQuoteByIndexString.html">getQuoteByIndexString</a></li><li><a class="function" href="kameloso.plugins.quote.getQuoteBySearchTerms.html">getQuoteBySearchTerms</a></li><li><a class="function" href="kameloso.plugins.quote.getRandomQuote.html">getRandomQuote</a></li><li><a class="function" href="kameloso.plugins.quote.getTimeStringFromTimestamp.html">getTimeStringFromTimestamp</a></li><li><a class="function" href="kameloso.plugins.quote.initResources.html">initResources</a></li><li><a class="function" href="kameloso.plugins.quote.loadQuotes.html">loadQuotes</a></li><li><a class="function" href="kameloso.plugins.quote.onCommandAddQuote.html">onCommandAddQuote</a></li><li><a class="function" href="kameloso.plugins.quote.onCommandDelQuote.html">onCommandDelQuote</a></li><li><a class="function" href="kameloso.plugins.quote.onCommandMergeQuotes.html">onCommandMergeQuotes</a></li><li><a class="function" href="kameloso.plugins.quote.onCommandModQuote.html">onCommandModQuote</a></li><li><a class="function" href="kameloso.plugins.quote.onCommandQuote.html">onCommandQuote</a></li><li><a class="function" href="kameloso.plugins.quote.onWelcome.html">onWelcome</a></li><li><a class="function" href="kameloso.plugins.quote.reload.html">reload</a></li><li><a class="function current" href="kameloso.plugins.quote.removeWeeChatHead.html">removeWeeChatHead</a></li><li><a class="function" href="kameloso.plugins.quote.saveQuotes.html">saveQuotes</a></li><li><a class="function" href="kameloso.plugins.quote.selftest.html">selftest</a></li><li><a class="function" href="kameloso.plugins.quote.sendQuoteToChannel.html">sendQuoteToChannel</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.quote.Quote.html">Quote</a></li><li><a class="struct" href="kameloso.plugins.quote.QuoteSettings.html">QuoteSettings</a></li><li><a class="struct" href="kameloso.plugins.quote.Senders.html">Senders</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

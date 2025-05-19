@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>containsNickname (kameloso.plugins.printer.formatting.containsNickname)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>containsNickname</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.printer.html">printer</a> <a class="breadcrumb" href="kameloso.plugins.printer.formatting.html">formatting</a> </div><div><div class="documentation-comment synopsis"><div><p>Searches a string for a substring that isn't surrounded by characters that
+    can be part of a nickname. This can detect a nickname in a string without
+    getting false positives from similar nicknames.</p><p>Tries to detect nicknames enclosed in terminal formatting. As such, call this
+    *after* having translated IRC-to-terminal such with
+    <a class="xref" href="kameloso.irccolours.mapEffects.html">kameloso.irccolours.mapEffects</a>.</p><p>Uses <a class="xref" href="std.string.indexOf.html">indexOf</a> internally with hopes of being more resilient to
+    weird UTF-8.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">pure @<span class="name" data-ident="safe">safe</span> nothrow @<span class="name" data-ident="nogc">nogc</span> </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">containsNickname</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="haystack"><a href="#param-haystack">haystack</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="needle"><a href="#param-needle">needle</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-haystack"><a class="parameter-name" data-ident="haystack" href="#param-haystack">haystack</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>A string to search for the substring nickname.</p></div></div></dd><dt id="param-needle"><a class="parameter-name" data-ident="needle" href="#param-needle">needle</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>The nickname substring to find in <tt class="inline-code">haystack</tt>.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>True if <tt class="inline-code">haystack</tt> contains <tt class="inline-code">needle</tt> in such a way that it is guaranteed
+        to not be a different nickname.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">assert</span>(<span class="str">&quot;kameloso&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+<span class="kwrd">assert</span>(<span class="str">&quot; kameloso &quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+<span class="kwrd">assert</span>(!<span class="str">&quot;kam&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+<span class="kwrd">assert</span>(!<span class="str">&quot;kameloso^&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+<span class="kwrd">assert</span>(!<span class="type">string</span>.<span class="hid">init</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+<span class="com">//assert(!&quot;kameloso&quot;.containsNickname(&quot;&quot;));  // For now let this be false.</span>
+<span class="kwrd">assert</span>(<span class="str">&quot;@kameloso&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+<span class="kwrd">assert</span>(!<span class="str">&quot;www.kameloso.com&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+<span class="kwrd">assert</span>(<span class="str">&quot;kameloso.&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+<span class="kwrd">assert</span>(<span class="str">&quot;kameloso/&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+<span class="kwrd">assert</span>(!<span class="str">&quot;/kameloso/&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+<span class="kwrd">assert</span>(!<span class="str">&quot;kamelosoooo&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+<span class="kwrd">assert</span>(!<span class="str">&quot;&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+
+<span class="kwrd">version</span>(<span class="hid">Colours</span>)
+{
+    <span class="kwrd">assert</span>(<span class="str">&quot;\033[1mkameloso&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+    <span class="kwrd">assert</span>(<span class="str">&quot;\033[2;3mkameloso&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+    <span class="kwrd">assert</span>(<span class="str">&quot;\033[12;34mkameloso&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+    <span class="kwrd">assert</span>(!<span class="str">&quot;\033[0m0mkameloso&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+    <span class="kwrd">assert</span>(!<span class="str">&quot;\033[kameloso&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+    <span class="kwrd">assert</span>(!<span class="str">&quot;\033[mkameloso&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+    <span class="kwrd">assert</span>(!<span class="str">&quot;\033[0kameloso&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+    <span class="kwrd">assert</span>(!<span class="str">&quot;\033[0mmkameloso&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+    <span class="kwrd">assert</span>(!<span class="str">&quot;\033[0;mkameloso&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+    <span class="kwrd">assert</span>(<span class="str">&quot;\033[12mkameloso\033[1mjoe&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+    <span class="kwrd">assert</span>(!<span class="str">&quot;0mkameloso&quot;</span>.<span class="hid">containsNickname</span>(<span class="str">&quot;kameloso&quot;</span>));
+}</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.printer.html">printer</a> <a class="parent" href="kameloso.plugins.printer.formatting.html">formatting</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function current" href="kameloso.plugins.printer.formatting.containsNickname.html">containsNickname</a></li><li><a class="function" href="kameloso.plugins.printer.formatting.formatMessageColoured.html">formatMessageColoured</a></li><li><a class="function" href="kameloso.plugins.printer.formatting.withoutTypePrefix.html">withoutTypePrefix</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

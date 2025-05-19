@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>onNick (kameloso.plugins.seen.onNick)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>onNick</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.seen.html">seen</a> </div><div><div class="documentation-comment synopsis"><div><p>When someone changes nickname, update their entry in the array.</p><p>For now, don't remove old entries. Revisit this decision later.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(WithSeenPlugin)</div>private <div class="uda">@<a class="name" data-ident="IRCEventHandler" href="kameloso.plugins.IRCEventHandler.html" title="kameloso.plugins.IRCEventHandler">IRCEventHandler</a>().<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#NICK" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.NICK</a>).<span class="name" data-ident="permissionsRequired">permissionsRequired</span>(<a class="name" data-ident="Permissions" href="kameloso.plugins.Permissions.html#ignore" title="kameloso.plugins.Permissions">Permissions.ignore</a>).<span class="name" data-ident="chainable">chainable</span>(true) </div></div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">onNick</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><a class="name" data-ident="SeenPlugin" href="kameloso.plugins.seen.SeenPlugin.html" title="kameloso.plugins.seen.SeenPlugin">SeenPlugin</a></span></span> <span class="parameter-name name" data-ident="plugin"><a href="#param-plugin">plugin</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.html" title="dialect.defs.IRCEvent">IRCEvent</a></span></span> <span class="parameter-name name" data-ident="event"><a href="#param-event">event</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.seen.html">seen</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.seen.SeenPlugin.html">SeenPlugin</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.seen.initResources.html">initResources</a></li><li><a class="function" href="kameloso.plugins.seen.loadSeen.html">loadSeen</a></li><li><a class="function" href="kameloso.plugins.seen.onCommandSeen.html">onCommandSeen</a></li><li><a class="function" href="kameloso.plugins.seen.onNamesReply.html">onNamesReply</a></li><li><a class="function current" href="kameloso.plugins.seen.onNick.html">onNick</a></li><li><a class="function" href="kameloso.plugins.seen.onQuit.html">onQuit</a></li><li><a class="function" href="kameloso.plugins.seen.onSomeAction.html">onSomeAction</a></li><li><a class="function" href="kameloso.plugins.seen.onWHOReply.html">onWHOReply</a></li><li><a class="function" href="kameloso.plugins.seen.onWelcome.html">onWelcome</a></li><li><a class="function" href="kameloso.plugins.seen.reload.html">reload</a></li><li><a class="function" href="kameloso.plugins.seen.saveSeen.html">saveSeen</a></li><li><a class="function" href="kameloso.plugins.seen.selftest.html">selftest</a></li><li><a class="function" href="kameloso.plugins.seen.teardown.html">teardown</a></li><li><a class="function" href="kameloso.plugins.seen.updateAllObservedUsers.html">updateAllObservedUsers</a></li><li><a class="function" href="kameloso.plugins.seen.updateUser.html">updateUser</a></li></ul><span class="type-separator">manifest constants</span><ul><li><a class="manifest-constant" href="kameloso.plugins.seen.omniscientChannelPolicy.1.html">omniscientChannelPolicy</a></li></ul><span class="type-separator">mixins</span><ul><li><a class="mixin" href="kameloso.plugins.seen.__anonymous.1.html">__anonymous</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.seen.SeenSettings.html">SeenSettings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

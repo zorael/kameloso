@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>updateUser (kameloso.plugins.seen.updateUser)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>updateUser</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.seen.html">seen</a> </div><div><div class="documentation-comment synopsis"><div><p>Update a given nickname's entry in the seen array with the passed time,
+    expressed in UNIX time.</p><p>This is not annotated as an IRC event handler and will merely be invoked from
+    elsewhere, like any normal function.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(WithSeenPlugin)</div>private </div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">updateUser</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="4"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><a class="name" data-ident="SeenPlugin" href="kameloso.plugins.seen.SeenPlugin.html" title="kameloso.plugins.seen.SeenPlugin">SeenPlugin</a></span></span> <span class="parameter-name name" data-ident="plugin"><a href="#param-plugin">plugin</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="signed"><a href="#param-signed">signed</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">long</span></span></span> <span class="parameter-name name" data-ident="time"><a href="#param-time">time</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="skipModesignStrip"><a href="#param-skipModesignStrip">skipModesignStrip</a></span><span class="parameter-default-value">&#160;=&#160;false</span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-plugin"><a class="parameter-name" data-ident="plugin" href="#param-plugin">plugin</a> <span class="parameter-type"><a class="xref" href="kameloso.plugins.seen.SeenPlugin.html" title="kameloso.plugins.seen.SeenPlugin"><span class="name" data-ident="SeenPlugin">SeenPlugin</span></a></span></dt><dd><div class="documentation-comment"><div><p>Current <a class="xref" href="kameloso.plugins.seen.SeenPlugin.html">SeenPlugin</a>.</p></div></div></dd><dt id="param-signed"><a class="parameter-name" data-ident="signed" href="#param-signed">signed</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>Nickname to update, potentially prefixed with one or more modesigns
+            (<tt class="inline-code">@</tt>, <tt class="inline-code">+</tt>, <tt class="inline-code">%</tt>, ...).</p></div></div></dd><dt id="param-time"><a class="parameter-name" data-ident="time" href="#param-time">time</a> <span class="parameter-type"><span class="builtin-type">long</span></span></dt><dd><div class="documentation-comment"><div><p>UNIX timestamp of when the user was seen.</p></div></div></dd><dt id="param-skipModesignStrip"><a class="parameter-name" data-ident="skipModesignStrip" href="#param-skipModesignStrip">skipModesignStrip</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether or not to explicitly not strip modesigns from the nickname.</p></div></div></dd></dl><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="type">string</span> <span class="hid">potentiallySignedNickname</span> = <span class="str">&quot;@kameloso&quot;</span>;
+<span class="type">long</span> <span class="hid">nowInUnix</span> = <span class="hid">Clock</span>.<span class="hid">currTime</span>.<span class="hid">toUnixTime</span>();
+<span class="hid">updateUser</span>(<span class="hid">plugin</span>, <span class="hid">potentiallySignedNickname</span>, <span class="hid">nowInUnix</span>);</pre></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.seen.html">seen</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.seen.SeenPlugin.html">SeenPlugin</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.seen.initResources.html">initResources</a></li><li><a class="function" href="kameloso.plugins.seen.loadSeen.html">loadSeen</a></li><li><a class="function" href="kameloso.plugins.seen.onCommandSeen.html">onCommandSeen</a></li><li><a class="function" href="kameloso.plugins.seen.onNamesReply.html">onNamesReply</a></li><li><a class="function" href="kameloso.plugins.seen.onNick.html">onNick</a></li><li><a class="function" href="kameloso.plugins.seen.onQuit.html">onQuit</a></li><li><a class="function" href="kameloso.plugins.seen.onSomeAction.html">onSomeAction</a></li><li><a class="function" href="kameloso.plugins.seen.onWHOReply.html">onWHOReply</a></li><li><a class="function" href="kameloso.plugins.seen.onWelcome.html">onWelcome</a></li><li><a class="function" href="kameloso.plugins.seen.reload.html">reload</a></li><li><a class="function" href="kameloso.plugins.seen.saveSeen.html">saveSeen</a></li><li><a class="function" href="kameloso.plugins.seen.selftest.html">selftest</a></li><li><a class="function" href="kameloso.plugins.seen.teardown.html">teardown</a></li><li><a class="function" href="kameloso.plugins.seen.updateAllObservedUsers.html">updateAllObservedUsers</a></li><li><a class="function current" href="kameloso.plugins.seen.updateUser.html">updateUser</a></li></ul><span class="type-separator">manifest constants</span><ul><li><a class="manifest-constant" href="kameloso.plugins.seen.omniscientChannelPolicy.1.html">omniscientChannelPolicy</a></li></ul><span class="type-separator">mixins</span><ul><li><a class="mixin" href="kameloso.plugins.seen.__anonymous.1.html">__anonymous</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.seen.SeenSettings.html">SeenSettings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

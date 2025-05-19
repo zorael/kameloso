@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>onCommandSeen (kameloso.plugins.seen.onCommandSeen)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>onCommandSeen</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.seen.html">seen</a> </div><div><div class="documentation-comment synopsis"><div><p>Whenever someone says &quot;!seen&quot; in a <a class="xref" href="dialect.defs.IRCEvent.Type.html#CHAN">CHAN</a> or
+    a <a class="xref" href="dialect.defs.IRCEvent.Type.html#QUERY">QUERY</a>, and if
+    <a class="xref" href="dialect.defs.IRCEvent.Type.html#CHAN">CHAN</a> then only if in a *home*, this function triggers.</p><p>The <a class="xref" href="kameloso.plugins.IRCEventHandler.Command.html#word">IRCEventHandler.Command.word</a>
+    annotation defines a piece of text that the incoming message must start with
+    for this function to be called.
+    <a class="xref" href="kameloso.plugins.IRCEventHandler.Command.html#policy">IRCEventHandler.Command.policy</a></p><p>deals with whether the message has to start with the name of the *bot* or not,
+    and to what extent.</p><p>Prefix policies can be one of:</p><p>* <a class="xref" href="kameloso.plugins.PrefixPolicy.html#direct">PrefixPolicy.direct</a>,
+        where the raw command is expected without any message prefix at all;
+        the command is simply that string: &quot;<tt class="inline-code">seen</tt>&quot;.</p><p>* <a class="xref" href="kameloso.plugins.PrefixPolicy.html#prefixed">PrefixPolicy.prefixed</a>,
+        where the message has to start with the command *prefix* character
+        or string (usually <tt class="inline-code">!</tt> or <tt class="inline-code">.</tt>): &quot;<tt class="inline-code">!seen</tt>&quot;.</p><p>* <a class="xref" href="kameloso.plugins.PrefixPolicy.html#nickname">PrefixPolicy.nickname</a>,
+        where the message has to start with bot's nickname:
+        &quot;<tt class="inline-code">kameloso: seen</tt>&quot; -- except if it's in a <a class="xref" href="dialect.defs.IRCEvent.Type.html#QUERY">QUERY</a> message.</p><p>The plugin system will have made certain we only get messages starting with
+    &quot;<tt class="inline-code">seen</tt>&quot;, since we annotated this function with such a
+    <a class="xref" href="kameloso.plugins.IRCEventHandler.Command.html">IRCEventHandler.Command</a>.
+    It will since have been sliced off, so we're left only with the &quot;arguments&quot;
+    to &quot;<tt class="inline-code">seen</tt>&quot;. <a class="xref" href="dialect.defs.IRCEvent.aux.html">IRCEvent.aux[$-1]</a> contains the triggering
+    word, if it's needed.</p><p>If this is a <a class="xref" href="dialect.defs.IRCEvent.Type.html#CHAN">CHAN</a> event, the original lines
+    could (for example) have been &quot;<tt class="inline-code">kameloso: seen Joe</tt>&quot;, or merely &quot;<tt class="inline-code">!seen Joe</tt>&quot;
+    (assuming a &quot;<tt class="inline-code">!</tt>&quot; prefix). If it was a private <a class="xref" href="dialect.defs.IRCEvent.Type.html#QUERY">QUERY</a>
+    message, the <tt class="inline-code">kameloso:</tt> prefix will have been removed. In either case, we're
+    left with only the parts we're interested in, and the rest sliced off.</p><p>As a result, the <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a> <tt class="inline-code">event</tt> would look something
+    like this (given a user <tt class="inline-code">foo</tt> querying &quot;<tt class="inline-code">!seen Joe</tt>&quot; or &quot;<tt class="inline-code">kameloso: seen Joe</tt>&quot;):</p><pre class="d_code highlighted"><span class="hid">event</span>.<span class="hid">type</span> = <span class="hid">IRCEvent</span>.<span class="hid">Type</span>.<span class="hid">CHAN</span>;
+<span class="hid">event</span>.<span class="hid">sender</span>.<span class="hid">nickname</span> = <span class="str">&quot;foo&quot;</span>;
+<span class="hid">event</span>.<span class="hid">sender</span>.<span class="hid">ident</span> = <span class="str">&quot;~bar&quot;</span>;
+<span class="hid">event</span>.<span class="hid">sender</span>.<span class="hid">address</span> = <span class="str">&quot;baz.foo.bar.org&quot;</span>;
+<span class="hid">event</span>.<span class="hid">channel</span>.<span class="hid">name</span> = <span class="str">&quot;#bar&quot;</span>;
+<span class="hid">event</span>.<span class="hid">content</span> = <span class="str">&quot;Joe&quot;</span>;
+<span class="hid">event</span>.<span class="hid">aux</span>[$-<span class="num">1</span>] = <span class="str">&quot;seen&quot;</span>;</pre><p>Lastly, the
+    <a class="xref" href="kameloso.plugins.IRCEventHandler.Command.html#description">IRCEventHandler.Command.description</a></p><p>annotation merely defines how this function will be listed in the &quot;online help&quot;
+    list, shown by triggering the <a class="xref" href="kameloso.plugins.help.HelpPlugin.html">HelpPlugin</a>'s'
+    &quot;<tt class="inline-code">help</tt>&quot; command.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(WithSeenPlugin)</div>private <div class="uda">@<a class="name" data-ident="IRCEventHandler" href="kameloso.plugins.IRCEventHandler.html" title="kameloso.plugins.IRCEventHandler">IRCEventHandler</a>().<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#CHAN" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.CHAN</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#QUERY" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.QUERY</a>).<span class="name" data-ident="permissionsRequired">permissionsRequired</span>(<a class="name" data-ident="Permissions" href="kameloso.plugins.Permissions.html#anyone" title="kameloso.plugins.Permissions">Permissions.anyone</a>).<span class="name" data-ident="channelPolicy">channelPolicy</span>(<a class="name" data-ident="omniscientChannelPolicy" href="kameloso.plugins.seen.omniscientChannelPolicy.1.html" title="kameloso.plugins.seen.omniscientChannelPolicy">omniscientChannelPolicy</a>).<span class="name" data-ident="addCommand">addCommand</span>(<a class="name" data-ident="IRCEventHandler" href="kameloso.plugins.IRCEventHandler.Command.html" title="kameloso.plugins.IRCEventHandler.Command">IRCEventHandler.Command</a>().<span class="name" data-ident="word">word</span>(&quot;seen&quot;).<span class="name" data-ident="policy">policy</span>(<a class="name" data-ident="PrefixPolicy" href="kameloso.plugins.PrefixPolicy.html#prefixed" title="kameloso.plugins.PrefixPolicy">PrefixPolicy.prefixed</a>).<span class="name" data-ident="description">description</span>(&quot;Queries the bot when it last saw a specified nickname online.&quot;).<span class="name" data-ident="addSyntax">addSyntax</span>(&quot;$command [nickname]&quot;)).<span class="name" data-ident="addCommand">addCommand</span>(<a class="name" data-ident="IRCEventHandler" href="kameloso.plugins.IRCEventHandler.Command.html" title="kameloso.plugins.IRCEventHandler.Command">IRCEventHandler.Command</a>().<span class="name" data-ident="word">word</span>(&quot;lastseen&quot;).<span class="name" data-ident="policy">policy</span>(<a class="name" data-ident="PrefixPolicy" href="kameloso.plugins.PrefixPolicy.html#prefixed" title="kameloso.plugins.PrefixPolicy">PrefixPolicy.prefixed</a>).<span class="name" data-ident="hidden">hidden</span>(true)) </div></div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">onCommandSeen</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><a class="name" data-ident="SeenPlugin" href="kameloso.plugins.seen.SeenPlugin.html" title="kameloso.plugins.seen.SeenPlugin">SeenPlugin</a></span></span> <span class="parameter-name name" data-ident="plugin"><a href="#param-plugin">plugin</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.html" title="dialect.defs.IRCEvent">IRCEvent</a></span></span> <span class="parameter-name name" data-ident="event"><a href="#param-event">event</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.seen.html">seen</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.seen.SeenPlugin.html">SeenPlugin</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.seen.initResources.html">initResources</a></li><li><a class="function" href="kameloso.plugins.seen.loadSeen.html">loadSeen</a></li><li><a class="function current" href="kameloso.plugins.seen.onCommandSeen.html">onCommandSeen</a></li><li><a class="function" href="kameloso.plugins.seen.onNamesReply.html">onNamesReply</a></li><li><a class="function" href="kameloso.plugins.seen.onNick.html">onNick</a></li><li><a class="function" href="kameloso.plugins.seen.onQuit.html">onQuit</a></li><li><a class="function" href="kameloso.plugins.seen.onSomeAction.html">onSomeAction</a></li><li><a class="function" href="kameloso.plugins.seen.onWHOReply.html">onWHOReply</a></li><li><a class="function" href="kameloso.plugins.seen.onWelcome.html">onWelcome</a></li><li><a class="function" href="kameloso.plugins.seen.reload.html">reload</a></li><li><a class="function" href="kameloso.plugins.seen.saveSeen.html">saveSeen</a></li><li><a class="function" href="kameloso.plugins.seen.selftest.html">selftest</a></li><li><a class="function" href="kameloso.plugins.seen.teardown.html">teardown</a></li><li><a class="function" href="kameloso.plugins.seen.updateAllObservedUsers.html">updateAllObservedUsers</a></li><li><a class="function" href="kameloso.plugins.seen.updateUser.html">updateUser</a></li></ul><span class="type-separator">manifest constants</span><ul><li><a class="manifest-constant" href="kameloso.plugins.seen.omniscientChannelPolicy.1.html">omniscientChannelPolicy</a></li></ul><span class="type-separator">mixins</span><ul><li><a class="mixin" href="kameloso.plugins.seen.__anonymous.1.html">__anonymous</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.seen.SeenSettings.html">SeenSettings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

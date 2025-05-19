@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>listenFiber (kameloso.net.listenFiber)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>listenFiber</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.net.html">net</a> </div><div><div class="documentation-comment synopsis"><div><p>A <a class="xref" href="std.socket.Socket.html">Socket</a>-reading <a class="xref" href="std.concurrency.Generator.html">Generator</a>.
+    It reads and yields full string lines.</p><p>It maintains its own buffer into which it receives from the server, though
+    not necessarily full lines. It thus keeps filling the buffer until it
+    finds a newline character, yields <a class="xref" href="kameloso.net.ListenAttempt.html">ListenAttempt</a>s back to the caller of
+    the fiber, checks for more lines to yield, and if none yields an attempt
+    with a <a class="xref" href="kameloso.net.ListenAttempt.html#State">ListenAttempt.State</a> denoting that nothing was read and that a new
+    attempt should be made later.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> @<span class="name" data-ident="system">system</span> </div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">listenFiber</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="4"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><a class="name" data-ident="Connection" href="kameloso.net.Connection.html" title="kameloso.net.Connection">Connection</a></span></span> <span class="parameter-name name" data-ident="conn"><a href="#param-conn">conn</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span>*</span></span> <span class="parameter-name name" data-ident="abort"><a href="#param-abort">abort</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="name" data-ident="Duration">Duration</span></span></span> <span class="parameter-name name" data-ident="connectionLost"><a href="#param-connectionLost">connectionLost</a></span><span class="parameter-default-value">&#160;=&#160;<a class="name" data-ident="Timeout" href="kameloso.constants.Timeout.connectionLost.html" title="kameloso.constants.Timeout.connectionLost">Timeout.connectionLost</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="name" data-ident="size_t">size_t</span></span></span> <span class="parameter-name name" data-ident="bufferSize"><a href="#param-bufferSize">bufferSize</a></span><span class="parameter-default-value">&#160;=&#160;<a class="name" data-ident="BufferSize" href="kameloso.constants.BufferSize.html#socketReceive" title="kameloso.constants.BufferSize">BufferSize.socketReceive</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-conn"><a class="parameter-name" data-ident="conn" href="#param-conn">conn</a> <span class="parameter-type"><a class="xref" href="kameloso.net.Connection.html" title="kameloso.net.Connection"><span class="name" data-ident="Connection">Connection</span></a></span></dt><dd><div class="documentation-comment"><div><p><a class="xref" href="kameloso.net.Connection.html">Connection</a> whose <a class="xref" href="std.socket.Socket.html">Socket</a> it reads from the server with.</p></div></div></dd><dt id="param-abort"><a class="parameter-name" data-ident="abort" href="#param-abort">abort</a> <span class="parameter-type"><span class="builtin-type">bool</span>*</span></dt><dd><div class="documentation-comment"><div><p>Pointer to the &quot;abort&quot; flag, which -- if set -- should make the
+            function return and the <a class="xref" href="core.thread.fiber.Fiber.html">Fiber</a> terminate.</p></div></div></dd><dt id="param-connectionLost"><a class="parameter-name" data-ident="connectionLost" href="#param-connectionLost">connectionLost</a> <span class="parameter-type"><span class="name" data-ident="Duration">Duration</span></span></dt><dd><div class="documentation-comment"><div><p>How many seconds may pass before we consider the connection lost.
+            Optional, defaults to
+            <a class="xref" href="kameloso.constants.Timeout.connectionLost.html">Timeout.connectionLost</a>.</p></div></div></dd><dt id="param-bufferSize"><a class="parameter-name" data-ident="bufferSize" href="#param-bufferSize">bufferSize</a> <span class="parameter-type"><span class="name" data-ident="size_t">size_t</span></span></dt><dd><div class="documentation-comment"><div><p>Size of the buffer to use for reading from the server.
+            Optional, defaults to
+            <a class="xref" href="kameloso.constants.BufferSize.html#socketReceive">BufferSize.socketReceive</a>.</p><p>Yields:
+        <a class="xref" href="kameloso.net.ListenAttempt.html">ListenAttempt</a>s with information about the line received in its member values.</p></div></div></dd></dl><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="com">//Connection conn;  // Address previously connected established with</span>
+
+<span class="kwrd">immutable</span> <span class="hid">connectionLost</span> = <span class="num">600</span>.<span class="hid">seconds</span>;
+
+<span class="kwrd">auto</span> <span class="hid">listener</span> = <span class="kwrd">new</span> <span class="hid">Generator</span>!<span class="hid">ListenAttempt</span>(() =&gt;
+    <span class="hid">listenFiber</span>(
+        <span class="hid">conn</span>,
+        <span class="hid">abort</span>,
+        <span class="hid">connectionLost</span>));
+
+<span class="kwrd">foreach</span> (<span class="kwrd">const</span> <span class="hid">attempt</span>; <span class="hid">listener</span>)
+{
+    <span class="com">// attempt is a yielded `ListenAttempt`</span>
+
+    <span class="kwrd">with</span> (<span class="hid">ListenAttempt</span>.<span class="hid">State</span>)
+    <span class="kwrd">final</span> <span class="kwrd">switch</span> (<span class="hid">attempt</span>.<span class="hid">state</span>)
+    {
+    <span class="kwrd">case</span> <span class="hid">prelisten</span>:
+        <span class="kwrd">assert</span>(<span class="num">0</span>, <span class="str">&quot;shouldn't happen&quot;</span>);
+
+    <span class="kwrd">case</span> <span class="hid">isEmpty</span>:
+    <span class="kwrd">case</span> <span class="hid">timeout</span>:
+        <span class="com">// Reading timed out or nothing was read, happens</span>
+        <span class="kwrd">break</span>;
+
+    <span class="kwrd">case</span> <span class="hid">hasString</span>:
+        <span class="com">// A line was successfully read!</span>
+        <span class="com">// program logic goes here</span>
+        <span class="hid">doThings</span>(<span class="hid">attempt</span>.<span class="hid">line</span>);
+        <span class="kwrd">break</span>;
+
+    <span class="kwrd">case</span> <span class="hid">warning</span>:
+        <span class="com">// Recoverable</span>
+        <span class="hid">warnAboutSomething</span>(<span class="hid">attempt</span>.<span class="hid">error</span>);
+        <span class="kwrd">break</span>;
+
+    <span class="kwrd">case</span> <span class="hid">error</span>:
+        <span class="com">// Unrecoverable</span>
+        <span class="hid">dealWithError</span>(<span class="hid">attempt</span>.<span class="hid">error</span>);
+        <span class="kwrd">return</span>;
+    }
+}</pre></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.net.html">net</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.net.Connection.html">Connection</a></li><li><a class="class" href="kameloso.net.EmptyDataJSONException.html">EmptyDataJSONException</a></li><li><a class="class" href="kameloso.net.EmptyResponseException.html">EmptyResponseException</a></li><li><a class="class" href="kameloso.net.ErrorJSONException.html">ErrorJSONException</a></li><li><a class="class" href="kameloso.net.HTTPQueryException.html">HTTPQueryException</a></li><li><a class="class" href="kameloso.net.Querier.html">Querier</a></li><li><a class="class" href="kameloso.net.QueryResponseJSONException.html">QueryResponseJSONException</a></li><li><a class="class" href="kameloso.net.SSLException.html">SSLException</a></li><li><a class="class" href="kameloso.net.SSLFileException.html">SSLFileException</a></li><li><a class="class" href="kameloso.net.SocketSendException.html">SocketSendException</a></li><li><a class="class" href="kameloso.net.UnexpectedJSONException.html">UnexpectedJSONException</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.net.connectFiber.html">connectFiber</a></li><li><a class="function" href="kameloso.net.delegateResolve.html">delegateResolve</a></li><li><a class="function" href="kameloso.net.issueSyncHTTPRequest.html">issueSyncHTTPRequest</a></li><li><a class="function current" href="kameloso.net.listenFiber.html">listenFiber</a></li><li><a class="function" href="kameloso.net.openSSLIsInstalled.html">openSSLIsInstalled</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.net.ConnectionAttempt.html">ConnectionAttempt</a></li><li><a class="struct" href="kameloso.net.HTTPQueryResponse.html">HTTPQueryResponse</a></li><li><a class="struct" href="kameloso.net.HTTPRequest.html">HTTPRequest</a></li><li><a class="struct" href="kameloso.net.ListenAttempt.html">ListenAttempt</a></li><li><a class="struct" href="kameloso.net.ResolveAttempt.html">ResolveAttempt</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

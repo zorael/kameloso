@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>IRCUser.hostmask (dialect.defs.IRCUser.hostmask)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>IRCUser.hostmask</h1><div class="breadcrumbs"><a class="breadcrumb" href="dialect.html">dialect</a> <a class="breadcrumb" href="dialect.defs.html">defs</a> <a class="breadcrumb" href="dialect.defs.IRCUser.html">IRCUser</a> </div><div><div class="documentation-comment synopsis"><div><p>Formats this <a class="xref" href="dialect.defs.IRCUser.html">IRCUser</a> into a hostmask representing its values.
+        Merely wraps <a class="xref" href="dialect.defs.IRCUser.toString.html">toString</a> and returns a newly allocated string.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="parent-prototype"><span class="builtin-type">struct</span> <span class="name">IRCUser</span></div><div><div class="attributes">pure @<span class="name" data-ident="safe">safe</span> const </div><div class="return-type"><span class="builtin-type">string</span></div><div class="function-name">hostmask</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="0"><div class="parameters-list toplevel"><span class="paren">(</span><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div></div><div><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><span class="builtin-type">string</span></span></div><div class="documentation-comment returns-description"><div><p>A hostmask &quot;*!*@*&quot; string.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted">{
+    <span class="kwrd">const</span> <span class="hid">user</span> = <span class="hid">IRCUser</span>(<span class="str">&quot;nickname&quot;</span>, <span class="str">&quot;ident&quot;</span>, <span class="str">&quot;address.tld&quot;</span>);
+    <span class="kwrd">immutable</span> <span class="hid">hostmask</span> = <span class="hid">user</span>.<span class="hid">hostmask</span>;
+    <span class="kwrd">assert</span>((<span class="hid">hostmask</span> == <span class="str">&quot;nickname!ident@address.tld&quot;</span>), <span class="hid">hostmask</span>);
+}
+{
+    <span class="kwrd">const</span> <span class="hid">user</span> = <span class="hid">IRCUser</span>(<span class="str">&quot;nickname&quot;</span>, <span class="type">string</span>.<span class="hid">init</span>, <span class="str">&quot;address.tld&quot;</span>);
+    <span class="kwrd">immutable</span> <span class="hid">hostmask</span> = <span class="hid">user</span>.<span class="hid">hostmask</span>;
+    <span class="kwrd">assert</span>((<span class="hid">hostmask</span> == <span class="str">&quot;nickname!*@address.tld&quot;</span>), <span class="hid">hostmask</span>);
+}
+{
+    <span class="kwrd">const</span> <span class="hid">user</span> = <span class="hid">IRCUser</span>(<span class="type">string</span>.<span class="hid">init</span>, <span class="type">string</span>.<span class="hid">init</span>, <span class="str">&quot;address.tld&quot;</span>);
+    <span class="kwrd">immutable</span> <span class="hid">hostmask</span> = <span class="hid">user</span>.<span class="hid">hostmask</span>;
+    <span class="kwrd">assert</span>((<span class="hid">hostmask</span> == <span class="str">&quot;*!*@address.tld&quot;</span>), <span class="hid">hostmask</span>);
+}
+{
+    <span class="kwrd">const</span> <span class="hid">IRCUser</span> <span class="hid">user</span>;
+    <span class="kwrd">immutable</span> <span class="hid">hostmask</span> = <span class="hid">user</span>.<span class="hid">hostmask</span>;
+    <span class="kwrd">assert</span>((<span class="hid">hostmask</span> == <span class="str">&quot;*!*@*&quot;</span>), <span class="hid">hostmask</span>);
+}
+</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="dialect.html">dialect</a> <a class="parent" href="dialect.defs.html">defs</a> <a class="parent" href="dialect.defs.IRCUser.html">IRCUser</a> 
+		<span class="type-separator">constructors</span><ul><li><a class="constructor" href="dialect.defs.IRCUser.this.1.html">this</a></li></ul><span class="type-separator">enums</span><ul><li><a class="enum" href="dialect.defs.IRCUser.Class.html">Class</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function current" href="dialect.defs.IRCUser.hostmask.html">hostmask</a></li><li><a class="function" href="dialect.defs.IRCUser.isServer.html">isServer</a></li><li><a class="function" href="dialect.defs.IRCUser.opEquals.html">opEquals</a></li><li><a class="function" href="dialect.defs.IRCUser.toHash.html">toHash</a></li><li><a class="function" href="dialect.defs.IRCUser.toString.html">toString</a></li></ul><span class="type-separator">variables</span><ul><li><a class="variable" href="dialect.defs.IRCUser.account.html">account</a></li><li><a class="variable" href="dialect.defs.IRCUser.address.html">address</a></li><li><a class="variable" href="dialect.defs.IRCUser.badges.html">badges</a></li><li><a class="variable" href="dialect.defs.IRCUser.class_.html">class_</a></li><li><a class="variable" href="dialect.defs.IRCUser.colour.html">colour</a></li><li><a class="variable" href="dialect.defs.IRCUser.displayName.html">displayName</a></li><li><a class="variable" href="dialect.defs.IRCUser.id.html">id</a></li><li><a class="variable" href="dialect.defs.IRCUser.ident.html">ident</a></li><li><a class="variable" href="dialect.defs.IRCUser.nickname.html">nickname</a></li><li><a class="variable" href="dialect.defs.IRCUser.realName.html">realName</a></li><li><a class="variable" href="dialect.defs.IRCUser.updated.html">updated</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

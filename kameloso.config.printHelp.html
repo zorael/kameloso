@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>printHelp (kameloso.config.printHelp)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>printHelp</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.config.html">config</a> </div><div><div class="documentation-comment synopsis"><div><p>Prints the <a class="xref" href="std.getopt.getopt.html">getopt</a> &quot;helpWanted&quot; help table to screen.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">private @<span class="name" data-ident="safe">safe</span> </div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">printHelp</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="1"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="name" data-ident="GetoptResult">GetoptResult</span></span></span> <span class="parameter-name name" data-ident="results"><a href="#param-results">results</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-results"><a class="parameter-name" data-ident="results" href="#param-results">results</a> <span class="parameter-type"><span class="name" data-ident="GetoptResult">GetoptResult</span></span></dt><dd><div class="documentation-comment"><div><p>Results from a <a class="xref" href="std.getopt.getopt.html">getopt</a> call.</p></div></div></dd></dl><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">auto</span> <span class="hid">results</span> = <span class="hid">args</span>.<span class="hid">getopt</span>(
+    <span class="str">&quot;n|nickname&quot;</span>,   <span class="str">&quot;Bot nickname&quot;</span>, &amp;<span class="hid">nickname</span>,
+    <span class="str">&quot;s|server&quot;</span>,     <span class="str">&quot;Server&quot;</span>,       &amp;<span class="hid">server</span>,
+    <span class="com">// ...</span>
+);
+
+<span class="kwrd">if</span> (<span class="hid">results</span>.<span class="hid">helpWanted</span>)
+{
+    <span class="hid">printHelp</span>(<span class="hid">results</span>);
+}</pre></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.config.html">config</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.config.FlagStringException.html">FlagStringException</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.config.applyDefaults.html">applyDefaults</a></li><li><a class="function" href="kameloso.config.flatten.html">flatten</a></li><li><a class="function" href="kameloso.config.giveBrightTerminalHint.html">giveBrightTerminalHint</a></li><li><a class="function" href="kameloso.config.giveConfigurationMinimalInstructions.html">giveConfigurationMinimalInstructions</a></li><li><a class="function" href="kameloso.config.handleGetopt.html">handleGetopt</a></li><li><a class="function" href="kameloso.config.manageConfigFile.html">manageConfigFile</a></li><li><a class="function" href="kameloso.config.notifyAboutIncompleteConfiguration.html">notifyAboutIncompleteConfiguration</a></li><li><a class="function" href="kameloso.config.notifyAboutMissingSettings.html">notifyAboutMissingSettings</a></li><li><a class="function current" href="kameloso.config.printHelp.html">printHelp</a></li><li><a class="function" href="kameloso.config.printSettings.html">printSettings</a></li><li><a class="function" href="kameloso.config.resolveFlagString.html">resolveFlagString</a></li><li><a class="function" href="kameloso.config.verboselyWriteConfig.html">verboselyWriteConfig</a></li><li><a class="function" href="kameloso.config.writeConfigurationFile.html">writeConfigurationFile</a></li><li><a class="function" href="kameloso.config.writeToDisk.html">writeToDisk</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

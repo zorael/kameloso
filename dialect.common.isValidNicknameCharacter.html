@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>isValidNicknameCharacter (dialect.common.isValidNicknameCharacter)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>isValidNicknameCharacter</h1><div class="breadcrumbs"><a class="breadcrumb" href="dialect.html">dialect</a> <a class="breadcrumb" href="dialect.common.html">common</a> </div><div><div class="documentation-comment synopsis"><div><p>Returns whether or not a passed <tt class="inline-code">char</tt> can be part of a nickname.</p><p>The IRC standard describes nicknames as being a string of any of the
+    following characters:</p><p><tt class="inline-code">[a-z] [A-Z] [0-9] _-\\[]{}^\</tt>|`</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">pure @<span class="name" data-ident="safe">safe</span> nothrow @<span class="name" data-ident="nogc">nogc</span> </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">isValidNicknameCharacter</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="1"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">ubyte</span></span></span> <span class="parameter-name name" data-ident="c"><a href="#param-c">c</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-c"><a class="parameter-name" data-ident="c" href="#param-c">c</a> <span class="parameter-type"><span class="builtin-type">ubyte</span></span></dt><dd><div class="documentation-comment"><div><p>Character to compare with the list of accepted characters in a nickname.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p><tt class="inline-code">true</tt> if the character is in the list of valid characters for
+        nicknames, <tt class="inline-code">false</tt> if not.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">assert</span>(<span class="str">'a'</span>.<span class="hid">isValidNicknameCharacter</span>);
+<span class="kwrd">assert</span>(<span class="str">'9'</span>.<span class="hid">isValidNicknameCharacter</span>);
+<span class="kwrd">assert</span>(<span class="str">'`'</span>.<span class="hid">isValidNicknameCharacter</span>);
+<span class="kwrd">assert</span>(!(<span class="str">' '</span>.<span class="hid">isValidNicknameCharacter</span>));</pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">string</span> : <span class="hid">representation</span>;
+
+{
+    <span class="kwrd">enum</span> <span class="hid">line</span> = <span class="str">&quot;abcDEFghi0{}29304_[]`\\^|---&quot;</span>;
+    <span class="kwrd">foreach</span> (<span class="kwrd">immutable</span> <span class="type">char</span> <span class="hid">c</span>; <span class="hid">line</span>.<span class="hid">representation</span>)
+    {
+        <span class="kwrd">assert</span>(<span class="hid">c</span>.<span class="hid">isValidNicknameCharacter</span>, <span class="hid">c</span> ~ <span class="str">&quot;&quot;</span>);
+    }
+}
+{
+    <span class="kwrd">enum</span> <span class="hid">line</span> = <span class="str">&quot;&#229;&#196;&#246;&#39640;&#25152;&#24656;&#24598;&#30151;&#65297;&#65298;&#65299;&#12394;&#12395;&#12396;&#12397;&#12398; &quot;</span>;
+    <span class="kwrd">foreach</span> (<span class="kwrd">immutable</span> <span class="type">char</span> <span class="hid">c</span>; <span class="hid">line</span>.<span class="hid">representation</span>)
+    {
+        <span class="kwrd">assert</span>(!<span class="hid">c</span>.<span class="hid">isValidNicknameCharacter</span>, <span class="hid">c</span> ~ <span class="str">&quot;&quot;</span>);
+    }
+}</pre></div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="dialect.common.isValidNickname.html">isValidNickname</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="dialect.html">dialect</a> <a class="parent" href="dialect.common.html">common</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="dialect.common.IRCParseException.html">IRCParseException</a></li></ul><span class="type-separator">enums</span><ul><li><a class="enum" href="dialect.common.IRCControlCharacter.html">IRCControlCharacter</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="dialect.common.decodeIRCv3String.html">decodeIRCv3String</a></li><li><a class="function" href="dialect.common.isAuthService.html">isAuthService</a></li><li><a class="function" href="dialect.common.isUpper.html">isUpper</a></li><li><a class="function" href="dialect.common.isValidChannel.html">isValidChannel</a></li><li><a class="function" href="dialect.common.isValidHostmask.html">isValidHostmask</a></li><li><a class="function" href="dialect.common.isValidNickname.html">isValidNickname</a></li><li><a class="function current" href="dialect.common.isValidNicknameCharacter.html">isValidNicknameCharacter</a></li><li><a class="function" href="dialect.common.matchesByMask.html">matchesByMask</a></li><li><a class="function" href="dialect.common.opEqualsCaseInsensitive.html">opEqualsCaseInsensitive</a></li><li><a class="function" href="dialect.common.setMode.html">setMode</a></li><li><a class="function" href="dialect.common.stripModesign.1.html">stripModesign</a></li><li><a class="function" href="dialect.common.toLower.html">toLower</a></li><li><a class="function" href="dialect.common.toLowerCase.html">toLowerCase</a></li><li><a class="function" href="dialect.common.typenumsOf.html">typenumsOf</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

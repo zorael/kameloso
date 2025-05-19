@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>onMinimalAuthenticationAccountInfoTarget (kameloso.plugins.common.mixins.awareness.onMinimalAuthenticationAccountInfoTarget)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>onMinimalAuthenticationAccountInfoTarget</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.common.html">common</a> <a class="breadcrumb" href="kameloso.plugins.common.mixins.html">mixins</a> <a class="breadcrumb" href="kameloso.plugins.common.mixins.awareness.html">awareness</a> </div><div><div class="documentation-comment synopsis"><div><p>Replays any queued <a class="xref" href="kameloso.plugins.Replay.html">Replay</a>s awaiting the result
+    of a WHOIS query. Before that, records the user's services account by
+    saving it to the user's <a class="xref" href="dialect.defs.IRCClient.html">IRCClient</a> in the
+    <a class="xref" href="kameloso.plugins.IRCPlugin.html">IRCPlugin</a>'s
+    <a class="xref" href="kameloso.plugins.IRCPluginState.users.html">IRCPluginState.users</a> associative array.</p><p><a class="xref" href="dialect.defs.IRCEvent.Type.html#RPL_ENDOFWHOIS">dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS</a> is also handled, to
+    cover the case where a user without an account triggering
+    <a class="xref" href="kameloso.plugins.Permissions.html#anyone">Permissions.anyone</a>- or
+    <a class="xref" href="kameloso.plugins.Permissions.html#ignore">Permissions.ignore</a>-level commands.</p><p>This function was part of <a class="xref" href="kameloso.plugins.common.mixins.awareness.UserAwareness.html">UserAwareness</a> but triggering queued replays
+    is too common to conflate with it.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> @<span class="name" data-ident="system">system</span> </div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">onMinimalAuthenticationAccountInfoTarget</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><a class="name" data-ident="IRCPlugin" href="kameloso.plugins.IRCPlugin.html" title="kameloso.plugins.IRCPlugin">IRCPlugin</a></span></span> <span class="parameter-name name" data-ident="plugin"><a href="#param-plugin">plugin</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.html" title="dialect.defs.IRCEvent">IRCEvent</a></span></span> <span class="parameter-name name" data-ident="event"><a href="#param-event">event</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.common.html">common</a> <a class="parent" href="kameloso.plugins.common.mixins.html">mixins</a> <a class="parent" href="kameloso.plugins.common.mixins.awareness.html">awareness</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.common.mixins.awareness.ensureChannel.html">ensureChannel</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onChannelAwarenessChannelModeIs.html">onChannelAwarenessChannelModeIs</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onChannelAwarenessCreationTime.html">onChannelAwarenessCreationTime</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onChannelAwarenessJoin.html">onChannelAwarenessJoin</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onChannelAwarenessMode.html">onChannelAwarenessMode</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onChannelAwarenessModeLists.html">onChannelAwarenessModeLists</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onChannelAwarenessNamesReply.html">onChannelAwarenessNamesReply</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onChannelAwarenessNick.html">onChannelAwarenessNick</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onChannelAwarenessPart.html">onChannelAwarenessPart</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onChannelAwarenessQuit.html">onChannelAwarenessQuit</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onChannelAwarenessSelfjoin.html">onChannelAwarenessSelfjoin</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onChannelAwarenessSelfpart.html">onChannelAwarenessSelfpart</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onChannelAwarenessTopic.html">onChannelAwarenessTopic</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onChannelAwarenessWhoReply.html">onChannelAwarenessWhoReply</a></li><li><a class="function current" href="kameloso.plugins.common.mixins.awareness.onMinimalAuthenticationAccountInfoTarget.html">onMinimalAuthenticationAccountInfoTarget</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onMinimalAuthenticationUnknownCommandWHOIS.html">onMinimalAuthenticationUnknownCommandWHOIS</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onTwitchAwarenessCatchRoomID.html">onTwitchAwarenessCatchRoomID</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onTwitchAwarenessDetectTargetModerator.html">onTwitchAwarenessDetectTargetModerator</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onTwitchAwarenessUserCarrierImpl.html">onTwitchAwarenessUserCarrierImpl</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onUserAwarenessCatchTarget.html">onUserAwarenessCatchTarget</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onUserAwarenessEndOfList.html">onUserAwarenessEndOfList</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onUserAwarenessNamesReply.html">onUserAwarenessNamesReply</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onUserAwarenessNick.html">onUserAwarenessNick</a></li><li><a class="function" href="kameloso.plugins.common.mixins.awareness.onUserAwarenessQuit.html">onUserAwarenessQuit</a></li></ul><span class="type-separator">mixin templates</span><ul><li><a class="mixin-template" href="kameloso.plugins.common.mixins.awareness.ChannelAwareness.html">ChannelAwareness</a></li><li><a class="mixin-template" href="kameloso.plugins.common.mixins.awareness.MinimalAuthentication.html">MinimalAuthentication</a></li><li><a class="mixin-template" href="kameloso.plugins.common.mixins.awareness.TwitchAwareness.1.html">TwitchAwareness</a></li><li><a class="mixin-template" href="kameloso.plugins.common.mixins.awareness.UserAwareness.html">UserAwareness</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

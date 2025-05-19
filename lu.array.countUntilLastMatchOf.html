@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>countUntilLastMatchOf (lu.array.countUntilLastMatchOf)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>countUntilLastMatchOf</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.array.html">array</a> </div><div><div class="documentation-comment synopsis"><div><p>Finds the index of the last match of a predicate in a haystack. The predicate
+    is evaluated against each element.</p><p>Overload that takes a predicate instead of a needle.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">pure </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">countUntilLastMatchOf</div><div class="template-parameters" data-count="2">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><a class="lang-feature" href="http://dpldocs.info/template-alias-parameter">alias</a> <span class="name" data-ident="pred">pred</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Haystack">Haystack</span></span></div></div>)</div><div class="runtime-parameters" data-count="1"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="storage-class">scope</span> <span class="name" data-ident="Haystack">Haystack</span></span></span> <span class="parameter-name name" data-ident="haystack"><a href="#param-haystack">haystack</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-pred"><a class="parameter-name" data-ident="pred" href="#param-pred">pred</a></dt><dd><div class="documentation-comment"><div><p>A predicate to match the needle against the elements in the haystack.</p></div></div></dd><dt id="param-haystack"><a class="parameter-name" data-ident="haystack" href="#param-haystack">haystack</a> <span class="parameter-type"><span class="name" data-ident="Haystack">Haystack</span></span></dt><dd><div class="documentation-comment"><div><p>The array to search.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>The index of the last match of <tt class="inline-code">pred</tt> when evaluating all elements in
+        <tt class="inline-code">haystack</tt>, or <tt class="inline-code">-1</tt> if none were found.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">conv</span> : <span class="hid">to</span>;
+
+{
+    <span class="kwrd">enum</span> <span class="hid">haystack</span> = <span class="str">&quot;haystack&quot;</span>;
+    <span class="kwrd">alias</span> <span class="hid">pred</span> = (<span class="hid">n</span>) =&gt; (<span class="hid">n</span> == <span class="str">'a'</span>);
+    <span class="kwrd">enum</span> <span class="hid">index</span> = <span class="hid">haystack</span>.<span class="hid">countUntilLastMatchOf</span>!<span class="hid">pred</span>;
+    <span class="kwrd">static</span> <span class="kwrd">assert</span>((<span class="hid">index</span> == <span class="num">5</span>), <span class="hid">index</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="kwrd">enum</span> <span class="hid">haystack</span> = <span class="str">&quot;haystack&quot;</span>;
+    <span class="kwrd">alias</span> <span class="hid">pred</span> = (<span class="hid">n</span>) =&gt; (<span class="hid">n</span> &lt; <span class="str">'a'</span>);
+    <span class="kwrd">enum</span> <span class="hid">index</span> = <span class="hid">haystack</span>.<span class="hid">countUntilLastMatchOf</span>!<span class="hid">pred</span>;
+    <span class="kwrd">static</span> <span class="kwrd">assert</span>((<span class="hid">index</span> == -<span class="num">1</span>), <span class="hid">index</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="kwrd">enum</span> <span class="hid">haystack</span> = <span class="str">&quot;haystack&quot;</span>;
+    <span class="kwrd">alias</span> <span class="hid">pred</span> = (<span class="hid">n</span>) =&gt; (<span class="hid">n</span> == <span class="type">char</span>.<span class="hid">init</span>);
+    <span class="kwrd">enum</span> <span class="hid">index</span> = <span class="hid">haystack</span>.<span class="hid">countUntilLastMatchOf</span>!<span class="hid">pred</span>;
+    <span class="kwrd">static</span> <span class="kwrd">assert</span>((<span class="hid">index</span> == -<span class="num">1</span>), <span class="hid">index</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="kwrd">enum</span> <span class="hid">haystack</span> = <span class="type">string</span>.<span class="hid">init</span>;
+    <span class="kwrd">alias</span> <span class="hid">pred</span> = (<span class="hid">n</span>) =&gt; (<span class="hid">n</span> == <span class="str">'\0'</span>);
+    <span class="kwrd">enum</span> <span class="hid">index</span> = <span class="hid">haystack</span>.<span class="hid">countUntilLastMatchOf</span>!<span class="hid">pred</span>;
+    <span class="kwrd">static</span> <span class="kwrd">assert</span>((<span class="hid">index</span> == -<span class="num">1</span>), <span class="hid">index</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">uni</span> : <span class="hid">toLower</span>;
+    <span class="kwrd">enum</span> <span class="hid">haystack</span> = <span class="str">&quot;HAYSTACK&quot;</span>;
+    <span class="kwrd">alias</span> <span class="hid">pred</span> = (<span class="hid">n</span>) =&gt; (<span class="hid">n</span>.<span class="hid">toLower</span> == <span class="str">'a'</span>);
+    <span class="kwrd">enum</span> <span class="hid">index</span> = <span class="hid">haystack</span>.<span class="hid">countUntilLastMatchOf</span>!<span class="hid">pred</span>;
+    <span class="kwrd">static</span> <span class="kwrd">assert</span>((<span class="hid">index</span> == <span class="num">5</span>), <span class="hid">index</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="kwrd">enum</span> <span class="hid">haystack</span> = <span class="str">&quot;haystack&quot;</span>;
+    <span class="kwrd">enum</span> <span class="hid">pred</span> = <span class="str">&quot;a == 'y'&quot;</span>;
+    <span class="kwrd">enum</span> <span class="hid">index</span> = <span class="hid">haystack</span>.<span class="hid">countUntilLastMatchOf</span>!<span class="hid">pred</span>;
+    <span class="kwrd">static</span> <span class="kwrd">assert</span>((<span class="hid">index</span> == <span class="num">2</span>), <span class="hid">index</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}
+{
+    <span class="kwrd">static</span> <span class="kwrd">struct</span> <span class="hid">Foo</span> { <span class="type">int</span> <span class="hid">i</span>; }
+
+    <span class="kwrd">static</span> <span class="kwrd">immutable</span> <span class="hid">haystack</span> = [ <span class="hid">Foo</span>(<span class="num">1</span>), <span class="hid">Foo</span>(<span class="num">2</span>), <span class="hid">Foo</span>(<span class="num">2</span>), <span class="hid">Foo</span>(<span class="num">3</span>), <span class="hid">Foo</span>(<span class="num">5</span>) ];
+    <span class="kwrd">alias</span> <span class="hid">pred</span> = (<span class="hid">foo</span>) =&gt; ((<span class="hid">foo</span>.<span class="hid">i</span> % <span class="num">2</span>) == <span class="num">0</span>);
+    <span class="kwrd">immutable</span> <span class="hid">index</span> = <span class="hid">haystack</span>.<span class="hid">countUntilLastMatchOf</span>!<span class="hid">pred</span>;
+    <span class="kwrd">assert</span>((<span class="hid">index</span> == <span class="num">2</span>), <span class="hid">index</span>.<span class="hid">to</span>!<span class="type">string</span>);
+}</pre></div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="std.algorithm.searching.countUntil.html">std.algorithm.searching.countUntil</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.array.html">array</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="lu.array.ArrayException.html">ArrayException</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function current" href="lu.array.countUntilLastMatchOf.html">countUntilLastMatchOf</a></li><li><a class="function" href="lu.array.countUntilLastOccurrenceOf.html">countUntilLastOccurrenceOf</a></li><li><a class="function" href="lu.array.pruneAA.html">pruneAA</a></li><li><a class="function" href="lu.array.truthTable.1.html">truthTable</a></li><li><a class="function" href="lu.array.uniqueKey.html">uniqueKey</a></li><li><a class="function" href="lu.array.zero.html">zero</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

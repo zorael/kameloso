@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>decodeEntities (kameloso.plugins.webtitle.decodeEntities)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>decodeEntities</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.webtitle.html">webtitle</a> </div><div><div class="documentation-comment synopsis"><div><p>Removes unwanted characters from a string, and decodes HTML entities in it
+    (like <tt class="inline-code">&amp;mdash;</tt> and <tt class="inline-code">&amp;nbsp;</tt>).</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(WithWebtitlePlugin)</div>private </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">decodeEntities</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="1"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="line"><a href="#param-line">line</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-line"><a class="parameter-name" data-ident="line" href="#param-line">line</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>String to decode entities and remove tags from.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>A modified string, with unwanted bits stripped out and/or decoded.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">immutable</span> <span class="hid">t1</span> = <span class="str">&quot;&amp;quot;Hello&amp;nbsp;world!&amp;quot;&quot;</span>;
+<span class="kwrd">immutable</span> <span class="hid">t1p</span> = <span class="hid">decodeEntities</span>(<span class="hid">t1</span>);
+<span class="kwrd">assert</span>((<span class="hid">t1p</span> == <span class="str">&quot;\&quot;Hello\u00A0world!\&quot;&quot;</span>), <span class="hid">t1p</span>);  <span class="com">// not a normal space</span>
+
+<span class="kwrd">immutable</span> <span class="hid">t2</span> = <span class="str">&quot;&amp;lt;/title&amp;gt;&quot;</span>;
+<span class="kwrd">immutable</span> <span class="hid">t2p</span> = <span class="hid">decodeEntities</span>(<span class="hid">t2</span>);
+<span class="kwrd">assert</span>((<span class="hid">t2p</span> == <span class="str">&quot;&lt;/title&gt;&quot;</span>), <span class="hid">t2p</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">t3</span> = <span class="str">&quot;&amp;mdash;&amp;micro;&amp;acute;&amp;yen;&amp;euro;&quot;</span>;
+<span class="kwrd">immutable</span> <span class="hid">t3p</span> = <span class="hid">decodeEntities</span>(<span class="hid">t3</span>);
+<span class="kwrd">assert</span>((<span class="hid">t3p</span> == <span class="str">&quot;&#8212;&#181;&#180;&#165;&#8364;&quot;</span>), <span class="hid">t3p</span>);  <span class="com">// not a normal dash</span>
+
+<span class="kwrd">immutable</span> <span class="hid">t4</span> = <span class="str">&quot;&amp;quot;Se&amp;ntilde;or &amp;THORN;&amp;quot; &amp;copy;2017&quot;</span>;
+<span class="kwrd">immutable</span> <span class="hid">t4p</span> = <span class="hid">decodeEntities</span>(<span class="hid">t4</span>);
+<span class="kwrd">assert</span>((<span class="hid">t4p</span> == <span class="str">`&quot;Se&#241;or &#222;&quot; &#169;2017`</span>), <span class="hid">t4p</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">t5</span> = <span class="str">&quot;\n        Nyheter - NSD.se        \n&quot;</span>;
+<span class="kwrd">immutable</span> <span class="hid">t5p</span> = <span class="hid">decodeEntities</span>(<span class="hid">t5</span>);
+<span class="kwrd">assert</span>(<span class="hid">t5p</span> == <span class="str">&quot;Nyheter - NSD.se&quot;</span>);</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.webtitle.html">webtitle</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.webtitle.TitleFetchException.html">TitleFetchException</a></li><li><a class="class" href="kameloso.plugins.webtitle.WebtitlePlugin.html">WebtitlePlugin</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function current" href="kameloso.plugins.webtitle.decodeEntities.html">decodeEntities</a></li><li><a class="function" href="kameloso.plugins.webtitle.lookupURLs.html">lookupURLs</a></li><li><a class="function" href="kameloso.plugins.webtitle.onMessage.html">onMessage</a></li><li><a class="function" href="kameloso.plugins.webtitle.onMessageImpl.html">onMessageImpl</a></li><li><a class="function" href="kameloso.plugins.webtitle.parseResponseIntoTitleLookupResult.html">parseResponseIntoTitleLookupResult</a></li><li><a class="function" href="kameloso.plugins.webtitle.rewriteDirectImgurURL.html">rewriteDirectImgurURL</a></li></ul><span class="type-separator">static variables</span><ul><li><a class="static-variable" href="kameloso.plugins.webtitle.descriptionExemptions.html">descriptionExemptions</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.webtitle.TitleLookupResult.html">TitleLookupResult</a></li><li><a class="struct" href="kameloso.plugins.webtitle.WebtitleSettings.html">WebtitleSettings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

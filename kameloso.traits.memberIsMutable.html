@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>memberIsMutable (kameloso.traits.memberIsMutable)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>memberIsMutable</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.traits.html">traits</a> </div><div><div class="documentation-comment synopsis"><div><p>As the name suggests, aliases itself to <tt class="inline-code">true</tt> if the passed member of the
+    passed aggregate <tt class="inline-code">Thing</tt> is mutable, which includes that it's not an enum.</p></div></div></div><div class="annotated-prototype"><div class="aggregate-prototype"><div class="attributes"></div><span class="builtin-type">template</span> memberIsMutable (<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Thing">Thing</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="builtin-type">string</span> <span class="name" data-ident="memberstring">memberstring</span></span></div></div>) {<div class="aggregate-member"><div class="attributes"><div class="uda"><span><span class="lang-feature">static if</span>(<span>!isType!Thing</span>)</span></div></div><span class="builtin-type">enum</span> <span class="name">pattern</span>;</div><div class="aggregate-member"><div class="attributes"><div class="uda"><span><span class="lang-feature">static if</span>(<span>!isType!Thing</span>)</span></div></div><span class="builtin-type">enum</span> <span class="name">message</span>;</div><div class="aggregate-member"><div class="attributes"><div class="uda"><span><span class="lang-feature">static if</span>(!(<span>!isType!Thing</span>))</span></div><div class="uda"><span><span class="lang-feature">static if</span>(<span>!isAggregateType!Thing</span>)</span></div></div><span class="builtin-type">enum</span> <span class="name">pattern</span>;</div><div class="aggregate-member"><div class="attributes"><div class="uda"><span><span class="lang-feature">static if</span>(!(<span>!isType!Thing</span>))</span></div><div class="uda"><span><span class="lang-feature">static if</span>(<span>!isAggregateType!Thing</span>)</span></div></div><span class="builtin-type">enum</span> <span class="name">message</span>;</div><div class="aggregate-member"><div class="attributes"><div class="uda"><span><span class="lang-feature">static if</span>(!(<span>!isType!Thing</span>))</span></div><div class="uda"><span><span class="lang-feature">static if</span>(!(<span>!isAggregateType!Thing</span>))</span></div><div class="uda"><span><span class="lang-feature">static if</span>(<span>!memberstring.length</span>)</span></div></div><span class="builtin-type">enum</span> <span class="name">message</span>;</div><div class="aggregate-member"><div class="attributes"><div class="uda"><span><span class="lang-feature">static if</span>(!(<span>!isType!Thing</span>))</span></div><div class="uda"><span><span class="lang-feature">static if</span>(!(<span>!isAggregateType!Thing</span>))</span></div><div class="uda"><span><span class="lang-feature">static if</span>(!(<span>!memberstring.length</span>))</span></div></div><span class="builtin-type">enum</span> <span class="name">memberIsMutable</span>;</div>}</div></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="import"><a class="header-anchor" href="#import">Imports</a></h3><dl class="member-list native"><dt><a href="std.format.format.html">format (from std.format)</a><div class="simplified-prototype" style="max-width: 38ch;"><span class="builtin-type">public</span> <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">format</span> : <span class="hid">format</span>;</tt></div></dt><dd><div><span class="undocumented-note">Undocumented in source.</span></div></dd><dt><a href="std.format.format.html">format (from std.format)</a><div class="simplified-prototype" style="max-width: 38ch;"><span class="builtin-type">public</span> <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">format</span> : <span class="hid">format</span>;</tt></div></dt><dd><div><span class="undocumented-note">Undocumented in source.</span></div></dd><dt><a href="std.format.format.html">format (from std.format)</a><div class="simplified-prototype" style="max-width: 38ch;"><span class="builtin-type">public</span> <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">format</span> : <span class="hid">format</span>;</tt></div></dt><dd><div><span class="undocumented-note">Undocumented in source.</span></div></dd><dt><a href="std.traits.isAggregateType.html">isAggregateType (from std.traits)</a><div class="simplified-prototype" style="max-width: 69ch;"><span class="builtin-type">public</span> <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">traits</span> : <span class="hid">isAggregateType</span>, <span class="hid">isMutable</span>, <span class="hid">isType</span>;</tt></div></dt><dd><div><span class="undocumented-note">Undocumented in source.</span></div></dd><dt><a href="std.traits.isMutable.html">isMutable (from std.traits)</a><div class="simplified-prototype" style="max-width: 69ch;"><span class="builtin-type">public</span> <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">traits</span> : <span class="hid">isAggregateType</span>, <span class="hid">isMutable</span>, <span class="hid">isType</span>;</tt></div></dt><dd><div><span class="undocumented-note">Undocumented in source.</span></div></dd><dt><a href="std.traits.isType.html">isType (from std.traits)</a><div class="simplified-prototype" style="max-width: 69ch;"><span class="builtin-type">public</span> <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">traits</span> : <span class="hid">isAggregateType</span>, <span class="hid">isMutable</span>, <span class="hid">isType</span>;</tt></div></dt><dd><div><span class="undocumented-note">Undocumented in source.</span></div></dd></dl><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-Thing"><a class="parameter-name" data-ident="Thing" href="#param-Thing">Thing</a></dt><dd><div class="documentation-comment"><div><p>Some aggregate.</p></div></div></dd><dt id="param-memberstring"><a class="parameter-name" data-ident="memberstring" href="#param-memberstring">memberstring</a></dt><dd><div class="documentation-comment"><div><p>String name of the member of <tt class="inline-code">Thing</tt> that we want to
+            determine is a non-enum mutable.</p></div></div></dd></dl><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">struct</span> <span class="hid">Foo</span>
+{
+    <span class="type">int</span> <span class="hid">i</span>;
+    <span class="kwrd">const</span> <span class="type">bool</span> <span class="hid">b</span>;
+    <span class="kwrd">immutable</span> <span class="type">string</span> <span class="hid">s</span>;
+    <span class="kwrd">enum</span> <span class="type">float</span> <span class="hid">f</span> = <span class="num">3.14</span>;
+}
+
+<span class="kwrd">class</span> <span class="hid">Bar</span>
+{
+    <span class="type">int</span> <span class="hid">i</span>;
+    <span class="kwrd">const</span> <span class="type">bool</span> <span class="hid">b</span>;
+    <span class="kwrd">immutable</span> <span class="type">string</span> <span class="hid">s</span>;
+    <span class="kwrd">enum</span> <span class="type">float</span> <span class="hid">f</span> = <span class="num">3.14</span>;
+}
+
+<span class="kwrd">static</span> <span class="kwrd">assert</span>( <span class="hid">memberIsMutable</span>!(<span class="hid">Foo</span>, <span class="str">&quot;i&quot;</span>));
+<span class="kwrd">static</span> <span class="kwrd">assert</span>(!<span class="hid">memberIsMutable</span>!(<span class="hid">Foo</span>, <span class="str">&quot;b&quot;</span>));
+<span class="kwrd">static</span> <span class="kwrd">assert</span>(!<span class="hid">memberIsMutable</span>!(<span class="hid">Foo</span>, <span class="str">&quot;s&quot;</span>));
+<span class="kwrd">static</span> <span class="kwrd">assert</span>(!<span class="hid">memberIsMutable</span>!(<span class="hid">Foo</span>, <span class="str">&quot;f&quot;</span>));
+
+<span class="kwrd">static</span> <span class="kwrd">assert</span>( <span class="hid">memberIsMutable</span>!(<span class="hid">Bar</span>, <span class="str">&quot;i&quot;</span>));
+<span class="kwrd">static</span> <span class="kwrd">assert</span>(!<span class="hid">memberIsMutable</span>!(<span class="hid">Bar</span>, <span class="str">&quot;b&quot;</span>));
+<span class="kwrd">static</span> <span class="kwrd">assert</span>(!<span class="hid">memberIsMutable</span>!(<span class="hid">Bar</span>, <span class="str">&quot;s&quot;</span>));
+<span class="kwrd">static</span> <span class="kwrd">assert</span>(!<span class="hid">memberIsMutable</span>!(<span class="hid">Bar</span>, <span class="str">&quot;f&quot;</span>));</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.traits.html">traits</a> 
+		<span class="type-separator">enums</span><ul><li><a class="enum" href="kameloso.traits.longestMember.html">longestMember</a></li><li><a class="enum" href="kameloso.traits.longestUnserialisableMember.html">longestUnserialisableMember</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.traits.longestMemberImpl.html">longestMemberImpl</a></li><li><a class="function" href="kameloso.traits.memberstringIsThisCtorOrDtor.html">memberstringIsThisCtorOrDtor</a></li></ul><span class="type-separator">templates</span><ul><li><a class="template current" href="kameloso.traits.memberIsMutable.html">memberIsMutable</a></li><li><a class="template" href="kameloso.traits.memberIsValue.html">memberIsValue</a></li><li><a class="template" href="kameloso.traits.memberIsVisibleAndNotDeprecated.html">memberIsVisibleAndNotDeprecated</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

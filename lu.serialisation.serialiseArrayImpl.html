@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>serialiseArrayImpl (lu.serialisation.serialiseArrayImpl)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>serialiseArrayImpl</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.serialisation.html">serialisation</a> </div><div><div class="documentation-comment synopsis"><div><p>Serialises a non-string array into a single row. To be used when serialising
+    an aggregate with <a class="xref" href="lu.serialisation.serialise.2.html">serialise</a>.</p><p>Since UDAs do not persist across function calls, they must be summarised
+    in a <a class="xref" href="lu.serialisation.SerialisationUDAs.html">SerialisationUDAs</a> struct separately so we can pass them at runtime.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">private </div><div class="return-type"><span class="builtin-type">string</span></div><div class="function-name">serialiseArrayImpl</div><div class="template-parameters" data-count="1">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="T">T</span></span></div></div>)</div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="storage-class">auto</span> <span class="storage-class">ref</span> <span class="name" data-ident="T">T</span></span></span> <span class="parameter-name name" data-ident="array"><a href="#param-array">array</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <a class="name" data-ident="SerialisationUDAs" href="lu.serialisation.SerialisationUDAs.html" title="lu.serialisation.SerialisationUDAs">SerialisationUDAs</a></span></span> <span class="parameter-name name" data-ident="udas"><a href="#param-udas">udas</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-array"><a class="parameter-name" data-ident="array" href="#param-array">array</a> <span class="parameter-type"><span class="name" data-ident="T">T</span></span></dt><dd><div class="documentation-comment"><div><p>Array to serialise.</p></div></div></dd><dt id="param-udas"><a class="parameter-name" data-ident="udas" href="#param-udas">udas</a> <span class="parameter-type"><a class="xref" href="lu.serialisation.SerialisationUDAs.html" title="lu.serialisation.SerialisationUDAs"><span class="name" data-ident="SerialisationUDAs">SerialisationUDAs</span></a></span></dt><dd><div class="documentation-comment"><div><p>Aggregate of UDAs the original array was annotated with, passed as
+            a runtime value.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><span class="builtin-type">string</span></span></div><div class="documentation-comment returns-description"><div><p>A string, to be saved as a serialised row in a configuration file-y format.</p></div></div></div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="lu.serialisation.serialise.2.html">serialise</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.serialisation.html">serialisation</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="lu.serialisation.DeserialisationException.html">DeserialisationException</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="lu.serialisation.deserialise.html">deserialise</a></li><li><a class="function" href="lu.serialisation.justifiedEntryValueText.html">justifiedEntryValueText</a></li><li><a class="function" href="lu.serialisation.serialise.1.html">serialise</a></li><li><a class="function current" href="lu.serialisation.serialiseArrayImpl.html">serialiseArrayImpl</a></li><li><a class="function" href="lu.serialisation.splitEntryValue.html">splitEntryValue</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="lu.serialisation.SerialisationUDAs.html">SerialisationUDAs</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

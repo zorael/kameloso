@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>setMemberByName (lu.objmanip.setMemberByName)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>setMemberByName</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.objmanip.html">objmanip</a> </div><div><div class="documentation-comment synopsis"><div><p>Given a struct/class object, sets one of its members by its string name to a
+    specified value. Overload that takes a value of the same type as the target
+    member, rather than a string to convert. Integer promotion applies.</p><p>It does not currently recurse into other struct/class members.</p></div></div></div><div class="annotated-prototype"><ol class="overloads"><li class="overload-option"><a href="lu.objmanip.setMemberByName.1.html"><span class="overload-signature"><span class="lang-feature">auto</span>  <span class="name">setMemberByName</span>(Thing thing, string memberToSet, string valueToSet)</span></a></li><li class="active-overload-option"><span class="overload-signature"><span class="lang-feature">auto</span>  <span class="name">setMemberByName</span>(Thing thing, string memberToSet, Val valueToSet)</span><div class="function-prototype"><div class="attributes"></div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">setMemberByName</div><div class="template-parameters" data-count="2">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Thing">Thing</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Val">Val</span></span></div></div>)</div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">ref</span> <span class="name" data-ident="Thing">Thing</span></span></span> <span class="parameter-name name" data-ident="thing"><a href="#param-thing">thing</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="memberToSet"><a href="#param-memberToSet">memberToSet</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="name" data-ident="Val">Val</span></span></span> <span class="parameter-name name" data-ident="valueToSet"><a href="#param-valueToSet">valueToSet</a></span></div><span class="paren">)</span></div></div><div class="template-constraint"> <a class="lang-feature" href="http://dpldocs.info/template-constraints">if</a> (<div class="template-constraint-expression"><div class="andand-left"><div class="andand-left"><span class="name" data-ident="isAggregateType">isAggregateType</span>!<span class="name" data-ident="Thing">Thing</span> &amp;&amp; </div><div class="andand-right"><span class="name" data-ident="isMutable">isMutable</span>!<span class="name" data-ident="Thing">Thing</span></div> &amp;&amp; </div><div class="andand-right">!<a class="lang-feature" href="http://dpldocs.info/is-expression">is</a>(<span class="name" data-ident="Val">Val</span> : <span class="builtin-type">string</span>)</div></div>)</div><div class="function-contracts"></div></div></li></ol></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-thing"><a class="parameter-name" data-ident="thing" href="#param-thing">thing</a> <span class="parameter-type"><span class="name" data-ident="Thing">Thing</span></span></dt><dd><div class="documentation-comment"><div><p>Reference to object whose members to set.</p></div></div></dd><dt id="param-memberToSet"><a class="parameter-name" data-ident="memberToSet" href="#param-memberToSet">memberToSet</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>String name of member to set.</p></div></div></dd><dt id="param-valueToSet"><a class="parameter-name" data-ident="valueToSet" href="#param-valueToSet">valueToSet</a> <span class="parameter-type"><span class="name" data-ident="Val">Val</span></span></dt><dd><div class="documentation-comment"><div><p>Value, of the same type as the target member.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p><tt class="inline-code">true</tt> if a member was found and set, <tt class="inline-code">false</tt> if not.</p></div></div></div><h2 id="throws"><a class="header-anchor" href="#throws">Throws</a></h2><div class="documentation-comment throws-description"><div><p><a class="xref" href="lu.objmanip.SetMemberException.html">SetMemberException</a> if the passed <tt class="inline-code">valueToSet</tt> was not the same type
+        (or implicitly convertible to) the member to set.</p></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">struct</span> <span class="hid">Foo</span>
+{
+    <span class="type">int</span> <span class="hid">i</span>;
+    <span class="type">double</span> <span class="hid">d</span>;
+}
+
+<span class="hid">Foo</span> <span class="hid">foo</span>;
+
+<span class="hid">foo</span>.<span class="hid">setMemberByName</span>(<span class="str">&quot;i&quot;</span>, <span class="num">42</span>);
+<span class="hid">foo</span>.<span class="hid">setMemberByName</span>(<span class="str">&quot;d&quot;</span>, <span class="num">3.14</span>);
+
+<span class="kwrd">assert</span>(<span class="hid">foo</span>.<span class="hid">i</span> == <span class="num">42</span>);
+<span class="kwrd">assert</span>(<span class="hid">foo</span>.<span class="hid">d</span> == <span class="num">3.14</span>);</pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">conv</span> : <span class="hid">to</span>;
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">exception</span> : <span class="hid">assertThrown</span>;
+
+<span class="kwrd">struct</span> <span class="hid">Foo</span>
+{
+    <span class="type">string</span> <span class="hid">s</span>;
+    <span class="type">int</span> <span class="hid">i</span>;
+    <span class="type">bool</span> <span class="hid">b</span>;
+    <span class="kwrd">const</span> <span class="type">double</span> <span class="hid">d</span>;
+}
+
+<span class="hid">Foo</span> <span class="hid">foo</span>;
+
+<span class="type">bool</span> <span class="hid">success</span>;
+
+<span class="hid">success</span> = <span class="hid">foo</span>.<span class="hid">setMemberByName</span>(<span class="str">&quot;s&quot;</span>, <span class="str">&quot;harbl&quot;</span>);
+<span class="kwrd">assert</span>(<span class="hid">success</span>);
+<span class="kwrd">assert</span>((<span class="hid">foo</span>.<span class="hid">s</span> == <span class="str">&quot;harbl&quot;</span>), <span class="hid">foo</span>.<span class="hid">s</span>);
+
+<span class="hid">success</span> = <span class="hid">foo</span>.<span class="hid">setMemberByName</span>(<span class="str">&quot;i&quot;</span>, <span class="num">42</span>);
+<span class="kwrd">assert</span>(<span class="hid">success</span>);
+<span class="kwrd">assert</span>((<span class="hid">foo</span>.<span class="hid">i</span> == <span class="num">42</span>), <span class="hid">foo</span>.<span class="hid">i</span>.<span class="hid">to</span>!<span class="type">string</span>);
+
+<span class="hid">success</span> = <span class="hid">foo</span>.<span class="hid">setMemberByName</span>(<span class="str">&quot;b&quot;</span>, <span class="kwrd">true</span>);
+<span class="kwrd">assert</span>(<span class="hid">success</span>);
+<span class="kwrd">assert</span>(<span class="hid">foo</span>.<span class="hid">b</span>);
+
+<span class="hid">success</span> = <span class="hid">foo</span>.<span class="hid">setMemberByName</span>(<span class="str">&quot;d&quot;</span>, <span class="num">3.14</span>);
+<span class="kwrd">assert</span>(!<span class="hid">success</span>);
+
+<span class="hid">assertThrown</span>!<span class="hid">SetMemberException</span>(<span class="hid">foo</span>.<span class="hid">setMemberByName</span>(<span class="str">&quot;b&quot;</span>, <span class="num">3.14</span>));</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.objmanip.html">objmanip</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="lu.objmanip.SetMemberException.html">SetMemberException</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="lu.objmanip.replaceMembers.html">replaceMembers</a></li><li><a class="function current" href="lu.objmanip.setMemberByName.1.html">setMemberByName</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

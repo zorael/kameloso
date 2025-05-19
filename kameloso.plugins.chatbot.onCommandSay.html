@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>onCommandSay (kameloso.plugins.chatbot.onCommandSay)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>onCommandSay</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.chatbot.html">chatbot</a> </div><div><div class="documentation-comment synopsis"><div><p>Repeats text to the channel the event was sent to.</p><p>If it was sent in a query, respond in a private message in kind.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(WithChatbotPlugin)</div>private <div class="uda">@<a class="name" data-ident="IRCEventHandler" href="kameloso.plugins.IRCEventHandler.html" title="kameloso.plugins.IRCEventHandler">IRCEventHandler</a>().<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#CHAN" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.CHAN</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#QUERY" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.QUERY</a>).<span class="name" data-ident="permissionsRequired">permissionsRequired</span>(<a class="name" data-ident="Permissions" href="kameloso.plugins.Permissions.html#anyone" title="kameloso.plugins.Permissions">Permissions.anyone</a>).<span class="name" data-ident="channelPolicy">channelPolicy</span>(<a class="name" data-ident="ChannelPolicy" href="kameloso.plugins.ChannelPolicy.html#home" title="kameloso.plugins.ChannelPolicy">ChannelPolicy.home</a>).<span class="name" data-ident="addCommand">addCommand</span>(<a class="name" data-ident="IRCEventHandler" href="kameloso.plugins.IRCEventHandler.Command.html" title="kameloso.plugins.IRCEventHandler.Command">IRCEventHandler.Command</a>().<span class="name" data-ident="word">word</span>(&quot;say&quot;).<span class="name" data-ident="policy">policy</span>(<a class="name" data-ident="PrefixPolicy" href="kameloso.plugins.PrefixPolicy.html#prefixed" title="kameloso.plugins.PrefixPolicy">PrefixPolicy.prefixed</a>).<span class="name" data-ident="description">description</span>(&quot;Repeats text to the current channel. Amazing.&quot;).<span class="name" data-ident="addSyntax">addSyntax</span>(&quot;$command [text to repeat]&quot;)).<span class="name" data-ident="addCommand">addCommand</span>(<a class="name" data-ident="IRCEventHandler" href="kameloso.plugins.IRCEventHandler.Command.html" title="kameloso.plugins.IRCEventHandler.Command">IRCEventHandler.Command</a>().<span class="name" data-ident="word">word</span>(&quot;s&#228;g&quot;).<span class="name" data-ident="policy">policy</span>(<a class="name" data-ident="PrefixPolicy" href="kameloso.plugins.PrefixPolicy.html#nickname" title="kameloso.plugins.PrefixPolicy">PrefixPolicy.nickname</a>).<span class="name" data-ident="hidden">hidden</span>(true)).<span class="name" data-ident="addCommand">addCommand</span>(<a class="name" data-ident="IRCEventHandler" href="kameloso.plugins.IRCEventHandler.Command.html" title="kameloso.plugins.IRCEventHandler.Command">IRCEventHandler.Command</a>().<span class="name" data-ident="word">word</span>(&quot;echo&quot;).<span class="name" data-ident="policy">policy</span>(<a class="name" data-ident="PrefixPolicy" href="kameloso.plugins.PrefixPolicy.html#prefixed" title="kameloso.plugins.PrefixPolicy">PrefixPolicy.prefixed</a>).<span class="name" data-ident="hidden">hidden</span>(true)) </div></div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">onCommandSay</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><a class="name" data-ident="ChatbotPlugin" href="kameloso.plugins.chatbot.ChatbotPlugin.html" title="kameloso.plugins.chatbot.ChatbotPlugin">ChatbotPlugin</a></span></span> <span class="parameter-name name" data-ident="plugin"><a href="#param-plugin">plugin</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.html" title="dialect.defs.IRCEvent">IRCEvent</a></span></span> <span class="parameter-name name" data-ident="event"><a href="#param-event">event</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.chatbot.html">chatbot</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.chatbot.ChatbotPlugin.html">ChatbotPlugin</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function current" href="kameloso.plugins.chatbot.onCommandSay.html">onCommandSay</a></li><li><a class="function" href="kameloso.plugins.chatbot.onDance.html">onDance</a></li><li><a class="function" href="kameloso.plugins.chatbot.selftest.html">selftest</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.chatbot.ChatbotSettings.html">ChatbotSettings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

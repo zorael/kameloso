@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>exec (kameloso.platform.exec)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>exec</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.platform.html">platform</a> </div><div><div class="documentation-comment synopsis"><div><p>Re-executes the program.</p><p>Filters out any <tt class="inline-code">--set twitch.*</tt> keygen terminal wizard flags from the
+    arguments originally passed to the program, then calls
+    <a class="xref" href="std.process.execvp.html">execvp</a>.</p><p>On Windows, the behaviour is faked using <a class="xref" href="std.process.spawnProcess.html">spawnProcess</a>.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> @<span class="name" data-ident="system">system</span> </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">exec</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="builtin-type">string</span>[]</span></span> <span class="parameter-name name" data-ident="args"><a href="#param-args">args</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">uint</span></span></span> <span class="parameter-name name" data-ident="numReexecs"><a href="#param-numReexecs">numReexecs</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span>[]</span></span> <span class="parameter-name name" data-ident="channels"><a href="#param-channels">channels</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-args"><a class="parameter-name" data-ident="args" href="#param-args">args</a> <span class="parameter-type"><span class="builtin-type">string</span>[]</span></dt><dd><div class="documentation-comment"><div><p>Arguments passed to the program.</p></div></div></dd><dt id="param-numReexecs"><a class="parameter-name" data-ident="numReexecs" href="#param-numReexecs">numReexecs</a> <span class="parameter-type"><span class="builtin-type">uint</span></span></dt><dd><div class="documentation-comment"><div><p>How many reexecutions have been done so far.</p></div></div></dd><dt id="param-channels"><a class="parameter-name" data-ident="channels" href="#param-channels">channels</a> <span class="parameter-type"><span class="builtin-type">string</span>[]</span></dt><dd><div class="documentation-comment"><div><p>A snapshot of the channels currently joined, to pass as override
+            to the new execution via an <tt class="inline-code">--internal-channel-override</tt> getopt flag.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>On Windows, a <a class="xref" href="std.process.Pid.html">Pid</a> of the spawned process.
+        On Posix, it either exits the program or it throws.</p></div></div></div><h2 id="throws"><a class="header-anchor" href="#throws">Throws</a></h2><div class="documentation-comment throws-description"><div><p>On Posix, <a class="xref" href="lu.misc.ReturnValueException.html">ReturnValueException</a> on failure.
+        On Windows, <a class="xref" href="std.process.ProcessException.html">ProcessException</a> on failure.</p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.platform.html">platform</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.platform.configurationBaseDirectory.html">configurationBaseDirectory</a></li><li><a class="function" href="kameloso.platform.currentEnvironment.html">currentEnvironment</a></li><li><a class="function current" href="kameloso.platform.exec.html">exec</a></li><li><a class="function" href="kameloso.platform.openInBrowser.html">openInBrowser</a></li><li><a class="function" href="kameloso.platform.resourceBaseDirectory.html">resourceBaseDirectory</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

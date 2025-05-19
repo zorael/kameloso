@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>ScheduledFiber (kameloso.thread.ScheduledFiber)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>ScheduledFiber</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.thread.html">thread</a> </div><div><div class="documentation-comment synopsis"><div><p>A <a class="xref" href="core.thread.fiber.Fiber.html">Fiber</a> paired with a <tt class="inline-code">long</tt> UNIX timestamp.</p><p>If we bundle the two together like this, we can associate a point in time
+    with a <a class="xref" href="core.thread.fiber.Fiber.html">Fiber</a> without having to to use an associative
+    array (with UNIX timestamp keys).</p></div></div></div><div class="annotated-prototype"><div class="aggregate-prototype"><div class="attributes"></div><span class="builtin-type">struct</span> ScheduledFiber  {<div class="aggregate-member"><a href="kameloso.thread.ScheduledFiber.fiber.html"><div class="attributes"></div><tt class="highlighted"><span class="hid">Fiber</span></tt> <span class="name">fiber</span>;</a></div><div class="aggregate-member"><a href="kameloso.thread.ScheduledFiber.timestamp.html"><div class="attributes"></div><tt class="highlighted"><span class="type">long</span></tt> <span class="name">timestamp</span>;</a></div><div class="aggregate-member"><a href="kameloso.thread.ScheduledFiber.creator.html"><div class="attributes"></div><tt class="highlighted"><span class="type">string</span></tt> <span class="name">creator</span>;</a></div><div class="aggregate-member"><a href="kameloso.thread.ScheduledFiber.this.html"><span class="lang-feature name">this</span>(Fiber fiber, long timestamp, string creator);</a></div><div class="aggregate-member"><a href="kameloso.thread.ScheduledFiber.toString.html"><span class="lang-feature">auto</span>  <span class="name">toString</span>();</a></div>}</div></div><h2 id="constructors"><a class="header-anchor" href="#constructors">Constructors</a></h2><dl class="member-list constructors"><dt><a href="kameloso.thread.ScheduledFiber.this.html">this</a><div class="simplified-prototype" style="max-width: 53ch;"><span class="lang-feature name">this</span>(Fiber fiber, long timestamp, string creator)</div></dt><dd><div><p>Constructor.</p></div></dd></dl><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="kameloso.thread.ScheduledFiber.toString.html">toString</a><div class="simplified-prototype" style="max-width: 17ch;"><span class="lang-feature">auto</span>  <span class="name">toString</span>()</div></dt><dd><div><p>Dummy <tt class="inline-code">toString</tt> to stop <a class="xref" href="std.conv.to.html">std.conv.to</a> from generating one.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="variable"><a class="header-anchor" href="#variable">Variables</a></h3><dl class="member-list native"><dt><a href="kameloso.thread.ScheduledFiber.creator.html">creator</a><div class="simplified-prototype" style="max-width: 16ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">creator</span>;</div></dt><dd><div><p>String name of the function that created this <a class="xref" href="kameloso.thread.ScheduledFiber.html">ScheduledFiber</a>.</p></div></dd><dt><a href="kameloso.thread.ScheduledFiber.fiber.html">fiber</a><div class="simplified-prototype" style="max-width: 13ch;"><tt class="highlighted"><span class="hid">Fiber</span></tt> <span class="name">fiber</span>;</div></dt><dd><div><p>Fiber to trigger at the point in time <a class="xref" href="kameloso.thread.ScheduledFiber.timestamp.html">timestamp</a>.</p></div></dd><dt><a href="kameloso.thread.ScheduledFiber.timestamp.html">timestamp</a><div class="simplified-prototype" style="max-width: 16ch;"><tt class="highlighted"><span class="type">long</span></tt> <span class="name">timestamp</span>;</div></dt><dd><div><p>When <a class="xref" href="kameloso.thread.ScheduledFiber.fiber.html">fiber</a> is scheduled to be called, in hnsecs from midnight Jan 1st 1970.</p></div></dd></dl><div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">datetime</span>.<span class="hid">systime</span> : <span class="hid">Clock</span>;
+<span class="kwrd">import</span> <span class="hid">core</span>.<span class="hid">thread</span>.<span class="hid">fiber</span> : <span class="hid">Fiber</span>;
+
+<span class="type">void</span> <span class="hid">dg</span>() { <span class="com">/* ... */</span> }
+
+<span class="kwrd">auto</span> <span class="hid">scheduledFiber</span> = <span class="hid">ScheduledFiber</span>(<span class="kwrd">new</span> <span class="hid">Fiber</span>(&amp;<span class="hid">dg</span>, <span class="hid">BufferSize</span>.<span class="hid">fiberStack</span>),
+    <span class="hid">Clock</span>.<span class="hid">currTime</span>.<span class="hid">stdTime</span> + <span class="num">10</span> * <span class="num">10_000_000</span>);  <span class="com">// ten seconds in hnsecs</span></pre></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.thread.html">thread</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.thread.Boxed.html">Boxed</a></li><li><a class="class" href="kameloso.thread.CarryingFiber.html">CarryingFiber</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.thread.boxed.html">boxed</a></li><li><a class="function" href="kameloso.thread.carryingFiber.html">carryingFiber</a></li><li><a class="function" href="kameloso.thread.getQuitMessage.html">getQuitMessage</a></li><li><a class="function" href="kameloso.thread.interruptibleSleep.html">interruptibleSleep</a></li><li><a class="function" href="kameloso.thread.pthread_setname_np.html">pthread_setname_np</a></li><li><a class="function" href="kameloso.thread.setThreadName.html">setThreadName</a></li></ul><span class="type-separator">interfaces</span><ul><li><a class="interface" href="kameloso.thread.Sendable.html">Sendable</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.thread.ScheduledDelegate.html">ScheduledDelegate</a></li><li><a class="struct current" href="kameloso.thread.ScheduledFiber.html">ScheduledFiber</a></li><li><a class="struct" href="kameloso.thread.ThreadMessage.html">ThreadMessage</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

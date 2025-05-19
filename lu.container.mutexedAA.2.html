@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>mutexedAA (lu.container.mutexedAA)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>mutexedAA</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.container.html">container</a> </div><div><div class="documentation-comment synopsis"><div><p>Convenience function to create and setup a <a class="xref" href="lu.container.MutexedAA.html">MutexedAA</a> instance.
+    Overload that inherits an original associative array, or optionally duplicates it.
+    Infers the types to instantiate the <a class="xref" href="lu.container.MutexedAA.html">MutexedAA</a> with from the AA passed.</p><p>Note: The original associative array must be mutable.</p></div></div></div><div class="annotated-prototype"><ol class="overloads"><li class="overload-option"><a href="lu.container.mutexedAA.1.html"><span class="overload-signature"><span class="lang-feature">auto</span>  <span class="name">mutexedAA</span>()</span></a></li><li class="active-overload-option"><span class="overload-signature"><span class="lang-feature">auto</span>  <span class="name">mutexedAA</span>(AA orig)</span><div class="function-prototype"><div class="attributes"></div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">mutexedAA</div><div class="template-parameters" data-count="4">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Flag">Flag</span>!&quot;dup&quot; <span class="name" data-ident="performDup">performDup</span> = <span class="name" data-ident="Yes">Yes.dup</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="AA">AA</span> : <span class="name" data-ident="V">V</span>[<span class="name" data-ident="K">K</span>]</span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="V">V</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="K">K</span></span></div></div>)</div><div class="runtime-parameters" data-count="1"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="name" data-ident="AA">AA</span></span></span> <span class="parameter-name name" data-ident="orig"><a href="#param-orig">orig</a></span></div><span class="paren">)</span></div></div><div class="template-constraint"> <a class="lang-feature" href="http://dpldocs.info/template-constraints">if</a> (<div class="template-constraint-expression">__traits(<span class="name" data-ident="isAssociativeArray">isAssociativeArray</span>, <span class="name" data-ident="AA">AA</span>)</div>)</div><div class="function-contracts"></div></div></li></ol></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-performDup"><a class="parameter-name" data-ident="performDup" href="#param-performDup">performDup</a></dt><dd><div class="documentation-comment"><div><p>Whether or not to dup the original associative array, or to
+            inherit it by reference. Default is <tt class="inline-code">Yes.dup</tt>.</p></div></div></dd><dt id="param-orig"><a class="parameter-name" data-ident="orig" href="#param-orig">orig</a> <span class="parameter-type"><span class="name" data-ident="AA">AA</span></span></dt><dd><div class="documentation-comment"><div><p>Original associative array.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>A new <a class="xref" href="lu.container.MutexedAA.html">MutexedAA</a> instance, initialised with the passed original associative array.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">auto</span> <span class="hid">orig</span> = [ <span class="num">1</span> : <span class="str">&quot;one&quot;</span>, <span class="num">2</span> : <span class="str">&quot;two&quot;</span>, <span class="num">3</span> : <span class="str">&quot;three&quot;</span> ];
+<span class="kwrd">auto</span> <span class="hid">aa</span> = <span class="hid">mutexedAA</span>(<span class="hid">orig</span>);
+<span class="com">// no need to setup</span>
+<span class="kwrd">assert</span>(<span class="num">1</span> <span class="kwrd">in</span> <span class="hid">aa</span>);</pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted">{
+    <span class="kwrd">auto</span> <span class="hid">orig</span> = [ <span class="num">1</span> : <span class="str">&quot;one&quot;</span>, <span class="num">2</span> : <span class="str">&quot;two&quot;</span>, <span class="num">3</span> : <span class="str">&quot;three&quot;</span> ];
+    <span class="kwrd">auto</span> <span class="hid">aa</span> = <span class="hid">mutexedAA</span>(<span class="hid">orig</span>);
+    <span class="hid">aa</span>[<span class="num">4</span>] = <span class="str">&quot;four&quot;</span>;
+    <span class="kwrd">assert</span>(<span class="hid">aa</span>.<span class="hid">has</span>(<span class="num">4</span>));
+    <span class="kwrd">assert</span>(<span class="num">4</span> !<span class="kwrd">in</span> <span class="hid">orig</span>);
+}
+{
+    <span class="kwrd">auto</span> <span class="hid">orig</span> = [ <span class="num">1</span> : <span class="str">&quot;one&quot;</span>, <span class="num">2</span> : <span class="str">&quot;two&quot;</span>, <span class="num">3</span> : <span class="str">&quot;three&quot;</span> ];
+    <span class="kwrd">auto</span> <span class="hid">aa</span> = <span class="hid">mutexedAA</span>!(<span class="hid">No</span>.<span class="hid">dup</span>)(<span class="hid">orig</span>);
+    <span class="hid">aa</span>[<span class="num">4</span>] = <span class="str">&quot;four&quot;</span>;
+    <span class="kwrd">assert</span>(<span class="hid">aa</span>.<span class="hid">has</span>(<span class="num">4</span>));
+    <span class="kwrd">assert</span>(<span class="num">4</span> <span class="kwrd">in</span> <span class="hid">orig</span>);
+}</pre></div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="lu.container.MutexedAA.html">MutexedAA</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.container.html">container</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function current" href="lu.container.mutexedAA.1.html">mutexedAA</a></li><li><a class="function" href="lu.container.rehashingAA.html">rehashingAA</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="lu.container.Buffer.html">Buffer</a></li><li><a class="struct" href="lu.container.CircularBuffer.html">CircularBuffer</a></li><li><a class="struct" href="lu.container.MutexedAA.html">MutexedAA</a></li><li><a class="struct" href="lu.container.RehashingAA.html">RehashingAA</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

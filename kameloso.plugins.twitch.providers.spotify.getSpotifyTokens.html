@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>getSpotifyTokens (kameloso.plugins.twitch.providers.spotify.getSpotifyTokens)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>getSpotifyTokens</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.twitch.html">twitch</a> <a class="breadcrumb" href="kameloso.plugins.twitch.providers.html">providers</a> <a class="breadcrumb" href="kameloso.plugins.twitch.providers.spotify.html">spotify</a> </div><div><div class="documentation-comment synopsis"><div><p>Request OAuth API tokens from Spotify.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(TwitchSupport &amp;&amp; WithTwitchPlugin)</div>private </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">getSpotifyTokens</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <a class="name" data-ident="Credentials" href="kameloso.plugins.twitch.Credentials.html" title="kameloso.plugins.twitch.Credentials">Credentials</a></span></span> <span class="parameter-name name" data-ident="creds"><a href="#param-creds">creds</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="code"><a href="#param-code">code</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="caBundleFile"><a href="#param-caBundleFile">caBundleFile</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-creds"><a class="parameter-name" data-ident="creds" href="#param-creds">creds</a> <span class="parameter-type"><a class="xref" href="kameloso.plugins.twitch.Credentials.html" title="kameloso.plugins.twitch.Credentials"><span class="name" data-ident="Credentials">Credentials</span></a></span></dt><dd><div class="documentation-comment"><div><p><a class="xref" href="kameloso.plugins.twitch.Credentials.html">Credentials</a> aggregate.</p></div></div></dd><dt id="param-code"><a class="parameter-name" data-ident="code" href="#param-code">code</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>Spotify authorisation code.</p></div></div></dd><dt id="param-caBundleFile"><a class="parameter-name" data-ident="caBundleFile" href="#param-caBundleFile">caBundleFile</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>Path to a <tt class="inline-code">cacert.pem</tt> bundle file.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>A Voldemort of the results.</p></div></div></div><h2 id="throws"><a class="header-anchor" href="#throws">Throws</a></h2><div class="documentation-comment throws-description"><div><p><a class="xref" href="kameloso.net.UnexpectedJSONException.html">UnexpectedJSONException</a> on unexpected JSON.</p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.twitch.html">twitch</a> <a class="parent" href="kameloso.plugins.twitch.providers.html">providers</a> <a class="parent" href="kameloso.plugins.twitch.providers.spotify.html">spotify</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.twitch.providers.spotify.addTrackToSpotifyPlaylist.html">addTrackToSpotifyPlaylist</a></li><li><a class="function" href="kameloso.plugins.twitch.providers.spotify.getSpotifyBase64Authorization.html">getSpotifyBase64Authorization</a></li><li><a class="function current" href="kameloso.plugins.twitch.providers.spotify.getSpotifyTokens.html">getSpotifyTokens</a></li><li><a class="function" href="kameloso.plugins.twitch.providers.spotify.getSpotifyTrackByID.html">getSpotifyTrackByID</a></li><li><a class="function" href="kameloso.plugins.twitch.providers.spotify.refreshSpotifyToken.html">refreshSpotifyToken</a></li><li><a class="function" href="kameloso.plugins.twitch.providers.spotify.requestSpotifyKeys.html">requestSpotifyKeys</a></li><li><a class="function" href="kameloso.plugins.twitch.providers.spotify.validateSpotifyToken.html">validateSpotifyToken</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.twitch.providers.spotify.SpotifyErrorResponse.html">SpotifyErrorResponse</a></li><li><a class="struct" href="kameloso.plugins.twitch.providers.spotify.SpotifyTokenResponse.html">SpotifyTokenResponse</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

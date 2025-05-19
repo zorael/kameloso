@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>justifiedEntryValueText (lu.serialisation.justifiedEntryValueText)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>justifiedEntryValueText</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.serialisation.html">serialisation</a> </div><div><div class="documentation-comment synopsis"><div><p>Takes an unformatted string of serialised entry-value text and justifies it
+    into two neat columns.</p><p>It does one pass through it all first to determine the maximum width of the
+    entry names, then another to format it and eventually return a flat string.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> pure </div><div class="return-type"><span class="builtin-type">string</span></div><div class="function-name">justifiedEntryValueText</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="1"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="origLines"><a href="#param-origLines">origLines</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-origLines"><a class="parameter-name" data-ident="origLines" href="#param-origLines">origLines</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>Unjustified raw serialised text.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><span class="builtin-type">string</span></span></div><div class="documentation-comment returns-description"><div><p>Configuration file-y text, justified into two columns.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">struct</span> <span class="hid">Foo</span>
+{
+    <span class="com">// ...</span>
+}
+
+<span class="kwrd">struct</span> <span class="hid">Bar</span>
+{
+    <span class="com">// ...</span>
+}
+
+<span class="hid">Foo</span> <span class="hid">foo</span>;
+<span class="hid">Bar</span> <span class="hid">bar</span>;
+
+<span class="hid">Appender</span>!(<span class="type">char</span>[]) <span class="hid">sink</span>;
+
+<span class="hid">sink</span>.<span class="hid">serialise</span>(<span class="hid">foo</span>, <span class="hid">bar</span>);
+<span class="kwrd">immutable</span> <span class="hid">justified</span> = <span class="hid">sink</span>[].<span class="hid">justifiedEntryValueText</span>;</pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted with-line-wrappers"><span class="br">1 </span>    <span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">algorithm</span>.<span class="hid">iteration</span> : <span class="hid">splitter</span>;
+<span class="br">2 </span>    <span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">array</span> : <span class="hid">Appender</span>;
+<span class="br">3 </span>    <span class="kwrd">import</span> <span class="hid">lu</span>.<span class="hid">uda</span> : <span class="hid">Separator</span>;
+<span class="br">4 </span>
+<span class="br">5 </span>    <span class="kwrd">struct</span> <span class="hid">Foo</span>
+<span class="br">6 </span>    {
+<span class="br">7 </span>        <span class="kwrd">enum</span> <span class="hid">Bar</span> { <span class="hid">blaawp</span> = <span class="num">5</span>, <span class="hid">oorgle</span> = -<span class="num">1</span> }
+<span class="br">8 </span>        <span class="type">int</span> <span class="hid">someInt</span> = <span class="num">42</span>;
+<span class="br">9 </span>        <span class="type">string</span> <span class="hid">someString</span> = <span class="str">&quot;hello world!&quot;</span>;
+<span class="br">10 </span>        <span class="type">bool</span> <span class="hid">someBool</span> = <span class="kwrd">true</span>;
+<span class="br">11 </span>        <span class="type">float</span> <span class="hid">someFloat</span> = <span class="num">3.14f</span>;
+<span class="br">12 </span>        <span class="type">double</span> <span class="hid">someDouble</span> = <span class="num">99.9</span>;
+<span class="br">13 </span>        <span class="hid">Bar</span> <span class="hid">someBars</span> = <span class="hid">Bar</span>.<span class="hid">oorgle</span>;
+<span class="br">14 </span>        <span class="type">string</span> <span class="hid">harbl</span>;
+<span class="br">15 </span>
+<span class="br">16 </span>        @<span class="hid">Separator</span>(<span class="str">&quot;,&quot;</span>)
+<span class="br">17 </span>        {
+<span class="br">18 </span>            <span class="type">int</span>[] <span class="hid">intArray</span> = [ <span class="num">1</span>, <span class="num">2</span>, -<span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span> ];
+<span class="br">19 </span>            <span class="type">string</span>[] <span class="hid">stringArrayy</span> = [ <span class="str">&quot;hello&quot;</span>, <span class="str">&quot;world&quot;</span>, <span class="str">&quot;!&quot;</span> ];
+<span class="br">20 </span>            <span class="type">bool</span>[] <span class="hid">boolArray</span> = [ <span class="kwrd">true</span>, <span class="kwrd">false</span>, <span class="kwrd">true</span> ];
+<span class="br">21 </span>            <span class="type">float</span>[] <span class="hid">floatArray</span> = [ <span class="num">0.0</span>, <span class="num">1.1</span>, -<span class="num">2.2</span>, <span class="num">3.3</span> ];
+<span class="br">22 </span>            <span class="type">double</span>[] <span class="hid">doubleArray</span> = [ <span class="num">99.9999</span>, <span class="num">0.0001</span>, -<span class="num">1.0</span> ];
+<span class="br">23 </span>            <span class="hid">Bar</span>[] <span class="hid">barArray</span> = [ <span class="hid">Bar</span>.<span class="hid">blaawp</span>, <span class="hid">Bar</span>.<span class="hid">oorgle</span>, <span class="hid">Bar</span>.<span class="hid">blaawp</span> ];
+<span class="br">24 </span>            <span class="type">string</span>[] <span class="hid">yarn</span>;
+<span class="br">25 </span>        }
+<span class="br">26 </span>    }
+<span class="br">27 </span>
+<span class="br">28 </span>    <span class="kwrd">struct</span> <span class="hid">DifferentSection</span>
+<span class="br">29 </span>    {
+<span class="br">30 </span>        <span class="type">string</span> <span class="hid">ignored</span> = <span class="str">&quot;completely&quot;</span>;
+<span class="br">31 </span>        <span class="type">string</span> <span class="hid">because</span> = <span class="str">&quot;   no DifferentSection struct was passed&quot;</span>;
+<span class="br">32 </span>        <span class="type">int</span> <span class="hid">nil</span> = <span class="num">5</span>;
+<span class="br">33 </span>        <span class="type">string</span> <span class="hid">naN</span> = <span class="str">`!&quot;#&#164;%&amp;/`</span>;
+<span class="br">34 </span>    }
+<span class="br">35 </span>
+<span class="br">36 </span>    <span class="hid">Appender</span>!(<span class="type">char</span>[]) <span class="hid">sink</span>;
+<span class="br">37 </span>    <span class="hid">sink</span>.<span class="hid">reserve</span>(<span class="num">512</span>);
+<span class="br">38 </span>    <span class="hid">Foo</span> <span class="hid">foo</span>;
+<span class="br">39 </span>    <span class="hid">DifferentSection</span> <span class="hid">diff</span>;
+<span class="br">40 </span>    <span class="kwrd">enum</span> <span class="hid">unjustified</span> =
+<span class="br">41 </span><span class="str">`[Foo]
+<span class="br">42 </span>someInt 42
+<span class="br">43 </span>someString hello world!
+<span class="br">44 </span>someBool true
+<span class="br">45 </span>someFloat 3.14
+<span class="br">46 </span>someDouble 99.9
+<span class="br">47 </span>someBars oorgle
+<span class="br">48 </span>#harbl
+<span class="br">49 </span>intArray 1,2,-3,4,5
+<span class="br">50 </span>stringArrayy hello,world,!
+<span class="br">51 </span>boolArray true,false,true
+<span class="br">52 </span>floatArray 0,1.1,-2.2,3.3
+<span class="br">53 </span>doubleArray 99.9999,0.0001,-1
+<span class="br">54 </span>barArray blaawp,oorgle,blaawp
+<span class="br">55 </span>#yarn
+<span class="br">56 </span>
+<span class="br">57 </span>[DifferentSection]
+<span class="br">58 </span>ignored completely
+<span class="br">59 </span>because    no DifferentSection struct was passed
+<span class="br">60 </span>nil 5
+<span class="br">61 </span>naN !&quot;#&#164;%&amp;/`</span>;
+<span class="br">62 </span>
+<span class="br">63 </span>    <span class="kwrd">enum</span> <span class="hid">justified</span> =
+<span class="br">64 </span><span class="str">`[Foo]
+<span class="br">65 </span>someInt                 42
+<span class="br">66 </span>someString              hello world!
+<span class="br">67 </span>someBool                true
+<span class="br">68 </span>someFloat               3.14
+<span class="br">69 </span>someDouble              99.9
+<span class="br">70 </span>someBars                oorgle
+<span class="br">71 </span>#harbl
+<span class="br">72 </span>intArray                1,2,-3,4,5
+<span class="br">73 </span>stringArrayy            hello,world,!
+<span class="br">74 </span>boolArray               true,false,true
+<span class="br">75 </span>floatArray              0,1.1,-2.2,3.3
+<span class="br">76 </span>doubleArray             99.9999,0.0001,-1
+<span class="br">77 </span>barArray                blaawp,oorgle,blaawp
+<span class="br">78 </span>#yarn
+<span class="br">79 </span>
+<span class="br">80 </span>[DifferentSection]
+<span class="br">81 </span>ignored                 completely
+<span class="br">82 </span>because                 no DifferentSection struct was passed
+<span class="br">83 </span>nil                     5
+<span class="br">84 </span>naN                     !&quot;#&#164;%&amp;/`</span>;
+<span class="br">85 </span>
+<span class="br">86 </span>    <span class="hid">sink</span>.<span class="hid">serialise</span>(<span class="hid">foo</span>, <span class="hid">diff</span>);
+<span class="br">87 </span>    <span class="kwrd">assert</span>((<span class="hid">sink</span>[] == <span class="hid">unjustified</span>), <span class="str">'\n'</span> ~ <span class="hid">sink</span>[]);
+<span class="br">88 </span>    <span class="kwrd">immutable</span> <span class="hid">configText</span> = <span class="hid">justifiedEntryValueText</span>(<span class="hid">sink</span>[].<span class="hid">idup</span>);
+<span class="br">89 </span>
+<span class="br">90 </span>    <span class="kwrd">assert</span>((<span class="hid">configText</span> == <span class="hid">justified</span>), <span class="str">'\n'</span> ~ <span class="hid">configText</span>);</pre></div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="lu.serialisation.splitEntryValue.html">splitEntryValue</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.serialisation.html">serialisation</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="lu.serialisation.DeserialisationException.html">DeserialisationException</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="lu.serialisation.deserialise.html">deserialise</a></li><li><a class="function current" href="lu.serialisation.justifiedEntryValueText.html">justifiedEntryValueText</a></li><li><a class="function" href="lu.serialisation.serialise.1.html">serialise</a></li><li><a class="function" href="lu.serialisation.serialiseArrayImpl.html">serialiseArrayImpl</a></li><li><a class="function" href="lu.serialisation.splitEntryValue.html">splitEntryValue</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="lu.serialisation.SerialisationUDAs.html">SerialisationUDAs</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

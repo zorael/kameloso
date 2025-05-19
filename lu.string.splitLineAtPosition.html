@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>splitLineAtPosition (lu.string.splitLineAtPosition)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>splitLineAtPosition</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.string.html">string</a> </div><div><div class="documentation-comment synopsis"><div><p>Splits a string with on boundary as delimited by a supplied separator, into
+    one or more more lines not longer than the passed maximum length.</p><p>If a line cannot be split due to the line being too short or the separator
+    not occurring in the text, it is added to the returned array as-is and no
+    more splitting is done.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> pure </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">splitLineAtPosition</div><div class="template-parameters" data-count="2">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Line">Line</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Separator">Separator</span></span></div></div>)</div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="name" data-ident="Line">Line</span></span></span> <span class="parameter-name name" data-ident="line"><a href="#param-line">line</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="name" data-ident="Separator">Separator</span></span></span> <span class="parameter-name name" data-ident="separator"><a href="#param-separator">separator</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="name" data-ident="size_t">size_t</span></span></span> <span class="parameter-name name" data-ident="maxLength"><a href="#param-maxLength">maxLength</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-line"><a class="parameter-name" data-ident="line" href="#param-line">line</a> <span class="parameter-type"><span class="name" data-ident="Line">Line</span></span></dt><dd><div class="documentation-comment"><div><p>String line to split.</p></div></div></dd><dt id="param-separator"><a class="parameter-name" data-ident="separator" href="#param-separator">separator</a> <span class="parameter-type"><span class="name" data-ident="Separator">Separator</span></span></dt><dd><div class="documentation-comment"><div><p>Separator character with which to split the <tt class="inline-code">line</tt>.</p></div></div></dd><dt id="param-maxLength"><a class="parameter-name" data-ident="maxLength" href="#param-maxLength">maxLength</a> <span class="parameter-type"><span class="name" data-ident="size_t">size_t</span></span></dt><dd><div class="documentation-comment"><div><p>Maximum length of the separated lines.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>A <tt class="inline-code">T[]</tt> array with lines split out of the passed <tt class="inline-code">line</tt>.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="type">string</span> <span class="hid">line</span> = <span class="str">&quot;I am a fish in a sort of long sentence~&quot;</span>;
+<span class="kwrd">enum</span> <span class="hid">maxLineLength</span> = <span class="num">20</span>;
+<span class="kwrd">auto</span> <span class="hid">splitLines</span> = <span class="hid">line</span>.<span class="hid">splitLineAtPosition</span>(<span class="str">' '</span>, <span class="hid">maxLineLength</span>);
+
+<span class="kwrd">assert</span>(<span class="hid">splitLines</span>[<span class="num">0</span>] == <span class="str">&quot;I am a fish in a&quot;</span>);
+<span class="kwrd">assert</span>(<span class="hid">splitLines</span>[<span class="num">1</span>] == <span class="str">&quot;sort of a long&quot;</span>);
+<span class="kwrd">assert</span>(<span class="hid">splitLines</span>[<span class="num">2</span>] == <span class="str">&quot;sentence~&quot;</span>);</pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">conv</span> : <span class="hid">text</span>;
+
+{
+    <span class="kwrd">immutable</span> <span class="hid">prelude</span> = <span class="str">&quot;PRIVMSG #garderoben :&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">maxLength</span> = <span class="num">250</span> - <span class="hid">prelude</span>.<span class="hid">length</span>;
+
+    <span class="kwrd">immutable</span> <span class="hid">rawLine</span> = <span class="str">&quot;Lorem ipsum dolor sit amet, ea has velit noluisse, &quot;</span> ~
+        <span class="str">&quot;eos eius appetere constituto no, ad quas natum eos. Perpetua &quot;</span> ~
+        <span class="str">&quot;electram mnesarchum usu ne, mei vero dolorem no. Ea quando scripta &quot;</span> ~
+        <span class="str">&quot;quo, minim legendos ut vel. Ut usu graece equidem posidonium. Ius &quot;</span> ~
+        <span class="str">&quot;denique ponderum verterem no, quo te mentitum officiis referrentur. &quot;</span> ~
+        <span class="str">&quot;Sed an dolor iriure vocibus. &quot;</span> ~
+        <span class="str">&quot;Lorem ipsum dolor sit amet, ea has velit noluisse, &quot;</span> ~
+        <span class="str">&quot;eos eius appetere constituto no, ad quas natum eos. Perpetua &quot;</span> ~
+        <span class="str">&quot;electram mnesarchum usu ne, mei vero dolorem no. Ea quando scripta &quot;</span> ~
+        <span class="str">&quot;quo, minim legendos ut vel. Ut usu graece equidem posidonium. Ius &quot;</span> ~
+        <span class="str">&quot;denique ponderum verterem no, quo te mentitum officiis referrentur. &quot;</span> ~
+        <span class="str">&quot;Sed an dolor iriure vocibus. ssssssssssssssssssssssssssssssssssss&quot;</span> ~
+        <span class="str">&quot;sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss&quot;</span> ~
+        <span class="str">&quot;sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss&quot;</span> ~
+        <span class="str">&quot;sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss&quot;</span> ~
+        <span class="str">&quot;sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss&quot;</span> ~
+        <span class="str">&quot;sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss&quot;</span> ~
+        <span class="str">&quot;sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss&quot;</span> ~
+        <span class="str">&quot;ssssssssssssssssssssssssssssssssssssssssssssssssssssssss&quot;</span>;
+    <span class="kwrd">const</span> <span class="hid">splitLines</span> = <span class="hid">rawLine</span>.<span class="hid">splitLineAtPosition</span>(<span class="str">' '</span>, <span class="hid">maxLength</span>);
+    <span class="kwrd">assert</span>((<span class="hid">splitLines</span>.<span class="hid">length</span> == <span class="num">4</span>), <span class="hid">splitLines</span>.<span class="hid">length</span>.<span class="hid">text</span>);
+}
+{
+    <span class="kwrd">immutable</span> <span class="hid">prelude</span> = <span class="str">&quot;PRIVMSG #garderoben :&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">maxLength</span> = <span class="num">250</span> - <span class="hid">prelude</span>.<span class="hid">length</span>;
+
+    <span class="kwrd">immutable</span> <span class="hid">rawLine</span> = <span class="str">&quot;ssssssssssssssssssssssssssssssssssss&quot;</span> ~
+        <span class="str">&quot;sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss&quot;</span> ~
+        <span class="str">&quot;sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss&quot;</span> ~
+        <span class="str">&quot;sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss&quot;</span> ~
+        <span class="str">&quot;sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss&quot;</span> ~
+        <span class="str">&quot;sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss&quot;</span> ~
+        <span class="str">&quot;sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss&quot;</span> ~
+        <span class="str">&quot;ssssssssssssssssssssssssssssssssssssssssssssssssssssssss&quot;</span>;
+    <span class="kwrd">const</span> <span class="hid">splitLines</span> = <span class="hid">rawLine</span>.<span class="hid">splitLineAtPosition</span>(<span class="str">' '</span>, <span class="hid">maxLength</span>);
+    <span class="kwrd">assert</span>((<span class="hid">splitLines</span>.<span class="hid">length</span> == <span class="num">1</span>), <span class="hid">splitLines</span>.<span class="hid">length</span>.<span class="hid">text</span>);
+    <span class="kwrd">assert</span>(<span class="hid">splitLines</span>[<span class="num">0</span>] == <span class="hid">rawLine</span>);
+}</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.string.html">string</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="lu.string.AdvanceException.html">AdvanceException</a></li><li><a class="class" href="lu.string.AdvanceExceptionImpl.html">AdvanceExceptionImpl</a></li></ul><span class="type-separator">enums</span><ul><li><a class="enum" href="lu.string.SplitResults.html">SplitResults</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="lu.string.advancePast.html">advancePast</a></li><li><a class="function" href="lu.string.decode64.html">decode64</a></li><li><a class="function" href="lu.string.encode64.html">encode64</a></li><li><a class="function" href="lu.string.escapeControlCharacters.html">escapeControlCharacters</a></li><li><a class="function" href="lu.string.indent.html">indent</a></li><li><a class="function" href="lu.string.indentInto.html">indentInto</a></li><li><a class="function" href="lu.string.plurality.html">plurality</a></li><li><a class="function" href="lu.string.removeControlCharacters.html">removeControlCharacters</a></li><li><a class="function" href="lu.string.replaceFromAA.html">replaceFromAA</a></li><li><a class="function" href="lu.string.splitInto.1.html">splitInto</a></li><li><a class="function current" href="lu.string.splitLineAtPosition.html">splitLineAtPosition</a></li><li><a class="function" href="lu.string.splitWithQuotes.html">splitWithQuotes</a></li><li><a class="function" href="lu.string.stripSuffix.html">stripSuffix</a></li><li><a class="function" href="lu.string.stripped.1.html">stripped</a></li><li><a class="function" href="lu.string.strippedLeft.1.html">strippedLeft</a></li><li><a class="function" href="lu.string.strippedRight.1.html">strippedRight</a></li><li><a class="function" href="lu.string.tabs.html">tabs</a></li><li><a class="function" href="lu.string.unenclosed.html">unenclosed</a></li><li><a class="function" href="lu.string.unquoted.html">unquoted</a></li><li><a class="function" href="lu.string.unsinglequoted.html">unsinglequoted</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>KamelosoLogger (kameloso.logger.KamelosoLogger)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>KamelosoLogger</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.logger.html">logger</a> </div><div><div class="documentation-comment synopsis"><div><p>Logger class, used to print timestamped and coloured logging messages.</p><p>It is thread-local so instantiate more if you're threading.</p></div></div></div><div class="annotated-prototype"><div class="aggregate-prototype"><div class="attributes">final </div><span class="builtin-type">class</span> KamelosoLogger  {<div class="aggregate-member"><a href="kameloso.pods.CoreSettings.html"><span class="builtin-type">struct</span> <span class="name">CoreSettings</span> via <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">kameloso</span>.<span class="hid">pods</span> : <span class="hid">CoreSettings</span>;</tt>;</a></div><div class="aggregate-member"><a href="kameloso.terminal.colours.tags.expandTags.html"><span class="lang-feature">auto</span>  <span class="name">expandTags</span>(T line, LogLevel baseLevel) via <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">kameloso</span>.<span class="hid">terminal</span>.<span class="hid">colours</span>.<span class="hid">tags</span> : <span class="hid">expandTags</span>;</tt>;</a></div><div class="aggregate-member"><a href="lu.conv.toString.html"><span class="lang-feature">auto</span>  <span class="name">toString</span>(E value) via <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">lu</span>.<span class="hid">conv</span> : <span class="hid">toString</span>;</tt>;</a></div><div class="aggregate-member"><a href="kameloso.constants.DefaultColours.html"><span class="builtin-type">struct</span> <span class="name">DefaultColours</span> via <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">kameloso</span>.<span class="hid">constants</span> : <span class="hid">DefaultColours</span>;</tt>;</a></div><div class="aggregate-member"><a href="kameloso.terminal.colours.defs.TerminalForeground.html"><span class="builtin-type">enum</span> <span class="name">TerminalForeground</span> via <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">kameloso</span>.<span class="hid">terminal</span>.<span class="hid">colours</span>.<span class="hid">defs</span> : <span class="hid">TerminalForeground</span>, <span class="hid">TerminalReset</span>;</tt>;</a></div><div class="aggregate-member"><a href="kameloso.terminal.colours.defs.TerminalReset.html"><span class="builtin-type">enum</span> <span class="name">TerminalReset</span> via <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">kameloso</span>.<span class="hid">terminal</span>.<span class="hid">colours</span>.<span class="hid">defs</span> : <span class="hid">TerminalForeground</span>, <span class="hid">TerminalReset</span>;</tt>;</a></div><div class="aggregate-member"><a href="kameloso.terminal.colours.applyANSI.html"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">applyANSI</span>(Sink sink, uint code, ANSICodeType overrideType) via <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">kameloso</span>.<span class="hid">terminal</span>.<span class="hid">colours</span> : <span class="hid">applyANSI</span>, <span class="hid">asANSI</span>;</tt>;</a></div><div class="aggregate-member"><a href="kameloso.terminal.colours.asANSI.html"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">asANSI</span>(uint code) via <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">kameloso</span>.<span class="hid">terminal</span>.<span class="hid">colours</span> : <span class="hid">applyANSI</span>, <span class="hid">asANSI</span>;</tt>;</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.logcoloursBright.html"><span class="builtin-type">alias</span> <span class="name">logcoloursBright</span> = <tt class="highlighted"><span class="hid">DefaultColours</span>.<span class="hid">logcoloursBright</span></tt>;</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.logcoloursDark.html"><span class="builtin-type">alias</span> <span class="name">logcoloursDark</span> = <tt class="highlighted"><span class="hid">DefaultColours</span>.<span class="hid">logcoloursDark</span></tt>;</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.linebuffer.html"><div class="attributes">private </div><tt class="highlighted"><span class="hid">Appender</span>!(<span class="type">char</span>[])</tt> <span class="name">linebuffer</span>;</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.messagebuffer.html"><div class="attributes">private </div><tt class="highlighted"><span class="hid">Appender</span>!(<span class="type">char</span>[])</tt> <span class="name">messagebuffer</span>;</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.bufferInitialSize.html"><div class="attributes">private </div><span class="builtin-type">enum</span> <span class="name">bufferInitialSize</span>;</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.colours.html"><div class="attributes">private </div><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">colours</span>;</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.brightTerminal.html"><div class="attributes">private </div><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">brightTerminal</span>;</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.headless.html"><div class="attributes">private </div><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">headless</span>;</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.flush.html"><div class="attributes">private </div><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">flush</span>;</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.this.html"><span class="lang-feature name">this</span>(CoreSettings coreSettings);</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.tint.html"><div class="conditional-compilation-attributes"><span><span class="lang-feature">version</span>(<span>Colours</span>)</span><br />
+</div><span class="storage-class">static</span> <tt class="highlighted"><span class="type">uint</span></tt> <span class="name">tint</span>(LogLevel level, bool brightTerminal);</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.tintImpl.html"><div class="conditional-compilation-attributes"><span><span class="lang-feature">version</span>(<span>Colours</span>)</span><br />
+</div><span class="lang-feature">auto</span>  <span class="name">tintImpl</span>();</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.logtint.1.html"><span class="builtin-type">alias</span> <span class="name">logtint</span> = <tt class="highlighted"><span class="hid">alltint</span></tt>;</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.offtint.html"><div class="conditional-compilation-attributes"><span><span class="lang-feature">version</span>(!<span>Colours</span>)</span><br />
+</div><span class="storage-class">static</span> <span class="lang-feature">auto</span>  <span class="name">offtint</span>();</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.logtint.2.html"><span class="builtin-type">alias</span> <span class="name">logtint</span> = <tt class="highlighted"><span class="hid">alltint</span></tt>;</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.beginLogMsg.html"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">beginLogMsg</span>(LogLevel logLevel);</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.finishLogMsg.html"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">finishLogMsg</span>();</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.printImpl.html"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">printImpl</span>(LogLevel logLevel, Args args);</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.printfImpl.1.html"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">printfImpl</span>(LogLevel logLevel, string pattern, Args args);</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.printfImpl.2.html"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">printfImpl</span>(LogLevel logLevel, Args args);</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.fatalErrorMixin.html"><div class="attributes">private </div><span class="builtin-type">enum</span> <span class="name">fatalErrorMixin</span>;</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.log.html"><span class="builtin-type">alias</span> <span class="name">log</span> = <tt class="highlighted"><span class="hid">all</span></tt>;</a></div><div class="aggregate-member"><a href="kameloso.logger.KamelosoLogger.logf.html"><span class="builtin-type">alias</span> <span class="name">logf</span> = <tt class="highlighted"><span class="hid">allf</span></tt>;</a></div>}</div></div><h2 id="constructors"><a class="header-anchor" href="#constructors">Constructors</a></h2><dl class="member-list constructors"><dt><a href="kameloso.logger.KamelosoLogger.this.html">this</a><div class="simplified-prototype" style="max-width: 34ch;"><span class="lang-feature name">this</span>(CoreSettings coreSettings)</div></dt><dd><div><p>Creates a new <a class="xref" href="kameloso.logger.KamelosoLogger.html">KamelosoLogger</a> with settings divined from the passed
+        <a class="xref" href="kameloso.pods.CoreSettings.html">CoreSettings</a> struct.</p></div></dd></dl><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="alias"><a class="header-anchor" href="#alias">Aliases</a></h3><dl class="member-list native"><dt><a href="kameloso.logger.KamelosoLogger.log.html">log</a><div class="simplified-prototype" style="max-width: 16ch;"><span class="builtin-type">alias</span> <span class="name">log</span> = <tt class="highlighted"><span class="hid">all</span></tt></div></dt><dd><div><p>Synonymous alias to <a class="xref" href="kameloso.logger.KamelosoLogger.html#all">KamelosoLogger.all</a>, as a workaround for
+        <a class="xref" href="kameloso.logger.LogLevel.html#all">LogLevel.all</a> not being named <tt class="inline-code">LogLevel.log</tt>.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.logcoloursBright.html">logcoloursBright</a><div class="simplified-prototype" style="max-width: 61ch;"><span class="builtin-type">alias</span> <span class="name">logcoloursBright</span> = <tt class="highlighted"><span class="hid">DefaultColours</span>.<span class="hid">logcoloursBright</span></tt></div></dt><dt><a href="kameloso.logger.KamelosoLogger.logcoloursDark.html">logcoloursDark</a><div class="simplified-prototype" style="max-width: 57ch;"><span class="builtin-type">alias</span> <span class="name">logcoloursDark</span> = <tt class="highlighted"><span class="hid">DefaultColours</span>.<span class="hid">logcoloursDark</span></tt></div></dt><dd><div><p>Convenience alias.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.logf.html">logf</a><div class="simplified-prototype" style="max-width: 18ch;"><span class="builtin-type">alias</span> <span class="name">logf</span> = <tt class="highlighted"><span class="hid">allf</span></tt></div></dt><dd><div><p>Synonymous alias to <a class="xref" href="kameloso.logger.KamelosoLogger.html#allf">KamelosoLogger.allf</a>, as a workaround for
+        <a class="xref" href="kameloso.logger.LogLevel.html#all">LogLevel.all</a> not being named <tt class="inline-code">LogLevel.log</tt>.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.logtint.1.html">logtint</a><div class="simplified-prototype" style="max-width: 25ch;"><span class="builtin-type">alias</span> <span class="name">logtint</span> = <tt class="highlighted"><span class="hid">alltint</span></tt></div></dt><dd><div><p>Synonymous alias to <tt class="inline-code">alltint</tt>, as a workaround for <a class="xref" href="kameloso.logger.LogLevel.html#all">LogLevel.all</a>
+            not being named <tt class="inline-code">LogLevel.log</tt>.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.logtint.2.html">logtint</a><div class="simplified-prototype" style="max-width: 25ch;"><span class="builtin-type">alias</span> <span class="name">logtint</span> = <tt class="highlighted"><span class="hid">alltint</span></tt></div></dt><dd><div><p>Synonymous alias to <tt class="inline-code">alltint</tt>, as a workaround for <a class="xref" href="kameloso.logger.LogLevel.html#all">LogLevel.all</a>
+            not being named <tt class="inline-code">LogLevel.log</tt>.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="kameloso.logger.KamelosoLogger.beginLogMsg.html">beginLogMsg</a><div class="simplified-prototype" style="max-width: 38ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">beginLogMsg</span>(LogLevel logLevel)</div></dt><dd><div><p>Outputs the header of a logger message.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.finishLogMsg.html">finishLogMsg</a><div class="simplified-prototype" style="max-width: 20ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">finishLogMsg</span>()</div></dt><dd><div><p>Outputs the tail of a logger message.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.printImpl.html">printImpl</a><div class="simplified-prototype" style="max-width: 48ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">printImpl</span>(LogLevel logLevel, Args args)</div></dt><dd><div><p>Prints a timestamped log message to screen. Implementation function.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.printfImpl.1.html">printfImpl</a><div class="simplified-prototype" style="max-width: 67ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">printfImpl</span>(LogLevel logLevel, string pattern, Args args)</div></dt><dd><div><p>Prints a timestamped log message to screen as per the passed runtime pattern,
+        in <tt class="inline-code">printf</tt> style. Implementation function.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.printfImpl.2.html">printfImpl</a><div class="simplified-prototype" style="max-width: 49ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">printfImpl</span>(LogLevel logLevel, Args args)</div></dt><dd><div><p>Prints a timestamped log message to screen as per the passed compile-time
+        pattern, in <tt class="inline-code">printf</tt> style. Implementation function.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.tintImpl.html">tintImpl</a><div class="simplified-prototype" style="max-width: 17ch;"><span class="lang-feature">auto</span>  <span class="name">tintImpl</span>()</div></dt><dd><div><p>Template for returning tints based on the settings of the <tt class="inline-code">this</tt>
+            <a class="xref" href="kameloso.logger.KamelosoLogger.html">KamelosoLogger</a>.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="manifest constant"><a class="header-anchor" href="#manifest constant">Manifest constants</a></h3><dl class="member-list native"><dt><a href="kameloso.logger.KamelosoLogger.bufferInitialSize.html">bufferInitialSize</a><div class="simplified-prototype" style="max-width: 25ch;"><span class="builtin-type">enum</span> <span class="name">bufferInitialSize</span>;</div></dt><dd><div><p>The initial size to allocate for buffers. It will grow if needed.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.fatalErrorMixin.html">fatalErrorMixin</a><div class="simplified-prototype" style="max-width: 23ch;"><span class="builtin-type">enum</span> <span class="name">fatalErrorMixin</span>;</div></dt><dd><div><p>Mixin to error out on <tt class="inline-code">fatal</tt> calls.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="static function"><a class="header-anchor" href="#static function">Static functions</a></h3><dl class="member-list native"><dt><a href="kameloso.logger.KamelosoLogger.offtint.html">offtint</a><div class="simplified-prototype" style="max-width: 16ch;"><span class="lang-feature">auto</span>  <span class="name">offtint</span>()</div></dt><dd><div><p>Dummy function returning an empty string, since there can be no tints
+            on non-version <tt class="inline-code">Colours</tt> builds.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.tint.html">tint</a><div class="simplified-prototype" style="max-width: 50ch;"><tt class="highlighted"><span class="type">uint</span></tt> <span class="name">tint</span>(LogLevel level, bool brightTerminal)</div></dt><dd><div><p>Returns the corresponding
+            <a class="xref" href="kameloso.terminal.colours.defs.TerminalForeground.html">TerminalForeground</a> for the <a class="xref" href="kameloso.logger.LogLevel.html">LogLevel</a>,
+            taking into account whether the terminal is said to be bright or not.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="variable"><a class="header-anchor" href="#variable">Variables</a></h3><dl class="member-list native"><dt><a href="kameloso.logger.KamelosoLogger.brightTerminal.html">brightTerminal</a><div class="simplified-prototype" style="max-width: 22ch;"><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">brightTerminal</span>;</div></dt><dd><div><p>Whether or not to use colours for a bright background.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.colours.html">colours</a><div class="simplified-prototype" style="max-width: 14ch;"><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">colours</span>;</div></dt><dd><div><p>Whether to use colours or not in logger output.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.flush.html">flush</a><div class="simplified-prototype" style="max-width: 12ch;"><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">flush</span>;</div></dt><dd><div><p>Whether or not to flush standard out after writing to it.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.headless.html">headless</a><div class="simplified-prototype" style="max-width: 15ch;"><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">headless</span>;</div></dt><dd><div><p>Whether or not to disable all terminal output.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.linebuffer.html">linebuffer</a><div class="simplified-prototype" style="max-width: 31ch;"><tt class="highlighted"><span class="hid">Appender</span>!(<span class="type">char</span>[])</tt> <span class="name">linebuffer</span>;</div></dt><dd><div><p>Buffer to compose a line in before printing it to screen in one go.</p></div></dd><dt><a href="kameloso.logger.KamelosoLogger.messagebuffer.html">messagebuffer</a><div class="simplified-prototype" style="max-width: 35ch;"><tt class="highlighted"><span class="hid">Appender</span>!(<span class="type">char</span>[])</tt> <span class="name">messagebuffer</span>;</div></dt><dd><div><p>Sub-buffer to compose the message in.</p></div></dd></dl><div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted with-line-wrappers"><span class="br">1 </span><span class="kwrd">import</span> <span class="hid">kameloso</span>.<span class="hid">pods</span> : <span class="hid">CoreSettings</span>;
+<span class="br">2 </span>
+<span class="br">3 </span><span class="kwrd">struct</span> <span class="hid">S1</span>
+<span class="br">4 </span>{
+<span class="br">5 </span>    <span class="type">void</span> <span class="hid">toString</span>(<span class="hid">Sink</span>)(<span class="kwrd">auto</span> <span class="kwrd">ref</span> <span class="hid">Sink</span> <span class="hid">sink</span>) <span class="kwrd">const</span>
+<span class="br">6 </span>    {
+<span class="br">7 </span>        <span class="hid">sink</span>.<span class="hid">put</span>(<span class="str">&quot;sink toString&quot;</span>);
+<span class="br">8 </span>    }
+<span class="br">9 </span>}
+<span class="br">10 </span>
+<span class="br">11 </span><span class="kwrd">struct</span> <span class="hid">S2</span>
+<span class="br">12 </span>{
+<span class="br">13 </span>    <span class="type">void</span> <span class="hid">toString</span>(<span class="kwrd">scope</span> <span class="type">void</span> <span class="kwrd">delegate</span>(<span class="kwrd">const</span>(<span class="type">char</span>)[]) <span class="hid">dg</span>) <span class="kwrd">const</span>
+<span class="br">14 </span>    {
+<span class="br">15 </span>        <span class="hid">dg</span>(<span class="str">&quot;delegate toString&quot;</span>);
+<span class="br">16 </span>    }
+<span class="br">17 </span>
+<span class="br">18 </span>    @<span class="hid">disable</span> <span class="kwrd">this</span>(<span class="kwrd">this</span>);
+<span class="br">19 </span>}
+<span class="br">20 </span>
+<span class="br">21 </span><span class="kwrd">struct</span> <span class="hid">S3</span>
+<span class="br">22 </span>{
+<span class="br">23 </span>    <span class="type">string</span> <span class="hid">s</span> = <span class="str">&quot;no toString&quot;</span>;
+<span class="br">24 </span>}
+<span class="br">25 </span>
+<span class="br">26 </span><span class="kwrd">struct</span> <span class="hid">S4</span>
+<span class="br">27 </span>{
+<span class="br">28 </span>    <span class="type">string</span> <span class="hid">toString</span> = <span class="str">&quot;toString literal&quot;</span>;
+<span class="br">29 </span>}
+<span class="br">30 </span>
+<span class="br">31 </span><span class="kwrd">struct</span> <span class="hid">S5</span>
+<span class="br">32 </span>{
+<span class="br">33 </span>    <span class="type">string</span> <span class="hid">toString</span>()() <span class="kwrd">const</span>
+<span class="br">34 </span>    {
+<span class="br">35 </span>        <span class="kwrd">return</span> <span class="str">&quot;template toString&quot;</span>;
+<span class="br">36 </span>    }
+<span class="br">37 </span>}
+<span class="br">38 </span>
+<span class="br">39 </span><span class="kwrd">class</span> <span class="hid">C</span>
+<span class="br">40 </span>{
+<span class="br">41 </span>    <span class="kwrd">override</span> <span class="type">string</span> <span class="hid">toString</span>() <span class="kwrd">const</span>
+<span class="br">42 </span>    {
+<span class="br">43 </span>        <span class="kwrd">return</span> <span class="str">&quot;plain toString&quot;</span>;
+<span class="br">44 </span>    }
+<span class="br">45 </span>}
+<span class="br">46 </span>
+<span class="br">47 </span><span class="hid">CoreSettings</span> <span class="hid">coreSettings</span>;
+<span class="br">48 </span><span class="hid">coreSettings</span>.<span class="hid">colours</span> = <span class="kwrd">false</span>;
+<span class="br">49 </span><span class="hid">coreSettings</span>.<span class="hid">brightTerminal</span> = <span class="kwrd">false</span>;
+<span class="br">50 </span><span class="hid">coreSettings</span>.<span class="hid">headless</span> = <span class="kwrd">false</span>;
+<span class="br">51 </span><span class="hid">coreSettings</span>.<span class="hid">flush</span> = <span class="kwrd">true</span>;
+<span class="br">52 </span>
+<span class="br">53 </span><span class="kwrd">auto</span> <span class="hid">log_</span> = <span class="kwrd">new</span> <span class="hid">KamelosoLogger</span>(<span class="hid">coreSettings</span>);
+<span class="br">54 </span>
+<span class="br">55 </span><span class="hid">log_</span>.<span class="hid">logf</span>!<span class="str">&quot;log: %s&quot;</span>(<span class="str">&quot;log&quot;</span>);
+<span class="br">56 </span><span class="hid">log_</span>.<span class="hid">infof</span>!<span class="str">&quot;log: %s&quot;</span>(<span class="str">&quot;info&quot;</span>);
+<span class="br">57 </span><span class="hid">log_</span>.<span class="hid">warningf</span>!<span class="str">&quot;log: %s&quot;</span>(<span class="str">&quot;warning&quot;</span>);
+<span class="br">58 </span><span class="hid">log_</span>.<span class="hid">errorf</span>!<span class="str">&quot;log: %s&quot;</span>(<span class="str">&quot;error&quot;</span>);
+<span class="br">59 </span><span class="hid">log_</span>.<span class="hid">criticalf</span>!<span class="str">&quot;log: %s&quot;</span>(<span class="str">&quot;critical&quot;</span>);
+<span class="br">60 </span><span class="com">// log_.fatalf!&quot;log: %s&quot;(&quot;FATAL&quot;);</span>
+<span class="br">61 </span><span class="hid">log_</span>.<span class="hid">tracef</span>!<span class="str">&quot;log: %s&quot;</span>(<span class="str">&quot;trace&quot;</span>);
+<span class="br">62 </span><span class="hid">log_</span>.<span class="hid">offf</span>!<span class="str">&quot;log: %s&quot;</span>(<span class="str">&quot;off&quot;</span>);
+<span class="br">63 </span>
+<span class="br">64 </span><span class="kwrd">version</span>(<span class="hid">Colours</span>)
+<span class="br">65 </span>{
+<span class="br">66 </span>    <span class="hid">coreSettings</span>.<span class="hid">colours</span> = <span class="kwrd">true</span>;
+<span class="br">67 </span>    <span class="hid">coreSettings</span>.<span class="hid">brightTerminal</span> = <span class="kwrd">true</span>;
+<span class="br">68 </span>    <span class="hid">log_</span> = <span class="kwrd">new</span> <span class="hid">KamelosoLogger</span>(<span class="hid">coreSettings</span>);
+<span class="br">69 </span>
+<span class="br">70 </span>    <span class="hid">log_</span>.<span class="hid">log</span>(<span class="str">&quot;log: log&quot;</span>);
+<span class="br">71 </span>    <span class="hid">log_</span>.<span class="hid">info</span>(<span class="str">&quot;log: info&quot;</span>);
+<span class="br">72 </span>    <span class="hid">log_</span>.<span class="hid">warning</span>(<span class="str">&quot;log: warning&quot;</span>);
+<span class="br">73 </span>    <span class="hid">log_</span>.<span class="hid">error</span>(<span class="str">&quot;log: error&quot;</span>);
+<span class="br">74 </span>    <span class="hid">log_</span>.<span class="hid">critical</span>(<span class="str">&quot;log: critical&quot;</span>);
+<span class="br">75 </span>    <span class="com">// log_.fatal(&quot;log: FATAL&quot;);</span>
+<span class="br">76 </span>    <span class="hid">log_</span>.<span class="hid">trace</span>(<span class="str">&quot;log: trace&quot;</span>);
+<span class="br">77 </span>    <span class="hid">log_</span>.<span class="hid">off</span>(<span class="str">&quot;log: off&quot;</span>);
+<span class="br">78 </span>
+<span class="br">79 </span>    <span class="hid">coreSettings</span>.<span class="hid">brightTerminal</span> = <span class="kwrd">false</span>;
+<span class="br">80 </span>    <span class="hid">log_</span> = <span class="kwrd">new</span> <span class="hid">KamelosoLogger</span>(<span class="hid">coreSettings</span>);
+<span class="br">81 </span>
+<span class="br">82 </span>    <span class="hid">log_</span>.<span class="hid">log</span>(<span class="str">&quot;log: log&quot;</span>);
+<span class="br">83 </span>    <span class="hid">log_</span>.<span class="hid">info</span>(<span class="str">&quot;log: info&quot;</span>);
+<span class="br">84 </span>    <span class="hid">log_</span>.<span class="hid">warning</span>(<span class="str">&quot;log: warning&quot;</span>);
+<span class="br">85 </span>    <span class="hid">log_</span>.<span class="hid">error</span>(<span class="str">&quot;log: error&quot;</span>);
+<span class="br">86 </span>    <span class="com">// log_.fatal(&quot;log: FATAL&quot;);</span>
+<span class="br">87 </span>    <span class="hid">log_</span>.<span class="hid">trace</span>(<span class="str">&quot;log: trace&quot;</span>);
+<span class="br">88 </span>    <span class="hid">log_</span>.<span class="hid">off</span>(<span class="str">&quot;log: off&quot;</span>);
+<span class="br">89 </span>}
+<span class="br">90 </span>
+<span class="br">91 </span><span class="hid">log_</span>.<span class="hid">log</span>(<span class="str">&quot;log &lt;i&gt;info&lt;/&gt; log &lt;w&gt;warning&lt;/&gt; log &lt;e&gt;error&lt;/&gt; log &lt;t&gt;trace&lt;/&gt; log &lt;o&gt;off&lt;/&gt; log&quot;</span>);
+<span class="br">92 </span>
+<span class="br">93 </span><span class="hid">S1</span> <span class="hid">s1</span>;
+<span class="br">94 </span><span class="hid">S2</span> <span class="hid">s2</span>;
+<span class="br">95 </span><span class="hid">S3</span> <span class="hid">s3</span>;
+<span class="br">96 </span><span class="hid">S4</span> <span class="hid">s4</span>;
+<span class="br">97 </span><span class="hid">S5</span> <span class="hid">s5</span>;
+<span class="br">98 </span><span class="hid">C</span> <span class="hid">c</span> = <span class="kwrd">new</span> <span class="hid">C</span>;
+<span class="br">99 </span>
+<span class="br">100 </span><span class="hid">log_</span>.<span class="hid">trace</span>();
+<span class="br">101 </span>
+<span class="br">102 </span><span class="hid">log_</span>.<span class="hid">log</span>(<span class="hid">s1</span>);
+<span class="br">103 </span><span class="hid">log_</span>.<span class="hid">info</span>(<span class="hid">s2</span>);
+<span class="br">104 </span><span class="hid">log_</span>.<span class="hid">warning</span>(<span class="hid">s3</span>);
+<span class="br">105 </span><span class="hid">log_</span>.<span class="hid">critical</span>(<span class="hid">s4</span>);
+<span class="br">106 </span><span class="hid">log_</span>.<span class="hid">error</span>(<span class="hid">s5</span>);
+<span class="br">107 </span><span class="hid">log_</span>.<span class="hid">trace</span>(<span class="hid">c</span>);
+<span class="br">108 </span>
+<span class="br">109 </span><span class="hid">log_</span>.<span class="hid">headless</span> = <span class="kwrd">true</span>;
+<span class="br">110 </span><span class="hid">log_</span>.<span class="hid">error</span>(<span class="str">&quot;THIS SHOULD NEVER BE SEEN&quot;</span>);</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.logger.html">logger</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class current" href="kameloso.logger.KamelosoLogger.html">KamelosoLogger</a></li></ul><span class="type-separator">enums</span><ul><li><a class="enum" href="kameloso.logger.LogLevel.html">LogLevel</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

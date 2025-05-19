@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>lu.array (lu.array)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>lu.array</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> </div><div><div class="documentation-comment synopsis"><div><p>Simple array utilities.</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="class"><a class="header-anchor" href="#class">Classes</a></h3><dl class="member-list native"><dt><a href="lu.array.ArrayException.html">ArrayException</a><div class="simplified-prototype" style="max-width: 22ch;"><span class="builtin-type">class</span> <span class="name">ArrayException</span></div></dt><dd><div><p>Exception, to be thrown when there was an array-related error.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="lu.array.countUntilLastMatchOf.html">countUntilLastMatchOf</a><div class="simplified-prototype" style="max-width: 50ch;"><span class="lang-feature">auto</span>  <span class="name">countUntilLastMatchOf</span>(Haystack haystack)</div></dt><dd><div><p>Finds the index of the last match of a predicate in a haystack. The predicate
+    is evaluated against each element.</p></div></dd><dt><a href="lu.array.countUntilLastOccurrenceOf.html">countUntilLastOccurrenceOf</a><div class="simplified-prototype" style="max-width: 72ch;"><span class="lang-feature">auto</span>  <span class="name">countUntilLastOccurrenceOf</span>(Haystack haystack, Needle needle)</div></dt><dd><div><p>Finds the index of the last occurrence of a needle in a haystack.
+    The needle may be a single element (character) or an array of the same type
+    as the haystack.</p></div></dd><dt><a href="lu.array.pruneAA.html">pruneAA</a><div class="simplified-prototype" style="max-width: 20ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">pruneAA</span>(AA aa)</div></dt><dd><div><p>Iterates an associative array and deletes invalid entries, either if the value
+    is in a default <tt class="inline-code">.init</tt> state or as per the optionally passed predicate.</p></div></dd><dt><a href="lu.array.truthTable.1.html">truthTable</a><div class="simplified-prototype" style="max-width: 36ch;"><span class="lang-feature">auto</span>  <span class="name">truthTable</span>(Numbers numbers)</div></dt><dd><div><p>Generates a truth table from a list of runtime numbers.</p></div></dd><dt><a href="lu.array.truthTable.2.html">truthTable</a><div class="simplified-prototype" style="max-width: 33ch;"><span class="lang-feature">auto</span>  <span class="name">truthTable</span>(Enums values)</div></dt><dd><div><p>Generates a truth table from a list of runtime enum values.</p></div></dd><dt><a href="lu.array.truthTable.3.html">truthTable</a><div class="simplified-prototype" style="max-width: 19ch;"><span class="lang-feature">auto</span>  <span class="name">truthTable</span>()</div></dt><dd><div><p>Generates a static truth table from a list of compile-time numbers.</p></div></dd><dt><a href="lu.array.truthTable.4.html">truthTable</a><div class="simplified-prototype" style="max-width: 19ch;"><span class="lang-feature">auto</span>  <span class="name">truthTable</span>()</div></dt><dd><div><p>Generates a static truth table from a list of compile-time enum values.</p></div></dd><dt><a href="lu.array.uniqueKey.html">uniqueKey</a><div class="simplified-prototype" style="max-width: 49ch;"><span class="lang-feature">auto</span>  <span class="name">uniqueKey</span>(AA aa, K min, K max, V value)</div></dt><dd><div><p>Returns a unique key for the passed associative array. Reserves the key by
+    assigning it a value.</p></div></dd><dt><a href="lu.array.zero.html">zero</a><div class="simplified-prototype" style="max-width: 49ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">zero</span>(Sink sink, bool clear, T zeroValue)</div></dt><dd><div><p>Zeroes out the contents of an <a class="xref" href="std.array.Appender.html">Appender</a>.</p></div></dd></dl><div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="type">string</span>[<span class="type">int</span>] <span class="hid">aa</span>;
+
+<span class="kwrd">immutable</span> <span class="hid">key</span> = <span class="hid">aa</span>.<span class="hid">uniqueKey</span>;
+
+<span class="kwrd">assert</span>(<span class="hid">key</span> &gt; <span class="num">0</span>);
+<span class="kwrd">assert</span>(<span class="hid">key</span> <span class="kwrd">in</span> <span class="hid">aa</span>);
+<span class="kwrd">assert</span>(<span class="hid">aa</span>[<span class="hid">key</span>] == <span class="type">string</span>.<span class="hid">init</span>);
+
+<span class="hid">Appender</span>!(<span class="type">int</span>]) <span class="hid">sink</span>;
+<span class="hid">sink</span>.<span class="hid">put</span>(<span class="num">1</span>);
+<span class="hid">sink</span>.<span class="hid">put</span>(<span class="num">2</span>);
+<span class="hid">sink</span>.<span class="hid">put</span>(<span class="num">3</span>);
+
+<span class="hid">sink</span>.<span class="hid">zero</span>(<span class="hid">clear</span>: <span class="kwrd">false</span>);
+<span class="kwrd">assert</span>(<span class="hid">sink</span>[] == [ <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span> ]);
+
+<span class="hid">sink</span>.<span class="hid">zero</span>(<span class="hid">clear</span>: <span class="kwrd">false</span>, <span class="num">42</span>);
+<span class="kwrd">assert</span>(<span class="hid">sink</span>[] == [ <span class="num">42</span>, <span class="num">42</span>, <span class="num">42</span> ]);
+
+<span class="hid">sink</span>.<span class="hid">zero</span>();  <span class="com">//(clear: true);</span>
+<span class="kwrd">assert</span>(!<span class="hid">sink</span>[].<span class="hid">length</span>);
+
+<span class="kwrd">immutable</span> <span class="hid">table</span> = <span class="hid">truthTable</span>(<span class="num">1</span>, <span class="num">3</span>, <span class="num">5</span>);
+<span class="kwrd">assert</span>((<span class="hid">table</span>.<span class="hid">length</span> == <span class="num">6</span>));
+<span class="kwrd">assert</span>(<span class="hid">table</span> == [ <span class="kwrd">false</span>, <span class="kwrd">true</span>, <span class="kwrd">false</span>, <span class="kwrd">true</span>, <span class="kwrd">false</span>, <span class="kwrd">true</span> ]);
+
+<span class="kwrd">enum</span> <span class="hid">E</span> { <span class="hid">a</span>, <span class="hid">b</span>, <span class="hid">c</span>, <span class="hid">d</span> }
+
+<span class="kwrd">const</span> <span class="hid">enumTable</span> = <span class="hid">truthTable</span>(<span class="hid">E</span>.<span class="hid">b</span>, <span class="hid">E</span>.<span class="hid">c</span>);
+<span class="kwrd">assert</span>((<span class="hid">enumTable</span>.<span class="hid">length</span> == <span class="num">3</span>));
+<span class="kwrd">assert</span>(<span class="hid">enumTable</span> == [ <span class="kwrd">false</span>, <span class="kwrd">true</span>, <span class="kwrd">true</span>, <span class="kwrd">false</span> ]);
+
+<span class="kwrd">static</span> <span class="hid">staticTable</span> = <span class="hid">truthTable</span>!(<span class="hid">Yes</span>.<span class="hid">fullEnumRange</span>, <span class="hid">E</span>.<span class="hid">a</span>, <span class="hid">E</span>.<span class="hid">b</span>);
+<span class="kwrd">assert</span>(<span class="kwrd">is</span>(<span class="kwrd">typeof</span>(<span class="hid">staticTable</span>) == <span class="type">bool</span>[<span class="num">4</span>]));
+<span class="kwrd">assert</span>(<span class="hid">staticTable</span> == [ <span class="kwrd">true</span>, <span class="kwrd">true</span>, <span class="kwrd">false</span>, <span class="kwrd">false</span> ]);
+
+<span class="kwrd">immutable</span> <span class="hid">staticNumTable</span> = <span class="hid">truthTable</span>!(<span class="num">2</span>, <span class="num">4</span>, <span class="num">6</span>);
+<span class="kwrd">assert</span>(<span class="kwrd">is</span>(<span class="kwrd">typeof</span>(<span class="hid">staticNumTable</span>) == <span class="type">bool</span>[<span class="num">7</span>]));
+<span class="kwrd">assert</span>(<span class="hid">staticNumTable</span> == [ <span class="kwrd">false</span>, <span class="kwrd">false</span>, <span class="kwrd">true</span>, <span class="kwrd">false</span>, <span class="kwrd">true</span>, <span class="kwrd">false</span>, <span class="kwrd">true</span> ]);</pre></div></div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module current" href="lu.array.html">array</a></li><li><a class="module" href="lu.assert_.html">assert_</a></li><li><a class="module" href="lu.common.html">common</a></li><li><a class="module" href="lu.container.html">container</a></li><li><a class="module" href="lu.conv.html">conv</a></li><li><a class="module" href="lu.deltastrings.html">deltastrings</a></li><li><a class="module" href="lu.json.html">json</a></li><li><a class="module" href="lu.meld.html">meld</a></li><li><a class="module" href="lu.misc.html">misc</a></li><li><a class="module" href="lu.numeric.html">numeric</a></li><li><a class="module" href="lu.objmanip.html">objmanip</a></li><li><a class="module" href="lu.semver.html">semver</a></li><li><a class="module" href="lu.serialisation.html">serialisation</a></li><li><a class="module" href="lu.string.html">string</a></li><li><a class="module" href="lu.traits.html">traits</a></li><li><a class="module" href="lu.typecons.html">typecons</a></li><li><a class="module" href="lu.uda.html">uda</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

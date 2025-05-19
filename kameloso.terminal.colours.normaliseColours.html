@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>normaliseColours (kameloso.terminal.colours.normaliseColours)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>normaliseColours</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.terminal.html">terminal</a> <a class="breadcrumb" href="kameloso.terminal.colours.html">colours</a> </div><div><div class="documentation-comment synopsis"><div><p>Takes a colour and, if it deems it is too dark to see on a black terminal
+    background, makes it brighter.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(Colours)</div>private pure @<span class="name" data-ident="safe">safe</span> nothrow @<span class="name" data-ident="nogc">nogc</span> </div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">normaliseColours</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">ref</span> <span class="builtin-type">uint</span></span></span> <span class="parameter-name name" data-ident="r"><a href="#param-r">r</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">ref</span> <span class="builtin-type">uint</span></span></span> <span class="parameter-name name" data-ident="g"><a href="#param-g">g</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">ref</span> <span class="builtin-type">uint</span></span></span> <span class="parameter-name name" data-ident="b"><a href="#param-b">b</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-r"><a class="parameter-name" data-ident="r" href="#param-r">r</a> <span class="parameter-type"><span class="builtin-type">uint</span></span></dt><dd><div class="documentation-comment"><div><p>Reference to a red value.</p></div></div></dd><dt id="param-g"><a class="parameter-name" data-ident="g" href="#param-g">g</a> <span class="parameter-type"><span class="builtin-type">uint</span></span></dt><dd><div class="documentation-comment"><div><p>Reference to a green value.</p></div></div></dd><dt id="param-b"><a class="parameter-name" data-ident="b" href="#param-b">b</a> <span class="parameter-type"><span class="builtin-type">uint</span></span></dt><dd><div class="documentation-comment"><div><p>Reference to a blue value.</p></div></div></dd></dl><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="type">int</span> <span class="hid">r</span> = <span class="num">255</span>;
+<span class="type">int</span> <span class="hid">g</span> = <span class="num">128</span>;
+<span class="type">int</span> <span class="hid">b</span> = <span class="num">100</span>;
+<span class="hid">normaliseColours</span>(<span class="hid">r</span>, <span class="hid">g</span>, <span class="hid">b</span>);
+<span class="kwrd">assert</span>(<span class="hid">r</span> != <span class="num">255</span>);
+<span class="kwrd">assert</span>(<span class="hid">g</span> != <span class="num">128</span>);
+<span class="kwrd">assert</span>(<span class="hid">b</span> != <span class="num">100</span>);</pre></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.terminal.html">terminal</a> <a class="parent" href="kameloso.terminal.colours.html">colours</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module" href="kameloso.terminal.colours.defs.html">defs</a></li><li><a class="module" href="kameloso.terminal.colours.tags.html">tags</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.terminal.colours.applyANSI.html">applyANSI</a></li><li><a class="function" href="kameloso.terminal.colours.applyTruecolour.html">applyTruecolour</a></li><li><a class="function" href="kameloso.terminal.colours.asANSI.html">asANSI</a></li><li><a class="function" href="kameloso.terminal.colours.asTruecolour.html">asTruecolour</a></li><li><a class="function" href="kameloso.terminal.colours.colourByHash.1.html">colourByHash</a></li><li><a class="function" href="kameloso.terminal.colours.getColourByHash.1.html">getColourByHash</a></li><li><a class="function" href="kameloso.terminal.colours.getColourByHashImpl.html">getColourByHashImpl</a></li><li><a class="function" href="kameloso.terminal.colours.invert.html">invert</a></li><li><a class="function current" href="kameloso.terminal.colours.normaliseColours.html">normaliseColours</a></li><li><a class="function" href="kameloso.terminal.colours.normaliseColoursBright.html">normaliseColoursBright</a></li><li><a class="function" href="kameloso.terminal.colours.withANSI.html">withANSI</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>kameloso.configreader (kameloso.configreader)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>kameloso.configreader</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> </div><div><div class="documentation-comment synopsis"><div><p>Functions related to reading from a configuration file, broken out of
+    <a class="xref" href="kameloso.config.html">kameloso.config</a> to avoid cyclic dependencies.</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="class"><a class="header-anchor" href="#class">Classes</a></h3><dl class="member-list native"><dt><a href="kameloso.configreader.ConfigurationFileReadFailureException.html">ConfigurationFileReadFailureException</a><div class="simplified-prototype" style="max-width: 47ch;"><span class="builtin-type">class</span> <span class="name">ConfigurationFileReadFailureException</span></div></dt><dd><div><p>Exception, to be thrown when the specified configuration file could not be
+    read, for whatever reason.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="kameloso.configreader.configurationText.html">configurationText</a><div class="simplified-prototype" style="max-width: 46ch;"><span class="lang-feature">auto</span>  <span class="name">configurationText</span>(string configFile)</div></dt><dd><div><p>Reads a configuration file into a string.</p></div></dd><dt><a href="kameloso.configreader.readConfigInto.1.html">readConfigInto</a><div class="simplified-prototype" style="max-width: 125ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">readConfigInto</span>(string configFile, string[][string] missingEntries, string[][string] invalidEntries, T things)</div></dt><dd><div><p>Reads a configuration file and applies the settings therein to passed objects.</p></div></dd><dt><a href="kameloso.configreader.readConfigInto.2.html">readConfigInto</a><div class="simplified-prototype" style="max-width: 52ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">readConfigInto</span>(string configFile, T things)</div></dt><dd><div><p>Reads a configuration file and applies the settings therein to passed objects.
+    Merely wraps the other <a class="xref" href="kameloso.configreader.readConfigInto.2.html">readConfigInto</a> overload and distinguishes itself
+    from it by not taking the two <tt class="inline-code">string[][string]</tt> out parameters it does.</p></div></dd></dl><div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="kameloso.config.html">kameloso.config</a></p></div></div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module" href="kameloso.common.html">common</a></li><li><a class="module" href="kameloso.config.html">config</a></li><li><a class="module current" href="kameloso.configreader.html">configreader</a></li><li><a class="module" href="kameloso.constants.html">constants</a></li><li><a class="module" href="kameloso.entrypoint.html">entrypoint</a></li><li><a class="module" href="kameloso.irccolours.html">irccolours</a></li><li><a class="module" href="kameloso.kameloso.html">kameloso</a></li><li><a class="module" href="kameloso.logger.html">logger</a></li><li><a class="module" href="kameloso.main.html">main</a></li><li><a class="module" href="kameloso.messaging.html">messaging</a></li><li><a class="module" href="kameloso.misc.html">misc</a></li><li><a class="module" href="kameloso.net.html">net</a></li><li><a class="module" href="kameloso.platform.html">platform</a></li><li><a class="module" href="kameloso.plugins.html">plugins</a></li><li><a class="module" href="kameloso.pods.html">pods</a></li><li><a class="module" href="kameloso.prettyprint.html">prettyprint</a></li><li><a class="module" href="kameloso.semver.html">semver</a></li><li><a class="module" href="kameloso.ssldownloads.html">ssldownloads</a></li><li><a class="module" href="kameloso.string.html">string</a></li><li><a class="module" href="kameloso.tables.html">tables</a></li><li><a class="module" href="kameloso.terminal.html">terminal</a></li><li><a class="module" href="kameloso.thread.html">thread</a></li><li><a class="module" href="kameloso.time.html">time</a></li><li><a class="module" href="kameloso.traits.html">traits</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

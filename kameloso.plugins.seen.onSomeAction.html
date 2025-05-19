@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>onSomeAction (kameloso.plugins.seen.onSomeAction)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>onSomeAction</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.seen.html">seen</a> </div><div><div class="documentation-comment synopsis"><div><p>Whenever a user does something, record this user as having been seen at the
+    current time.</p><p>This function will be called whenever an <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a> is
+    being processed of the <a class="xref" href="dialect.defs.IRCEvent.Type.html">IRCEvent.Type</a>s that we annotate
+    the function with.</p><p>The <a class="xref" href="kameloso.plugins.IRCEventHandler.html#chainable">IRCEventHandler.chainable</a>
+    annotations mean that the plugin will also process other functions in this
+    module with the same <a class="xref" href="dialect.defs.IRCEvent.Type.html">IRCEvent.Type</a> annotations,
+    even if this one matched. The default is otherwise that it will end early
+    after one match and proceed to the next plugin, but this doesn't ring well
+    with catch-all functions like these. It's sensible to save
+    <a class="xref" href="kameloso.plugins.IRCEventHandler.html#chainable">IRCEventHandler.chainable</a></p><p>only for the modules and functions that actually need it.</p><p>The <a class="xref" href="kameloso.plugins.IRCEventHandler.html#requiredPermissions">IRCEventHandler.requiredPermissions</a>
+    annotation dictates who is authorised to trigger the function. It has six
+    policies, in increasing order of importance:
+    <a class="xref" href="kameloso.plugins.Permissions.html#ignore">Permissions.ignore</a>,
+    <a class="xref" href="kameloso.plugins.Permissions.html#anyone">Permissions.anyone</a>,
+    <a class="xref" href="kameloso.plugins.Permissions.html#registered">Permissions.registered</a>,
+    <a class="xref" href="kameloso.plugins.Permissions.html#whitelist">Permissions.whitelist</a>,
+    <a class="xref" href="kameloso.plugins.Permissions.html#elevated">Permissions.elevated</a>,
+    <a class="xref" href="kameloso.plugins.Permissions.html#operator">Permissions.operator</a>,
+    <a class="xref" href="kameloso.plugins.Permissions.html#staff">Permissions.staff</a> and
+    <a class="xref" href="kameloso.plugins.Permissions.html#admin">Permissions.admin</a>.</p><p>* <a class="xref" href="kameloso.plugins.Permissions.html#ignore">Permissions.ignore</a> will
+        let precisely anyone trigger it, without looking them up. It just doesn't care.</p><p>* <a class="xref" href="kameloso.plugins.Permissions.html#anyone">Permissions.anyone</a> will
+        let anyone trigger it, but only after having looked them up, allowing
+        for blacklisting people.</p><p>* <a class="xref" href="kameloso.plugins.Permissions.html#registered">Permissions.registered</a>
+        will let anyone logged into a services account trigger it, provided they
+        are not blacklisted.</p><p>* <a class="xref" href="kameloso.plugins.Permissions.html#whitelist">Permissions.whitelist</a>
+        will only allow users in the whitelist section of the <tt class="inline-code">users.json</tt>
+        resource file, provided they are also not blacklisted. Consider this to
+        correspond to &quot;regulars&quot; in the channel.</p><p>* <a class="xref" href="kameloso.plugins.Permissions.html#elevated">Permissions.elevated</a>
+        will also only allow users in the whitelist section of the <tt class="inline-code">users.json</tt>
+        resource file, provided they are also not blacklisted. Consider this to
+        correspond to VIPs in the channel.</p><p>* <a class="xref" href="kameloso.plugins.Permissions.html#operator">Permissions.operator</a>
+        will only allow users in the operator section of the <tt class="inline-code">users.json</tt>
+        resource file. Consider this to correspond to &quot;moderators&quot; in the channel.</p><p>* <a class="xref" href="kameloso.plugins.Permissions.html#staff">Permissions.staff</a> will
+        only allow users in the staff section of the <tt class="inline-code">users.json</tt> resource file.
+        Consider this to correspond to channel owners.</p><p>* <a class="xref" href="kameloso.plugins.Permissions.html#admin">Permissions.admin</a> will
+        allow only you and your other superuser administrators, as defined in
+        the configuration file. This is a program-wide permission and will apply
+        to all channels. Consider it to correspond to bot system operators.</p><p>In the case of
+    <a class="xref" href="kameloso.plugins.Permissions.html#whitelist">Permissions.whitelist</a>,
+    <a class="xref" href="kameloso.plugins.Permissions.html#elevated">Permissions.elevated</a>,
+    <a class="xref" href="kameloso.plugins.Permissions.html#operator">Permissions.operator</a>,
+    <a class="xref" href="kameloso.plugins.Permissions.html#staff">Permissions.staff</a> and
+    <a class="xref" href="kameloso.plugins.Permissions.html#admin">Permissions.admin</a> it will
+    look you up and compare your *services account name* to those known good
+    before doing anything. In the case of
+    <a class="xref" href="kameloso.plugins.Permissions.html#registered">Permissions.registered</a>,
+    merely being logged in is enough. In the case of
+    <a class="xref" href="kameloso.plugins.Permissions.html#anyone">Permissions.anyone</a>, the
+    WHOIS results won't matter and it will just let it pass, but it will check
+    all the same so as to be able to apply the blacklist.
+    In the other cases, if you aren't logged into services or if your account
+    name isn't included in the lists, the function will not trigger.</p><p>This particular function doesn't care at all, so it is
+    <a class="xref" href="kameloso.plugins.Permissions.html#ignore">Permissions.ignore</a>.</p><p>The <a class="xref" href="kameloso.plugins.ChannelPolicy.html">ChannelPolicy</a> here is the same
+    <a class="xref" href="kameloso.plugins.seen.omniscientChannelPolicy.2.html">omniscientChannelPolicy</a> we defined earlier, versioned to have a different
+    value based on the dub build configuration. By default, it's
+    <a class="xref" href="kameloso.plugins.ChannelPolicy.html#home">ChannelPolicy.home</a>.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(WithSeenPlugin)</div>private <div class="uda">@<a class="name" data-ident="IRCEventHandler" href="kameloso.plugins.IRCEventHandler.html" title="kameloso.plugins.IRCEventHandler">IRCEventHandler</a>().<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#CHAN" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.CHAN</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#QUERY" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.QUERY</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#EMOTE" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.EMOTE</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#JOIN" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.JOIN</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#PART" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.PART</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#MODE" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.MODE</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_SUB" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_SUB</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_SUBGIFT" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_SUBGIFT</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_CHEER" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_CHEER</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_REWARDGIFT" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_REWARDGIFT</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_GIFTCHAIN" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_GIFTCHAIN</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_BULKGIFT" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_BULKGIFT</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_SUBUPGRADE" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_SUBUPGRADE</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_CHARITY" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_CHARITY</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_BITSBADGETIER" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_BITSBADGETIER</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_RITUAL" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_RITUAL</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_EXTENDSUB" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_EXTENDSUB</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_GIFTRECEIVED" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_GIFTRECEIVED</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_PAYFORWARD" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_PAYFORWARD</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_RAID" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_RAID</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_CROWDCHANT" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_CROWDCHANT</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_ANNOUNCEMENT" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_ANNOUNCEMENT</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_DIRECTCHEER" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_DIRECTCHEER</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_INTRO" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_INTRO</a>).<span class="name" data-ident="onEvent">onEvent</span>(<a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.Type.html#TWITCH_MILESTONE" title="dialect.defs.IRCEvent.Type">IRCEvent.Type.TWITCH_MILESTONE</a>).<span class="name" data-ident="permissionsRequired">permissionsRequired</span>(<a class="name" data-ident="Permissions" href="kameloso.plugins.Permissions.html#ignore" title="kameloso.plugins.Permissions">Permissions.ignore</a>).<span class="name" data-ident="channelPolicy">channelPolicy</span>(<a class="name" data-ident="omniscientChannelPolicy" href="kameloso.plugins.seen.omniscientChannelPolicy.1.html" title="kameloso.plugins.seen.omniscientChannelPolicy">omniscientChannelPolicy</a>).<span class="name" data-ident="chainable">chainable</span>(true) </div></div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">onSomeAction</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><a class="name" data-ident="SeenPlugin" href="kameloso.plugins.seen.SeenPlugin.html" title="kameloso.plugins.seen.SeenPlugin">SeenPlugin</a></span></span> <span class="parameter-name name" data-ident="plugin"><a href="#param-plugin">plugin</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.html" title="dialect.defs.IRCEvent">IRCEvent</a></span></span> <span class="parameter-name name" data-ident="event"><a href="#param-event">event</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.seen.html">seen</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.seen.SeenPlugin.html">SeenPlugin</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.seen.initResources.html">initResources</a></li><li><a class="function" href="kameloso.plugins.seen.loadSeen.html">loadSeen</a></li><li><a class="function" href="kameloso.plugins.seen.onCommandSeen.html">onCommandSeen</a></li><li><a class="function" href="kameloso.plugins.seen.onNamesReply.html">onNamesReply</a></li><li><a class="function" href="kameloso.plugins.seen.onNick.html">onNick</a></li><li><a class="function" href="kameloso.plugins.seen.onQuit.html">onQuit</a></li><li><a class="function current" href="kameloso.plugins.seen.onSomeAction.html">onSomeAction</a></li><li><a class="function" href="kameloso.plugins.seen.onWHOReply.html">onWHOReply</a></li><li><a class="function" href="kameloso.plugins.seen.onWelcome.html">onWelcome</a></li><li><a class="function" href="kameloso.plugins.seen.reload.html">reload</a></li><li><a class="function" href="kameloso.plugins.seen.saveSeen.html">saveSeen</a></li><li><a class="function" href="kameloso.plugins.seen.selftest.html">selftest</a></li><li><a class="function" href="kameloso.plugins.seen.teardown.html">teardown</a></li><li><a class="function" href="kameloso.plugins.seen.updateAllObservedUsers.html">updateAllObservedUsers</a></li><li><a class="function" href="kameloso.plugins.seen.updateUser.html">updateUser</a></li></ul><span class="type-separator">manifest constants</span><ul><li><a class="manifest-constant" href="kameloso.plugins.seen.omniscientChannelPolicy.1.html">omniscientChannelPolicy</a></li></ul><span class="type-separator">mixins</span><ul><li><a class="mixin" href="kameloso.plugins.seen.__anonymous.1.html">__anonymous</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.seen.SeenSettings.html">SeenSettings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>dialect.assertgen (dialect.assertgen)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>dialect.assertgen</h1><div class="breadcrumbs"><a class="breadcrumb" href="dialect.html">dialect</a> </div><div><div class="documentation-comment synopsis"><div><p>Interactive assert statement generation from raw IRC strings, for use in
+    source code <tt class="inline-code">unittest</tt> blocks.</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="dialect.assertgen.callGetopt.html">callGetopt</a><div class="simplified-prototype" style="max-width: 34ch;"><span class="lang-feature">auto</span>  <span class="name">callGetopt</span>(string[] args)</div></dt><dd><div><p>Parses command-line arguments into a <a class="xref" href="dialect.assertgen.Configuration.html">Configuration</a> struct.</p></div></dd><dt><a href="dialect.assertgen.createParser.html">createParser</a><div class="simplified-prototype" style="max-width: 71ch;"><span class="lang-feature">auto</span>  <span class="name">createParser</span>(IRCParser parser, Configuration configuration)</div></dt><dd><div><p>Creates an <a class="xref" href="dialect.parsing.IRCParser.html">IRCParser</a> with values taken from the
+    passed <a class="xref" href="dialect.assertgen.Configuration.html">Configuration</a>.</p></div></dd><dt><a href="dialect.assertgen.inputLoop.html">inputLoop</a><div class="simplified-prototype" style="max-width: 67ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">inputLoop</span>(IRCParser parser, Configuration configuration)</div></dt><dd><div><p>Main input loop for the <tt class="inline-code">assertgen</tt> tool.</p></div></dd><dt><a href="dialect.assertgen.inputServerInformation.html">inputServerInformation</a><div class="simplified-prototype" style="max-width: 81ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">inputServerInformation</span>(IRCParser parser, Configuration configuration)</div></dt><dd><div><p>Asks the user to enter server information via standard input.</p></div></dd><dt><a href="dialect.assertgen.parseServerInformation.html">parseServerInformation</a><div class="simplified-prototype" style="max-width: 81ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">parseServerInformation</span>(IRCParser parser, Configuration configuration)</div></dt><dd><div><p>Parses server information from a <a class="xref" href="dialect.assertgen.Configuration.html">Configuration</a> struct and populates an
+    <a class="xref" href="dialect.parsing.IRCParser.html">IRCParser</a> with it.</p></div></dd><dt><a href="dialect.assertgen.putClientServerDelta.html">putClientServerDelta</a><div class="simplified-prototype" style="max-width: 94ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">putClientServerDelta</span>(Sink sink, IRCClient client, IRCServer server, uint indents)</div></dt><dd><div><p>Constructs assignment block deltastrings for an
+    <a class="xref" href="dialect.defs.IRCClient.html">IRCClient</a> and an <a class="xref" href="dialect.defs.IRCServer.html">IRCServer</a>,
+    as if they were members of an <a class="xref" href="dialect.parsing.IRCParser.html">IRCParser</a> instance,
+    and writes them to an output range.</p></div></dd><dt><a href="dialect.assertgen.putEventAssertBlock.html">putEventAssertBlock</a><div class="simplified-prototype" style="max-width: 71ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">putEventAssertBlock</span>(Sink sink, IRCEvent event, uint indents)</div></dt><dd><div><p>Constructs assert block deltastrings for an <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a>
+    and writes them to an output range.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="struct"><a class="header-anchor" href="#struct">Structs</a></h3><dl class="member-list native"><dt><a href="dialect.assertgen.Configuration.html">Configuration</a><div class="simplified-prototype" style="max-width: 22ch;"><span class="builtin-type">struct</span> <span class="name">Configuration</span></div></dt><dd><div><p>Configuration struct for the <tt class="inline-code">assertgen</tt> tool. An aggregate of the options
+    that were passed on the command line.</p></div></dd></dl><div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="console">$ dub run :assertgen
+(...)<p>// Paste a raw event string and hit Enter to generate an assert block. Ctrl+C to exit.</p><p><i>:silver.libera.chat 338 zorael livemarshal 2625:6400:11:5bf:6f57:829d:f62e:2d8c :actually using host</i></p><p>{
+    enum input = <tt class="inline-code">:silver.libera.chat 338 zorael livemarshal 2625:6400:11:5bf:6f57:829d:f62e:2d8c :actually using host</tt>;
+    immutable event = parser.toIRCEvent(input);</p><p>with (event)
+    {
+        assert((type == IRCEvent.Type.RPL_WHOISACTUALLY), type.toString);
+        assert((sender.address == &quot;silver.libera.chat&quot;), sender.address);
+        assert((target.nickname == &quot;livemarshal&quot;), target.nickname);
+        assert((content == &quot;actually using host&quot;), content);
+        assert((aux[0] == &quot;2625:6400:11:5bf:6f57:829d:f62e:2d8c&quot;), aux[0]);
+        assert((num == 338), num.to!string);
+    }
+}</p></pre><p>These can be directly copy/pasted into the appropriate files in <tt class="inline-code">/tests</tt>.
+    They carry state from the events pasted before it, and the delta between them
+    are also expressed as separate asserts.</p><pre class="console">$ dub run :assertgen
+(...)<p>// Paste a raw event string and hit Enter to generate an assert block. Ctrl+C to exit.</p><p><i>@badge-info=;badges=;color=#5F9EA0;display-name=Zorael;emote-sets=0,185411,771823,1511983;user-id=22216721;user-type= :tmi.twitch.tv GLOBALUSERSTATE</i></p><p>{
+    enum input = <tt class="inline-code">@badge-info=;badges=;color=#5F9EA0;display-name=Zorael;emote-sets=0,185411,771823,1511983;user-id=22216721;user-type= :tmi.twitch.tv GLOBALUSERSTATE</tt>;
+    immutable event = parser.toIRCEvent(input);</p><p>with (event)
+    {
+        assert((type == IRCEvent.Type.GLOBALUSERSTATE), type.toString);
+        assert((sender.address == &quot;tmi.twitch.tv&quot;), sender.address);
+        assert((sender.id == 22216721), sender.id.to!string);
+        assert((target.nickname == &quot;dialect&quot;), target.nickname);
+        assert((target.account == &quot;dialect&quot;), target.account);
+        assert((target.displayName == &quot;Zorael&quot;), target.displayName);
+        assert((target.badges == &quot;*&quot;), target.badges);
+        assert((target.colour == &quot;5F9EA0&quot;), target.colour);
+        assert((tags == &quot;badge-info=;badges=;color=#5F9EA0;display-name=Zorael;emote-sets=0,185411,771823,1511983;user-id=22216721;user-type=&quot;), tags);
+    }
+}</p><p>with (parser)
+{
+    assert((client.displayName == &quot;Zorael&quot;), client.displayName);
+}</p></pre><p>This makes it easy to generate tests that verify wanted side-effects
+    incurred by events, and to catch unwanted ones.</p><p>There is a shorthand <tt class="inline-code">--twitch</tt> flag that sets up the parser for Twitch.
+    This requires version <tt class="inline-code">TwitchSupport</tt>.</p><pre class="console">$ dub run :assertgen -- --twitch
+(...)<p>Server set to Twitch as per command-line argument.</p><p>// Paste a raw event string and hit Enter to generate an assert block. Ctrl+C to exit.</p><p><i>@badge-info=subscriber/15;badges=subscriber/12;color=;display-name=SomeoneOnTwitch;emotes=;flags=;id=d6229854-2bf3-415d-80ce-a2fe84d00a23;login=someoneontwitch;mod=0;msg-id=submysterygift;msg-param-mass-gift-count=1;msg-param-origin-id=49\s9d\s3e\s68\sca\s26\se9\s2a\s6e\s44\sd4\s60\s9b\s3d\saa\sb9\s4c\sad\s43\s5c;msg-param-sender-count=4;msg-param-sub-plan=1000;room-id=71092938;subscriber=1;system-msg=SomeoneOnTwitch\sis\sgifting\s1\sTier\s1\sSubs\sto\sSome_Streamer's\scommunity!\sThey've\sgifted\sa\stotal\sof\s4\sin\sthe\schannel!;tmi-sent-ts=1569013433362;user-id=22454856921;user-type= :tmi.twitch.tv USERNOTICE #some_streamer</i></p><p>{
+    enum input = <tt class="inline-code">@badge-info=subscriber/15;badges=subscriber/12;color=;display-name=SomeoneOnTwitch;emotes=;flags=;id=d6229854-2bf3-415d-80ce-a2fe84d00a23;login=someoneontwitch;mod=0;msg-id=submysterygift;msg-param-mass-gift-count=1;msg-param-origin-id=49\s9d\s3e\s68\sca\s26\se9\s2a\s6e\s44\sd4\s60\s9b\s3d\saa\sb9\s4c\sad\s43\s5c;msg-param-sender-count=4;msg-param-sub-plan=1000;room-id=71092938;subscriber=1;system-msg=SomeoneOnTwitch\sis\sgifting\s1\sTier\s1\sSubs\sto\sSome_Streamer's\scommunity!\sThey've\sgifted\sa\stotal\sof\s4\sin\sthe\schannel!;tmi-sent-ts=1569013433362;user-id=2245456921;user-type= :tmi.twitch.tv USERNOTICE #some_streamer</tt>;
+    immutable event = parser.toIRCEvent(input);</p><p>with (event)
+    {
+        assert((type == IRCEvent.Type.TWITCH_BULKGIFT), type.toString);
+        assert((sender.nickname == &quot;someoneontwitch&quot;), sender.nickname);
+        assert((sender.address == &quot;tmi.twitch.tv&quot;), sender.address);
+        assert((sender.account == &quot;someoneontwitch&quot;), sender.account);
+        assert((sender.displayName == &quot;SomeoneOnTwitch&quot;), sender.displayName);
+        assert((sender.badges == &quot;subscriber/15&quot;), sender.badges);
+        assert((sender.id == 2245456921), sender.id.to!string);
+        assert((channel == &quot;#some_streamer&quot;), channel);
+        assert((content == &quot;SomeoneOnTwitch is gifting 1 Tier 1 Subs to Some_Streamer's community! They've gifted a total of 4 in the channel!&quot;), content);
+        assert((aux[0] == &quot;1000&quot;), aux[0]);
+        assert((count[0] == 1), count[0].to!string);
+        assert((count[1] == 4), count[1].to!string);
+        assert((tags == &quot;badge-info=subscriber/15;badges=subscriber/12;color=;display-name=SomeoneOnTwitch;emotes=;flags=;id=d6229854-2bf3-415d-80ce-a2fe84d00a23;login=someoneontwitch;mod=0;msg-id=submysterygift;msg-param-mass-gift-count=1;msg-param-origin-id=49\\s9d\\s3e\\s68\\sca\\s26\\se9\\s2a\\s6e\\s44\\sd4\\s60\\s9b\\s3d\\saa\\sb9\\s4c\\sad\\s43\\s5c;msg-param-sender-count=4;msg-param-sub-plan=1000;room-id=71092938;subscriber=1;system-msg=SomeoneOnTwitch\\sis\\sgifting\\s1\\sTier\\s1\\sSubs\\sto\\sSome_Streamer's\\scommunity!\\sThey've\\sgifted\\sa\\stotal\\sof\\s4\\sin\\sthe\\schannel!;tmi-sent-ts=1569013433362;user-id=2245456921;user-type=&quot;), tags);
+        assert((id == &quot;d6229854-2bf3-415d-80ce-a2fe84d00a23&quot;), id);
+    }
+}</p></pre></div></div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="dialect.html">dialect</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module current" href="dialect.assertgen.html">assertgen</a></li><li><a class="module" href="dialect.common.html">common</a></li><li><a class="module" href="dialect.defs.html">defs</a></li><li><a class="module" href="dialect.parsing.html">parsing</a></li><li><a class="module" href="dialect.postprocessors.html">postprocessors</a></li><li><a class="module" href="dialect.semver.html">semver</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>replaceTokens (kameloso.string.replaceTokens)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>replaceTokens</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.string.html">string</a> </div><div><div class="documentation-comment synopsis"><div><p>Apply some common text replacements. Used on part and quit reasons.</p></div></div></div><div class="annotated-prototype"><ol class="overloads"><li class="active-overload-option"><span class="overload-signature"><span class="lang-feature">auto</span>  <span class="name">replaceTokens</span>(string line, IRCClient client)</span><div class="function-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> pure nothrow </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">replaceTokens</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="line"><a href="#param-line">line</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <a class="name" data-ident="IRCClient" href="dialect.defs.IRCClient.html" title="dialect.defs.IRCClient">IRCClient</a></span></span> <span class="parameter-name name" data-ident="client"><a href="#param-client">client</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></li><li class="overload-option"><a href="kameloso.string.replaceTokens.2.html"><span class="overload-signature"><span class="lang-feature">auto</span>  <span class="name">replaceTokens</span>(string line)</span></a></li></ol></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-line"><a class="parameter-name" data-ident="line" href="#param-line">line</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>String to replace tokens in.</p></div></div></dd><dt id="param-client"><a class="parameter-name" data-ident="client" href="#param-client">client</a> <span class="parameter-type"><a class="xref" href="dialect.defs.IRCClient.html" title="dialect.defs.IRCClient"><span class="name" data-ident="IRCClient">IRCClient</span></a></span></dt><dd><div class="documentation-comment"><div><p>The current <a class="xref" href="dialect.defs.IRCClient.html">IRCClient</a>.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>A modified string with token occurrences replaced.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">kameloso</span>.<span class="hid">constants</span> : <span class="hid">KamelosoInfo</span>;
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">format</span> : <span class="hid">format</span>;
+
+<span class="hid">IRCClient</span> <span class="hid">client</span>;
+<span class="hid">client</span>.<span class="hid">nickname</span> = <span class="str">&quot;harbl&quot;</span>;
+
+{
+    <span class="kwrd">immutable</span> <span class="hid">line</span> = <span class="str">&quot;asdf $nickname is kameloso version $version from $source&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">expected</span> = <span class="str">&quot;asdf %s is kameloso version %s from %s&quot;</span>
+        .<span class="hid">format</span>(<span class="hid">client</span>.<span class="hid">nickname</span>, <span class="kwrd">cast</span>(<span class="type">string</span>) <span class="hid">KamelosoInfo</span>.<span class="hid">version_</span>,
+            <span class="kwrd">cast</span>(<span class="type">string</span>) <span class="hid">KamelosoInfo</span>.<span class="hid">source</span>);
+    <span class="kwrd">immutable</span> <span class="hid">actual</span> = <span class="hid">line</span>.<span class="hid">replaceTokens</span>(<span class="hid">client</span>);
+    <span class="kwrd">assert</span>((<span class="hid">actual</span> == <span class="hid">expected</span>), <span class="hid">actual</span>);
+}
+{
+    <span class="kwrd">immutable</span> <span class="hid">line</span> = <span class="str">&quot;&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">expected</span> = <span class="str">&quot;&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">actual</span> = <span class="hid">line</span>.<span class="hid">replaceTokens</span>(<span class="hid">client</span>);
+    <span class="kwrd">assert</span>((<span class="hid">actual</span> == <span class="hid">expected</span>), <span class="hid">actual</span>);
+}
+{
+    <span class="kwrd">immutable</span> <span class="hid">line</span> = <span class="str">&quot;blerp&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">expected</span> = <span class="str">&quot;blerp&quot;</span>;
+    <span class="kwrd">immutable</span> <span class="hid">actual</span> = <span class="hid">line</span>.<span class="hid">replaceTokens</span>(<span class="hid">client</span>);
+    <span class="kwrd">assert</span>((<span class="hid">actual</span> == <span class="hid">expected</span>), <span class="hid">actual</span>);
+}</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.string.html">string</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.string.doublyBackslashed.html">doublyBackslashed</a></li><li><a class="function" href="kameloso.string.replaceRandom.html">replaceRandom</a></li><li><a class="function current" href="kameloso.string.replaceTokens.1.html">replaceTokens</a></li><li><a class="function" href="kameloso.string.stripSeparatedPrefix.html">stripSeparatedPrefix</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

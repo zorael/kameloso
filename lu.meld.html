@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>lu.meld (lu.meld)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>lu.meld</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> </div><div><div class="documentation-comment synopsis"><div><p>This module contains the <a class="xref" href="lu.meld.meldInto.3.html">meldInto</a> functions; functions that take two
+    structs or classes of the same type and combine them, creating a resulting
+    object with the union of the members of both parents. Array and associative
+    array variants exist too.</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="enum"><a class="header-anchor" href="#enum">Enums</a></h3><dl class="member-list native"><dt><a href="lu.meld.MeldingStrategy.html">MeldingStrategy</a><div class="simplified-prototype" style="max-width: 22ch;"><span class="builtin-type">enum</span> <span class="name">MeldingStrategy</span></div></dt><dd><div><p>To what extent a source should overwrite a target when melding.</p></div></dd><dt><a href="lu.uda.Unmeldable.html">Unmeldable (from lu.uda)</a><div class="simplified-prototype" style="max-width: 60ch;"><span class="builtin-type">enum</span> <span class="name">Unmeldable</span> via <span class="builtin-type">public</span> <tt class="highlighted">
+<span class="kwrd">import</span> <span class="hid">lu</span>.<span class="hid">uda</span> : <span class="hid">Unmeldable</span>;</tt></div></dt><dd><div><p>Public import of <a class="xref" href="lu.uda.Meldable.html">lu.uda.Meldable</a>.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="lu.meld.meldInto.1.html">meldInto</a><div class="simplified-prototype" style="max-width: 53ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">meldInto</span>(QualThing meldThis, Thing intoThis)</div></dt><dd><div><p>Takes two structs or classes of the same type and melds them together,
+    making the members of the resulting aggregate a union of the two.</p></div></dd><dt><a href="lu.meld.meldInto.2.html">meldInto</a><div class="simplified-prototype" style="max-width: 51ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">meldInto</span>(Array1 meldThis, Array2 intoThis)</div></dt><dd><div><p>Takes two arrays and melds them together, making a union of the two.</p></div></dd><dt><a href="lu.meld.meldInto.3.html">meldInto</a><div class="simplified-prototype" style="max-width: 47ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">meldInto</span>(QualAA meldThis, AA intoThis)</div></dt><dd><div><p>Takes two associative arrays and melds them together, making a union of the two.</p></div></dd></dl><div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">struct</span> <span class="hid">Foo</span>
+{
+    <span class="type">string</span> <span class="hid">abc</span>;
+    <span class="type">string</span> <span class="hid">def</span>;
+    <span class="type">int</span> <span class="hid">i</span>;
+    <span class="type">float</span> <span class="hid">f</span>;
+    <span class="type">double</span> <span class="hid">d</span>;
+}
+
+<span class="hid">Foo</span> <span class="hid">f1</span>; <span class="com">// = new Foo;</span>
+<span class="hid">f1</span>.<span class="hid">abc</span> = <span class="str">&quot;ABC&quot;</span>;
+<span class="hid">f1</span>.<span class="hid">def</span> = <span class="str">&quot;DEF&quot;</span>;
+
+<span class="hid">Foo</span> <span class="hid">f2</span>; <span class="com">// = new Foo;</span>
+<span class="hid">f2</span>.<span class="hid">abc</span> = <span class="str">&quot;this won't get copied&quot;</span>;
+<span class="hid">f2</span>.<span class="hid">def</span> = <span class="str">&quot;neither will this&quot;</span>;
+<span class="hid">f2</span>.<span class="hid">i</span> = <span class="num">42</span>;
+<span class="hid">f2</span>.<span class="hid">f</span> = <span class="num">3.14f</span>;
+
+<span class="hid">f2</span>.<span class="hid">meldInto</span>(<span class="hid">f1</span>);
+
+<span class="kwrd">with</span> (<span class="hid">f1</span>)
+{
+    <span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">math</span> : <span class="hid">isNaN</span>;
+
+    <span class="kwrd">assert</span>(<span class="hid">abc</span> == <span class="str">&quot;ABC&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">def</span> == <span class="str">&quot;DEF&quot;</span>);
+    <span class="kwrd">assert</span>(<span class="hid">i</span> == <span class="num">42</span>);
+    <span class="kwrd">assert</span>(<span class="hid">f</span> == <span class="num">3.14f</span>);
+    <span class="kwrd">assert</span>(<span class="hid">d</span>.<span class="hid">isNaN</span>);
+}</pre></div></div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module" href="lu.array.html">array</a></li><li><a class="module" href="lu.assert_.html">assert_</a></li><li><a class="module" href="lu.common.html">common</a></li><li><a class="module" href="lu.container.html">container</a></li><li><a class="module" href="lu.conv.html">conv</a></li><li><a class="module" href="lu.deltastrings.html">deltastrings</a></li><li><a class="module" href="lu.json.html">json</a></li><li><a class="module current" href="lu.meld.html">meld</a></li><li><a class="module" href="lu.misc.html">misc</a></li><li><a class="module" href="lu.numeric.html">numeric</a></li><li><a class="module" href="lu.objmanip.html">objmanip</a></li><li><a class="module" href="lu.semver.html">semver</a></li><li><a class="module" href="lu.serialisation.html">serialisation</a></li><li><a class="module" href="lu.string.html">string</a></li><li><a class="module" href="lu.traits.html">traits</a></li><li><a class="module" href="lu.typecons.html">typecons</a></li><li><a class="module" href="lu.uda.html">uda</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

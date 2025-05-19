@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>initResources (kameloso.plugins.admin.initResources)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>initResources</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.admin.html">admin</a> </div><div><div class="documentation-comment synopsis"><div><p>Initialises the hostmasks and user files.</p><p>Persistence may have already initialised them, but do it anyway in case we
+    ever change the order of initialisation.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(WithAdminPlugin)</div>private </div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">initResources</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="1"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><a class="name" data-ident="AdminPlugin" href="kameloso.plugins.admin.AdminPlugin.html" title="kameloso.plugins.admin.AdminPlugin">AdminPlugin</a></span></span> <span class="parameter-name name" data-ident="plugin"><a href="#param-plugin">plugin</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.admin.html">admin</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module" href="kameloso.plugins.admin.classifiers.html">classifiers</a></li><li><a class="module" href="kameloso.plugins.admin.debugging.html">debugging</a></li></ul><span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.admin.AdminPlugin.html">AdminPlugin</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.admin.addChannel.html">addChannel</a></li><li><a class="function" href="kameloso.plugins.admin.cycle.html">cycle</a></li><li><a class="function" href="kameloso.plugins.admin.delChannel.html">delChannel</a></li><li><a class="function current" href="kameloso.plugins.admin.initResources.html">initResources</a></li><li><a class="function" href="kameloso.plugins.admin.initialise.html">initialise</a></li><li><a class="function" href="kameloso.plugins.admin.listHostmaskDefinitions.html">listHostmaskDefinitions</a></li><li><a class="function" href="kameloso.plugins.admin.onAnyEvent.html">onAnyEvent</a></li><li><a class="function" href="kameloso.plugins.admin.onBusMessage.html">onBusMessage</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandAuth.html">onCommandAuth</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandBlacklist.html">onCommandBlacklist</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandBus.html">onCommandBus</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandCycle.html">onCommandCycle</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandElevated.html">onCommandElevated</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandFake.html">onCommandFake</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandGet.html">onCommandGet</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandGuest.html">onCommandGuest</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandHome.html">onCommandHome</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandJoin.html">onCommandJoin</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandMask.html">onCommandMask</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandOperator.html">onCommandOperator</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandPart.html">onCommandPart</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandPrintBytes.html">onCommandPrintBytes</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandPrintEvents.html">onCommandPrintEvents</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandPrintRaw.html">onCommandPrintRaw</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandQuit.html">onCommandQuit</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandReconnect.html">onCommandReconnect</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandReexec.html">onCommandReexec</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandReload.html">onCommandReload</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandSave.html">onCommandSave</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandSelftest.html">onCommandSelftest</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandSet.html">onCommandSet</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandShowUser.html">onCommandShowUser</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandShowUsers.html">onCommandShowUsers</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandStaff.html">onCommandStaff</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandSudo.html">onCommandSudo</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandSummary.html">onCommandSummary</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandWhitelist.html">onCommandWhitelist</a></li><li><a class="function" href="kameloso.plugins.admin.onCommandWhoami.html">onCommandWhoami</a></li><li><a class="function" href="kameloso.plugins.admin.parseTypesFromString.html">parseTypesFromString</a></li><li><a class="function" href="kameloso.plugins.admin.selftest.html">selftest</a></li></ul><span class="type-separator">manifest constants</span><ul><li><a class="manifest-constant" href="kameloso.plugins.admin.omniscientChannelPolicy.1.html">omniscientChannelPolicy</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.admin.AdminSettings.html">AdminSettings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>ConnectionDefaultFloats (kameloso.constants.ConnectionDefaultFloats)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>ConnectionDefaultFloats</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.constants.html">constants</a> </div><div><div class="documentation-comment synopsis"><div><p>Connection defaults, floating point version.</p></div></div></div><div class="annotated-prototype"></div><h2 id="values"><a class="header-anchor" href="#values">Values</a></h2><table class="enum-members"><tr><th>Value</th><th>Meaning</th></tr><tr class="enum-member" id="delayIncrementMultiplier"><td><a class="enum-member-name" href="#delayIncrementMultiplier">delayIncrementMultiplier</a><span class="enum-member-value"><tt class="highlighted"><span class="num">1.5</span></tt></span><div class="enum-attributes"></div></td><td><div><p>By what to multiply the connect timeout after failing an attempt.</p></div></td></tr><tr class="enum-member" id="receiveShorteningMultiplier"><td><a class="enum-member-name" href="#receiveShorteningMultiplier">receiveShorteningMultiplier</a><span class="enum-member-value"><tt class="highlighted"><span class="num">0.25</span></tt></span><div class="enum-attributes"></div></td><td><div><p>By what to multiply <a class="xref" href="kameloso.constants.Timeout.html#receiveMsecs">Timeout.receiveMsecs</a> with to shorten reads.</p></div></td></tr><tr class="enum-member" id="messageRate"><td><a class="enum-member-name" href="#messageRate">messageRate</a><span class="enum-member-value"><tt class="highlighted"><span class="num">1.2</span></tt></span><div class="enum-attributes"></div></td><td><div><p>How many messages to send per second, maximum.</p></div></td></tr><tr class="enum-member" id="messageBurst"><td><a class="enum-member-name" href="#messageBurst">messageBurst</a><span class="enum-member-value"><tt class="highlighted"><span class="num">3.0</span></tt></span><div class="enum-attributes"></div></td><td><div><p>How many messages to immediately send in one go, before throttling kicks in.</p></div></td></tr><tr class="enum-member" id="messageRateTwitchFast"><td><a class="enum-member-name" href="#messageRateTwitchFast">messageRateTwitchFast</a><span class="enum-member-value"><tt class="highlighted"><span class="num">2.0</span></tt></span><div class="enum-attributes"></div></td><td><div><p>How many messages to send per second, maximum. For *fast* sends on Twitch servers.</p><p>FIXME: Tweak value.</p></div></td></tr><tr class="enum-member" id="messageBurstTwitchFast"><td><a class="enum-member-name" href="#messageBurstTwitchFast">messageBurstTwitchFast</a><span class="enum-member-value"><tt class="highlighted"><span class="num">3.0</span></tt></span><div class="enum-attributes"></div></td><td><div><p>How many messages to immediately send in one go, before throttling kicks in.
+        For *fast* sends on Twitch servers.</p><p>FIXME: Tweak value.</p></div></td></tr><tr class="enum-member" id="messageRateTwitchSlow"><td><a class="enum-member-name" href="#messageRateTwitchSlow">messageRateTwitchSlow</a><span class="enum-member-value"><tt class="highlighted"><span class="num">0.5</span></tt></span><div class="enum-attributes"></div></td><td><div><p>How many messages to send per second, maximum. For *slow* sends on Twitch servers.</p><p>FIXME: Tweak value.</p></div></td></tr><tr class="enum-member" id="messageBurstTwitchSlow"><td><a class="enum-member-name" href="#messageBurstTwitchSlow">messageBurstTwitchSlow</a><span class="enum-member-value"><tt class="highlighted"><span class="num">0.5</span></tt></span><div class="enum-attributes"></div></td><td><div><p>How many messages to immediately send in one go, before throttling kicks in.
+        For *slow* sends on Twitch servers.</p><p>FIXME: Tweak value.</p></div></td></tr></table><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.constants.html">constants</a> 
+		<span class="type-separator">enums</span><ul><li><a class="enum" href="kameloso.constants.BufferSize.html">BufferSize</a></li><li><a class="enum current" href="kameloso.constants.ConnectionDefaultFloats.html">ConnectionDefaultFloats</a></li><li><a class="enum" href="kameloso.constants.ConnectionDefaultIntegers.html">ConnectionDefaultIntegers</a></li><li><a class="enum" href="kameloso.constants.KamelosoDefaultChars.html">KamelosoDefaultChars</a></li><li><a class="enum" href="kameloso.constants.KamelosoDefaultIntegers.html">KamelosoDefaultIntegers</a></li><li><a class="enum" href="kameloso.constants.KamelosoDefaults.html">KamelosoDefaults</a></li><li><a class="enum" href="kameloso.constants.KamelosoFilenames.html">KamelosoFilenames</a></li><li><a class="enum" href="kameloso.constants.KamelosoInfo.html">KamelosoInfo</a></li><li><a class="enum" href="kameloso.constants.MagicErrorStrings.html">MagicErrorStrings</a></li><li><a class="enum" href="kameloso.constants.MagicStrings.html">MagicStrings</a></li><li><a class="enum" href="kameloso.constants.ShellReturnValue.html">ShellReturnValue</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.constants.buildCompilerVersionString.html">buildCompilerVersionString</a></li><li><a class="function" href="kameloso.constants.buildVersionString.html">buildVersionString</a></li></ul><span class="type-separator">manifest constants</span><ul><li><a class="manifest-constant" href="kameloso.constants.compiler.1.html">compiler</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.constants.DefaultColours.html">DefaultColours</a></li><li><a class="struct" href="kameloso.constants.Timeout.html">Timeout</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>BufferSize (kameloso.constants.BufferSize)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>BufferSize</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.constants.html">constants</a> </div><div><div class="documentation-comment synopsis"><div><p>Buffer sizes in bytes.</p></div></div></div><div class="annotated-prototype"></div><h2 id="values"><a class="header-anchor" href="#values">Values</a></h2><table class="enum-members"><tr><th>Value</th><th>Meaning</th></tr><tr class="enum-member" id="socketOptionReceive"><td><a class="enum-member-name" href="#socketOptionReceive">socketOptionReceive</a><span class="enum-member-value"><tt class="highlighted"><span class="num">8192</span></tt></span><div class="enum-attributes"></div></td><td><div><p>The receive buffer size as set as a <a class="xref" href="std.socket.SocketOption.html">SocketOption</a>.</p></div></td></tr><tr class="enum-member" id="socketOptionSend"><td><a class="enum-member-name" href="#socketOptionSend">socketOptionSend</a><span class="enum-member-value"><tt class="highlighted"><span class="num">8192</span></tt></span><div class="enum-attributes"></div></td><td><div><p>The send buffer size as set as a <a class="xref" href="std.socket.SocketOption.html">SocketOption</a>.</p></div></td></tr><tr class="enum-member" id="socketReceive"><td><a class="enum-member-name" href="#socketReceive">socketReceive</a><span class="enum-member-value"><tt class="highlighted"><span class="num">8192</span></tt></span><div class="enum-attributes"></div></td><td><div><p>The actual buffer array size used when reading from the socket.</p></div></td></tr><tr class="enum-member" id="outbuffer"><td><a class="enum-member-name" href="#outbuffer">outbuffer</a><span class="enum-member-value"><tt class="highlighted"><span class="num">512</span></tt></span><div class="enum-attributes"></div></td><td><div><p>The maximum number of queued outgoing lines to buffer. Anything above
+        this will crash the program with a buffer overrun. It can be arbitrarily big.</p></div></td></tr><tr class="enum-member" id="priorityBuffer"><td><a class="enum-member-name" href="#priorityBuffer">priorityBuffer</a><span class="enum-member-value"><tt class="highlighted"><span class="num">64</span></tt></span><div class="enum-attributes"></div></td><td><div><p>The maximum number of queued priority lines to buffer. These are rare.</p></div></td></tr><tr class="enum-member" id="prettyprintBufferPerObject"><td><a class="enum-member-name" href="#prettyprintBufferPerObject">prettyprintBufferPerObject</a><span class="enum-member-value"><tt class="highlighted"><span class="num">1024</span></tt></span><div class="enum-attributes"></div></td><td><div><p>How many bytes to preallocate a buffer for when printing objects to
+        screen with the <a class="xref" href="kameloso.prettyprint.html">kameloso.prettyprint</a> templates. This value times the
+        number of objects to print.</p></div></td></tr><tr class="enum-member" id="vbufStdout"><td><a class="enum-member-name" href="#vbufStdout">vbufStdout</a><span class="enum-member-value"><tt class="highlighted"><span class="num">32_768</span></tt></span><div class="enum-attributes"></div></td><td><div><p>How many bytes to allocate for the stdout buffer, when we need to do so explicitly.</p></div></td></tr><tr class="enum-member" id="fiberStack"><td><a class="enum-member-name" href="#fiberStack">fiberStack</a><span class="enum-member-value"><tt class="highlighted"><span class="num">32_768</span></tt></span><div class="enum-attributes"></div></td><td><div><p>How large to make <a class="xref" href="core.thread.fiber.Fiber.html">Fiber</a> stacks, so they don't
+        overflow (which they seem to have a knack for doing).</p></div></td></tr></table><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.constants.html">constants</a> 
+		<span class="type-separator">enums</span><ul><li><a class="enum current" href="kameloso.constants.BufferSize.html">BufferSize</a></li><li><a class="enum" href="kameloso.constants.ConnectionDefaultFloats.html">ConnectionDefaultFloats</a></li><li><a class="enum" href="kameloso.constants.ConnectionDefaultIntegers.html">ConnectionDefaultIntegers</a></li><li><a class="enum" href="kameloso.constants.KamelosoDefaultChars.html">KamelosoDefaultChars</a></li><li><a class="enum" href="kameloso.constants.KamelosoDefaultIntegers.html">KamelosoDefaultIntegers</a></li><li><a class="enum" href="kameloso.constants.KamelosoDefaults.html">KamelosoDefaults</a></li><li><a class="enum" href="kameloso.constants.KamelosoFilenames.html">KamelosoFilenames</a></li><li><a class="enum" href="kameloso.constants.KamelosoInfo.html">KamelosoInfo</a></li><li><a class="enum" href="kameloso.constants.MagicErrorStrings.html">MagicErrorStrings</a></li><li><a class="enum" href="kameloso.constants.MagicStrings.html">MagicStrings</a></li><li><a class="enum" href="kameloso.constants.ShellReturnValue.html">ShellReturnValue</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.constants.buildCompilerVersionString.html">buildCompilerVersionString</a></li><li><a class="function" href="kameloso.constants.buildVersionString.html">buildVersionString</a></li></ul><span class="type-separator">manifest constants</span><ul><li><a class="manifest-constant" href="kameloso.constants.compiler.1.html">compiler</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.constants.DefaultColours.html">DefaultColours</a></li><li><a class="struct" href="kameloso.constants.Timeout.html">Timeout</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>applyDefaults (kameloso.config.applyDefaults)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>applyDefaults</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.config.html">config</a> </div><div><div class="documentation-comment synopsis"><div><p>Completes a client's, a server's and a bot's member fields. Empty members are
+    given values from compile-time defaults.</p><p>Nickname, user, GECOS/&quot;real name&quot;, server address and server port are
+    required. If there is no nickname, generate a random one. For any other empty values,
+    update them with relevant such from <a class="xref" href="kameloso.constants.KamelosoDefaults.html">KamelosoDefaults</a>
+    (and <a class="xref" href="kameloso.constants.KamelosoDefaultIntegers.html">KamelosoDefaultIntegers</a>).</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> </div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">applyDefaults</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="1"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">scope</span> <a class="name" data-ident="Kameloso" href="kameloso.kameloso.Kameloso.html" title="kameloso.kameloso.Kameloso">Kameloso</a></span></span> <span class="parameter-name name" data-ident="instance"><a href="#param-instance">instance</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-instance"><a class="parameter-name" data-ident="instance" href="#param-instance">instance</a> <span class="parameter-type"><a class="xref" href="kameloso.kameloso.Kameloso.html" title="kameloso.kameloso.Kameloso"><span class="name" data-ident="Kameloso">Kameloso</span></a></span></dt><dd><div class="documentation-comment"><div><p>The current <a class="xref" href="kameloso.kameloso.Kameloso.html">Kameloso</a> instance.</p></div></div></dd></dl><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted"><span class="kwrd">import</span> <span class="hid">kameloso</span>.<span class="hid">constants</span> : <span class="hid">KamelosoDefaults</span>, <span class="hid">KamelosoDefaultIntegers</span>;
+<span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">conv</span> : <span class="hid">to</span>;
+
+<span class="kwrd">scope</span> <span class="hid">instance</span> = <span class="kwrd">new</span> <span class="hid">Kameloso</span>;
+
+<span class="kwrd">with</span> (<span class="hid">instance</span>.<span class="hid">parser</span>)
+{
+    <span class="kwrd">assert</span>(!<span class="hid">client</span>.<span class="hid">nickname</span>.<span class="hid">length</span>, <span class="hid">client</span>.<span class="hid">nickname</span>);
+    <span class="kwrd">assert</span>(!<span class="hid">client</span>.<span class="hid">user</span>.<span class="hid">length</span>, <span class="hid">client</span>.<span class="hid">user</span>);
+    <span class="kwrd">assert</span>(!<span class="hid">client</span>.<span class="hid">ident</span>.<span class="hid">length</span>, <span class="hid">client</span>.<span class="hid">ident</span>);
+    <span class="kwrd">assert</span>(!<span class="hid">client</span>.<span class="hid">realName</span>.<span class="hid">length</span>, <span class="hid">client</span>.<span class="hid">realName</span>);
+    <span class="kwrd">assert</span>(!<span class="hid">server</span>.<span class="hid">address</span>, <span class="hid">server</span>.<span class="hid">address</span>);
+    <span class="kwrd">assert</span>((<span class="hid">server</span>.<span class="hid">port</span> == <span class="num">0</span>), <span class="hid">server</span>.<span class="hid">port</span>.<span class="hid">to</span>!<span class="type">string</span>);
+
+    <span class="hid">applyDefaults</span>(<span class="hid">instance</span>);
+
+    <span class="kwrd">assert</span>(<span class="hid">client</span>.<span class="hid">nickname</span>.<span class="hid">length</span>);
+    <span class="kwrd">assert</span>((<span class="hid">client</span>.<span class="hid">user</span> == <span class="hid">KamelosoDefaults</span>.<span class="hid">user</span>), <span class="hid">client</span>.<span class="hid">user</span>);
+    <span class="kwrd">assert</span>(!<span class="hid">client</span>.<span class="hid">ident</span>.<span class="hid">length</span>, <span class="hid">client</span>.<span class="hid">ident</span>);
+    <span class="kwrd">assert</span>((<span class="hid">client</span>.<span class="hid">realName</span> == <span class="hid">KamelosoDefaults</span>.<span class="hid">realName</span>), <span class="hid">client</span>.<span class="hid">realName</span>);
+    <span class="kwrd">assert</span>((<span class="hid">server</span>.<span class="hid">address</span> == <span class="hid">KamelosoDefaults</span>.<span class="hid">serverAddress</span>), <span class="hid">server</span>.<span class="hid">address</span>);
+    <span class="kwrd">assert</span>((<span class="hid">server</span>.<span class="hid">port</span> == <span class="hid">KamelosoDefaultIntegers</span>.<span class="hid">port</span>), <span class="hid">server</span>.<span class="hid">port</span>.<span class="hid">to</span>!<span class="type">string</span>);
+    <span class="kwrd">assert</span>((<span class="hid">instance</span>.<span class="hid">bot</span>.<span class="hid">quitReason</span> == <span class="hid">KamelosoDefaults</span>.<span class="hid">quitReason</span>), <span class="hid">instance</span>.<span class="hid">bot</span>.<span class="hid">quitReason</span>);
+    <span class="kwrd">assert</span>((<span class="hid">instance</span>.<span class="hid">bot</span>.<span class="hid">partReason</span> == <span class="hid">KamelosoDefaults</span>.<span class="hid">partReason</span>), <span class="hid">instance</span>.<span class="hid">bot</span>.<span class="hid">partReason</span>);
+
+    <span class="hid">client</span>.<span class="hid">nickname</span> = <span class="type">string</span>.<span class="hid">init</span>;
+    <span class="hid">applyDefaults</span>(<span class="hid">instance</span>);
+
+    <span class="kwrd">assert</span>(<span class="hid">client</span>.<span class="hid">nickname</span>.<span class="hid">length</span>, <span class="hid">client</span>.<span class="hid">nickname</span>);
+}</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.config.html">config</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.config.FlagStringException.html">FlagStringException</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function current" href="kameloso.config.applyDefaults.html">applyDefaults</a></li><li><a class="function" href="kameloso.config.flatten.html">flatten</a></li><li><a class="function" href="kameloso.config.giveBrightTerminalHint.html">giveBrightTerminalHint</a></li><li><a class="function" href="kameloso.config.giveConfigurationMinimalInstructions.html">giveConfigurationMinimalInstructions</a></li><li><a class="function" href="kameloso.config.handleGetopt.html">handleGetopt</a></li><li><a class="function" href="kameloso.config.manageConfigFile.html">manageConfigFile</a></li><li><a class="function" href="kameloso.config.notifyAboutIncompleteConfiguration.html">notifyAboutIncompleteConfiguration</a></li><li><a class="function" href="kameloso.config.notifyAboutMissingSettings.html">notifyAboutMissingSettings</a></li><li><a class="function" href="kameloso.config.printHelp.html">printHelp</a></li><li><a class="function" href="kameloso.config.printSettings.html">printSettings</a></li><li><a class="function" href="kameloso.config.resolveFlagString.html">resolveFlagString</a></li><li><a class="function" href="kameloso.config.verboselyWriteConfig.html">verboselyWriteConfig</a></li><li><a class="function" href="kameloso.config.writeConfigurationFile.html">writeConfigurationFile</a></li><li><a class="function" href="kameloso.config.writeToDisk.html">writeToDisk</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

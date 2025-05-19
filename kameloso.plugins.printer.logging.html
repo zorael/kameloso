@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>kameloso.plugins.printer.logging (kameloso.plugins.printer.logging)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>kameloso.plugins.printer.logging</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.printer.html">printer</a> </div><div><div class="documentation-comment synopsis"><div><p>Implementation of Printer plugin functionality that concerns logging.
+    For internal use.</p><p>The <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a>-annotated handlers must be in the same module
+    as the <a class="xref" href="kameloso.plugins.printer.PrinterPlugin.html">PrinterPlugin</a>, but these implementation
+    functions can be offloaded here to limit module size a bit.</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="kameloso.plugins.printer.logging.escapedPath.html">escapedPath</a><div class="simplified-prototype" style="max-width: 33ch;"><span class="lang-feature">auto</span>  <span class="name">escapedPath</span>(string path)</div></dt><dd><div><p>Replaces some invalid filenames to something that can be stored on the filesystem.</p></div></dd><dt><a href="kameloso.plugins.printer.logging.establishLogLocation.html">establishLogLocation</a><div class="simplified-prototype" style="max-width: 73ch;"><span class="lang-feature">auto</span>  <span class="name">establishLogLocation</span>(string logLocation, bool naggedAboutDir)</div></dt><dd><div><p>Verifies that a log directory exists, complaining if it's invalid, creating
+    it if it doesn't exist.</p></div></dd><dt><a href="kameloso.plugins.printer.logging.flushAllLogsImpl.html">flushAllLogsImpl</a><div class="simplified-prototype" style="max-width: 47ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">flushAllLogsImpl</span>(PrinterPlugin plugin)</div></dt><dd><div><p>Writes all buffered log lines to disk.</p></div></dd><dt><a href="kameloso.plugins.printer.logging.flushLog.html">flushLog</a><div class="simplified-prototype" style="max-width: 62ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">flushLog</span>(PrinterPlugin plugin, LogLineBuffer buffer)</div></dt><dd><div><p>Writes a single log buffer to disk.</p></div></dd><dt><a href="kameloso.plugins.printer.logging.onLoggableEventImpl.html">onLoggableEventImpl</a><div class="simplified-prototype" style="max-width: 68ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">onLoggableEventImpl</span>(PrinterPlugin plugin, IRCEvent event)</div></dt><dd><div><p>Logs an event to disk.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="struct"><a class="header-anchor" href="#struct">Structs</a></h3><dl class="member-list native"><dt><a href="kameloso.plugins.printer.logging.LogLineBuffer.html">LogLineBuffer</a><div class="simplified-prototype" style="max-width: 22ch;"><span class="builtin-type">struct</span> <span class="name">LogLineBuffer</span></div></dt><dd><div><p>A struct containing lines to write to a log file when next flushing such.</p></div></dd></dl><div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="kameloso.plugins.printer.html">kameloso.plugins.printer</a>,
+        <a class="xref" href="kameloso.plugins.printer.formatting.html">kameloso.plugins.printer.formatting</a></p></div></div><h2 id="meta"><a class="header-anchor" href="#meta">Meta</a></h2><div class="documentation-comment license-section other-section"><h3 id="license"><a class="header-anchor" href="#license">License</a></h3><div><p><a href="https://www.boost.org/users/license.html">Boost Software License 1.0</a></p></div></div><div class="documentation-comment copyright-section other-section"><h3 id="copyright"><a class="header-anchor" href="#copyright">Copyright</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div><div class="documentation-comment authors-section other-section"><h3 id="authors"><a class="header-anchor" href="#authors">Authors</a></h3><div><p><a href="https://github.com/zorael">JR</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.printer.html">printer</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module" href="kameloso.plugins.printer.formatting.html">formatting</a></li><li><a class="module current" href="kameloso.plugins.printer.logging.html">logging</a></li></ul><span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.printer.PrinterPlugin.html">PrinterPlugin</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.printer.clearTargetNicknameIfUs.html">clearTargetNicknameIfUs</a></li><li><a class="function" href="kameloso.plugins.printer.datestamp.html">datestamp</a></li><li><a class="function" href="kameloso.plugins.printer.initResources.html">initResources</a></li><li><a class="function" href="kameloso.plugins.printer.initialise.html">initialise</a></li><li><a class="function" href="kameloso.plugins.printer.onBusMessage.html">onBusMessage</a></li><li><a class="function" href="kameloso.plugins.printer.onISUPPORT.html">onISUPPORT</a></li><li><a class="function" href="kameloso.plugins.printer.onLoggableEvent.html">onLoggableEvent</a></li><li><a class="function" href="kameloso.plugins.printer.onPing.html">onPing</a></li><li><a class="function" href="kameloso.plugins.printer.onPrintableEvent.html">onPrintableEvent</a></li><li><a class="function" href="kameloso.plugins.printer.setup.html">setup</a></li><li><a class="function" href="kameloso.plugins.printer.teardown.html">teardown</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.printer.PrinterSettings.html">PrinterSettings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

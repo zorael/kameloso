@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>parseSpecialcases (dialect.parsing.parseSpecialcases)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>parseSpecialcases</h1><div class="breadcrumbs"><a class="breadcrumb" href="dialect.html">dialect</a> <a class="breadcrumb" href="dialect.parsing.html">parsing</a> </div><div><div class="documentation-comment synopsis"><div><p>Takes a slice of a raw IRC string and continues parsing it into an
+    <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a> struct.</p><p>This function only focuses on specialcasing the remaining line, dividing it
+    into fields like <tt class="inline-code">target</tt>, <tt class="inline-code">channel</tt>, <tt class="inline-code">content</tt>, etc.</p><p>IRC events are *riddled* with inconsistencies and specialcasings, so this
+    function is very very long, but by necessity.</p><p>The <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a> is finished at the end of this function.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">private pure @<span class="name" data-ident="safe">safe</span> </div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">parseSpecialcases</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">ref</span> <a class="name" data-ident="IRCParser" href="dialect.parsing.IRCParser.html" title="dialect.parsing.IRCParser">IRCParser</a></span></span> <span class="parameter-name name" data-ident="parser"><a href="#param-parser">parser</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">ref</span> <a class="name" data-ident="IRCEvent" href="dialect.defs.IRCEvent.html" title="dialect.defs.IRCEvent">IRCEvent</a></span></span> <span class="parameter-name name" data-ident="event"><a href="#param-event">event</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">ref</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="slice"><a href="#param-slice">slice</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-parser"><a class="parameter-name" data-ident="parser" href="#param-parser">parser</a> <span class="parameter-type"><a class="xref" href="dialect.parsing.IRCParser.html" title="dialect.parsing.IRCParser"><span class="name" data-ident="IRCParser">IRCParser</span></a></span></dt><dd><div class="documentation-comment"><div><p>Reference to the current <a class="xref" href="dialect.parsing.IRCParser.html">IRCParser</a>.</p></div></div></dd><dt id="param-event"><a class="parameter-name" data-ident="event" href="#param-event">event</a> <span class="parameter-type"><a class="xref" href="dialect.defs.IRCEvent.html" title="dialect.defs.IRCEvent"><span class="name" data-ident="IRCEvent">IRCEvent</span></a></span></dt><dd><div class="documentation-comment"><div><p>Reference to the <a class="xref" href="dialect.defs.IRCEvent.html">IRCEvent</a> to continue
+            working on.</p></div></div></dd><dt id="param-slice"><a class="parameter-name" data-ident="slice" href="#param-slice">slice</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>Reference to the slice of the raw IRC string.</p></div></div></dd></dl><h2 id="throws"><a class="header-anchor" href="#throws">Throws</a></h2><div class="documentation-comment throws-description"><div><p><a class="xref" href="dialect.common.IRCParseException.html">IRCParseException</a> if an unknown
+        to-connect-type event was encountered, or if the event was not
+        recognised at all, as neither a normal type nor a numeric.</p></div></div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="dialect.parsing.parsePrefix.html">parsePrefix</a></p><p><a class="xref" href="dialect.parsing.parseBasic.html">parseBasic</a></p><p><a class="xref" href="dialect.parsing.parseTypestring.html">parseTypestring</a></p><p><a class="xref" href="dialect.parsing.parseGeneralCases.html">parseGeneralCases</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="dialect.html">dialect</a> <a class="parent" href="dialect.parsing.html">parsing</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function" href="dialect.parsing.applyTags.html">applyTags</a></li><li><a class="function" href="dialect.parsing.onISUPPORT.html">onISUPPORT</a></li><li><a class="function" href="dialect.parsing.onMode.html">onMode</a></li><li><a class="function" href="dialect.parsing.onMyInfo.html">onMyInfo</a></li><li><a class="function" href="dialect.parsing.onNotice.html">onNotice</a></li><li><a class="function" href="dialect.parsing.onPRIVMSG.html">onPRIVMSG</a></li><li><a class="function" href="dialect.parsing.parseBasic.html">parseBasic</a></li><li><a class="function" href="dialect.parsing.parseGeneralCases.html">parseGeneralCases</a></li><li><a class="function" href="dialect.parsing.parsePrefix.html">parsePrefix</a></li><li><a class="function current" href="dialect.parsing.parseSpecialcases.html">parseSpecialcases</a></li><li><a class="function" href="dialect.parsing.parseTypestring.html">parseTypestring</a></li><li><a class="function" href="dialect.parsing.postparseSanityCheck.html">postparseSanityCheck</a></li><li><a class="function" href="dialect.parsing.toIRCEvent.html">toIRCEvent</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="dialect.parsing.IRCParser.html">IRCParser</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

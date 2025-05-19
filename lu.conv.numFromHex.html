@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>numFromHex (lu.conv.numFromHex)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>numFromHex</h1><div class="breadcrumbs"><a class="breadcrumb" href="lu.html">lu</a> <a class="breadcrumb" href="lu.conv.html">conv</a> </div><div><div class="documentation-comment synopsis"><div><p>Returns the decimal value of a hex number in string form.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> pure </div><div class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </div><div class="function-name">numFromHex</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="hex"><a href="#param-hex">hex</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="acceptLowercase"><a href="#param-acceptLowercase">acceptLowercase</a></span><span class="parameter-default-value">&#160;=&#160;true</span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-hex"><a class="parameter-name" data-ident="hex" href="#param-hex">hex</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>Hexadecimal number in string form.</p></div></div></dd><dt id="param-acceptLowercase"><a class="parameter-name" data-ident="acceptLowercase" href="#param-acceptLowercase">acceptLowercase</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether or not to accept <tt class="inline-code">rrggbb</tt> in lowercase form.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="lang-feature" href="http://dpldocs.info/auto-function-return-prototype">auto</a> </span></div><div class="documentation-comment returns-description"><div><p>An integer equalling the value of the passed hexadecimal string.</p></div></div></div><h2 id="throws"><a class="header-anchor" href="#throws">Throws</a></h2><div class="documentation-comment throws-description"><div><p><a class="xref" href="std.conv.ConvException.html">ConvException</a> if the hex string was malformed.</p></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="type">int</span> <span class="hid">fifteen</span> = <span class="hid">numFromHex</span>(<span class="str">&quot;F&quot;</span>);
+<span class="type">int</span> <span class="hid">twofiftyfive</span> = <span class="hid">numFromHex</span>(<span class="str">&quot;FF&quot;</span>);</pre></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="lu.html">lu</a> <a class="parent" href="lu.conv.html">conv</a> 
+		<span class="type-separator">aliases</span><ul><li><a class="alias" href="lu.conv.enumToString.html">enumToString</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function current" href="lu.conv.numFromHex.html">numFromHex</a></li><li><a class="function" href="lu.conv.rgbFromHex.html">rgbFromHex</a></li><li><a class="function" href="lu.conv.toAlpha.html">toAlpha</a></li><li><a class="function" href="lu.conv.toAlphaInto.html">toAlphaInto</a></li><li><a class="function" href="lu.conv.toString.html">toString</a></li></ul><span class="type-separator">templates</span><ul><li><a class="template" href="lu.conv.Enum.html">Enum</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
