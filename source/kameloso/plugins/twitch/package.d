@@ -3368,10 +3368,17 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                     room.followers = results.followers;
                     room.followersLastCached = now.toUnixTime();
 
-                    if (plugin.state.coreSettings.trace)
+                    if (!results.followers.length)
                     {
-                        enum pattern = "Cached <l>%,d</> followers of channel <l>%s</>.";
-                        logger.infof(pattern, results.followers.length, channelName);
+                        // No followers, so don't output anything
+                    }
+                    else
+                    {
+                        if (plugin.state.coreSettings.trace)
+                        {
+                            enum pattern = "Cached <l>%,d</> followers of channel <l>%s";
+                            logger.infof(pattern, results.followers.length, channelName);
+                        }
                     }
                 }
                 else
@@ -3379,7 +3386,7 @@ in (channelName.length, "Tried to start room monitor with an empty channel name 
                     // Failed to get followers, retry next time
                     if (plugin.state.coreSettings.trace)
                     {
-                        enum pattern = "Failed to fetch followers of channel <l>%s</>.";
+                        enum pattern = "Failed to fetch followers of channel <l>%s";
                         logger.warningf(pattern, channelName);
                     }
                 }
