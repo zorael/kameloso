@@ -68,13 +68,14 @@ void saveAutomodes(AutomodePlugin plugin)
  +/
 void initResources(AutomodePlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File;
 
-    immutable content = plugin.automodeFile.readText();
+    immutable content = plugin.automodeFile.readText.strippedRight;
 
     if (!content.length)
     {
@@ -556,10 +557,11 @@ void reload(AutomodePlugin plugin)
  +/
 void loadAutomodes(AutomodePlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    immutable content = plugin.automodeFile.readText();
+    immutable content = plugin.automodeFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {

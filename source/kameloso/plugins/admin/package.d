@@ -1464,6 +1464,7 @@ void onCommandMask(AdminPlugin plugin, const IRCEvent event)
  +/
 void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.file : readText;
     import std.json : JSONValue;
@@ -1471,7 +1472,7 @@ void listHostmaskDefinitions(AdminPlugin plugin, const IRCEvent event)
 
     if (plugin.state.coreSettings.headless) return;
 
-    immutable content = plugin.hostmasksFile.readText();
+    immutable content = plugin.hostmasksFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -2194,6 +2195,7 @@ void onBusMessage(
  +/
 void initResources(AdminPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
@@ -2204,7 +2206,7 @@ void initResources(AdminPlugin plugin)
         (const string filename,
         const string fileDescription)
     {
-        immutable content = filename.readText();
+        immutable content = filename.readText.strippedRight;
 
         if (!content.length)
         {

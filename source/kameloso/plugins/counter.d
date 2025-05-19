@@ -844,10 +844,11 @@ void saveCounters(CounterPlugin plugin)
  +/
 void loadCounters(CounterPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    immutable content = plugin.countersFile.readText();
+    immutable content = plugin.countersFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -897,13 +898,14 @@ void loadCounters(CounterPlugin plugin)
  +/
 void initResources(CounterPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File;
 
-    immutable content = plugin.countersFile.readText();
+    immutable content = plugin.countersFile.readText.strippedRight;
 
     if (!content.length)
     {

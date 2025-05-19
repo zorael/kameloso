@@ -524,10 +524,11 @@ in (filename.length, "Tried to save resources to an empty filename string")
  +/
 void reload(TimePlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    immutable content = plugin.timezonesFile.readText();
+    immutable content = plugin.timezonesFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -553,13 +554,14 @@ void reload(TimePlugin plugin)
  +/
 void initResources(TimePlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File;
 
-    immutable content = plugin.timezonesFile.readText();
+    immutable content = plugin.timezonesFile.readText.strippedRight;
 
     if (!content.length)
     {

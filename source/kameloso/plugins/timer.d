@@ -1676,13 +1676,14 @@ void saveTimers(TimerPlugin plugin)
  +/
 void initResources(TimerPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : exists, readText;
     import std.json : JSONValue;
     import std.stdio : File;
 
-    immutable content = plugin.timerFile.readText();
+    immutable content = plugin.timerFile.readText.strippedRight;
 
     if (!content.length)
     {
@@ -1742,10 +1743,11 @@ void initResources(TimerPlugin plugin)
  +/
 void loadTimers(TimerPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    immutable content = plugin.timerFile.readText();
+    immutable content = plugin.timerFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {

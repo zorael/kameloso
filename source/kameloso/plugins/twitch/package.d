@@ -813,6 +813,7 @@ void reportStreamTime(
     const TwitchPlugin.Room room)
 {
     import kameloso.time : timeSince;
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.datetime.systime : Clock, SysTime;
     import std.file : readText;
@@ -852,7 +853,7 @@ void reportStreamTime(
     }
 
     // Stream down, check if we have one on record to report instead
-    immutable content = plugin.streamHistoryFile.readText();
+    immutable content = plugin.streamHistoryFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -2945,6 +2946,7 @@ void onCommandCommercial(TwitchPlugin plugin, const IRCEvent event)
 void initialise(TwitchPlugin plugin)
 {
     import kameloso.terminal : isTerminal;
+    import lu.string : strippedRight;
     import std.algorithm.searching : endsWith;
 
     if (!isTerminal)
@@ -2986,7 +2988,7 @@ void initialise(TwitchPlugin plugin)
 
         // Some keygen, reload to load secrets so existing ones are read
         // Not strictly needed for normal keygen but for everything else
-        immutable content = plugin.secretsFile.readText();
+        immutable content = plugin.secretsFile.readText.strippedRight;
 
         version(PrintStacktraces)
         {
@@ -3874,12 +3876,13 @@ in (Fiber.getThis(), "Tried to call `startSaver` from outside a fiber")
  +/
 void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream stream)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File;
 
-    immutable content = plugin.streamHistoryFile.readText();
+    immutable content = plugin.streamHistoryFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -4600,6 +4603,7 @@ auto postprocess(TwitchPlugin plugin, ref IRCEvent event)
  +/
 void initResources(TwitchPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
@@ -4614,7 +4618,7 @@ void initResources(TwitchPlugin plugin)
         (const string filename,
         const string fileDescription)
     {
-        immutable content = filename.readText();
+        immutable content = filename.readText.strippedRight;
 
         if (!content.length)
         {
@@ -4765,6 +4769,7 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
  +/
 void loadResources(TwitchPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.file : readText;
     import core.memory : GC;
@@ -4786,7 +4791,7 @@ void loadResources(TwitchPlugin plugin)
     scope(exit) GC.enable();
 
     {
-        immutable content = plugin.ecountFile.readText();
+        immutable content = plugin.ecountFile.readText.strippedRight;
 
         version(PrintStacktraces)
         {
@@ -4796,7 +4801,7 @@ void loadResources(TwitchPlugin plugin)
         plugin.ecount = content.deserialize!(long[string][string]);
     }
     {
-        immutable content = plugin.viewersFile.readText();
+        immutable content = plugin.viewersFile.readText.strippedRight;
 
         version(PrintStacktraces)
         {
@@ -4806,7 +4811,7 @@ void loadResources(TwitchPlugin plugin)
         plugin.viewerTimesByChannel = content.deserialize!(long[string][string]);
     }
     {
-        immutable content = plugin.secretsFile.readText();
+        immutable content = plugin.secretsFile.readText.strippedRight;
 
         version(PrintStacktraces)
         {

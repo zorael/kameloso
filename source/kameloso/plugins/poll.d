@@ -918,11 +918,12 @@ void serialisePolls(PollPlugin plugin)
  +/
 void deserialisePolls(PollPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.file : readText;
     import std.stdio : File, writeln;
 
-    immutable content = plugin.pollTempFile.readText();
+    immutable content = plugin.pollTempFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -1027,13 +1028,14 @@ void onSelfpart(PollPlugin plugin, const IRCEvent event)
  +/
 void initResources(PollPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File;
 
-    immutable content = plugin.pollTempFile.readText();
+    immutable content = plugin.pollTempFile.readText.strippedRight;
 
     if (!content.length)
     {

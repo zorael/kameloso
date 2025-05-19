@@ -1308,11 +1308,12 @@ unittest
  +/
 void loadQuotes(QuotePlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.file : readText;
     import std.stdio : File, writeln;
 
-    immutable content = plugin.quotesFile.readText();
+    immutable content = plugin.quotesFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -1511,6 +1512,7 @@ final class NoQuotesSearchMatchException : Exception
  +/
 void initResources(QuotePlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.algorithm.searching : startsWith;
@@ -1518,7 +1520,7 @@ void initResources(QuotePlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File;
 
-    immutable content = plugin.quotesFile.readText();
+    immutable content = plugin.quotesFile.readText.strippedRight;
 
     if (!content.length)
     {

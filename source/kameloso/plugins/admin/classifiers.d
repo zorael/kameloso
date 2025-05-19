@@ -100,15 +100,16 @@ void listList(
     const IRCUser.Class class_,
     const IRCEvent event = IRCEvent.init)
 {
-    import asdf.serialization : deserialize;
     import lu.conv : toString;
+    import lu.string : strippedRight;
+    import asdf.serialization : deserialize;
     import std.file : readText;
     import std.format : format;
 
     immutable shouldSendToChannel = (event.sender.nickname.length > 0);
     immutable role = getNoun(NounForm.plural, class_);
     immutable list = class_.toString;
-    immutable content = plugin.userFile.readText();
+    immutable content = plugin.userFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -621,13 +622,14 @@ auto alterAccountClassifier(
     const string channelName)
 {
     import kameloso.thread : ThreadMessage;
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import lu.conv : toString;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File;
 
-    immutable content = plugin.userFile.readText();
+    immutable content = plugin.userFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -728,6 +730,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
 {
     import kameloso.pods : CoreSettings;
     import kameloso.thread : ThreadMessage;
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.conv : text;
     import std.file : readText;
@@ -740,7 +743,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
     enum examplePlaceholderValue = "<account>";
 
     immutable shouldSendToChannel = (event.sender.nickname.length > 0);
-    immutable content = plugin.hostmasksFile.readText();
+    immutable content = plugin.hostmasksFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {

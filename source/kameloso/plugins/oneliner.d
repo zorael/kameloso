@@ -1358,11 +1358,12 @@ void reload(OnelinerPlugin plugin)
  +/
 void loadOneliners(OnelinerPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.file : readText;
     import std.stdio : File, writeln;
 
-    immutable content = plugin.onelinerFile.readText();
+    immutable content = plugin.onelinerFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -1494,13 +1495,14 @@ in (filename.length, "Tried to save resources to an empty filename string")
  +/
 void initResources(OnelinerPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File;
 
-    immutable content = plugin.onelinerFile.readText();
+    immutable content = plugin.onelinerFile.readText.strippedRight;
 
     if (!content.length)
     {

@@ -1027,11 +1027,12 @@ void updateAllObservedUsers(SeenPlugin plugin)
  +/
 void loadSeen(SeenPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.file : readText;
     import std.stdio : File, writeln;
 
-    immutable content = plugin.seenFile.readText();
+    immutable content = plugin.seenFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -1162,13 +1163,14 @@ void teardown(SeenPlugin plugin)
  +/
 void initResources(SeenPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File;
 
-    immutable content = plugin.seenFile.readText();
+    immutable content = plugin.seenFile.readText.strippedRight;
 
     if (!content.length)
     {

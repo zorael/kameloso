@@ -546,11 +546,12 @@ void saveNotes(NotePlugin plugin)
  +/
 void loadNotes(NotePlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.file : readText;
     import std.stdio : File, writeln;
 
-    immutable content = plugin.notesFile.readText();
+    immutable content = plugin.notesFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -602,13 +603,14 @@ void reload(NotePlugin plugin)
  +/
 void initResources(NotePlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File;
 
-    immutable content = plugin.notesFile.readText();
+    immutable content = plugin.notesFile.readText.strippedRight;
 
     if (!content.length)
     {

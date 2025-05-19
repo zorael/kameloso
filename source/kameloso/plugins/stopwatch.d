@@ -246,10 +246,11 @@ void serialiseStopwatches(StopwatchPlugin plugin)
  +/
 void deserialiseStopwatches(StopwatchPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    immutable content = plugin.stopwatchTempFile.readText();
+    immutable content = plugin.stopwatchTempFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -298,13 +299,14 @@ void onWelcome(StopwatchPlugin plugin, const IRCEvent _)
  +/
 void initResources(StopwatchPlugin plugin)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File;
 
-    immutable content = plugin.stopwatchTempFile.readText();
+    immutable content = plugin.stopwatchTempFile.readText.strippedRight;
 
     if (!content.length)
     {

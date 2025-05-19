@@ -1185,11 +1185,12 @@ struct JSONSchema
  +/
 void reloadAccountClassifiersFromDisk(PersistenceService service)
 {
-    import asdf.serialization : deserialize;
     import lu.conv : toString;
+    import lu.string : strippedRight;
+    import asdf.serialization : deserialize;
     import std.file : readText;
 
-    immutable content = service.userFile.readText();
+    immutable content = service.userFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -1250,10 +1251,11 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
  +/
 void reloadHostmasksFromDisk(PersistenceService service)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import std.file : readText;
 
-    immutable content = service.hostmasksFile.readText();
+    immutable content = service.hostmasksFile.readText.strippedRight;
 
     version(PrintStacktraces)
     {
@@ -1359,13 +1361,14 @@ void initResources(PersistenceService service)
  +/
 void initAccountResources(PersistenceService service)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : exists, readText;
     import std.json : JSONValue;
     import std.stdio : File;
 
-    immutable content = service.userFile.readText();
+    immutable content = service.userFile.readText.strippedRight;
 
     if (!content.length)
     {
@@ -1423,13 +1426,14 @@ void initAccountResources(PersistenceService service)
  +/
 void initHostmaskResources(PersistenceService service)
 {
+    import lu.string : strippedRight;
     import asdf.serialization : deserialize;
     import mir.serde : SerdeException;
     import std.file : readText;
     import std.json : JSONValue;
     import std.stdio : File;
 
-    immutable content = service.hostmasksFile.readText();
+    immutable content = service.hostmasksFile.readText.strippedRight;
 
     if (!content.length)
     {
